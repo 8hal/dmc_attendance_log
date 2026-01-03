@@ -25,9 +25,11 @@
     .list { margin-top:10px; }
     .item { padding:10px 0; border-top:1px solid #eee; }
     .item:first-child { border-top:0; }
+    .more { margin-top:10px; }
+    .more button { width:100%; padding:10px; border-radius:10px; border:1px solid #d7dbe0; background:#fff; cursor:pointer; font-size:14px; }
     .nick { font-size:14px; }
     .sub { font-size:12px; color:#666; margin-top:4px; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#f1f3f5; font-size:12px; color:#444; margin-left:6px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; border:1px solid transparent; }
   </style>
 </head>
 <body>
@@ -67,6 +69,9 @@
       <h1>오늘 출석 현황</h1>
       <div class="meta" id="todayCount"></div>
       <div class="list" id="list"></div>
+      <div class="more" id="moreWrap" style="display:none;">
+        <button id="moreBtn">더보기</button>
+      </div>
     </div>
   </div>
 
@@ -83,6 +88,14 @@
   const ENTRY_MEETING = "1376201711";
 
   const TEAM_OPTIONS = ["S팀", "1팀", "2팀", "3팀", "4팀", "5팀"];
+  const TEAM_COLORS = {
+    "S팀": { bg: "#ffe8d9", text: "#8a3d00", border: "#ffd0b3" },
+    "1팀": { bg: "#e6f1ff", text: "#124e8a", border: "#c7ddff" },
+    "2팀": { bg: "#e9f7ee", text: "#1f6b3a", border: "#cfeedd" },
+    "3팀": { bg: "#f3e8ff", text: "#5a2b8a", border: "#e2d1ff" },
+    "4팀": { bg: "#fff5cc", text: "#7a5b00", border: "#ffe8a3" },
+    "5팀": { bg: "#ffe7f1", text: "#8a2353", border: "#ffd0e2" }
+  };
 
   const MEETING_TYPES = [
     { value: "화요일 정모", label: "화요일 정모" },
@@ -106,7 +119,11 @@
   const elMeta = document.getElementById("meta");
   const elCount = document.getElementById("todayCount");
   const elList = document.getElementById("list");
+  const elMoreWrap = document.getElementById("moreWrap");
+  const LIST_PAGE_SIZE = 20;
   let todayNickSet = new Set();
+  let todayItems = [];
+  let listShownCount = 0;
 
   function setMsg(t) { elMsg.textContent = t || ""; }
 
@@ -152,21 +169,33 @@
   function renderList(items) {
     if (!items.length) {
       elList.innerHTML = `<div class="meta">아직 출석자가 없습니다.</div>`;
+      elMoreWrap.style.display = "none";
       return;
     }
     elList.innerHTML = items.map(it => {
       const nick = escapeHtml(it.nickname);
       const team = escapeHtml(it.team || "");
+      const teamStyle = TEAM_COLORS[it.team] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
       const mtValue = it.meetingType || "";
       const mt = escapeHtml(MEETING_LABEL_BY_VALUE[mtValue] || mtValue);
       const ts = escapeHtml(it.timestamp || "");
       return `
         <div class="item">
-          <div class="nick">${nick}${team ? `<span class="pill">${team}</span>` : ""}</div>
+          <div class="nick">${nick}${team ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${team}</span>` : ""}</div>
           <div class="sub">${mt} · ${ts}</div>
         </div>
       `;
     }).join("");
+  }
+
+  function renderPagedList() {
+    if (!todayItems.length) {
+      renderList([]);
+      return;
+    }
+    const slice = todayItems.slice(0, listShownCount);
+    renderList(slice);
+    elMoreWrap.style.display = listShownCount < todayItems.length ? "block" : "none";
   }
 
   function parseGviz(text) {
@@ -198,12 +227,15 @@
         };
       });
 
+      todayItems = items;
+      listShownCount = Math.min(LIST_PAGE_SIZE, todayItems.length);
       todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
       elCount.textContent = `${today} 출석 인원: ${items.length}명`;
-      renderList(items);
+      renderPagedList();
     } catch (e) {
       elCount.textContent = "목록을 불러오지 못했습니다. (시트를 웹에 게시했는지 확인해 주세요)";
       elList.innerHTML = "";
+      elMoreWrap.style.display = "none";
     }
   }
 
@@ -270,6 +302,11 @@
     elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
     refreshTodayList();
   }
+
+  document.getElementById("moreBtn").addEventListener("click", () => {
+    listShownCount = Math.min(listShownCount + LIST_PAGE_SIZE, todayItems.length);
+    renderPagedList();
+  });
 
   elBtn.addEventListener("click", submitAttendance);
   bootstrap();
