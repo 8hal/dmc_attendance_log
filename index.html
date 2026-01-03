@@ -48,12 +48,7 @@
 
       <div class="row">
         <label>정모 유형</label>
-        <select id="meetingType">
-          <option value="화요일 정모">화요일 정모</option>
-          <option value="목요일 정모">목요일 정모</option>
-          <option value="토요일 정모">토요일 정모</option>
-          <option value="번개/자율런">번개/자율런</option>
-        </select>
+        <select id="meetingType"></select>
       </div>
 
       <button id="submitBtn" class="primary">출석 체크</button>
@@ -80,6 +75,16 @@
   const ENTRY_DATE = "787715400";
   const ENTRY_MEETING = "1376201711";
 
+  const MEETING_TYPES = [
+    { value: "화요일 정모", label: "화요일 정모" },
+    { value: "목요일 정모", label: "목요일 정모" },
+    { value: "토요일 정모", label: "토요일 정모" },
+    { value: "번개", label: "번개/자율런" }
+  ];
+  const MEETING_LABEL_BY_VALUE = Object.fromEntries(
+    MEETING_TYPES.map(item => [item.value, item.label])
+  );
+
   const LS_NICK = "marathon_att_nickname";
   const LS_TEAM = "marathon_att_team";
 
@@ -100,7 +105,7 @@
       timeZone: "Asia/Seoul",
       year: "numeric", month: "2-digit", day: "2-digit"
     });
-    return fmt.format(new Date()); // yyyy-mm-dd
+    return fmt.format(new Date()).replace(/-/g, "/"); // yyyy/mm/dd (form expects slashes)
   }
 
   function kstDow() {
@@ -113,7 +118,7 @@
     if (w === "Tue") return "화요일 정모";
     if (w === "Thu") return "목요일 정모";
     if (w === "Sat") return "토요일 정모";
-    return "번개/자율런";
+    return "번개";
   }
 
   function loadProfile() {
@@ -142,7 +147,8 @@
     elList.innerHTML = items.map(it => {
       const nick = escapeHtml(it.nickname);
       const team = escapeHtml(it.team || "");
-      const mt = escapeHtml(it.meetingType || "");
+      const mtValue = it.meetingType || "";
+      const mt = escapeHtml(MEETING_LABEL_BY_VALUE[mtValue] || mtValue);
       const ts = escapeHtml(it.timestamp || "");
       return `
         <div class="item">
@@ -225,12 +231,19 @@
     }
   }
 
+  function populateMeetingOptions() {
+    elMeeting.innerHTML = MEETING_TYPES.map(item => (
+      `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`
+    )).join("");
+  }
+
   function bootstrap() {
     loadProfile();
     const today = kstTodayYYYYMMDD();
     elToday.value = today;
+    populateMeetingOptions();
     elMeeting.value = inferMeetingType();
-    elMeta.textContent = `자동 선택: ${elMeeting.value}`;
+    elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
     refreshTodayList();
   }
 
