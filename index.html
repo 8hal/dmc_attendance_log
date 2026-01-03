@@ -45,7 +45,7 @@
 
       <div class="row">
         <label>소속팀</label>
-        <input id="team" type="text" placeholder="예: 2팀" />
+        <select id="team"></select>
       </div>
 
       <div class="row">
@@ -82,6 +82,8 @@
   const ENTRY_DATE = "787715400";
   const ENTRY_MEETING = "1376201711";
 
+  const TEAM_OPTIONS = ["S팀", "1팀", "2팀", "3팀", "4팀", "5팀"];
+
   const MEETING_TYPES = [
     { value: "화요일 정모", label: "화요일 정모" },
     { value: "목요일 정모", label: "목요일 정모" },
@@ -104,6 +106,7 @@
   const elMeta = document.getElementById("meta");
   const elCount = document.getElementById("todayCount");
   const elList = document.getElementById("list");
+  let todayNickSet = new Set();
 
   function setMsg(t) { elMsg.textContent = t || ""; }
 
@@ -195,6 +198,7 @@
         };
       });
 
+      todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
       elCount.textContent = `${today} 출석 인원: ${items.length}명`;
       renderList(items);
     } catch (e) {
@@ -211,6 +215,12 @@
 
     if (!nickname) {
       setMsg("닉네임을 입력해 주세요.");
+      return;
+    }
+
+    const nickKey = nickname.toLowerCase();
+    if (todayNickSet.has(nickKey)) {
+      setMsg("이미 오늘 출석이 등록되어 있습니다.");
       return;
     }
 
@@ -238,6 +248,12 @@
     }
   }
 
+  function populateTeamOptions() {
+    elTeam.innerHTML = TEAM_OPTIONS.map(team => (
+      `<option value="${escapeHtml(team)}">${escapeHtml(team)}</option>`
+    )).join("");
+  }
+
   function populateMeetingOptions() {
     elMeeting.innerHTML = MEETING_TYPES.map(item => (
       `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`
@@ -245,6 +261,7 @@
   }
 
   function bootstrap() {
+    populateTeamOptions();
     loadProfile();
     const today = kstTodayYYYYMMDD();
     elToday.value = today;
