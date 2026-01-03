@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>마라톤 클럽 출석</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background:#f6f7f9; }
+    .wrap { max-width:520px; margin:0 auto; padding:16px; }
+    .card { background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 10px rgba(0,0,0,0.06); margin-bottom:12px; }
+    h1 { font-size:18px; margin:0 0 10px 0; }
+    .row { margin:10px 0; }
+    label { display:block; font-size:12px; color:#444; margin-bottom:6px; }
+    input, select { width:100%; padding:12px; border-radius:10px; border:1px solid #d7dbe0; font-size:14px; background:#fff; box-sizing:border-box; }
+    input[readonly] { background:#f1f3f5; }
+    button { width:100%; padding:12px; border:0; border-radius:10px; font-size:15px; cursor:pointer; }
+    button.primary { background:#111; color:#fff; }
+    button.primary:disabled { background:#888; cursor:not-allowed; }
+    .msg { font-size:13px; margin-top:10px; color:#111; }
+    .meta { font-size:12px; color:#666; }
+    .list { margin-top:10px; }
+    .item { padding:10px 0; border-top:1px solid #eee; }
+    .item:first-child { border-top:0; }
+    .nick { font-size:14px; }
+    .sub { font-size:12px; color:#666; margin-top:4px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#f1f3f5; font-size:12px; color:#444; margin-left:6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>출석 체크</h1>
+
+      <div class="row">
+        <label>닉네임</label>
+        <input id="nickname" type="text" placeholder="예: 게살볶음밥" />
+      </div>
+
+      <div class="row">
+        <label>소속팀</label>
+        <input id="team" type="text" placeholder="예: 2팀" />
+      </div>
+
+      <div class="row">
+        <label>오늘 날짜(KST)</label>
+        <input id="today" type="text" readonly />
+      </div>
+
+      <div class="row">
+        <label>정모 유형</label>
+        <select id="meetingType">
+          <option value="화요일 정모">화요일 정모</option>
+          <option value="목요일 정모">목요일 정모</option>
+          <option value="토요일 정모">토요일 정모</option>
+          <option value="번개/자율런">번개/자율런</option>
+        </select>
+      </div>
+
+      <button id="submitBtn" class="primary">출석 체크</button>
+      <div id="msg" class="msg"></div>
+      <div class="meta" id="meta"></div>
+    </div>
+
+    <div class="card">
+      <h1>오늘 출석 현황</h1>
+      <div class="meta" id="todayCount"></div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+
+<script>
+  // Google Sheet
+  const SHEET_ID = "13S3zHl2rHzJYdWEUvx1ID8iJAiHJuipw_6qDy1w0XP0";
+  const SHEET_GID = "2002029408";
+
+  // Google Form
+  const FORM_ACTION_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWUfL9GeZFt3RobjLYwuJ3Wk3n0TBJaM4BD-OO5UcZ1DrtDA/formResponse";
+  const ENTRY_NICK = "2688445";
+  const ENTRY_TEAM = "1952386524";
+  const ENTRY_DATE = "787715400";
+  const ENTRY_MEETING = "1376201711";
+
+  const LS_NICK = "marathon_att_nickname";
+  const LS_TEAM = "marathon_att_team";
+
+  const elNick = document.getElementById("nickname");
+  const elTeam = document.getElementById("team");
+  const elToday = document.getElementById("today");
+  const elMeeting = document.getElementById("meetingType");
+  const elBtn = document.getElementById("submitBtn");
+  const elMsg = document.getElementById("msg");
+  const elMeta = document.getElementById("meta");
+  const elCount = document.getElementById("todayCount");
+  const elList = document.getElementById("list");
+
+  function setMsg(t) { elMsg.textContent = t || ""; }
+
+  function kstTodayYYYYMMDD() {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "numeric", month: "2-digit", day: "2-digit"
+    });
+    return fmt.format(new Date()); // yyyy-mm-dd
+  }
+
+  function kstDow() {
+    const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" });
+    return fmt.format(new Date()); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+  }
+
+  function inferMeetingType() {
+    const w = kstDow();
+    if (w === "Tue") return "화요일 정모";
+    if (w === "Thu") return "목요일 정모";
+    if (w === "Sat") return "토요일 정모";
+    return "번개/자율런";
+  }
+
+  function loadProfile() {
+    const n = localStorage.getItem(LS_NICK) || "";
+    const t = localStorage.getItem(LS_TEAM) || "";
+    if (n) elNick.value = n;
+    if (t) elTeam.value = t;
+  }
+
+  function saveProfile() {
+    localStorage.setItem(LS_NICK, (elNick.value || "").trim());
+    localStorage.setItem(LS_TEAM, (elTeam.value || "").trim());
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[m]));
+  }
+
+  function renderList(items) {
+    if (!items.length) {
+      elList.innerHTML = `<div class="meta">아직 출석자가 없습니다.</div>`;
+      return;
+    }
+    elList.innerHTML = items.map(it => {
+      const nick = escapeHtml(it.nickname);
+      const team = escapeHtml(it.team || "");
+      const mt = escapeHtml(it.meetingType || "");
+      const ts = escapeHtml(it.timestamp || "");
+      return `
+        <div class="item">
+          <div class="nick">${nick}${team ? `<span class="pill">${team}</span>` : ""}</div>
+          <div class="sub">${mt} · ${ts}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function parseGviz(text) {
+    const m = text.match(/setResponse\((.*)\);?\s*$/s);
+    if (!m) throw new Error("gviz parse failed");
+    return JSON.parse(m[1]);
+  }
+
+  // 시트 컬럼 가정:
+  // A Timestamp, B 닉네임, C 소속팀, D 날짜, E 정모유형
+  async function refreshTodayList() {
+    const today = elToday.value;
+    const q = `select A,B,C,D,E where D = '${today}' order by A desc`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=out:json&tq=${encodeURIComponent(q)}`;
+
+    try {
+      const res = await fetch(url);
+      const text = await res.text();
+      const json = parseGviz(text);
+      const rows = json.table.rows || [];
+
+      const items = rows.map(r => {
+        const c = r.c || [];
+        return {
+          timestamp: c[0]?.f || (c[0]?.v ? String(c[0].v) : ""),
+          nickname: c[1]?.v || "",
+          team: c[2]?.v || "",
+          meetingType: c[4]?.v || ""
+        };
+      });
+
+      elCount.textContent = `${today} 출석 인원: ${items.length}명`;
+      renderList(items);
+    } catch (e) {
+      elCount.textContent = "목록을 불러오지 못했습니다. (시트를 웹에 게시했는지 확인해 주세요)";
+      elList.innerHTML = "";
+    }
+  }
+
+  async function submitAttendance() {
+    const nickname = (elNick.value || "").trim();
+    const team = (elTeam.value || "").trim();
+    const date = (elToday.value || "").trim();
+    const meetingType = (elMeeting.value || "").trim();
+
+    if (!nickname) {
+      setMsg("닉네임을 입력해 주세요.");
+      return;
+    }
+
+    saveProfile();
+    elBtn.disabled = true;
+    setMsg("처리 중...");
+
+    const formData = new FormData();
+    formData.append(`entry.${ENTRY_NICK}`, nickname);
+    formData.append(`entry.${ENTRY_TEAM}`, team);
+    formData.append(`entry.${ENTRY_DATE}`, date);
+    formData.append(`entry.${ENTRY_MEETING}`, meetingType);
+
+    try {
+      // Google Form은 CORS 응답을 안 주기 때문에 no-cors 사용
+      await fetch(FORM_ACTION_URL, { method: "POST", mode: "no-cors", body: formData });
+      setMsg("출석 완료");
+      elBtn.disabled = false;
+
+      // 시트 반영 지연 고려
+      setTimeout(refreshTodayList, 900);
+    } catch (e) {
+      setMsg("출석 처리에 실패했습니다. 다시 시도해 주세요.");
+      elBtn.disabled = false;
+    }
+  }
+
+  function bootstrap() {
+    loadProfile();
+    const today = kstTodayYYYYMMDD();
+    elToday.value = today;
+    elMeeting.value = inferMeetingType();
+    elMeta.textContent = `자동 선택: ${elMeeting.value}`;
+    refreshTodayList();
+  }
+
+  elBtn.addEventListener("click", submitAttendance);
+  bootstrap();
+</script>
+</body>
+</html>
