@@ -78,18 +78,22 @@
   </div>
 
 <script>
-  // Google Sheet
-  const SHEET_ID = "13S3zHl2rHzJYdWEUvx1ID8iJAiHJuipw_6qDy1w0XP0";
-  const SHEET_GID = "2002029408";
+  const BASE_URL = "https://script.google.com/macros/s/AKfycbxCysCTBOi5Kk_sh82Vrl2wivTUeMUxkiRo3zQDFN0vcsQa0FElWxdoKQ9G8Alf3zkrrA/exec";
 
-  // Google Form
-  const FORM_ACTION_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWUfL9GeZFt3RobjLYwuJ3Wk3n0TBJaM4BD-OO5UcZ1DrtDA/formResponse";
-  const ENTRY_NICK = "2688445";
-  const ENTRY_TEAM = "1952386524";
-  const ENTRY_DATE = "787715400";
-  const ENTRY_MEETING = "1376201711";
-
-  const TEAM_OPTIONS = ["S팀", "1팀", "2팀", "3팀", "4팀", "5팀"];
+  const TEAM_OPTIONS = [
+    { value: "S", label: "S팀" },
+    { value: "T1", label: "1팀" },
+    { value: "T2", label: "2팀" },
+    { value: "T3", label: "3팀" },
+    { value: "T4", label: "4팀" },
+    { value: "T5", label: "5팀" }
+  ];
+  const TEAM_LABEL_BY_VALUE = Object.fromEntries(
+    TEAM_OPTIONS.map(item => [item.value, item.label])
+  );
+  const TEAM_VALUE_BY_LABEL = Object.fromEntries(
+    TEAM_OPTIONS.map(item => [item.label, item.value])
+  );
   const TEAM_COLORS = {
     "S팀": { bg: "#ffe8d9", text: "#8a3d00", border: "#ffd0b3" },
     "1팀": { bg: "#e6f1ff", text: "#124e8a", border: "#c7ddff" },
@@ -100,15 +104,14 @@
   };
 
   const MEETING_TYPES = [
-    { value: "화요일 정모", label: "화요일 정모" },
-    { value: "목요일 정모", label: "목요일 정모" },
-    { value: "토요일 정모", label: "토요일 정모" },
-    { value: "기타", label: "기타" }
+    { value: "TUE", label: "화요일 정모" },
+    { value: "THU", label: "목요일 정모" },
+    { value: "SAT", label: "토요일 정모" },
+    { value: "ETC", label: "기타" }
   ];
   const MEETING_LABEL_BY_VALUE = Object.fromEntries(
     MEETING_TYPES.map(item => [item.value, item.label])
   );
-  MEETING_LABEL_BY_VALUE["번개"] = "기타";
 
   const LS_NICK = "marathon_att_nickname";
   const LS_TEAM = "marathon_att_team";
@@ -162,17 +165,17 @@
 
   function inferMeetingType() {
     const w = kstDow();
-    if (w === "Tue") return "화요일 정모";
-    if (w === "Thu") return "목요일 정모";
-    if (w === "Sat") return "토요일 정모";
-    return "기타";
+    if (w === "Tue") return "TUE";
+    if (w === "Thu") return "THU";
+    if (w === "Sat") return "SAT";
+    return "ETC";
   }
 
   function loadProfile() {
     const n = localStorage.getItem(LS_NICK) || "";
     const t = localStorage.getItem(LS_TEAM) || "";
     if (n) elNick.value = n;
-    if (t) elTeam.value = t;
+    if (t) elTeam.value = TEAM_VALUE_BY_LABEL[t] || t;
     toggleSubmit();
   }
 
@@ -205,15 +208,14 @@
     }
     elList.innerHTML = items.map(it => {
       const nick = escapeHtml(it.nickname);
-      const team = escapeHtml(it.team || "");
-      const teamStyle = TEAM_COLORS[it.team] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
-      const mtValue = it.meetingType || "";
-      const mt = escapeHtml(MEETING_LABEL_BY_VALUE[mtValue] || mtValue);
-      const ts = escapeHtml(it.timestamp || "");
+      const teamLabel = escapeHtml(it.teamLabel || it.team || "");
+      const teamStyle = TEAM_COLORS[it.teamLabel] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
+      const mtLabel = escapeHtml(it.meetingTypeLabel || it.meetingType || "");
+      const ts = escapeHtml(it.timeText || it.timestamp || "");
       return `
         <div class="item">
-          <div class="nick">${nick}${team ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${team}</span>` : ""}</div>
-          <div class="sub">${mt} · ${ts}</div>
+          <div class="nick">${nick}${teamLabel ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${teamLabel}</span>` : ""}</div>
+          <div class="sub">${mtLabel} · ${ts}</div>
         </div>
       `;
     }).join("");
@@ -229,44 +231,27 @@
     elMoreWrap.style.display = listShownCount < todayItems.length ? "block" : "none";
   }
 
-  function parseGviz(text) {
-    const m = text.match(/setResponse\((.*)\);?\s*$/s);
-    if (!m) throw new Error("gviz parse failed");
-    return JSON.parse(m[1]);
-  }
-
-  // 시트 컬럼 가정:
-  // A Timestamp, B 닉네임, C 소속팀, D 날짜, E 정모유형
   async function refreshTodayList() {
     const today = elToday.value;
-    const q = `select A,B,C,D,E where D = '${today}' order by A desc`;
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=out:json&tq=${encodeURIComponent(q)}`;
+    const url = `${BASE_URL}?action=status&date=${encodeURIComponent(today)}`;
 
     try {
       const res = await fetch(url);
-      const text = await res.text();
-      const json = parseGviz(text);
-      const rows = json.table.rows || [];
-
-      const items = rows.map(r => {
-        const c = r.c || [];
-        return {
-          timestamp: c[0]?.f || (c[0]?.v ? String(c[0].v) : ""),
-          nickname: c[1]?.v || "",
-          team: c[2]?.v || "",
-          meetingType: c[4]?.v || ""
-        };
-      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "status fetch failed");
+      const items = json.items || [];
 
       todayItems = items;
       listShownCount = Math.min(getListPageSize(), todayItems.length);
       todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
-      elCount.textContent = `${today} 출석 인원: ${items.length}명`;
+      elCount.textContent = `${json.date || today} 출석 인원: ${items.length}명`;
       renderPagedList();
+      return { ok: true, items };
     } catch (e) {
-      elCount.textContent = "목록을 불러오지 못했습니다. (시트를 웹에 게시했는지 확인해 주세요)";
+      elCount.textContent = "목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
       elList.innerHTML = "";
       elMoreWrap.style.display = "none";
+      return { ok: false, error: e };
     }
   }
 
@@ -291,20 +276,36 @@
     elBtn.disabled = true;
     setMsg("처리 중...");
 
-    const formData = new FormData();
-    formData.append(`entry.${ENTRY_NICK}`, nickname);
-    formData.append(`entry.${ENTRY_TEAM}`, team);
-    formData.append(`entry.${ENTRY_DATE}`, date);
-    formData.append(`entry.${ENTRY_MEETING}`, meetingType);
+    const params = new URLSearchParams();
+    params.append("nickname", nickname);
+    params.append("team", team);
+    params.append("meetingType", meetingType);
+    params.append("meetingDate", date);
 
     try {
-      // Google Form은 CORS 응답을 안 주기 때문에 no-cors 사용
-      await fetch(FORM_ACTION_URL, { method: "POST", mode: "no-cors", body: formData });
-      setMsg("출석 완료", "success");
+      const res = await fetch(BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: params
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "submit failed");
+      setMsg("출석 등록됨. 목록 업데이트 중...", "success");
       elBtn.disabled = false;
 
-      // 시트 반영 지연 고려
-      setTimeout(refreshTodayList, 900);
+      // 시트 반영 지연 고려 후 반영 확인
+      setTimeout(async () => {
+        const result = await refreshTodayList();
+        if (result.ok) {
+          const stored = String(json.written?.nicknameStored || nickname || "").trim().toLowerCase();
+          const exists = result.items?.some(item => String(item.nickname || "").trim().toLowerCase() === stored);
+          if (exists) {
+            setMsg("출석 완료", "success");
+          } else {
+            setMsg("등록됨(반영 지연). 잠시 후 새로고침해 주세요.", "success");
+          }
+        }
+      }, 900);
     } catch (e) {
       setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
       elBtn.disabled = false;
@@ -313,7 +314,7 @@
 
   function populateTeamOptions() {
     elTeam.innerHTML = TEAM_OPTIONS.map(team => (
-      `<option value="${escapeHtml(team)}">${escapeHtml(team)}</option>`
+      `<option value="${escapeHtml(team.value)}">${escapeHtml(team.label)}</option>`
     )).join("");
   }
 
