@@ -21,6 +21,8 @@
     button.primary { background:#111; color:#fff; }
     button.primary:disabled { background:#888; cursor:not-allowed; }
     .msg { font-size:13px; margin-top:10px; color:#111; }
+    .msg.success { color:#1f6b3a; }
+    .msg.error { color:#8a2353; }
     .meta { font-size:12px; color:#666; }
     .list { margin-top:10px; }
     .item { padding:10px 0; border-top:1px solid #eee; }
@@ -61,7 +63,7 @@
       </div>
 
       <button id="submitBtn" class="primary">출석 체크</button>
-      <div id="msg" class="msg"></div>
+      <div id="msg" class="msg" aria-live="polite"></div>
       <div class="meta" id="meta"></div>
     </div>
 
@@ -125,7 +127,11 @@
   let todayItems = [];
   let listShownCount = 0;
 
-  function setMsg(t) { elMsg.textContent = t || ""; }
+  function setMsg(t, type) {
+    elMsg.textContent = t || "";
+    elMsg.classList.remove("success", "error");
+    if (type) elMsg.classList.add(type);
+  }
 
   function kstTodayYYYYMMDD() {
     const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -246,13 +252,13 @@
     const meetingType = (elMeeting.value || "").trim();
 
     if (!nickname) {
-      setMsg("닉네임을 입력해 주세요.");
+      setMsg("닉네임을 입력해 주세요.", "error");
       return;
     }
 
     const nickKey = nickname.toLowerCase();
     if (todayNickSet.has(nickKey)) {
-      setMsg("이미 오늘 출석이 등록되어 있습니다.");
+      setMsg("이미 오늘 출석이 등록되어 있습니다.", "error");
       return;
     }
 
@@ -269,13 +275,13 @@
     try {
       // Google Form은 CORS 응답을 안 주기 때문에 no-cors 사용
       await fetch(FORM_ACTION_URL, { method: "POST", mode: "no-cors", body: formData });
-      setMsg("출석 완료");
+      setMsg("출석 완료", "success");
       elBtn.disabled = false;
 
       // 시트 반영 지연 고려
       setTimeout(refreshTodayList, 900);
     } catch (e) {
-      setMsg("출석 처리에 실패했습니다. 다시 시도해 주세요.");
+      setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
       elBtn.disabled = false;
     }
   }
