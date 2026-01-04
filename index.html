@@ -78,7 +78,7 @@
   </div>
 
 <script>
-  const BASE_URL = "https://script.google.com/macros/s/AKfycbxCysCTBOi5Kk_sh82Vrl2wivTUeMUxkiRo3zQDFN0vcsQa0FElWxdoKQ9G8Alf3zkrrA/exec";
+  const BASE_URL = "https://script.google.com/macros/s/AKfycbwazg_Cj0k56iVpWxZdGIdJt6zYk0NsMVeD_URrs5FbpaBOW-1Nu82unOreqc4gKc6PiQ/exec";
 
   const TEAM_OPTIONS = [
     { value: "S", label: "S팀" },
@@ -231,6 +231,15 @@
     elMoreWrap.style.display = listShownCount < todayItems.length ? "block" : "none";
   }
 
+  function applyStatus(status, fallbackDate) {
+    const items = status?.items || [];
+    todayItems = items;
+    listShownCount = Math.min(getListPageSize(), todayItems.length);
+    todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
+    elCount.textContent = `${status?.date || fallbackDate} 출석 인원: ${items.length}명`;
+    renderPagedList();
+  }
+
   async function refreshTodayList() {
     const today = elToday.value;
     const url = `${BASE_URL}?action=status&date=${encodeURIComponent(today)}`;
@@ -239,14 +248,8 @@
       const res = await fetch(url);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "status fetch failed");
-      const items = json.items || [];
-
-      todayItems = items;
-      listShownCount = Math.min(getListPageSize(), todayItems.length);
-      todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
-      elCount.textContent = `${json.date || today} 출석 인원: ${items.length}명`;
-      renderPagedList();
-      return { ok: true, items };
+      applyStatus(json, today);
+      return { ok: true, items: json.items || [] };
     } catch (e) {
       elCount.textContent = "목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
       elList.innerHTML = "";
@@ -290,22 +293,14 @@
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "submit failed");
-      setMsg("출석 등록됨. 목록 업데이트 중...", "success");
+      if (json.status) {
+        applyStatus(json.status, date);
+        setMsg("출석 완료", "success");
+      } else {
+        setMsg("출석 등록됨. 목록 업데이트 중...", "success");
+        refreshTodayList();
+      }
       elBtn.disabled = false;
-
-      // 시트 반영 지연 고려 후 반영 확인
-      setTimeout(async () => {
-        const result = await refreshTodayList();
-        if (result.ok) {
-          const stored = String(json.written?.nicknameStored || nickname || "").trim().toLowerCase();
-          const exists = result.items?.some(item => String(item.nickname || "").trim().toLowerCase() === stored);
-          if (exists) {
-            setMsg("출석 완료", "success");
-          } else {
-            setMsg("등록됨(반영 지연). 잠시 후 새로고침해 주세요.", "success");
-          }
-        }
-      }, 900);
     } catch (e) {
       setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
       elBtn.disabled = false;
