@@ -20,6 +20,20 @@
     button { width:100%; padding:12px; border:0; border-radius:10px; font-size:15px; cursor:pointer; }
     button.primary { background:#111; color:#fff; }
     button.primary:disabled { background:#888; cursor:not-allowed; }
+    button.loading { position:relative; }
+    button.loading::after {
+      content:"";
+      width:14px;
+      height:14px;
+      border:2px solid rgba(255,255,255,0.6);
+      border-top-color:#fff;
+      border-radius:50%;
+      display:inline-block;
+      margin-left:8px;
+      vertical-align:-2px;
+      animation:spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .msg { font-size:13px; margin-top:10px; color:#111; }
     .msg.success { color:#1f6b3a; }
     .msg.error { color:#8a2353; }
@@ -121,6 +135,8 @@
   const elToday = document.getElementById("today");
   const elMeeting = document.getElementById("meetingType");
   const elBtn = document.getElementById("submitBtn");
+  const SUBMIT_LABEL_DEFAULT = "출석 체크 하기";
+  const SUBMIT_LABEL_LOADING = "출석 전송 중";
   const elMsg = document.getElementById("msg");
   const elMeta = document.getElementById("meta");
   const elCount = document.getElementById("todayCount");
@@ -186,6 +202,15 @@
 
   function toggleSubmit() {
     elBtn.disabled = !(elNick.value || "").trim();
+  }
+
+  function setSubmitLoading(isLoading) {
+    elBtn.classList.toggle("loading", isLoading);
+    elBtn.disabled = isLoading || !(elNick.value || "").trim();
+    elBtn.textContent = isLoading ? SUBMIT_LABEL_LOADING : SUBMIT_LABEL_DEFAULT;
+    elNick.disabled = isLoading;
+    elTeam.disabled = isLoading;
+    elMeeting.disabled = isLoading;
   }
 
   function updateTitle() {
@@ -276,7 +301,7 @@
     }
 
     saveProfile();
-    elBtn.disabled = true;
+    setSubmitLoading(true);
     setMsg("처리 중...");
 
     const params = new URLSearchParams();
@@ -300,10 +325,10 @@
         setMsg("출석 등록됨. 목록 업데이트 중...", "success");
         refreshTodayList();
       }
-      elBtn.disabled = false;
+      setSubmitLoading(false);
     } catch (e) {
       setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
-      elBtn.disabled = false;
+      setSubmitLoading(false);
     }
   }
 
