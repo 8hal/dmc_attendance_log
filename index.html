@@ -122,10 +122,13 @@
   const elCount = document.getElementById("todayCount");
   const elList = document.getElementById("list");
   const elMoreWrap = document.getElementById("moreWrap");
-  const LIST_PAGE_SIZE = 20;
   let todayNickSet = new Set();
   let todayItems = [];
   let listShownCount = 0;
+
+  function getListPageSize() {
+    return window.matchMedia("(max-width: 480px)").matches ? 6 : 20;
+  }
 
   function setMsg(t, type) {
     elMsg.textContent = t || "";
@@ -234,7 +237,7 @@
       });
 
       todayItems = items;
-      listShownCount = Math.min(LIST_PAGE_SIZE, todayItems.length);
+      listShownCount = Math.min(getListPageSize(), todayItems.length);
       todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
       elCount.textContent = `${today} 출석 인원: ${items.length}명`;
       renderPagedList();
@@ -310,7 +313,7 @@
   }
 
   document.getElementById("moreBtn").addEventListener("click", () => {
-    listShownCount = Math.min(listShownCount + LIST_PAGE_SIZE, todayItems.length);
+    listShownCount = Math.min(listShownCount + 20, todayItems.length);
     renderPagedList();
   });
 
