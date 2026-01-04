@@ -39,7 +39,7 @@
     <div class="card">
       <div class="brand">
         <img alt="동탄마라톤클럽 로고" src="assets/dmc_logo.png" />
-        <h1>출석 체크</h1>
+        <h1 id="titleText">출석 체크</h1>
       </div>
 
       <div class="row">
@@ -62,7 +62,7 @@
         <select id="meetingType"></select>
       </div>
 
-      <button id="submitBtn" class="primary">출석 체크</button>
+      <button id="submitBtn" class="primary" disabled>출석 체크 하기</button>
       <div id="msg" class="msg" aria-live="polite"></div>
       <div class="meta" id="meta"></div>
     </div>
@@ -103,11 +103,12 @@
     { value: "화요일 정모", label: "화요일 정모" },
     { value: "목요일 정모", label: "목요일 정모" },
     { value: "토요일 정모", label: "토요일 정모" },
-    { value: "번개", label: "번개" }
+    { value: "기타", label: "기타" }
   ];
   const MEETING_LABEL_BY_VALUE = Object.fromEntries(
     MEETING_TYPES.map(item => [item.value, item.label])
   );
+  MEETING_LABEL_BY_VALUE["번개"] = "기타";
 
   const LS_NICK = "marathon_att_nickname";
   const LS_TEAM = "marathon_att_team";
@@ -122,6 +123,7 @@
   const elCount = document.getElementById("todayCount");
   const elList = document.getElementById("list");
   const elMoreWrap = document.getElementById("moreWrap");
+  const elTitleText = document.getElementById("titleText");
   let todayNickSet = new Set();
   let todayItems = [];
   let listShownCount = 0;
@@ -144,6 +146,15 @@
     return fmt.format(new Date()).replace(/-/g, "/"); // yyyy/mm/dd (form expects slashes)
   }
 
+  function kstTodayKoreanLabel() {
+    const fmt = new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      month: "long",
+      day: "numeric"
+    });
+    return fmt.format(new Date()); // 1월 4일
+  }
+
   function kstDow() {
     const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" });
     return fmt.format(new Date()); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
@@ -154,7 +165,7 @@
     if (w === "Tue") return "화요일 정모";
     if (w === "Thu") return "목요일 정모";
     if (w === "Sat") return "토요일 정모";
-    return "번개";
+    return "기타";
   }
 
   function loadProfile() {
@@ -162,11 +173,22 @@
     const t = localStorage.getItem(LS_TEAM) || "";
     if (n) elNick.value = n;
     if (t) elTeam.value = t;
+    toggleSubmit();
   }
 
   function saveProfile() {
     localStorage.setItem(LS_NICK, (elNick.value || "").trim());
     localStorage.setItem(LS_TEAM, (elTeam.value || "").trim());
+  }
+
+  function toggleSubmit() {
+    elBtn.disabled = !(elNick.value || "").trim();
+  }
+
+  function updateTitle() {
+    const dateLabel = kstTodayKoreanLabel();
+    const meetingLabel = MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value || "";
+    elTitleText.textContent = `${dateLabel} ${meetingLabel} 출석 체크`.trim();
   }
 
   function escapeHtml(s) {
@@ -309,6 +331,7 @@
     populateMeetingOptions();
     elMeeting.value = inferMeetingType();
     elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
+    updateTitle();
     refreshTodayList();
   }
 
@@ -317,6 +340,8 @@
     renderPagedList();
   });
 
+  elNick.addEventListener("input", toggleSubmit);
+  elMeeting.addEventListener("change", updateTitle);
   elBtn.addEventListener("click", submitAttendance);
   bootstrap();
 </script>
