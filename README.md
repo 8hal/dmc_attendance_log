@@ -64,6 +64,12 @@ Google Apps Script 기반 출석 시스템입니다.
 2. `apps-script/Code.gs`의 `TARGET_SHEET_NAME`을 실제 시트명으로 설정합니다.
 3. Apps Script에 코드를 배포하여 웹 앱 엔드포인트를 생성합니다.
 
+### 현재 배포
+
+- 버전: 5 (2026. 1. 5., PM 1:17)
+- 배포 ID: `AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A`
+- 웹 앱 URL: `https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec`
+
 ## 기술 스택
 
 - Google Apps Script
@@ -73,9 +79,16 @@ Google Apps Script 기반 출석 시스템입니다.
 
 - 입력 자동화 개선 및 중복 제출 방지 로직 강화
 - 지표 대시보드 및 품질 검증 룰 확장
+- GA 추가를 통한 사용자 행동 로그 및 분석 환경 구축
+- GitHub + Apps Script 배포 자동화 파이프라인 구축 (clasp/GitHub Actions)
 - 월별 출석 현황 보기 뷰 추가로 출석 체크 행동의 효용을 높여 출석 체크율 증대
 - 라벨 프린터 연동으로 출석 후 스티커 라벨 출력 제공 (종이컵/옷 부착, 일회용품 사용량 감소 및 회원 간 소통 증대)
 - 월별 출석 현황 게시물을 자동 생성해 카페에 게시
+
+## 고민 사항
+
+- 날짜와 정모 유형의 관계 정립
+- 날짜 변경 시 정모 유형 자동 변경 여부는 당장은 구현하지 않음
 
 ## 라이선스
 

@@ -71,6 +71,10 @@ function doPost(e) {
 
     const tz = getTz_();
     const now = new Date();
+    const meetingDateObj = dateKeyToDate_(meetingDateKey);
+    if (!meetingDateObj) {
+      return json_({ ok: false, error: `invalid meetingDate (YYYY/MM/DD): ${meetingDateKey}` });
+    }
 
     // Allow safe test writes while keeping uniqueness
     const nicknameStored = (nicknameRaw.toUpperCase() === 'TEST')
@@ -78,7 +82,8 @@ function doPost(e) {
       : nicknameRaw;
 
     const sheet = getTargetSheet_();
-    sheet.appendRow([now, nicknameStored, teamLabel, meetingTypeLabel, meetingDateKey]);
+    // Store meetingDate as Date object to match Google Forms responses.
+    sheet.appendRow([now, nicknameStored, teamLabel, meetingTypeLabel, meetingDateObj]);
 
     const status = getStatusForDate_(meetingDateKey, tz);
     setCachedStatus_(meetingDateKey, status);
@@ -197,6 +202,16 @@ function formatKstKoreanAmPm_(d, tz) {
   if (hh12 === 0) hh12 = 12;
 
   return `${yyyy}. ${m}. ${dd} ${ampm} ${hh12}:${mm}:${ss}`;
+}
+
+function dateKeyToDate_(dateKey) {
+  if (!isValidDateKey_(dateKey)) return null;
+  const parts = dateKey.split('/');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
 }
 
 function labelToCode_(mapObj, label) {

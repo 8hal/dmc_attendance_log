@@ -67,8 +67,8 @@
       </div>
 
       <div class="row">
-        <label>오늘 날짜(KST)</label>
-        <input id="today" type="text" readonly />
+        <label>날짜(KST)</label>
+        <input id="today" type="date" />
       </div>
 
       <div class="row">
@@ -92,7 +92,7 @@
   </div>
 
 <script>
-  const BASE_URL = "https://script.google.com/macros/s/AKfycbwazg_Cj0k56iVpWxZdGIdJt6zYk0NsMVeD_URrs5FbpaBOW-1Nu82unOreqc4gKc6PiQ/exec";
+  const BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
 
   const TEAM_OPTIONS = [
     { value: "S", label: "S팀" },
@@ -146,6 +146,8 @@
   let todayNickSet = new Set();
   let todayItems = [];
   let listShownCount = 0;
+  let lastValidDateKey = "";
+  let meetingTypeAuto = true;
 
   function getListPageSize() {
     return window.matchMedia("(max-width: 480px)").matches ? 6 : 20;
@@ -162,7 +164,7 @@
       timeZone: "Asia/Seoul",
       year: "numeric", month: "2-digit", day: "2-digit"
     });
-    return fmt.format(new Date()).replace(/-/g, "/"); // yyyy/mm/dd (form expects slashes)
+    return fmt.format(new Date()).replace(/-/g, "/"); // yyyy/mm/dd (API expects slashes)
   }
 
   function kstTodayKoreanLabel() {
@@ -174,13 +176,73 @@
     return fmt.format(new Date()); // 1월 4일
   }
 
-  function kstDow() {
-    const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" });
-    return fmt.format(new Date()); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+  function isValidDateKey_(value) {
+    return /^\d{4}\/\d{2}\/\d{2}$/.test(String(value || "").trim());
   }
 
-  function inferMeetingType() {
-    const w = kstDow();
+  function dateKeyToInputValue_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    return dateKey.replace(/\//g, "-");
+  }
+
+  function inputValueToDateKey_(value) {
+    const s = String(value || "").trim();
+    if (!s) return "";
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(s)) return s;
+    const dash = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dash) return `${dash[1]}/${dash[2]}/${dash[3]}`;
+    const dots = s.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})$/);
+    if (dots) {
+      const mm = String(Number(dots[2])).padStart(2, "0");
+      const dd = String(Number(dots[3])).padStart(2, "0");
+      return `${dots[1]}/${mm}/${dd}`;
+    }
+    return "";
+  }
+
+  function setActiveDateKey_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return;
+    lastValidDateKey = dateKey;
+    elToday.value = dateKeyToInputValue_(dateKey);
+  }
+
+  function getActiveDateKey_() {
+    const current = inputValueToDateKey_(elToday.value);
+    if (current) return current;
+    return lastValidDateKey;
+  }
+
+  function dateKeyToKoreanLabel_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    const m = dateKey.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+    if (!m) return "";
+    const utcDate = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+    const fmt = new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      month: "long",
+      day: "numeric"
+    });
+    return fmt.format(utcDate);
+  }
+
+  function kstDow(dateObj) {
+    const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" });
+    return fmt.format(dateObj || new Date()); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+  }
+
+  function dateKeyToKstWeekday_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    const parts = dateKey.split("/");
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+    if (!y || !m || !d) return "";
+    const utcDate = new Date(Date.UTC(y, m - 1, d));
+    return kstDow(utcDate);
+  }
+
+  function inferMeetingTypeByDateKey_(dateKey) {
+    const w = dateKey ? dateKeyToKstWeekday_(dateKey) : kstDow();
     if (w === "Tue") return "TUE";
     if (w === "Thu") return "THU";
     if (w === "Sat") return "SAT";
@@ -201,20 +263,25 @@
   }
 
   function toggleSubmit() {
-    elBtn.disabled = !(elNick.value || "").trim();
+    const hasNick = !!(elNick.value || "").trim();
+    const hasValidDate = !!inputValueToDateKey_(elToday.value);
+    elBtn.disabled = !hasNick || !hasValidDate;
   }
 
   function setSubmitLoading(isLoading) {
     elBtn.classList.toggle("loading", isLoading);
-    elBtn.disabled = isLoading || !(elNick.value || "").trim();
+    const hasNick = !!(elNick.value || "").trim();
+    const hasValidDate = !!inputValueToDateKey_(elToday.value);
+    elBtn.disabled = isLoading || !hasNick || !hasValidDate;
     elBtn.textContent = isLoading ? SUBMIT_LABEL_LOADING : SUBMIT_LABEL_DEFAULT;
     elNick.disabled = isLoading;
     elTeam.disabled = isLoading;
+    elToday.disabled = isLoading;
     elMeeting.disabled = isLoading;
   }
 
   function updateTitle() {
-    const dateLabel = kstTodayKoreanLabel();
+    const dateLabel = dateKeyToKoreanLabel_(getActiveDateKey_()) || kstTodayKoreanLabel();
     const meetingLabel = MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value || "";
     elTitleText.textContent = `${dateLabel} ${meetingLabel} 출석 체크`.trim();
   }
@@ -266,7 +333,13 @@
   }
 
   async function refreshTodayList() {
-    const today = elToday.value;
+    const today = getActiveDateKey_();
+    if (!today) {
+      elCount.textContent = "날짜를 선택해 주세요.";
+      elList.innerHTML = "";
+      elMoreWrap.style.display = "none";
+      return { ok: false, error: "invalid date" };
+    }
     const url = `${BASE_URL}?action=status&date=${encodeURIComponent(today)}`;
 
     try {
@@ -286,8 +359,13 @@
   async function submitAttendance() {
     const nickname = (elNick.value || "").trim();
     const team = (elTeam.value || "").trim();
-    const date = (elToday.value || "").trim();
+    const date = inputValueToDateKey_(elToday.value);
     const meetingType = (elMeeting.value || "").trim();
+
+    if (!date) {
+      setMsg("날짜를 선택해 주세요.", "error");
+      return;
+    }
 
     if (!nickname) {
       setMsg("닉네임을 입력해 주세요.", "error");
@@ -348,12 +426,13 @@
     populateTeamOptions();
     loadProfile();
     const today = kstTodayYYYYMMDD();
-    elToday.value = today;
+    setActiveDateKey_(today);
     populateMeetingOptions();
-    elMeeting.value = inferMeetingType();
+    elMeeting.value = inferMeetingTypeByDateKey_(today);
     elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
     updateTitle();
     refreshTodayList();
+    toggleSubmit();
   }
 
   document.getElementById("moreBtn").addEventListener("click", () => {
@@ -362,7 +441,27 @@
   });
 
   elNick.addEventListener("input", toggleSubmit);
-  elMeeting.addEventListener("change", updateTitle);
+  elToday.addEventListener("change", () => {
+    const dateKey = inputValueToDateKey_(elToday.value);
+    if (!dateKey) {
+      setMsg("날짜를 선택해 주세요.", "error");
+      toggleSubmit();
+      return;
+    }
+    setActiveDateKey_(dateKey);
+    if (meetingTypeAuto) {
+      elMeeting.value = inferMeetingTypeByDateKey_(dateKey);
+      elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
+    }
+    setMsg("");
+    toggleSubmit();
+    updateTitle();
+    refreshTodayList();
+  });
+  elMeeting.addEventListener("change", () => {
+    meetingTypeAuto = false;
+    updateTitle();
+  });
   elBtn.addEventListener("click", submitAttendance);
   bootstrap();
 </script>
