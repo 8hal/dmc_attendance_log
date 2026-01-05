@@ -67,6 +67,7 @@ Google Apps Script 기반 출석 시스템입니다.
 ### 현재 배포
 
 - 버전: 5 (2026. 1. 5., PM 1:17)
+- 설명: 저장되는 날짜 형식 변경
 - 배포 ID: `AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A`
 - 웹 앱 URL: `https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec`
 
