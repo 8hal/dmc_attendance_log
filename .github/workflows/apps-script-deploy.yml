@@ -1,0 +1,39 @@
+name: Apps Script Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps-script/**"
+      - ".clasp.json"
+      - ".github/workflows/apps-script-deploy.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install clasp
+        run: npm i -g @google/clasp
+
+      - name: Configure clasp auth
+        run: |
+          mkdir -p "$HOME"
+          echo '${{ secrets.CLASPRC_JSON }}' > "$HOME/.clasprc.json"
+
+      - name: Push and deploy
+        env:
+          DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
+        run: |
+          clasp push
+          if [ -z "$DEPLOYMENT_ID" ]; then
+            echo "APPS_SCRIPT_DEPLOYMENT_ID is not set."
+            exit 1
+          fi
+          clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub Actions $GITHUB_SHA"
