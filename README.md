@@ -56,11 +56,6 @@ Google Apps Script 기반 출석 시스템입니다.
 - E 컬럼이 Date 또는 문자열인 경우 모두 인식
 - "YYYY/MM/DD" 또는 "YYYY. M. D" 형식 지원
 
-### GET /exec?action=user_month&nickname=...&month=YYYY/MM
-
-- month 파라미터 생략 시 KST 기준 이번 달로 조회
-- nickname과 month 기준으로 해당 월 출석 내역 반환
-
 ## 개발 및 배포
 
 이 프로젝트는 Google Apps Script를 사용합니다.
@@ -68,13 +63,6 @@ Google Apps Script 기반 출석 시스템입니다.
 1. Google Sheets에 응답 시트를 준비하고 시트 이름을 확인합니다.
 2. `apps-script/Code.gs`의 `TARGET_SHEET_NAME`을 실제 시트명으로 설정합니다.
 3. Apps Script에 코드를 배포하여 웹 앱 엔드포인트를 생성합니다.
-
-### 자동 배포 (Apps Script)
-
-- GitHub Actions로 `main` 브랜치의 `apps-script/` 변경 시 자동 배포합니다.
-- 필요 값
-  - GitHub Secrets: `CLASPRC_JSON` (`~/.clasprc.json` 내용)
-  - GitHub Variables: `APPS_SCRIPT_DEPLOYMENT_ID` (웹앱 배포 ID)
 
 ### 현재 배포
 

@@ -84,19 +84,10 @@
     <div class="card">
       <h1>오늘 출석 현황</h1>
       <div class="meta" id="todayCount"></div>
-      <div class="row">
-        <button id="monthlyBtn" class="primary" type="button">출석 현황 보기</button>
-      </div>
       <div class="list" id="list"></div>
       <div class="more" id="moreWrap" style="display:none;">
         <button id="moreBtn">더보기</button>
       </div>
-    </div>
-
-    <div class="card" id="monthlyCard" style="display:none;">
-      <h1 id="monthlyTitle">이번 달 출석 현황</h1>
-      <div class="meta" id="monthlyMeta"></div>
-      <div class="list" id="monthlyList"></div>
     </div>
   </div>
 
@@ -153,11 +144,6 @@
   const elList = document.getElementById("list");
   const elMoreWrap = document.getElementById("moreWrap");
   const elTitleText = document.getElementById("titleText");
-  const elMonthlyBtn = document.getElementById("monthlyBtn");
-  const elMonthlyCard = document.getElementById("monthlyCard");
-  const elMonthlyTitle = document.getElementById("monthlyTitle");
-  const elMonthlyMeta = document.getElementById("monthlyMeta");
-  const elMonthlyList = document.getElementById("monthlyList");
   let todayNickSet = new Set();
   let todayItems = [];
   let listShownCount = 0;
@@ -260,19 +246,6 @@
     return fmt.format(utcDate);
   }
 
-  function monthKeyFromDateKey_(dateKey) {
-    if (!isValidDateKey_(dateKey)) return "";
-    return dateKey.slice(0, 7);
-  }
-
-  function monthKeyToLabel_(monthKey) {
-    const m = String(monthKey || "").match(/^(\d{4})\/(\d{2})$/);
-    if (!m) return "";
-    const year = m[1];
-    const month = String(Number(m[2]));
-    return `${year}년 ${month}월`;
-  }
-
   function kstDow(dateObj) {
     const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" });
     return fmt.format(dateObj || new Date()); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
@@ -361,26 +334,6 @@
     }).join("");
   }
 
-  function renderMonthlyList(items) {
-    if (!items.length) {
-      elMonthlyList.innerHTML = `<div class="meta">이번 달 출석 기록이 없습니다.</div>`;
-      return;
-    }
-    elMonthlyList.innerHTML = items.map(it => {
-      const nick = escapeHtml(it.nickname);
-      const teamLabel = escapeHtml(it.teamLabel || it.team || "");
-      const teamStyle = TEAM_COLORS[it.teamLabel] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
-      const mtLabel = escapeHtml(it.meetingTypeLabel || it.meetingType || "");
-      const dateLabel = escapeHtml(it.meetingDate || "");
-      return `
-        <div class="item">
-          <div class="nick">${nick}${teamLabel ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${teamLabel}</span>` : ""}</div>
-          <div class="sub">${dateLabel} · ${mtLabel}</div>
-        </div>
-      `;
-    }).join("");
-  }
-
   function renderPagedList() {
     if (!todayItems.length) {
       renderList([]);
@@ -424,44 +377,6 @@
       trackEvent("attendance_status_fetch_error", { date_key: today });
       return { ok: false, error: e };
     }
-  }
-
-  async function fetchMonthlyAttendance(nickname, monthKey) {
-    const url = `${BASE_URL}?action=user_month&nickname=${encodeURIComponent(nickname)}&month=${encodeURIComponent(monthKey)}`;
-    try {
-      const res = await fetch(url);
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || "monthly fetch failed");
-      return { ok: true, data: json };
-    } catch (e) {
-      return { ok: false, error: e };
-    }
-  }
-
-  async function openMonthlyView() {
-    const nickname = (elNick.value || "").trim();
-    if (!nickname) {
-      setMsg("닉네임을 입력해 주세요.", "error");
-      return;
-    }
-    const dateKey = getActiveDateKey_() || kstTodayYYYYMMDD();
-    const monthKey = monthKeyFromDateKey_(dateKey);
-    if (!monthKey) {
-      setMsg("날짜를 선택해 주세요.", "error");
-      return;
-    }
-    setMsg("이번 달 출석 현황을 불러오는 중...");
-    const result = await fetchMonthlyAttendance(nickname, monthKey);
-    if (!result.ok) {
-      setMsg("출석 현황을 불러오지 못했습니다.", "error");
-      return;
-    }
-    const label = monthKeyToLabel_(monthKey) || "이번 달";
-    elMonthlyTitle.textContent = `${label} 출석 현황`;
-    elMonthlyMeta.textContent = `${nickname} · ${result.data.count || 0}회`;
-    renderMonthlyList(result.data.items || []);
-    elMonthlyCard.style.display = "block";
-    setMsg("");
   }
 
   async function submitAttendance() {
@@ -612,7 +527,6 @@
       meeting_type: elMeeting.value
     });
   });
-  elMonthlyBtn.addEventListener("click", openMonthlyView);
   elBtn.addEventListener("click", submitAttendance);
   bootstrap();
 </script>

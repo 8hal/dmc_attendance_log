@@ -19,10 +19,6 @@
  *   - date omitted -> today in KST
  *   - reads existing sheet rows whose E column matches the requested date
  *     (supports E as Date or string; supports "YYYY/MM/DD" or "YYYY. M. D")
- *
- * - GET /exec?action=user_month&nickname=...&month=YYYY/MM
- *   - month omitted -> current month in KST
- *   - returns per-day attendance for the nickname in that month
  */
 
 const TARGET_SHEET_NAME = '설문지 응답 시트2';
@@ -113,28 +109,10 @@ function doPost(e) {
 function doGet(e) {
   try {
     const action = str_(e?.parameter?.action || 'status').trim();
+    if (action !== 'status') return json_({ ok: false, error: `unknown action: ${action}` });
 
     const tz = getTz_();
     const todayKey = Utilities.formatDate(new Date(), tz, 'yyyy/MM/dd');
-
-    if (action === 'user_month') {
-      const nicknameRaw = str_(e?.parameter?.nickname).trim();
-      if (!nicknameRaw) return json_({ ok: false, error: 'nickname is required' });
-
-      const monthParam = str_(e?.parameter?.month).trim();
-      const monthKey = monthParam
-        ? monthParam
-        : Utilities.formatDate(new Date(), tz, 'yyyy/MM');
-
-      if (!isValidMonthKey_(monthKey)) {
-        return json_({ ok: false, error: `invalid month (YYYY/MM): ${monthKey}` });
-      }
-
-      const status = getMonthlyStatusForUser_(nicknameRaw, monthKey, tz);
-      return json_({ ok: true, ...status });
-    }
-
-    if (action !== 'status') return json_({ ok: false, error: `unknown action: ${action}` });
 
     const dateParam = str_(e?.parameter?.date).trim();
     const dateKey = dateParam ? dateParam : todayKey;
@@ -202,10 +180,6 @@ function parsePayload_(e) {
 
 function isValidDateKey_(s) {
   return /^\d{4}\/\d{2}\/\d{2}$/.test(s);
-}
-
-function isValidMonthKey_(s) {
-  return /^\d{4}\/\d{2}$/.test(s);
 }
 
 function makeTestNickname_(now, tz) {
@@ -333,47 +307,4 @@ function getStatusForDate_(dateKey, tz) {
   const out = items.map(({ ts, ...rest }) => rest);
 
   return { date: dateKey, count: out.length, items: out };
-}
-
-function getMonthlyStatusForUser_(nicknameRaw, monthKey, tz) {
-  const sheet = getTargetSheet_();
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { nickname: nicknameRaw, month: monthKey, count: 0, items: [] };
-
-  const values = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
-  const nickKey = nicknameRaw.trim().toLowerCase();
-  const items = [];
-
-  for (const row of values) {
-    const tsCell = row[0];
-    const tsDate = (tsCell instanceof Date) ? tsCell : null;
-    const nickname = str_(row[1]).trim();
-    if (nickname.toLowerCase() !== nickKey) continue;
-
-    const teamLabel = str_(row[2]).trim();
-    const meetingTypeLabel = str_(row[3]).trim();
-    const eCell = row[4];
-
-    const rowDateKey = normalizeMeetingDateKey_(eCell, tz);
-    if (!rowDateKey) continue;
-    if (!rowDateKey.startsWith(monthKey)) continue;
-
-    const teamCode = labelToCode_(TEAM_LABEL, teamLabel) || null;
-    const typeCode = labelToCode_(MEETING_TYPE_LABEL, meetingTypeLabel) || null;
-
-    items.push({
-      nickname,
-      team: teamCode,
-      teamLabel,
-      meetingType: typeCode,
-      meetingTypeLabel,
-      meetingDate: rowDateKey,
-      timeText: tsDate ? formatKstKoreanAmPm_(tsDate, tz) : str_(tsCell).trim(),
-      ts: tsDate ? tsDate.getTime() : null,
-    });
-  }
-
-  items.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0));
-  const out = items.map(({ ts, ...rest }) => rest);
-  return { nickname: nicknameRaw, month: monthKey, count: out.length, items: out };
 }
