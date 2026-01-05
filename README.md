@@ -70,6 +70,20 @@ Google Apps Script 기반 출석 시스템입니다.
 - 배포 ID: `AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A`
 - 웹 앱 URL: `https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec`
 
+## Analytics (GA4)
+
+`index.html`의 `GA_MEASUREMENT_ID`에 GA4 측정 ID를 입력하면 이벤트가 전송됩니다.
+
+이벤트 목록
+- attendance_view: date_key, meeting_type, meeting_type_auto
+- attendance_date_change: date_key, meeting_type, meeting_type_auto
+- attendance_meeting_type_change: meeting_type
+- attendance_submit_attempt: date_key, meeting_type, team
+- attendance_submit_success: date_key, meeting_type, team, duration_ms, page_to_submit_ms
+- attendance_submit_error: error_type, date_key(optional)
+- attendance_status_fetch_success: date_key
+- attendance_status_fetch_error: date_key
+
 ## 기술 스택
 
 - Google Apps Script

@@ -93,6 +93,7 @@
 
 <script>
   const BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
+  const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
 
   const TEAM_OPTIONS = [
     { value: "S", label: "S팀" },
@@ -148,6 +149,26 @@
   let listShownCount = 0;
   let lastValidDateKey = "";
   let meetingTypeAuto = true;
+  let submitStartMs = null;
+  const pageEnterMs = performance.now();
+
+  function initAnalytics() {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag === "function") return;
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag("js", new Date());
+    gtag("config", GA_MEASUREMENT_ID, { send_page_view: true });
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
+    document.head.appendChild(script);
+  }
+
+  function trackEvent(name, params) {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag !== "function") return;
+    window.gtag("event", name, params || {});
+  }
 
   function getListPageSize() {
     return window.matchMedia("(max-width: 480px)").matches ? 6 : 20;
@@ -347,11 +368,13 @@
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "status fetch failed");
       applyStatus(json, today);
+      trackEvent("attendance_status_fetch_success", { date_key: today });
       return { ok: true, items: json.items || [] };
     } catch (e) {
       elCount.textContent = "목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
       elList.innerHTML = "";
       elMoreWrap.style.display = "none";
+      trackEvent("attendance_status_fetch_error", { date_key: today });
       return { ok: false, error: e };
     }
   }
@@ -364,23 +387,33 @@
 
     if (!date) {
       setMsg("날짜를 선택해 주세요.", "error");
+      trackEvent("attendance_submit_error", { error_type: "invalid_date" });
       return;
     }
 
     if (!nickname) {
       setMsg("닉네임을 입력해 주세요.", "error");
+      trackEvent("attendance_submit_error", { error_type: "missing_nickname" });
       return;
     }
 
     const nickKey = nickname.toLowerCase();
     if (todayNickSet.has(nickKey)) {
       setMsg("이미 오늘 출석이 등록되어 있습니다.", "error");
+      trackEvent("attendance_submit_error", { error_type: "duplicate", date_key: date });
       return;
     }
 
     saveProfile();
     setSubmitLoading(true);
     setMsg("처리 중...");
+
+    submitStartMs = performance.now();
+    trackEvent("attendance_submit_attempt", {
+      date_key: date,
+      meeting_type: meetingType,
+      team: team || null
+    });
 
     const params = new URLSearchParams();
     params.append("nickname", nickname);
@@ -396,16 +429,34 @@
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "submit failed");
+      const nowMs = performance.now();
+      const durationMs = submitStartMs !== null ? Math.round(nowMs - submitStartMs) : null;
+      const pageToSubmitMs = Math.round(nowMs - pageEnterMs);
       if (json.status) {
         applyStatus(json.status, date);
         setMsg("출석 완료", "success");
+        trackEvent("attendance_submit_success", {
+          date_key: date,
+          meeting_type: meetingType,
+          team: team || null,
+          duration_ms: durationMs,
+          page_to_submit_ms: pageToSubmitMs
+        });
       } else {
         setMsg("출석 등록됨. 목록 업데이트 중...", "success");
         refreshTodayList();
+        trackEvent("attendance_submit_success", {
+          date_key: date,
+          meeting_type: meetingType,
+          team: team || null,
+          duration_ms: durationMs,
+          page_to_submit_ms: pageToSubmitMs
+        });
       }
       setSubmitLoading(false);
     } catch (e) {
       setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
+      trackEvent("attendance_submit_error", { error_type: "network_or_server", date_key: date });
       setSubmitLoading(false);
     }
   }
@@ -423,6 +474,7 @@
   }
 
   function bootstrap() {
+    initAnalytics();
     populateTeamOptions();
     loadProfile();
     const today = kstTodayYYYYMMDD();
@@ -433,6 +485,11 @@
     updateTitle();
     refreshTodayList();
     toggleSubmit();
+    trackEvent("attendance_view", {
+      date_key: today,
+      meeting_type: elMeeting.value,
+      meeting_type_auto: meetingTypeAuto
+    });
   }
 
   document.getElementById("moreBtn").addEventListener("click", () => {
@@ -457,10 +514,18 @@
     toggleSubmit();
     updateTitle();
     refreshTodayList();
+    trackEvent("attendance_date_change", {
+      date_key: dateKey,
+      meeting_type: elMeeting.value,
+      meeting_type_auto: meetingTypeAuto
+    });
   });
   elMeeting.addEventListener("change", () => {
     meetingTypeAuto = false;
     updateTitle();
+    trackEvent("attendance_meeting_type_change", {
+      meeting_type: elMeeting.value
+    });
   });
   elBtn.addEventListener("click", submitAttendance);
   bootstrap();
