@@ -1,0 +1,82 @@
+# DMC Attendance Log
+
+QR 기반 출석 체크 경험을 개선하고, 관리자가 분석 가능한 고품질 출석 데이터를 얻기 위한
+Google Apps Script 기반 출석 시스템입니다.
+
+## 프로젝트 배경
+
+마라톤클럽의 QR 출석 도입 이후, 기존 구글 폼 입력 경험이 비효율적이었습니다.
+출석자는 매번 동일한 정보를 반복 입력해야 하고, 오늘 날짜처럼 자동화 가능한 정보까지
+수동 입력해야 하는 문제가 있었습니다.
+
+## 목표
+
+- 출석 체크자가 응답에 걸리는 시간과 피로도를 0에 가깝게 감소
+- 관리자가 데이터 분석에 필요한 품질 좋은 출석 데이터를 확보
+
+## 성공 지표
+
+- 출석 완료 수: 특정 모임일 기준 유효 응답 수(중복/오류 제외)
+- 출석 전환율: QR 방문 대비 유효 제출 비율
+- 데이터 품질
+  - 잘못된 닉네임 입력률
+  - 중복 제출률
+  - 필수 필드 누락률
+
+## 사용자 흐름 요약
+
+1. 사용자가 QR 코드를 스캔해 출석 페이지로 이동
+2. 닉네임/팀/모임유형/날짜를 간편 입력 후 제출
+3. 서버가 시트에 저장하고, 해당 날짜의 출석 현황을 반환
+
+## 데이터 스키마 (응답 시트)
+
+- A: timestamp (DateTime)
+- B: nickname (string)
+- C: teamLabel (string, 예: 1팀, S팀)
+- D: meetingTypeLabel (string, 예: 토요일, 기타)
+- E: meetingDate (Date object 또는 "YYYY. M. D" 문자열)
+
+## API
+
+### POST /exec
+
+요청 필드
+- nickname: string
+- team: enum code (T1..T5, S)
+- meetingType: enum code (ETC, TUE, THU, SAT)
+- meetingDate: YYYY/MM/DD
+
+응답
+- 저장된 출석 정보와 해당 날짜의 출석 현황
+
+### GET /exec?action=status&date=YYYY/MM/DD
+
+- date 파라미터 생략 시 KST 기준 오늘 날짜로 조회
+- E 컬럼이 Date 또는 문자열인 경우 모두 인식
+- "YYYY/MM/DD" 또는 "YYYY. M. D" 형식 지원
+
+## 개발 및 배포
+
+이 프로젝트는 Google Apps Script를 사용합니다.
+
+1. Google Sheets에 응답 시트를 준비하고 시트 이름을 확인합니다.
+2. `apps-script/Code.gs`의 `TARGET_SHEET_NAME`을 실제 시트명으로 설정합니다.
+3. Apps Script에 코드를 배포하여 웹 앱 엔드포인트를 생성합니다.
+
+## 기술 스택
+
+- Google Apps Script
+- Google Sheets
+
+## 향후 계획
+
+- 입력 자동화 개선 및 중복 제출 방지 로직 강화
+- 지표 대시보드 및 품질 검증 룰 확장
+- 월별 출석 현황 보기 뷰 추가로 출석 체크 행동의 효용을 높여 출석 체크율 증대
+- 라벨 프린터 연동으로 출석 후 스티커 라벨 출력 제공 (종이컵/옷 부착, 일회용품 사용량 감소 및 회원 간 소통 증대)
+- 월별 출석 현황 게시물을 자동 생성해 카페에 게시
+
+## 라이선스
+
+TBD
