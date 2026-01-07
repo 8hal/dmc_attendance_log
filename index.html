@@ -155,6 +155,7 @@
 
   const LS_NICK = "marathon_att_nickname";
   const LS_TEAM = "marathon_att_team";
+  const LS_STATUS_PREFIX = "marathon_att_status:";
 
   const elNick = document.getElementById("nickname");
   const elTeam = document.getElementById("team");
@@ -211,6 +212,29 @@
     elMsg.textContent = t || "";
     elMsg.classList.remove("success", "error");
     if (type) elMsg.classList.add(type);
+  }
+
+  function getCachedStatus_(dateKey) {
+    if (!dateKey) return null;
+    try {
+      const raw = localStorage.getItem(`${LS_STATUS_PREFIX}${dateKey}`);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.status) return null;
+      return parsed.status;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedStatus_(dateKey, status) {
+    if (!dateKey || !status) return;
+    try {
+      const payload = { savedAt: Date.now(), status };
+      localStorage.setItem(`${LS_STATUS_PREFIX}${dateKey}`, JSON.stringify(payload));
+    } catch (e) {
+      // ignore storage errors
+    }
   }
 
   function kstTodayYYYYMMDD() {
@@ -423,7 +447,12 @@
       elMoreWrap.style.display = "none";
       return { ok: false, error: "invalid date" };
     }
-    renderListSkeleton(getListPageSize());
+    const cached = getCachedStatus_(today);
+    if (cached) {
+      applyStatus(cached, today);
+    } else {
+      renderListSkeleton(getListPageSize());
+    }
     const url = `${BASE_URL}?action=status&date=${encodeURIComponent(today)}`;
     const fetchStart = performance.now();
 
@@ -433,6 +462,7 @@
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "status fetch failed");
       applyStatus(json, today);
+      setCachedStatus_(today, json);
       trackEvent("attendance_status_fetch_success", { date_key: today });
       logLatency("status_fetch", {
         date_key: today,
@@ -512,6 +542,7 @@
       const pageToSubmitMs = Math.round(nowMs - pageEnterMs);
       if (json.status) {
         applyStatus(json.status, date);
+        setCachedStatus_(date, json.status);
         setMsg("출석 완료", "success");
         trackEvent("attendance_submit_success", {
           date_key: date,

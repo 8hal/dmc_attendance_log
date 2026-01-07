@@ -144,6 +144,7 @@
     location.hostname === "127.0.0.1";
   const BASE_URL = IS_LOCAL ? STAGING_BASE_URL : PROD_BASE_URL;
   const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
+  const LS_HISTORY_PREFIX = "marathon_att_history:";
 
   const TEAM_COLORS = {
     "S팀": { bg: "#ffe8d9", text: "#8a3d00", border: "#ffd0b3" },
@@ -180,6 +181,33 @@
     return String(s || "").replace(/[&<>"']/g, (m) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
     }[m]));
+  }
+
+  function getHistoryCacheKey_(nickname, month) {
+    return `${LS_HISTORY_PREFIX}${nickname}::${month}`;
+  }
+
+  function getCachedHistory_(nickname, month) {
+    if (!nickname || !month) return null;
+    try {
+      const raw = localStorage.getItem(getHistoryCacheKey_(nickname, month));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.history) return null;
+      return parsed.history;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedHistory_(nickname, month, history) {
+    if (!nickname || !month || !history) return;
+    try {
+      const payload = { savedAt: Date.now(), history };
+      localStorage.setItem(getHistoryCacheKey_(nickname, month), JSON.stringify(payload));
+    } catch (e) {
+      // ignore storage errors
+    }
   }
 
   function setHistoryLoading(isLoading) {
@@ -288,12 +316,27 @@
     document.getElementById("title").textContent = `${nickname} · ${month} 출석`;
     const url = `${BASE_URL}?action=history&nickname=${encodeURIComponent(nickname)}&month=${encodeURIComponent(month)}`;
     const fetchStart = performance.now();
-    setHistoryLoading(true);
+    const cached = getCachedHistory_(nickname, month);
+    if (cached) {
+      setHistoryLoading(false);
+      renderSummary(
+        cached.nickname || nickname,
+        cached.month || month,
+        cached.count,
+        cached.summaryByType,
+        cached.attendanceRate
+      );
+      renderList(cached.items || []);
+      renderCalendar(cached.month || month, cached.items || []);
+    } else {
+      setHistoryLoading(true);
+    }
     try {
       const res = await fetch(url);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "history fetch failed");
       setHistoryLoading(false);
+      setCachedHistory_(nickname, month, json);
       renderSummary(
         json.nickname || nickname,
         json.month || month,
