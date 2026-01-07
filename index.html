@@ -38,19 +38,38 @@
     .msg.success { color:#1f6b3a; }
     .msg.error { color:#8a2353; }
     .meta { font-size:12px; color:#666; }
+    .guide { margin:8px 0; padding:8px 10px; background:#f3f6fb; border:1px solid #d8e4f5; border-radius:10px; color:#2f3c54; font-size:12px; }
     .list { margin-top:10px; }
     .item { padding:10px 0; border-top:1px solid #eee; }
     .item:first-child { border-top:0; }
+    .item-head { display:flex; align-items:center; justify-content:flex-start; gap:8px; flex-wrap:wrap; cursor:pointer; }
     .more { margin-top:10px; }
     .more button { width:100%; padding:10px; border-radius:10px; border:1px solid #d7dbe0; background:#fff; cursor:pointer; font-size:14px; }
     .nick { font-size:14px; }
     .sub { font-size:12px; color:#666; margin-top:4px; }
     .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; border:1px solid transparent; }
+    .form-anchor { scroll-margin-top: 12px; }
+    .skeleton { position:relative; overflow:hidden; background:#e9edf3; border-radius:8px; }
+    .skeleton::after {
+      content:"";
+      position:absolute;
+      top:0;
+      left:-60%;
+      width:60%;
+      height:100%;
+      background:linear-gradient(90deg, rgba(233,237,243,0), rgba(255,255,255,0.7), rgba(233,237,243,0));
+      animation:shimmer 1.2s infinite;
+    }
+    .skeleton-line { height:12px; margin:6px 0; }
+    .skeleton-line.sm { height:10px; width:60%; }
+    .skeleton-line.md { height:12px; width:80%; }
+    .skeleton-line.lg { height:14px; width:90%; }
+    @keyframes shimmer { to { transform: translateX(160%); } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
+    <div class="card form-anchor" id="formCard">
       <div class="brand">
         <img alt="동탄마라톤클럽 로고" src="assets/dmc_logo.png" />
         <h1 id="titleText">출석 체크</h1>
@@ -84,6 +103,7 @@
     <div class="card">
       <h1>오늘 출석 현황</h1>
       <div class="meta" id="todayCount"></div>
+      <div class="guide" id="historyGuide" style="display:none;">닉네임을 선택하면 이번달 출석 기록을 볼 수 있어요.</div>
       <div class="list" id="list"></div>
       <div class="more" id="moreWrap" style="display:none;">
         <button id="moreBtn">더보기</button>
@@ -92,7 +112,12 @@
   </div>
 
 <script>
-  const BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
+  const PROD_BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
+  const STAGING_BASE_URL = "https://script.google.com/macros/s/AKfycbyRiS8msgpzPcwj8g8kQ1PD1tOie5jhFpw17s7cX68KVB9-guUKub7kOKNKIL767c8oAg/exec";
+  const IS_LOCAL = location.protocol === "file:" ||
+    location.hostname === "localhost" ||
+    location.hostname === "127.0.0.1";
+  const BASE_URL = IS_LOCAL ? STAGING_BASE_URL : PROD_BASE_URL;
   const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
 
   const TEAM_OPTIONS = [
@@ -143,6 +168,7 @@
   const elCount = document.getElementById("todayCount");
   const elList = document.getElementById("list");
   const elMoreWrap = document.getElementById("moreWrap");
+  const elGuide = document.getElementById("historyGuide");
   const elTitleText = document.getElementById("titleText");
   let todayNickSet = new Set();
   let todayItems = [];
@@ -151,6 +177,13 @@
   let meetingTypeAuto = true;
   let submitStartMs = null;
   const pageEnterMs = performance.now();
+  const latencyLogsEnabled = true;
+
+  function logLatency(label, payload) {
+    if (!latencyLogsEnabled) return;
+    const now = new Date().toISOString();
+    console.log(`[latency] ${label} @${now}`, payload);
+  }
 
   function initAnalytics() {
     if (!GA_MEASUREMENT_ID || typeof window.gtag === "function") return;
@@ -314,6 +347,11 @@
   }
 
   function renderList(items) {
+    if (items.length) {
+      elGuide.style.display = "block";
+    } else {
+      elGuide.style.display = "none";
+    }
     if (!items.length) {
       elList.innerHTML = `<div class="meta">아직 출석자가 없습니다.</div>`;
       elMoreWrap.style.display = "none";
@@ -321,17 +359,34 @@
     }
     elList.innerHTML = items.map(it => {
       const nick = escapeHtml(it.nickname);
+      const nickParam = encodeURIComponent(it.nickname || "");
       const teamLabel = escapeHtml(it.teamLabel || it.team || "");
       const teamStyle = TEAM_COLORS[it.teamLabel] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
       const mtLabel = escapeHtml(it.meetingTypeLabel || it.meetingType || "");
       const ts = escapeHtml(it.timeText || it.timestamp || "");
+      const monthKey = (getActiveDateKey_() || "").slice(0, 7).replace(/\//g, "-");
       return `
         <div class="item">
-          <div class="nick">${nick}${teamLabel ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${teamLabel}</span>` : ""}</div>
+          <div class="item-head" onclick="openHistory(decodeURIComponent('${nickParam}'), '${monthKey}')">
+            <div class="nick">${nick}${teamLabel ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${teamLabel}</span>` : ""}</div>
+          </div>
           <div class="sub">${mtLabel} · ${ts}</div>
         </div>
       `;
     }).join("");
+  }
+
+  function renderListSkeleton(count) {
+    const items = Array.from({ length: count }, () => (
+      `<div class="item">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line sm"></div>
+      </div>`
+    )).join("");
+    elCount.innerHTML = `<span class="skeleton skeleton-line md"></span>`;
+    elList.innerHTML = items;
+    elGuide.style.display = "none";
+    elMoreWrap.style.display = "none";
   }
 
   function renderPagedList() {
@@ -353,6 +408,13 @@
     renderPagedList();
   }
 
+  function openHistory(nickname, monthKey) {
+    const targetMonth = monthKey && monthKey.length >= 7 ? monthKey : (getActiveDateKey_() || "").slice(0, 7).replace(/\//g, "-");
+    const url = `history.html?nickname=${encodeURIComponent(nickname)}&month=${encodeURIComponent(targetMonth)}`;
+    window.location.href = url;
+  }
+
+
   async function refreshTodayList() {
     const today = getActiveDateKey_();
     if (!today) {
@@ -361,20 +423,34 @@
       elMoreWrap.style.display = "none";
       return { ok: false, error: "invalid date" };
     }
+    renderListSkeleton(getListPageSize());
     const url = `${BASE_URL}?action=status&date=${encodeURIComponent(today)}`;
+    const fetchStart = performance.now();
 
     try {
       const res = await fetch(url);
+      const networkMs = Math.round(performance.now() - fetchStart);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "status fetch failed");
       applyStatus(json, today);
       trackEvent("attendance_status_fetch_success", { date_key: today });
+      logLatency("status_fetch", {
+        date_key: today,
+        network_ms: networkMs,
+        count: json.items?.length ?? 0,
+        base_url: BASE_URL
+      });
       return { ok: true, items: json.items || [] };
     } catch (e) {
       elCount.textContent = "목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
       elList.innerHTML = "";
       elMoreWrap.style.display = "none";
       trackEvent("attendance_status_fetch_error", { date_key: today });
+      logLatency("status_fetch_error", {
+        date_key: today,
+        network_ms: Math.round(performance.now() - fetchStart),
+        error: String(e && e.message ? e.message : e)
+      });
       return { ok: false, error: e };
     }
   }
@@ -422,11 +498,13 @@
     params.append("meetingDate", date);
 
     try {
+      const networkStart = performance.now();
       const res = await fetch(BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body: params
       });
+      const networkMs = Math.round(performance.now() - networkStart);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "submit failed");
       const nowMs = performance.now();
@@ -440,6 +518,7 @@
           meeting_type: meetingType,
           team: team || null,
           duration_ms: durationMs,
+          network_ms: networkMs,
           page_to_submit_ms: pageToSubmitMs
         });
       } else {
@@ -450,13 +529,31 @@
           meeting_type: meetingType,
           team: team || null,
           duration_ms: durationMs,
+          network_ms: networkMs,
           page_to_submit_ms: pageToSubmitMs
         });
       }
+      logLatency("submit_success", {
+        date_key: date,
+        meeting_type: meetingType,
+        team,
+        duration_ms: durationMs,
+        network_ms: networkMs,
+        page_to_submit_ms: pageToSubmitMs,
+        base_url: BASE_URL
+      });
       setSubmitLoading(false);
     } catch (e) {
       setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
       trackEvent("attendance_submit_error", { error_type: "network_or_server", date_key: date });
+      logLatency("submit_error", {
+        date_key: date,
+        meeting_type: meetingType,
+        team,
+        duration_ms: submitStartMs ? Math.round(performance.now() - submitStartMs) : null,
+        error: String(e && e.message ? e.message : e),
+        base_url: BASE_URL
+      });
       setSubmitLoading(false);
     }
   }

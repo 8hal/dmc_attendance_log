@@ -28,6 +28,12 @@ Google Apps Script 기반 출석 시스템입니다.
 1. 사용자가 QR 코드를 스캔해 출석 페이지로 이동
 2. 닉네임/팀/모임유형/날짜를 간편 입력 후 제출
 3. 서버가 시트에 저장하고, 해당 날짜의 출석 현황을 반환
+4. 출석자 목록에서 닉네임을 선택해 월간 출석 기록을 확인
+
+## 웹 페이지
+
+- `index.html`: 출석 체크 및 당일 출석 현황
+- `history.html`: 닉네임별 월간 출석 기록(출석률 바 포함)
 
 ## 데이터 스키마 (응답 시트)
 
@@ -66,14 +72,15 @@ Google Apps Script 기반 출석 시스템입니다.
 
 ### 현재 배포
 
-- 버전: 5 (2026. 1. 5., PM 1:17)
-- 설명: 저장되는 날짜 형식 변경
+- 버전: 12 (2026. 1. 7., PM 10:22)
+- 설명: UI 업데이트 및 GA 이벤트 추가
 - 배포 ID: `AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A`
 - 웹 앱 URL: `https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec`
+- 라이브러리 URL: `https://script.google.com/macros/library/d/1HpT8BoitLaBHA4a5fZrKfjUTQlEYD3CexbMCR3Ys-0oCNDpWfM3YV4Zt/12`
 
 ## Analytics (GA4)
 
-`index.html`의 `GA_MEASUREMENT_ID`에 GA4 측정 ID를 입력하면 이벤트가 전송됩니다.
+`index.html`과 `history.html`의 `GA_MEASUREMENT_ID`에 GA4 측정 ID를 입력하면 이벤트가 전송됩니다.
 
 이벤트 목록
 - attendance_view: date_key, meeting_type, meeting_type_auto
@@ -84,6 +91,9 @@ Google Apps Script 기반 출석 시스템입니다.
 - attendance_submit_error: error_type, date_key(optional)
 - attendance_status_fetch_success: date_key
 - attendance_status_fetch_error: date_key
+- history_view: nickname_present, month
+- history_fetch_success: month, latency_ms, count
+- history_back_click: month
 
 ## 기술 스택
 
@@ -92,6 +102,8 @@ Google Apps Script 기반 출석 시스템입니다.
 
 ## 향후 계획
 
+- 제출 레이턴시 측정 체계 구축 (클라이언트/서버 구간 분리)
+- 제출 레이턴시 최적화로 응답 체감 속도 개선
 - 입력 자동화 개선 및 중복 제출 방지 로직 강화
 - 지표 대시보드 및 품질 검증 룰 확장
 - GA 추가를 통한 사용자 행동 로그 및 분석 환경 구축

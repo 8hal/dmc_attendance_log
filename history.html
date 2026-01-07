@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>출석 월간 기록</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background:#f6f7f9; }
+    .wrap { max-width:520px; margin:0 auto; padding:16px; }
+    .card { background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 10px rgba(0,0,0,0.06); margin-bottom:12px; }
+    h1 { font-size:18px; margin:0 0 10px 0; }
+    .meta { font-size:12px; color:#666; }
+    .top-nav {
+      position: sticky;
+      top: 0;
+      background: rgba(246,247,249,0.95);
+      border-bottom: 1px solid #e3e6ea;
+      padding: 10px 16px;
+      backdrop-filter: blur(6px);
+      z-index: 10;
+    }
+    .top-nav-inner { max-width:520px; margin:0 auto; display:flex; align-items:center; justify-content:flex-start; }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:10px; border:1px solid #d7dbe0; background:#fff; font-size:13px; cursor:pointer; }
+    .hero { display:flex; align-items:center; gap:12px; margin:12px 0; }
+    .hero-count { background:#111; color:#fff; padding:12px 16px; border-radius:12px; font-size:18px; font-weight:700; }
+    .hero-text { font-size:12px; color:#555; }
+    .rate-wrap { margin-top:8px; }
+    .rate-label { font-size:12px; color:#555; margin-bottom:6px; }
+    .rate-bar { height:10px; background:#e9edf3; border-radius:999px; overflow:hidden; border:1px solid #e1e6ed; }
+    .rate-fill { height:100%; background:linear-gradient(90deg, #1f7ae0, #3aa0ff); width:0%; transition:width 0.4s ease; }
+    .skeleton { position:relative; overflow:hidden; background:#e9edf3; border-radius:8px; }
+    .skeleton::after {
+      content:"";
+      position:absolute;
+      top:0;
+      left:-60%;
+      width:60%;
+      height:100%;
+      background:linear-gradient(90deg, rgba(233,237,243,0), rgba(255,255,255,0.7), rgba(233,237,243,0));
+      animation:shimmer 1.2s infinite;
+    }
+    .skeleton-line { height:12px; margin:6px 0; }
+    .skeleton-line.sm { height:10px; width:60%; }
+    .skeleton-line.md { height:12px; width:80%; }
+    .skeleton-line.lg { height:14px; width:90%; }
+    .hero-count.loading { background:#e9edf3; color:transparent; position:relative; overflow:hidden; }
+    .hero-count.loading::after {
+      content:"";
+      position:absolute;
+      top:0;
+      left:-60%;
+      width:60%;
+      height:100%;
+      background:linear-gradient(90deg, rgba(233,237,243,0), rgba(255,255,255,0.7), rgba(233,237,243,0));
+      animation:shimmer 1.2s infinite;
+    }
+    .rate-bar.loading { position:relative; overflow:hidden; }
+    .rate-bar.loading::after {
+      content:"";
+      position:absolute;
+      top:0;
+      left:-60%;
+      width:60%;
+      height:100%;
+      background:linear-gradient(90deg, rgba(233,237,243,0), rgba(255,255,255,0.6), rgba(233,237,243,0));
+      animation:shimmer 1.2s infinite;
+    }
+    .cal-day.skeleton { background:#e9edf3; border-color:#e1e6ed; color:transparent; position:relative; overflow:hidden; }
+    .cal-day.skeleton::after {
+      content:"";
+      position:absolute;
+      top:0;
+      left:-60%;
+      width:60%;
+      height:100%;
+      background:linear-gradient(90deg, rgba(233,237,243,0), rgba(255,255,255,0.7), rgba(233,237,243,0));
+      animation:shimmer 1.2s infinite;
+    }
+    @keyframes shimmer { to { transform: translateX(160%); } }
+    .list { margin-top:10px; }
+    .item { padding:10px 0; border-top:1px solid #eee; }
+    .item:first-child { border-top:0; }
+    .nick { font-size:14px; }
+    .sub { font-size:12px; color:#666; margin-top:4px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; border:1px solid transparent; }
+    .pill.default { background:#f1f3f5; color:#444; border-color:#e3e6ea; }
+    .calendar { margin-top:8px; }
+    .cal-head-row { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px; }
+    .cal-head-cell { font-size:11px; color:#777; text-align:center; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+    .cal-day { background:#f4f6f9; border:1px solid #e5e8ed; border-radius:10px; min-height:42px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; color:#444; transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+    .cal-day.muted { background:#f9fafb; color:#b0b5bc; border-style:dashed; }
+    .cal-day.dim { background:#fbfcfd; color:#c1c5cc; border-color:#eff1f5; }
+    .cal-day.hit { background:#1f7ae0; color:#fff; border-color:#1f7ae0; box-shadow:0 6px 12px rgba(31,122,224,0.25); }
+  </style>
+</head>
+<body>
+  <div class="top-nav" role="navigation" aria-label="상단 내비게이션">
+    <div class="top-nav-inner">
+      <button class="back-btn" type="button" onclick="goBackToIndex()">← 뒤로 가기</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h1 id="title">월간 출석 기록</h1>
+      <div class="meta" id="summary"></div>
+      <div class="hero">
+        <div class="hero-count" id="countBox">0회</div>
+        <div class="hero-text" id="heroText"></div>
+      </div>
+      <div class="rate-wrap">
+        <div class="rate-label" id="rateLabel">출석률 0%</div>
+        <div class="rate-bar" aria-hidden="true">
+          <div class="rate-fill" id="rateFill"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="calendar">
+        <div class="cal-head-row">
+          <div class="cal-head-cell">일</div>
+          <div class="cal-head-cell">월</div>
+          <div class="cal-head-cell">화</div>
+          <div class="cal-head-cell">수</div>
+          <div class="cal-head-cell">목</div>
+          <div class="cal-head-cell">금</div>
+          <div class="cal-head-cell">토</div>
+        </div>
+        <div class="cal-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h1>출석 리스트</h1>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+
+<script>
+  const PROD_BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
+  const STAGING_BASE_URL = "https://script.google.com/macros/s/AKfycbyRiS8msgpzPcwj8g8kQ1PD1tOie5jhFpw17s7cX68KVB9-guUKub7kOKNKIL767c8oAg/exec";
+  const IS_LOCAL = location.protocol === "file:" ||
+    location.hostname === "localhost" ||
+    location.hostname === "127.0.0.1";
+  const BASE_URL = IS_LOCAL ? STAGING_BASE_URL : PROD_BASE_URL;
+  const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
+
+  const TEAM_COLORS = {
+    "S팀": { bg: "#ffe8d9", text: "#8a3d00", border: "#ffd0b3" },
+    "1팀": { bg: "#e6f1ff", text: "#124e8a", border: "#c7ddff" },
+    "2팀": { bg: "#e9f7ee", text: "#1f6b3a", border: "#cfeedd" },
+    "3팀": { bg: "#f3e8ff", text: "#5a2b8a", border: "#e2d1ff" },
+    "4팀": { bg: "#fff5cc", text: "#7a5b00", border: "#ffe8a3" },
+    "5팀": { bg: "#ffe7f1", text: "#8a2353", border: "#ffd0e2" }
+  };
+
+  function initAnalytics() {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag === "function") return;
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag("js", new Date());
+    gtag("config", GA_MEASUREMENT_ID, { send_page_view: true });
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
+    document.head.appendChild(script);
+  }
+
+  function trackEvent(name, params) {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag !== "function") return;
+    window.gtag("event", name, params || {});
+  }
+
+  function qs(name) {
+    return new URL(location.href).searchParams.get(name) || "";
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[m]));
+  }
+
+  function setHistoryLoading(isLoading) {
+    const summary = document.getElementById("summary");
+    const countBox = document.getElementById("countBox");
+    const rateLabel = document.getElementById("rateLabel");
+    const rateBar = document.querySelector(".rate-bar");
+    const list = document.getElementById("list");
+    const grid = document.getElementById("calendarGrid");
+    if (!isLoading) {
+      countBox.classList.remove("loading");
+      rateBar.classList.remove("loading");
+      return;
+    }
+    summary.innerHTML = `<span class="skeleton skeleton-line md"></span>`;
+    countBox.textContent = "";
+    countBox.classList.add("loading");
+    rateLabel.innerHTML = `<span class="skeleton skeleton-line sm"></span>`;
+    rateBar.classList.add("loading");
+    list.innerHTML = Array.from({ length: 4 }, () => (
+      `<div class="item">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line sm"></div>
+      </div>`
+    )).join("");
+    grid.innerHTML = Array.from({ length: 35 }, () => `<div class="cal-day skeleton"></div>`).join("");
+  }
+
+  function renderSummary(nickname, month, count, summaryByType, attendanceRate) {
+    const el = document.getElementById("summary");
+    const parts = [];
+    if (summaryByType) {
+      const kv = Object.entries(summaryByType).map(([k, v]) => `${k}: ${v}회`);
+      if (kv.length) parts.push(kv.join(" · "));
+    }
+    el.textContent = `${month} 출석 요약${parts.length ? " · " + parts.join(" | ") : ""}`;
+    document.getElementById("countBox").textContent = `${count || 0}회`;
+    document.getElementById("heroText").textContent = "";
+    const rate = Number.isFinite(attendanceRate) ? Math.max(0, Math.min(100, attendanceRate)) : 0;
+    document.getElementById("rateLabel").textContent = `출석률 ${rate}%`;
+    document.getElementById("rateFill").style.width = `${rate}%`;
+  }
+
+  function renderList(items) {
+    const el = document.getElementById("list");
+    if (!items || !items.length) {
+      el.innerHTML = `<div class="meta">출석 기록이 없습니다.</div>`;
+      return;
+    }
+    el.innerHTML = items.map(it => {
+      const teamLabel = escapeHtml(it.teamLabel || it.team || "");
+      const teamStyle = TEAM_COLORS[it.teamLabel] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
+      const mtLabel = escapeHtml(it.meetingTypeLabel || it.meetingType || "");
+      const ts = escapeHtml(it.timeText || "");
+      return `
+        <div class="item">
+          <div class="nick">${teamLabel ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${teamLabel}</span>` : mtLabel}</div>
+          <div class="sub">${it.meetingDate || ""} · ${mtLabel}${ts ? ` · ${ts}` : ""}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderCalendar(monthKey, items) {
+    const grid = document.getElementById("calendarGrid");
+    grid.innerHTML = "";
+    if (!monthKey) return;
+    const [y, m] = monthKey.split("-").map(Number);
+    const first = new Date(y, m - 1, 1);
+    const startOffset = first.getDay(); // 0=Sun
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const attended = new Set(
+      (items || [])
+        .map(it => (it.meetingDate || "").split("/")[2])
+        .map(d => Number(d))
+        .filter(Boolean)
+    );
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push({ empty: true });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const weekday = new Date(y, m - 1, d).getDay(); // 0=Sun ..6=Sat
+      const isMeetDay = [2, 4, 6].includes(weekday); // 화, 목, 토
+      const hit = attended.has(d);
+      cells.push({ day: d, hit, dim: !isMeetDay && !hit });
+    }
+    // fill remaining to full weeks
+    while (cells.length % 7 !== 0) cells.push({ empty: true });
+    grid.innerHTML = cells.map(c => {
+      if (c.empty) return `<div class="cal-day muted"></div>`;
+      return `<div class="cal-day${c.hit ? " hit" : ""}${c.dim ? " dim" : ""}">${c.day}</div>`;
+    }).join("");
+  }
+
+  async function loadHistory() {
+    initAnalytics();
+    const nickname = qs("nickname").trim();
+    const month = qs("month").trim();
+    trackEvent("history_view", {
+      nickname_present: Boolean(nickname),
+      month: month || null
+    });
+    if (!nickname || !month) {
+      document.getElementById("summary").textContent = "닉네임/월 정보가 없습니다.";
+      return;
+    }
+    document.getElementById("title").textContent = `${nickname} · ${month} 출석`;
+    const url = `${BASE_URL}?action=history&nickname=${encodeURIComponent(nickname)}&month=${encodeURIComponent(month)}`;
+    const fetchStart = performance.now();
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "history fetch failed");
+      setHistoryLoading(false);
+      renderSummary(
+        json.nickname || nickname,
+        json.month || month,
+        json.count,
+        json.summaryByType,
+        json.attendanceRate
+      );
+      renderList(json.items || []);
+      renderCalendar(json.month || month, json.items || []);
+      trackEvent("history_fetch_success", {
+        month: json.month || month,
+        latency_ms: Math.round(performance.now() - fetchStart),
+        count: json.items?.length ?? 0
+      });
+    } catch (e) {
+      setHistoryLoading(false);
+      document.getElementById("summary").textContent = "기록을 불러오지 못했습니다.";
+      document.getElementById("list").innerHTML = `<div class="meta">${escapeHtml(e && e.message ? e.message : e)}</div>`;
+    }
+  }
+
+  function goBackToIndex() {
+    const month = qs("month").trim();
+    trackEvent("history_back_click", { month: month || null });
+    window.location.href = "index.html";
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>
