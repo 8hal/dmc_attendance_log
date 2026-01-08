@@ -41,6 +41,28 @@
     .msg { font-size:13px; margin-top:10px; color:#111; }
     .msg.success { color:#1f6b3a; }
     .msg.error { color:#8a2353; }
+    .toast {
+      position:fixed;
+      left:50%;
+      top:18px;
+      transform:translateX(-50%);
+      background:#111;
+      color:#fff;
+      padding:10px 14px;
+      border-radius:12px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.2);
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 0.25s ease, transform 0.25s ease;
+      z-index:1000;
+      max-width:90%;
+      text-align:center;
+    }
+    .toast.show {
+      opacity:1;
+      transform:translateX(-50%) translateY(6px);
+    }
     .meta { font-size:12px; color:#666; }
     .guide { margin:8px 0; padding:8px 10px; background:#f3f6fb; border:1px solid #d8e4f5; border-radius:10px; color:#2f3c54; font-size:12px; }
     .list { margin-top:10px; }
@@ -117,6 +139,7 @@
       </div>
     </div>
   </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
   const PROD_BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
@@ -178,6 +201,7 @@
   const elMoreWrap = document.getElementById("moreWrap");
   const elGuide = document.getElementById("historyGuide");
   const elTitleText = document.getElementById("titleText");
+  const elToast = document.getElementById("toast");
   const elSortToggle = document.getElementById("sortToggle");
   let todayNickSet = new Set();
   let todayItems = [];
@@ -222,6 +246,16 @@
     elMsg.textContent = t || "";
     elMsg.classList.remove("success", "error");
     if (type) elMsg.classList.add(type);
+  }
+
+  function showToast(message) {
+    if (!message) return;
+    elToast.textContent = message;
+    elToast.classList.add("show");
+    window.clearTimeout(showToast._timer);
+    showToast._timer = window.setTimeout(() => {
+      elToast.classList.remove("show");
+    }, 2000);
   }
 
   function getCachedStatus_(dateKey) {
@@ -575,6 +609,7 @@
         applyStatus(json.status, date);
         setCachedStatus_(date, json.status);
         setMsg("출석 완료", "success");
+        showToast(`✅ ${nickname}님 출석 완료되었습니다! 오늘도 화이팅!`);
         trackEvent("attendance_submit_success", {
           date_key: date,
           meeting_type: meetingType,
@@ -585,6 +620,7 @@
         });
       } else {
         setMsg("출석 등록됨. 목록 업데이트 중...", "success");
+        showToast(`✅ ${nickname}님 출석 완료되었습니다! 오늘도 화이팅!`);
         refreshTodayList();
         trackEvent("attendance_submit_success", {
           date_key: date,
