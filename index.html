@@ -13,6 +13,10 @@
     .brand { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
     .brand img { width:32px; height:32px; border-radius:8px; }
     .brand h1 { margin:0; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .card-head h1 { margin:0; }
+    .sort-btn { width:auto; padding:6px 10px; border-radius:999px; border:1px solid #d7dbe0; background:#fff; font-size:12px; cursor:pointer; }
+    .sort-btn.active { background:#111; color:#fff; border-color:#111; }
     .row { margin:10px 0; }
     label { display:block; font-size:12px; color:#444; margin-bottom:6px; }
     input, select { width:100%; padding:12px; border-radius:10px; border:1px solid #d7dbe0; font-size:14px; background:#fff; box-sizing:border-box; }
@@ -101,7 +105,10 @@
     </div>
 
     <div class="card">
-      <h1>오늘 출석 현황</h1>
+      <div class="card-head">
+        <h1>오늘 출석 현황</h1>
+        <button id="sortToggle" class="sort-btn" type="button">팀 정렬</button>
+      </div>
       <div class="meta" id="todayCount"></div>
       <div class="guide" id="historyGuide" style="display:none;">닉네임을 선택하면 이번달 출석 기록을 볼 수 있어요.</div>
       <div class="list" id="list"></div>
@@ -171,12 +178,15 @@
   const elMoreWrap = document.getElementById("moreWrap");
   const elGuide = document.getElementById("historyGuide");
   const elTitleText = document.getElementById("titleText");
+  const elSortToggle = document.getElementById("sortToggle");
   let todayNickSet = new Set();
   let todayItems = [];
+  let todayItemsRaw = [];
   let listShownCount = 0;
   let lastValidDateKey = "";
   let meetingTypeAuto = true;
   let submitStartMs = null;
+  let sortMode = "recent";
   const pageEnterMs = performance.now();
   const latencyLogsEnabled = true;
 
@@ -423,9 +433,30 @@
     elMoreWrap.style.display = listShownCount < todayItems.length ? "block" : "none";
   }
 
+  function getSortedItems_() {
+    if (!todayItemsRaw.length) return [];
+    if (sortMode === "recent") return todayItemsRaw.slice();
+    const teamOrder = new Map(TEAM_OPTIONS.map((t, idx) => [t.label, idx]));
+    return todayItemsRaw.slice().sort((a, b) => {
+      const aLabel = a.teamLabel || TEAM_LABEL_BY_VALUE[a.team] || a.team || "";
+      const bLabel = b.teamLabel || TEAM_LABEL_BY_VALUE[b.team] || b.team || "";
+      const aOrder = teamOrder.has(aLabel) ? teamOrder.get(aLabel) : 999;
+      const bOrder = teamOrder.has(bLabel) ? teamOrder.get(bLabel) : 999;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return (a.__idx ?? 0) - (b.__idx ?? 0);
+    });
+  }
+
+  function updateSortUi_() {
+    const isTeam = sortMode === "team";
+    elSortToggle.textContent = isTeam ? "최근순" : "팀 정렬";
+    elSortToggle.classList.toggle("active", isTeam);
+  }
+
   function applyStatus(status, fallbackDate) {
     const items = status?.items || [];
-    todayItems = items;
+    todayItemsRaw = items.map((it, idx) => ({ ...it, __idx: idx }));
+    todayItems = getSortedItems_();
     listShownCount = Math.min(getListPageSize(), todayItems.length);
     todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
     elCount.textContent = `${status?.date || fallbackDate} 출석 인원: ${items.length}명`;
@@ -611,6 +642,7 @@
     elMeeting.value = inferMeetingTypeByDateKey_(today);
     elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
     updateTitle();
+    updateSortUi_();
     refreshTodayList();
     toggleSubmit();
     trackEvent("attendance_view", {
@@ -622,6 +654,14 @@
 
   document.getElementById("moreBtn").addEventListener("click", () => {
     listShownCount = Math.min(listShownCount + 20, todayItems.length);
+    renderPagedList();
+  });
+
+  elSortToggle.addEventListener("click", () => {
+    sortMode = sortMode === "recent" ? "team" : "recent";
+    todayItems = getSortedItems_();
+    listShownCount = Math.min(getListPageSize(), todayItems.length);
+    updateSortUi_();
     renderPagedList();
   });
 
