@@ -90,7 +90,7 @@
       </div>
 
       <div class="row">
-        <label>날짜(KST)</label>
+        <label>날짜</label>
         <input id="today" type="date" />
       </div>
 
@@ -640,7 +640,7 @@
     setActiveDateKey_(today);
     populateMeetingOptions();
     elMeeting.value = inferMeetingTypeByDateKey_(today);
-    elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
+    elMeta.textContent = "";
     updateTitle();
     updateSortUi_();
     refreshTodayList();
@@ -676,7 +676,7 @@
     setActiveDateKey_(dateKey);
     if (meetingTypeAuto) {
       elMeeting.value = inferMeetingTypeByDateKey_(dateKey);
-      elMeta.textContent = `자동 선택: ${MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value}`;
+      elMeta.textContent = "";
     }
     setMsg("");
     toggleSubmit();
