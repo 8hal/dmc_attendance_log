@@ -11,6 +11,7 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const { onRequest } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { google } = require("googleapis");
 
 // 초기화
 initializeApp();
@@ -23,6 +24,10 @@ setGlobalOptions({ maxInstances: 10, region: "asia-northeast3" });
 
 const COLLECTION = "attendance";
 const DEFAULT_TZ = "Asia/Seoul";
+
+// Google Sheets 설정
+const SPREADSHEET_ID = "1sn6sLKyBn5HjNIyZfn6P-foF9maoqp5vp04_j43zDYY";
+const SHEET_NAME = "설문지 응답 시트2"; // 시트 이름
 
 const TEAM_LABEL = {
   T1: "1팀",
@@ -39,6 +44,55 @@ const MEETING_TYPE_LABEL = {
   THU: "목요일",
   SAT: "토요일",
 };
+
+// ==================== Google Sheets 헬퍼 ====================
+
+let sheetsClient = null;
+
+async function getSheetsClient() {
+  if (sheetsClient) return sheetsClient;
+  
+  const auth = new google.auth.GoogleAuth({
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+  
+  const authClient = await auth.getClient();
+  sheetsClient = google.sheets({ version: "v4", auth: authClient });
+  return sheetsClient;
+}
+
+/**
+ * Google Sheets에 출석 데이터 추가 (비동기, 실패해도 에러 무시)
+ */
+async function appendToSheets(data) {
+  try {
+    const sheets = await getSheetsClient();
+    
+    // 기존 시트 스키마: timestamp, nickname, teamLabel, meetingTypeLabel, meetingDate
+    const row = [
+      data.timestamp,           // A: timestamp
+      data.nickname,            // B: nickname
+      data.teamLabel,           // C: teamLabel
+      data.meetingTypeLabel,    // D: meetingTypeLabel
+      data.meetingDate,         // E: meetingDate
+    ];
+    
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A:E`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [row],
+      },
+    });
+    
+    console.log(`[Sheets] Appended: ${data.nickname}`);
+  } catch (err) {
+    // Sheets 백업 실패해도 API 응답에는 영향 없음
+    console.error("[Sheets Error]", err.message || err);
+  }
+}
 
 // ==================== 헬퍼 함수 ====================
 
@@ -185,6 +239,7 @@ async function handlePost(req, res) {
 
     const now = new Date();
     const monthKey = dateKeyToMonthKey(meetingDateKey);
+    const timeText = formatKstKoreanAmPm(now);
 
     // TEST 닉네임 처리
     const nicknameStored =
@@ -204,6 +259,15 @@ async function handlePost(req, res) {
       ts: now.getTime(),
     });
 
+    // Google Sheets에 백업 (비동기, fire-and-forget)
+    appendToSheets({
+      timestamp: timeText,
+      nickname: nicknameStored,
+      teamLabel,
+      meetingTypeLabel,
+      meetingDate: meetingDateKey,
+    }).catch(() => {}); // 에러 무시
+
     // 해당 날짜 출석 현황 조회
     const status = await getStatusForDate(meetingDateKey);
 
@@ -219,7 +283,7 @@ async function handlePost(req, res) {
         meetingType: typeCode,
         meetingTypeLabel,
         meetingDate: meetingDateKey,
-        timeText: formatKstKoreanAmPm(now),
+        timeText,
       },
       status,
     });
