@@ -1,0 +1,11 @@
+rules_version='2'
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // attendance 컬렉션: Functions만 쓰기 가능, 읽기는 누구나
+    match /attendance/{docId} {
+      allow read: if true;
+      allow write: if false; // Cloud Functions (Admin SDK)만 쓰기 가능
+    }
+  }
+}

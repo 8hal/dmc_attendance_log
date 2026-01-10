@@ -1,0 +1,22 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "meetingDateKey", "order": "ASCENDING" },
+        { "fieldPath": "ts", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "nicknameKey", "order": "ASCENDING" },
+        { "fieldPath": "monthKey", "order": "ASCENDING" },
+        { "fieldPath": "ts", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -137,12 +137,8 @@
   </div>
 
 <script>
-  const PROD_BASE_URL = "https://script.google.com/macros/s/AKfycbz2_GEXNqGdf7WGb75H9w6N0KorGJNQ_iD7SU5hxE8NLPBXrpU-fwxpTy1P1WHPlxsx4A/exec";
-  const STAGING_BASE_URL = "https://script.google.com/macros/s/AKfycbyRiS8msgpzPcwj8g8kQ1PD1tOie5jhFpw17s7cX68KVB9-guUKub7kOKNKIL767c8oAg/exec";
-  const IS_LOCAL = location.protocol === "file:" ||
-    location.hostname === "localhost" ||
-    location.hostname === "127.0.0.1";
-  const BASE_URL = IS_LOCAL ? STAGING_BASE_URL : PROD_BASE_URL;
+  // Firebase Cloud Functions URL
+  const BASE_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
   const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
   const LS_HISTORY_PREFIX = "marathon_att_history:";
 

@@ -1,0 +1,11 @@
+{
+  "name": "dmc-attendance-scripts",
+  "version": "1.0.0",
+  "description": "Migration and utility scripts",
+  "scripts": {
+    "migrate": "node migrate-sheets-to-firestore.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.0"
+  }
+}
