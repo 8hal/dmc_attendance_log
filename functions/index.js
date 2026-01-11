@@ -145,6 +145,16 @@ function formatKstKoreanAmPm(date) {
   return formatted;
 }
 
+/**
+ * Sheets용 timestamp 형식 (날짜 끝 마침표 제거)
+ * "2026. 1. 11. 오후 7:10:35" → "2026. 1. 11 오후 7:10:35"
+ */
+function formatTimestampForSheets(date) {
+  const formatted = formatKstKoreanAmPm(date);
+  // 날짜 끝의 ". 오후" 또는 ". 오전"을 " 오후" 또는 " 오전"으로 변경
+  return formatted.replace(/\. (오전|오후)/, " $1");
+}
+
 function kstTodayKey() {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -187,6 +197,16 @@ function countPossibleMeetingsForMonth(monthKey) {
     if ([2, 4, 6].includes(weekday)) cnt++; // 화, 목, 토
   }
   return cnt;
+}
+
+/**
+ * YYYY/MM/DD → "YYYY. M. D" 형식 변환
+ * 예: "2026/01/10" → "2026. 1. 10"
+ */
+function formatDateKeyForSheets(dateKey) {
+  if (!isValidDateKey(dateKey)) return dateKey;
+  const [year, month, day] = dateKey.split("/");
+  return `${year}. ${parseInt(month, 10)}. ${parseInt(day, 10)}`;
 }
 
 // ==================== API 핸들러 ====================
@@ -261,11 +281,11 @@ async function handlePost(req, res) {
 
     // Google Sheets에 백업 (비동기, fire-and-forget)
     appendToSheets({
-      timestamp: timeText,
+      timestamp: formatTimestampForSheets(now), // "2026. 1. 11 오후 7:10:35" 형식
       nickname: nicknameStored,
       teamLabel,
       meetingTypeLabel,
-      meetingDate: meetingDateKey,
+      meetingDate: formatDateKeyForSheets(meetingDateKey), // "2026. 1. 10" 형식
     }).catch(() => {}); // 에러 무시
 
     // 해당 날짜 출석 현황 조회
