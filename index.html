@@ -6,24 +6,126 @@
   <title>마라톤 클럽 출석</title>
   <link rel="icon" href="assets/dmc_logo.png" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background:#f6f7f9; }
+    :root {
+      --color-primary: #2563EB;
+      --color-primary-hover: #1D4ED8;
+      --color-primary-light: #DBEAFE;
+      --color-bg: #F8FAFC;
+      --color-card: #FFFFFF;
+      --color-text: #0F172A;
+      --color-text-secondary: #64748B;
+      --color-text-muted: #94A3B8;
+      --color-border: #E2E8F0;
+      --color-border-light: #F1F5F9;
+      --color-success: #059669;
+      --color-error: #DC2626;
+    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background: var(--color-bg); color: var(--color-text); }
+    /* 스테이징 워터마크 */
+    body.staging-env::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 80px,
+        rgba(255, 100, 100, 0.03) 80px,
+        rgba(255, 100, 100, 0.03) 160px
+      );
+      background-size: 200% 200%;
+    }
+    body.staging-env::after {
+      content: "STAGING";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 120px;
+      font-weight: 900;
+      color: rgba(255, 50, 50, 0.06);
+      pointer-events: none;
+      z-index: 9998;
+      white-space: nowrap;
+      letter-spacing: 20px;
+    }
     .wrap { max-width:520px; margin:0 auto; padding:16px; }
-    .card { background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 10px rgba(0,0,0,0.06); margin-bottom:12px; }
+    .card { background: var(--color-card); border-radius:14px; padding:14px; box-shadow:0 2px 12px rgba(15,23,42,0.08); margin-bottom:12px; }
     h1 { font-size:18px; margin:0 0 10px 0; }
     .brand { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
     .brand img { width:32px; height:32px; border-radius:8px; }
     .brand h1 { margin:0; }
     .card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
     .card-head h1 { margin:0; }
-    .sort-btn { width:auto; padding:6px 10px; border-radius:999px; border:1px solid #d7dbe0; background:#fff; font-size:12px; cursor:pointer; }
-    .sort-btn.active { background:#111; color:#fff; border-color:#111; }
+    .sort-btn { width:auto; padding:6px 10px; border-radius:999px; border:1px solid var(--color-border); background: var(--color-card); font-size:12px; cursor:pointer; color: var(--color-text-secondary); transition: all 0.15s; }
+    .sort-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .sort-btn.active { background: var(--color-primary); color:#fff; border-color: var(--color-primary); }
     .row { margin:10px 0; }
-    label { display:block; font-size:12px; color:#444; margin-bottom:6px; }
-    input, select { width:100%; padding:12px; border-radius:10px; border:1px solid #d7dbe0; font-size:14px; background:#fff; box-sizing:border-box; }
-    input[readonly] { background:#f1f3f5; }
+    label { display:block; font-size:12px; color: var(--color-text-secondary); margin-bottom:6px; font-weight: 500; }
+    input, select { width:100%; padding:12px; border-radius:10px; border:1px solid var(--color-border); font-size:14px; background: var(--color-card); box-sizing:border-box; color: var(--color-text); transition: border-color 0.15s, box-shadow 0.15s; }
+    input:focus, select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    input[readonly] { background: var(--color-border-light); }
     button { width:100%; padding:12px; border:0; border-radius:10px; font-size:15px; cursor:pointer; }
-    button.primary { background:#111; color:#fff; }
-    button.primary:disabled { background:#888; cursor:not-allowed; }
+    button.primary { background: var(--color-primary); color:#fff; }
+    button.primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    button.primary:disabled { background: var(--color-border); color: var(--color-text-muted); cursor:not-allowed; }
+    /* 출석 체크 버튼 강조 */
+    button.submit-main {
+      height: 60px;
+      font-size: 17px;
+      font-weight: 600;
+      border-radius: 16px;
+      margin-top: 14px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button.submit-main:not(:disabled):active {
+      transform: scale(0.98);
+    }
+    /* 상세 설정 아코디언 */
+    .accordion { margin-top: 16px; }
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--color-border-light);
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: var(--color-border); }
+    .accordion-summary {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+    .accordion-summary strong {
+      color: var(--color-text);
+      font-weight: 500;
+    }
+    .accordion-chevron {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      transition: transform 0.2s;
+    }
+    .accordion.open .accordion-chevron {
+      transform: rotate(180deg);
+    }
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease-out, padding 0.25s ease-out;
+      padding: 0 4px;
+    }
+    .accordion.open .accordion-body {
+      max-height: 200px;
+      padding: 12px 4px 4px 4px;
+    }
     button.loading { position:relative; }
     button.loading::after {
       content:"";
@@ -38,20 +140,21 @@
       animation:spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .msg { font-size:13px; margin-top:10px; color:#111; }
-    .msg.success { color:#1f6b3a; }
-    .msg.error { color:#8a2353; }
+    .msg { font-size:13px; margin-top:10px; color: var(--color-text); }
+    .msg.success { color: var(--color-success); }
+    .msg.error { color: var(--color-error); }
     .toast {
       position:fixed;
       left:50%;
       top:18px;
       transform:translateX(-50%);
-      background:#111;
+      background: var(--color-primary);
       color:#fff;
-      padding:10px 14px;
+      padding:12px 18px;
       border-radius:12px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.2);
+      box-shadow:0 10px 25px rgba(37,99,235,0.3);
       font-size:13px;
+      font-weight: 500;
       opacity:0;
       pointer-events:none;
       transition:opacity 0.25s ease, transform 0.25s ease;
@@ -63,19 +166,21 @@
       opacity:1;
       transform:translateX(-50%) translateY(6px);
     }
-    .meta { font-size:12px; color:#666; }
-    .guide { margin:8px 0; padding:8px 10px; background:#f3f6fb; border:1px solid #d8e4f5; border-radius:10px; color:#2f3c54; font-size:12px; }
+    .meta { font-size:12px; color: var(--color-text-secondary); }
+    .guide { margin:8px 0; padding:10px 12px; background: var(--color-primary-light); border:1px solid rgba(37,99,235,0.2); border-radius:10px; color: var(--color-primary-hover); font-size:12px; }
     .list { margin-top:10px; }
-    .item { padding:10px 0; border-top:1px solid #eee; }
+    .item { padding:10px 0; border-top:1px solid var(--color-border-light); }
     .item:first-child { border-top:0; }
-    .item-head { display:flex; align-items:center; justify-content:flex-start; gap:8px; flex-wrap:wrap; cursor:pointer; }
+    .item-head { display:flex; align-items:center; justify-content:flex-start; gap:8px; flex-wrap:wrap; cursor:pointer; transition: opacity 0.15s; }
+    .item-head:hover { opacity: 0.7; }
     .more { margin-top:10px; }
-    .more button { width:100%; padding:10px; border-radius:10px; border:1px solid #d7dbe0; background:#fff; cursor:pointer; font-size:14px; }
-    .nick { font-size:14px; }
-    .sub { font-size:12px; color:#666; margin-top:4px; }
+    .more button { width:100%; padding:10px; border-radius:10px; border:1px solid var(--color-border); background: var(--color-card); cursor:pointer; font-size:14px; color: var(--color-text-secondary); transition: all 0.15s; }
+    .more button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .nick { font-size:14px; color: var(--color-text); }
+    .sub { font-size:12px; color: var(--color-text-muted); margin-top:4px; }
     .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; border:1px solid transparent; }
     .form-anchor { scroll-margin-top: 12px; }
-    .skeleton { position:relative; overflow:hidden; background:#e9edf3; border-radius:8px; }
+    .skeleton { position:relative; overflow:hidden; background: var(--color-border); border-radius:8px; }
     .skeleton::after {
       content:"";
       position:absolute;
@@ -83,7 +188,7 @@
       left:-60%;
       width:60%;
       height:100%;
-      background:linear-gradient(90deg, rgba(233,237,243,0), rgba(255,255,255,0.7), rgba(233,237,243,0));
+      background:linear-gradient(90deg, rgba(226,232,240,0), rgba(255,255,255,0.8), rgba(226,232,240,0));
       animation:shimmer 1.2s infinite;
     }
     .skeleton-line { height:12px; margin:6px 0; }
@@ -111,18 +216,27 @@
         <select id="team"></select>
       </div>
 
-      <div class="row">
-        <label>날짜</label>
-        <input id="today" type="date" />
-      </div>
-
-      <div class="row">
-        <label>정모 유형</label>
-        <select id="meetingType"></select>
-      </div>
-
-      <button id="submitBtn" class="primary" disabled>출석 체크 하기</button>
+      <button id="submitBtn" class="primary submit-main" disabled>출석 체크 하기</button>
       <div id="msg" class="msg" aria-live="polite"></div>
+
+      <div class="accordion" id="detailAccordion">
+        <div class="accordion-header" id="accordionToggle">
+          <span class="accordion-summary" id="accordionSummary">
+            <strong>상세 설정</strong> · <span id="summaryDate">2026.01.13</span> · <span id="summaryMeeting">화요일 정모</span>
+          </span>
+          <span class="accordion-chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div class="row">
+            <label>날짜</label>
+            <input id="today" type="date" />
+          </div>
+          <div class="row">
+            <label>정모 유형</label>
+            <select id="meetingType"></select>
+          </div>
+        </div>
+      </div>
       <div class="meta" id="meta"></div>
     </div>
 
@@ -143,7 +257,17 @@
 
 <script>
   // Firebase Cloud Functions URL
-  const BASE_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
+  const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.startsWith("192.168.") || location.hostname.startsWith("172.");
+  const IS_STAGING = location.hostname.includes("dmc-attendance-staging");
+  const PROD_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
+  const STAGING_URL = "https://asia-northeast3-dmc-attendance-staging.cloudfunctions.net/attendance";
+  const LOCAL_URL = `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/attendance`;
+  const BASE_URL = IS_LOCAL ? LOCAL_URL : (IS_STAGING ? STAGING_URL : PROD_URL);
+  
+  // 스테이징 환경 표시
+  if (IS_STAGING) {
+    document.body.classList.add("staging-env");
+  }
   const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
 
   const TEAM_OPTIONS = [
@@ -199,6 +323,10 @@
   const elTitleText = document.getElementById("titleText");
   const elToast = document.getElementById("toast");
   const elSortToggle = document.getElementById("sortToggle");
+  const elAccordion = document.getElementById("detailAccordion");
+  const elAccordionToggle = document.getElementById("accordionToggle");
+  const elSummaryDate = document.getElementById("summaryDate");
+  const elSummaryMeeting = document.getElementById("summaryMeeting");
   let todayNickSet = new Set();
   let todayItems = [];
   let todayItemsRaw = [];
@@ -404,6 +532,28 @@
     elTitleText.textContent = `${dateLabel} ${meetingLabel} 출석 체크`.trim();
   }
 
+  function dateKeyToSummaryFormat_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    const parts = dateKey.split("/");
+    return `${parts[0]}.${String(Number(parts[1])).padStart(2, "0")}.${String(Number(parts[2])).padStart(2, "0")}`;
+  }
+
+  function updateAccordionSummary() {
+    const dateKey = getActiveDateKey_();
+    const dateStr = dateKeyToSummaryFormat_(dateKey) || dateKeyToSummaryFormat_(kstTodayYYYYMMDD());
+    const meetingLabel = MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value || "";
+    elSummaryDate.textContent = dateStr;
+    elSummaryMeeting.textContent = meetingLabel;
+  }
+
+  function toggleAccordion(forceState) {
+    if (typeof forceState === "boolean") {
+      elAccordion.classList.toggle("open", forceState);
+    } else {
+      elAccordion.classList.toggle("open");
+    }
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (m) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -604,7 +754,7 @@
       if (json.status) {
         applyStatus(json.status, date);
         setCachedStatus_(date, json.status);
-        setMsg("출석 완료", "success");
+        setMsg("");
         showToast(`✅ ${nickname}님 출석 완료되었습니다! 오늘도 화이팅!`);
         trackEvent("attendance_submit_success", {
           date_key: date,
@@ -615,7 +765,7 @@
           page_to_submit_ms: pageToSubmitMs
         });
       } else {
-        setMsg("출석 등록됨. 목록 업데이트 중...", "success");
+        setMsg("");
         showToast(`✅ ${nickname}님 출석 완료되었습니다! 오늘도 화이팅!`);
         refreshTodayList();
         trackEvent("attendance_submit_success", {
@@ -674,6 +824,7 @@
     elMeeting.value = inferMeetingTypeByDateKey_(today);
     elMeta.textContent = "";
     updateTitle();
+    updateAccordionSummary();
     updateSortUi_();
     refreshTodayList();
     toggleSubmit();
@@ -697,6 +848,8 @@
     renderPagedList();
   });
 
+  elAccordionToggle.addEventListener("click", () => toggleAccordion());
+
   elNick.addEventListener("input", toggleSubmit);
   elToday.addEventListener("change", () => {
     const dateKey = inputValueToDateKey_(elToday.value);
@@ -713,6 +866,7 @@
     setMsg("");
     toggleSubmit();
     updateTitle();
+    updateAccordionSummary();
     refreshTodayList();
     trackEvent("attendance_date_change", {
       date_key: dateKey,
@@ -723,6 +877,7 @@
   elMeeting.addEventListener("change", () => {
     meetingTypeAuto = false;
     updateTitle();
+    updateAccordionSummary();
     trackEvent("attendance_meeting_type_change", {
       meeting_type: elMeeting.value
     });

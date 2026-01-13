@@ -7,6 +7,39 @@
   <link rel="icon" href="assets/dmc_logo.png" />
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background:#f6f7f9; }
+    /* 스테이징 워터마크 */
+    body.staging-env::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 80px,
+        rgba(255, 100, 100, 0.03) 80px,
+        rgba(255, 100, 100, 0.03) 160px
+      );
+      background-size: 200% 200%;
+    }
+    body.staging-env::after {
+      content: "STAGING";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 120px;
+      font-weight: 900;
+      color: rgba(255, 50, 50, 0.06);
+      pointer-events: none;
+      z-index: 9998;
+      white-space: nowrap;
+      letter-spacing: 20px;
+    }
     .wrap { max-width:520px; margin:0 auto; padding:16px; }
     .card { background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 10px rgba(0,0,0,0.06); margin-bottom:12px; }
     h1 { font-size:18px; margin:0 0 10px 0; }
@@ -20,8 +53,12 @@
       backdrop-filter: blur(6px);
       z-index: 10;
     }
-    .top-nav-inner { max-width:520px; margin:0 auto; display:flex; align-items:center; justify-content:flex-start; }
+    .top-nav-inner { max-width:520px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; }
     .back-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:10px; border:1px solid #d7dbe0; background:#fff; font-size:13px; cursor:pointer; }
+    .nav-share-btn { display:none; align-items:center; gap:5px; padding:8px 14px; border-radius:10px; border:1px solid #1f7ae0; background:#fff; font-size:13px; font-weight:500; color:#1f7ae0; cursor:pointer; transition: all 0.15s; }
+    .nav-share-btn:hover { background:#1f7ae0; color:#fff; }
+    .nav-share-btn:active { transform:scale(0.97); }
+    .nav-share-btn .icon { font-size:14px; }
     .hero { display:flex; align-items:center; gap:12px; margin:12px 0; }
     .hero-count { background:#111; color:#fff; padding:12px 16px; border-radius:12px; font-size:18px; font-weight:700; }
     .hero-text { font-size:12px; color:#555; }
@@ -93,12 +130,187 @@
     .cal-day.muted { background:#f9fafb; color:#b0b5bc; border-style:dashed; }
     .cal-day.dim { background:#fbfcfd; color:#c1c5cc; border-color:#eff1f5; }
     .cal-day.hit { background:#1f7ae0; color:#fff; border-color:#1f7ae0; box-shadow:0 6px 12px rgba(31,122,224,0.25); }
+    
+    /* 공유 버튼 스타일 */
+    .share-btn-wrap { margin-top:12px; display:flex; gap:8px; }
+    .share-btn {
+      flex:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      padding:12px 16px;
+      border-radius:12px;
+      border:1px solid #d7dbe0;
+      background:#fff;
+      font-size:14px;
+      font-weight:500;
+      cursor:pointer;
+      transition:all 0.15s ease;
+    }
+    .share-btn:hover { background:#f6f7f9; }
+    .share-btn:active { transform:scale(0.98); }
+    .share-btn.primary { background:#111; color:#fff; border-color:#111; }
+    .share-btn.primary:hover { background:#333; }
+    .share-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .share-btn .icon { font-size:16px; }
+    
+    /* 공유용 캡처 카드 (숨김) - 새 디자인 */
+    .share-capture {
+      position:absolute;
+      left:-9999px;
+      top:-9999px;
+      width:360px;
+      padding:32px 24px;
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+      border-radius:24px;
+      text-align:center;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    /* 원형 프로그레스 (이미지 기반) */
+    .share-capture .progress-ring-wrap {
+      position:relative;
+      width:180px;
+      height:180px;
+      margin:0 auto 16px;
+    }
+    .share-capture .progress-ring-img {
+      width:100%;
+      height:100%;
+    }
+    .share-capture .progress-inner {
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%, -50%);
+      text-align:center;
+    }
+    .share-capture .progress-percent {
+      font-size:52px;
+      font-weight:800;
+      color:#1a5fb4;
+      line-height:1;
+    }
+    .share-capture .progress-icon {
+      font-size:32px;
+      margin-top:8px;
+    }
+    /* 타이틀 & 닉네임 */
+    .share-capture .share-title {
+      font-size:12px;
+      font-weight:600;
+      color:#8a9ab0;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+    .share-capture .share-nickname {
+      font-size:24px;
+      font-weight:700;
+      color:#1a3a5c;
+      margin-bottom:4px;
+    }
+    .share-capture .share-month {
+      font-size:16px;
+      font-weight:500;
+      color:#5a6a7a;
+      margin-bottom:16px;
+    }
+    /* 캘린더 그리드 (축소) */
+    .share-capture .share-cal-wrap {
+      background:#fff;
+      border-radius:12px;
+      padding:12px;
+      box-shadow:0 2px 12px rgba(26,95,180,0.08);
+      max-width:280px;
+      margin:0 auto;
+    }
+    .share-capture .share-cal-grid {
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:4px;
+    }
+    .share-capture .share-cal-head {
+      font-size:9px;
+      font-weight:600;
+      color:#8a9ab0;
+      text-align:center;
+      padding:2px 0;
+    }
+    .share-capture .share-cal-day {
+      background:#f0f4f8;
+      border:none;
+      border-radius:4px;
+      height:20px;
+      width:20px;
+      margin:1px auto;
+    }
+    .share-capture .share-cal-day.muted { 
+      background:transparent; 
+    }
+    .share-capture .share-cal-day.dim { 
+      background:#f5f7fa; 
+    }
+    .share-capture .share-cal-day.hit { 
+      background:linear-gradient(135deg, #4a9eff 0%, #1a5fb4 100%);
+      box-shadow:0 1px 4px rgba(26,95,180,0.35);
+    }
+    /* 통계 */
+    .share-capture .share-stats {
+      display:flex;
+      justify-content:center;
+      gap:24px;
+      margin-top:16px;
+      padding-top:16px;
+      border-top:1px solid #e8f0fa;
+    }
+    .share-capture .share-stat-item {
+      text-align:center;
+    }
+    .share-capture .share-stat-value {
+      font-size:24px;
+      font-weight:800;
+      color:#1a5fb4;
+    }
+    .share-capture .share-stat-label {
+      font-size:11px;
+      color:#8a9ab0;
+      margin-top:2px;
+    }
+    .share-capture .share-footer {
+      margin-top:16px;
+      font-size:11px;
+      color:#a0aab8;
+    }
+    
+    /* 토스트 알림 */
+    .share-toast {
+      position:fixed;
+      bottom:24px;
+      left:50%;
+      transform:translateX(-50%) translateY(100px);
+      background:#111;
+      color:#fff;
+      padding:12px 20px;
+      border-radius:12px;
+      font-size:13px;
+      opacity:0;
+      transition:all 0.3s ease;
+      z-index:1000;
+    }
+    .share-toast.show {
+      transform:translateX(-50%) translateY(0);
+      opacity:1;
+    }
   </style>
 </head>
 <body>
   <div class="top-nav" role="navigation" aria-label="상단 내비게이션">
     <div class="top-nav-inner">
       <button class="back-btn" type="button" onclick="goBackToIndex()">← 뒤로 가기</button>
+      <button class="nav-share-btn" id="navShareBtn" type="button" onclick="shareToSNS()">
+        <span class="icon">📤</span> 공유하기
+      </button>
     </div>
   </div>
   <div class="wrap">
@@ -134,11 +346,66 @@
       <h1>출석 리스트</h1>
       <div class="list" id="list"></div>
     </div>
+    
   </div>
+  
+  <!-- 공유용 캡처 카드 (화면 밖에 숨김) -->
+  <div class="share-capture" id="shareCapture">
+    <!-- 원형 프로그레스 -->
+    <div class="progress-ring-wrap">
+      <img src="assets/progress_0.svg" alt="" class="progress-ring-img" id="progressRingImg" />
+      <div class="progress-inner">
+        <div class="progress-percent" id="sharePercent">0%</div>
+        <div class="progress-icon">🏃</div>
+      </div>
+    </div>
+    
+    <!-- 타이틀 & 닉네임 -->
+    <div class="share-title">MONTHLY ATTENDANCE</div>
+    <div class="share-nickname" id="shareNickname">닉네임</div>
+    <div class="share-month" id="shareMonth">2026년 1월</div>
+    
+    <!-- 캘린더 -->
+    <div class="share-cal-wrap">
+      <div class="share-cal-grid" id="shareCalGrid">
+        <!-- 캘린더 동적 생성 -->
+      </div>
+    </div>
+    
+    <!-- 통계 -->
+    <div class="share-stats">
+      <div class="share-stat-item">
+        <div class="share-stat-value" id="shareCount">0</div>
+        <div class="share-stat-label">출석 횟수</div>
+      </div>
+      <div class="share-stat-item">
+        <div class="share-stat-value" id="shareTotalDays">0</div>
+        <div class="share-stat-label">모임 일수</div>
+      </div>
+    </div>
+    
+    <div class="share-footer">동탄 마라톤 클럽 🏃 (v5)</div>
+  </div>
+  
+  <!-- 토스트 알림 -->
+  <div class="share-toast" id="shareToast"></div>
+
+<!-- html2canvas CDN -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
   // Firebase Cloud Functions URL
-  const BASE_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
+  const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.startsWith("192.168.") || location.hostname.startsWith("172.");
+  const IS_STAGING = location.hostname.includes("dmc-attendance-staging");
+  const PROD_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
+  const STAGING_URL = "https://asia-northeast3-dmc-attendance-staging.cloudfunctions.net/attendance";
+  const LOCAL_URL = `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/attendance`;
+  const BASE_URL = IS_LOCAL ? LOCAL_URL : (IS_STAGING ? STAGING_URL : PROD_URL);
+  
+  // 스테이징 환경 표시
+  if (IS_STAGING) {
+    document.body.classList.add("staging-env");
+  }
   const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
   const LS_HISTORY_PREFIX = "marathon_att_history:";
 
@@ -324,6 +591,11 @@
       );
       renderList(cached.items || []);
       renderCalendar(cached.month || month, cached.items || []);
+      
+      // 캐시에서도 공유 기능 활성화
+      const cachedRate = Number.isFinite(cached.attendanceRate) ? Math.max(0, Math.min(100, cached.attendanceRate)) : 0;
+      renderShareCapture(nickname, cached.month || month, cached.count, cachedRate, cached.items || []);
+      showShareButtons();
     } else {
       setHistoryLoading(true);
     }
@@ -342,6 +614,12 @@
       );
       renderList(json.items || []);
       renderCalendar(json.month || month, json.items || []);
+      
+      // 공유 기능 활성화
+      const rate = Number.isFinite(json.attendanceRate) ? Math.max(0, Math.min(100, json.attendanceRate)) : 0;
+      renderShareCapture(nickname, json.month || month, json.count, rate, json.items || []);
+      showShareButtons();
+      
       trackEvent("history_fetch_success", {
         month: json.month || month,
         latency_ms: Math.round(performance.now() - fetchStart),
@@ -358,6 +636,198 @@
     const month = qs("month").trim();
     trackEvent("history_back_click", { month: month || null });
     window.location.href = "index.html";
+  }
+
+  // ========== SNS 공유 기능 ==========
+  
+  let shareData = null; // 공유용 데이터 저장
+  
+  function showShareButtons() {
+    // 상단 네비게이션 공유 버튼 표시
+    document.getElementById("navShareBtn").style.display = "inline-flex";
+  }
+  
+  function showToast(message) {
+    const toast = document.getElementById("shareToast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2500);
+  }
+  
+  function renderShareCapture(nickname, month, count, rate, items) {
+    // 출석률 원형 프로그레스 (10% 단위 이미지)
+    const rateNum = Number(rate) || 0;
+    document.getElementById("sharePercent").textContent = `${rateNum}%`;
+    const roundedRate = Math.round(rateNum / 10) * 10; // 10% 단위로 반올림
+    document.getElementById("progressRingImg").src = `assets/progress_${roundedRate}.svg`;
+    
+    // 닉네임 표시
+    document.getElementById("shareNickname").textContent = nickname || "닉네임";
+    
+    // 월 표시
+    if (month) {
+      const [y, m] = month.split("-").map(Number);
+      document.getElementById("shareMonth").textContent = `${y}년 ${m}월`;
+    }
+    
+    // 통계
+    document.getElementById("shareCount").textContent = count || 0;
+    
+    // 캘린더 렌더링
+    const grid = document.getElementById("shareCalGrid");
+    grid.innerHTML = "";
+    
+    if (!month) return;
+    const [y, m] = month.split("-").map(Number);
+    const first = new Date(y, m - 1, 1);
+    const startOffset = first.getDay();
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const attended = new Set(
+      (items || [])
+        .map(it => (it.meetingDate || "").split("/")[2])
+        .map(d => Number(d))
+        .filter(Boolean)
+    );
+    
+    // 모임 일수 계산 (화, 목, 토)
+    let meetDaysCount = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const weekday = new Date(y, m - 1, d).getDay();
+      if ([2, 4, 6].includes(weekday)) meetDaysCount++;
+    }
+    document.getElementById("shareTotalDays").textContent = meetDaysCount;
+    
+    // 요일 헤더
+    ["일","월","화","수","목","금","토"].forEach(day => {
+      const cell = document.createElement("div");
+      cell.className = "share-cal-head";
+      cell.textContent = day;
+      grid.appendChild(cell);
+    });
+    
+    // 빈 칸
+    for (let i = 0; i < startOffset; i++) {
+      const cell = document.createElement("div");
+      cell.className = "share-cal-day muted";
+      grid.appendChild(cell);
+    }
+    
+    // 날짜 (숫자 없이 색칠만)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const weekday = new Date(y, m - 1, d).getDay();
+      const isMeetDay = [2, 4, 6].includes(weekday);
+      const hit = attended.has(d);
+      const cell = document.createElement("div");
+      cell.className = `share-cal-day${hit ? " hit" : ""}${!isMeetDay && !hit ? " dim" : ""}`;
+      // 숫자 표시 안 함
+      grid.appendChild(cell);
+    }
+    
+    // 남은 칸 채우기
+    const totalCells = startOffset + daysInMonth;
+    const remaining = (7 - (totalCells % 7)) % 7;
+    for (let i = 0; i < remaining; i++) {
+      const cell = document.createElement("div");
+      cell.className = "share-cal-day muted";
+      grid.appendChild(cell);
+    }
+    
+    // 공유 데이터 저장
+    shareData = { nickname, month, count, rate };
+  }
+  
+  async function generateShareImage() {
+    const captureEl = document.getElementById("shareCapture");
+    
+    // 캡처를 위해 잠시 화면에 표시
+    captureEl.style.position = "fixed";
+    captureEl.style.left = "0";
+    captureEl.style.top = "0";
+    captureEl.style.zIndex = "-1";
+    captureEl.style.opacity = "1";
+    
+    try {
+      const canvas = await html2canvas(captureEl, {
+        backgroundColor: "#ffffff",
+        scale: 2, // 고해상도
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      });
+      
+      return canvas;
+    } finally {
+      // 다시 숨기기
+      captureEl.style.position = "absolute";
+      captureEl.style.left = "-9999px";
+      captureEl.style.top = "-9999px";
+      captureEl.style.zIndex = "";
+      captureEl.style.opacity = "";
+    }
+  }
+  
+  async function downloadShareImage() {
+    trackEvent("share_download_click", { month: shareData?.month });
+    
+    try {
+      const canvas = await generateShareImage();
+      const link = document.createElement("a");
+      link.download = `출석_${shareData?.nickname || "기록"}_${shareData?.month || "월간"}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("✅ 이미지가 저장되었습니다");
+      trackEvent("share_download_success", { month: shareData?.month });
+    } catch (e) {
+      console.error("이미지 생성 실패:", e);
+      showToast("❌ 이미지 저장에 실패했습니다");
+      trackEvent("share_download_error", { error: String(e) });
+    }
+  }
+  
+  async function shareToSNS() {
+    trackEvent("share_sns_click", { month: shareData?.month });
+    
+    try {
+      const canvas = await generateShareImage();
+      
+      // Canvas를 Blob으로 변환
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      const file = new File([blob], `출석_${shareData?.nickname || "기록"}.png`, { type: "image/png" });
+      
+      // Web Share API 지원 확인
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `🏃 ${shareData?.nickname} 출석 기록`,
+          text: `${shareData?.month} 출석 ${shareData?.count}회 (출석률 ${shareData?.rate}%)`,
+          files: [file]
+        });
+        showToast("✅ 공유되었습니다");
+        trackEvent("share_sns_success", { month: shareData?.month });
+      } else if (navigator.share) {
+        // 파일 공유 미지원 시 텍스트만 공유
+        await navigator.share({
+          title: `🏃 ${shareData?.nickname} 출석 기록`,
+          text: `${shareData?.month} 출석 ${shareData?.count}회 (출석률 ${shareData?.rate}%)\n\n#동탄마라톤클럽 #출석인증`,
+          url: window.location.href
+        });
+        showToast("✅ 공유되었습니다");
+        trackEvent("share_sns_text_only", { month: shareData?.month });
+      } else {
+        // Web Share API 미지원 시 이미지 다운로드로 폴백
+        await downloadShareImage();
+        showToast("💡 이미지를 저장한 후 SNS에서 직접 공유해주세요");
+        trackEvent("share_sns_fallback_download", { month: shareData?.month });
+      }
+    } catch (e) {
+      if (e.name === "AbortError") {
+        // 사용자가 공유 취소
+        trackEvent("share_sns_cancelled", { month: shareData?.month });
+        return;
+      }
+      console.error("공유 실패:", e);
+      showToast("❌ 공유에 실패했습니다. 이미지를 저장해주세요.");
+      trackEvent("share_sns_error", { error: String(e) });
+    }
   }
 
   loadHistory();

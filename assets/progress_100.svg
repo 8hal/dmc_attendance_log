@@ -1,0 +1,12 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#e8f0fa" stroke-width="16"/>
+  <circle cx="100" cy="100" r="90" fill="none" stroke="url(#grad)" stroke-width="16" 
+          stroke-linecap="round" stroke-dasharray="565.5" stroke-dashoffset="0"
+          transform="rotate(-90 100 100)"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4a9eff"/>
+      <stop offset="100%" style="stop-color:#1a5fb4"/>
+    </linearGradient>
+  </defs>
+</svg>
