@@ -495,6 +495,75 @@
     return "ETC";
   }
 
+  // 요일 기반 기본 날짜/정모 유형 계산
+  // 월: 토요정모(2일전), 화: 화요정모(당일), 수: 화요정모(1일전)
+  // 목: 목요정모(당일), 금: 목요정모(1일전), 토: 토요정모(당일), 일: 토요정모(1일전)
+  function getDefaultDateAndMeetingType() {
+    // 스테이징에서 ?testDate=2026-01-20 형식으로 테스트 가능
+    const urlParams = new URLSearchParams(window.location.search);
+    const testDateParam = urlParams.get('testDate');
+    let now = new Date();
+    
+    if ((IS_LOCAL || IS_STAGING) && testDateParam) {
+      const parsed = new Date(testDateParam + 'T10:00:00+09:00');
+      if (!isNaN(parsed.getTime())) {
+        now = parsed;
+        console.log('[TEST MODE] 테스트 날짜:', testDateParam);
+      }
+    }
+    const kstFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      weekday: "short"
+    });
+    const dow = kstFormatter.format(now); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+
+    // 날짜 오프셋 (0=당일, -1=어제, -2=그저께)
+    let dayOffset = 0;
+    let meetingType = "SAT";
+
+    switch (dow) {
+      case "Mon":
+        dayOffset = -2; // 토요일
+        meetingType = "SAT";
+        break;
+      case "Tue":
+        dayOffset = 0; // 당일
+        meetingType = "TUE";
+        break;
+      case "Wed":
+        dayOffset = -1; // 화요일
+        meetingType = "TUE";
+        break;
+      case "Thu":
+        dayOffset = 0; // 당일
+        meetingType = "THU";
+        break;
+      case "Fri":
+        dayOffset = -1; // 목요일
+        meetingType = "THU";
+        break;
+      case "Sat":
+        dayOffset = 0; // 당일
+        meetingType = "SAT";
+        break;
+      case "Sun":
+        dayOffset = -1; // 토요일
+        meetingType = "SAT";
+        break;
+    }
+
+    // KST 기준 날짜 계산
+    const kstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    kstDate.setDate(kstDate.getDate() + dayOffset);
+    
+    const year = kstDate.getFullYear();
+    const month = String(kstDate.getMonth() + 1).padStart(2, "0");
+    const day = String(kstDate.getDate()).padStart(2, "0");
+    const dateKey = `${year}/${month}/${day}`;
+
+    return { dateKey, meetingType };
+  }
+
   function loadProfile() {
     const n = localStorage.getItem(LS_NICK) || "";
     const t = localStorage.getItem(LS_TEAM) || "";
@@ -818,10 +887,13 @@
     initAnalytics();
     populateTeamOptions();
     loadProfile();
-    const today = kstTodayYYYYMMDD();
-    setActiveDateKey_(today);
+    
+    // 요일 기반 기본 날짜/정모 유형 설정
+    const defaults = getDefaultDateAndMeetingType();
+    setActiveDateKey_(defaults.dateKey);
     populateMeetingOptions();
-    elMeeting.value = inferMeetingTypeByDateKey_(today);
+    elMeeting.value = defaults.meetingType;
+    
     elMeta.textContent = "";
     updateTitle();
     updateAccordionSummary();
@@ -829,7 +901,7 @@
     refreshTodayList();
     toggleSubmit();
     trackEvent("attendance_view", {
-      date_key: today,
+      date_key: defaults.dateKey,
       meeting_type: elMeeting.value,
       meeting_type_auto: meetingTypeAuto
     });
