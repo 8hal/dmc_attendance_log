@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>마라톤 클럽 출석</title>
+  <title>출석 체크 - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
   <style>
     :root {
@@ -893,6 +893,11 @@
     setActiveDateKey_(defaults.dateKey);
     populateMeetingOptions();
     elMeeting.value = defaults.meetingType;
+    
+    // 페이지 타이틀 동적 설정 (예: "1월 18일 토요일 정모 출석 체크 - 동탄 마라톤 클럽")
+    const meetingLabel = MEETING_TYPES.find(m => m.value === defaults.meetingType)?.label || '기타';
+    const [, titleMonth, titleDay] = defaults.dateKey.split('/');
+    document.title = `${Number(titleMonth)}월 ${Number(titleDay)}일 ${meetingLabel} 출석 체크 - 동탄 마라톤 클럽`;
     
     elMeta.textContent = "";
     updateTitle();
