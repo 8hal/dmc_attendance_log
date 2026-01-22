@@ -196,6 +196,44 @@
     .skeleton-line.md { height:12px; width:80%; }
     .skeleton-line.lg { height:14px; width:90%; }
     @keyframes shimmer { to { transform: translateX(160%); } }
+    /* 자동완성 드롭다운 */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin: 4px 0 0 0;
+      padding: 0;
+      list-style: none;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.12);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .autocomplete-list.show { display: block; }
+    .autocomplete-list li {
+      padding: 12px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--color-text);
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .autocomplete-list li:last-child { border-bottom: none; }
+    .autocomplete-list li:hover,
+    .autocomplete-list li.active {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .autocomplete-list li mark {
+      background: transparent;
+      color: var(--color-primary);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -208,7 +246,10 @@
 
       <div class="row">
         <label>닉네임</label>
-        <input id="nickname" type="text" placeholder="예: 게살볶음밥" />
+        <div class="autocomplete-wrap">
+          <input id="nickname" type="text" placeholder="예: 게살볶음밥" autocomplete="off" />
+          <ul id="nicknameList" class="autocomplete-list"></ul>
+        </div>
       </div>
 
       <div class="row">
@@ -306,6 +347,7 @@
   const LS_NICK = "marathon_att_nickname";
   const LS_TEAM = "marathon_att_team";
   const LS_STATUS_PREFIX = "marathon_att_status:";
+  const LS_NICKNAMES = "marathon_att_nicknames_cache";
 
   const elNick = document.getElementById("nickname");
   const elTeam = document.getElementById("team");
@@ -327,6 +369,7 @@
   const elAccordionToggle = document.getElementById("accordionToggle");
   const elSummaryDate = document.getElementById("summaryDate");
   const elSummaryMeeting = document.getElementById("summaryMeeting");
+  const elNicknameList = document.getElementById("nicknameList");
   let todayNickSet = new Set();
   let todayItems = [];
   let todayItemsRaw = [];
@@ -577,6 +620,99 @@
     localStorage.setItem(LS_TEAM, (elTeam.value || "").trim());
   }
 
+  // 닉네임 자동완성 캐시 관리
+  function loadNicknameCache() {
+    try {
+      const raw = localStorage.getItem(LS_NICKNAMES);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveNicknameCache(nicknames) {
+    try {
+      // 최대 500개까지만 저장
+      const limited = nicknames.slice(0, 500);
+      localStorage.setItem(LS_NICKNAMES, JSON.stringify(limited));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  function mergeNicknameCache(newNicknames) {
+    const existing = new Set(loadNicknameCache());
+    newNicknames.forEach(nick => existing.add(nick));
+    // 가나다순 정렬
+    const sorted = [...existing].sort((a, b) => a.localeCompare(b, 'ko'));
+    saveNicknameCache(sorted);
+    return sorted;
+  }
+
+  let nicknameListCache = [];
+  let autocompleteActiveIndex = -1;
+
+  function updateNicknameDatalist(nicknames) {
+    nicknameListCache = nicknames || loadNicknameCache();
+  }
+
+  function showAutocomplete(query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q || nicknameListCache.length === 0) {
+      hideAutocomplete();
+      return;
+    }
+    
+    const filtered = nicknameListCache.filter(nick => 
+      nick.toLowerCase().includes(q)
+    ).slice(0, 10);
+    
+    if (filtered.length === 0) {
+      hideAutocomplete();
+      return;
+    }
+    
+    elNicknameList.innerHTML = filtered.map(nick => {
+      const idx = nick.toLowerCase().indexOf(q);
+      const highlighted = idx >= 0
+        ? escapeHtml(nick.slice(0, idx)) + '<mark>' + escapeHtml(nick.slice(idx, idx + q.length)) + '</mark>' + escapeHtml(nick.slice(idx + q.length))
+        : escapeHtml(nick);
+      return `<li data-value="${escapeHtml(nick)}">${highlighted}</li>`;
+    }).join("");
+    
+    elNicknameList.classList.add("show");
+    autocompleteActiveIndex = -1;
+  }
+
+  function hideAutocomplete() {
+    elNicknameList.classList.remove("show");
+    elNicknameList.innerHTML = "";
+    autocompleteActiveIndex = -1;
+  }
+
+  function selectAutocompleteItem(value) {
+    elNick.value = value;
+    hideAutocomplete();
+    toggleSubmit();
+  }
+
+  async function fetchNicknames() {
+    try {
+      const res = await fetch(`${BASE_URL}?action=nicknames`);
+      const json = await res.json();
+      if (json.ok && Array.isArray(json.nicknames)) {
+        saveNicknameCache(json.nicknames);
+        updateNicknameDatalist(json.nicknames);
+        return json.nicknames;
+      }
+    } catch (e) {
+      console.warn("[fetchNicknames] error:", e);
+    }
+    return [];
+  }
+
   function toggleSubmit() {
     const hasNick = !!(elNick.value || "").trim();
     const hasValidDate = !!inputValueToDateKey_(elToday.value);
@@ -710,6 +846,15 @@
     todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
     elCount.textContent = `${status?.date || fallbackDate} 출석 인원: ${items.length}명`;
     renderPagedList();
+    
+    // 닉네임 캐시에 추가 (TEST 닉네임 제외)
+    const newNicknames = items
+      .map(it => String(it.nickname || "").trim())
+      .filter(nick => nick && !nick.toUpperCase().startsWith("TEST"));
+    if (newNicknames.length > 0) {
+      mergeNicknameCache(newNicknames);
+      updateNicknameDatalist();
+    }
   }
 
   function openHistory(nickname, monthKey) {
@@ -887,6 +1032,8 @@
     initAnalytics();
     populateTeamOptions();
     loadProfile();
+    updateNicknameDatalist();  // 캐시된 닉네임 목록 즉시 로드
+    fetchNicknames();  // 서버에서 최신 목록 병렬 호출 (백그라운드)
     
     // 요일 기반 기본 날짜/정모 유형 설정
     const defaults = getDefaultDateAndMeetingType();
@@ -927,7 +1074,57 @@
 
   elAccordionToggle.addEventListener("click", () => toggleAccordion());
 
-  elNick.addEventListener("input", toggleSubmit);
+  // 닉네임 자동완성 이벤트
+  elNick.addEventListener("input", () => {
+    toggleSubmit();
+    showAutocomplete(elNick.value);
+  });
+  
+  elNick.addEventListener("focus", () => {
+    if (elNick.value.trim()) {
+      showAutocomplete(elNick.value);
+    }
+  });
+  
+  elNicknameList.addEventListener("click", (e) => {
+    const li = e.target.closest("li");
+    if (li && li.dataset.value) {
+      selectAutocompleteItem(li.dataset.value);
+    }
+  });
+  
+  // 키보드 네비게이션
+  elNick.addEventListener("keydown", (e) => {
+    const items = elNicknameList.querySelectorAll("li");
+    if (!items.length || !elNicknameList.classList.contains("show")) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      autocompleteActiveIndex = Math.min(autocompleteActiveIndex + 1, items.length - 1);
+      items.forEach((li, i) => li.classList.toggle("active", i === autocompleteActiveIndex));
+      items[autocompleteActiveIndex]?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      autocompleteActiveIndex = Math.max(autocompleteActiveIndex - 1, 0);
+      items.forEach((li, i) => li.classList.toggle("active", i === autocompleteActiveIndex));
+      items[autocompleteActiveIndex]?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter" && autocompleteActiveIndex >= 0) {
+      e.preventDefault();
+      const selected = items[autocompleteActiveIndex];
+      if (selected?.dataset.value) {
+        selectAutocompleteItem(selected.dataset.value);
+      }
+    } else if (e.key === "Escape") {
+      hideAutocomplete();
+    }
+  });
+  
+  // 외부 클릭 시 닫기
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".autocomplete-wrap")) {
+      hideAutocomplete();
+    }
+  });
   elToday.addEventListener("change", () => {
     const dateKey = inputValueToDateKey_(elToday.value);
     if (!dateKey) {

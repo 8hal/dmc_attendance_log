@@ -5,6 +5,7 @@
  * - POST /attendance - 출석 등록
  * - GET /attendance?action=status&date=YYYY/MM/DD - 날짜별 출석 현황
  * - GET /attendance?action=history&nickname=xxx&month=YYYY-MM - 월간 출석 기록
+ * - GET /attendance?action=nicknames&limit=500 - 닉네임 목록 조회 (자동완성용)
  */
 
 const { setGlobalOptions } = require("firebase-functions/v2");
@@ -392,6 +393,36 @@ async function getHistoryForNicknameMonth(nickname, monthKey) {
 }
 
 /**
+ * 닉네임 목록 조회 (자동완성용)
+ * TEST로 시작하는 닉네임 제외, 가나다순 정렬
+ */
+async function getNicknames(limit = 500) {
+  // 최근 출석 기록에서 닉네임 추출 (최대 limit * 3개 문서 조회 후 중복 제거)
+  const snapshot = await db
+    .collection(COLLECTION)
+    .orderBy("ts", "desc")
+    .limit(limit * 3)
+    .get();
+
+  const nickSet = new Set();
+  snapshot.docs.forEach((doc) => {
+    const nickname = doc.data().nickname;
+    // TEST로 시작하는 닉네임 제외
+    if (nickname && !nickname.toUpperCase().startsWith("TEST")) {
+      nickSet.add(nickname);
+    }
+  });
+
+  // 가나다순 정렬 후 limit 적용
+  const sorted = [...nickSet].sort((a, b) => a.localeCompare(b, "ko")).slice(0, limit);
+
+  return {
+    nicknames: sorted,
+    count: sorted.length,
+  };
+}
+
+/**
  * GET 요청 핸들러
  */
 async function handleGet(req, res) {
@@ -399,6 +430,14 @@ async function handleGet(req, res) {
 
   try {
     const action = str(req.query.action || "status").trim();
+
+    if (action === "nicknames") {
+      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 500, 1), 1000);
+      const result = await getNicknames(limit);
+      const durationMs = Date.now() - startMs;
+      console.log(`[GET nicknames] ${result.count} items - ${durationMs}ms`);
+      return res.json({ ok: true, ...result });
+    }
 
     if (action === "status") {
       const dateKey = str(req.query.date).trim() || kstTodayKey();
