@@ -176,7 +176,10 @@
             <h2 id="reviewEventName" style="margin:0"></h2>
             <div id="reviewEventDate" style="font-size:13px; color:var(--color-text-secondary)"></div>
           </div>
-          <button class="btn btn-outline btn-sm" id="backBtn">← 대회 선택</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-outline btn-sm" id="rescrapeBtn" style="color:var(--color-warning); border-color:var(--color-warning)">다시 스크래핑</button>
+            <button class="btn btn-outline btn-sm" id="backBtn">← 대회 선택</button>
+          </div>
         </div>
       </div>
 
@@ -290,13 +293,13 @@
         }
 
         list.innerHTML = data.events.map(e => `
-          <div class="event-item ${e.alreadyScraped ? "already-scraped" : ""}" data-source="${e.source}" data-source-id="${e.sourceId}" data-name="${e.name}" data-date="${e.date || ""}">
+          <div class="event-item ${e.alreadyScraped ? "already-scraped" : ""}" data-source="${e.source}" data-source-id="${e.sourceId}" data-name="${e.name}" data-date="${e.date || ""}" ${e.jobId ? `data-job-id="${e.jobId}"` : ""}>
             <div class="event-info">
               <div class="event-name">${e.name}</div>
               <div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div>
             </div>
             ${e.alreadyScraped
-              ? '<span class="event-badge badge-complete">스크래핑됨</span>'
+              ? '<span class="event-badge badge-complete">스크래핑됨 — 클릭하여 열기</span>'
               : '<span class="event-badge" style="background:#DBEAFE;color:#2563EB">검색하기</span>'}
           </div>
         `).join("");
@@ -305,7 +308,12 @@
         list.querySelectorAll(".event-item").forEach(el => {
           el.addEventListener("click", async () => {
             if (el.classList.contains("already-scraped")) {
-              showToast("이미 스크래핑된 대회입니다. '스크래핑 완료' 탭에서 확인하세요.");
+              const jobId = el.dataset.jobId;
+              if (jobId) {
+                loadJob(jobId);
+              } else {
+                showToast("이미 스크래핑된 대회입니다. '스크래핑 완료' 탭에서 확인하세요.");
+              }
               return;
             }
             if (scraping) {
@@ -787,6 +795,44 @@
       showScreen("screenSelect");
       loadDiscoveredEvents();
       loadScrapedJobs();
+    });
+
+    // ─── 다시 스크래핑 ────────────────────────────────────
+    document.getElementById("rescrapeBtn").addEventListener("click", async () => {
+      if (!currentJob) return;
+      if (!confirm("기존 결과가 새 결과로 교체됩니다.\n이전 리뷰 작업(포함/제외/PB 결정)도 초기화됩니다.\n\n진행하시겠습니까?")) return;
+
+      const btn = document.getElementById("rescrapeBtn");
+      btn.disabled = true;
+      btn.textContent = "스크래핑 중...";
+
+      try {
+        const res = await fetch(`${API_BASE}?action=scrape`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: currentJob.source,
+            sourceId: currentJob.sourceId,
+            eventName: currentJob.eventName,
+            eventDate: currentJob.eventDate,
+            replaceJobId: currentJob.jobId,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+
+        // localStorage 초기화
+        const key = `review_${currentJob.jobId || currentJob.sourceId}`;
+        localStorage.removeItem(key);
+
+        showToast(`재스크래핑 완료: ${data.foundCount}명 발견`);
+        await loadJob(data.jobId);
+      } catch (err) {
+        showToast("오류: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "다시 스크래핑";
+      }
     });
 
     // ─── 요약 텍스트 생성 ────────────────────────────────

@@ -669,16 +669,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       });
 
       const existingSnap = await db.collection("scrape_jobs").get();
-      const existingKeys = new Set();
+      const existingMap = new Map();
       existingSnap.forEach((doc) => {
         const d = doc.data();
-        existingKeys.add(`${d.source}:${d.sourceId}`);
+        existingMap.set(`${d.source}:${d.sourceId}`, doc.id);
       });
 
-      const events = recent.map((e) => ({
-        ...e,
-        alreadyScraped: existingKeys.has(`${e.source}:${e.sourceId}`),
-      }));
+      const events = recent.map((e) => {
+        const key = `${e.source}:${e.sourceId}`;
+        const jobId = existingMap.get(key);
+        return { ...e, alreadyScraped: !!jobId, ...(jobId ? { jobId } : {}) };
+      });
 
       return res.json({ ok: true, events });
     }
@@ -705,7 +706,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
     }
 
     if (action === "scrape" && req.method === "POST") {
-      const { source, sourceId, eventName, eventDate } = req.body || {};
+      const { source, sourceId, eventName, eventDate, replaceJobId } = req.body || {};
       if (!source || !sourceId) {
         return res.status(400).json({ ok: false, error: "source and sourceId required" });
       }
@@ -722,16 +723,23 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
       const pbMap = scraper.buildPBMap(confirmedResults);
 
-      const jobRef = db.collection("scrape_jobs").doc();
-      await jobRef.set({
+      // replaceJobId가 있으면 기존 문서 덮어쓰기, 없으면 새 문서 생성
+      const jobRef = replaceJobId
+        ? db.collection("scrape_jobs").doc(replaceJobId)
+        : db.collection("scrape_jobs").doc();
+
+      const now = new Date().toISOString();
+      const jobData = {
         source, sourceId,
         eventName: eventName || sourceId,
         eventDate: eventDate || "",
         status: "running",
         progress: { searched: 0, total: members.length, found: 0 },
         results: [],
-        createdAt: new Date().toISOString(),
-      });
+        createdAt: now,
+        ...(replaceJobId ? { rescrapedAt: now } : {}),
+      };
+      await jobRef.set(jobData);
 
       const jobId = jobRef.id;
 
