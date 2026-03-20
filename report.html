@@ -405,6 +405,64 @@
       }
     }
 
+    // ─── localStorage 저장/복원 ───────────────────────────
+    function saveReviewState() {
+      if (!currentJob) return;
+      const key = `review_${currentJob.jobId || currentJob.sourceId}`;
+      const state = reviewRows.map(r => ({
+        idx: r.idx,
+        decision: r.decision,
+        pbConfirmed: r.pbConfirmed,
+        selectedCandidate: r.selectedCandidate,
+        // 수동 추가 행은 전체 데이터 저장
+        ...(r.status === "manual" ? { _manual: true, memberNickname: r.memberNickname, memberRealName: r.memberRealName, distance: r.distance, netTime: r.netTime, memberGender: r.memberGender } : {}),
+      }));
+      localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), state }));
+    }
+
+    function restoreReviewState() {
+      if (!currentJob) return false;
+      const key = `review_${currentJob.jobId || currentJob.sourceId}`;
+      const raw = localStorage.getItem(key);
+      if (!raw) return false;
+
+      try {
+        const { savedAt, state } = JSON.parse(raw);
+        // 24시간 이상 된 저장은 무시
+        if (Date.now() - savedAt > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem(key);
+          return false;
+        }
+
+        // 수동 추가 행 복원
+        const manualRows = state.filter(s => s._manual);
+        for (const m of manualRows) {
+          if (!reviewRows.find(r => r.memberRealName === m.memberRealName && r.status === "manual")) {
+            reviewRows.push({
+              idx: reviewRows.length, name: m.memberRealName, bib: "", distance: m.distance,
+              netTime: m.netTime, gunTime: "", overallRank: null, genderRank: null, pace: "",
+              memberRealName: m.memberRealName, memberNickname: m.memberNickname,
+              memberGender: m.memberGender || "", status: "manual", candidateCount: 1,
+              isPB: false, decision: m.decision, pbConfirmed: m.pbConfirmed, selectedCandidate: true,
+            });
+          }
+        }
+
+        // 기존 행 상태 복원
+        for (const s of state) {
+          if (s._manual) continue;
+          const row = reviewRows[s.idx];
+          if (!row) continue;
+          row.decision = s.decision;
+          row.pbConfirmed = s.pbConfirmed;
+          row.selectedCandidate = s.selectedCandidate;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     function openReview(job) {
       currentJob = job;
       document.getElementById("reviewEventName").textContent = job.eventName || "대회";
@@ -413,22 +471,13 @@
       reviewRows = (job.results || []).map((r, i) => ({
         ...r,
         idx: i,
-        // pending: 아직 결정 안 됨 (초기 상태). included: 포함. excluded: 명시적 제외
-        // DNF는 처음부터 excluded로 고정
         decision: (!r.netTime || r.netTime === "--:--:--") ? "excluded" : "pending",
         pbConfirmed: r.isPB || false,
         selectedCandidate: r.status !== "ambiguous",
       }));
 
-      // ambiguous 그룹: 같은 이름의 첫 번째만 기본 포함
-      const ambiguousGroups = {};
-      reviewRows.forEach(r => {
-        if (r.status === "ambiguous") {
-          const key = r.memberRealName;
-          if (!ambiguousGroups[key]) ambiguousGroups[key] = [];
-          ambiguousGroups[key].push(r);
-        }
-      });
+      const restored = restoreReviewState();
+      if (restored) showToast("이전 작업 상태를 복원했습니다");
 
       renderTable();
       updateStats();
@@ -650,6 +699,7 @@
         : "";
 
       renderPostPreview();
+      saveReviewState();
     }
 
     // ─── 수동 스크래핑 ───────────────────────────────────
