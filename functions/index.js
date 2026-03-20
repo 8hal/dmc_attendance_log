@@ -609,19 +609,41 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
         .get();
 
       const jobs = [];
+      const fixPromises = [];
+
       snap.forEach((doc) => {
         const d = doc.data();
-        jobs.push({
-          jobId: doc.id,
-          source: d.source,
-          sourceId: d.sourceId,
-          eventName: d.eventName,
-          eventDate: d.eventDate,
-          status: d.status,
-          foundCount: d.results?.length || 0,
-          createdAt: d.createdAt,
-        });
+        const needsFix = !d.eventName || d.eventName === d.sourceId || /^\d{12,}$/.test(d.eventName);
+
+        if (needsFix) {
+          fixPromises.push(
+            scraper.getEventInfo(d.source, d.sourceId).then((info) => {
+              const patch = {};
+              if (info.title && info.title !== d.sourceId) patch.eventName = info.title;
+              if (info.date && !d.eventDate) patch.eventDate = info.date;
+              if (Object.keys(patch).length > 0) {
+                doc.ref.update(patch).catch(() => {});
+              }
+              return {
+                jobId: doc.id, source: d.source, sourceId: d.sourceId,
+                eventName: patch.eventName || d.eventName,
+                eventDate: patch.eventDate || d.eventDate,
+                status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt,
+              };
+            })
+          );
+        } else {
+          jobs.push({
+            jobId: doc.id, source: d.source, sourceId: d.sourceId,
+            eventName: d.eventName, eventDate: d.eventDate,
+            status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt,
+          });
+        }
       });
+
+      const fixed = await Promise.all(fixPromises);
+      jobs.push(...fixed);
+      jobs.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
       return res.json({ ok: true, jobs });
     }

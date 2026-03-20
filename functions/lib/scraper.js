@@ -230,10 +230,33 @@ async function searchMember(source, sourceId, memberName) {
   }
 }
 
+async function getSmartChipEventInfo(sourceId) {
+  try {
+    const res = await fetch(
+      `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${sourceId}`
+    );
+    const html = await res.text();
+    const nameMatch = html.match(/class="box white"[^>]*>\s*([^\n<]{2,80})\s*<\/div>/);
+    const title = nameMatch ? nameMatch[1].trim() : `SmartChip ${sourceId}`;
+
+    // main.html selectItem 드롭다운에서 날짜 찾기
+    const mainRes = await fetch("https://www.smartchip.co.kr/main.html");
+    const mainHtml = await mainRes.text();
+    const dateMatch = mainHtml.match(
+      new RegExp(`selectItem\\s*\\(\\s*'\\((\\d{4}-\\d{2}-\\d{2})\\)[^']*'\\s*,\\s*'${sourceId}'`)
+    );
+
+    return { title, date: dateMatch ? dateMatch[1] : null };
+  } catch {
+    return { title: `SmartChip ${sourceId}`, date: null };
+  }
+}
+
 async function getEventInfo(source, sourceId) {
   switch (source) {
     case "spct": return getSPCTEventInfo(sourceId);
     case "myresult": return getMyResultEventInfo(sourceId);
+    case "smartchip": return getSmartChipEventInfo(sourceId);
     case "marazone": {
       const comps = await (await fetch("https://raceresult.co.kr/api/record-competitions")).json();
       const match = comps.find((c) => c.comp_title === sourceId);

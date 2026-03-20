@@ -71,3 +71,6 @@ node_modules/
 # Migration scripts - sensitive files
 scripts/service-account.json
 scripts/data.csv
+
+# 로컬 데이터 (실명/기록 포함, 개인정보)
+data/
