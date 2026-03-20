@@ -231,25 +231,61 @@ async function searchMember(source, sourceId, memberName) {
 }
 
 async function getSmartChipEventInfo(sourceId) {
+  let title = `SmartChip ${sourceId}`;
+  let date = null;
+
+  // 1) Search_Ballyno.html에서 정확한 대회명
   try {
     const res = await fetch(
       `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${sourceId}`
     );
     const html = await res.text();
     const nameMatch = html.match(/class="box white"[^>]*>\s*([^\n<]{2,80})\s*<\/div>/);
-    const title = nameMatch ? nameMatch[1].trim() : `SmartChip ${sourceId}`;
+    if (nameMatch) title = nameMatch[1].trim();
+  } catch { /* ignore */ }
 
-    // main.html selectItem 드롭다운에서 날짜 찾기
+  // 2) main.html selectItem 드롭다운에서 날짜 (과거 대회)
+  try {
     const mainRes = await fetch("https://www.smartchip.co.kr/main.html");
     const mainHtml = await mainRes.text();
     const dateMatch = mainHtml.match(
       new RegExp(`selectItem\\s*\\(\\s*'\\((\\d{4}-\\d{2}-\\d{2})\\)[^']*'\\s*,\\s*'${sourceId}'`)
     );
+    if (dateMatch) date = dateMatch[1];
+  } catch { /* ignore */ }
 
-    return { title, date: dateMatch ? dateMatch[1] : null };
-  } catch {
-    return { title: `SmartChip ${sourceId}`, date: null };
+  // 3) 날짜 못 찾으면: Smart_Member_Recorddata_Select.asp로 rally_date 추출
+  //    인증 불필요. sourceId = Year_Gbn(4자리) + Rally_Id(나머지).
+  //    참가 기록이 있는 회원의 memberid가 필요하므로 여러 명 시도.
+  if (!date) {
+    const yearGbn = sourceId.slice(0, 4);
+    const rallyId = sourceId.slice(4);
+    const PROBE_IDS = ["79813", "78498", "80001", "75000", "82000"];
+
+    for (const mid of PROBE_IDS) {
+      try {
+        const memberRes = await fetch(
+          "https://smartchip.co.kr/data/Smart_Member_Recorddata_Select.asp",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+            body: `memberid=${mid}`,
+          }
+        );
+        const records = await memberRes.json();
+        const match = records.find(
+          (r) => r.Year_Gbn === yearGbn && r.Rally_Id === rallyId
+        );
+        if (match?.rally_date) {
+          date = match.rally_date;
+          if (match.rally_name && title.startsWith("SmartChip")) title = match.rally_name;
+          break;
+        }
+      } catch { /* ignore, try next */ }
+    }
   }
+
+  return { title, date };
 }
 
 async function getEventInfo(source, sourceId) {
