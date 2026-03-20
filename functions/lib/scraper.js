@@ -135,18 +135,7 @@ function scDecrypt(secret, html) {
   return text;
 }
 
-async function searchSmartChip(eventId, memberName) {
-  const params = new URLSearchParams();
-  params.append("nameorbibno", memberName);
-  params.append("usedata", eventId);
-  const res = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-  });
-  const html = await res.text();
-  if (html.includes("검색 결과가 없습니다") || html.length < 5000) return [];
-
+function parseSmartChipResult(html, memberName) {
   const $ = cheerioLoad(html);
   const jamsil = [];
   $(".jamsil-bold-center").each((_, el) => {
@@ -166,8 +155,61 @@ async function searchSmartChip(eventId, memberName) {
   const rankData = html.match(/var rawData\s*=\s*\[([^\]]*)\]/);
   const overallRank = rankData ? parseInt(rankData[1].split(",")[0]) : null;
 
-  if (!netTime) return [];
-  return [{ name, bib, distance, netTime: normTime(netTime), gunTime: "", overallRank, genderRank: null, gender: null, pace: "" }];
+  if (!netTime) return null;
+  return { name, bib, distance, netTime: normTime(netTime), gunTime: "", overallRank, genderRank: null, gender: null, pace: "" };
+}
+
+async function searchSmartChip(eventId, memberName) {
+  const params = new URLSearchParams();
+  params.append("nameorbibno", memberName);
+  params.append("usedata", eventId);
+  const res = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+  const html = await res.text();
+
+  // 동명이인: name_search_result.asp로 리다이렉트 → 배번 목록 파싱 후 각각 재검색
+  if (html.includes("name_search_result.asp")) {
+    const yearGbn = eventId.slice(0, 4);
+    const rallyNo = eventId.slice(4);
+    const listUrl = `https://www.smartchip.co.kr/name_search_result.asp?name=${encodeURIComponent(memberName)}&Year_Gbn=${yearGbn}&Rally_no=${rallyNo}`;
+    try {
+      const listRes = await fetch(listUrl);
+      const listHtml = await listRes.text();
+      const $ = cheerioLoad(listHtml);
+      const bibs = [];
+      $("td").each((_, el) => {
+        const text = $(el).text().trim();
+        if (/^\d{3,6}$/.test(text)) bibs.push(text);
+      });
+
+      const results = [];
+      for (const bib of bibs) {
+        await sleep(DELAY_MS);
+        const bibParams = new URLSearchParams();
+        bibParams.append("nameorbibno", bib);
+        bibParams.append("usedata", eventId);
+        const bibRes = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: bibParams.toString(),
+        });
+        const bibHtml = await bibRes.text();
+        const r = parseSmartChipResult(bibHtml, memberName);
+        if (r) results.push(r);
+      }
+      return results;
+    } catch {
+      return [];
+    }
+  }
+
+  if (html.includes("기록이 없습니다") || html.length < 5000) return [];
+
+  const r = parseSmartChipResult(html, memberName);
+  return r ? [r] : [];
 }
 
 // ─── MyResult 검색 ────────────────────────────────────────────
