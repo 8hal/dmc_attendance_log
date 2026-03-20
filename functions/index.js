@@ -613,7 +613,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
 
       snap.forEach((doc) => {
         const d = doc.data();
-        const needsFix = !d.eventName || d.eventName === d.sourceId || /^\d{12,}$/.test(d.eventName);
+        const badName = !d.eventName || d.eventName === d.sourceId || /^\d{12,}$/.test(d.eventName);
+        const badDate = !d.eventDate;
+        const needsFix = badName || badDate;
 
         if (needsFix) {
           fixPromises.push(
