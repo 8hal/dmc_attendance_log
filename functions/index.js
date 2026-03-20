@@ -10,8 +10,10 @@
 
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const scraper = require("./lib/scraper");
 const { google } = require("googleapis");
 
 // 초기화
@@ -482,6 +484,267 @@ async function handleGet(req, res) {
 }
 
 // ==================== HTTP 엔드포인트 ====================
+
+// ==================== Race: 스케줄 + API ====================
+
+/**
+ * 주간 자동 이벤트 발견 + 스크래핑 (토/일 15:00 KST)
+ * 최근 2주 내 이벤트를 발견하고, 아직 스크래핑하지 않은 이벤트에 대해 전 회원 검색
+ */
+exports.weeklyDiscoverAndScrape = onSchedule(
+  {
+    schedule: "0 15 * * 6,0",
+    timeZone: "Asia/Seoul",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+    region: "asia-northeast3",
+  },
+  async () => {
+    const year = new Date().getFullYear();
+    console.log(`[weeklyDiscoverAndScrape] ${year}년 이벤트 발견 시작`);
+
+    const events = await scraper.discoverAllEvents(year);
+    const now = new Date();
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const todayStr = now.toISOString().slice(0, 10);
+
+    const twoWeeksAgoStr = twoWeeksAgo.toISOString().slice(0, 10);
+    const recentEvents = events.filter((e) => {
+      if (e.date) return e.date >= twoWeeksAgoStr && e.date <= todayStr;
+      // 날짜 null인 SmartChip 슬라이더 이벤트: 올해 ID면 포함
+      if (e.sourceId && String(e.sourceId).startsWith(String(year))) return true;
+      return false;
+    });
+
+    console.log(`[weeklyDiscoverAndScrape] 최근 2주 이벤트: ${recentEvents.length}개`);
+
+    const existingSnap = await db.collection("scrape_jobs")
+      .where("createdAt", ">=", twoWeeksAgo.toISOString())
+      .get();
+    const existingKeys = new Set();
+    existingSnap.forEach((doc) => {
+      const d = doc.data();
+      existingKeys.add(`${d.source}:${d.sourceId}`);
+    });
+
+    const newEvents = recentEvents.filter((e) => !existingKeys.has(`${e.source}:${e.sourceId}`));
+    console.log(`[weeklyDiscoverAndScrape] 신규 이벤트: ${newEvents.length}개`);
+
+    if (newEvents.length === 0) return;
+
+    const membersSnap = await db.collection("members").where("hidden", "==", false).get();
+    const members = [];
+    membersSnap.forEach((doc) => {
+      const d = doc.data();
+      members.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
+    });
+    console.log(`[weeklyDiscoverAndScrape] 회원: ${members.length}명`);
+
+    const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
+    const confirmedResults = [];
+    confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
+    const pbMap = scraper.buildPBMap(confirmedResults);
+
+    for (const event of newEvents.slice(0, 3)) {
+      console.log(`[scrape] ${event.source}:${event.sourceId} (${event.name})`);
+
+      const jobRef = db.collection("scrape_jobs").doc();
+      await jobRef.set({
+        source: event.source,
+        sourceId: event.sourceId,
+        eventName: event.name,
+        eventDate: event.date,
+        status: "running",
+        progress: { searched: 0, total: members.length, found: 0 },
+        results: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      try {
+        const result = await scraper.scrapeEvent({
+          source: event.source,
+          sourceId: event.sourceId,
+          members,
+          pbMap,
+          onProgress: async (p) => {
+            await jobRef.update({ progress: p });
+          },
+        });
+
+        await jobRef.update({
+          status: "complete",
+          eventName: result.eventName || event.name,
+          eventDate: result.eventDate || event.date,
+          results: result.results,
+          progress: { searched: members.length, total: members.length, found: result.results.length },
+          completedAt: new Date().toISOString(),
+        });
+
+        console.log(`[scrape] 완료: ${result.results.length}건 (${result.eventName})`);
+      } catch (err) {
+        console.error(`[scrape] 오류: ${err.message}`);
+        await jobRef.update({ status: "error", error: err.message });
+      }
+    }
+  }
+);
+
+/**
+ * Race API - 대회 결과 조회 및 수동 스크래핑
+ */
+exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", region: "asia-northeast3" }, async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(204).send("");
+
+  try {
+    const action = req.query.action || (req.method === "POST" ? "scrape" : "events");
+
+    if (action === "events") {
+      const snap = await db.collection("scrape_jobs")
+        .orderBy("createdAt", "desc")
+        .limit(20)
+        .get();
+
+      const jobs = [];
+      snap.forEach((doc) => {
+        const d = doc.data();
+        jobs.push({
+          jobId: doc.id,
+          source: d.source,
+          sourceId: d.sourceId,
+          eventName: d.eventName,
+          eventDate: d.eventDate,
+          status: d.status,
+          foundCount: d.results?.length || 0,
+          createdAt: d.createdAt,
+        });
+      });
+
+      return res.json({ ok: true, jobs });
+    }
+
+    if (action === "discover") {
+      const year = new Date().getFullYear();
+      const allEvents = await scraper.discoverAllEvents(year);
+
+      const now = new Date();
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const todayStr = now.toISOString().slice(0, 10);
+
+      const twoWeeksAgoStr = twoWeeksAgo.toISOString().slice(0, 10);
+      const recent = allEvents.filter((e) => {
+        // 날짜가 있으면 최근 2주 이내인지 확인
+        if (e.date) return e.date >= twoWeeksAgoStr && e.date <= todayStr;
+        // 날짜가 null인 경우(SmartChip 슬라이더 이벤트): 이벤트 ID 앞 4자리가 올해이면 포함
+        // (main.html 슬라이더는 현재 진행 중이거나 방금 끝난 대회만 표시하므로 안전함)
+        if (e.sourceId && String(e.sourceId).startsWith(String(year))) return true;
+        return false;
+      });
+
+      const existingSnap = await db.collection("scrape_jobs").get();
+      const existingKeys = new Set();
+      existingSnap.forEach((doc) => {
+        const d = doc.data();
+        existingKeys.add(`${d.source}:${d.sourceId}`);
+      });
+
+      const events = recent.map((e) => ({
+        ...e,
+        alreadyScraped: existingKeys.has(`${e.source}:${e.sourceId}`),
+      }));
+
+      return res.json({ ok: true, events });
+    }
+
+    if (action === "job") {
+      const jobId = req.query.jobId;
+      if (!jobId) return res.status(400).json({ ok: false, error: "jobId required" });
+
+      const doc = await db.collection("scrape_jobs").doc(jobId).get();
+      if (!doc.exists) return res.status(404).json({ ok: false, error: "job not found" });
+
+      return res.json({ ok: true, ...doc.data(), jobId: doc.id });
+    }
+
+    if (action === "members") {
+      const snap = await db.collection("members").where("hidden", "==", false).get();
+      const members = [];
+      snap.forEach((doc) => {
+        const d = doc.data();
+        members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
+      });
+      members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+      return res.json({ ok: true, members });
+    }
+
+    if (action === "scrape" && req.method === "POST") {
+      const { source, sourceId, eventName, eventDate } = req.body || {};
+      if (!source || !sourceId) {
+        return res.status(400).json({ ok: false, error: "source and sourceId required" });
+      }
+
+      const membersSnap = await db.collection("members").where("hidden", "==", false).get();
+      const members = [];
+      membersSnap.forEach((doc) => {
+        const d = doc.data();
+        members.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
+      });
+
+      const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
+      const confirmedResults = [];
+      confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
+      const pbMap = scraper.buildPBMap(confirmedResults);
+
+      const jobRef = db.collection("scrape_jobs").doc();
+      await jobRef.set({
+        source, sourceId,
+        eventName: eventName || sourceId,
+        eventDate: eventDate || "",
+        status: "running",
+        progress: { searched: 0, total: members.length, found: 0 },
+        results: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      const jobId = jobRef.id;
+
+      // 비동기로 스크래핑 (응답은 바로 반환하지 않고 완료까지 대기)
+      const result = await scraper.scrapeEvent({
+        source, sourceId, members, pbMap,
+        onProgress: async (p) => {
+          await jobRef.update({ progress: p });
+        },
+      });
+
+      await jobRef.update({
+        status: "complete",
+        eventName: result.eventName || eventName || sourceId,
+        eventDate: result.eventDate || eventDate || "",
+        results: result.results,
+        progress: { searched: members.length, total: members.length, found: result.results.length },
+        completedAt: new Date().toISOString(),
+      });
+
+      return res.json({
+        ok: true,
+        jobId,
+        eventName: result.eventName,
+        eventDate: result.eventDate,
+        foundCount: result.results.length,
+      });
+    }
+
+    return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
+  } catch (err) {
+    console.error("[race error]", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ==================== Attendance ====================
 
 exports.attendance = onRequest({ cors: true }, async (req, res) => {
   // CORS 헤더 설정

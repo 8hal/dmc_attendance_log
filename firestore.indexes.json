@@ -16,6 +16,39 @@
         { "fieldPath": "monthKey", "order": "ASCENDING" },
         { "fieldPath": "ts", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "race_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "distance", "order": "ASCENDING" },
+        { "fieldPath": "netTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "race_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "eventDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "race_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "eventId", "order": "ASCENDING" },
+        { "fieldPath": "distance", "order": "ASCENDING" },
+        { "fieldPath": "netTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "year", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

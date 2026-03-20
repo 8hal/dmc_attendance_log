@@ -5,7 +5,28 @@ service cloud.firestore {
     // attendance 컬렉션: Functions만 쓰기 가능, 읽기는 누구나
     match /attendance/{docId} {
       allow read: if true;
-      allow write: if false; // Cloud Functions (Admin SDK)만 쓰기 가능
+      allow write: if false;
+    }
+
+    // 대회 기록 서비스: 읽기 전용, 쓰기는 Admin SDK만
+    match /members/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /race_results/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /scrape_jobs/{docId} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

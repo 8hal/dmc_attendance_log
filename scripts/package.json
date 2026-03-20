@@ -5,9 +5,12 @@
   "scripts": {
     "migrate": "node migrate-sheets-to-firestore.js",
     "cleanup": "node cleanup-test-data.js",
-    "cleanup:dry": "node cleanup-test-data.js --dry-run"
+    "cleanup:dry": "node cleanup-test-data.js --dry-run",
+    "scrape": "node scrape-results.js",
+    "report": "node weekly-report.js"
   },
   "dependencies": {
+    "cheerio": "^1.0.0",
     "firebase-admin": "^13.6.0",
     "googleapis": "^170.0.0"
   }
