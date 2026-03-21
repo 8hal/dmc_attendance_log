@@ -735,13 +735,27 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
         };
       });
 
-      // 날짜가 여전히 없는 SmartChip 이벤트는 getEventInfo로 보완
+      // 웹 검색 기반 날짜 힌트 (SmartChip에서 날짜 미제공 시 fallback)
+      const DATE_HINTS = {
+        "202650000017": "2026-03-21", // 저스트 RUN10 청주
+        "202650000023": "2026-03-21", // 남해트레일레이스
+        "202650000024": "2026-03-21", // 지리산 봄꽃레이스
+        "202650000025": "2026-03-21", // 제6회 버킷런
+        "202650000028": "2026-03-22", // YTN 히드 앤 런
+        "202650000026": "2026-03-22", // 인천국제하프마라톤
+        "202650000022": "2026-02-21", // 릴레이마라톤
+        "202650000021": "2026-03-14", // 창녕부곡온천마라톤
+      };
+
+      // 날짜가 여전히 없는 SmartChip 이벤트는 getEventInfo로 보완, 없으면 힌트 사용
       const enriched = await Promise.all(baseEvents.map(async (e) => {
         if (e.source === "smartchip" && !e.date) {
           try {
             const info = await scraper.getEventInfo(e.source, e.sourceId);
-            return { ...e, name: info.title || e.name, date: info.date || null };
+            if (info.date) return { ...e, name: info.title || e.name, date: info.date };
           } catch { /* ignore */ }
+          const hint = DATE_HINTS[String(e.sourceId)];
+          if (hint) return { ...e, date: hint };
         }
         return e;
       }));
@@ -771,6 +785,157 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       });
       members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
       return res.json({ ok: true, members });
+    }
+
+    // ─── 회원 관리 API ─────────────────────────────────
+    if (action === "add-member" && req.method === "POST") {
+      const { nickname, realName, gender } = req.body || {};
+      if (!nickname || !realName) {
+        return res.status(400).json({ ok: false, error: "nickname and realName required" });
+      }
+      const dup = await db.collection("members").where("nickname", "==", nickname).get();
+      if (!dup.empty) {
+        return res.status(409).json({ ok: false, error: `닉네임 '${nickname}' 이미 존재합니다` });
+      }
+      const ref = db.collection("members").doc();
+      await ref.set({ nickname, realName, gender: gender || "", hidden: false, team: "" });
+      return res.json({ ok: true, id: ref.id, nickname, realName });
+    }
+
+    if (action === "update-member" && req.method === "POST") {
+      const { id, nickname, realName, gender, hidden } = req.body || {};
+      if (!id) return res.status(400).json({ ok: false, error: "id required" });
+      const ref = db.collection("members").doc(id);
+      const doc = await ref.get();
+      if (!doc.exists) return res.status(404).json({ ok: false, error: "member not found" });
+      const updates = {};
+      if (nickname !== undefined) updates.nickname = nickname;
+      if (realName !== undefined) updates.realName = realName;
+      if (gender !== undefined) updates.gender = gender;
+      if (hidden !== undefined) updates.hidden = !!hidden;
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ ok: false, error: "nothing to update" });
+      }
+      await ref.update(updates);
+      return res.json({ ok: true, id, ...updates });
+    }
+
+    if (action === "hide-member" && req.method === "POST") {
+      const { id } = req.body || {};
+      if (!id) return res.status(400).json({ ok: false, error: "id required" });
+      const ref = db.collection("members").doc(id);
+      const doc = await ref.get();
+      if (!doc.exists) return res.status(404).json({ ok: false, error: "member not found" });
+      await ref.update({ hidden: true });
+      return res.json({ ok: true, id });
+    }
+
+    if (action === "all-members") {
+      const snap = await db.collection("members").get();
+      const members = [];
+      snap.forEach((doc) => {
+        const d = doc.data();
+        members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "", team: d.team || "", hidden: d.hidden || false });
+      });
+      members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+      return res.json({ ok: true, members });
+    }
+
+    // ─── 연도 전체 대회 목록 ──────────────────────────────
+    if (action === "discover-all") {
+      const year = parseInt(req.query.year) || new Date().getFullYear();
+      const allEvents = await scraper.discoverAllEvents(year);
+
+      const existingSnap = await db.collection("scrape_jobs").get();
+      const existingMap = new Map();
+      existingSnap.forEach((doc) => {
+        const d = doc.data();
+        existingMap.set(`${d.source}:${d.sourceId}`, { jobId: doc.id, status: d.status, eventName: d.eventName, eventDate: d.eventDate });
+      });
+
+      const enriched = allEvents.map((e) => {
+        const key = `${e.source}:${e.sourceId}`;
+        const existing = existingMap.get(key);
+        return {
+          ...e,
+          alreadyInSystem: !!existing,
+          jobStatus: existing?.status || null,
+          jobId: existing?.jobId || null,
+        };
+      });
+
+      return res.json({ ok: true, events: enriched, total: enriched.length });
+    }
+
+    // ─── 회원별 역방향 검색 (1명 × N대회) ─────────────────
+    if (action === "search-member-events" && req.method === "POST") {
+      const { realName, nickname, gender, events } = req.body || {};
+      if (!realName || !events || !Array.isArray(events) || events.length === 0) {
+        return res.status(400).json({ ok: false, error: "realName and events[] required" });
+      }
+
+      const jobRef = db.collection("member_search_jobs").doc();
+      const now = new Date().toISOString();
+      await jobRef.set({
+        realName,
+        nickname: nickname || "",
+        status: "running",
+        progress: { searched: 0, total: events.length, currentEvent: "" },
+        results: [],
+        createdAt: now,
+      });
+      const jobId = jobRef.id;
+
+      // 응답을 먼저 반환 (프론트가 jobId로 폴링)
+      res.json({ ok: true, jobId });
+
+      // 백그라운드 검색
+      const allResults = [];
+      for (let i = 0; i < events.length; i++) {
+        const ev = events[i];
+        try {
+          await jobRef.update({
+            progress: { searched: i, total: events.length, currentEvent: ev.eventName || ev.sourceId },
+          });
+
+          await scraper.sleep(scraper.DELAY_MS);
+          const found = await scraper.searchMember(ev.source, ev.sourceId, realName);
+
+          if (found && found.length > 0) {
+            allResults.push({
+              eventName: ev.eventName || ev.sourceId,
+              eventDate: ev.eventDate || "",
+              source: ev.source,
+              sourceId: ev.sourceId,
+              records: found.map((r) => ({
+                ...r,
+                memberRealName: realName,
+                memberNickname: nickname || "",
+                memberGender: gender || "",
+              })),
+            });
+          }
+
+          await jobRef.update({
+            progress: { searched: i + 1, total: events.length, currentEvent: ev.eventName || ev.sourceId },
+            results: allResults,
+          });
+        } catch (err) {
+          console.error(`[search-member] ${ev.sourceId}: ${err.message}`);
+        }
+      }
+
+      await jobRef.update({ status: "complete", completedAt: new Date().toISOString() });
+      return;
+    }
+
+    // ─── 회원 검색 job 조회 ──────────────────────────────
+    if (action === "member-search-job") {
+      const jobId = req.query.jobId;
+      if (!jobId) return res.status(400).json({ ok: false, error: "jobId required" });
+      const doc = await db.collection("member_search_jobs").doc(jobId).get();
+      if (!doc.exists) return res.status(404).json({ ok: false, error: "job not found" });
+      return res.json({ ok: true, ...doc.data(), jobId: doc.id });
     }
 
     if (action === "confirm" && req.method === "POST") {
@@ -808,7 +973,20 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       }
 
       const jobRef = db.collection("scrape_jobs").doc(jobId);
-      batch.update(jobRef, { status: "confirmed", confirmedAt: now });
+      const jobDoc = await jobRef.get();
+      if (jobDoc.exists) {
+        batch.update(jobRef, { status: "confirmed", confirmedAt: now });
+      } else {
+        batch.set(jobRef, {
+          eventName: eventName || "",
+          eventDate: eventDate || "",
+          source: source || "",
+          sourceId: sourceId || "",
+          status: "confirmed",
+          createdAt: now,
+          confirmedAt: now,
+        });
+      }
 
       await batch.commit();
       return res.json({ ok: true, savedCount: results.length });

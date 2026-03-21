@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>회원 관리 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --color-primary: #2563EB;
+      --color-primary-hover: #1D4ED8;
+      --color-primary-light: #DBEAFE;
+      --color-bg: #F8FAFC;
+      --color-card: #FFFFFF;
+      --color-text: #0F172A;
+      --color-text-secondary: #64748B;
+      --color-text-muted: #94A3B8;
+      --color-border: #E2E8F0;
+      --color-border-light: #F1F5F9;
+      --color-success: #059669;
+      --color-success-light: #D1FAE5;
+      --color-error: #DC2626;
+      --color-error-light: #FEE2E2;
+      --color-warning: #D97706;
+      --color-warning-light: #FEF3C7;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 0; background: var(--color-bg); color: var(--color-text); }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .brand h1 { margin: 0; font-size: 18px; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link { font-size: 13px; color: var(--color-primary); text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--color-primary); transition: all 0.15s; }
+    .nav-link:hover { background: var(--color-primary); color: #fff; }
+    .card { background: var(--color-card); border-radius: 14px; padding: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
+    .card h2 { margin: 0 0 12px; font-size: 16px; }
+
+    .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-bar input { flex: 1; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: 10px; font-size: 14px; outline: none; }
+    .search-bar input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { background: var(--color-primary); color: #fff; }
+    .btn-primary:hover { background: var(--color-primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-secondary); }
+    .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .btn-danger { background: var(--color-error-light); color: var(--color-error); }
+    .btn-danger:hover { background: var(--color-error); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .member-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .member-table th { text-align: left; padding: 10px 8px; color: var(--color-text-secondary); font-weight: 600; font-size: 12px; border-bottom: 2px solid var(--color-border); }
+    .member-table td { padding: 10px 8px; border-bottom: 1px solid var(--color-border-light); }
+    .member-table tr:hover { background: var(--color-primary-light); cursor: pointer; }
+    .member-table tr.editing { background: #FEF9C3; }
+    .member-table .hidden-row { opacity: 0.4; }
+    .gender-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .gender-m { background: #DBEAFE; color: #1D4ED8; }
+    .gender-f { background: #FCE7F3; color: #BE185D; }
+    .hidden-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--color-error-light); color: var(--color-error); }
+
+    .add-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .add-form input, .add-form select { padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px; }
+    .add-form input:focus, .add-form select:focus { border-color: var(--color-primary); outline: none; }
+
+    .edit-inline input, .edit-inline select { padding: 4px 8px; border: 1px solid var(--color-primary); border-radius: 6px; font-size: 13px; width: 100%; }
+    .edit-actions { display: flex; gap: 4px; white-space: nowrap; }
+
+    .stat-bar { display: flex; gap: 16px; padding: 12px 0; font-size: 14px; color: var(--color-text-secondary); }
+    .stat-bar strong { color: var(--color-text); }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    .show-hidden-toggle { font-size: 13px; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; }
+
+    #authOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--color-bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+    .auth-card { background: var(--color-card); border-radius: 16px; padding: 32px; box-shadow: 0 4px 24px rgba(15,23,42,0.12); text-align: center; max-width: 320px; width: 90%; }
+    .auth-card h2 { margin: 0 0 16px; font-size: 18px; }
+    .auth-card input { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 10px; font-size: 16px; text-align: center; margin-bottom: 12px; }
+    .auth-card input:focus { border-color: var(--color-primary); outline: none; }
+    .auth-error { color: var(--color-error); font-size: 13px; display: none; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<div id="authOverlay">
+  <div class="auth-card">
+    <h2>회원 관리</h2>
+    <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 16px;">관리자 비밀번호를 입력하세요</p>
+    <input type="password" id="authPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter') tryAuth()" />
+    <div class="auth-error" id="authError">비밀번호가 올바르지 않습니다</div>
+    <button class="btn btn-primary" style="width:100%" onclick="tryAuth()">확인</button>
+  </div>
+</div>
+
+<div id="mainWrap" style="display:none">
+<div class="wrap">
+  <div class="header">
+    <div class="brand">
+      <img src="assets/dmc_logo.png" alt="DMC" />
+      <h1>회원 관리</h1>
+    </div>
+    <div class="nav-links">
+      <a href="races.html" class="nav-link">대회 기록</a>
+      <a href="report.html" class="nav-link">주간 리포트</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>회원 추가</h2>
+    <div class="add-form">
+      <input type="text" id="addNickname" placeholder="닉네임 *" style="flex:2; min-width:100px" />
+      <input type="text" id="addRealName" placeholder="실명 *" style="flex:2; min-width:100px" />
+      <select id="addGender" style="width:80px">
+        <option value="">성별</option>
+        <option value="M">남</option>
+        <option value="F">여</option>
+      </select>
+      <button class="btn btn-primary btn-sm" id="addBtn" onclick="addMember()">추가</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <h2 style="margin:0">회원 목록</h2>
+      <span class="show-hidden-toggle" id="toggleHidden" onclick="toggleShowHidden()">숨긴 회원 보기</span>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="닉네임 또는 실명으로 검색" oninput="renderMembers()" />
+    </div>
+    <div class="stat-bar" id="statBar"></div>
+    <div style="overflow-x:auto">
+      <table class="member-table">
+        <thead>
+          <tr>
+            <th>닉네임</th>
+            <th>실명</th>
+            <th>성별</th>
+            <th style="width:100px"></th>
+          </tr>
+        </thead>
+        <tbody id="memberBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const AUTH_HASH = "dmc2008";
+const API_BASE = location.hostname === "localhost"
+  ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+  : "https://race-nszximpvtq-du.a.run.app";
+
+let allMembers = [];
+let showHidden = false;
+let editingId = null;
+
+function checkAuth() {
+  if (sessionStorage.getItem("dmc_admin_auth") === "ok") {
+    document.getElementById("authOverlay").style.display = "none";
+    document.getElementById("mainWrap").style.display = "block";
+    loadMembers();
+  }
+}
+
+function tryAuth() {
+  const pw = document.getElementById("authPw").value;
+  if (pw === AUTH_HASH) {
+    sessionStorage.setItem("dmc_admin_auth", "ok");
+    checkAuth();
+  } else {
+    document.getElementById("authError").style.display = "block";
+    document.getElementById("authPw").value = "";
+    document.getElementById("authPw").focus();
+  }
+}
+
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), duration);
+}
+
+function esc(s) { return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+async function loadMembers() {
+  try {
+    const res = await fetch(`${API_BASE}?action=all-members`);
+    const data = await res.json();
+    if (data.ok) {
+      allMembers = data.members;
+      renderMembers();
+    }
+  } catch (e) {
+    showToast("회원 목록 로드 실패", 4000);
+  }
+}
+
+function renderMembers() {
+  const query = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+  let filtered = allMembers.filter(m => {
+    if (!showHidden && m.hidden) return false;
+    if (query) {
+      return m.nickname.toLowerCase().includes(query) || m.realName.toLowerCase().includes(query);
+    }
+    return true;
+  });
+
+  const activeCount = allMembers.filter(m => !m.hidden).length;
+  const hiddenCount = allMembers.filter(m => m.hidden).length;
+  document.getElementById("statBar").innerHTML = `활동 회원 <strong>${activeCount}</strong>명${hiddenCount ? ` / 숨김 <strong>${hiddenCount}</strong>명` : ""}`;
+
+  const tbody = document.getElementById("memberBody");
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted);padding:24px">검색 결과가 없습니다</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(m => {
+    if (editingId === m.id) {
+      return `<tr class="editing">
+        <td><input id="editNick" value="${esc(m.nickname)}" /></td>
+        <td><input id="editReal" value="${esc(m.realName)}" /></td>
+        <td><select id="editGender">
+          <option value="" ${!m.gender ? "selected" : ""}>-</option>
+          <option value="M" ${m.gender === "M" ? "selected" : ""}>남</option>
+          <option value="F" ${m.gender === "F" ? "selected" : ""}>여</option>
+        </select></td>
+        <td><div class="edit-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveEdit('${m.id}')">저장</button>
+          <button class="btn btn-outline btn-sm" onclick="cancelEdit()">취소</button>
+        </div></td>
+      </tr>`;
+    }
+    const genderBadge = m.gender === "M" ? '<span class="gender-badge gender-m">남</span>'
+      : m.gender === "F" ? '<span class="gender-badge gender-f">여</span>' : "";
+    const hiddenBadge = m.hidden ? ' <span class="hidden-badge">숨김</span>' : "";
+    return `<tr class="${m.hidden ? "hidden-row" : ""}" onclick="startEdit('${m.id}')">
+      <td>${esc(m.nickname)}${hiddenBadge}</td>
+      <td>${esc(m.realName)}</td>
+      <td>${genderBadge}</td>
+      <td>
+        ${m.hidden
+          ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); restoreMember('${m.id}')">복원</button>`
+          : `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); hideMember('${m.id}', '${esc(m.nickname)}')">숨김</button>`
+        }
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function startEdit(id) {
+  editingId = id;
+  renderMembers();
+  setTimeout(() => document.getElementById("editNick")?.focus(), 50);
+}
+
+function cancelEdit() {
+  editingId = null;
+  renderMembers();
+}
+
+async function saveEdit(id) {
+  const nickname = document.getElementById("editNick").value.trim();
+  const realName = document.getElementById("editReal").value.trim();
+  const gender = document.getElementById("editGender").value;
+  if (!nickname || !realName) { showToast("닉네임과 실명은 필수입니다", 3000); return; }
+
+  try {
+    const res = await fetch(`${API_BASE}?action=update-member`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, nickname, realName, gender }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    editingId = null;
+    showToast("수정 완료");
+    await loadMembers();
+  } catch (e) {
+    showToast("수정 실패: " + e.message, 4000);
+  }
+}
+
+async function addMember() {
+  const nickname = document.getElementById("addNickname").value.trim();
+  const realName = document.getElementById("addRealName").value.trim();
+  const gender = document.getElementById("addGender").value;
+  if (!nickname || !realName) { showToast("닉네임과 실명은 필수입니다", 3000); return; }
+
+  const btn = document.getElementById("addBtn");
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}?action=add-member`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname, realName, gender }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    document.getElementById("addNickname").value = "";
+    document.getElementById("addRealName").value = "";
+    document.getElementById("addGender").value = "";
+    showToast(`${nickname} 추가 완료`);
+    await loadMembers();
+  } catch (e) {
+    showToast("추가 실패: " + e.message, 4000);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function hideMember(id, nickname) {
+  if (!confirm(`'${nickname}'을(를) 숨김 처리할까요?`)) return;
+  try {
+    const res = await fetch(`${API_BASE}?action=hide-member`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showToast(`${nickname} 숨김 처리됨`);
+    await loadMembers();
+  } catch (e) {
+    showToast("숨김 실패: " + e.message, 4000);
+  }
+}
+
+async function restoreMember(id) {
+  try {
+    const res = await fetch(`${API_BASE}?action=update-member`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, hidden: false }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showToast("복원 완료");
+    await loadMembers();
+  } catch (e) {
+    showToast("복원 실패: " + e.message, 4000);
+  }
+}
+
+function toggleShowHidden() {
+  showHidden = !showHidden;
+  document.getElementById("toggleHidden").textContent = showHidden ? "숨긴 회원 숨기기" : "숨긴 회원 보기";
+  renderMembers();
+}
+
+checkAuth();
+</script>
+</body>
+</html>

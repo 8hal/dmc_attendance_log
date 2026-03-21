@@ -138,6 +138,59 @@
     .sub-filter { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--color-border); background: transparent; font-size: 12px; cursor: pointer; color: var(--color-text-muted); transition: all 0.15s; }
     .sub-filter.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
 
+    /* Search flow */
+    .search-trigger { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
+    .btn { padding: 10px 18px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--color-primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-secondary); }
+    .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn-success { background: var(--color-success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+
+    .search-panel { margin-top: 14px; }
+    .search-panel .card { border: 1px solid var(--color-primary); border-left: 4px solid var(--color-primary); }
+    .search-section-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+    .search-section-title small { font-weight: 400; color: var(--color-text-muted); font-size: 12px; }
+    .event-search-bar { display: flex; gap: 6px; margin-bottom: 10px; }
+    .event-search-bar input { flex: 1; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; outline: none; }
+    .event-search-bar input:focus { border-color: var(--color-primary); }
+    .event-search-bar select { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; background: #fff; }
+    .event-list-actions { display: flex; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .event-list-actions a { color: var(--color-primary); cursor: pointer; text-decoration: underline; }
+    .event-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--color-border-light); border-radius: 8px; }
+    .event-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--color-border-light); font-size: 13px; cursor: pointer; transition: background 0.1s; }
+    .event-item:last-child { border-bottom: none; }
+    .event-item:hover { background: var(--color-primary-light); }
+    .event-item input[type=checkbox] { flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--color-primary); }
+    .event-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .event-item-date { color: var(--color-text-muted); font-size: 12px; white-space: nowrap; }
+    .event-item-badge { padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+    .event-badge-done { background: #D1FAE5; color: #065F46; }
+    .event-badge-source { background: var(--color-border-light); color: var(--color-text-muted); text-transform: uppercase; }
+    .event-counter { font-size: 12px; color: var(--color-text-muted); text-align: right; margin-top: 6px; }
+
+    .progress-bar-wrap { margin: 12px 0; }
+    .progress-bar-bg { height: 6px; background: var(--color-border-light); border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--color-primary); border-radius: 4px; transition: width 0.3s; }
+    .progress-text { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+    .progress-detail { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
+
+    .found-result-card { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+    .found-result-card.selected { border-color: var(--color-primary); background: #EFF6FF; }
+    .found-result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; }
+    .found-result-header input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--color-primary); }
+    .found-event-name { font-weight: 600; font-size: 14px; flex: 1; }
+    .found-event-date { font-size: 12px; color: var(--color-text-muted); }
+    .found-records { padding-left: 24px; }
+    .found-record-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
+    .found-record-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
     @media (max-width: 480px) {
       .ranking-time { font-size: 16px; }
       .stat-value { font-size: 20px; }
@@ -155,6 +208,7 @@
       </div>
       <div style="display:flex; gap:6px;">
         <a href="report.html" class="nav-link">주간 리포트</a>
+        <a href="admin.html" class="nav-link">회원관리</a>
         <a href="index.html" class="nav-link">출석체크</a>
       </div>
     </div>
@@ -202,6 +256,8 @@
     <!-- Content -->
     <div id="content"></div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
 <script>
 const TEAM_COLORS = {
@@ -416,6 +472,8 @@ function renderRacesTab() {
   el.innerHTML = html;
 }
 
+let searchState = { step: "idle", jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Set() };
+
 function renderIndividualTab() {
   const el = document.getElementById("content");
   const all = enrichResults();
@@ -423,7 +481,7 @@ function renderIndividualTab() {
   const guestNames = [...new Set(all.filter(r => r.isGuest).map(r => r.realName))];
   let selectHtml = `
     <div class="member-select-wrap">
-      <select class="member-select" id="memberSelect" onchange="renderMemberDetail()">
+      <select class="member-select" id="memberSelect" onchange="onMemberChange()">
         <option value="">회원을 선택하세요</option>
         ${membersData.map(m => `<option value="${esc(m.realName)}">${esc(m.nickname)} (${esc(TEAM_LABELS[m.team] || m.team)})</option>`).join("")}
         ${guestNames.length ? '<option disabled>──── 게스트 ────</option>' : ""}
@@ -433,9 +491,22 @@ function renderIndividualTab() {
         }).join("")}
       </select>
     </div>
-    <div id="memberDetail"></div>`;
+    <div id="memberDetail"></div>
+    <div id="searchPanel"></div>`;
 
   el.innerHTML = selectHtml;
+}
+
+function onMemberChange() {
+  resetSearch();
+  renderMemberDetail();
+}
+
+function resetSearch() {
+  if (searchState.pollTimer) clearInterval(searchState.pollTimer);
+  searchState = { step: "idle", jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Set() };
+  const sp = document.getElementById("searchPanel");
+  if (sp) sp.innerHTML = "";
 }
 
 function renderMemberDetail() {
@@ -444,56 +515,394 @@ function renderMemberDetail() {
   if (!name) { el.innerHTML = emptyState("회원을 선택하면 기록이 표시됩니다."); return; }
 
   const all = enrichResults().filter(r => r.realName === name);
-  if (!all.length) { el.innerHTML = emptyState("해당 회원의 기록이 없습니다."); return; }
-  const filtered = filterResults(all).sort((a, b) => {
-    const dateCmp = (b.raceDate || "").localeCompare(a.raceDate || "");
-    if (dateCmp !== 0) return dateCmp;
-    return sortResults(a, b);
-  });
+  const member = memberMap[name] || {};
+  const nickname = member.nickname || name;
 
-  const pbs = computePBs(all);
-  const pbSet = new Set(pbs.map(p => `${p.raceId}||${p.distance}||${p.netTime}`));
-  const totalRaces = new Set(filtered.map(r => r.raceId)).size;
-  const distances = [...new Set(filtered.map(r => r.distance))];
-  const pbCount = pbs.filter(p => {
-    if (currentDist !== "all" && p.distance !== currentDist) return false;
-    if (currentGender !== "all" && p.gender !== currentGender) return false;
-    return true;
-  }).length;
+  let html = "";
 
-  let html = `
-    <div class="member-stats">
-      <div class="member-stat"><strong>${totalRaces}</strong>개 대회</div>
-      <div class="member-stat"><strong>${distances.length}</strong>개 거리</div>
-      <div class="member-stat"><strong>${pbCount}</strong>개 PB</div>
+  if (all.length) {
+    const filtered = filterResults(all).sort((a, b) => {
+      const dateCmp = (b.raceDate || "").localeCompare(a.raceDate || "");
+      if (dateCmp !== 0) return dateCmp;
+      return sortResults(a, b);
+    });
+
+    const pbs = computePBs(all);
+    const pbSet = new Set(pbs.map(p => `${p.raceId}||${p.distance}||${p.netTime}`));
+    const totalRaces = new Set(filtered.map(r => r.raceId)).size;
+    const distances = [...new Set(filtered.map(r => r.distance))];
+    const pbCount = pbs.filter(p => {
+      if (currentDist !== "all" && p.distance !== currentDist) return false;
+      if (currentGender !== "all" && p.gender !== currentGender) return false;
+      return true;
+    }).length;
+
+    html += `
+      <div class="member-stats">
+        <div class="member-stat"><strong>${totalRaces}</strong>개 대회</div>
+        <div class="member-stat"><strong>${distances.length}</strong>개 거리</div>
+        <div class="member-stat"><strong>${pbCount}</strong>개 PB</div>
+      </div>`;
+
+    if (filtered.length) {
+      html += '<div class="timeline">';
+      for (const r of filtered) {
+        const isPb = pbSet.has(`${r.raceId}||${r.distance}||${r.netTime}`);
+        html += `
+          <div class="timeline-item ${isPb ? "is-pb" : ""}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">${formatDate(r.raceDate)}</div>
+            <div class="timeline-content">
+              <div class="timeline-race">${esc(r.raceName)}</div>
+              <div class="timeline-result">
+                ${distBadge(r.distance)}
+                <span class="timeline-time">${esc(r.netTime)}</span>
+                ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
+                ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
+              </div>
+            </div>
+          </div>`;
+      }
+      html += "</div>";
+    } else {
+      html += emptyState("해당 필터에 맞는 기록이 없습니다.");
+    }
+  } else {
+    html += emptyState("해당 회원의 기록이 없습니다.");
+  }
+
+  html += `
+    <div class="search-trigger">
+      <button class="btn btn-outline" onclick="startSearchFlow()">🔍 과거 대회 기록 검색</button>
     </div>`;
 
-  if (!filtered.length) {
-    html += emptyState("해당 필터에 맞는 기록이 없습니다.");
-    el.innerHTML = html;
+  el.innerHTML = html;
+}
+
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), duration);
+}
+
+async function startSearchFlow() {
+  const sp = document.getElementById("searchPanel");
+  searchState.step = "loading-events";
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">대회 목록 불러오는 중...</p>
+    <div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:30%;animation:shimmer 1.2s infinite"></div></div></div>
+  </div></div>`;
+
+  try {
+    const res = await fetch(`${RACE_API}?action=discover-all&year=2026`);
+    const data = await res.json();
+    if (!data.ok) throw new Error("대회 목록 로드 실패");
+    searchState.allEvents = (data.events || []).map(e => ({
+      ...e,
+      eventName: e.name || e.eventName || e.sourceId,
+      eventDate: e.date || e.eventDate || "",
+    }));
+    searchState.step = "select-events";
+    renderEventSelector();
+  } catch (e) {
+    sp.innerHTML = `<div class="search-panel"><div class="card">
+      <div class="empty"><span class="empty-icon">⚠️</span>대회 목록을 불러오지 못했습니다.<br><small style="color:var(--color-text-muted)">${esc(e.message)}</small></div>
+    </div></div>`;
+  }
+}
+
+function renderEventSelector() {
+  const sp = document.getElementById("searchPanel");
+  const name = document.getElementById("memberSelect").value;
+  const member = memberMap[name] || {};
+  const query = document.getElementById("eventSearchQ")?.value || "";
+  const sourceFilter = document.getElementById("eventSourceFilter")?.value || "all";
+
+  let events = searchState.allEvents;
+  if (query) {
+    const q = query.toLowerCase();
+    events = events.filter(e => (e.eventName || "").toLowerCase().includes(q) || (e.sourceId || "").toLowerCase().includes(q));
+  }
+  if (sourceFilter !== "all") {
+    events = events.filter(e => e.source === sourceFilter);
+  }
+
+  const sources = [...new Set(searchState.allEvents.map(e => e.source))].sort();
+  const selCount = searchState.selectedEvents.size;
+
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색할 대회 선택 <small>${esc(member.nickname || name)}님의 기록을 검색합니다</small></p>
+    <div class="event-search-bar">
+      <input type="text" id="eventSearchQ" placeholder="대회명 검색" value="${esc(query)}" oninput="renderEventSelector()" />
+      <select id="eventSourceFilter" onchange="renderEventSelector()">
+        <option value="all">전체 사이트</option>
+        ${sources.map(s => `<option value="${esc(s)}" ${sourceFilter === s ? "selected" : ""}>${esc(s)}</option>`).join("")}
+      </select>
+    </div>
+    <div class="event-list-actions">
+      <a onclick="toggleAllEvents(true)">전체 선택</a>
+      <a onclick="toggleAllEvents(false)">전체 해제</a>
+    </div>
+    <div class="event-list" id="eventListContainer">
+      ${events.map((e, i) => {
+        const key = `${e.source}:${e.sourceId}`;
+        const checked = searchState.selectedEvents.has(key);
+        const doneLabel = e.alreadyInSystem ? (e.jobStatus === "confirmed" ? "입력완료" : "스크랩됨") : "";
+        return `<label class="event-item">
+          <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleEvent('${esc(key)}', this.checked)" />
+          <span class="event-item-name">${esc(e.eventName)}</span>
+          ${e.eventDate ? `<span class="event-item-date">${esc(e.eventDate)}</span>` : ""}
+          ${doneLabel ? `<span class="event-item-badge event-badge-done">${doneLabel}</span>` : ""}
+          <span class="event-item-badge event-badge-source">${esc(e.source)}</span>
+        </label>`;
+      }).join("")}
+      ${!events.length ? '<div style="padding:20px;text-align:center;color:var(--color-text-muted);font-size:13px">검색 결과 없음</div>' : ""}
+    </div>
+    <div class="event-counter">${events.length}개 대회 중 <strong>${selCount}개</strong> 선택됨</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+      <button class="btn btn-primary btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="beginSearch()">검색 시작 (${selCount}개)</button>
+    </div>
+  </div></div>`;
+}
+
+function toggleEvent(key, checked) {
+  if (checked) searchState.selectedEvents.add(key);
+  else searchState.selectedEvents.delete(key);
+  renderEventSelector();
+}
+
+function toggleAllEvents(selectAll) {
+  const query = document.getElementById("eventSearchQ")?.value || "";
+  const sourceFilter = document.getElementById("eventSourceFilter")?.value || "all";
+  let events = searchState.allEvents;
+  if (query) {
+    const q = query.toLowerCase();
+    events = events.filter(e => (e.eventName || "").toLowerCase().includes(q) || (e.sourceId || "").toLowerCase().includes(q));
+  }
+  if (sourceFilter !== "all") events = events.filter(e => e.source === sourceFilter);
+
+  for (const e of events) {
+    const key = `${e.source}:${e.sourceId}`;
+    if (selectAll) searchState.selectedEvents.add(key);
+    else searchState.selectedEvents.delete(key);
+  }
+  renderEventSelector();
+}
+
+async function beginSearch() {
+  const name = document.getElementById("memberSelect").value;
+  const member = memberMap[name] || {};
+  const eventsToSearch = searchState.allEvents.filter(e => searchState.selectedEvents.has(`${e.source}:${e.sourceId}`));
+
+  if (!eventsToSearch.length) return;
+
+  searchState.step = "searching";
+  searchState.foundResults = [];
+  searchState.selectedResults = new Set();
+
+  const sp = document.getElementById("searchPanel");
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색 중... <small>0 / ${eventsToSearch.length}</small></p>
+    <div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" id="searchProgressBar" style="width:0%"></div></div></div>
+    <div class="progress-text" id="searchProgressText">검색 준비 중...</div>
+    <div id="searchLiveResults"></div>
+  </div></div>`;
+
+  try {
+    const res = await fetch(`${RACE_API}?action=search-member-events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        realName: name,
+        nickname: member.nickname || name,
+        gender: member.gender || "",
+        events: eventsToSearch.map(e => ({ source: e.source, sourceId: e.sourceId, eventName: e.eventName || e.sourceId, eventDate: e.eventDate || "" })),
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "검색 시작 실패");
+    searchState.jobId = data.jobId;
+    pollSearchJob();
+  } catch (e) {
+    sp.innerHTML = `<div class="search-panel"><div class="card">
+      <div class="empty"><span class="empty-icon">⚠️</span>검색을 시작하지 못했습니다.<br><small style="color:var(--color-text-muted)">${esc(e.message)}</small></div>
+      <div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div>
+    </div></div>`;
+  }
+}
+
+function pollSearchJob() {
+  const poll = async () => {
+    try {
+      const res = await fetch(`${RACE_API}?action=member-search-job&jobId=${searchState.jobId}`);
+      const data = await res.json();
+      if (!data.ok) return;
+
+      const prog = data.progress || {};
+      const pct = prog.total > 0 ? Math.round((prog.searched / prog.total) * 100) : 0;
+
+      const bar = document.getElementById("searchProgressBar");
+      const txt = document.getElementById("searchProgressText");
+      const title = document.querySelector(".search-section-title small");
+      if (bar) bar.style.width = pct + "%";
+      if (txt) txt.textContent = prog.currentEvent ? `${esc(prog.currentEvent)} 검색 중...` : "검색 중...";
+      if (title) title.textContent = `${prog.searched || 0} / ${prog.total || 0}`;
+
+      searchState.foundResults = data.results || [];
+      renderLiveResults();
+
+      if (data.status === "complete") {
+        clearInterval(searchState.pollTimer);
+        searchState.step = "review";
+        renderSearchResults();
+      }
+    } catch (_) {}
+  };
+
+  poll();
+  searchState.pollTimer = setInterval(poll, 2000);
+}
+
+function renderLiveResults() {
+  const el = document.getElementById("searchLiveResults");
+  if (!el) return;
+  const results = searchState.foundResults;
+  if (!results.length) { el.innerHTML = ""; return; }
+
+  el.innerHTML = `<div style="margin-top:12px;font-size:13px;color:var(--color-text-secondary)">
+    <strong>${results.length}</strong>개 대회에서 기록 발견
+    ${results.map(r => `<div style="padding:4px 0;display:flex;align-items:center;gap:6px">
+      <span style="color:var(--color-success)">✓</span>
+      <span>${esc(r.eventName)}</span>
+      <span style="color:var(--color-text-muted);font-size:12px">${r.records.length}건</span>
+    </div>`).join("")}
+  </div>`;
+}
+
+function renderSearchResults() {
+  const sp = document.getElementById("searchPanel");
+  const results = searchState.foundResults;
+
+  if (!results.length) {
+    sp.innerHTML = `<div class="search-panel"><div class="card">
+      <div class="empty"><span class="empty-icon">🏃</span>검색한 대회에서 기록을 찾지 못했습니다.</div>
+      <div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div>
+    </div></div>`;
     return;
   }
 
-  html += '<div class="timeline">';
-  for (const r of filtered) {
-    const isPb = pbSet.has(`${r.raceId}||${r.distance}||${r.netTime}`);
-    html += `
-      <div class="timeline-item ${isPb ? "is-pb" : ""}">
-        <div class="timeline-dot"></div>
-        <div class="timeline-date">${formatDate(r.raceDate)}</div>
-        <div class="timeline-content">
-          <div class="timeline-race">${esc(r.raceName)}</div>
-          <div class="timeline-result">
-            ${distBadge(r.distance)}
-            <span class="timeline-time">${esc(r.netTime)}</span>
-            ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
-            ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
-          </div>
+  const totalRecords = results.reduce((sum, r) => sum + r.records.length, 0);
+
+  // Auto-select all by default
+  if (searchState.selectedResults.size === 0) {
+    for (let i = 0; i < results.length; i++) {
+      searchState.selectedResults.add(i);
+    }
+  }
+
+  const selCount = searchState.selectedResults.size;
+
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색 결과 <small>${results.length}개 대회, ${totalRecords}건</small></p>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">저장할 대회를 선택하세요. 이미 등록된 기록과 중복될 수 있으니 확인 후 저장하세요.</p>
+    ${results.map((r, i) => {
+      const sel = searchState.selectedResults.has(i);
+      return `<div class="found-result-card ${sel ? "selected" : ""}">
+        <label class="found-result-header">
+          <input type="checkbox" ${sel ? "checked" : ""} onchange="toggleSearchResult(${i}, this.checked)" />
+          <span class="found-event-name">${esc(r.eventName)}</span>
+          <span class="found-event-date">${esc(r.eventDate)}</span>
+        </label>
+        <div class="found-records">
+          ${r.records.map(rec => `<div class="found-record-row">
+            ${distBadge(rec.distance || "?")}
+            <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
+            ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
+          </div>`).join("")}
         </div>
       </div>`;
+    }).join("")}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+      <button class="btn btn-success btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="saveSearchResults()">선택한 ${selCount}개 대회 기록 저장</button>
+    </div>
+  </div></div>`;
+}
+
+function toggleSearchResult(idx, checked) {
+  if (checked) searchState.selectedResults.add(idx);
+  else searchState.selectedResults.delete(idx);
+  renderSearchResults();
+}
+
+async function saveSearchResults() {
+  const name = document.getElementById("memberSelect").value;
+  const member = memberMap[name] || {};
+  const results = searchState.foundResults;
+  const selected = [...searchState.selectedResults].sort();
+
+  if (!selected.length) return;
+
+  const confirmMsg = `${selected.length}개 대회의 기록을 저장할까요?`;
+  if (!confirm(confirmMsg)) return;
+
+  let savedTotal = 0;
+  let errors = [];
+
+  for (const idx of selected) {
+    const r = results[idx];
+    try {
+      const saveRes = await fetch(`${RACE_API}?action=confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: `search_${searchState.jobId}_${idx}`,
+          eventName: r.eventName,
+          eventDate: r.eventDate,
+          source: r.source,
+          sourceId: r.sourceId,
+          results: r.records.map(rec => ({
+            memberRealName: rec.memberRealName || name,
+            memberNickname: rec.memberNickname || member.nickname || name,
+            distance: rec.distance || "",
+            netTime: rec.netTime || "",
+            gunTime: rec.gunTime || "",
+            bib: rec.bib || "",
+            gender: rec.memberGender || member.gender || "",
+            pbConfirmed: false,
+            isGuest: false,
+            note: "",
+          })),
+        }),
+      });
+      const data = await saveRes.json();
+      if (data.ok) savedTotal += data.savedCount || 0;
+      else errors.push(`${r.eventName}: ${data.error}`);
+    } catch (e) {
+      errors.push(`${r.eventName}: ${e.message}`);
+    }
   }
-  html += "</div>";
-  el.innerHTML = html;
+
+  if (errors.length) {
+    showToast(`${savedTotal}건 저장, ${errors.length}건 실패`, 4000);
+  } else {
+    showToast(`${savedTotal}건 저장 완료`);
+  }
+
+  resetSearch();
+
+  // Reload data
+  try {
+    const racesRes = await fetch(`${RACE_API}?action=confirmed-races`);
+    const racesJson = await racesRes.json();
+    if (racesJson.ok) {
+      racesData = racesJson.races || [];
+      updateStats();
+      renderMemberDetail();
+    }
+  } catch (_) {}
 }
 
 function toggleRace(id) {
