@@ -853,7 +853,30 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
         existingMap.set(`${d.source}:${d.sourceId}`, { jobId: doc.id, status: d.status, eventName: d.eventName, eventDate: d.eventDate });
       });
 
-      const enriched = allEvents.map((e) => {
+      // DATE_HINTS (discover 액션과 동일)
+      const DATE_HINTS = {
+        "202650000017": "2026-03-21",
+        "202650000023": "2026-03-21",
+        "202650000024": "2026-03-21",
+        "202650000025": "2026-03-21",
+        "202650000028": "2026-03-22",
+        "202650000026": "2026-03-22",
+        "202650000022": "2026-02-21",
+        "202650000021": "2026-03-14",
+      };
+
+      const enriched = await Promise.all(allEvents.map(async (e) => {
+        if (e.source === "smartchip" && !e.date) {
+          try {
+            const info = await scraper.getEventInfo(e.source, e.sourceId);
+            if (info.date) { e = { ...e, name: info.title || e.name, date: info.date }; }
+          } catch { /* ignore */ }
+          if (!e.date) {
+            const hint = DATE_HINTS[String(e.sourceId)];
+            if (hint) e = { ...e, date: hint };
+          }
+        }
+
         const key = `${e.source}:${e.sourceId}`;
         const existing = existingMap.get(key);
         return {
@@ -862,8 +885,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
           jobStatus: existing?.status || null,
           jobId: existing?.jobId || null,
         };
-      });
+      }));
 
+      enriched.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       return res.json({ ok: true, events: enriched, total: enriched.length });
     }
 
