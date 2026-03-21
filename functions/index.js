@@ -742,6 +742,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
         return e;
       }));
 
+      // 날짜 내림차순 재정렬 (날짜 없는 항목은 맨 아래)
+      enriched.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
       return res.json({ ok: true, events: enriched });
     }
 
