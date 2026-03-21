@@ -90,8 +90,8 @@
     .race-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--color-text-muted); }
     .race-meta .dot { color: var(--color-border); }
     .race-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: var(--color-primary-light); color: var(--color-primary); border-radius: 999px; font-size: 11px; font-weight: 600; }
-    .race-results { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-    .race-card.open .race-results { max-height: 2000px; }
+    .race-results { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+    .race-card.open .race-results { max-height: 20000px; }
     .race-chevron { display: inline-block; transition: transform 0.2s; font-size: 12px; color: var(--color-text-muted); }
     .race-card.open .race-chevron { transform: rotate(180deg); }
     .result-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--color-border-light); }
@@ -143,12 +143,14 @@
     .sub-filter { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--color-border); background: transparent; font-size: 12px; cursor: pointer; color: var(--color-text-muted); transition: all 0.15s; }
     .sub-filter.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
 
-    /* Period selector */
-    .period-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
-    .period-btn { padding: 16px 12px; border: 2px solid var(--color-border); border-radius: 14px; background: #fff; cursor: pointer; text-align: center; transition: all 0.15s; }
-    .period-btn:hover { border-color: var(--color-primary); background: #EFF6FF; }
-    .period-btn .period-label { font-size: 15px; font-weight: 700; color: var(--color-text); display: block; margin-bottom: 4px; }
-    .period-btn .period-count { font-size: 12px; color: var(--color-text-muted); }
+    /* Period / month selector */
+    .year-group { margin-bottom: 14px; }
+    .year-group-label { font-size: 12px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 8px; letter-spacing: 0.5px; }
+    .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .month-btn { padding: 10px 4px; border: 1.5px solid var(--color-border); border-radius: 10px; background: #fff; cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; color: var(--color-text); transition: all 0.15s; }
+    .month-btn:hover:not(:disabled) { border-color: var(--color-primary); background: #EFF6FF; }
+    .month-btn.selected { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
+    .month-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
     /* Search flow */
     .search-trigger { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
@@ -345,7 +347,7 @@ function buildTimingSiteUrl(source, sourceId, realName) {
     case "smartchip":
       return `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${sourceId}`;
     case "myresult":
-      return `https://myresult.co.kr/race/${sourceId}`;
+      return `https://myresult.co.kr/${sourceId}`;
     case "marazone":
       return `https://raceresult.co.kr`;
     default:
@@ -408,13 +410,69 @@ function filterResults(results) {
   });
 }
 
+function renderSummaryStats(all) {
+  const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5, "3K": 3, "21K": 21.0975, "42K": 42.195, "30K": 30, "32K": 32, "100K": 100, "6.5K": 6.5 };
+  const totalKm = all.reduce((s, r) => s + (DIST_KM[r.distance] || 0), 0);
+  const fullResults = all.filter(r => r.distance === "full" && timeToSeconds(r.netTime) > 0);
+  const sub3 = fullResults.filter(r => timeToSeconds(r.netTime) < 10800);
+  const pbCount = all.filter(r => r.isPB).length;
+  const memberSet = new Set(all.map(r => r.realName));
+  const raceSet = new Set(all.map(r => r.raceId));
+
+  // 가장 많이 출전한 회원 (상위 1명)
+  const memberRaceCnt = {};
+  for (const r of all) { memberRaceCnt[r.nickname || r.realName] = (memberRaceCnt[r.nickname || r.realName] || new Set()); memberRaceCnt[r.nickname || r.realName].add(r.raceId); }
+  const topActive = Object.entries(memberRaceCnt).sort((a, b) => b[1].size - a[1].size)[0];
+
+  return `<div class="card" style="margin-bottom:12px">
+    <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">2026 시즌 하이라이트</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+      <div style="text-align:center;padding:10px 6px;background:#F0F7FF;border-radius:12px">
+        <div style="font-size:22px;font-weight:800;color:#2563EB">${raceSet.size}</div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">대회</div>
+      </div>
+      <div style="text-align:center;padding:10px 6px;background:#F0FDF4;border-radius:12px">
+        <div style="font-size:22px;font-weight:800;color:#16A34A">${memberSet.size}</div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">참가 회원</div>
+      </div>
+      <div style="text-align:center;padding:10px 6px;background:#FFF7ED;border-radius:12px">
+        <div style="font-size:22px;font-weight:800;color:#EA580C">${pbCount}</div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">PB 달성</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+      <div style="padding:10px 12px;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🏃</span>
+        <div>
+          <div style="font-size:13px;font-weight:700">${(totalKm / 1000).toFixed(1)}천 km</div>
+          <div style="font-size:11px;color:var(--color-text-muted)">총 달린 거리</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">⚡</span>
+        <div>
+          <div style="font-size:13px;font-weight:700">서브3 ${sub3.length}명</div>
+          <div style="font-size:11px;color:var(--color-text-muted)">풀코스 3시간 이내</div>
+        </div>
+      </div>
+      ${topActive ? `<div style="padding:10px 12px;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;gap:8px;grid-column:span 2">
+        <span style="font-size:20px">🔥</span>
+        <div>
+          <div style="font-size:13px;font-weight:700">${esc(topActive[0])} · ${topActive[1].size}개 대회 출전</div>
+          <div style="font-size:11px;color:var(--color-text-muted)">최다 출전 회원</div>
+        </div>
+      </div>` : ""}
+    </div>
+  </div>`;
+}
+
 function renderPBTab() {
   const all = enrichResults();
   const pbs = computePBs(all);
   const filtered = filterResults(pbs);
 
   if (currentDist === "all") {
-    let html = "";
+    let html = renderSummaryStats(all);
     for (const dist of DIST_ORDER) {
       const distPbs = filtered.filter(r => r.distance === dist).sort((a, b) => timeToSeconds(a.netTime) - timeToSeconds(b.netTime));
       if (!distPbs.length) continue;
@@ -512,12 +570,25 @@ function renderRacesTab() {
   el.innerHTML = html;
 }
 
-const PERIODS = [
-  { id: "2026h1", label: "2026 상반기", year: 2026, start: "2026-01-01", end: "2026-06-30" },
-  { id: "2025h2", label: "2025 하반기", year: 2025, start: "2025-07-01", end: "2025-12-31" },
-  { id: "2025h1", label: "2025 상반기", year: 2025, start: "2025-01-01", end: "2025-06-30" },
-];
-let searchState = { step: "idle", period: null, jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
+// 월별 선택 (최대 5개)
+const MAX_MONTH_SELECT = 5;
+function buildMonthOptions() {
+  const now = new Date();
+  const months = [];
+  // 2026년 (1월 ~ 현재월)
+  for (let m = now.getMonth() + 1; m >= 1; m--) {
+    months.push({ year: 2026, month: m, id: `2026-${String(m).padStart(2,"0")}` });
+  }
+  // 2025년 (12월 ~ 1월)
+  for (let m = 12; m >= 1; m--) {
+    months.push({ year: 2025, month: m, id: `2025-${String(m).padStart(2,"0")}` });
+  }
+  return months;
+}
+const MONTH_OPTIONS = buildMonthOptions();
+const MONTH_LABELS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+let searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
 
 function renderIndividualTab() {
   const el = document.getElementById("content");
@@ -549,7 +620,7 @@ function onMemberChange() {
 
 function resetSearch() {
   if (searchState.pollTimer) clearInterval(searchState.pollTimer);
-  searchState = { step: "idle", period: null, jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
+  searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
   const sp = document.getElementById("searchPanel");
   if (sp) sp.innerHTML = "";
 }
@@ -633,52 +704,85 @@ function showToast(msg, duration = 2000) {
 }
 
 function startSearchFlow() {
+  renderMonthSelector();
+}
+
+function renderMonthSelector() {
   const sp = document.getElementById("searchPanel");
   searchState.step = "select-period";
+  const selCount = searchState.selectedMonths.size;
+
+  const by2026 = MONTH_OPTIONS.filter(m => m.year === 2026);
+  const by2025 = MONTH_OPTIONS.filter(m => m.year === 2025);
+
+  function monthGrid(months) {
+    return `<div class="month-grid">
+      ${months.map(m => {
+        const isSel = searchState.selectedMonths.has(m.id);
+        const isDisabled = !isSel && selCount >= MAX_MONTH_SELECT;
+        return `<button class="month-btn ${isSel ? "selected" : ""}" ${isDisabled ? "disabled" : ""} onclick="toggleMonth('${m.id}')">${MONTH_LABELS[m.month-1]}</button>`;
+      }).join("")}
+    </div>`;
+  }
+
   sp.innerHTML = `<div class="search-panel"><div class="card">
-    <p class="search-section-title">검색 기간 선택</p>
-    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 4px">기간을 선택하면 해당 기간의 대회 목록을 불러옵니다.</p>
-    <div class="period-grid">
-      ${PERIODS.map(p => `
-        <button class="period-btn" onclick="selectPeriod('${esc(p.id)}')">
-          <span class="period-label">${esc(p.label)}</span>
-          <span class="period-count">대회 목록 불러오기</span>
-        </button>
-      `).join("")}
-    </div>
-    <div style="text-align:right;margin-top:4px">
-      <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+    <p class="search-section-title">검색할 월 선택 <small>최대 ${MAX_MONTH_SELECT}개</small></p>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">참가한 대회가 있는 달을 선택하세요.</p>
+    ${by2026.length ? `<div class="year-group"><div class="year-group-label">2026</div>${monthGrid(by2026)}</div>` : ""}
+    <div class="year-group"><div class="year-group-label">2025</div>${monthGrid(by2025)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+      <span style="font-size:13px;color:${selCount >= MAX_MONTH_SELECT ? "var(--color-primary)" : "var(--color-text-muted)"}">
+        ${selCount}개 선택됨 (최대 ${MAX_MONTH_SELECT}개)
+      </span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+        <button class="btn btn-primary btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="loadEventsForMonths()">대회 불러오기</button>
+      </div>
     </div>
   </div></div>`;
 }
 
-async function selectPeriod(periodId) {
-  const period = PERIODS.find(p => p.id === periodId);
-  if (!period) return;
-  searchState.period = period;
+function toggleMonth(monthId) {
+  if (searchState.selectedMonths.has(monthId)) {
+    searchState.selectedMonths.delete(monthId);
+  } else {
+    if (searchState.selectedMonths.size >= MAX_MONTH_SELECT) return;
+    searchState.selectedMonths.add(monthId);
+  }
+  renderMonthSelector();
+}
 
+async function loadEventsForMonths() {
+  const months = [...searchState.selectedMonths].sort();
+  if (!months.length) return;
+
+  const years = [...new Set(months.map(m => parseInt(m.split("-")[0])))];
   const sp = document.getElementById("searchPanel");
   searchState.step = "loading-events";
+
+  const label = months.map(m => {
+    const [y, mo] = m.split("-");
+    return `${y}.${MONTH_LABELS[parseInt(mo)-1]}`;
+  }).join(", ");
+
   sp.innerHTML = `<div class="search-panel"><div class="card">
-    <p class="search-section-title">${esc(period.label)} 대회 목록 불러오는 중...</p>
+    <p class="search-section-title">${esc(label)} 대회 목록 불러오는 중...</p>
     <div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:30%;animation:shimmer 1.2s infinite"></div></div></div>
   </div></div>`;
 
   try {
-    const res = await fetch(`${RACE_API}?action=discover-all&year=${period.year}`);
-    const data = await res.json();
-    if (!data.ok) throw new Error("대회 목록 로드 실패");
-    // 선택한 반기 범위로 필터
-    searchState.allEvents = (data.events || [])
-      .map(e => ({
-        ...e,
-        eventName: e.name || e.eventName || e.sourceId,
-        eventDate: e.date || e.eventDate || "",
-      }))
+    // 연도별 API 호출 (병렬)
+    const results = await Promise.all(years.map(y => fetch(`${RACE_API}?action=discover-all&year=${y}`).then(r => r.json())));
+    const allRaw = results.flatMap(d => d.events || []);
+
+    searchState.allEvents = allRaw
+      .map(e => ({ ...e, eventName: e.name || e.eventName || e.sourceId, eventDate: e.date || e.eventDate || "" }))
       .filter(e => {
-        if (!e.eventDate) return true; // 날짜 미상은 일단 포함
-        return e.eventDate >= period.start && e.eventDate <= period.end;
+        if (!e.eventDate) return false; // 날짜 미상은 제외 (월 필터 불가)
+        const ym = e.eventDate.substring(0, 7); // "2025-11"
+        return months.includes(ym);
       });
+
     searchState.step = "select-events";
     renderEventSelector();
   } catch (e) {
@@ -708,7 +812,7 @@ function renderEventSelector() {
   const selCount = searchState.selectedEvents.size;
 
   sp.innerHTML = `<div class="search-panel"><div class="card">
-    <p class="search-section-title">검색할 대회 선택 <small>${esc(searchState.period?.label || "")} · ${esc(member.nickname || name)}님</small></p>
+    <p class="search-section-title">검색할 대회 선택 <small>${[...searchState.selectedMonths].sort().map(m => { const [y,mo]=m.split("-"); return `${y}.${MONTH_LABELS[parseInt(mo)-1]}`; }).join(", ")} · ${esc(member.nickname || name)}님</small></p>
     <div class="event-search-bar">
       <input type="text" id="eventSearchQ" placeholder="대회명 검색" value="${esc(query)}" oninput="renderEventSelector()" />
       <select id="eventSourceFilter" onchange="renderEventSelector()">
