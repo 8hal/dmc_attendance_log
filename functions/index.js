@@ -603,6 +603,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
     const action = req.query.action || (req.method === "POST" ? "scrape" : "events");
 
     if (action === "confirmed-races") {
+      const year = req.query.year || "2026";
       const snap = await db.collection("scrape_jobs")
         .where("status", "==", "confirmed")
         .orderBy("confirmedAt", "desc")
@@ -611,6 +612,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       const races = [];
       for (const doc of snap.docs) {
         const job = doc.data();
+        if (job.eventDate && !job.eventDate.startsWith(year)) continue;
         const resultsSnap = await db.collection("race_results")
           .where("jobId", "==", doc.id)
           .where("status", "==", "confirmed")
