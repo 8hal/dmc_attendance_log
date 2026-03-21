@@ -197,18 +197,30 @@
           <div class="section-title" style="margin:0">결과</div>
           <button class="btn btn-outline btn-sm" id="addRowBtn">+ 기록 추가</button>
         </div>
-        <div id="addRowForm" class="add-row">
-          <input list="memberList" class="name-input" id="addNickname" placeholder="닉네임" />
-          <datalist id="memberList"></datalist>
-          <select class="dist-select" id="addDist">
-            <option value="full">Full</option>
-            <option value="half">Half</option>
-            <option value="10K">10K</option>
-            <option value="5K">5K</option>
-          </select>
-          <input class="time-input" id="addTime" placeholder="HH:MM:SS" />
-          <button class="btn btn-primary btn-sm" id="addConfirmBtn">추가</button>
-          <button class="btn btn-outline btn-sm" id="addCancelBtn">취소</button>
+        <div id="addRowForm" style="display:none; flex-direction:column; gap:8px; margin-bottom:10px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <input list="memberList" class="name-input" id="addNickname" placeholder="닉네임" style="flex:1; min-width:100px" />
+            <datalist id="memberList"></datalist>
+            <select class="dist-select" id="addDist">
+              <option value="full">Full</option>
+              <option value="half">Half</option>
+              <option value="10K">10K</option>
+              <option value="5K">5K</option>
+            </select>
+            <input class="time-input" id="addTime" placeholder="HH:MM:SS" />
+            <button class="btn btn-primary btn-sm" id="addConfirmBtn">추가</button>
+            <button class="btn btn-outline btn-sm" id="addCancelBtn">취소</button>
+          </div>
+          <!-- 게스트 모드: 회원 목록에 없을 때 표시 -->
+          <div id="guestHint" style="display:none; font-size:12px; color:var(--color-text-secondary)">
+            '<span id="guestNickPreview"></span>'은 회원 목록에 없습니다.
+            <button id="guestModeBtn" style="background:none; border:none; color:var(--color-primary); font-size:12px; cursor:pointer; padding:0; text-decoration:underline">게스트로 추가</button>
+          </div>
+          <div id="guestFields" style="display:none; gap:8px; align-items:center; background:var(--color-border-light); padding:8px; border-radius:8px;">
+            <span style="font-size:12px; color:var(--color-warning); font-weight:500">게스트</span>
+            <input class="name-input" id="addRealName" placeholder="실명" style="flex:1; min-width:80px" />
+            <span style="font-size:11px; color:var(--color-text-muted)">기록은 위 폼에서 입력</span>
+          </div>
         </div>
         <table class="result-table">
           <thead>
@@ -475,7 +487,7 @@
         pbConfirmed: r.pbConfirmed,
         selectedCandidate: r.selectedCandidate,
         // 수동 추가 행은 전체 데이터 저장
-        ...(r.status === "manual" ? { _manual: true, memberNickname: r.memberNickname, memberRealName: r.memberRealName, distance: r.distance, netTime: r.netTime, memberGender: r.memberGender } : {}),
+        ...(r.status === "manual" ? { _manual: true, memberNickname: r.memberNickname, memberRealName: r.memberRealName, distance: r.distance, netTime: r.netTime, memberGender: r.memberGender, isGuest: r.isGuest || false } : {}),
       }));
       localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), state }));
     }
@@ -502,7 +514,7 @@
               idx: reviewRows.length, name: m.memberRealName, bib: "", distance: m.distance,
               netTime: m.netTime, gunTime: "", overallRank: null, genderRank: null, pace: "",
               memberRealName: m.memberRealName, memberNickname: m.memberNickname,
-              memberGender: m.memberGender || "", status: "manual", candidateCount: 1,
+              memberGender: m.memberGender || "", status: "manual", isGuest: m.isGuest || false, candidateCount: 1,
               isPB: false, decision: m.decision, pbConfirmed: m.pbConfirmed, selectedCandidate: true,
             });
           }
@@ -577,19 +589,45 @@
         }
       }
 
-      // 정렬: included 기록순 → excluded/pending 일반 → 선택 미완료 ambiguous
+      // 종목 우선순위 (길이 긴 것이 앞)
+      const distOrder = { full: 0, half: 1, "10K": 2, "5K": 3 };
+      const getDistOrder = (dist) => distOrder[dist] ?? 99;
+
+      // 정렬: included(종목→기록→PB→배번) → excluded/pending 일반 → 선택 미완료 ambiguous
       sortItems.sort((a, b) => {
         const aAmbPending = a.isAmbRep && !a.selected && !a.group.every(c => c.decision === "excluded");
         const bAmbPending = b.isAmbRep && !b.selected && !b.group.every(c => c.decision === "excluded");
         if (aAmbPending && !bAmbPending) return 1;
         if (!aAmbPending && bAmbPending) return -1;
 
-        const aTime = a.selected ? a.selected.netTime : (a.r.decision === "included" ? a.r.netTime : null);
-        const bTime = b.selected ? b.selected.netTime : (b.r.decision === "included" ? b.r.netTime : null);
-        if (aTime && bTime) return timeToSec(aTime) - timeToSec(bTime);
-        if (aTime && !bTime) return -1;
-        if (!aTime && bTime) return 1;
-        return 0;
+        // included인 경우에만 세부 정렬
+        const aIncluded = a.selected || a.r.decision === "included";
+        const bIncluded = b.selected || b.r.decision === "included";
+        if (!aIncluded && !bIncluded) return 0;
+        if (aIncluded && !bIncluded) return -1;
+        if (!aIncluded && bIncluded) return 1;
+
+        const aRow = a.selected || a.r;
+        const bRow = b.selected || b.r;
+
+        // 1) 종목 (full > half > 10K > 5K)
+        const distDiff = getDistOrder(aRow.distance) - getDistOrder(bRow.distance);
+        if (distDiff !== 0) return distDiff;
+
+        // 2) 기록 (짧은 것 먼저)
+        const aTime = aRow.netTime; const bTime = bRow.netTime;
+        const aTimeSec = timeToSec(aTime); const bTimeSec = timeToSec(bTime);
+        if (aTimeSec !== bTimeSec) return aTimeSec - bTimeSec;
+
+        // 3) PB (yes 먼저)
+        const aPB = aRow.pbConfirmed || aRow.isPB ? 0 : 1;
+        const bPB = bRow.pbConfirmed || bRow.isPB ? 0 : 1;
+        if (aPB !== bPB) return aPB - bPB;
+
+        // 4) 배번 (오름차순)
+        const aBib = parseInt(aRow.bib || "99999");
+        const bBib = parseInt(bRow.bib || "99999");
+        return aBib - bBib;
       });
 
       for (const { r } of sortItems) {
@@ -668,10 +706,11 @@
         const toggleIcon = dec === "included" ? "✓" : dec === "excluded" ? "✕" : "?";
         const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" }[r.distance] || r.distance;
 
+        const guestBadge = r.isGuest ? ' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:4px;font-weight:500">게스트</span>' : "";
         html += `<tr class="${rowClass}" data-idx="${r.idx}">
           <td><button class="toggle-btn ${toggleClass}" data-idx="${r.idx}">${toggleIcon}</button></td>
           <td>${no}</td>
-          <td>${r.memberNickname}</td>
+          <td>${r.memberNickname}${guestBadge}</td>
           <td>${r.memberRealName}</td>
           <td>${distLabel}</td>
           <td>${r.netTime}</td>
@@ -847,7 +886,40 @@
     });
 
     document.getElementById("addCancelBtn").addEventListener("click", () => {
+      resetAddForm();
       document.getElementById("addRowForm").style.display = "none";
+    });
+
+    // ─── 기록 추가: 게스트 힌트 ─────────────────────────
+    let guestMode = false;
+
+    function resetAddForm() {
+      guestMode = false;
+      document.getElementById("addNickname").value = "";
+      document.getElementById("addTime").value = "";
+      document.getElementById("addRealName").value = "";
+      document.getElementById("guestHint").style.display = "none";
+      document.getElementById("guestFields").style.display = "none";
+    }
+
+    document.getElementById("addNickname").addEventListener("input", () => {
+      const nickname = document.getElementById("addNickname").value.trim();
+      const member = allMembers.find(m => m.nickname === nickname);
+      const hint = document.getElementById("guestHint");
+      if (nickname && !member && !guestMode) {
+        document.getElementById("guestNickPreview").textContent = nickname;
+        hint.style.display = "block";
+      } else {
+        hint.style.display = "none";
+        if (!guestMode) document.getElementById("guestFields").style.display = "none";
+      }
+    });
+
+    document.getElementById("guestModeBtn").addEventListener("click", () => {
+      guestMode = true;
+      document.getElementById("guestHint").style.display = "none";
+      document.getElementById("guestFields").style.display = "flex";
+      document.getElementById("addRealName").focus();
     });
 
     document.getElementById("addConfirmBtn").addEventListener("click", () => {
@@ -857,7 +929,25 @@
       if (!nickname || !time) { showToast("닉네임과 기록을 입력하세요"); return; }
 
       const member = allMembers.find(m => m.nickname === nickname);
-      const realName = member ? member.realName : nickname;
+
+      let realName, gender, isGuest;
+      if (member) {
+        realName = member.realName;
+        gender = member.gender || "";
+        isGuest = false;
+      } else if (guestMode) {
+        const inputRealName = document.getElementById("addRealName").value.trim();
+        if (!inputRealName) { showToast("게스트 실명을 입력하세요"); return; }
+        realName = inputRealName;
+        gender = "";
+        isGuest = true;
+      } else {
+        // 목록에 없는데 게스트 모드 미선택 — 안내
+        document.getElementById("guestNickPreview").textContent = nickname;
+        document.getElementById("guestHint").style.display = "block";
+        showToast("회원 목록에 없는 닉네임입니다. 게스트로 추가하려면 '게스트로 추가'를 눌러주세요.");
+        return;
+      }
 
       reviewRows.push({
         idx: reviewRows.length,
@@ -871,8 +961,9 @@
         pace: "",
         memberRealName: realName,
         memberNickname: nickname,
-        memberGender: member?.gender || "",
+        memberGender: gender,
         status: "manual",
+        isGuest,
         candidateCount: 1,
         isPB: false,
         decision: "included",
@@ -880,12 +971,11 @@
         selectedCandidate: true,
       });
 
-      document.getElementById("addNickname").value = "";
-      document.getElementById("addTime").value = "";
+      resetAddForm();
       document.getElementById("addRowForm").style.display = "none";
       renderTable();
       updateStats();
-      showToast(`${nickname} 추가 완료`);
+      showToast(`${nickname}${isGuest ? " (게스트)" : ""} 추가 완료`);
     });
 
     // ─── 뒤로 가기 ──────────────────────────────────────
@@ -1084,8 +1174,9 @@
               gunTime: r.gunTime || "",
               bib: r.bib || "",
               overallRank: r.overallRank || null,
-              gender: r.gender || "",
+              gender: r.gender || r.memberGender || "",
               pbConfirmed: r.pbConfirmed || false,
+              isGuest: r.isGuest || false,
             })),
           }),
         });
