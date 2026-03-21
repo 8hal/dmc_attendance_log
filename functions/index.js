@@ -809,6 +809,30 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       return res.json({ ok: true, savedCount: results.length });
     }
 
+    if (action === "create-job" && req.method === "POST") {
+      const { eventName, eventDate, location } = req.body || {};
+      if (!eventName) {
+        return res.status(400).json({ ok: false, error: "eventName required" });
+      }
+
+      const now = new Date().toISOString();
+      const sourceId = `manual_${Date.now()}`;
+      const jobRef = db.collection("scrape_jobs").doc();
+      await jobRef.set({
+        source: "manual",
+        sourceId,
+        eventName,
+        eventDate: eventDate || "",
+        location: location || "",
+        status: "complete",
+        progress: { searched: 0, total: 0, found: 0 },
+        results: [],
+        createdAt: now,
+      });
+
+      return res.json({ ok: true, jobId: jobRef.id, eventName, eventDate: eventDate || "" });
+    }
+
     if (action === "scrape" && req.method === "POST") {
       const { source, sourceId, eventName, eventDate, replaceJobId } = req.body || {};
       if (!source || !sourceId) {
