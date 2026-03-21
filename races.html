@@ -1018,6 +1018,13 @@ async function init() {
     memberMap = {};
     for (const m of membersData) memberMap[m.realName] = m;
     updateStats();
+    const hashTab = location.hash.replace("#", "");
+    if (["pb", "races", "individual"].includes(hashTab)) {
+      currentTab = hashTab;
+      document.querySelectorAll(".tab").forEach(t => {
+        t.classList.toggle("active", t.dataset.tab === currentTab);
+      });
+    }
     render();
   } catch (e) {
     contentEl.innerHTML = `<div class="card"><div class="empty"><span class="empty-icon">⚠️</span>데이터를 불러오지 못했습니다.<br><small style="color:var(--color-text-muted)">${esc(e.message)}</small></div></div>`;
