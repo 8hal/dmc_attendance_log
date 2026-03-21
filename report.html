@@ -81,8 +81,9 @@
     .row-ambiguous { background: var(--color-warning-light); }
     .row-dnf { background: var(--color-border-light); color: var(--color-text-muted); }
     .row-excluded { opacity: 0.35; text-decoration: line-through; }
-    .row-candidate { background: #FFFBEB; font-size: 12px; }
+    .row-candidate { background: #FFFBEB; font-size: 12px; cursor: pointer; user-select: none; }
     .row-candidate td { padding: 6px 6px 6px 30px; }
+    .row-candidate:hover td { background: #FEF3C7; }
 
     .toggle-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-success-light); color: var(--color-success); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
     .toggle-btn.excluded { background: var(--color-error-light); color: var(--color-error); border-color: #FCA5A5; }
@@ -546,7 +547,6 @@
     // ─── 테이블 렌더링 ──────────────────────────────────
     function renderTable() {
       const tbody = document.getElementById("resultBody");
-      const rendered = new Set();
       let no = 0;
       let html = "";
 
@@ -560,12 +560,40 @@
         }
       });
 
+      // 정렬용 대표 항목 목록 생성 (ambiguous는 그룹당 1개 대표만)
+      const seenAmb = new Set();
+      const sortItems = [];  // { r, isAmbRep, group, selected }
       for (const r of reviewRows) {
         if (r.status === "ambiguous") {
           const key = r.memberRealName;
-          if (rendered.has(key)) continue;
-          rendered.add(key);
+          if (seenAmb.has(key)) continue;
+          seenAmb.add(key);
+          const group = ambGroups[key];
+          const selected = group.find(c => c.selectedCandidate && c.decision === "included");
+          sortItems.push({ r, isAmbRep: true, group, selected });
+        } else {
+          sortItems.push({ r, isAmbRep: false, group: null, selected: null });
+        }
+      }
 
+      // 정렬: included 기록순 → excluded/pending 일반 → 선택 미완료 ambiguous
+      sortItems.sort((a, b) => {
+        const aAmbPending = a.isAmbRep && !a.selected && !a.group.every(c => c.decision === "excluded");
+        const bAmbPending = b.isAmbRep && !b.selected && !b.group.every(c => c.decision === "excluded");
+        if (aAmbPending && !bAmbPending) return 1;
+        if (!aAmbPending && bAmbPending) return -1;
+
+        const aTime = a.selected ? a.selected.netTime : (a.r.decision === "included" ? a.r.netTime : null);
+        const bTime = b.selected ? b.selected.netTime : (b.r.decision === "included" ? b.r.netTime : null);
+        if (aTime && bTime) return timeToSec(aTime) - timeToSec(bTime);
+        if (aTime && !bTime) return -1;
+        if (!aTime && bTime) return 1;
+        return 0;
+      });
+
+      for (const { r } of sortItems) {
+        if (r.status === "ambiguous") {
+          const key = r.memberRealName;
           const group = ambGroups[key];
           const selected = group.find(c => c.selectedCandidate && c.decision === "included");
           // 그룹의 대표 decision: 하나라도 included면 included, 모두 excluded면 excluded, 나머지 pending
@@ -599,8 +627,8 @@
 
           for (const c of group) {
             const checkedAttr = c.selectedCandidate && c.decision === "included" ? "checked" : "";
-            html += `<tr class="row-candidate" data-name="${key}" style="display:none">
-              <td><input type="radio" name="amb_${key}" ${checkedAttr} data-idx="${c.idx}" /></td>
+            html += `<tr class="row-candidate" data-name="${key}" data-idx="${c.idx}" style="display:none; cursor:pointer">
+              <td><input type="radio" name="amb_${key}" ${checkedAttr} data-idx="${c.idx}" style="pointer-events:none" /></td>
               <td></td><td></td><td></td>
               <td>${c.distance}</td>
               <td>${c.netTime}</td>
@@ -610,8 +638,8 @@
           }
 
           // "해당없음" 라디오 (모두 제외 상태일 때 체크)
-          html += `<tr class="row-candidate" data-name="${key}" style="display:none">
-            <td><input type="radio" name="amb_${key}" data-idx="none_${key}" ${groupDecision === "excluded" ? "checked" : ""} /></td>
+          html += `<tr class="row-candidate" data-name="${key}" data-idx="none_${key}" style="display:none; cursor:pointer">
+            <td><input type="radio" name="amb_${key}" data-idx="none_${key}" ${groupDecision === "excluded" ? "checked" : ""} style="pointer-events:none" /></td>
             <td></td><td></td><td></td>
             <td colspan="4" style="color:var(--color-text-muted);font-size:12px">해당없음 (전부 제외)</td>
           </tr>`;
@@ -697,12 +725,17 @@
         });
       });
 
-      tbody.querySelectorAll('input[type="radio"]').forEach(radio => {
-        radio.addEventListener("change", () => {
-          const name = radio.name.replace("amb_", "");
-          const idxStr = radio.dataset.idx;
+      tbody.querySelectorAll("tr.row-candidate").forEach(tr => {
+        tr.addEventListener("click", (e) => {
+          // PB 버튼 클릭은 무시
+          if (e.target.closest(".pb-toggle")) return;
 
-          // 같은 그룹 전부 제외
+          const idxStr = tr.dataset.idx;
+          const name = tr.dataset.name;
+          const radio = tr.querySelector('input[type="radio"]');
+          if (radio) radio.checked = true;
+
+          // 같은 그룹 전부 초기화
           reviewRows.filter(r => r.memberRealName === name && r.status === "ambiguous").forEach(r => {
             r.decision = "excluded";
             r.selectedCandidate = false;
