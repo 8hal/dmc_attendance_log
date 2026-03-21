@@ -516,7 +516,7 @@ function renderIndividualTab() {
     <div class="member-select-wrap">
       <select class="member-select" id="memberSelect" onchange="onMemberChange()">
         <option value="">회원을 선택하세요</option>
-        ${membersData.map(m => `<option value="${esc(m.realName)}">${esc(m.nickname)} (${esc(TEAM_LABELS[m.team] || m.team)})</option>`).join("")}
+        ${membersData.map(m => { const t = TEAM_LABELS[m.team] || m.team; return `<option value="${esc(m.realName)}">${esc(m.nickname)}${t ? ` (${esc(t)})` : ""}</option>`; }).join("")}
         ${guestNames.length ? '<option disabled>──── 게스트 ────</option>' : ""}
         ${guestNames.map(name => {
           const rec = all.find(r => r.realName === name);
