@@ -239,7 +239,7 @@
       </div>
       <div class="stat-item">
         <div class="stat-value" id="statRecords">-</div>
-        <div class="stat-label">총 기록</div>
+        <div class="stat-label">총 기록 수</div>
       </div>
     </div>
 
@@ -472,7 +472,7 @@ function renderPBTab() {
   const filtered = filterResults(pbs);
 
   if (currentDist === "all") {
-    let html = renderSummaryStats(all);
+    let html = "";
     for (const dist of DIST_ORDER) {
       const distPbs = filtered.filter(r => r.distance === dist).sort((a, b) => timeToSeconds(a.netTime) - timeToSeconds(b.netTime));
       if (!distPbs.length) continue;
@@ -521,7 +521,8 @@ function renderRacesTab() {
     return;
   }
 
-  let html = "";
+  const all = enrichResults();
+  let html = renderSummaryStats(all);
   for (const race of sortedRaces) {
     const results = race.results
       .map(r => {
@@ -548,7 +549,7 @@ function renderRacesTab() {
             <span>${esc(race.location || "")}</span>
             <span class="dot">·</span>
             ${distances.map(d => distBadge(d)).join(" ")}
-            <span class="race-count">DMC ${results.length}명</span>
+            <span class="race-count">클럽원 ${results.length}명</span>
             ${race.source && race.sourceId ? extLinkHtml(race.source, race.sourceId) : race.source ? `<span class="source-badge">${esc(race.source)}</span>` : ""}
           </div>
         </div>
@@ -566,7 +567,7 @@ function renderRacesTab() {
       </div>`;
   }
 
-  if (!html) html = emptyState("해당 필터에 맞는 대회가 없습니다.");
+  if (!html) html = emptyState("선택한 조건에 맞는 대회가 없습니다.");
   el.innerHTML = html;
 }
 
@@ -595,7 +596,7 @@ function renderIndividualTab() {
   let selectHtml = `
     <div class="member-select-wrap">
       <select class="member-select" id="memberSelect" onchange="onMemberChange()">
-        <option value="">회원을 선택하세요</option>
+        <option value="">닉네임을 선택하세요</option>
         ${membersData.map(m => { const t = TEAM_LABELS[m.team] || m.team; return `<option value="${esc(m.realName)}">${esc(m.nickname)}${t ? ` (${esc(t)})` : ""}</option>`; }).join("")}
         ${guestNames.length ? '<option disabled>──── 게스트 ────</option>' : ""}
         ${guestNames.map(name => {
@@ -625,7 +626,7 @@ function resetSearch() {
 function renderMemberDetail() {
   const el = document.getElementById("memberDetail");
   const name = document.getElementById("memberSelect").value;
-  if (!name) { el.innerHTML = emptyState("회원을 선택하면 기록이 표시됩니다."); return; }
+  if (!name) { el.innerHTML = emptyState("닉네임을 선택하면 기록이 표시됩니다."); return; }
 
   const all = enrichResults().filter(r => r.realName === name);
   const member = memberMap[name] || {};
@@ -679,7 +680,7 @@ function renderMemberDetail() {
       }
       html += "</div>";
     } else {
-      html += emptyState("해당 필터에 맞는 기록이 없습니다.");
+      html += emptyState("선택한 조건에 맞는 기록이 없습니다.");
     }
   } else {
     html += emptyState("해당 회원의 기록이 없습니다.");
@@ -687,7 +688,7 @@ function renderMemberDetail() {
 
   html += `
     <div class="search-trigger">
-      <button class="btn btn-outline" onclick="startSearchFlow()">🔍 과거 대회 기록 검색</button>
+      <button class="btn btn-outline" onclick="startSearchFlow()">🔍 내 기록 찾기</button>
     </div>`;
 
   el.innerHTML = html;
@@ -833,7 +834,7 @@ function renderEventSelector() {
           <span class="event-item-badge event-badge-source">${esc(e.source)}</span>
         </label>`;
       }).join("")}
-      ${!events.length ? '<div style="padding:20px;text-align:center;color:var(--color-text-muted);font-size:13px">검색 결과 없음</div>' : ""}
+      ${!events.length ? '<div style="padding:20px;text-align:center;color:var(--color-text-muted);font-size:13px">해당 조건의 대회가 없습니다</div>' : ""}
     </div>
     <div class="event-counter">${events.length}개 대회 중 <strong>${selCount}개</strong> 선택됨</div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
@@ -930,7 +931,7 @@ function pollSearchJob() {
       clearInterval(searchState.pollTimer);
       const sp = document.getElementById("searchPanel");
       sp.innerHTML = `<div class="search-panel"><div class="card">
-        <div class="empty"><span class="empty-icon">⏱️</span>검색 시간이 초과되었습니다.<br><small style="color:var(--color-text-muted)">대회 수가 너무 많습니다. 월 범위를 줄여서 다시 시도해주세요.</small></div>
+        <div class="empty"><span class="empty-icon">⏱️</span>검색 시간이 초과되었습니다.<br><small style="color:var(--color-text-muted)">선택한 대회가 너무 많습니다. 검색할 월을 줄여서 다시 시도해주세요.</small></div>
         <div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="startSearchFlow()">다시 선택하기</button></div>
       </div></div>`;
       return;
@@ -998,7 +999,7 @@ function renderSearchResults() {
 
   if (!results.length) {
     sp.innerHTML = `<div class="search-panel"><div class="card">
-      <div class="empty"><span class="empty-icon">🏃</span>검색한 대회에서 기록을 찾지 못했습니다.</div>
+      <div class="empty"><span class="empty-icon">🏃</span>선택한 대회에서 기록을 찾지 못했습니다.</div>
       <div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div>
     </div></div>`;
     return;
@@ -1148,7 +1149,7 @@ async function saveSearchResults() {
   }
 
   if (errors.length) {
-    showToast(`${savedTotal}건 저장, ${errors.length}건 실패`, 4000);
+    showToast(`${savedTotal}건 저장 완료, ${errors.length}건 실패`, 4000);
   } else {
     showToast(`${savedTotal}건 저장 완료`);
   }
@@ -1232,8 +1233,8 @@ async function init() {
     ]);
     const membersJson = await membersRes.json();
     const racesJson = await racesRes.json();
-    if (!membersJson.ok) throw new Error("멤버 로드 실패");
-    if (!racesJson.ok) throw new Error("대회 기록 로드 실패");
+    if (!membersJson.ok) throw new Error("회원 정보를 불러오지 못했습니다");
+    if (!racesJson.ok) throw new Error("대회 기록을 불러오지 못했습니다");
     membersData = (membersJson.members || []).map(m => ({
       realName: m.realName,
       nickname: m.nickname,
