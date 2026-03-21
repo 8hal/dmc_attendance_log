@@ -472,7 +472,7 @@ function renderRacesTab() {
   el.innerHTML = html;
 }
 
-let searchState = { step: "idle", jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Set() };
+let searchState = { step: "idle", jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
 
 function renderIndividualTab() {
   const el = document.getElementById("content");
@@ -504,7 +504,7 @@ function onMemberChange() {
 
 function resetSearch() {
   if (searchState.pollTimer) clearInterval(searchState.pollTimer);
-  searchState = { step: "idle", jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Set() };
+  searchState = { step: "idle", jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
   const sp = document.getElementById("searchPanel");
   if (sp) sp.innerHTML = "";
 }
@@ -700,7 +700,7 @@ async function beginSearch() {
 
   searchState.step = "searching";
   searchState.foundResults = [];
-  searchState.selectedResults = new Set();
+  searchState.selectedResults = new Map();
 
   const sp = document.getElementById("searchPanel");
   sp.innerHTML = `<div class="search-panel"><div class="card">
@@ -794,47 +794,73 @@ function renderSearchResults() {
   }
 
   const totalRecords = results.reduce((sum, r) => sum + r.records.length, 0);
+  const multiEvents = results.filter(r => r.records.length > 1);
 
-  // Auto-select: 1건이면 자동 선택, 다건이면 미선택
-  if (searchState.selectedResults.size === 0 && searchState.step === "review") {
+  // selectedResults: Map<eventIdx, recordIdx|null>
+  // 1건 → 자동 포함, 다건 → 미선택 (사용자가 라디오로 선택)
+  if (searchState.step === "review") {
+    searchState.selectedResults = new Map();
     for (let i = 0; i < results.length; i++) {
-      for (let j = 0; j < results[i].records.length; j++) {
-        if (results[i].records.length === 1) {
-          searchState.selectedResults.add(`${i}_${j}`);
-        }
+      if (results[i].records.length === 1) {
+        searchState.selectedResults.set(i, 0);
       }
     }
     searchState.step = "reviewed";
   }
 
-  const selCount = searchState.selectedResults.size;
-  const multiWarn = results.some(r => r.records.length > 1);
+  const selCount = [...searchState.selectedResults.values()].filter(v => v !== null).length;
+  const needsAction = multiEvents.length > 0;
+  const unresolved = multiEvents.filter((_, idx) => {
+    const realIdx = results.indexOf(multiEvents[idx]);
+    return !searchState.selectedResults.has(realIdx);
+  }).length;
 
   sp.innerHTML = `<div class="search-panel"><div class="card">
     <p class="search-section-title">검색 결과 <small>${results.length}개 대회, ${totalRecords}건</small></p>
-    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">저장할 기록을 선택하세요.${multiWarn ? ' <strong style="color:var(--color-error)">동명이인이 있을 수 있으니 BIB/기록을 확인하세요.</strong>' : ""}</p>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">${needsAction ? '<strong style="color:var(--color-error)">동명이인이 포함되어 있습니다. 본인 기록을 선택해주세요.</strong>' : "저장할 기록을 확인하세요."}</p>
     ${results.map((r, i) => {
-      const recKeys = r.records.map((_, j) => `${i}_${j}`);
-      const allSel = recKeys.every(k => searchState.selectedResults.has(k));
-      const someSel = recKeys.some(k => searchState.selectedResults.has(k));
-      return `<div class="found-result-card ${someSel ? "selected" : ""}">
+      const isMulti = r.records.length > 1;
+      const chosen = searchState.selectedResults.get(i);
+      const included = searchState.selectedResults.has(i) && chosen !== null;
+
+      if (!isMulti) {
+        const rec = r.records[0];
+        return `<div class="found-result-card ${included ? "selected" : ""}" style="cursor:pointer" onclick="toggleSingleEvent(${i})">
+          <div class="found-result-header">
+            <span style="font-size:18px;flex-shrink:0">${included ? "✅" : "⬜"}</span>
+            <span class="found-event-name">${esc(r.eventName)}</span>
+            <span class="found-event-date">${esc(r.eventDate)}</span>
+          </div>
+          <div class="found-records" style="padding-left:30px">
+            <div class="found-record-row">
+              ${distBadge(rec.distance || "?")}
+              <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
+              ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
+            </div>
+          </div>
+        </div>`;
+      }
+
+      return `<div class="found-result-card ${included ? "selected" : ""}" style="border-color:${chosen === undefined ? "var(--color-error)" : ""}">
         <div class="found-result-header">
-          <input type="checkbox" ${allSel ? "checked" : ""} ${!allSel && someSel ? 'style="opacity:0.5"' : ""} onchange="toggleEventRecords(${i}, this.checked)" />
           <span class="found-event-name">${esc(r.eventName)}</span>
           <span class="found-event-date">${esc(r.eventDate)}</span>
-          ${r.records.length > 1 ? `<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--color-error-light);color:var(--color-error);font-weight:600">${r.records.length}건</span>` : ""}
+          <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--color-error-light);color:var(--color-error);font-weight:600">동명이인 ${r.records.length}건</span>
         </div>
-        <div class="found-records">
+        <div class="found-records" style="padding-left:4px">
           ${r.records.map((rec, j) => {
-            const key = `${i}_${j}`;
-            const checked = searchState.selectedResults.has(key);
-            return `<label class="found-record-row" style="cursor:pointer;padding:6px 0;border-radius:6px;${checked ? "background:#EFF6FF;" : ""}">
-              <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleSingleRecord('${key}', this.checked)" style="width:14px;height:14px;accent-color:var(--color-primary)" />
+            const isSel = chosen === j;
+            return `<label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${isSel ? "background:#EFF6FF;" : ""}">
+              <input type="radio" name="evt_${i}" ${isSel ? "checked" : ""} onchange="pickRecord(${i}, ${j})" style="width:16px;height:16px;accent-color:var(--color-primary);flex-shrink:0" />
               ${distBadge(rec.distance || "?")}
               <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
               ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
             </label>`;
           }).join("")}
+          <label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${chosen === null ? "background:#FEF2F2;" : ""}">
+            <input type="radio" name="evt_${i}" ${chosen === null ? "checked" : ""} onchange="pickRecord(${i}, null)" style="width:16px;height:16px;accent-color:var(--color-text-muted);flex-shrink:0" />
+            <span style="font-size:13px;color:var(--color-text-muted)">해당 없음 (건너뛰기)</span>
+          </label>
         </div>
       </div>`;
     }).join("")}
@@ -845,20 +871,17 @@ function renderSearchResults() {
   </div></div>`;
 }
 
-function toggleSingleRecord(key, checked) {
-  if (checked) searchState.selectedResults.add(key);
-  else searchState.selectedResults.delete(key);
+function toggleSingleEvent(evtIdx) {
+  if (searchState.selectedResults.has(evtIdx)) {
+    searchState.selectedResults.delete(evtIdx);
+  } else {
+    searchState.selectedResults.set(evtIdx, 0);
+  }
   renderSearchResults();
 }
 
-function toggleEventRecords(evtIdx, checked) {
-  const results = searchState.foundResults;
-  const r = results[evtIdx];
-  for (let j = 0; j < r.records.length; j++) {
-    const key = `${evtIdx}_${j}`;
-    if (checked) searchState.selectedResults.add(key);
-    else searchState.selectedResults.delete(key);
-  }
+function pickRecord(evtIdx, recIdx) {
+  searchState.selectedResults.set(evtIdx, recIdx);
   renderSearchResults();
 }
 
@@ -867,28 +890,18 @@ async function saveSearchResults() {
   const member = memberMap[name] || {};
   const results = searchState.foundResults;
 
-  // Group selected records by event
-  const byEvent = {};
-  for (const key of searchState.selectedResults) {
-    const [i, j] = key.split("_").map(Number);
-    if (!byEvent[i]) byEvent[i] = [];
-    byEvent[i].push(j);
-  }
+  const entries = [...searchState.selectedResults.entries()].filter(([_, v]) => v !== null);
+  if (!entries.length) return;
 
-  const eventCount = Object.keys(byEvent).length;
-  const totalCount = searchState.selectedResults.size;
-  if (!totalCount) return;
-
-  const confirmMsg = `${eventCount}개 대회에서 ${totalCount}건의 기록을 저장할까요?`;
+  const confirmMsg = `${entries.length}건의 기록을 저장할까요?`;
   if (!confirm(confirmMsg)) return;
 
   let savedTotal = 0;
   let errors = [];
 
-  for (const [iStr, recIdxs] of Object.entries(byEvent)) {
-    const i = Number(iStr);
+  for (const [i, j] of entries) {
     const r = results[i];
-    const selectedRecords = recIdxs.map(j => r.records[j]);
+    const selectedRecords = [r.records[j]];
     try {
       const saveRes = await fetch(`${RACE_API}?action=confirm`, {
         method: "POST",
