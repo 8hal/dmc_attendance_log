@@ -570,16 +570,13 @@ function renderRacesTab() {
   el.innerHTML = html;
 }
 
-// 월별 선택 (최대 5개)
 const MAX_MONTH_SELECT = 5;
 function buildMonthOptions() {
   const now = new Date();
   const months = [];
-  // 2026년 (1월 ~ 현재월)
   for (let m = now.getMonth() + 1; m >= 1; m--) {
     months.push({ year: 2026, month: m, id: `2026-${String(m).padStart(2,"0")}` });
   }
-  // 2025년 (12월 ~ 1월)
   for (let m = 12; m >= 1; m--) {
     months.push({ year: 2025, month: m, id: `2025-${String(m).padStart(2,"0")}` });
   }
@@ -771,15 +768,14 @@ async function loadEventsForMonths() {
   </div></div>`;
 
   try {
-    // 연도별 API 호출 (병렬)
     const results = await Promise.all(years.map(y => fetch(`${RACE_API}?action=discover-all&year=${y}`).then(r => r.json())));
     const allRaw = results.flatMap(d => d.events || []);
 
     searchState.allEvents = allRaw
       .map(e => ({ ...e, eventName: e.name || e.eventName || e.sourceId, eventDate: e.date || e.eventDate || "" }))
       .filter(e => {
-        if (!e.eventDate) return false; // 날짜 미상은 제외 (월 필터 불가)
-        const ym = e.eventDate.substring(0, 7); // "2025-11"
+        if (!e.eventDate) return false;
+        const ym = e.eventDate.substring(0, 7);
         return months.includes(ym);
       });
 
