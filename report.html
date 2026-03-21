@@ -221,6 +221,7 @@
               <th>기록</th>
               <th>배번</th>
               <th>PB</th>
+              <th style="width:40px"></th>
             </tr>
           </thead>
           <tbody id="resultBody"></tbody>
@@ -608,6 +609,14 @@
           const infoColor = groupDecision === "excluded" ? "var(--color-text-muted)"
             : groupDecision === "pending" ? "var(--color-warning)" : "var(--color-text)";
 
+          const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" };
+          // 선택된 후보의 종목/기록/배번 (일반 행과 동일한 서식)
+          const selDist = selected ? (distLabel[selected.distance] || selected.distance) : "";
+          const selTime = selected ? selected.netTime : "";
+          const selBib  = selected ? (selected.bib || "") : "";
+          // 선택 미완료 상태 안내 (종목 컬럼에만 표시)
+          const pendingHint = groupDecision === "excluded" ? "" : `<span style="font-size:11px;color:var(--color-warning)">선택 필요</span>`;
+
           html += `<tr class="row-ambiguous ${rowExtraClass}">
             <td>
               <button class="toggle-btn amb-toggle ${toggleClass}" data-name="${key}">
@@ -617,12 +626,13 @@
             <td>${no}</td>
             <td>${r.memberNickname}</td>
             <td>${r.memberRealName}</td>
-            <td colspan="3" style="font-size:12px;color:${infoColor}">
-              <span class="expand-btn" data-name="${key}">
-                ${groupDecision === "excluded" ? "제외됨" : selected ? `${selected.distance} ${selected.netTime} ▸ ${group.length}건` : `선택 필요 ▸ ${group.length}건`}
-              </span>
-            </td>
+            <td>${selected ? selDist : pendingHint}</td>
+            <td>${selTime}</td>
+            <td>${selBib}</td>
             <td>${selected ? '<span class="pb-toggle ' + (selected.pbConfirmed ? "active" : "") + '" data-idx="' + selected.idx + '">PB</span>' : ""}</td>
+            <td>
+              ${groupDecision !== "excluded" ? `<span class="expand-btn" data-name="${key}" style="font-size:11px;color:var(--color-text-muted);cursor:pointer;white-space:nowrap">▸ ${group.length}건</span>` : ""}
+            </td>
           </tr>`;
 
           for (const c of group) {
@@ -631,10 +641,11 @@
             html += `<tr class="row-candidate" data-name="${key}" data-idx="${c.idx}" style="display:none; cursor:pointer">
               <td><input type="radio" name="amb_${key}" ${checkedAttr} data-idx="${c.idx}" style="pointer-events:none" /></td>
               <td></td><td></td><td></td>
-              <td>${c.distance}</td>
+              <td>${distLabel[c.distance] || c.distance}</td>
               <td>${c.netTime}</td>
               <td>${c.bib || ""}</td>
               <td>${isSelected && c.isPB ? '<span class="pb-toggle ' + (c.pbConfirmed ? "active" : "") + '" data-idx="' + c.idx + '">PB</span>' : ""}</td>
+              <td></td>
             </tr>`;
           }
 
@@ -643,6 +654,7 @@
             <td><input type="radio" name="amb_${key}" data-idx="none_${key}" ${groupDecision === "excluded" ? "checked" : ""} style="pointer-events:none" /></td>
             <td></td><td></td><td></td>
             <td colspan="4" style="color:var(--color-text-muted);font-size:12px">해당없음 (전부 제외)</td>
+            <td></td>
           </tr>`;
 
           continue;
@@ -665,6 +677,7 @@
           <td>${r.netTime}</td>
           <td>${r.bib || ""}</td>
           <td>${!isDnf ? '<span class="pb-toggle ' + (r.pbConfirmed ? "active" : "") + '" data-idx="' + r.idx + '">PB</span>' : ""}</td>
+          <td></td>
         </tr>`;
       }
 
