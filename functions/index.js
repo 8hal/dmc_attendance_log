@@ -640,6 +640,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
           name: job.eventName,
           date: job.eventDate,
           source: job.source,
+          sourceId: job.sourceId || "",
           results,
         });
       }

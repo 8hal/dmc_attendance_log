@@ -123,6 +123,11 @@
     /* Source badge */
     .source-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; text-transform: uppercase; background: var(--color-border-light); color: var(--color-text-muted); }
 
+    /* External link */
+    .ext-link { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 5px; font-size: 11px; color: var(--color-primary); background: #EFF6FF; text-decoration: none; white-space: nowrap; transition: background 0.15s; }
+    .ext-link:hover { background: #DBEAFE; }
+    .ext-link svg { width: 11px; height: 11px; flex-shrink: 0; }
+
     /* Empty state */
     .empty { text-align: center; padding: 32px 16px; color: var(--color-text-muted); font-size: 14px; }
     .empty-icon { font-size: 40px; margin-bottom: 8px; display: block; }
@@ -321,6 +326,33 @@ function teamPill(teamCode) {
   return `<span class="pill" style="background:${c.bg};color:${c.text};border-color:${c.border}">${esc(label)}</span>`;
 }
 
+function buildTimingSiteUrl(source, sourceId, realName) {
+  if (!source || !sourceId || source === "manual") return null;
+  switch (source) {
+    case "spct": {
+      const year = sourceId.substring(0, 4);
+      return realName
+        ? `https://time.spct.kr/m1.php?TargetYear=${year}&EVENT_NO=${sourceId}&currentPage=1&searchResultsName=${encodeURIComponent(realName)}`
+        : `https://time.spct.kr/m1.php?TargetYear=${year}&EVENT_NO=${sourceId}&currentPage=1`;
+    }
+    case "smartchip":
+      return `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${sourceId}`;
+    case "myresult":
+      return `https://myresult.co.kr/race/${sourceId}`;
+    case "marazone":
+      return `https://raceresult.co.kr`;
+    default:
+      return null;
+  }
+}
+
+function extLinkHtml(source, sourceId, realName) {
+  const url = buildTimingSiteUrl(source, sourceId, realName);
+  if (!url) return "";
+  const svg = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>';
+  return `<a href="${esc(url)}" target="_blank" rel="noopener" class="ext-link" title="기록 사이트에서 보기" onclick="event.stopPropagation()">${esc(source)}${svg}</a>`;
+}
+
 function distBadge(dist) {
   const label = DIST_LABELS[dist] || dist;
   const cls = `dist-${dist}`;
@@ -341,7 +373,8 @@ function enrichResults() {
         raceDate: race.date,
         raceId: race.id,
         raceLocation: race.location,
-        source: race.source
+        source: race.source,
+        sourceId: race.sourceId
       });
     }
   }
@@ -451,7 +484,7 @@ function renderRacesTab() {
             <span class="dot">·</span>
             ${distances.map(d => distBadge(d)).join(" ")}
             <span class="race-count">DMC ${results.length}명</span>
-            ${race.source ? `<span class="source-badge">${esc(race.source)}</span>` : ""}
+            ${race.source && race.sourceId ? extLinkHtml(race.source, race.sourceId) : race.source ? `<span class="source-badge">${esc(race.source)}</span>` : ""}
           </div>
         </div>
         <div class="race-results">
@@ -559,6 +592,7 @@ function renderMemberDetail() {
                 <span class="timeline-time">${esc(r.netTime)}</span>
                 ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
                 ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
+                ${extLinkHtml(r.source, r.sourceId, r.realName)}
               </div>
             </div>
           </div>`;
@@ -670,7 +704,15 @@ function renderEventSelector() {
 function toggleEvent(key, checked) {
   if (checked) searchState.selectedEvents.add(key);
   else searchState.selectedEvents.delete(key);
-  renderEventSelector();
+  updateEventCounter();
+}
+
+function updateEventCounter() {
+  const selCount = searchState.selectedEvents.size;
+  const counter = document.querySelector(".event-counter");
+  if (counter) counter.innerHTML = `${searchState.allEvents.length}개 대회 중 <strong>${selCount}개</strong> 선택됨`;
+  const btn = document.querySelector(".search-panel .btn-primary");
+  if (btn) { btn.disabled = selCount === 0; btn.textContent = `검색 시작 (${selCount}개)`; }
 }
 
 function toggleAllEvents(selectAll) {
@@ -688,7 +730,11 @@ function toggleAllEvents(selectAll) {
     if (selectAll) searchState.selectedEvents.add(key);
     else searchState.selectedEvents.delete(key);
   }
-  renderEventSelector();
+  const container = document.getElementById("eventListContainer");
+  if (container) {
+    container.querySelectorAll("input[type=checkbox]").forEach(cb => { cb.checked = selectAll; });
+  }
+  updateEventCounter();
 }
 
 async function beginSearch() {
@@ -836,6 +882,7 @@ function renderSearchResults() {
               ${distBadge(rec.distance || "?")}
               <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
               ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
+              ${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}
             </div>
           </div>
         </div>`;
@@ -855,6 +902,7 @@ function renderSearchResults() {
               ${distBadge(rec.distance || "?")}
               <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
               ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
+              ${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}
             </label>`;
           }).join("")}
           <label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${chosen === null ? "background:#FEF2F2;" : ""}">
