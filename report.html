@@ -46,6 +46,7 @@
     .event-meta { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
     .event-badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 500; }
     .badge-complete { background: var(--color-success-light); color: var(--color-success); }
+    .badge-confirmed { background: #DBEAFE; color: #1D4ED8; font-weight: 600; }
     .badge-running { background: var(--color-warning-light); color: var(--color-warning); }
 
     /* 직접 입력 */
@@ -242,8 +243,18 @@
 
       <!-- 내보내기 + 기록 저장 -->
       <div class="card" id="saveCard">
+        <!-- 미확정 상태: 저장하기 버튼 -->
         <button class="btn btn-primary" id="saveRecordsBtn" style="width:100%; padding:14px; font-size:16px; font-weight:600">기록 저장하기</button>
-        <div id="alreadyConfirmedMsg" style="display:none; text-align:center; margin-top:8px; font-size:13px; color:var(--color-success); font-weight:500"></div>
+        <!-- 확정 상태: 잠금 배너 + 수정하기 버튼 -->
+        <div id="confirmedBanner" style="display:none; border-radius:10px; background:#DBEAFE; padding:14px 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#1D4ED8">기록 입력 완료</div>
+              <div id="confirmedAtMsg" style="font-size:12px; color:#3B82F6; margin-top:2px"></div>
+            </div>
+            <button class="btn btn-outline btn-sm" id="editConfirmedBtn" style="color:#1D4ED8; border-color:#93C5FD">수정하기</button>
+          </div>
+        </div>
         <div style="margin-top:16px; border-top:1px solid var(--color-border); padding-top:14px;">
           <div class="section-title" style="margin-bottom:8px">게시글 미리보기</div>
           <div class="post-preview" id="postPreview"></div>
@@ -432,17 +443,22 @@
           return;
         }
 
-        list.innerHTML = data.jobs.map(j => `
+        list.innerHTML = data.jobs.map(j => {
+          const badgeClass = j.status === "confirmed" ? "badge-confirmed"
+            : j.status === "complete" ? "badge-complete"
+            : "badge-running";
+          const badgeText = j.status === "confirmed" ? "기록 입력 완료"
+            : j.status === "complete" ? "스크래핑 완료"
+            : j.status === "running" ? "진행중" : j.status;
+          return `
           <div class="event-item" data-job-id="${j.jobId}">
             <div class="event-info">
               <div class="event-name">${j.eventName}</div>
               <div class="event-meta">${j.eventDate || "날짜 미확인"} · ${j.source} · ${j.foundCount}명 발견</div>
             </div>
-            <span class="event-badge ${j.status === "complete" ? "badge-complete" : "badge-running"}">
-              ${j.status === "complete" ? "완료" : j.status === "running" ? "진행중" : j.status}
-            </span>
-          </div>
-        `).join("");
+            <span class="event-badge ${badgeClass}">${badgeText}</span>
+          </div>`;
+        }).join("");
 
         list.querySelectorAll(".event-item").forEach(el => {
           el.addEventListener("click", () => loadJob(el.dataset.jobId));
@@ -1197,19 +1213,33 @@
 
     // 이미 확정된 job이면 저장 버튼 상태 갱신
     function updateSaveButton() {
-      const msg = document.getElementById("alreadyConfirmedMsg");
-      const btn = document.getElementById("saveRecordsBtn");
+      const saveBtn = document.getElementById("saveRecordsBtn");
+      const banner = document.getElementById("confirmedBanner");
+      const atMsg = document.getElementById("confirmedAtMsg");
+
       if (currentJob?.status === "confirmed") {
-        msg.style.display = "block";
-        msg.textContent = "이 대회의 기록은 이미 저장되었습니다. 다시 저장하면 기존 기록을 덮어씁니다.";
-        btn.textContent = "기록 다시 저장하기";
-        btn.style.background = "var(--color-warning)";
+        saveBtn.style.display = "none";
+        banner.style.display = "block";
+        const confirmedAt = currentJob.confirmedAt
+          ? new Date(currentJob.confirmedAt).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " 저장됨"
+          : "저장됨";
+        atMsg.textContent = confirmedAt;
       } else {
-        msg.style.display = "none";
-        btn.textContent = "기록 저장하기";
-        btn.style.background = "";
+        saveBtn.style.display = "block";
+        banner.style.display = "none";
+        saveBtn.textContent = "기록 저장하기";
+        saveBtn.style.background = "";
       }
     }
+
+    // 수정하기 버튼: confirmed 상태를 해제하고 저장 버튼 복원
+    document.getElementById("editConfirmedBtn").addEventListener("click", () => {
+      if (!confirm("저장된 기록을 수정합니다.\n수정 후 다시 '기록 저장하기'를 눌러 확정해야 합니다.\n\n계속하시겠습니까?")) return;
+      // 로컬 상태만 변경 (Firestore 상태는 재확정 시 덮어씀)
+      currentJob = { ...currentJob, status: "complete" };
+      updateSaveButton();
+      showToast("수정 모드입니다. 변경 후 기록 저장하기를 눌러주세요.");
+    });
 
     // ─── 초기화 ──────────────────────────────────────────
     loadDiscoveredEvents();

@@ -672,7 +672,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
                 jobId: doc.id, source: d.source, sourceId: d.sourceId,
                 eventName: patch.eventName || d.eventName,
                 eventDate: patch.eventDate || d.eventDate,
-                status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt,
+                status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
               };
             })
           );
@@ -680,7 +680,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
           jobs.push({
             jobId: doc.id, source: d.source, sourceId: d.sourceId,
             eventName: d.eventName, eventDate: d.eventDate,
-            status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt,
+            status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
           });
         }
       });
