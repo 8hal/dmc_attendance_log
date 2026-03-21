@@ -349,7 +349,7 @@ function renderRankingList(items) {
         <div class="rank-badge ${rankCls}">${medal}</div>
         <div class="ranking-info">
           <div class="ranking-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)}</div>
-          <div class="ranking-detail">${esc(r.raceName)} · ${formatDate(r.raceDate)}</div>
+          <div class="ranking-detail">${esc(r.raceName)} · ${formatDate(r.raceDate)} ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}</div>
         </div>
         <div class="ranking-time">${esc(r.netTime)}</div>
       </li>`;
@@ -402,7 +402,7 @@ function renderRacesTab() {
           ${results.map((r) => `
             <div class="result-row">
               <div class="result-info">
-                <div class="result-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)} ${distBadge(r.distance)} ${r.isPB ? '<span class="pb-badge">PB</span>' : ""}</div>
+                <div class="result-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)} ${distBadge(r.distance)} ${r.isPB ? '<span class="pb-badge">PB</span>' : ""} ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}</div>
                 ${r.bib ? `<div class="result-sub">BIB ${esc(r.bib)}</div>` : ""}
               </div>
               <div class="result-time">${esc(r.netTime)}</div>
@@ -486,8 +486,8 @@ function renderMemberDetail() {
           <div class="timeline-result">
             ${distBadge(r.distance)}
             <span class="timeline-time">${esc(r.netTime)}</span>
-            ${isPb ? '<span class="pb-badge">PB</span>' : ""}
-            ${r.isPB ? '<span class="pb-badge">PB</span>' : ""}
+            ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
+            ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
           </div>
         </div>
       </div>`;

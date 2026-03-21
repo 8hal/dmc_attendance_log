@@ -631,6 +631,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
             overallRank: r.overallRank || null,
             gender: r.gender || "",
             isPB: r.pbConfirmed || false,
+            note: r.note || "",
           });
         });
 
@@ -799,6 +800,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
           overallRank: r.overallRank || null,
           gender: r.gender || "",
           pbConfirmed: r.pbConfirmed || false,
+          isGuest: r.isGuest || false,
+          note: r.note || "",
           status: "confirmed",
           confirmedAt: now,
         });

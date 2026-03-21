@@ -290,6 +290,7 @@
               <th>기록</th>
               <th>배번</th>
               <th>PB</th>
+              <th>비고</th>
               <th style="width:40px"></th>
             </tr>
           </thead>
@@ -349,6 +350,7 @@
               <th>기록</th>
               <th>배번</th>
               <th>PB</th>
+              <th>비고</th>
             </tr>
           </thead>
           <tbody id="confirmBody"></tbody>
@@ -412,6 +414,8 @@
     let allMembers = [];
 
     // ─── 유틸 ────────────────────────────────────────────
+    function escAttr(s) { return String(s || "").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+
     function timeToSec(t) {
       const m = String(t).match(/^(\d+):(\d{2}):(\d{2})/);
       if (!m) return Infinity;
@@ -764,7 +768,7 @@
         decision: r.decision,
         pbConfirmed: r.pbConfirmed,
         selectedCandidate: r.selectedCandidate,
-        // 수동 추가 행은 전체 데이터 저장
+        note: r.note || "",
         ...(r.status === "manual" ? { _manual: true, memberNickname: r.memberNickname, memberRealName: r.memberRealName, distance: r.distance, netTime: r.netTime, memberGender: r.memberGender, isGuest: r.isGuest || false } : {}),
       }));
       localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), state }));
@@ -806,6 +810,7 @@
           row.decision = s.decision;
           row.pbConfirmed = s.pbConfirmed;
           row.selectedCandidate = s.selectedCandidate;
+          row.note = s.note || "";
         }
         return true;
       } catch {
@@ -824,6 +829,7 @@
         decision: (!r.netTime || r.netTime === "--:--:--") ? "excluded" : "pending",
         pbConfirmed: r.isPB || false,
         selectedCandidate: r.status !== "ambiguous",
+        note: r.note || "",
       }));
 
       const restored = restoreReviewState();
@@ -948,6 +954,7 @@
             <td>${selTime}</td>
             <td>${selBib}</td>
             <td>${selected ? '<span class="pb-toggle ' + (selected.pbConfirmed ? "active" : "") + '" data-idx="' + selected.idx + '">PB</span>' : ""}</td>
+            <td>${selected ? `<input class="note-input" data-idx="${selected.idx}" value="${escAttr(selected.note)}" placeholder="" style="width:70px;padding:3px 6px;border:1px solid var(--color-border);border-radius:4px;font-size:11px;" />` : ""}</td>
             <td>
               ${groupDecision !== "excluded" ? `<span class="expand-btn" data-name="${key}" style="font-size:11px;color:var(--color-text-muted);cursor:pointer;white-space:nowrap">▸ ${group.length}건</span>` : ""}
             </td>
@@ -963,7 +970,7 @@
               <td>${c.netTime}</td>
               <td>${c.bib || ""}</td>
               <td>${isSelected && c.isPB ? '<span class="pb-toggle ' + (c.pbConfirmed ? "active" : "") + '" data-idx="' + c.idx + '">PB</span>' : ""}</td>
-              <td></td>
+              <td></td><td></td>
             </tr>`;
           }
 
@@ -971,7 +978,7 @@
           html += `<tr class="row-candidate" data-name="${key}" data-idx="none_${key}" style="display:none; cursor:pointer">
             <td><input type="radio" name="amb_${key}" data-idx="none_${key}" ${groupDecision === "excluded" ? "checked" : ""} style="pointer-events:none" /></td>
             <td></td><td></td><td></td>
-            <td colspan="4" style="color:var(--color-text-muted);font-size:12px">해당없음 (전부 제외)</td>
+            <td colspan="5" style="color:var(--color-text-muted);font-size:12px">해당없음 (전부 제외)</td>
             <td></td>
           </tr>`;
 
@@ -996,6 +1003,7 @@
           <td>${r.netTime}</td>
           <td>${r.bib || ""}</td>
           <td>${!isDnf ? '<span class="pb-toggle ' + (r.pbConfirmed ? "active" : "") + '" data-idx="' + r.idx + '">PB</span>' : ""}</td>
+          <td><input class="note-input" data-idx="${r.idx}" value="${escAttr(r.note)}" placeholder="" style="width:70px;padding:3px 6px;border:1px solid var(--color-border);border-radius:4px;font-size:11px;" /></td>
           <td></td>
         </tr>`;
       }
@@ -1045,6 +1053,16 @@
           row.pbConfirmed = !row.pbConfirmed;
           btn.classList.toggle("active");
           updateStats();
+        });
+      });
+
+      tbody.querySelectorAll(".note-input").forEach(input => {
+        input.addEventListener("change", () => {
+          const idx = parseInt(input.dataset.idx);
+          if (!isNaN(idx) && reviewRows[idx]) {
+            reviewRows[idx].note = input.value.trim();
+            saveReviewState();
+          }
         });
       });
 
@@ -1411,6 +1429,7 @@
           <td style="font-variant-numeric:tabular-nums; font-weight:600">${r.netTime}</td>
           <td>${r.bib || ""}</td>
           <td>${r.pbConfirmed ? '<span style="color:var(--color-warning); font-weight:600">PB</span>' : ""}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary)">${r.note || ""}</td>
         </tr>
       `).join("");
 
@@ -1458,6 +1477,7 @@
               gender: r.gender || r.memberGender || "",
               pbConfirmed: r.pbConfirmed || false,
               isGuest: r.isGuest || false,
+              note: r.note || "",
             })),
           }),
         });
