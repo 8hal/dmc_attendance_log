@@ -367,17 +367,24 @@
           return;
         }
 
-        list.innerHTML = data.events.map(e => `
+        list.innerHTML = data.events.map(e => {
+          let badge;
+          if (!e.alreadyScraped) {
+            badge = '<span class="event-badge" style="background:#DBEAFE;color:#2563EB">검색하기</span>';
+          } else if (e.jobStatus === "confirmed") {
+            badge = '<span class="event-badge badge-confirmed">기록 입력 완료 — 열기</span>';
+          } else {
+            badge = '<span class="event-badge badge-complete">스크래핑됨 — 클릭하여 열기</span>';
+          }
+          return `
           <div class="event-item ${e.alreadyScraped ? "already-scraped" : ""}" data-source="${e.source}" data-source-id="${e.sourceId}" data-name="${e.name}" data-date="${e.date || ""}" ${e.jobId ? `data-job-id="${e.jobId}"` : ""}>
             <div class="event-info">
               <div class="event-name">${e.name}</div>
               <div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div>
             </div>
-            ${e.alreadyScraped
-              ? '<span class="event-badge badge-complete">스크래핑됨 — 클릭하여 열기</span>'
-              : '<span class="event-badge" style="background:#DBEAFE;color:#2563EB">검색하기</span>'}
-          </div>
-        `).join("");
+            ${badge}
+          </div>`;
+        }).join("");
 
         let scraping = false;
         list.querySelectorAll(".event-item").forEach(el => {
