@@ -6,7 +6,7 @@
 
 const { load: cheerioLoad } = require("cheerio");
 
-const DELAY_MS = 400;
+const DELAY_MS = 200;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─── 거리/시간 유틸리티 ──────────────────────────────────────

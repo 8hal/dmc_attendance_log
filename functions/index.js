@@ -914,45 +914,61 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       // 응답을 먼저 반환 (프론트가 jobId로 폴링)
       res.json({ ok: true, jobId });
 
-      // 백그라운드 검색 — res.json() 이후에도 함수가 완료될 때까지 실행 보장
-      // (Cloud Run: 응답 후에도 동기 코드는 계속 실행됨, 단 timeoutSeconds 이내)
+      // 사이트별 병렬 검색 (같은 사이트 내에서는 순차 + 딜레이)
       try {
         const allResults = [];
-        for (let i = 0; i < events.length; i++) {
-          const ev = events[i];
-          try {
-            await jobRef.update({
-              progress: { searched: i, total: events.length, currentEvent: ev.eventName || ev.sourceId },
-            });
+        let searched = 0;
 
-            await scraper.sleep(scraper.DELAY_MS);
-            const found = await scraper.searchMember(ev.source, ev.sourceId, realName);
-
-            if (found && found.length > 0) {
-              allResults.push({
-                eventName: ev.eventName || ev.sourceId,
-                eventDate: ev.eventDate || "",
-                source: ev.source,
-                sourceId: ev.sourceId,
-                records: found.map((r) => ({
-                  ...r,
-                  memberRealName: realName,
-                  memberNickname: nickname || "",
-                  memberGender: gender || "",
-                })),
-              });
-            }
-
-            await jobRef.update({
-              progress: { searched: i + 1, total: events.length, currentEvent: ev.eventName || ev.sourceId },
-              results: allResults,
-            });
-          } catch (err) {
-            console.error(`[search-member] ${ev.sourceId}: ${err.message}`);
-          }
+        // 사이트별로 이벤트 그룹핑
+        const bySource = {};
+        for (const ev of events) {
+          const src = ev.source || "unknown";
+          if (!bySource[src]) bySource[src] = [];
+          bySource[src].push(ev);
         }
 
-        await jobRef.update({ status: "complete", completedAt: new Date().toISOString() });
+        const updateProgress = async (currentEvent) => {
+          await jobRef.update({
+            progress: { searched, total: events.length, currentEvent },
+            results: allResults,
+          });
+        };
+
+        // 사이트별 순차 검색 함수
+        const searchSource = async (sourceEvents) => {
+          for (const ev of sourceEvents) {
+            try {
+              await scraper.sleep(scraper.DELAY_MS);
+              const found = await scraper.searchMember(ev.source, ev.sourceId, realName);
+
+              if (found && found.length > 0) {
+                allResults.push({
+                  eventName: ev.eventName || ev.sourceId,
+                  eventDate: ev.eventDate || "",
+                  source: ev.source,
+                  sourceId: ev.sourceId,
+                  records: found.map((r) => ({
+                    ...r,
+                    memberRealName: realName,
+                    memberNickname: nickname || "",
+                    memberGender: gender || "",
+                  })),
+                });
+              }
+
+              searched++;
+              await updateProgress(ev.eventName || ev.sourceId);
+            } catch (err) {
+              searched++;
+              console.error(`[search-member] ${ev.sourceId}: ${err.message}`);
+            }
+          }
+        };
+
+        // 사이트별 병렬 실행
+        await Promise.all(Object.values(bySource).map(searchSource));
+
+        await jobRef.update({ status: "complete", completedAt: new Date().toISOString(), results: allResults });
       } catch (err) {
         console.error(`[search-member] fatal: ${err.message}`);
         await jobRef.update({ status: "failed", error: err.message, completedAt: new Date().toISOString() }).catch(() => {});
