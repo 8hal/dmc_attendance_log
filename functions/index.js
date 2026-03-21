@@ -548,7 +548,7 @@ exports.weeklyDiscoverAndScrape = onSchedule(
     for (const event of newEvents.slice(0, 3)) {
       console.log(`[scrape] ${event.source}:${event.sourceId} (${event.name})`);
 
-      const jobRef = db.collection("scrape_jobs").doc();
+      const jobRef = db.collection("scrape_jobs").doc(`${event.source}_${event.sourceId}`);
       await jobRef.set({
         source: event.source,
         sourceId: event.sourceId,
@@ -651,7 +651,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     if (action === "events") {
       const snap = await db.collection("scrape_jobs")
         .orderBy("createdAt", "desc")
-        .limit(20)
         .get();
 
       const jobs = [];
@@ -676,7 +675,11 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
                 jobId: doc.id, source: d.source, sourceId: d.sourceId,
                 eventName: patch.eventName || d.eventName,
                 eventDate: patch.eventDate || d.eventDate,
-                status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
+                status: d.status,
+                foundCount: d.status === "confirmed"
+                  ? (d.confirmedCount ?? 0)
+                  : (d.results?.length ?? 0),
+                createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
               };
             })
           );
@@ -684,16 +687,35 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           jobs.push({
             jobId: doc.id, source: d.source, sourceId: d.sourceId,
             eventName: d.eventName, eventDate: d.eventDate,
-            status: d.status, foundCount: d.results?.length || 0, createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
+            status: d.status,
+            foundCount: d.status === "confirmed"
+              ? (d.confirmedCount ?? 0)
+              : (d.results?.length ?? 0),
+            createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
           });
         }
       });
 
       const fixed = await Promise.all(fixPromises);
       jobs.push(...fixed);
-      jobs.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
-      return res.json({ ok: true, jobs });
+      // source+sourceId 기준 중복 제거 (confirmed > complete > running, foundCount 높은 것 우선)
+      const statusPriority = { confirmed: 0, complete: 1, running: 2 };
+      const jobMap = new Map();
+      for (const j of jobs) {
+        const key = `${j.source}_${j.sourceId}`;
+        const existing = jobMap.get(key);
+        if (!existing) { jobMap.set(key, j); continue; }
+        const ePri = statusPriority[existing.status] ?? 9;
+        const jPri = statusPriority[j.status] ?? 9;
+        if (jPri < ePri || (jPri === ePri && (j.foundCount || 0) > (existing.foundCount || 0))) {
+          jobMap.set(key, j);
+        }
+      }
+      const deduped = [...jobMap.values()];
+      deduped.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+
+      return res.json({ ok: true, jobs: deduped });
     }
 
     if (action === "discover") {
@@ -774,7 +796,22 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const doc = await db.collection("scrape_jobs").doc(jobId).get();
       if (!doc.exists) return res.status(404).json({ ok: false, error: "job not found" });
 
-      return res.json({ ok: true, ...doc.data(), jobId: doc.id });
+      const data = doc.data();
+
+      // confirmed job은 race_results(실제 저장된 기록)를 소스로 사용
+      if (data.status === "confirmed") {
+        const raceSnap = await db.collection("race_results")
+          .where("eventName", "==", data.eventName)
+          .where("eventDate", "==", data.eventDate || "")
+          .get();
+        if (!raceSnap.empty) {
+          const confirmed = [];
+          raceSnap.forEach((d) => confirmed.push(d.data()));
+          data.results = confirmed;
+        }
+      }
+
+      return res.json({ ok: true, ...data, jobId: doc.id });
     }
 
     if (action === "members") {
@@ -818,6 +855,21 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.status(400).json({ ok: false, error: "nothing to update" });
       }
       await ref.update(updates);
+
+      // gender 변경 시 기존 race_results 동기화
+      if (updates.gender !== undefined) {
+        const currentRealName = doc.data().realName;
+        const resultsSnap = await db.collection("race_results")
+          .where("memberRealName", "==", currentRealName)
+          .get();
+        if (!resultsSnap.empty) {
+          const batch = db.batch();
+          resultsSnap.docs.forEach(d => batch.update(d.ref, { gender: updates.gender }));
+          await batch.commit();
+          console.log(`[update-member] gender sync: ${resultsSnap.size}건 updated for ${currentRealName}`);
+        }
+      }
+
       return res.json({ ok: true, id, ...updates });
     }
 
@@ -1024,20 +1076,32 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       }
 
-      const jobRef = db.collection("scrape_jobs").doc(jobId);
+      const canonicalJobId = (source && sourceId && source !== "manual")
+        ? `${source}_${sourceId}`
+        : jobId;
+      const jobRef = db.collection("scrape_jobs").doc(canonicalJobId);
       const jobDoc = await jobRef.get();
+
+      const confirmedJobData = {
+        status: "confirmed",
+        confirmedAt: now,
+        confirmedCount: results.length,
+        results,
+        eventName: eventName || "",
+        eventDate: eventDate || "",
+        source: source || "",
+        sourceId: sourceId || "",
+      };
+
       if (jobDoc.exists) {
-        batch.update(jobRef, { status: "confirmed", confirmedAt: now });
+        batch.update(jobRef, confirmedJobData);
       } else {
-        batch.set(jobRef, {
-          eventName: eventName || "",
-          eventDate: eventDate || "",
-          source: source || "",
-          sourceId: sourceId || "",
-          status: "confirmed",
-          createdAt: now,
-          confirmedAt: now,
-        });
+        batch.set(jobRef, { ...confirmedJobData, createdAt: now });
+      }
+
+      // canonicalJobId가 원래 jobId와 다르면 구 문서 삭제
+      if (canonicalJobId !== jobId) {
+        batch.delete(db.collection("scrape_jobs").doc(jobId));
       }
 
       await batch.commit();
@@ -1052,7 +1116,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       const now = new Date().toISOString();
       const sourceId = `manual_${Date.now()}`;
-      const jobRef = db.collection("scrape_jobs").doc();
+      const jobRef = db.collection("scrape_jobs").doc(`manual_${sourceId}`);
       await jobRef.set({
         source: "manual",
         sourceId,
@@ -1086,10 +1150,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
       const pbMap = scraper.buildPBMap(confirmedResults);
 
-      // replaceJobId가 있으면 기존 문서 덮어쓰기, 없으면 새 문서 생성
-      const jobRef = replaceJobId
-        ? db.collection("scrape_jobs").doc(replaceJobId)
-        : db.collection("scrape_jobs").doc();
+      const canonicalId = `${source}_${sourceId}`;
+      const jobRef = db.collection("scrape_jobs").doc(replaceJobId || canonicalId);
 
       const now = new Date().toISOString();
       const jobData = {

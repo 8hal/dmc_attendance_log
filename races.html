@@ -245,7 +245,7 @@
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab active" data-tab="pb">PB 랭킹</button>
+      <button class="tab active" data-tab="pb">최고 기록</button>
       <button class="tab" data-tab="races">대회별 기록</button>
       <button class="tab" data-tab="individual">개인 기록</button>
     </div>
@@ -476,7 +476,7 @@ function renderPBTab() {
     for (const dist of DIST_ORDER) {
       const distPbs = filtered.filter(r => r.distance === dist).sort((a, b) => timeToSeconds(a.netTime) - timeToSeconds(b.netTime));
       if (!distPbs.length) continue;
-      html += `<div class="card"><h3 style="margin:0 0 10px;font-size:15px;">${distBadge(dist)} PB 랭킹</h3>`;
+      html += `<div class="card"><h3 style="margin:0 0 10px;font-size:15px;">${distBadge(dist)} 최고 기록</h3>`;
       html += renderRankingList(distPbs);
       html += `</div>`;
     }

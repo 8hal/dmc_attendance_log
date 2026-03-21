@@ -98,6 +98,31 @@
     .tab-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
     .already-scraped { opacity: 0.6; }
 
+    /* 로딩 스피너 */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-spinner { width: 26px; height: 26px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .loading-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px; color: var(--color-text-muted); font-size: 13px; }
+
+    /* 글로벌 검색 바 */
+    #screenSelect > .card-search { background: var(--color-card); border-radius: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; padding: 12px 14px; }
+
+    /* 타임라인 탭 바 */
+    .tl-tab-bar { display: flex; gap: 6px; margin-bottom: 12px; transition: opacity 0.2s; }
+    .tl-tab { flex: 1; padding: 10px 6px 9px; border: 1.5px solid var(--color-border); border-radius: 12px; background: var(--color-card); cursor: pointer; color: var(--color-text-secondary); transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 5px; box-shadow: 0 1px 4px rgba(15,23,42,0.06); }
+    .tl-tab:hover:not(.active) { border-color: var(--color-primary); color: var(--color-primary); }
+    .tl-tab.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+    .tl-tab-label { font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .tl-tab-count { font-size: 20px; font-weight: 800; line-height: 1.1; }
+    .tl-tab-count.zero { opacity: 0.35; }
+
+    /* 탭 패널 */
+    #tabPanel { min-height: 180px; }
+    #tabPanel .event-list, #searchPanel .event-list { padding: 8px; gap: 6px; }
+    .tab-empty { text-align: center; padding: 40px 20px; color: var(--color-text-muted); font-size: 14px; line-height: 1.8; }
+    .add-event-hint { padding: 10px 16px 12px; font-size: 13px; color: var(--color-text-muted); display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--color-border-light); }
+    #collectExtras { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+    #collectExtras .card { padding: 0; overflow: hidden; }
+
     /* 진행률 */
     .progress-wrap { display: none; margin: 12px 0; }
     .progress-bar { height: 6px; background: var(--color-border-light); border-radius: 3px; overflow: hidden; }
@@ -108,7 +133,7 @@
     .result-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .result-table th { text-align: left; padding: 8px 6px; font-size: 11px; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; border-bottom: 2px solid var(--color-border); }
     .result-table td { padding: 8px 6px; border-bottom: 1px solid var(--color-border-light); vertical-align: middle; }
-    .row-auto { }
+    .row-auto { /* 자동 매칭 행 */ }
     .row-ambiguous { background: var(--color-warning-light); }
     .row-dnf { background: var(--color-border-light); color: var(--color-text-muted); }
     .row-excluded { opacity: 0.35; text-decoration: line-through; }
@@ -191,63 +216,85 @@
 
     <!-- 화면 1: 대회 선택 -->
     <div id="screenSelect" class="screen active">
-      <div class="card">
-        <h2>대회 선택</h2>
-        <div style="display:flex; gap:4px; margin-bottom:8px;">
-          <button class="btn btn-sm tab-btn active" data-tab="discover">최근 대회 발견</button>
-          <button class="btn btn-sm tab-btn" data-tab="scraped">스크래핑 완료</button>
-        </div>
-        <div style="display:flex; gap:6px; margin-bottom:10px;">
-          <input id="eventSearchName" type="text" placeholder="대회명 검색" style="flex:2; padding:8px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:13px;" />
-          <input id="eventSearchDate" type="month" style="flex:1; padding:8px 10px; border:1px solid var(--color-border); border-radius:8px; font-size:13px;" />
+
+      <!-- 글로벌 검색 바 -->
+      <div class="card-search">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input id="eventSearchName" type="text" placeholder="대회명으로 전체 검색..." style="flex:1; padding:9px 14px; border:1px solid var(--color-border); border-radius:10px; font-size:14px;" />
           <button class="btn btn-outline btn-sm" id="eventSearchClear" title="초기화" style="padding:8px 10px;">✕</button>
-        </div>
-        <div id="discoverList" class="event-list">
-          <div id="discoverItems">
-            <div style="text-align:center; padding:20px; color:var(--color-text-muted)">대회 목록 불러오는 중...</div>
-          </div>
-          <div id="discoverPagination" class="pagination" style="display:none"></div>
-        </div>
-        <div id="scrapedList" class="event-list" style="display:none">
-          <!-- 대회 직접 추가 -->
-          <div style="margin-bottom:10px;">
-            <button class="btn btn-outline btn-sm" id="createJobBtn" style="width:100%">+ 대회 직접 추가</button>
-            <div id="createJobForm" style="display:none; flex-direction:column; gap:8px; margin-top:10px; padding:12px; background:var(--color-border-light); border-radius:10px;">
-              <input id="createJobName" type="text" placeholder="대회명 (예: 2026 춘천소양강마라톤)" style="padding:9px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:14px; width:100%; box-sizing:border-box" />
-              <div style="display:flex; gap:8px;">
-                <input id="createJobDate" type="date" style="flex:1; padding:9px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:14px;" />
-                <input id="createJobLocation" type="text" placeholder="장소 (선택)" style="flex:1; padding:9px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:14px;" />
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-primary btn-sm" id="createJobConfirmBtn" style="flex:1">추가 후 기록 입력</button>
-                <button class="btn btn-outline btn-sm" id="createJobCancelBtn">취소</button>
-              </div>
-            </div>
-          </div>
-          <div id="scrapedJobsList">
-            <div style="text-align:center; padding:20px; color:var(--color-text-muted)">불러오는 중...</div>
-          </div>
-          <div id="scrapedPagination" class="pagination" style="display:none"></div>
         </div>
       </div>
 
-      <details class="card">
-        <summary class="section-title" style="cursor:pointer; user-select:none; list-style:none;">직접 입력 (이벤트 ID)</summary>
-        <div class="manual-input">
-          <select id="manualSource">
-            <option value="smartchip">SmartChip</option>
-            <option value="spct">SPCT</option>
-            <option value="myresult">MyResult</option>
-            <option value="marazone">Marazone</option>
-          </select>
-          <input id="manualId" type="text" placeholder="이벤트 ID (예: 202650000006)" />
-          <button class="btn btn-primary" id="manualScrapeBtn">검색</button>
+      <!-- 타임라인 탭 바 -->
+      <div class="tl-tab-bar">
+        <button class="tl-tab" data-tab="scheduled">
+          <div class="tl-tab-label">📅 대회 예정</div>
+          <div class="tl-tab-count zero" id="tabCountScheduled">-</div>
+        </button>
+        <button class="tl-tab" data-tab="collect">
+          <div class="tl-tab-label">🔍 수집 가능</div>
+          <div class="tl-tab-count zero" id="tabCountCollect">-</div>
+        </button>
+        <button class="tl-tab" data-tab="review">
+          <div class="tl-tab-label">✏️ 검토 필요</div>
+          <div class="tl-tab-count zero" id="tabCountReview">-</div>
+        </button>
+        <button class="tl-tab" data-tab="done">
+          <div class="tl-tab-label">✅ 완료</div>
+          <div class="tl-tab-count zero" id="tabCountDone">-</div>
+        </button>
+      </div>
+
+      <!-- 탭 패널 (탭별 콘텐츠 렌더) -->
+      <div class="card" id="tabPanel">
+        <div class="tab-empty">불러오는 중...</div>
+      </div>
+
+      <!-- 수집 가능 탭 전용 추가 기능 (persistent DOM, initCreateJobUI 참조) -->
+      <div id="collectExtras" style="display:none;">
+        <div class="card">
+          <div class="add-event-hint">
+            목록에 없는 대회라면?
+            <button class="btn btn-outline btn-sm" id="createJobBtn">+ 직접 추가</button>
+          </div>
+          <div id="createJobForm" style="display:none; flex-direction:column; gap:8px; padding:4px 16px 16px; border-top:1px solid var(--color-border-light);">
+            <input id="createJobName" type="text" placeholder="대회명 (예: 2026 춘천소양강마라톤)" style="padding:9px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:14px; width:100%; box-sizing:border-box; margin-top:4px;" />
+            <div style="display:flex; gap:8px;">
+              <input id="createJobDate" type="date" style="flex:1; padding:9px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:14px;" />
+              <input id="createJobLocation" type="text" placeholder="장소 (선택)" style="flex:1; padding:9px 12px; border:1px solid var(--color-border); border-radius:8px; font-size:14px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary btn-sm" id="createJobConfirmBtn" style="flex:1">추가 후 기록 입력</button>
+              <button class="btn btn-outline btn-sm" id="createJobCancelBtn">취소</button>
+            </div>
+          </div>
         </div>
-        <div id="manualProgress" class="progress-wrap">
-          <div class="progress-bar"><div class="progress-fill" id="manualProgressFill"></div></div>
-          <div class="progress-text" id="manualProgressText">검색 중...</div>
+        <div class="card">
+          <details>
+            <summary style="cursor:pointer; user-select:none; list-style:none; font-size:13px; color:var(--color-text-muted); padding:12px 16px;">이벤트 ID로 직접 검색</summary>
+            <div style="padding:0 16px 14px; border-top:1px solid var(--color-border-light);">
+              <div class="manual-input" style="margin-top:12px;">
+                <select id="manualSource">
+                  <option value="smartchip">SmartChip</option>
+                  <option value="spct">SPCT</option>
+                  <option value="myresult">MyResult</option>
+                  <option value="marazone">Marazone</option>
+                </select>
+                <input id="manualId" type="text" placeholder="이벤트 ID (예: 202650000006)" />
+                <button class="btn btn-primary" id="manualScrapeBtn">검색</button>
+              </div>
+              <div id="manualProgress" class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" id="manualProgressFill"></div></div>
+                <div class="progress-text" id="manualProgressText">검색 중...</div>
+              </div>
+            </div>
+          </details>
         </div>
-      </details>
+      </div>
+
+      <!-- 검색 결과 패널 (검색어 있을 때 tabPanel 대체) -->
+      <div class="card" id="searchPanel" style="display:none;"></div>
+
     </div>
 
     <!-- 화면 2: 결과 리뷰 -->
@@ -397,6 +444,68 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- 사용법 모달 -->
+  <div class="modal-backdrop" id="helpModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📖 대회 기록 관리 사용법</h2>
+        <button class="modal-close" id="helpModalClose">×</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="help-section">
+          <h3>📋 전체 흐름</h3>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:13px; color:var(--color-text-secondary); margin-bottom:4px;">
+            <span style="background:#DBEAFE;color:#2563EB;padding:3px 10px;border-radius:99px;font-weight:600;">🔍 수집 가능</span>
+            <span>→</span>
+            <span style="background:var(--color-success-light);color:var(--color-success);padding:3px 10px;border-radius:99px;font-weight:600;">✏️ 검토 필요</span>
+            <span>→</span>
+            <span style="background:#DBEAFE;color:#1D4ED8;padding:3px 10px;border-radius:99px;font-weight:600;">✅ 완료</span>
+          </div>
+          <p style="font-size:13px;color:var(--color-text-secondary);margin:6px 0 0;">대회를 수집하면 검토 필요로 이동하고, 검토 후 저장하면 완료로 이동합니다.</p>
+        </div>
+
+        <div class="help-section">
+          <h3>🔍 1단계: 기록 수집</h3>
+          <ul style="font-size:13px;color:var(--color-text-secondary);padding-left:18px;line-height:1.9;margin:0;">
+            <li><b>수집 가능</b> 탭에서 대회를 선택하면 자동으로 기록을 수집합니다.</li>
+            <li>목록에 없는 대회는 하단 <b>+ 직접 추가</b>에서 대회명·날짜를 입력하세요.</li>
+            <li>이벤트 ID를 알고 있다면 <b>이벤트 ID로 직접 검색</b>을 사용하세요.</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>✏️ 2단계: 결과 검토</h3>
+          <ul style="font-size:13px;color:var(--color-text-secondary);padding-left:18px;line-height:1.9;margin:0;">
+            <li><b>검토 필요</b> 탭에서 대회를 클릭하면 수집된 결과가 표시됩니다.</li>
+            <li>이름이 <span style="background:#FEF3C7;padding:1px 6px;border-radius:4px;font-size:12px;">노란색</span>으로 표시된 행은 회원 매칭이 애매한 경우입니다. 직접 회원을 선택하거나 제외하세요.</li>
+            <li>DNF/기록 없음 행은 기본적으로 제외됩니다. 체크박스로 포함 여부를 조정할 수 있습니다.</li>
+            <li><b>PB</b> 버튼을 눌러 개인 최고 기록 여부를 수동으로 조정할 수 있습니다.</li>
+            <li><b>비고</b> 열에 수상·특이사항 등을 메모할 수 있습니다.</li>
+            <li>게스트(비회원) 기록은 <b>게스트 행 추가</b>로 직접 입력하세요.</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>💾 3단계: 기록 저장</h3>
+          <ul style="font-size:13px;color:var(--color-text-secondary);padding-left:18px;line-height:1.9;margin:0;">
+            <li>검토가 끝나면 <b>기록 저장하기</b>를 클릭합니다.</li>
+            <li>최종 확인 화면에서 참가자 수·PB 목록을 확인하고 <b>확정</b>을 누릅니다.</li>
+            <li>저장된 기록은 대회 기록 페이지에 즉시 반영됩니다.</li>
+            <li>저장 후에도 <b>수정하기</b>를 눌러 재확정할 수 있습니다.</li>
+            <li><b>완료</b> 탭에서 대회를 클릭하면 저장된 기록을 확인하거나 재수정할 수 있습니다.</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>🔑 비밀번호</h3>
+          <p style="font-size:13px;color:var(--color-text-secondary);margin:0;">이 페이지와 회원관리 페이지의 비밀번호는 <b>dmc2008</b>입니다.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script>
     // ─── 비밀번호 인증 ─────────────────────────────────
     const AUTH_KEY = "dmc_report_auth";
@@ -454,23 +563,20 @@
       el._tid = setTimeout(() => el.classList.remove("show"), duration);
     }
 
-    function showScreen(id) {
+    let currentScreen = "screenSelect";
+    function showScreen(id, pushHistory = true) {
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById(id).classList.add("active");
+      if (pushHistory && id !== currentScreen) {
+        history.pushState({ screen: id }, "");
+      }
+      currentScreen = id;
     }
 
-    // ─── 탭 전환 ──────────────────────────────────────────
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        const tab = btn.dataset.tab;
-        document.getElementById("discoverList").style.display = tab === "discover" ? "flex" : "none";
-        document.getElementById("scrapedList").style.display  = tab === "scraped"  ? "flex" : "none";
-        // 탭 전환 시 현재 검색 필터 적용하여 첫 페이지 렌더
-        if (tab === "scraped" && scrapedAllJobs.length > 0) renderScrapedPage(1);
-        if (tab === "discover" && discoverAllEvents.length > 0) renderDiscoverPage(1);
-      });
+    window.addEventListener("popstate", (e) => {
+      const target = e.state?.screen || "screenSelect";
+      showScreen(target, false);
+      if (target === "screenSelect") renderAllFromCache();
     });
 
     // ─── 페이지네이션 유틸 ───────────────────────────────
@@ -487,219 +593,348 @@
       el.querySelector(`#${containerId}Next`).addEventListener("click", () => onPage(currentPage + 1));
     }
 
-    // ─── 발견된 대회 로드 ────────────────────────────────
+    // ─── 데이터 & 상태 ───────────────────────────────────
     const PAGE_SIZE = 10;
+    const TODAY_STR = new Date().toISOString().slice(0, 10);
     let discoverAllEvents = [];
-    let discoverPage = 1;
-    let discoverScraping = false;
     let scrapedAllJobs = [];
-    let scrapedPage = 1;
+    let isScraping = false;
     let eventSearchQuery = "";
-    let eventSearchMonth = "";
+    let activeTab = "review";
+    let hasAutoSelected = false;
+    let pageCollect = 1;
+    let pageDone = 1;
+    let pendingLoads = 2; // discover + scraped 둘 다 완료 시 렌더
 
-    function filteredDiscover() {
-      return discoverAllEvents.filter(e => {
-        const nameOk = !eventSearchQuery || e.name.toLowerCase().includes(eventSearchQuery);
-        const dateOk = !eventSearchMonth || (e.date || "").startsWith(eventSearchMonth);
-        return nameOk && dateOk;
+    // ─── 분류 ─────────────────────────────────────────────
+    function classify() {
+      function match(name) {
+        return !eventSearchQuery || (name || "").toLowerCase().includes(eventSearchQuery);
+      }
+      const pending   = scrapedAllJobs.filter(j => j.status !== "confirmed" && match(j.eventName));
+      const done      = scrapedAllJobs.filter(j => j.status === "confirmed"  && match(j.eventName));
+      const available = discoverAllEvents.filter(e => !e.alreadyScraped && (e.date || "") <= TODAY_STR && match(e.name));
+      const scheduled = discoverAllEvents.filter(e => !e.alreadyScraped && (e.date || "") >  TODAY_STR && match(e.name));
+      return { pending, done, available, scheduled };
+    }
+
+    // ─── 탭 카운트 업데이트 ──────────────────────────────
+    function updateTabCounts() {
+      const { pending, done, available, scheduled } = classify();
+      [
+        ["tabCountScheduled", scheduled.length],
+        ["tabCountCollect",   available.length],
+        ["tabCountReview",    pending.length],
+        ["tabCountDone",      done.length],
+      ].forEach(([id, count]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = count;
+        el.className = "tl-tab-count" + (count === 0 ? " zero" : "");
       });
     }
 
-    function filteredScraped() {
-      return scrapedAllJobs.filter(j => {
-        const nameOk = !eventSearchQuery || j.eventName.toLowerCase().includes(eventSearchQuery);
-        const dateOk = !eventSearchMonth || (j.eventDate || "").startsWith(eventSearchMonth);
-        return nameOk && dateOk;
+    // ─── 탭 전환 ──────────────────────────────────────────
+    function setActiveTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll(".tl-tab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+      document.getElementById("collectExtras").style.display = tab === "collect" ? "flex" : "none";
+      if (!eventSearchQuery) renderTabContent();
+    }
+
+    document.querySelectorAll(".tl-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        hasAutoSelected = true;
+        if (eventSearchQuery) {
+          document.getElementById("eventSearchName").value = "";
+          eventSearchQuery = "";
+        }
+        setActiveTab(btn.dataset.tab);
+      });
+    });
+
+    // ─── 탭 콘텐츠 렌더 ───────────────────────────────────
+    function renderTabContent() {
+      const panel = document.getElementById("tabPanel");
+      const { pending, done, available, scheduled } = classify();
+      if      (activeTab === "review")    renderReviewTab(pending, panel);
+      else if (activeTab === "collect")   renderCollectTab(available, panel);
+      else if (activeTab === "done")      renderDoneTab(done, panel);
+      else if (activeTab === "scheduled") renderScheduledTab(scheduled, panel);
+    }
+
+    // ─── 통합 렌더 (API 로드 후 호출) ────────────────────
+    function showLoadingState() {
+      document.getElementById("tabPanel").innerHTML =
+        '<div class="loading-state"><div class="loading-spinner"></div><span>불러오는 중...</span></div>';
+    }
+
+    function renderAllSections() {
+      if (pendingLoads > 0) return;
+      updateTabCounts();
+      if (!hasAutoSelected) {
+        hasAutoSelected = true;
+        const { pending } = classify();
+        setActiveTab(pending.length > 0 ? "review" : "collect");
+      } else {
+        setActiveTab(activeTab);
+      }
+      if (eventSearchQuery) renderSearchResults();
+    }
+
+    function renderAllFromCache() {
+      if (discoverAllEvents.length === 0 && scrapedAllJobs.length === 0) {
+        reloadEvents();
+        return;
+      }
+      updateTabCounts();
+      setActiveTab(activeTab);
+    }
+
+    // ✏️ 검토 필요 탭
+    function renderReviewTab(items, panel) {
+      if (!items.length) {
+        panel.innerHTML = '<div class="tab-empty">검토 대기 중인 대회가 없습니다.</div>';
+        return;
+      }
+      panel.innerHTML = '<div class="event-list">' + items.map(j => {
+        const meta = j.source === "manual"
+          ? `${j.eventDate || "날짜 미확인"} · 수동 추가`
+          : `${j.eventDate || "날짜 미확인"} · ${j.source} · ${j.foundCount}명 발견`;
+        const badge = j.status === "running"
+          ? '<span class="event-badge badge-running">수집 중</span>'
+          : '<span class="event-badge badge-complete">검토하기 →</span>';
+        return `<div class="event-item" data-job-id="${j.jobId}">
+          <div class="event-info"><div class="event-name">${j.eventName}</div><div class="event-meta">${meta}</div></div>
+          ${badge}
+        </div>`;
+      }).join("") + "</div>";
+      panel.querySelectorAll(".event-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const job = scrapedAllJobs.find(j => j.jobId === el.dataset.jobId);
+          if (job?.status === "running") {
+            showToast("수집이 완료된 후 검토할 수 있습니다. 잠시 후 새로고침해 주세요.");
+            return;
+          }
+          loadJob(el.dataset.jobId);
+        });
       });
     }
 
-    function renderDiscoverPage(page) {
-      discoverPage = page;
-      const items = document.getElementById("discoverItems");
-      const filtered = filteredDiscover();
-      const start = (page - 1) * PAGE_SIZE;
-      const slice = filtered.slice(start, start + PAGE_SIZE);
+    // 🔍 수집 가능 탭
+    function renderCollectTab(items, panel) {
+      if (!items.length) {
+        panel.innerHTML = '<div class="tab-empty">수집 가능한 대회가 없습니다.<br><span style="font-size:12px;">최근 2주 기준으로 발견된 대회를 표시합니다.</span></div>';
+        return;
+      }
+      const totalPages = Math.ceil(items.length / PAGE_SIZE) || 1;
+      if (pageCollect > totalPages) pageCollect = 1;
+      const slice = items.slice((pageCollect - 1) * PAGE_SIZE, pageCollect * PAGE_SIZE);
+      panel.innerHTML = '<div class="event-list">' + slice.map(e => `
+        <div class="event-item" data-source="${e.source}" data-source-id="${e.sourceId}" data-name="${e.name}" data-date="${e.date || ""}">
+          <div class="event-info"><div class="event-name">${e.name}</div><div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div></div>
+          <span class="event-badge" style="background:#DBEAFE;color:#2563EB">수집하기</span>
+        </div>`).join("") + '</div><div class="pagination" id="paginationCollect" style="display:none"></div>';
+      panel.querySelectorAll(".event-item").forEach(item => {
+        item.addEventListener("click", () => scrapeEvent(item));
+      });
+      renderPagination("paginationCollect", pageCollect, totalPages, p => { pageCollect = p; renderCollectTab(items, panel); });
+    }
 
-      if (filtered.length === 0) {
-        items.innerHTML = '<div style="text-align:center;padding:20px;color:var(--color-text-muted)">검색 결과가 없습니다.</div>';
-        document.getElementById("discoverPagination").style.display = "none";
+    // ✅ 완료 탭
+    function renderDoneTab(items, panel) {
+      // 최신 대회 먼저
+      items = [...items].sort((a, b) => (b.eventDate || "").localeCompare(a.eventDate || ""));
+      if (!items.length) {
+        panel.innerHTML = '<div class="tab-empty">입력 완료된 대회가 없습니다.</div>';
+        return;
+      }
+      const totalPages = Math.ceil(items.length / PAGE_SIZE) || 1;
+      if (pageDone > totalPages) pageDone = 1;
+      const slice = items.slice((pageDone - 1) * PAGE_SIZE, pageDone * PAGE_SIZE);
+      panel.innerHTML = '<div class="event-list">' + slice.map(j => {
+        const countText = j.foundCount > 0 ? ` · ${j.foundCount}명` : "";
+        const meta = j.source === "manual"
+          ? `${j.eventDate || "날짜 미확인"} · 수동 추가`
+          : `${j.eventDate || "날짜 미확인"} · ${j.source}${countText}`;
+        return `<div class="event-item" data-job-id="${j.jobId}">
+          <div class="event-info"><div class="event-name">${j.eventName}</div><div class="event-meta">${meta}</div></div>
+          <span class="event-badge badge-confirmed">완료</span>
+        </div>`;
+      }).join("") + '</div><div class="pagination" id="paginationDone" style="display:none"></div>';
+      panel.querySelectorAll(".event-item").forEach(el => {
+        el.addEventListener("click", () => loadJob(el.dataset.jobId));
+      });
+      renderPagination("paginationDone", pageDone, totalPages, p => { pageDone = p; renderDoneTab(items, panel); });
+    }
+
+    // 📅 대회 예정 탭
+    function renderScheduledTab(items, panel) {
+      if (!items.length) {
+        panel.innerHTML = '<div class="tab-empty">예정된 대회가 없습니다.</div>';
+        return;
+      }
+      panel.innerHTML = '<div class="event-list">' + items.map(e => `
+        <div class="event-item" style="cursor:default;opacity:0.75">
+          <div class="event-info"><div class="event-name">${e.name}</div><div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div></div>
+          <span class="event-badge" style="background:#F1F5F9;color:#64748B">예정</span>
+        </div>`).join("") + '</div>';
+    }
+
+    // ─── 수집 실행 (공통) ─────────────────────────────────
+    async function scrapeEvent(el) {
+      if (isScraping) { showToast("다른 대회 수집이 진행 중입니다."); return; }
+      isScraping = true;
+      const badge = el.querySelector(".event-badge");
+      const origText = badge.textContent;
+      const origStyle = badge.style.cssText;
+      badge.textContent = "수집 중...";
+      badge.style.cssText = "background:#FEF3C7;color:#92400E";
+      try {
+        const res = await fetch(`${API_BASE}?action=scrape`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: el.dataset.source, sourceId: el.dataset.sourceId, eventName: el.dataset.name, eventDate: el.dataset.date }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+        showToast(`완료: ${data.foundCount}명 발견`);
+        await loadJob(data.jobId);
+        reloadEvents();
+      } catch (err) {
+        showToast("오류: " + err.message, 4000);
+        badge.textContent = origText;
+        badge.style.cssText = origStyle;
+      } finally {
+        isScraping = false;
+      }
+    }
+
+    // ─── 글로벌 검색 결과 ─────────────────────────────────
+    function renderSearchResults() {
+      const tabPanel    = document.getElementById("tabPanel");
+      const searchPanel = document.getElementById("searchPanel");
+      const tabBar      = document.querySelector(".tl-tab-bar");
+      const collectExtras = document.getElementById("collectExtras");
+
+      if (!eventSearchQuery) {
+        searchPanel.style.display = "none";
+        tabPanel.style.display    = "block";
+        tabBar.style.opacity      = "1";
+        collectExtras.style.display = activeTab === "collect" ? "flex" : "none";
+        renderTabContent();
         return;
       }
 
-      items.innerHTML = slice.map(e => {
-        let badge;
-        if (!e.alreadyScraped) {
-          badge = '<span class="event-badge" style="background:#DBEAFE;color:#2563EB">검색하기</span>';
-        } else if (e.jobStatus === "confirmed") {
-          badge = '<span class="event-badge badge-confirmed">기록 입력 완료 — 열기</span>';
-        } else {
-          badge = '<span class="event-badge badge-complete">스크래핑됨 — 클릭하여 열기</span>';
-        }
-        return `
-        <div class="event-item ${e.alreadyScraped ? "already-scraped" : ""}" data-source="${e.source}" data-source-id="${e.sourceId}" data-name="${e.name}" data-date="${e.date || ""}" ${e.jobId ? `data-job-id="${e.jobId}"` : ""}>
-          <div class="event-info">
-            <div class="event-name">${e.name}</div>
-            <div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div>
-          </div>
-          ${badge}
+      tabPanel.style.display    = "none";
+      collectExtras.style.display = "none";
+      tabBar.style.opacity      = "0.5";
+      searchPanel.style.display = "block";
+
+      const { pending, done, available, scheduled } = classify();
+      const stageInfo = {
+        review:    { badge: "✏️ 검토 필요", style: "background:#FEF3C7;color:#92400E" },
+        collect:   { badge: "🔍 수집 가능", style: "background:#DBEAFE;color:#2563EB" },
+        done:      { badge: "✅ 완료",      style: "background:#D1FAE5;color:#065F46" },
+        scheduled: { badge: "📅 대회 예정", style: "background:#F1F5F9;color:#64748B" },
+      };
+      const allItems = [
+        ...pending.map(j => ({ stage: "review", jobId: j.jobId, name: j.eventName, meta: `${j.eventDate || "날짜 미확인"} · ${j.source}` })),
+        ...available.map(e => ({ stage: "collect", name: e.name, meta: `${e.date || "날짜 미확인"} · ${e.source}`, source: e.source, sourceId: e.sourceId, date: e.date })),
+        ...done.map(j => ({ stage: "done", jobId: j.jobId, name: j.eventName, meta: `${j.eventDate || "날짜 미확인"} · ${j.source}` })),
+        ...scheduled.map(e => ({ stage: "scheduled", name: e.name, meta: `${e.date || "날짜 미확인"} · ${e.source}` })),
+      ];
+
+      if (!allItems.length) {
+        searchPanel.innerHTML = '<div class="tab-empty">검색 결과가 없습니다.</div>';
+        return;
+      }
+
+      searchPanel.innerHTML = `
+        <div style="font-size:13px;color:var(--color-text-muted);padding:12px 16px 4px;">"${eventSearchQuery}" 검색 결과 ${allItems.length}건</div>
+        <div class="event-list">
+          ${allItems.map(item => {
+            const { badge, style } = stageInfo[item.stage];
+            const isClickable = item.stage !== "scheduled";
+            return `<div class="event-item"
+              ${!isClickable ? 'style="cursor:default;opacity:0.75"' : ""}
+              ${item.jobId ? `data-job-id="${item.jobId}"` : ""}
+              ${item.source ? `data-source="${item.source}" data-source-id="${item.sourceId || ""}" data-name="${item.name}" data-date="${item.date || ""}"` : ""}
+              data-stage="${item.stage}">
+              <div class="event-info"><div class="event-name">${item.name}</div><div class="event-meta">${item.meta}</div></div>
+              <span class="event-badge" style="${style}">${badge}</span>
+            </div>`;
+          }).join("")}
         </div>`;
-      }).join("");
 
-      items.querySelectorAll(".event-item").forEach(el => {
-        el.addEventListener("click", async () => {
-          if (el.classList.contains("already-scraped")) {
-            const jobId = el.dataset.jobId;
-            if (jobId) { loadJob(jobId); }
-            else { showToast("이미 스크래핑된 대회입니다. '스크래핑 완료' 탭에서 확인하세요."); }
+      searchPanel.querySelectorAll(".event-item[data-job-id]").forEach(el => {
+        el.addEventListener("click", () => {
+          const job = scrapedAllJobs.find(j => j.jobId === el.dataset.jobId);
+          if (job?.status === "running") {
+            showToast("수집이 완료된 후 검토할 수 있습니다. 잠시 후 새로고침해 주세요.");
             return;
           }
-          if (discoverScraping) {
-            showToast("다른 대회 검색이 진행 중입니다. 완료 후 다시 시도하세요.");
-            return;
-          }
-          discoverScraping = true;
-          const source = el.dataset.source;
-          const sourceId = el.dataset.sourceId;
-          const eventName = el.dataset.name;
-          const eventDate = el.dataset.date;
-
-          el.querySelector(".event-badge").textContent = "검색 중...";
-          el.querySelector(".event-badge").style.background = "#FEF3C7";
-          el.querySelector(".event-badge").style.color = "#92400E";
-
-          try {
-            const res = await fetch(`${API_BASE}?action=scrape`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ source, sourceId, eventName, eventDate }),
-            });
-            const data = await res.json();
-            if (!data.ok) throw new Error(data.error);
-            showToast(`완료: ${data.foundCount}명 발견`);
-            await loadJob(data.jobId);
-          } catch (err) {
-            showToast("오류: " + err.message, 4000);
-            el.querySelector(".event-badge").textContent = "재시도";
-            el.querySelector(".event-badge").style.background = "#FEE2E2";
-            el.querySelector(".event-badge").style.color = "#DC2626";
-          } finally {
-            discoverScraping = false;
-          }
+          loadJob(el.dataset.jobId);
         });
       });
+      searchPanel.querySelectorAll(".event-item[data-stage='collect']").forEach(el => {
+        el.addEventListener("click", () => scrapeEvent(el));
+      });
+    }
 
-      renderPagination("discoverPagination", page, Math.ceil(filteredDiscover().length / PAGE_SIZE), renderDiscoverPage);
+    // ─── API 로드 ─────────────────────────────────────────
+    function reloadEvents() {
+      pendingLoads = 2;
+      showLoadingState();
+      loadDiscoveredEvents();
+      loadScrapedJobs();
     }
 
     async function loadDiscoveredEvents() {
-      const items = document.getElementById("discoverItems");
       try {
         const res = await fetch(`${API_BASE}?action=discover`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
-
-        if (data.events.length === 0) {
-          items.innerHTML = '<div style="text-align:center;padding:20px;color:var(--color-text-muted)">최근 2주 내 발견된 대회가 없습니다.</div>';
-          return;
-        }
-
         discoverAllEvents = data.events;
-        renderDiscoverPage(1);
       } catch (err) {
-        items.innerHTML = `<div style="color:var(--color-error);padding:12px">로드 실패: ${err.message}</div>`;
+        document.getElementById("tabPanel").innerHTML = `<div style="color:var(--color-error);padding:16px">대회 목록 로드 실패: ${err.message}</div>`;
+      } finally {
+        pendingLoads = Math.max(0, pendingLoads - 1);
+        renderAllSections();
       }
-    }
-
-    // ─── 스크래핑 완료 목록 로드 ─────────────────────────
-    function renderScrapedPage(page) {
-      scrapedPage = page;
-      const list = document.getElementById("scrapedJobsList");
-      const filtered = filteredScraped();
-      const start = (page - 1) * PAGE_SIZE;
-      const slice = filtered.slice(start, start + PAGE_SIZE);
-
-      if (filtered.length === 0) {
-        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--color-text-muted)">검색 결과가 없습니다.</div>';
-        document.getElementById("scrapedPagination").style.display = "none";
-        return;
-      }
-
-      list.innerHTML = slice.map(j => {
-        const isManual = j.source === "manual";
-        const badgeClass = j.status === "confirmed" ? "badge-confirmed"
-          : j.status === "complete" ? "badge-complete"
-          : "badge-running";
-        const badgeText = j.status === "confirmed" ? "기록 입력 완료"
-          : isManual ? "수동 추가"
-          : j.status === "complete" ? "스크래핑 완료"
-          : j.status === "running" ? "진행중" : j.status;
-        const metaText = isManual
-          ? `${j.eventDate || "날짜 미확인"} · 수동 추가`
-          : `${j.eventDate || "날짜 미확인"} · ${j.source} · ${j.foundCount}명 발견`;
-        return `
-        <div class="event-item" data-job-id="${j.jobId}">
-          <div class="event-info">
-            <div class="event-name">${j.eventName}</div>
-            <div class="event-meta">${metaText}</div>
-          </div>
-          <span class="event-badge ${badgeClass}">${badgeText}</span>
-        </div>`;
-      }).join("");
-
-      list.querySelectorAll(".event-item").forEach(el => {
-        el.addEventListener("click", () => loadJob(el.dataset.jobId));
-      });
-
-      renderPagination("scrapedPagination", page, Math.ceil(filteredScraped().length / PAGE_SIZE), renderScrapedPage);
     }
 
     async function loadScrapedJobs() {
-      const list = document.getElementById("scrapedJobsList");
       try {
         const res = await fetch(`${API_BASE}?action=events`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
-
-        if (data.jobs.length === 0) {
-          list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--color-text-muted)">아직 스크래핑된 대회가 없습니다.</div>';
-          return;
-        }
-
         scrapedAllJobs = data.jobs;
-        renderScrapedPage(1);
       } catch (err) {
-        list.innerHTML = `<div style="color:var(--color-error);padding:12px">로드 실패: ${err.message}</div>`;
+        document.getElementById("tabPanel").innerHTML = `<div style="color:var(--color-error);padding:16px">스크래핑 목록 로드 실패: ${err.message}</div>`;
+      } finally {
+        pendingLoads = Math.max(0, pendingLoads - 1);
+        renderAllSections();
       }
     }
 
-    // ─── 대회 직접 추가 ──────────────────────────────────
-    // ─── 대회 검색 필터 ──────────────────────────────────
+    // ─── 글로벌 검색 초기화 ───────────────────────────────
     function initEventSearch() {
       const nameInput = document.getElementById("eventSearchName");
-      const dateInput = document.getElementById("eventSearchDate");
       const clearBtn  = document.getElementById("eventSearchClear");
 
-      function applyFilter() {
+      nameInput.addEventListener("input", () => {
         eventSearchQuery = nameInput.value.trim().toLowerCase();
-        eventSearchMonth = dateInput.value; // "YYYY-MM"
-        const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab;
-        if (activeTab === "scraped") {
-          renderScrapedPage(1);
-        } else {
-          renderDiscoverPage(1);
-        }
-      }
-
-      nameInput.addEventListener("input", applyFilter);
-      dateInput.addEventListener("change", applyFilter);
+        pageCollect = 1; pageDone = 1;
+        renderSearchResults();
+      });
       clearBtn.addEventListener("click", () => {
         nameInput.value = "";
-        dateInput.value = "";
         eventSearchQuery = "";
-        eventSearchMonth = "";
-        const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab;
-        if (activeTab === "scraped") renderScrapedPage(1);
-        else renderDiscoverPage(1);
+        pageCollect = 1; pageDone = 1;
+        renderSearchResults();
       });
     }
 
@@ -847,17 +1082,21 @@
       document.getElementById("reviewEventName").textContent = job.eventName || "대회";
       document.getElementById("reviewEventDate").textContent = job.eventDate || "";
 
+      const isConfirmed = job.status === "confirmed";
       reviewRows = (job.results || []).map((r, i) => ({
         ...r,
         idx: i,
-        decision: (!r.netTime || r.netTime === "--:--:--") ? "excluded" : "pending",
-        pbConfirmed: r.isPB || false,
+        decision: (!r.netTime || r.netTime === "--:--:--") ? "excluded"
+          : (isConfirmed ? "included" : "pending"),
+        pbConfirmed: r.pbConfirmed || r.isPB || false,
         selectedCandidate: r.status !== "ambiguous",
         note: r.note || "",
       }));
 
-      const restored = restoreReviewState();
-      if (restored) showToast("이전 작업 상태를 복원했습니다");
+      if (!isConfirmed) {
+        const restored = restoreReviewState();
+        if (restored) showToast("이전 작업 상태를 복원했습니다");
+      }
 
       document.getElementById("rescrapeBtn").style.display = job.source === "manual" ? "none" : "";
 
@@ -1304,8 +1543,7 @@
     // ─── 뒤로 가기 ──────────────────────────────────────
     document.getElementById("backBtn").addEventListener("click", () => {
       showScreen("screenSelect");
-      loadDiscoveredEvents();
-      loadScrapedJobs();
+      renderAllFromCache();
     });
 
     // ─── 다시 스크래핑 ────────────────────────────────────
@@ -1509,9 +1747,10 @@
         if (!data.ok) throw new Error(data.error);
 
         showToast(`${data.savedCount}건 기록 저장 완료!`);
+        activeTab = "done";
+        hasAutoSelected = true;
         showScreen("screenSelect");
-        loadDiscoveredEvents();
-        loadScrapedJobs();
+        reloadEvents();
       } catch (err) {
         showToast("저장 실패: " + err.message, 4000);
       } finally {
@@ -1551,11 +1790,26 @@
     });
 
     // ─── 초기화 ──────────────────────────────────────────
+    // ─── 사용법 모달 ──────────────────────────────────────
+    document.getElementById("helpBtn").addEventListener("click", () => {
+      document.getElementById("helpModal").classList.add("open");
+    });
+    document.getElementById("helpModalClose").addEventListener("click", () => {
+      document.getElementById("helpModal").classList.remove("open");
+    });
+    document.getElementById("helpModal").addEventListener("click", e => {
+      if (e.target === document.getElementById("helpModal")) {
+        document.getElementById("helpModal").classList.remove("open");
+      }
+    });
+
+    // ─── 초기화 ──────────────────────────────────────────
+    history.replaceState({ screen: "screenSelect" }, "");
     initEventSearch();
     initCreateJobUI();
-    loadDiscoveredEvents();
-    loadScrapedJobs();
+    reloadEvents();
     loadMembers();
   </script>
+
 </body>
 </html>
