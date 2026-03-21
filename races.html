@@ -153,7 +153,10 @@
         <img alt="동탄마라톤클럽 로고" src="assets/dmc_logo.png" />
         <h1>대회 기록</h1>
       </div>
-      <a href="index.html" class="nav-link">← 출석체크</a>
+      <div style="display:flex; gap:6px;">
+        <a href="report.html" class="nav-link">주간 리포트</a>
+        <a href="index.html" class="nav-link">출석체크</a>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -212,6 +215,22 @@ const TEAM_COLORS = {
 const TEAM_LABELS = { S: "S팀", T1: "1팀", T2: "2팀", T3: "3팀", T4: "4팀", T5: "5팀" };
 const DIST_LABELS = { "5K": "5K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라" };
 const DIST_ORDER = ["5K", "10K", "half", "full", "ultra"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, ultra: -1 };
+
+function sortResults(a, b) {
+  const distA = DIST_SORT_ORDER[a.distance] ?? 99;
+  const distB = DIST_SORT_ORDER[b.distance] ?? 99;
+  if (distA !== distB) return distA - distB;
+  const timeA = timeToSeconds(a.netTime);
+  const timeB = timeToSeconds(b.netTime);
+  if (timeA !== timeB) return timeA - timeB;
+  const pbA = a.isPB ? 0 : 1;
+  const pbB = b.isPB ? 0 : 1;
+  if (pbA !== pbB) return pbA - pbB;
+  const bibA = parseInt(a.bib || "99999");
+  const bibB = parseInt(b.bib || "99999");
+  return bibA - bibB;
+}
 
 let membersData = [];
 let racesData = [];
@@ -255,18 +274,17 @@ function enrichResults() {
   for (const race of racesData) {
     for (const r of race.results) {
       const member = memberMap[r.realName];
-      if (member) {
-        allResults.push({
-          ...r,
-          nickname: member.nickname,
-          team: member.team,
-          raceName: race.name,
-          raceDate: race.date,
-          raceId: race.id,
-          raceLocation: race.location,
-          source: race.source
-        });
-      }
+      allResults.push({
+        ...r,
+        nickname: member?.nickname || r.nickname || r.realName,
+        team: member?.team || "",
+        isGuest: !member,
+        raceName: race.name,
+        raceDate: race.date,
+        raceId: race.id,
+        raceLocation: race.location,
+        source: race.source
+      });
     }
   }
   return allResults;
@@ -328,7 +346,7 @@ function renderRankingList(items) {
       <li class="ranking-item">
         <div class="rank-badge ${rankCls}">${medal}</div>
         <div class="ranking-info">
-          <div class="ranking-name">${esc(r.nickname)} ${teamPill(r.team)}</div>
+          <div class="ranking-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)}</div>
           <div class="ranking-detail">${esc(r.raceName)} · ${formatDate(r.raceDate)}</div>
         </div>
         <div class="ranking-time">${esc(r.netTime)}</div>
@@ -350,14 +368,16 @@ function renderRacesTab() {
   let html = "";
   for (const race of sortedRaces) {
     const results = race.results
-      .filter(r => memberMap[r.realName])
-      .map(r => ({ ...r, nickname: memberMap[r.realName].nickname, team: memberMap[r.realName].team }))
+      .map(r => {
+        const member = memberMap[r.realName];
+        return { ...r, nickname: member?.nickname || r.nickname || r.realName, team: member?.team || "", isGuest: !member };
+      })
       .filter(r => {
         if (currentDist !== "all" && r.distance !== currentDist) return false;
         if (currentGender !== "all" && r.gender !== currentGender) return false;
         return true;
       })
-      .sort((a, b) => timeToSeconds(a.netTime) - timeToSeconds(b.netTime));
+      .sort(sortResults);
 
     if (!results.length) continue;
 
@@ -381,8 +401,8 @@ function renderRacesTab() {
             <div class="result-row">
               <div class="result-rank">${i + 1}</div>
               <div class="result-info">
-                <div class="result-name">${esc(r.nickname)} ${teamPill(r.team)} ${distBadge(r.distance)}</div>
-                <div class="result-sub">BIB ${esc(r.bib)} · 대회순위 ${r.overallRank || "-"}위</div>
+                <div class="result-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)} ${distBadge(r.distance)}</div>
+                <div class="result-sub">BIB ${esc(r.bib)}${r.overallRank ? ` · 대회순위 ${r.overallRank}위` : ""}</div>
               </div>
               <div class="result-time">${esc(r.netTime)}</div>
             </div>
@@ -399,11 +419,17 @@ function renderIndividualTab() {
   const el = document.getElementById("content");
   const all = enrichResults();
 
+  const guestNames = [...new Set(all.filter(r => r.isGuest).map(r => r.realName))];
   let selectHtml = `
     <div class="member-select-wrap">
       <select class="member-select" id="memberSelect" onchange="renderMemberDetail()">
         <option value="">회원을 선택하세요</option>
         ${membersData.map(m => `<option value="${esc(m.realName)}">${esc(m.nickname)} (${esc(TEAM_LABELS[m.team] || m.team)})</option>`).join("")}
+        ${guestNames.length ? '<option disabled>──── 게스트 ────</option>' : ""}
+        ${guestNames.map(name => {
+          const rec = all.find(r => r.realName === name);
+          return `<option value="${esc(name)}">${esc(rec?.nickname || name)} (게스트)</option>`;
+        }).join("")}
       </select>
     </div>
     <div id="memberDetail"></div>`;
@@ -416,11 +442,13 @@ function renderMemberDetail() {
   const name = document.getElementById("memberSelect").value;
   if (!name) { el.innerHTML = emptyState("회원을 선택하면 기록이 표시됩니다."); return; }
 
-  const member = memberMap[name];
-  if (!member) { el.innerHTML = emptyState("회원 정보를 찾을 수 없습니다."); return; }
-
   const all = enrichResults().filter(r => r.realName === name);
-  const filtered = filterResults(all).sort((a, b) => b.raceDate.localeCompare(a.raceDate));
+  if (!all.length) { el.innerHTML = emptyState("해당 회원의 기록이 없습니다."); return; }
+  const filtered = filterResults(all).sort((a, b) => {
+    const dateCmp = (b.raceDate || "").localeCompare(a.raceDate || "");
+    if (dateCmp !== 0) return dateCmp;
+    return sortResults(a, b);
+  });
 
   const pbs = computePBs(all);
   const pbSet = new Set(pbs.map(p => `${p.raceId}||${p.distance}||${p.netTime}`));
@@ -458,7 +486,7 @@ function renderMemberDetail() {
             ${distBadge(r.distance)}
             <span class="timeline-time">${esc(r.netTime)}</span>
             ${isPb ? '<span class="pb-badge">PB</span>' : ""}
-            <span style="color:var(--color-text-muted);font-size:11px">순위 ${r.overallRank || "-"}위</span>
+            ${r.overallRank ? `<span style="color:var(--color-text-muted);font-size:11px">순위 ${r.overallRank}위</span>` : ""}
           </div>
         </div>
       </div>`;
