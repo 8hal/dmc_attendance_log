@@ -973,14 +973,19 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       const now = new Date().toISOString();
 
       for (const r of results) {
-        const docId = `${jobId}_${r.memberRealName}_${r.distance}`;
+        // 중복 방지: 사람+거리+날짜 기반 유니크 키 (수동/검색 구분 없이 덮어씀)
+        const resolvedDate = eventDate || r.eventDate || "";
+        const safeDate = resolvedDate.replace(/[^0-9\-]/g, "");
+        const safeName = (r.memberRealName || "").replace(/[^a-zA-Z0-9가-힣]/g, "_");
+        const safeDist = (r.distance || "").replace(/[^a-zA-Z0-9]/g, "_");
+        const docId = `${safeName}_${safeDist}_${safeDate}`;
         const ref = db.collection("race_results").doc(docId);
         batch.set(ref, {
           jobId,
           eventName: eventName || "",
-          eventDate: eventDate || "",
-          source: source || "",
-          sourceId: sourceId || "",
+          eventDate: resolvedDate,
+          source: source || r.source || "",
+          sourceId: sourceId || r.sourceId || "",
           memberRealName: r.memberRealName,
           memberNickname: r.memberNickname,
           distance: r.distance,

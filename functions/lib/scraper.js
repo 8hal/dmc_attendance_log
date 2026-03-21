@@ -436,21 +436,21 @@ async function discoverSmartChip(year) {
   // main.html만 사용 (result.html은 404)
   const html = await fetch("https://www.smartchip.co.kr/main.html").then((r) => r.text());
 
+  // selectItem 형식 (PAST EVENTS 드롭다운): 날짜와 이름 모두 포함
+  // e.g. selectItem('(2025-04-05) 대회명', '202550000040')
+  const selectMatches = [...html.matchAll(/selectItem\s*\(\s*'([^']*)'\s*,\s*'(\d+)'/g)];
+  for (const m of selectMatches) {
+    const raw = m[1];
+    const id = m[2];
+    if (!id.startsWith(yearPrefix)) continue;
+    const dateMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
+    const name = raw.replace(/^\(\d{4}-\d{2}-\d{2}\)\s*/, "").trim();
+    eventMap.set(id, { name, date: dateMatch ? dateMatch[1] : "" });
+  }
+
+  // swiper 슬라이드 형식 (현재/최근 대회, 주로 올해): selectItem에 없는 것만
   const ids = [...new Set([...html.matchAll(usedataPattern)].map((m) => m[1]))];
-
-  for (const id of ids.filter((id) => id.startsWith(yearPrefix))) {
-    // 우선 selectItem 형식 (PAST EVENTS 드롭다운): 날짜와 이름 모두 포함
-    // e.g. selectItem('(2026-03-08) 2026 이벤트명', '202650000009')
-    const selectMatch = html.match(new RegExp(`selectItem\\s*\\(\\s*'([^']*)'\\s*,\\s*'${id}'`));
-    if (selectMatch) {
-      const raw = selectMatch[1];
-      const dateMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
-      const name = raw.replace(/^\(\d{4}-\d{2}-\d{2}\)\s*/, "").trim();
-      eventMap.set(id, { name, date: dateMatch ? dateMatch[1] : "" });
-      continue;
-    }
-
-    // swiper 슬라이드 형식 (현재/최근 대회): Search_Ballyno.html에서 실제 대회명 가져오기
+  for (const id of ids.filter((id) => id.startsWith(yearPrefix) && !eventMap.has(id))) {
     const swiperIsPresent = new RegExp(`usedata=${id}'`).test(html);
     if (swiperIsPresent) {
       try {
@@ -459,7 +459,6 @@ async function discoverSmartChip(year) {
           `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${id}`
         ).then((r) => r.text());
 
-        // <div class="box white" ...>대회명</div> 패턴
         const nameMatch = pageHtml.match(
           /class="box white"[^>]*>\s*([^\n<]{2,60})\s*<\/div>/
         );
