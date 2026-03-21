@@ -214,7 +214,7 @@ const TEAM_COLORS = {
 };
 const TEAM_LABELS = { S: "S팀", T1: "1팀", T2: "2팀", T3: "3팀", T4: "4팀", T5: "5팀" };
 const DIST_LABELS = { "5K": "5K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라" };
-const DIST_ORDER = ["5K", "10K", "half", "full", "ultra"];
+const DIST_ORDER = ["full", "half", "10K", "5K", "ultra"];
 const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, ultra: -1 };
 
 function sortResults(a, b) {
@@ -258,8 +258,10 @@ function formatDate(d) {
 }
 
 function teamPill(teamCode) {
+  if (!teamCode) return "";
   const label = TEAM_LABELS[teamCode] || teamCode;
-  const c = TEAM_COLORS[label] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
+  const c = TEAM_COLORS[label];
+  if (!c) return "";
   return `<span class="pill" style="background:${c.bg};color:${c.text};border-color:${c.border}">${esc(label)}</span>`;
 }
 
@@ -397,12 +399,11 @@ function renderRacesTab() {
           </div>
         </div>
         <div class="race-results">
-          ${results.map((r, i) => `
+          ${results.map((r) => `
             <div class="result-row">
-              <div class="result-rank">${i + 1}</div>
               <div class="result-info">
-                <div class="result-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)} ${distBadge(r.distance)}</div>
-                <div class="result-sub">BIB ${esc(r.bib)}${r.overallRank ? ` · 대회순위 ${r.overallRank}위` : ""}</div>
+                <div class="result-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)} ${distBadge(r.distance)} ${r.isPB ? '<span class="pb-badge">PB</span>' : ""}</div>
+                ${r.bib ? `<div class="result-sub">BIB ${esc(r.bib)}</div>` : ""}
               </div>
               <div class="result-time">${esc(r.netTime)}</div>
             </div>
@@ -486,7 +487,7 @@ function renderMemberDetail() {
             ${distBadge(r.distance)}
             <span class="timeline-time">${esc(r.netTime)}</span>
             ${isPb ? '<span class="pb-badge">PB</span>' : ""}
-            ${r.overallRank ? `<span style="color:var(--color-text-muted);font-size:11px">순위 ${r.overallRank}위</span>` : ""}
+            ${r.isPB ? '<span class="pb-badge">PB</span>' : ""}
           </div>
         </div>
       </div>`;
