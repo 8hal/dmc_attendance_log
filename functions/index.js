@@ -602,6 +602,48 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
   try {
     const action = req.query.action || (req.method === "POST" ? "scrape" : "events");
 
+    if (action === "confirmed-races") {
+      const snap = await db.collection("scrape_jobs")
+        .where("status", "==", "confirmed")
+        .orderBy("confirmedAt", "desc")
+        .get();
+
+      const races = [];
+      for (const doc of snap.docs) {
+        const job = doc.data();
+        const resultsSnap = await db.collection("race_results")
+          .where("jobId", "==", doc.id)
+          .where("status", "==", "confirmed")
+          .get();
+
+        const results = [];
+        resultsSnap.forEach((rDoc) => {
+          const r = rDoc.data();
+          results.push({
+            realName: r.memberRealName,
+            nickname: r.memberNickname,
+            bib: r.bib || "",
+            distance: r.distance,
+            netTime: r.netTime,
+            gunTime: r.gunTime || "",
+            overallRank: r.overallRank || null,
+            gender: r.gender || "",
+            isPB: r.pbConfirmed || false,
+          });
+        });
+
+        races.push({
+          id: doc.id,
+          name: job.eventName,
+          date: job.eventDate,
+          source: job.source,
+          results,
+        });
+      }
+
+      return res.json({ ok: true, races });
+    }
+
     if (action === "events") {
       const snap = await db.collection("scrape_jobs")
         .orderBy("createdAt", "desc")
@@ -699,10 +741,49 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       const members = [];
       snap.forEach((doc) => {
         const d = doc.data();
-        members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
+        members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "", team: d.team || "" });
       });
       members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
       return res.json({ ok: true, members });
+    }
+
+    if (action === "confirm" && req.method === "POST") {
+      const { jobId, eventName, eventDate, source, sourceId, results } = req.body || {};
+      if (!jobId || !results || !Array.isArray(results)) {
+        return res.status(400).json({ ok: false, error: "jobId and results[] required" });
+      }
+
+      const batch = db.batch();
+      const now = new Date().toISOString();
+
+      for (const r of results) {
+        const docId = `${jobId}_${r.memberRealName}_${r.distance}`;
+        const ref = db.collection("race_results").doc(docId);
+        batch.set(ref, {
+          jobId,
+          eventName: eventName || "",
+          eventDate: eventDate || "",
+          source: source || "",
+          sourceId: sourceId || "",
+          memberRealName: r.memberRealName,
+          memberNickname: r.memberNickname,
+          distance: r.distance,
+          netTime: r.netTime,
+          gunTime: r.gunTime || "",
+          bib: r.bib || "",
+          overallRank: r.overallRank || null,
+          gender: r.gender || "",
+          pbConfirmed: r.pbConfirmed || false,
+          status: "confirmed",
+          confirmedAt: now,
+        });
+      }
+
+      const jobRef = db.collection("scrape_jobs").doc(jobId);
+      batch.update(jobRef, { status: "confirmed", confirmedAt: now });
+
+      await batch.commit();
+      return res.json({ ok: true, savedCount: results.length });
     }
 
     if (action === "scrape" && req.method === "POST") {

@@ -226,13 +226,63 @@
         </table>
       </div>
 
-      <!-- 내보내기 -->
+      <!-- 내보내기 + 기록 저장 -->
+      <div class="card" id="saveCard">
+        <button class="btn btn-primary" id="saveRecordsBtn" style="width:100%; padding:14px; font-size:16px; font-weight:600">기록 저장하기</button>
+        <div id="alreadyConfirmedMsg" style="display:none; text-align:center; margin-top:8px; font-size:13px; color:var(--color-success); font-weight:500"></div>
+        <div style="margin-top:16px; border-top:1px solid var(--color-border); padding-top:14px;">
+          <div class="section-title" style="margin-bottom:8px">게시글 미리보기</div>
+          <div class="post-preview" id="postPreview"></div>
+          <div class="export-bar" style="margin-top:10px">
+            <button class="btn btn-outline" id="copyTextBtn">클립보드 복사</button>
+            <button class="btn btn-outline" id="downloadCsvBtn">CSV 다운로드</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 화면 3: 저장 확인 -->
+    <div id="screenConfirm" class="screen">
       <div class="card">
-        <div class="section-title">게시글 미리보기</div>
-        <div class="post-preview" id="postPreview"></div>
-        <div class="export-bar">
-          <button class="btn btn-primary" id="copyTextBtn">클립보드 복사</button>
-          <button class="btn btn-outline" id="downloadCsvBtn">CSV 다운로드</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div>
+            <h2 id="confirmEventName" style="margin:0"></h2>
+            <div id="confirmEventDate" style="font-size:13px; color:var(--color-text-secondary)"></div>
+          </div>
+          <button class="btn btn-outline btn-sm" id="confirmBackBtn">← 리뷰로 돌아가기</button>
+        </div>
+        <div style="font-size:14px; color:var(--color-text-secondary); margin-bottom:12px">
+          아래 기록이 저장됩니다. 확인 후 확정 버튼을 눌러주세요.
+        </div>
+      </div>
+
+      <div class="card" style="overflow-x:auto">
+        <div class="section-title">저장될 기록 (<span id="confirmCount">0</span>건)</div>
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>닉네임</th>
+              <th>이름</th>
+              <th>종목</th>
+              <th>기록</th>
+              <th>배번</th>
+              <th>PB</th>
+            </tr>
+          </thead>
+          <tbody id="confirmBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card" id="confirmStatsCard">
+        <div class="section-title">요약</div>
+        <div id="confirmSummary" style="font-size:14px; line-height:1.8"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline" id="confirmCancelBtn" style="flex:1; padding:14px">돌아가기</button>
+          <button class="btn btn-primary" id="confirmSaveBtn" style="flex:2; padding:14px; font-size:16px; font-weight:600">확정</button>
         </div>
       </div>
     </div>
@@ -489,6 +539,7 @@
 
       renderTable();
       updateStats();
+      updateSaveButton();
       showScreen("screenReview");
     }
 
@@ -909,6 +960,118 @@
       URL.revokeObjectURL(url);
       showToast("CSV 다운로드 완료");
     });
+
+    // ─── 기록 저장하기 → 확인 뷰 ─────────────────────────
+    function getIncludedRows() {
+      return reviewRows.filter(r => r.decision === "included" && r.netTime && r.netTime !== "--:--:--");
+    }
+
+    document.getElementById("saveRecordsBtn").addEventListener("click", () => {
+      const included = getIncludedRows();
+      if (included.length === 0) {
+        showToast("저장할 기록이 없습니다. 최소 1건 이상 포함(✓)해주세요.");
+        return;
+      }
+
+      const pending = reviewRows.filter(r => r.decision === "pending" && r.netTime && r.netTime !== "--:--:--");
+      if (pending.length > 0) {
+        if (!confirm(`아직 미확정(?) 상태인 기록이 ${pending.length}건 있습니다.\n미확정 기록은 저장되지 않습니다. 계속하시겠습니까?`)) return;
+      }
+
+      document.getElementById("confirmEventName").textContent = currentJob?.eventName || "대회";
+      document.getElementById("confirmEventDate").textContent = currentJob?.eventDate || "";
+      document.getElementById("confirmCount").textContent = included.length;
+
+      const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" };
+      const tbody = document.getElementById("confirmBody");
+      tbody.innerHTML = included.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${r.memberNickname}</td>
+          <td>${r.memberRealName}</td>
+          <td>${distLabel[r.distance] || r.distance}</td>
+          <td style="font-variant-numeric:tabular-nums; font-weight:600">${r.netTime}</td>
+          <td>${r.bib || ""}</td>
+          <td>${r.pbConfirmed ? '<span style="color:var(--color-warning); font-weight:600">PB</span>' : ""}</td>
+        </tr>
+      `).join("");
+
+      const pbRows = included.filter(r => r.pbConfirmed);
+      const uniqueNames = new Set(included.map(r => r.memberRealName));
+      const distCounts = {};
+      included.forEach(r => { distCounts[r.distance] = (distCounts[r.distance] || 0) + 1; });
+      const distSummary = Object.entries(distCounts).map(([d, c]) => `${distLabel[d] || d} ${c}명`).join(", ");
+
+      document.getElementById("confirmSummary").innerHTML = `
+        <div>참가: <strong>${uniqueNames.size}명</strong> (${distSummary})</div>
+        ${pbRows.length > 0 ? `<div>PB: <strong>${pbRows.map(r => r.memberNickname).join(", ")}</strong> (${pbRows.length}명)</div>` : ""}
+      `;
+
+      showScreen("screenConfirm");
+    });
+
+    document.getElementById("confirmBackBtn").addEventListener("click", () => showScreen("screenReview"));
+    document.getElementById("confirmCancelBtn").addEventListener("click", () => showScreen("screenReview"));
+
+    document.getElementById("confirmSaveBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("confirmSaveBtn");
+      btn.disabled = true;
+      btn.textContent = "저장 중...";
+
+      try {
+        const included = getIncludedRows();
+        const res = await fetch(`${API_BASE}?action=confirm`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jobId: currentJob.jobId,
+            eventName: currentJob.eventName,
+            eventDate: currentJob.eventDate,
+            source: currentJob.source,
+            sourceId: currentJob.sourceId,
+            results: included.map(r => ({
+              memberRealName: r.memberRealName,
+              memberNickname: r.memberNickname,
+              distance: r.distance,
+              netTime: r.netTime,
+              gunTime: r.gunTime || "",
+              bib: r.bib || "",
+              overallRank: r.overallRank || null,
+              gender: r.gender || "",
+              pbConfirmed: r.pbConfirmed || false,
+            })),
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+
+        showToast(`${data.savedCount}건 기록 저장 완료!`);
+        showScreen("screenSelect");
+        loadDiscoveredEvents();
+        loadScrapedJobs();
+      } catch (err) {
+        showToast("저장 실패: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "확정";
+      }
+    });
+
+    // 이미 확정된 job이면 저장 버튼 상태 갱신
+    function updateSaveButton() {
+      const msg = document.getElementById("alreadyConfirmedMsg");
+      const btn = document.getElementById("saveRecordsBtn");
+      if (currentJob?.status === "confirmed") {
+        msg.style.display = "block";
+        msg.textContent = "이 대회의 기록은 이미 저장되었습니다. 다시 저장하면 기존 기록을 덮어씁니다.";
+        btn.textContent = "기록 다시 저장하기";
+        btn.style.background = "var(--color-warning)";
+      } else {
+        msg.style.display = "none";
+        btn.textContent = "기록 저장하기";
+        btn.style.background = "";
+      }
+    }
 
     // ─── 초기화 ──────────────────────────────────────────
     loadDiscoveredEvents();

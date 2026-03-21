@@ -517,18 +517,29 @@ document.querySelectorAll(".sub-filter").forEach(btn => {
   });
 });
 
+const RACE_API = location.hostname === "localhost"
+  ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+  : "https://race-nszximpvtq-du.a.run.app";
+
 async function init() {
   const contentEl = document.getElementById("content");
   contentEl.innerHTML = `<div class="card">${Array(5).fill('<div class="skeleton skeleton-line" style="width:' + (60 + Math.random()*30) + '%"></div>').join("")}</div>`;
 
   try {
     const [membersRes, racesRes] = await Promise.all([
-      fetch("data/members.json"),
-      fetch("data/races.json")
+      fetch(`${RACE_API}?action=members`),
+      fetch(`${RACE_API}?action=confirmed-races`),
     ]);
     const membersJson = await membersRes.json();
     const racesJson = await racesRes.json();
-    membersData = membersJson.members || [];
+    if (!membersJson.ok) throw new Error("멤버 로드 실패");
+    if (!racesJson.ok) throw new Error("대회 기록 로드 실패");
+    membersData = (membersJson.members || []).map(m => ({
+      realName: m.realName,
+      nickname: m.nickname,
+      gender: m.gender || "",
+      team: m.team || "",
+    }));
     racesData = racesJson.races || [];
     memberMap = {};
     for (const m of membersData) memberMap[m.realName] = m;
