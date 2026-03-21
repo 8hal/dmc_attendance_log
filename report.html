@@ -626,14 +626,15 @@
           </tr>`;
 
           for (const c of group) {
-            const checkedAttr = c.selectedCandidate && c.decision === "included" ? "checked" : "";
+            const isSelected = c.selectedCandidate && c.decision === "included";
+            const checkedAttr = isSelected ? "checked" : "";
             html += `<tr class="row-candidate" data-name="${key}" data-idx="${c.idx}" style="display:none; cursor:pointer">
               <td><input type="radio" name="amb_${key}" ${checkedAttr} data-idx="${c.idx}" style="pointer-events:none" /></td>
               <td></td><td></td><td></td>
               <td>${c.distance}</td>
               <td>${c.netTime}</td>
               <td>${c.bib || ""}</td>
-              <td>${c.isPB ? '<span class="pb-toggle ' + (c.pbConfirmed ? "active" : "") + '" data-idx="' + c.idx + '">PB</span>' : ""}</td>
+              <td>${isSelected && c.isPB ? '<span class="pb-toggle ' + (c.pbConfirmed ? "active" : "") + '" data-idx="' + c.idx + '">PB</span>' : ""}</td>
             </tr>`;
           }
 
