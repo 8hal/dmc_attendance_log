@@ -795,45 +795,70 @@ function renderSearchResults() {
 
   const totalRecords = results.reduce((sum, r) => sum + r.records.length, 0);
 
-  // Auto-select all by default
-  if (searchState.selectedResults.size === 0) {
+  // Auto-select: 1건이면 자동 선택, 다건이면 미선택
+  if (searchState.selectedResults.size === 0 && searchState.step === "review") {
     for (let i = 0; i < results.length; i++) {
-      searchState.selectedResults.add(i);
+      for (let j = 0; j < results[i].records.length; j++) {
+        if (results[i].records.length === 1) {
+          searchState.selectedResults.add(`${i}_${j}`);
+        }
+      }
     }
+    searchState.step = "reviewed";
   }
 
   const selCount = searchState.selectedResults.size;
+  const multiWarn = results.some(r => r.records.length > 1);
 
   sp.innerHTML = `<div class="search-panel"><div class="card">
     <p class="search-section-title">검색 결과 <small>${results.length}개 대회, ${totalRecords}건</small></p>
-    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">저장할 대회를 선택하세요. 이미 등록된 기록과 중복될 수 있으니 확인 후 저장하세요.</p>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">저장할 기록을 선택하세요.${multiWarn ? ' <strong style="color:var(--color-error)">동명이인이 있을 수 있으니 BIB/기록을 확인하세요.</strong>' : ""}</p>
     ${results.map((r, i) => {
-      const sel = searchState.selectedResults.has(i);
-      return `<div class="found-result-card ${sel ? "selected" : ""}">
-        <label class="found-result-header">
-          <input type="checkbox" ${sel ? "checked" : ""} onchange="toggleSearchResult(${i}, this.checked)" />
+      const recKeys = r.records.map((_, j) => `${i}_${j}`);
+      const allSel = recKeys.every(k => searchState.selectedResults.has(k));
+      const someSel = recKeys.some(k => searchState.selectedResults.has(k));
+      return `<div class="found-result-card ${someSel ? "selected" : ""}">
+        <div class="found-result-header">
+          <input type="checkbox" ${allSel ? "checked" : ""} ${!allSel && someSel ? 'style="opacity:0.5"' : ""} onchange="toggleEventRecords(${i}, this.checked)" />
           <span class="found-event-name">${esc(r.eventName)}</span>
           <span class="found-event-date">${esc(r.eventDate)}</span>
-        </label>
+          ${r.records.length > 1 ? `<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--color-error-light);color:var(--color-error);font-weight:600">${r.records.length}건</span>` : ""}
+        </div>
         <div class="found-records">
-          ${r.records.map(rec => `<div class="found-record-row">
-            ${distBadge(rec.distance || "?")}
-            <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
-            ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
-          </div>`).join("")}
+          ${r.records.map((rec, j) => {
+            const key = `${i}_${j}`;
+            const checked = searchState.selectedResults.has(key);
+            return `<label class="found-record-row" style="cursor:pointer;padding:6px 0;border-radius:6px;${checked ? "background:#EFF6FF;" : ""}">
+              <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleSingleRecord('${key}', this.checked)" style="width:14px;height:14px;accent-color:var(--color-primary)" />
+              ${distBadge(rec.distance || "?")}
+              <span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>
+              ${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}
+            </label>`;
+          }).join("")}
         </div>
       </div>`;
     }).join("")}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
       <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
-      <button class="btn btn-success btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="saveSearchResults()">선택한 ${selCount}개 대회 기록 저장</button>
+      <button class="btn btn-success btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="saveSearchResults()">선택한 ${selCount}건 저장</button>
     </div>
   </div></div>`;
 }
 
-function toggleSearchResult(idx, checked) {
-  if (checked) searchState.selectedResults.add(idx);
-  else searchState.selectedResults.delete(idx);
+function toggleSingleRecord(key, checked) {
+  if (checked) searchState.selectedResults.add(key);
+  else searchState.selectedResults.delete(key);
+  renderSearchResults();
+}
+
+function toggleEventRecords(evtIdx, checked) {
+  const results = searchState.foundResults;
+  const r = results[evtIdx];
+  for (let j = 0; j < r.records.length; j++) {
+    const key = `${evtIdx}_${j}`;
+    if (checked) searchState.selectedResults.add(key);
+    else searchState.selectedResults.delete(key);
+  }
   renderSearchResults();
 }
 
@@ -841,29 +866,40 @@ async function saveSearchResults() {
   const name = document.getElementById("memberSelect").value;
   const member = memberMap[name] || {};
   const results = searchState.foundResults;
-  const selected = [...searchState.selectedResults].sort();
 
-  if (!selected.length) return;
+  // Group selected records by event
+  const byEvent = {};
+  for (const key of searchState.selectedResults) {
+    const [i, j] = key.split("_").map(Number);
+    if (!byEvent[i]) byEvent[i] = [];
+    byEvent[i].push(j);
+  }
 
-  const confirmMsg = `${selected.length}개 대회의 기록을 저장할까요?`;
+  const eventCount = Object.keys(byEvent).length;
+  const totalCount = searchState.selectedResults.size;
+  if (!totalCount) return;
+
+  const confirmMsg = `${eventCount}개 대회에서 ${totalCount}건의 기록을 저장할까요?`;
   if (!confirm(confirmMsg)) return;
 
   let savedTotal = 0;
   let errors = [];
 
-  for (const idx of selected) {
-    const r = results[idx];
+  for (const [iStr, recIdxs] of Object.entries(byEvent)) {
+    const i = Number(iStr);
+    const r = results[i];
+    const selectedRecords = recIdxs.map(j => r.records[j]);
     try {
       const saveRes = await fetch(`${RACE_API}?action=confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobId: `search_${searchState.jobId}_${idx}`,
+          jobId: `search_${searchState.jobId}_${i}`,
           eventName: r.eventName,
           eventDate: r.eventDate,
           source: r.source,
           sourceId: r.sourceId,
-          results: r.records.map(rec => ({
+          results: selectedRecords.map(rec => ({
             memberRealName: rec.memberRealName || name,
             memberNickname: rec.memberNickname || member.nickname || name,
             distance: rec.distance || "",
