@@ -714,16 +714,35 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 300, memory: "512MiB", re
       const existingMap = new Map();
       existingSnap.forEach((doc) => {
         const d = doc.data();
-        existingMap.set(`${d.source}:${d.sourceId}`, doc.id);
+        existingMap.set(`${d.source}:${d.sourceId}`, { jobId: doc.id, eventDate: d.eventDate, eventName: d.eventName });
       });
 
-      const events = recent.map((e) => {
+      const baseEvents = recent.map((e) => {
         const key = `${e.source}:${e.sourceId}`;
-        const jobId = existingMap.get(key);
-        return { ...e, alreadyScraped: !!jobId, ...(jobId ? { jobId } : {}) };
+        const existing = existingMap.get(key);
+        if (!existing) return { ...e, alreadyScraped: false };
+        // 이미 스크래핑된 경우: Firestore에 저장된 날짜/이름 우선 사용
+        return {
+          ...e,
+          name: existing.eventName || e.name,
+          date: existing.eventDate || e.date,
+          alreadyScraped: true,
+          jobId: existing.jobId,
+        };
       });
 
-      return res.json({ ok: true, events });
+      // 날짜가 여전히 없는 SmartChip 이벤트는 getEventInfo로 보완
+      const enriched = await Promise.all(baseEvents.map(async (e) => {
+        if (e.source === "smartchip" && !e.date) {
+          try {
+            const info = await scraper.getEventInfo(e.source, e.sourceId);
+            return { ...e, name: info.title || e.name, date: info.date || null };
+          } catch { /* ignore */ }
+        }
+        return e;
+      }));
+
+      return res.json({ ok: true, events: enriched });
     }
 
     if (action === "job") {
