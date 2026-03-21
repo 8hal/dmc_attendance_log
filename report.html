@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>주간 리포트 - 동탄 마라톤 클럽</title>
+  <title>대회 기록 관리 - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
   <style>
     :root {
@@ -33,6 +33,29 @@
     .brand h1 { margin: 0; font-size: 18px; }
     .nav-link { font-size: 13px; color: var(--color-primary); text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--color-primary); }
     .nav-link:hover { background: var(--color-primary); color: #fff; }
+    .help-btn { font-size: 13px; color: var(--color-text-secondary); background: none; border: 1px solid var(--color-border); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+    .help-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+    /* 도움말 모달 */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(15,23,42,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--color-border); position: sticky; top: 0; background: #fff; border-radius: 20px 20px 0 0; z-index: 1; }
+    .modal-header h2 { margin: 0; font-size: 18px; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--color-text-muted); line-height: 1; padding: 4px; }
+    .modal-body { padding: 20px 24px 28px; }
+    .help-section { margin-bottom: 24px; }
+    .help-section:last-child { margin-bottom: 0; }
+    .help-section h3 { font-size: 15px; font-weight: 700; margin: 0 0 10px; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+    .help-section h3 .step-num { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; background: var(--color-primary); color: #fff; border-radius: 50%; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .help-step { display: flex; gap: 10px; padding: 10px 12px; background: var(--color-bg); border-radius: 10px; margin-bottom: 6px; font-size: 13px; line-height: 1.6; color: var(--color-text-secondary); }
+    .help-step strong { color: var(--color-text); }
+    .help-tip { padding: 10px 14px; background: #FFFBEB; border-left: 3px solid #F59E0B; border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; line-height: 1.6; margin-bottom: 6px; }
+    .help-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 0 2px; }
+    .hb-yellow { background: var(--color-warning-light); color: var(--color-warning); }
+    .hb-green { background: var(--color-success-light); color: var(--color-success); }
+    .hb-blue { background: #DBEAFE; color: #1D4ED8; }
+    .hb-red { background: var(--color-error-light); color: var(--color-error); }
     .card { background: var(--color-card); border-radius: 14px; padding: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
     .card h2 { margin: 0 0 12px; font-size: 16px; }
     .section-title { font-size: 14px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 8px; }
@@ -143,7 +166,7 @@
   <div id="authOverlay" style="position:fixed;inset:0;background:var(--color-bg);z-index:999;display:flex;align-items:center;justify-content:center;">
     <div style="text-align:center;max-width:320px;padding:20px;">
       <img src="assets/dmc_logo.png" alt="DMC" style="width:48px;height:48px;border-radius:12px;margin-bottom:12px;" />
-      <h2 style="margin:0 0 4px;font-size:18px;">주간 리포트</h2>
+      <h2 style="margin:0 0 4px;font-size:18px;">대회 기록 관리</h2>
       <p style="margin:0 0 16px;font-size:13px;color:var(--color-text-secondary);">담당자 전용 페이지입니다.</p>
       <div style="display:flex;gap:8px;">
         <input id="authPw" type="password" placeholder="비밀번호" style="flex:1;padding:10px 14px;border:1px solid var(--color-border);border-radius:10px;font-size:14px;" />
@@ -157,12 +180,12 @@
     <div class="header">
       <div class="brand">
         <img src="assets/dmc_logo.png" alt="DMC" />
-        <h1>주간 리포트</h1>
+        <h1>대회 기록 관리</h1>
       </div>
       <div style="display:flex; gap:6px;">
-        <a href="races.html" class="nav-link">2026 기록</a>
+        <button class="help-btn" id="helpBtn">사용법</button>
+        <a href="races.html" class="nav-link">대회 기록</a>
         <a href="admin.html" class="nav-link">회원관리</a>
-        <a href="index.html" class="nav-link">출석 체크</a>
       </div>
     </div>
 
