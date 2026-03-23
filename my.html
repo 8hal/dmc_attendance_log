@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>내 기록 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <meta property="og:title" content="내 대회 기록 — 동탄 마라톤 클럽" />
+  <meta property="og:description" content="닉네임 또는 실명으로 대회 기록을 확인하세요." />
+  <meta property="og:image" content="https://dmc-attendance.web.app/assets/dmc_logo.png" />
+  <style>
+    :root {
+      --color-primary: #2563EB;
+      --color-primary-hover: #1D4ED8;
+      --color-primary-light: #DBEAFE;
+      --color-bg: #F8FAFC;
+      --color-card: #FFFFFF;
+      --color-text: #0F172A;
+      --color-text-secondary: #64748B;
+      --color-text-muted: #94A3B8;
+      --color-border: #E2E8F0;
+      --color-border-light: #F1F5F9;
+      --color-success: #059669;
+      --color-error: #DC2626;
+      --color-error-light: #FEE2E2;
+      --color-gold: #F59E0B;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 0; background: var(--color-bg); color: var(--color-text); }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 16px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .brand h1 { margin: 0; font-size: 18px; }
+    .nav-link { font-size: 13px; color: var(--color-primary); text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--color-primary); transition: all 0.15s; }
+    .nav-link:hover { background: var(--color-primary); color: #fff; }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #2563EB, #1D4ED8); border-radius: 16px; padding: 24px 20px 22px; color: #fff; margin-bottom: 12px; position: relative; overflow: visible; }
+    .hero::before { content: ""; position: absolute; top: 0; right: 0; width: 120px; height: 120px; background: rgba(255,255,255,0.07); border-radius: 50%; pointer-events: none; }
+    .hero-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+    .hero-desc { font-size: 13px; opacity: 0.85; margin: 0 0 16px; line-height: 1.5; }
+
+    /* Combobox */
+    .combo-wrap { position: relative; }
+    .combo-input { width: 100%; padding: 14px 16px; border: none; border-radius: 14px; font-size: 15px; background: rgba(255,255,255,0.95); color: var(--color-text); outline: none; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+    .combo-input::placeholder { color: var(--color-text-muted); }
+    .combo-input:focus { box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
+    .combo-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; color: var(--color-text); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); max-height: 260px; overflow-y: auto; z-index: 10; display: none; }
+    .combo-dropdown.open { display: block; }
+    .combo-item { padding: 12px 16px; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.1s; }
+    .combo-item:hover, .combo-item.highlighted { background: #EFF6FF; }
+    .combo-item-sub { font-size: 12px; color: var(--color-text-muted); }
+    .combo-hint { padding: 12px 16px; font-size: 13px; color: var(--color-text-muted); border-top: 1px solid var(--color-border-light); }
+
+    /* Selected state badge */
+    .selected-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.18); border-radius: 10px; font-size: 14px; font-weight: 600; }
+    .selected-badge button { background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 4px; transition: background 0.15s; }
+    .selected-badge button:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* Cards */
+    .card { background: var(--color-card); border-radius: 14px; padding: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
+
+    /* PB Summary - compact strip */
+    .pb-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--color-card); border-radius: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 14px; overflow: hidden; }
+    .pb-cell { padding: 12px 6px; text-align: center; border-right: 1px solid var(--color-border-light); }
+    .pb-cell:last-child { border-right: none; }
+    .pb-cell-dist { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
+    .pb-cell-time { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .pb-cell-time.empty { color: var(--color-text-muted); font-size: 13px; }
+    .pb-cell-meta { font-size: 10px; color: var(--color-text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pb-cell.pb-5K .pb-cell-dist { color: #065F46; }
+    .pb-cell.pb-10K .pb-cell-dist { color: #1E40AF; }
+    .pb-cell.pb-half .pb-cell-dist { color: #5B21B6; }
+    .pb-cell.pb-full .pb-cell-dist { color: #991B1B; }
+
+    /* Distance badge */
+    .dist-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .dist-5K { background: #D1FAE5; color: #065F46; }
+    .dist-10K { background: #DBEAFE; color: #1E40AF; }
+    .dist-half { background: #EDE9FE; color: #5B21B6; }
+    .dist-full { background: #FEE2E2; color: #991B1B; }
+    .dist-ultra { background: #1F2937; color: #F9FAFB; }
+
+    /* PB badge */
+    .pb-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #FEF3C7; color: #92400E; }
+
+    /* Timeline */
+    .timeline { position: relative; padding-left: 20px; }
+    .timeline::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--color-border); border-radius: 2px; }
+    .timeline-item { position: relative; margin-bottom: 16px; }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot { position: absolute; left: -17px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); border: 2px solid var(--color-card); }
+    .timeline-item.is-pb .timeline-dot { background: var(--color-gold); }
+    .timeline-date { font-size: 12px; color: var(--color-text-muted); margin-bottom: 2px; }
+    .timeline-content { background: var(--color-border-light); border-radius: 10px; padding: 10px 14px; }
+    .timeline-race { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .timeline-result { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+    .timeline-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* External link */
+    .ext-link { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 5px; font-size: 11px; color: var(--color-primary); background: #EFF6FF; text-decoration: none; white-space: nowrap; transition: background 0.15s; }
+    .ext-link:hover { background: #DBEAFE; }
+    .ext-link svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 32px 16px; color: var(--color-text-muted); font-size: 14px; }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; display: block; }
+
+    /* Search CTA */
+    .search-cta { text-align: center; padding: 20px; background: var(--color-card); border-radius: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
+    .search-cta p { font-size: 14px; color: var(--color-text-secondary); margin: 0 0 12px; }
+
+    /* Buttons */
+    .btn { padding: 10px 18px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--color-primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-secondary); }
+    .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn-success { background: var(--color-success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+
+    /* Community link */
+    .community-link { display: block; text-align: center; padding: 20px; background: var(--color-card); border-radius: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-top: 16px; text-decoration: none; color: var(--color-primary); font-size: 15px; font-weight: 600; transition: all 0.15s; border: 1px solid transparent; }
+    .community-link:hover { border-color: var(--color-primary); background: #EFF6FF; }
+    .community-link small { display: block; font-size: 12px; color: var(--color-text-muted); font-weight: 400; margin-top: 4px; }
+
+    /* Guest notice */
+    .guest-notice { padding: 10px 14px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; font-size: 13px; color: #92400E; margin-bottom: 12px; }
+
+    /* Search nudge */
+    .nudge { background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; }
+    .nudge:hover { border-color: var(--color-primary); box-shadow: 0 4px 16px rgba(37,99,235,0.15); }
+    .nudge-icon { font-size: 28px; flex-shrink: 0; }
+    .nudge-body { flex: 1; min-width: 0; }
+    .nudge-title { font-size: 14px; font-weight: 700; color: var(--color-text); margin: 0 0 3px; }
+    .nudge-desc { font-size: 12px; color: var(--color-text-secondary); margin: 0; line-height: 1.4; }
+    .nudge-arrow { color: var(--color-primary); font-size: 18px; font-weight: 700; flex-shrink: 0; }
+
+    /* Search panel reuse styles */
+    .search-panel { margin-top: 14px; }
+    .search-panel .card { border: 1px solid var(--color-primary); border-left: 4px solid var(--color-primary); }
+    .search-section-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+    .search-section-title small { font-weight: 400; color: var(--color-text-muted); font-size: 12px; }
+    .year-group { margin-bottom: 14px; }
+    .year-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .year-group-label { font-size: 12px; font-weight: 700; color: var(--color-text-muted); letter-spacing: 0.5px; }
+    .year-select-btn { font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--color-primary); background: transparent; color: var(--color-primary); cursor: pointer; font-weight: 600; transition: all 0.15s; }
+    .year-select-btn:hover { background: var(--color-primary); color: #fff; }
+    .year-select-btn.active { background: var(--color-primary); color: #fff; }
+    .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .month-btn { padding: 10px 4px; border: 1.5px solid var(--color-border); border-radius: 10px; background: #fff; cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; color: var(--color-text); transition: all 0.15s; }
+    .month-btn:hover:not(:disabled) { border-color: var(--color-primary); background: #EFF6FF; color: var(--color-text); }
+    .month-btn.selected { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
+    .month-btn.selected:hover { background: var(--color-primary-hover); color: #fff; }
+    .month-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .event-search-bar { display: flex; gap: 6px; margin-bottom: 10px; }
+    .event-search-bar input { flex: 1; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; outline: none; }
+    .event-search-bar input:focus { border-color: var(--color-primary); }
+    .event-search-bar select { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; background: #fff; }
+    .event-list-actions { display: flex; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .event-list-actions a { color: var(--color-primary); cursor: pointer; text-decoration: underline; }
+    .event-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--color-border-light); border-radius: 8px; }
+    .event-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--color-border-light); font-size: 13px; cursor: pointer; transition: background 0.1s; }
+    .event-item:last-child { border-bottom: none; }
+    .event-item:hover { background: var(--color-primary-light); }
+    .event-item input[type=checkbox] { flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--color-primary); }
+    .event-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .event-item-date { color: var(--color-text-muted); font-size: 12px; white-space: nowrap; }
+    .event-item-badge { padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+    .event-badge-done { background: #D1FAE5; color: #065F46; }
+    .event-badge-source { background: var(--color-border-light); color: var(--color-text-muted); text-transform: uppercase; }
+    .event-counter { font-size: 12px; color: var(--color-text-muted); text-align: right; margin-top: 6px; }
+    .progress-bar-wrap { margin: 12px 0; }
+    .progress-bar-bg { height: 6px; background: var(--color-border-light); border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--color-primary); border-radius: 4px; transition: width 0.3s; }
+    .progress-text { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+    .found-result-card { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+    .found-result-card.selected { border-color: var(--color-primary); background: #EFF6FF; }
+    .found-result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; }
+    .found-result-header input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--color-primary); }
+    .found-event-name { font-weight: 600; font-size: 14px; flex: 1; }
+    .found-event-date { font-size: 12px; color: var(--color-text-muted); }
+    .found-records { padding-left: 24px; }
+    .found-record-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
+    .found-record-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* Loading skeleton */
+    .skeleton { position: relative; overflow: hidden; background: var(--color-border); border-radius: 8px; }
+    .skeleton::after { content: ""; position: absolute; top: 0; left: -60%; width: 60%; height: 100%; background: linear-gradient(90deg, rgba(226,232,240,0), rgba(255,255,255,0.8), rgba(226,232,240,0)); animation: shimmer 1.2s infinite; }
+    .skeleton-line { height: 14px; margin: 8px 0; }
+    @keyframes shimmer { to { transform: translateX(260%); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .dist-filter-chip.active { background: var(--color-primary) !important; color: #fff !important; border-color: var(--color-primary) !important; }
+
+    .achievement-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .ach-badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.2px; border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fadeIn 0.4s; }
+    .ach-badge .ach-icon { font-size: 12px; }
+    .ach-challenger { background: linear-gradient(135deg, rgba(220,38,38,0.9), rgba(239,68,68,0.85)); color: #fff; border-color: rgba(252,165,165,0.7); text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .ach-diamond { background: linear-gradient(135deg, rgba(99,102,241,0.9), rgba(168,85,247,0.9)); color: #fff; border-color: rgba(196,181,253,0.7); text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .ach-emerald { background: linear-gradient(135deg, rgba(5,150,105,0.85), rgba(16,185,129,0.85)); color: #fff; border-color: rgba(110,231,183,0.6); text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .ach-platinum { background: linear-gradient(135deg, rgba(6,182,212,0.85), rgba(20,184,166,0.85)); color: #fff; border-color: rgba(103,232,249,0.6); text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .ach-gold { background: linear-gradient(135deg, rgba(245,158,11,0.85), rgba(217,119,6,0.85)); color: #fff; border-color: rgba(251,191,36,0.6); text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .ach-silver { background: linear-gradient(135deg, rgba(148,163,184,0.7), rgba(100,116,139,0.7)); color: #fff; border-color: rgba(203,213,225,0.5); }
+    .ach-bronze { background: linear-gradient(135deg, rgba(180,120,60,0.75), rgba(150,90,40,0.75)); color: #fff; border-color: rgba(210,160,100,0.5); }
+    .ach-basic { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.92); }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 480px) {
+      .pb-cell-time { font-size: 13px; }
+      .pb-cell-dist { font-size: 10px; }
+      .hero { padding: 20px 16px 18px; }
+      .hero-title { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">
+        <img alt="동탄마라톤클럽 로고" src="assets/dmc_logo.png" />
+        <h1>내 기록</h1>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <a href="races.html" class="nav-link">전체 기록</a>
+        <a href="index.html" class="nav-link">출석체크</a>
+      </div>
+    </div>
+
+    <div class="hero" id="hero">
+      <p class="hero-title" id="heroTitle">대회 기록 확인하기</p>
+      <p class="hero-desc" id="heroDesc">닉네임 또는 실명을 입력하면 대회 기록을 바로 확인할 수 있습니다.</p>
+      <div id="achievementBadges" style="display:none"></div>
+      <div class="combo-wrap" id="comboWrap">
+        <input type="text" class="combo-input" id="comboInput" placeholder="닉네임 또는 실명 입력" autocomplete="off" />
+        <div class="combo-dropdown" id="comboDropdown"></div>
+      </div>
+    </div>
+
+    <div id="dashboard" style="display:none;">
+      <div id="pbCards"></div>
+      <div id="searchNudge"></div>
+      <div id="recordTimeline"></div>
+      <div id="searchPanel"></div>
+    </div>
+
+    <div id="loadingArea"></div>
+
+    <a href="races.html" class="community-link">
+      동마클 전체 기록 · 최고 기록 랭킹 보기 →
+      <small>대회별 기록, PB 랭킹을 확인하세요</small>
+    </a>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const RACE_API = location.hostname === "localhost"
+  ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+  : "https://race-nszximpvtq-du.a.run.app";
+
+const DIST_LABELS = { "5K": "5K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라" };
+const DIST_ORDER = ["full", "half", "10K", "5K"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, ultra: -1 };
+const MONTH_LABELS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+const MAX_MONTH_SELECT = 5;
+
+let membersData = [];
+let racesData = [];
+let memberMap = {};
+let reverseNickMap = {};
+
+let selectedRealName = null;
+let selectedMember = null;
+let isGuestMode = false;
+
+let searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
+
+function esc(s) { return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
+function timeToSeconds(t) {
+  if (!t) return Infinity;
+  const parts = t.split(":").map(Number);
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return Infinity;
+}
+function formatDate(d) { if (!d) return ""; const [y, m, day] = d.split("-"); return `${y}.${m}.${day}`; }
+function distBadge(dist) { const label = DIST_LABELS[dist] || dist; return `<span class="dist-badge dist-${dist}">${esc(label)}</span>`; }
+
+function buildTimingSiteUrl(source, sourceId, realName) {
+  if (!source || !sourceId || source === "manual") return null;
+  switch (source) {
+    case "spct": { const year = sourceId.substring(0, 4); return realName ? `https://time.spct.kr/m1.php?TargetYear=${year}&EVENT_NO=${sourceId}&currentPage=1&searchResultsName=${encodeURIComponent(realName)}` : `https://time.spct.kr/m1.php?TargetYear=${year}&EVENT_NO=${sourceId}&currentPage=1`; }
+    case "smartchip": return `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${sourceId}`;
+    case "myresult": return `https://myresult.co.kr/${sourceId}`;
+    case "marazone": return `https://raceresult.co.kr`;
+    default: return null;
+  }
+}
+function extLinkHtml(source, sourceId, realName) {
+  const url = buildTimingSiteUrl(source, sourceId, realName);
+  if (!url) return "";
+  const svg = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>';
+  return `<a href="${esc(url)}" target="_blank" rel="noopener" class="ext-link" onclick="event.stopPropagation()">${esc(source)}${svg}</a>`;
+}
+
+function enrichResults() {
+  const all = [];
+  for (const race of racesData) {
+    for (const r of race.results) {
+      const member = memberMap[r.realName];
+      all.push({ ...r, nickname: member?.nickname || r.nickname || r.realName, team: member?.team || "", isGuest: !member, raceName: race.name, raceDate: race.date, raceId: race.id, source: race.source, sourceId: race.sourceId });
+    }
+  }
+  return all;
+}
+
+function computePBs(results) {
+  const pbs = {};
+  for (const r of results) {
+    const key = `${r.realName}||${r.distance}`;
+    const sec = timeToSeconds(r.netTime);
+    if (!pbs[key] || sec < timeToSeconds(pbs[key].netTime)) pbs[key] = { ...r };
+  }
+  return Object.values(pbs);
+}
+
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), duration);
+}
+
+// ─── Combobox ─────────────────────────────────────
+
+let comboHighlight = -1;
+let comboFiltered = [];
+
+function getComboItems() {
+  return membersData.map(m => ({ type: "member", realName: m.realName, nickname: m.nickname, team: m.team, label: m.nickname }));
+}
+
+function renderComboDropdown(query) {
+  const dd = document.getElementById("comboDropdown");
+  const q = (query || "").trim().toLowerCase();
+  if (!q) { dd.classList.remove("open"); comboFiltered = []; return; }
+
+  const items = getComboItems();
+  comboFiltered = items.filter(it => it.nickname.toLowerCase().includes(q) || it.realName.toLowerCase().includes(q));
+
+  if (!comboFiltered.length) {
+    dd.innerHTML = `<div class="combo-hint">회원 목록에 없는 이름입니다.<br>Enter를 눌러 <strong>${esc(query.trim())}</strong>님의 기록을 검색할 수 있습니다.</div>`;
+    dd.classList.add("open");
+    comboHighlight = -1;
+    return;
+  }
+
+  dd.innerHTML = comboFiltered.map((it, i) =>
+    `<div class="combo-item ${i === comboHighlight ? "highlighted" : ""}" data-idx="${i}">
+      <span>${esc(it.nickname)}</span>
+    </div>`
+  ).join("") + `<div class="combo-hint">Enter로 실명 검색도 가능합니다</div>`;
+  dd.classList.add("open");
+
+  dd.querySelectorAll(".combo-item").forEach(el => {
+    el.addEventListener("mousedown", e => {
+      e.preventDefault();
+      selectComboItem(parseInt(el.dataset.idx));
+    });
+  });
+}
+
+function selectComboItem(idx) {
+  const item = comboFiltered[idx];
+  if (!item) return;
+  document.getElementById("comboInput").value = item.nickname;
+  document.getElementById("comboDropdown").classList.remove("open");
+  selectMember(item.realName);
+}
+
+function selectByRealName(name) {
+  const member = memberMap[name];
+  if (member) {
+    selectMember(name);
+  } else {
+    selectGuest(name);
+  }
+}
+
+function selectMember(realName) {
+  selectedRealName = realName;
+  selectedMember = memberMap[realName];
+  isGuestMode = false;
+  localStorage.setItem("my_selected_nickname", selectedMember.nickname);
+  updateHeroSelected();
+  renderDashboard();
+}
+
+function selectGuest(realName) {
+  selectedRealName = realName;
+  selectedMember = null;
+  isGuestMode = true;
+  updateHeroSelected();
+  renderDashboard();
+}
+
+function updateHeroSelected() {
+  const title = document.getElementById("heroTitle");
+  const desc = document.getElementById("heroDesc");
+  const comboWrap = document.getElementById("comboWrap");
+  const displayName = selectedMember ? selectedMember.nickname : selectedRealName;
+
+  title.textContent = `${displayName}님의 기록`;
+  desc.innerHTML = `<span class="selected-badge">${esc(displayName)} <button onclick="clearSelection()">변경</button></span>`;
+  comboWrap.style.display = "none";
+}
+
+function clearSelection() {
+  selectedRealName = null;
+  selectedMember = null;
+  isGuestMode = false;
+  resetSearch();
+
+  document.getElementById("heroTitle").textContent = "대회 기록 확인하기";
+  document.getElementById("heroDesc").textContent = "닉네임 또는 실명을 입력하면 대회 기록을 바로 확인할 수 있습니다.";
+  document.getElementById("achievementBadges").style.display = "none";
+  document.getElementById("comboWrap").style.display = "";
+  document.getElementById("comboInput").value = "";
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("comboInput").focus();
+}
+
+// ─── Achievement Badges ──────────────────────────
+
+function computeAchievements(records) {
+  const pbs = computePBs(records);
+  const pbMap = {};
+  for (const p of pbs) pbMap[p.distance] = timeToSeconds(p.netTime);
+  const badges = [];
+  const fullSec = pbMap["full"];
+  const halfSec = pbMap["half"];
+  const tenSec = pbMap["10K"];
+  const fiveSec = pbMap["5K"];
+
+  if (fullSec && fullSec < 9600) badges.push({ icon: "🔥", label: "239", tier: "challenger" });
+  else if (fullSec && fullSec < 10200) badges.push({ icon: "🔥", label: "249", tier: "diamond" });
+  else if (fullSec && fullSec < 10800) badges.push({ icon: "🔥", label: "Sub 3", tier: "gold" });
+  else if (fullSec && fullSec < 11400) badges.push({ icon: "🏃", label: "309", tier: "silver" });
+  else if (fullSec && fullSec < 12600) badges.push({ icon: "🏃", label: "330", tier: "bronze" });
+  else if (fullSec && fullSec < 14400) badges.push({ icon: "🏃", label: "Sub 4", tier: "basic" });
+
+  if (halfSec && halfSec < 5400) badges.push({ icon: "🔥", label: "싱글", tier: "gold" });
+  else if (halfSec && halfSec < 7200) badges.push({ icon: "🏃", label: "하프 Sub 2", tier: "bronze" });
+
+  const dists = new Set(records.map(r => r.distance));
+  if (dists.has("full")) badges.push({ icon: "🏁", label: "풀 완주", tier: "basic" });
+  if (dists.has("half")) badges.push({ icon: "🏁", label: "하프 완주", tier: "basic" });
+
+  return badges;
+}
+
+function renderAchievements(records) {
+  const el = document.getElementById("achievementBadges");
+  const badges = computeAchievements(records);
+  if (!badges.length) { el.style.display = "none"; return; }
+  el.style.display = "";
+  el.innerHTML = `<div class="achievement-row">${badges.map(b =>
+    `<span class="ach-badge ach-${b.tier}"><span class="ach-icon">${b.icon}</span>${esc(b.label)}</span>`
+  ).join("")}</div>`;
+}
+
+// ─── PB Summary Cards ─────────────────────────────
+
+function renderPBCards(records) {
+  const pbs = computePBs(records);
+  const pbMap = {};
+  for (const p of pbs) pbMap[p.distance] = p;
+
+  const el = document.getElementById("pbCards");
+  el.innerHTML = `<div class="pb-strip">${DIST_ORDER.map(dist => {
+    const pb = pbMap[dist];
+    const hasRecord = !!pb;
+    const label = DIST_LABELS[dist] || dist;
+    return `<div class="pb-cell pb-${dist}">
+      <div class="pb-cell-dist">${esc(label)}</div>
+      <div class="pb-cell-time ${hasRecord ? "" : "empty"}">${hasRecord ? esc(pb.netTime) : "-"}</div>
+      ${hasRecord ? `<div class="pb-cell-meta">${formatDate(pb.raceDate)}</div>` : ""}
+    </div>`;
+  }).join("")}</div>`;
+}
+
+// ─── Timeline ─────────────────────────────────────
+
+function renderTimeline(records) {
+  const el = document.getElementById("recordTimeline");
+  const pbs = computePBs(records);
+  const pbSet = new Set(pbs.map(p => `${p.raceId}||${p.distance}||${p.netTime}`));
+
+  const sorted = [...records].sort((a, b) => {
+    const dc = (b.raceDate || "").localeCompare(a.raceDate || "");
+    if (dc !== 0) return dc;
+    const da = DIST_SORT_ORDER[a.distance] ?? 99;
+    const db = DIST_SORT_ORDER[b.distance] ?? 99;
+    return da - db;
+  });
+
+  if (!sorted.length) {
+    const searchPrompt = isGuestMode
+      ? `<div class="search-cta">
+          <p>${esc(selectedRealName)}님의 대회 기록을 조회해 볼 수 있습니다.</p>
+          <button class="btn btn-primary" onclick="startSearchFlow()">기록 조회하기</button>
+        </div>`
+      : `<div class="search-cta">
+          <p>아직 등록된 기록이 없습니다.<br>기록 사이트에서 자동으로 찾아볼까요?</p>
+          <button class="btn btn-primary" onclick="startSearchFlow()">내 기록 찾기</button>
+        </div>`;
+    el.innerHTML = searchPrompt;
+    return;
+  }
+
+  let html = '<div class="card"><div class="timeline">';
+  for (const r of sorted) {
+    const isPb = pbSet.has(`${r.raceId}||${r.distance}||${r.netTime}`);
+    html += `<div class="timeline-item ${isPb ? "is-pb" : ""}">
+      <div class="timeline-dot"></div>
+      <div class="timeline-date">${formatDate(r.raceDate)}</div>
+      <div class="timeline-content">
+        <div class="timeline-race">${esc(r.raceName)}</div>
+        <div class="timeline-result">
+          ${distBadge(r.distance)}
+          <span class="timeline-time">${esc(r.netTime)}</span>
+          ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
+          ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
+          ${extLinkHtml(r.source, r.sourceId, r.realName)}
+        </div>
+      </div>
+    </div>`;
+  }
+  html += '</div></div>';
+
+  html += `<div class="search-cta">
+    <p>${isGuestMode ? "다른 대회 기록도 조회할 수 있습니다." : "더 많은 기록을 찾아볼까요?"}</p>
+    <button class="btn btn-outline" onclick="startSearchFlow()">${isGuestMode ? "추가 조회하기 (2025~2026)" : "기록 검색하기 (2025~2026)"}</button>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+// ─── Dashboard ────────────────────────────────────
+
+function renderDashboard() {
+  const dashboard = document.getElementById("dashboard");
+  dashboard.style.display = "";
+
+  const all = enrichResults().filter(r => r.realName === selectedRealName);
+
+  if (isGuestMode && !memberMap[selectedRealName]) {
+    document.getElementById("pbCards").innerHTML = `<div class="guest-notice">${esc(selectedRealName)}님은 동마클 회원이 아닙니다. 기록 조회만 가능하며, 저장은 되지 않습니다.</div>`;
+    renderAchievements(all);
+  } else {
+    renderPBCards(all);
+    renderAchievements(all);
+  }
+
+  renderSearchNudge(all);
+  renderTimeline(all);
+}
+
+function renderSearchNudge(records) {
+  const el = document.getElementById("searchNudge");
+  if (searchState.step !== "idle") { el.innerHTML = ""; return; }
+
+  const count = records.length;
+  const emptyPBs = DIST_ORDER.filter(d => !records.some(r => r.distance === d)).length;
+  const displayName = selectedMember?.nickname || selectedRealName;
+
+  if (count === 0) {
+    el.innerHTML = `<div class="nudge" onclick="startSearchFlow()">
+      <span class="nudge-icon">🔍</span>
+      <div class="nudge-body">
+        <p class="nudge-title">${isGuestMode ? `${esc(displayName)}님의 기록 조회하기` : "2025~2026 대회 기록 자동 수집"}</p>
+        <p class="nudge-desc">${isGuestMode ? "국내 주요 기록 사이트에서 기록을 찾아봅니다." : "국내 주요 기록 사이트에서 내 기록을 자동으로 찾아 등록합니다."}</p>
+      </div>
+      <span class="nudge-arrow">→</span>
+    </div>`;
+  } else if (count <= 5 || emptyPBs >= 2) {
+    const hint = emptyPBs > 0 ? `아직 ${emptyPBs}개 거리의 기록이 비어 있어요.` : "다른 대회 기록이 더 있을 수 있어요.";
+    el.innerHTML = `<div class="nudge" onclick="startSearchFlow()">
+      <span class="nudge-icon">📊</span>
+      <div class="nudge-body">
+        <p class="nudge-title">기록을 더 찾아볼까요?</p>
+        <p class="nudge-desc">${hint} 2025~2026년 대회를 검색해 보세요.</p>
+      </div>
+      <span class="nudge-arrow">→</span>
+    </div>`;
+  } else {
+    el.innerHTML = "";
+  }
+}
+
+// ─── Search Flow (ported from races.html) ─────────
+
+function buildMonthOptions() {
+  const now = new Date();
+  const months = [];
+  for (let m = now.getMonth() + 1; m >= 1; m--) months.push({ year: 2026, month: m, id: `2026-${String(m).padStart(2,"0")}` });
+  for (let m = 12; m >= 1; m--) months.push({ year: 2025, month: m, id: `2025-${String(m).padStart(2,"0")}` });
+  return months;
+}
+const MONTH_OPTIONS = buildMonthOptions();
+
+function resetSearch() {
+  if (searchState.pollTimer) clearInterval(searchState.pollTimer);
+  searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
+  const sp = document.getElementById("searchPanel");
+  if (sp) sp.innerHTML = "";
+}
+
+function startSearchFlow() {
+  if (!isGuestMode && selectedMember && searchState.selectedMonths.size === 0) {
+    for (const m of MONTH_OPTIONS) searchState.selectedMonths.add(m.id);
+  }
+  renderMonthSelector();
+  setTimeout(() => {
+    const sp = document.getElementById("searchPanel");
+    if (sp) sp.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 50);
+}
+
+function renderMonthSelector() {
+  const sp = document.getElementById("searchPanel");
+  searchState.step = "select-period";
+  const selCount = searchState.selectedMonths.size;
+  const isMember = !isGuestMode && selectedMember;
+  const maxMonth = isMember ? 24 : MAX_MONTH_SELECT;
+  const by2026 = MONTH_OPTIONS.filter(m => m.year === 2026);
+  const by2025 = MONTH_OPTIONS.filter(m => m.year === 2025);
+
+  const allOf = (year) => MONTH_OPTIONS.filter(m => m.year === year).every(m => searchState.selectedMonths.has(m.id));
+  const toggleYearLabel = (year) => allOf(year) ? "해제" : "전체";
+
+  function monthGrid(months) {
+    return `<div class="month-grid">${months.map(m => {
+      const isSel = searchState.selectedMonths.has(m.id);
+      const isDisabled = !isSel && selCount >= maxMonth;
+      return `<button class="month-btn ${isSel ? "selected" : ""}" ${isDisabled ? "disabled" : ""} onclick="toggleMonth('${m.id}')">${MONTH_LABELS[m.month-1]}</button>`;
+    }).join("")}</div>`;
+  }
+
+  const limitHint = isMember
+    ? `<small>회원은 연 단위 선택 가능 · 캐시 적용</small>`
+    : `<small>최대 ${MAX_MONTH_SELECT}개</small>`;
+
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색할 기간 선택 ${limitHint}</p>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">${isGuestMode ? "조회할 대회가 있는 달을 선택하세요." : "참가한 대회가 있는 달을 선택하세요."}</p>
+    ${by2026.length ? `<div class="year-group"><div class="year-group-header"><span class="year-group-label">2026</span>${isMember ? `<button class="year-select-btn ${allOf(2026) ? "active" : ""}" onclick="toggleYear(2026)">${toggleYearLabel(2026)}</button>` : ""}</div>${monthGrid(by2026)}</div>` : ""}
+    <div class="year-group"><div class="year-group-header"><span class="year-group-label">2025</span>${isMember ? `<button class="year-select-btn ${allOf(2025) ? "active" : ""}" onclick="toggleYear(2025)">${toggleYearLabel(2025)}</button>` : ""}</div>${monthGrid(by2025)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+      <span style="font-size:13px;color:${selCount > 0 ? "var(--color-primary)" : "var(--color-text-muted)"}">${selCount}개월 선택됨</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+        <button class="btn btn-primary btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="loadEventsForMonths()">대회 불러오기</button>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+function toggleYear(year) {
+  const months = MONTH_OPTIONS.filter(m => m.year === year);
+  const allSelected = months.every(m => searchState.selectedMonths.has(m.id));
+  for (const m of months) { if (allSelected) searchState.selectedMonths.delete(m.id); else searchState.selectedMonths.add(m.id); }
+  renderMonthSelector();
+}
+
+function toggleMonth(monthId) {
+  const isMember = !isGuestMode && selectedMember;
+  const maxMonth = isMember ? 24 : MAX_MONTH_SELECT;
+  if (searchState.selectedMonths.has(monthId)) searchState.selectedMonths.delete(monthId);
+  else { if (searchState.selectedMonths.size >= maxMonth) return; searchState.selectedMonths.add(monthId); }
+  renderMonthSelector();
+}
+
+async function loadEventsForMonths() {
+  const months = [...searchState.selectedMonths].sort();
+  if (!months.length) return;
+  const years = [...new Set(months.map(m => parseInt(m.split("-")[0])))];
+  const sp = document.getElementById("searchPanel");
+  sp.innerHTML = `<div class="search-panel"><div class="card"><p class="search-section-title">대회 목록 불러오는 중...</p><div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:30%;animation:shimmer 1.2s infinite"></div></div></div></div></div>`;
+  try {
+    const results = await Promise.all(years.map(y => fetch(`${RACE_API}?action=discover-all&year=${y}`).then(r => r.json())));
+    searchState.allEvents = results.flatMap(d => d.events || [])
+      .map(e => ({ ...e, eventName: e.name || e.eventName || e.sourceId, eventDate: e.date || e.eventDate || "" }))
+      .filter(e => { if (!e.eventDate) return false; return months.includes(e.eventDate.substring(0, 7)); });
+    for (const e of searchState.allEvents) searchState.selectedEvents.add(`${e.source}:${e.sourceId}`);
+    searchState.step = "select-events";
+    renderEventSelector();
+  } catch (e) {
+    sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>대회 목록을 불러오지 못했습니다.</div></div></div>`;
+  }
+}
+
+function renderEventSelector() {
+  const sp = document.getElementById("searchPanel");
+  const displayName = selectedMember?.nickname || selectedRealName;
+  const sources = [...new Set(searchState.allEvents.map(e => e.source))].sort();
+
+  const existing = document.getElementById("eventListContainer");
+  if (existing) { filterEventList(); return; }
+
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색할 대회 선택 <small>${esc(displayName)}님</small></p>
+    <div class="event-search-bar">
+      <input type="text" id="eventSearchQ" placeholder="대회명 검색" value="" oninput="filterEventList()" />
+      <select id="eventSourceFilter" onchange="filterEventList()">
+        <option value="all">전체</option>
+        ${sources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}
+      </select>
+    </div>
+    <div class="event-list-actions"><a onclick="toggleAllEvents(true)">전체 선택</a><a onclick="toggleAllEvents(false)">전체 해제</a></div>
+    <div class="event-list" id="eventListContainer"></div>
+    <div class="event-counter" id="eventCounter"></div>
+    ${isGuestMode ? `<div style="margin-top:12px;padding:12px;background:var(--color-border-light);border-radius:10px">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--color-text-secondary)">동명이인 필터 (선택사항)</p>
+      <div style="display:flex;gap:8px">
+        <select id="filterGender" style="flex:1;padding:8px 10px;border:1px solid var(--color-border);border-radius:8px;font-size:13px;background:#fff">
+          <option value="">성별 무관</option>
+          <option value="M">남성</option>
+          <option value="F">여성</option>
+        </select>
+        <div id="filterDistance" style="flex:1;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+          ${["full","half","10K","5K"].map(d => `<button type="button" class="dist-filter-chip" data-dist="${d}" onclick="this.classList.toggle('active')" style="padding:5px 10px;border:1px solid var(--color-border);border-radius:16px;font-size:12px;background:#fff;cursor:pointer;transition:all .15s">${d === "full" ? "풀" : d === "half" ? "하프" : d}</button>`).join("")}
+        </div>
+      </div>
+    </div>` : ""}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+      <button class="btn btn-primary btn-sm" id="eventSearchBtn" onclick="beginSearch()">검색 시작 (0개)</button>
+    </div>
+  </div></div>`;
+  filterEventList();
+}
+
+function filterEventList() {
+  const query = (document.getElementById("eventSearchQ")?.value || "").toLowerCase();
+  const sourceFilter = document.getElementById("eventSourceFilter")?.value || "all";
+  let events = searchState.allEvents;
+  if (query) events = events.filter(e => (e.eventName || "").toLowerCase().includes(query));
+  if (sourceFilter !== "all") events = events.filter(e => e.source === sourceFilter);
+  const selCount = searchState.selectedEvents.size;
+
+  const container = document.getElementById("eventListContainer");
+  if (container) {
+    container.innerHTML = events.map(e => {
+      const key = `${e.source}:${e.sourceId}`;
+      const checked = searchState.selectedEvents.has(key);
+      return `<label class="event-item"><input type="checkbox" ${checked ? "checked" : ""} onchange="toggleEvent('${esc(key)}', this.checked)" /><span class="event-item-name">${esc(e.eventName)}</span>${e.eventDate ? `<span class="event-item-date">${esc(e.eventDate)}</span>` : ""}<span class="event-item-badge event-badge-source">${esc(e.source)}</span></label>`;
+    }).join("") || '<div style="padding:20px;text-align:center;color:var(--color-text-muted);font-size:13px">해당 조건의 대회가 없습니다</div>';
+  }
+  const isMember = !isGuestMode && selectedMember;
+  const estSec = Math.ceil(selCount * (isMember ? 0.05 : 0.77));
+  const estText = selCount === 0 ? "" : isMember ? "캐시 적용 · 빠른 검색" : (estSec < 60 ? `약 ${estSec}초` : `약 ${Math.ceil(estSec / 60)}분`);
+  const counter = document.getElementById("eventCounter");
+  if (counter) counter.innerHTML = `${events.length}개 대회 중 <strong>${selCount}개</strong> 선택됨${estText ? ` · <span style="color:var(--color-primary)">${estText} 소요</span>` : ""}`;
+  const btn = document.getElementById("eventSearchBtn");
+  if (btn) { btn.disabled = selCount === 0; btn.textContent = selCount === 0 ? "검색 시작" : `검색 시작 (${selCount}개)`; }
+}
+
+function toggleEvent(key, checked) { if (checked) searchState.selectedEvents.add(key); else searchState.selectedEvents.delete(key); filterEventList(); }
+function toggleAllEvents(selectAll) {
+  const query = (document.getElementById("eventSearchQ")?.value || "").toLowerCase();
+  const sourceFilter = document.getElementById("eventSourceFilter")?.value || "all";
+  let events = searchState.allEvents;
+  if (query) events = events.filter(e => (e.eventName || "").toLowerCase().includes(query));
+  if (sourceFilter !== "all") events = events.filter(e => e.source === sourceFilter);
+  for (const e of events) { const key = `${e.source}:${e.sourceId}`; if (selectAll) searchState.selectedEvents.add(key); else searchState.selectedEvents.delete(key); }
+  filterEventList();
+}
+
+async function beginSearch() {
+  const realName = selectedRealName;
+  const nickname = selectedMember?.nickname || realName;
+  const gender = selectedMember?.gender || "";
+  const eventsToSearch = searchState.allEvents.filter(e => searchState.selectedEvents.has(`${e.source}:${e.sourceId}`));
+  if (!eventsToSearch.length) return;
+
+  searchState.step = "searching";
+  searchState.foundResults = [];
+  searchState.selectedResults = new Map();
+  const sp = document.getElementById("searchPanel");
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색 중... <small>0 / ${eventsToSearch.length}</small></p>
+    <div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" id="searchProgressBar" style="width:0%"></div></div></div>
+    <div class="progress-text" id="searchProgressText">검색 준비 중...</div>
+    <div id="searchLiveResults"></div>
+  </div></div>`;
+
+  try {
+    const res = await fetch(`${RACE_API}?action=search-member-events`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ realName, nickname, gender, filterGender: document.getElementById("filterGender")?.value || "", filterDistance: Array.from(document.querySelectorAll(".dist-filter-chip.active")).map(el => el.dataset.dist), events: eventsToSearch.map(e => ({ source: e.source, sourceId: e.sourceId, eventName: e.eventName || e.sourceId, eventDate: e.eventDate || "" })) }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "검색 시작 실패");
+    searchState.jobId = data.jobId;
+    pollSearchJob();
+  } catch (e) {
+    sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>검색을 시작하지 못했습니다.<br><small style="color:var(--color-text-muted)">${esc(e.message)}</small></div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div></div></div>`;
+  }
+}
+
+function pollSearchJob() {
+  const startedAt = Date.now();
+  const poll = async () => {
+    if (Date.now() - startedAt > 520000) {
+      clearInterval(searchState.pollTimer);
+      document.getElementById("searchPanel").innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⏱️</span>검색 시간이 초과되었습니다.</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="startSearchFlow()">다시 선택하기</button></div></div></div>`;
+      return;
+    }
+    try {
+      const res = await fetch(`${RACE_API}?action=member-search-job&jobId=${searchState.jobId}`);
+      const data = await res.json();
+      if (!data.ok) return;
+      if (data.status === "failed") {
+        clearInterval(searchState.pollTimer);
+        document.getElementById("searchPanel").innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>검색 중 오류가 발생했습니다.</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="startSearchFlow()">다시 시도</button></div></div></div>`;
+        return;
+      }
+      const prog = data.progress || {};
+      const pct = prog.total > 0 ? Math.round((prog.searched / prog.total) * 100) : 0;
+      const bar = document.getElementById("searchProgressBar");
+      const txt = document.getElementById("searchProgressText");
+      const title = document.querySelector(".search-section-title small");
+      if (bar) bar.style.width = pct + "%";
+      if (txt) txt.textContent = prog.currentEvent ? `${prog.currentEvent} 검색 중...` : "검색 중...";
+      if (title) title.textContent = `${prog.searched || 0} / ${prog.total || 0}`;
+      searchState.foundResults = data.results || [];
+      renderLiveResults();
+      if (data.status === "complete") { clearInterval(searchState.pollTimer); searchState.step = "review"; renderSearchResults(); }
+    } catch (_) {}
+  };
+  poll();
+  searchState.pollTimer = setInterval(poll, 1000);
+}
+
+function renderLiveResults() {
+  const el = document.getElementById("searchLiveResults");
+  if (!el) return;
+  const results = searchState.foundResults;
+  if (!results.length) return;
+
+  let wrap = el.querySelector(".live-results-wrap");
+  if (!wrap) {
+    el.innerHTML = `<div class="live-results-wrap" style="margin-top:14px"><div class="live-results-count" style="font-size:13px;font-weight:600;color:var(--color-text-secondary);margin-bottom:8px"></div></div>`;
+    wrap = el.querySelector(".live-results-wrap");
+  }
+
+  wrap.querySelector(".live-results-count").innerHTML = `<span style="color:var(--color-success)">●</span> ${results.length}개 대회에서 기록 발견`;
+
+  const rendered = wrap.querySelectorAll(".found-result-card").length;
+  for (let i = rendered; i < results.length; i++) {
+    const r = results[i];
+    const card = document.createElement("div");
+    card.className = "found-result-card";
+    card.style.cssText = "margin-bottom:6px;border-color:var(--color-success);animation:fadeIn 0.3s";
+    card.innerHTML = `<div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span></div>
+      <div class="found-records" style="padding-left:4px">${r.records.map(rec =>
+        `<div class="found-record-row" style="padding:2px 0">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}</div>`
+      ).join("")}</div>`;
+    wrap.appendChild(card);
+  }
+}
+
+function renderSearchResults() {
+  const sp = document.getElementById("searchPanel");
+  const results = searchState.foundResults;
+  if (!results.length) {
+    sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">🏃</span>${isGuestMode ? `${esc(selectedRealName)}님의 기록을 찾지 못했습니다.` : "선택한 대회에서 기록을 찾지 못했습니다."}</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div></div></div>`;
+    return;
+  }
+  const totalRecords = results.reduce((sum, r) => sum + r.records.length, 0);
+  if (searchState.step === "review") {
+    searchState.selectedResults = new Map();
+    for (let i = 0; i < results.length; i++) { if (results[i].records.length === 1) searchState.selectedResults.set(i, 0); }
+    searchState.step = "reviewed";
+  }
+  const selCount = [...searchState.selectedResults.values()].filter(v => v !== null).length;
+  const canSave = selectedMember || memberMap[selectedRealName];
+
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">검색 결과 <small>${results.length}개 대회, ${totalRecords}건</small></p>
+    ${!canSave ? `<div class="guest-notice">${esc(selectedRealName)}님의 기록을 찾았습니다. 조회 전용이며 저장은 되지 않습니다.</div>` : ""}
+    ${results.map((r, i) => {
+      if (!canSave) {
+        return `<div class="found-result-card">
+          <div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span></div>
+          <div class="found-records" style="padding-left:4px">${r.records.map(rec => `<div class="found-record-row" style="padding:4px 0">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div>`).join("")}</div>
+        </div>`;
+      }
+      const isMulti = r.records.length > 1;
+      const chosen = searchState.selectedResults.get(i);
+      const included = searchState.selectedResults.has(i) && chosen !== null;
+      if (!isMulti) {
+        const rec = r.records[0];
+        return `<div class="found-result-card ${included ? "selected" : ""}" style="cursor:pointer" onclick="toggleSingleEvent(${i})">
+          <div class="found-result-header"><span style="font-size:18px;flex-shrink:0">${included ? "✅" : "⬜"}</span><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span></div>
+          <div class="found-records" style="padding-left:30px"><div class="found-record-row">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div></div>
+        </div>`;
+      }
+      return `<div class="found-result-card ${included ? "selected" : ""}" style="border-color:${chosen === undefined ? "var(--color-error)" : ""}">
+        <div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span><span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--color-error-light);color:var(--color-error);font-weight:600">동명이인 ${r.records.length}건</span></div>
+        <div class="found-records" style="padding-left:4px">
+          ${r.records.map((rec, j) => { const isSel = chosen === j; return `<label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${isSel ? "background:#EFF6FF;" : ""}"><input type="radio" name="evt_${i}" ${isSel ? "checked" : ""} onchange="pickRecord(${i}, ${j})" style="width:16px;height:16px;accent-color:var(--color-primary);flex-shrink:0" />${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</label>`; }).join("")}
+          <label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${chosen === null ? "background:#FEF2F2;" : ""}"><input type="radio" name="evt_${i}" ${chosen === null ? "checked" : ""} onchange="pickRecord(${i}, null)" style="width:16px;height:16px;accent-color:var(--color-text-muted);flex-shrink:0" /><span style="font-size:13px;color:var(--color-text-muted)">해당 없음</span></label>
+        </div>
+      </div>`;
+    }).join("")}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button>
+      ${canSave ? `<button class="btn btn-success btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="saveSearchResults()">선택한 ${selCount}건 저장</button>` : ""}
+    </div>
+  </div></div>`;
+}
+
+function toggleSingleEvent(evtIdx) { if (searchState.selectedResults.has(evtIdx)) searchState.selectedResults.delete(evtIdx); else searchState.selectedResults.set(evtIdx, 0); renderSearchResults(); }
+function pickRecord(evtIdx, recIdx) { searchState.selectedResults.set(evtIdx, recIdx); renderSearchResults(); }
+
+async function saveSearchResults() {
+  const realName = selectedRealName;
+  const member = selectedMember || memberMap[realName];
+  if (!member) { showToast("동마클 회원만 저장 가능합니다", 3000); return; }
+
+  const results = searchState.foundResults;
+  const entries = [...searchState.selectedResults.entries()].filter(([_, v]) => v !== null);
+  if (!entries.length) return;
+  if (!confirm(`${entries.length}건의 기록을 저장할까요?`)) return;
+
+  const sp = document.getElementById("searchPanel");
+  sp.innerHTML = `<div class="search-panel"><div class="card">
+    <p class="search-section-title">기록 저장 중... <small>0 / ${entries.length}</small></p>
+    <div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" id="saveProgressBar" style="width:0%"></div></div></div>
+    <div class="progress-text" id="saveProgressText">저장 준비 중...</div>
+  </div></div>`;
+
+  let savedTotal = 0, errors = [];
+  for (let idx = 0; idx < entries.length; idx++) {
+    const [i, j] = entries[idx];
+    const r = results[i];
+    const bar = document.getElementById("saveProgressBar");
+    const txt = document.getElementById("saveProgressText");
+    const title = document.querySelector(".search-section-title small");
+    const pct = Math.round(((idx + 1) / entries.length) * 100);
+    if (bar) bar.style.width = pct + "%";
+    if (txt) txt.textContent = `${r.eventName} 저장 중...`;
+    if (title) title.textContent = `${idx + 1} / ${entries.length}`;
+    try {
+      const res = await fetch(`${RACE_API}?action=confirm`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: `search_${searchState.jobId}_${i}`, eventName: r.eventName, eventDate: r.eventDate, source: r.source, sourceId: r.sourceId,
+          results: [{ memberRealName: r.records[j].memberRealName || realName, memberNickname: r.records[j].memberNickname || member.nickname, distance: r.records[j].distance || "", netTime: r.records[j].netTime || "", gunTime: r.records[j].gunTime || "", bib: r.records[j].bib || "", gender: r.records[j].memberGender || member.gender || "", pbConfirmed: false, isGuest: false, note: "" }],
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) savedTotal += data.savedCount || 0; else errors.push(`${r.eventName}: ${data.error}`);
+    } catch (e) { errors.push(`${r.eventName}: ${e.message}`); }
+  }
+
+  showToast(errors.length ? `${savedTotal}건 저장, ${errors.length}건 실패` : `${savedTotal}건 저장 완료`, errors.length ? 4000 : 2000);
+  resetSearch();
+
+  try {
+    const racesRes = await fetch(`${RACE_API}?action=confirmed-races`);
+    const racesJson = await racesRes.json();
+    if (racesJson.ok) { racesData = racesJson.races || []; renderDashboard(); }
+  } catch (_) {}
+}
+
+// ─── Init ─────────────────────────────────────────
+
+const comboInput = document.getElementById("comboInput");
+const comboDropdown = document.getElementById("comboDropdown");
+
+comboInput.addEventListener("input", () => { comboHighlight = -1; renderComboDropdown(comboInput.value); });
+comboInput.addEventListener("focus", () => { if (comboInput.value.trim()) renderComboDropdown(comboInput.value); });
+comboInput.addEventListener("blur", () => { setTimeout(() => comboDropdown.classList.remove("open"), 150); });
+comboInput.addEventListener("keydown", e => {
+  if (e.key === "ArrowDown") { e.preventDefault(); comboHighlight = Math.min(comboHighlight + 1, comboFiltered.length - 1); renderComboDropdown(comboInput.value); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); comboHighlight = Math.max(comboHighlight - 1, 0); renderComboDropdown(comboInput.value); }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    if (comboHighlight >= 0 && comboFiltered[comboHighlight]) { selectComboItem(comboHighlight); }
+    else {
+      const val = comboInput.value.trim();
+      if (!val) return;
+      const match = membersData.find(m => m.nickname === val || m.realName === val);
+      if (match) selectMember(match.realName);
+      else selectByRealName(val);
+    }
+    comboDropdown.classList.remove("open");
+  }
+  else if (e.key === "Escape") { comboDropdown.classList.remove("open"); }
+});
+
+async function init() {
+  document.getElementById("loadingArea").innerHTML = `<div class="card">${Array(3).fill('<div class="skeleton skeleton-line" style="width:' + (60 + Math.random()*30) + '%"></div>').join("")}</div>`;
+
+  try {
+    const [membersRes, racesRes] = await Promise.all([
+      fetch(`${RACE_API}?action=members`),
+      fetch(`${RACE_API}?action=confirmed-races`),
+    ]);
+    const membersJson = await membersRes.json();
+    const racesJson = await racesRes.json();
+    if (!membersJson.ok) throw new Error("회원 정보를 불러오지 못했습니다");
+    if (!racesJson.ok) throw new Error("대회 기록을 불러오지 못했습니다");
+
+    membersData = (membersJson.members || []).map(m => ({ realName: m.realName, nickname: m.nickname, gender: m.gender || "", team: m.team || "" }));
+    racesData = racesJson.races || [];
+    memberMap = {};
+    reverseNickMap = {};
+    for (const m of membersData) { memberMap[m.realName] = m; reverseNickMap[m.nickname] = m; }
+
+    document.getElementById("loadingArea").innerHTML = "";
+
+    const savedNick = localStorage.getItem("marathon_att_nickname") || localStorage.getItem("my_selected_nickname") || "";
+    if (savedNick) {
+      const member = reverseNickMap[savedNick];
+      if (member) {
+        comboInput.value = member.nickname;
+        selectMember(member.realName);
+        return;
+      }
+    }
+
+    comboInput.focus();
+  } catch (e) {
+    document.getElementById("loadingArea").innerHTML = `<div class="card"><div class="empty"><span class="empty-icon">⚠️</span>데이터를 불러오지 못했습니다.<br><small style="color:var(--color-text-muted)">${esc(e.message)}</small></div></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
