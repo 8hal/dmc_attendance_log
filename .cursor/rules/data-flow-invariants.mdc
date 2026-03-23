@@ -1,0 +1,98 @@
+# Firestore 데이터 흐름 불변 규칙
+
+> **목적**: race_results, scrape_jobs, search_cache 등 Firestore 컬렉션을 수정할 때
+> 기존 데이터 흐름을 파괴하지 않도록 강제하는 규칙.
+
+## 적용 조건
+
+`functions/index.js`, `scripts/*.js`, 또는 프론트엔드에서 Firestore 컬렉션에
+READ/WRITE하는 코드를 **추가하거나 수정**할 때 반드시 따른다.
+
+---
+
+## 1. 변경 전 필수 트레이싱 (Pre-Change Trace)
+
+코드를 작성하기 **전에**, 아래 3단계를 반드시 수행한다:
+
+### Step 1: 영향받는 컬렉션 식별
+- 이 변경이 어떤 Firestore 컬렉션을 읽거나 쓰는가?
+- 해당 컬렉션을 읽는 **모든 다른 API/스크립트**를 나열한다.
+
+### Step 2: JOIN 키 확인
+- 쓰기 대상 문서의 필드가 다른 컬렉션의 **쿼리 조건**으로 사용되는가?
+- 해당 필드의 값이 기존 쿼리와 **정확히 일치**하는지 확인한다.
+
+### Step 3: 덮어쓰기 영향
+- `batch.set()` / `doc.set()`은 문서 전체를 덮어쓴다.
+- 기존 문서의 다른 필드가 손실되지 않는지 확인한다.
+- 동일 docId로 다른 곳에서도 쓰는 경우 충돌 여부를 확인한다.
+
+---
+
+## 2. 핵심 JOIN 키 (절대 깨뜨리지 말 것)
+
+### race_results.jobId ↔ scrape_jobs doc ID
+```
+scrape_jobs doc ID = canonicalJobId = `${source}_${sourceId}` (non-manual)
+race_results.jobId = 반드시 canonicalJobId와 동일해야 함
+
+confirmed-races API는 이 JOIN으로 기록을 조회:
+  race_results.where("jobId", "==", scrapeJobDocId)
+```
+
+**위반 시**: 기록이 UI에서 사라짐 (데이터 존재하지만 조회 불가)
+
+### race_results doc ID = `{realName}_{distance}_{date}`
+- 동일인/동일거리/동일날짜 → 같은 문서 덮어쓰기 (의도된 중복 방지)
+- set() 시 모든 필드를 올바르게 포함해야 함
+
+### search_cache doc ID = `{source}_{sourceId}_{realName}`
+- 읽기/쓰기 양쪽에서 동일한 키 생성 로직 사용 필수
+
+---
+
+## 3. Import/변수 규칙
+
+functions/index.js의 Firebase 모듈 import:
+```javascript
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+```
+
+- `admin` 전역 변수는 **없음** → `admin.firestore.FieldValue` 사용 금지
+- `FieldValue.serverTimestamp()` 직접 사용
+- 새 모듈 필요 시 기존 import 패턴 확인 후 추가
+
+---
+
+## 4. confirm API 수정 시 체크리스트
+
+- [ ] race_results에 저장하는 `jobId`가 `canonicalJobId`인가? (raw request jobId 아님)
+- [ ] scrape_jobs 문서 업데이트 시 기존 필드를 보존하는가?
+- [ ] batch.set()으로 race_results 문서를 덮어쓸 때 모든 필수 필드가 포함되는가?
+- [ ] canonicalJobId와 원본 jobId가 다를 때 구 문서 삭제 로직이 올바른가?
+
+---
+
+## 5. 데이터 조회 경로 (참조용)
+
+### confirmed-races (메인 조회 경로)
+```
+scrape_jobs (status=="confirmed") → doc.id로 race_results 조회
+  race_results.where("jobId", "==", scrapeJobDoc.id)
+              .where("status", "==", "confirmed")
+```
+
+### job (단건 조회 — 다른 경로!)
+```
+scrape_jobs.doc(jobId) → confirmed인 경우:
+  race_results.where("eventName", "==", ...).where("eventDate", "==", ...)
+```
+⚠️ confirmed-races와 다른 쿼리 경로 — 불일치 가능성 있음
+
+### search-member-events (검색)
+```
+search_cache 확인 → 미스 시 scraper → search_cache 저장
+member_search_jobs에 진행률 기록
+```
+→ race_results에 직접 쓰지 않음. 저장은 별도 confirm 호출.

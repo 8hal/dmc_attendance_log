@@ -604,49 +604,42 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     const action = req.query.action || (req.method === "POST" ? "scrape" : "events");
 
     if (action === "confirmed-races") {
-      const year = req.query.year || null; // null이면 전체 연도
-      const snap = await db.collection("scrape_jobs")
+      const year = req.query.year || null;
+      const snap = await db.collection("race_results")
         .where("status", "==", "confirmed")
-        .orderBy("confirmedAt", "desc")
         .get();
 
-      const races = [];
-      for (const doc of snap.docs) {
-        const job = doc.data();
-        if (year && job.eventDate && !job.eventDate.startsWith(year)) continue;
-        const resultsSnap = await db.collection("race_results")
-          .where("jobId", "==", doc.id)
-          .where("status", "==", "confirmed")
-          .get();
-
-        const results = [];
-        resultsSnap.forEach((rDoc) => {
-          const r = rDoc.data();
-          results.push({
-            docId: rDoc.id,
-            realName: r.memberRealName,
-            nickname: r.memberNickname,
-            bib: r.bib || "",
-            distance: r.distance,
-            netTime: r.netTime,
-            gunTime: r.gunTime || "",
-            overallRank: r.overallRank || null,
-            gender: r.gender || "",
-            isPB: r.pbConfirmed || false,
-            note: r.note || "",
-          });
+      const groupMap = {};
+      snap.forEach((rDoc) => {
+        const r = rDoc.data();
+        if (year && r.eventDate && !r.eventDate.startsWith(year)) return;
+        const key = `${r.source || "unknown"}_${r.sourceId || "unknown"}`;
+        if (!groupMap[key]) {
+          groupMap[key] = {
+            id: key,
+            name: r.eventName || "",
+            date: r.eventDate || "",
+            source: r.source || "",
+            sourceId: r.sourceId || "",
+            results: [],
+          };
+        }
+        groupMap[key].results.push({
+          docId: rDoc.id,
+          realName: r.memberRealName,
+          nickname: r.memberNickname,
+          bib: r.bib || "",
+          distance: r.distance,
+          netTime: r.netTime,
+          gunTime: r.gunTime || "",
+          overallRank: r.overallRank || null,
+          gender: r.gender || "",
+          isPB: r.pbConfirmed || false,
+          note: r.note || "",
         });
+      });
 
-        races.push({
-          id: doc.id,
-          name: job.eventName,
-          date: job.eventDate,
-          source: job.source,
-          sourceId: job.sourceId || "",
-          results,
-        });
-      }
-
+      const races = Object.values(groupMap);
       return res.json({ ok: true, races });
     }
 
@@ -1076,7 +1069,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "confirm" && req.method === "POST") {
-      const { jobId, eventName, eventDate, source, sourceId, results } = req.body || {};
+      const { jobId, eventName, eventDate, source, sourceId, results, confirmSource } = req.body || {};
       if (!jobId || !results || !Array.isArray(results)) {
         return res.status(400).json({ ok: false, error: "jobId and results[] required" });
       }
@@ -1114,6 +1107,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           note: r.note || "",
           status: "confirmed",
           confirmedAt: now,
+          confirmSource: confirmSource || "event",
         });
       }
 

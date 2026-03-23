@@ -1,0 +1,44 @@
+---
+description: 배포 전 필수 체크리스트 — firebase deploy 요청 시 자동 적용
+globs: 
+alwaysApply: false
+---
+
+# 배포 전 필수 체크리스트
+
+`firebase deploy`, `배포`, `deploy` 요청 시 반드시 아래 순서를 따른다.
+
+## 1. 테스트 실행 (필수)
+
+```bash
+bash scripts/pre-deploy-test.sh
+```
+
+- 전체 통과(`✅ 전체 통과 — 배포 가능`)가 나와야 배포 진행
+- 실패 시 원인 수정 후 재실행
+
+## 2. 백업 (필수)
+
+```bash
+cd functions && node ../scripts/backup-firestore.js
+```
+
+- `backup/YYYY-MM-DD/` 폴더에 저장 확인
+
+## 3. 커밋 + 푸시
+
+- 변경 사항 전부 커밋 후 원격 푸시 완료
+
+## 4. 배포 순서
+
+```bash
+firebase deploy --only functions
+firebase deploy --only hosting
+```
+
+- functions 먼저, hosting 나중에 (API 호환성 보장)
+
+## 5. 배포 후 검증
+
+- 프로덕션 URL에서 주요 기능 수동 확인
+- `event_logs` 컬렉션에 `page_load` 이벤트 쌓이는지 확인

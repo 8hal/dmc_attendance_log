@@ -320,6 +320,18 @@ function timeToSeconds(t) {
   return Infinity;
 }
 
+function calcPace(netTime, distance) {
+  const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5, "3K": 3, "21K": 21.0975, "42K": 42.195, "30K": 30, "32K": 32, "100K": 100, "6.5K": 6.5 };
+  const km = DIST_KM[distance];
+  if (!km) return "";
+  const secs = timeToSeconds(netTime);
+  if (!secs || secs === Infinity) return "";
+  const paceSecPerKm = secs / km;
+  const paceMin = Math.floor(paceSecPerKm / 60);
+  const paceSec = Math.round(paceSecPerKm % 60);
+  return `${paceMin}'${String(paceSec).padStart(2, "0")}"`;
+}
+
 function formatDate(d) {
   if (!d) return "";
   const [y, m, day] = d.split("-");
@@ -374,6 +386,7 @@ function enrichResults() {
       const member = memberMap[r.realName];
       allResults.push({
         ...r,
+        gender: member?.gender || r.gender || "",
         nickname: member?.nickname || r.nickname || r.realName,
         team: member?.team || "",
         isGuest: !member,
@@ -504,7 +517,10 @@ function renderRankingList(items) {
           <div class="ranking-name">${esc(r.nickname)} ${r.isGuest ? '<span class="pill" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;font-size:10px">게스트</span>' : teamPill(r.team)}</div>
           <div class="ranking-detail">${esc(r.raceName)} · ${formatDate(r.raceDate)} ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}</div>
         </div>
-        <div class="ranking-time">${esc(r.netTime)}</div>
+        <div style="text-align:right">
+          <div class="ranking-time">${esc(r.netTime)}</div>
+          ${calcPace(r.netTime, r.distance) ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${calcPace(r.netTime, r.distance)}/km</div>` : ""}
+        </div>
       </li>`;
   });
   html += "</ul>";
@@ -670,6 +686,7 @@ function renderMemberDetail() {
               <div class="timeline-result">
                 ${distBadge(r.distance)}
                 <span class="timeline-time">${esc(r.netTime)}</span>
+                ${calcPace(r.netTime, r.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(r.netTime, r.distance)}/km</span>` : ""}
                 ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
                 ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
                 ${extLinkHtml(r.source, r.sourceId, r.realName)}
@@ -687,7 +704,7 @@ function renderMemberDetail() {
 
   html += `
     <div class="search-trigger">
-      <button class="btn btn-outline" onclick="startSearchFlow()">🔍 내 기록 찾기</button>
+      <a href="my.html" class="btn btn-outline" style="text-decoration:none;">🔍 내 기록에서 검색하기 →</a>
     </div>`;
 
   el.innerHTML = html;
@@ -906,6 +923,7 @@ async function beginSearch() {
         realName: name,
         nickname: member.nickname || name,
         gender: member.gender || "",
+        filterGender: member.gender || "",
         events: eventsToSearch.map(e => ({ source: e.source, sourceId: e.sourceId, eventName: e.eventName || e.sourceId, eventDate: e.eventDate || "" })),
       }),
     });
@@ -1125,6 +1143,7 @@ async function saveSearchResults() {
           eventDate: r.eventDate,
           source: r.source,
           sourceId: r.sourceId,
+          confirmSource: "personal",
           results: selectedRecords.map(rec => ({
             memberRealName: rec.memberRealName || name,
             memberNickname: rec.memberNickname || member.nickname || name,

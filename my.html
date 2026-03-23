@@ -306,6 +306,17 @@ function timeToSeconds(t) {
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   return Infinity;
 }
+function calcPace(netTime, distance) {
+  const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5, "3K": 3, "21K": 21.0975, "42K": 42.195, "30K": 30, "32K": 32, "100K": 100, "6.5K": 6.5 };
+  const km = DIST_KM[distance];
+  if (!km) return "";
+  const secs = timeToSeconds(netTime);
+  if (!secs || secs === Infinity) return "";
+  const paceSecPerKm = secs / km;
+  const paceMin = Math.floor(paceSecPerKm / 60);
+  const paceSec = Math.round(paceSecPerKm % 60);
+  return `${paceMin}'${String(paceSec).padStart(2, "0")}"`;
+}
 function formatDate(d) { if (!d) return ""; const [y, m, day] = d.split("-"); return `${y}.${m}.${day}`; }
 function distBadge(dist) { const label = DIST_LABELS[dist] || dist; return `<span class="dist-badge dist-${dist}">${esc(label)}</span>`; }
 
@@ -564,6 +575,7 @@ function renderTimeline(records) {
         <div class="timeline-result">
           ${distBadge(r.distance)}
           <span class="timeline-time">${esc(r.netTime)}</span>
+          ${calcPace(r.netTime, r.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(r.netTime, r.distance)}/km</span>` : ""}
           ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
           ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
           ${extLinkHtml(r.source, r.sourceId, r.realName)}
@@ -866,7 +878,7 @@ async function beginSearch() {
   try {
     const res = await fetch(`${RACE_API}?action=search-member-events`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ realName, nickname, gender, filterGender: document.getElementById("filterGender")?.value || "", filterDistance: Array.from(document.querySelectorAll(".dist-filter-chip.active")).map(el => el.dataset.dist), events: eventsToSearch.map(e => ({ source: e.source, sourceId: e.sourceId, eventName: e.eventName || e.sourceId, eventDate: e.eventDate || "" })) }),
+      body: JSON.stringify({ realName, nickname, gender, filterGender: document.getElementById("filterGender")?.value || gender, filterDistance: Array.from(document.querySelectorAll(".dist-filter-chip.active")).map(el => el.dataset.dist), events: eventsToSearch.map(e => ({ source: e.source, sourceId: e.sourceId, eventName: e.eventName || e.sourceId, eventDate: e.eventDate || "" })) }),
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "검색 시작 실패");
@@ -910,8 +922,9 @@ function pollSearchJob() {
       if (data.status === "complete") {
         clearInterval(searchState.pollTimer);
         searchState.step = "review";
+        const alreadyCount = (searchState.foundResults || []).filter(r => r._alreadyConfirmed).length;
         const resultCount = (searchState.foundResults || []).length;
-        logEvent(resultCount === 0 ? "search_no_result" : "search_complete", { resultCount, elapsed: Math.round((Date.now() - startedAt) / 1000) });
+        logEvent(resultCount === 0 ? "search_no_result" : "search_complete", { resultCount, alreadyConfirmed: alreadyCount, elapsed: Math.round((Date.now() - startedAt) / 1000) });
         renderSearchResults();
       }
     } catch (_) {}
@@ -956,9 +969,18 @@ function renderSearchResults() {
     return;
   }
   const totalRecords = results.reduce((sum, r) => sum + r.records.length, 0);
+  const myConfirmed = new Set(
+    enrichResults().filter(r => r.realName === selectedRealName).map(r => `${r.source}:${r.sourceId}:${r.distance}`)
+  );
+  for (const r of results) {
+    r._alreadyConfirmed = r.records.length === 1 && myConfirmed.has(`${r.source}:${r.sourceId}:${r.records[0].distance}`);
+  }
+
   if (searchState.step === "review") {
     searchState.selectedResults = new Map();
-    for (let i = 0; i < results.length; i++) { if (results[i].records.length === 1) searchState.selectedResults.set(i, 0); }
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].records.length === 1 && !results[i]._alreadyConfirmed) searchState.selectedResults.set(i, 0);
+    }
     searchState.step = "reviewed";
   }
   const selCount = [...searchState.selectedResults.values()].filter(v => v !== null).length;
@@ -979,8 +1001,9 @@ function renderSearchResults() {
       const included = searchState.selectedResults.has(i) && chosen !== null;
       if (!isMulti) {
         const rec = r.records[0];
-        return `<div class="found-result-card ${included ? "selected" : ""}" style="cursor:pointer" onclick="toggleSingleEvent(${i})">
-          <div class="found-result-header"><span style="font-size:18px;flex-shrink:0">${included ? "✅" : "⬜"}</span><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span></div>
+        const alreadyTag = r._alreadyConfirmed ? `<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:#DCFCE7;color:#166534;font-weight:600">등록됨</span>` : "";
+        return `<div class="found-result-card ${included ? "selected" : ""}" style="cursor:pointer;${r._alreadyConfirmed ? "opacity:0.55;" : ""}" onclick="toggleSingleEvent(${i})">
+          <div class="found-result-header"><span style="font-size:18px;flex-shrink:0">${included ? "✅" : "⬜"}</span><span class="found-event-name">${esc(r.eventName)}</span>${alreadyTag}<span class="found-event-date">${esc(r.eventDate)}</span></div>
           <div class="found-records" style="padding-left:30px"><div class="found-record-row">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div></div>
         </div>`;
       }
@@ -1034,7 +1057,7 @@ async function saveSearchResults() {
       const res = await fetch(`${RACE_API}?action=confirm`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobId: `search_${searchState.jobId}_${i}`, eventName: r.eventName, eventDate: r.eventDate, source: r.source, sourceId: r.sourceId,
+          jobId: `search_${searchState.jobId}_${i}`, eventName: r.eventName, eventDate: r.eventDate, source: r.source, sourceId: r.sourceId, confirmSource: "personal",
           results: [{ memberRealName: r.records[j].memberRealName || realName, memberNickname: r.records[j].memberNickname || member.nickname, distance: r.records[j].distance || "", netTime: r.records[j].netTime || "", gunTime: r.records[j].gunTime || "", bib: r.records[j].bib || "", gender: r.records[j].memberGender || member.gender || "", pbConfirmed: false, isGuest: false, note: "" }],
         }),
       });

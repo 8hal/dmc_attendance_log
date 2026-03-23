@@ -62,12 +62,13 @@ echo -e "${YELLOW}[1/4] 에뮬레이터 시작...${NC}"
 firebase emulators:start --only functions,hosting > /tmp/emu.log 2>&1 &
 EMU_PID=$!
 
-for i in $(seq 1 30); do
-  if curl -s "$API?action=members" > /dev/null 2>&1; then
+for i in $(seq 1 40); do
+  resp=$(curl -s "$API?action=members" 2>/dev/null || echo "")
+  if echo "$resp" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null; then
     echo "  에뮬레이터 준비 완료 (${i}s)"
     break
   fi
-  if [ "$i" -eq 30 ]; then
+  if [ "$i" -eq 40 ]; then
     echo -e "${RED}에뮬레이터 시작 실패${NC}"
     cat /tmp/emu.log
     exit 1
@@ -161,12 +162,24 @@ assert_contains "my.html: logEvent 함수" "logEvent" "$TMP_DIR/my.html"
 assert_contains "my.html: deleteRecord 함수" "deleteRecord" "$TMP_DIR/my.html"
 assert_contains "my.html: _alreadyConfirmed" "_alreadyConfirmed" "$TMP_DIR/my.html"
 assert_contains "my.html: toggleDetail 함수" "toggleDetail" "$TMP_DIR/my.html"
+assert_contains "my.html: calcPace 함수" "calcPace" "$TMP_DIR/my.html"
+assert_contains "my.html: confirmSource" "confirmSource" "$TMP_DIR/my.html"
 
 assert_contains "races.html: BETA 태그" "BETA" "$TMP_DIR/races.html"
+assert_contains "races.html: calcPace 함수" "calcPace" "$TMP_DIR/races.html"
+assert_contains "races.html: gender 우선순위" "member?.gender" "$TMP_DIR/races.html"
+assert_contains "races.html: confirmSource" "confirmSource" "$TMP_DIR/races.html"
 assert_contains "report.html: BETA 태그" "BETA" "$TMP_DIR/report.html"
+assert_contains "report.html: verify-admin" "verify-admin" "$TMP_DIR/report.html"
+
+curl -s "$HOST/admin.html" > "$TMP_DIR/admin.html"
+assert_contains "admin.html: verify-admin" "verify-admin" "$TMP_DIR/admin.html"
 
 curl -s "$HOST/index.html" > "$TMP_DIR/index.html"
 assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
+
+curl -s "$HOST/ops.html" > "$TMP_DIR/ops.html"
+assert_contains "ops.html: Ops Console" "Ops Console" "$TMP_DIR/ops.html"
 
 # 비밀번호 평문 노출 없음 확인
 ! grep -q "dmc2008" "$TMP_DIR/report.html" 2>/dev/null

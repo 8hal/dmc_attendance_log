@@ -153,7 +153,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const AUTH_HASH = "dmc2008";
 const API_BASE = location.hostname === "localhost"
   ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
   : "https://race-nszximpvtq-du.a.run.app";
@@ -170,15 +169,24 @@ function checkAuth() {
   }
 }
 
-function tryAuth() {
+async function tryAuth() {
   const pw = document.getElementById("authPw").value;
-  if (pw === AUTH_HASH) {
-    sessionStorage.setItem("dmc_admin_auth", "ok");
-    checkAuth();
-  } else {
+  try {
+    const res = await fetch(`${API_BASE}?action=verify-admin`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pw }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      sessionStorage.setItem("dmc_admin_auth", "ok");
+      checkAuth();
+    } else {
+      document.getElementById("authError").style.display = "block";
+      document.getElementById("authPw").value = "";
+      document.getElementById("authPw").focus();
+    }
+  } catch (_) {
     document.getElementById("authError").style.display = "block";
-    document.getElementById("authPw").value = "";
-    document.getElementById("authPw").focus();
   }
 }
 

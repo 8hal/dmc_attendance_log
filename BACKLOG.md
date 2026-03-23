@@ -19,10 +19,11 @@
 
 ## P1 — 이번 주
 
-- 🔴 검색 시 회원 성별 자동 필터 (내일 아침 배포)
-- 🔴 races.html gender 우선순위 변경 (members > race_results)
-- 🔴 동명이인 카드에 페이스 표시
-- 🔴 춘천마라톤 스크랩 (myresult:132) + 회원 워밍업
+- ✅ 검색 시 회원 성별 자동 필터 (filterGender에 members.gender 자동 적용)
+- ✅ races.html gender 우선순위 변경 (members > race_results)
+- ✅ 동명이인 카드에 페이스 표시 (my.html + races.html)
+- ✅ confirmSource 필드 추가 (personal vs event 구분)
+- ✅ 춘천마라톤 myresult:132 — 이미 confirmed (헥사 1건)
 - 🔴 3/30 전환율 비교 (로그 분석)
 
 ## P2 — 다음 주
@@ -66,3 +67,10 @@
 - ✅ discoverMyResult 페이지네이션 수정
 - ✅ 주간 스크래퍼 foundCount=0 재시도 + 처리 한도 5로 증가
 - ✅ verify-admin, event-logs, data-integrity, log API 추가
+- ✅ confirmed-races API SSOT 리팩토링 (N+1→단일쿼리, 중복대회 해결)
+- ✅ race_results eventDate 누락 4건 보완
+- ✅ races.html gender 우선순위 (members > race_results)
+- ✅ 페이스 표시 (my.html + races.html 타임라인)
+- ✅ confirmSource 필드 추가 (personal/event 구분)
+- ✅ 검색 시 회원 성별 자동 필터 적용
+- ✅ functions/.env + .gitignore 설정
