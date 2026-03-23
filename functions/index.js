@@ -728,10 +728,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       const twoWeeksAgoStr = twoWeeksAgo.toISOString().slice(0, 10);
       const recent = allEvents.filter((e) => {
-        // 날짜가 있으면 최근 2주 이내인지 확인
-        if (e.date) return e.date >= twoWeeksAgoStr && e.date <= todayStr;
-        // 날짜가 null인 경우(SmartChip 슬라이더 이벤트): 이벤트 ID 앞 4자리가 올해이면 포함
-        // (main.html 슬라이더는 현재 진행 중이거나 방금 끝난 대회만 표시하므로 안전함)
+        // 미래 대회(예정)도 포함
+        if (e.date) return e.date >= twoWeeksAgoStr;
         if (e.sourceId && String(e.sourceId).startsWith(String(year))) return true;
         return false;
       });
@@ -946,7 +944,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
     // ─── 회원별 역방향 검색 (1명 × N대회) ─────────────────
     if (action === "search-member-events" && req.method === "POST") {
-      const { realName, nickname, gender, events } = req.body || {};
+      const { realName, nickname, gender, events, filterGender, filterDistance } = req.body || {};
       if (!realName || !events || !Array.isArray(events) || events.length === 0) {
         return res.status(400).json({ ok: false, error: "realName and events[] required" });
       }
@@ -986,33 +984,71 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           });
         };
 
-        // 사이트별 순차 검색 함수
+        const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+        const cacheCol = db.collection("search_cache");
+
+        const applyFilters = (entry) => {
+          if (!entry || !entry.records) return entry;
+          let records = entry.records;
+          if (filterGender) records = records.filter((r) => !r.gender || r.gender === filterGender || scraper.inferGender(r.name) === filterGender);
+          if (filterDistance && Array.isArray(filterDistance) && filterDistance.length > 0) records = records.filter((r) => filterDistance.includes(r.distance));
+          else if (filterDistance && typeof filterDistance === "string") records = records.filter((r) => r.distance === filterDistance);
+          if (records.length === 0) return null;
+          return { ...entry, records };
+        };
+
         const searchSource = async (sourceEvents) => {
           for (const ev of sourceEvents) {
             try {
+              const cacheKey = `${ev.source}_${ev.sourceId}_${realName}`.substring(0, 1500);
+              const cached = await cacheCol.doc(cacheKey).get();
+
+              if (cached.exists) {
+                const cd = cached.data();
+                const age = Date.now() - (cd.cachedAt?.toMillis?.() || 0);
+                if (age < CACHE_TTL_MS) {
+                  const filtered = cd.found ? applyFilters(cd.result) : null;
+                  if (filtered) allResults.push(filtered);
+                  searched++;
+                  await updateProgress(ev.eventName || ev.sourceId);
+                  continue;
+                }
+              }
+
               await scraper.sleep(scraper.DELAY_MS);
               const found = await scraper.searchMember(ev.source, ev.sourceId, realName);
 
-              if (found && found.length > 0) {
-                allResults.push({
-                  eventName: ev.eventName || ev.sourceId,
-                  eventDate: ev.eventDate || "",
-                  source: ev.source,
-                  sourceId: ev.sourceId,
-                  records: found.map((r) => ({
-                    ...r,
-                    memberRealName: realName,
-                    memberNickname: nickname || "",
-                    memberGender: gender || "",
-                  })),
-                });
-              }
+              const resultEntry = (found && found.length > 0) ? {
+                eventName: ev.eventName || ev.sourceId,
+                eventDate: ev.eventDate || "",
+                source: ev.source,
+                sourceId: ev.sourceId,
+                records: found.map((r) => ({
+                  ...r,
+                  memberRealName: realName,
+                  memberNickname: nickname || "",
+                  memberGender: gender || "",
+                })),
+              } : null;
+
+              const filtered = applyFilters(resultEntry);
+              if (filtered) allResults.push(filtered);
+
+              cacheCol.doc(cacheKey).set({
+                realName,
+                source: ev.source,
+                sourceId: ev.sourceId,
+                found: !!resultEntry,
+                result: resultEntry || null,
+                cachedAt: FieldValue.serverTimestamp(),
+              }).catch(() => {});
 
               searched++;
               await updateProgress(ev.eventName || ev.sourceId);
             } catch (err) {
               searched++;
               console.error(`[search-member] ${ev.sourceId}: ${err.message}`);
+              await updateProgress(ev.eventName || ev.sourceId).catch(() => {});
             }
           }
         };
@@ -1046,8 +1082,11 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const batch = db.batch();
       const now = new Date().toISOString();
 
+      const canonicalJobId = (source && sourceId && source !== "manual")
+        ? `${source}_${sourceId}`
+        : jobId;
+
       for (const r of results) {
-        // 중복 방지: 사람+거리+날짜 기반 유니크 키 (수동/검색 구분 없이 덮어씀)
         const resolvedDate = eventDate || r.eventDate || "";
         const safeDate = resolvedDate.replace(/[^0-9\-]/g, "");
         const safeName = (r.memberRealName || "").replace(/[^a-zA-Z0-9가-힣]/g, "_");
@@ -1055,7 +1094,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const docId = `${safeName}_${safeDist}_${safeDate}`;
         const ref = db.collection("race_results").doc(docId);
         batch.set(ref, {
-          jobId,
+          jobId: canonicalJobId,
           eventName: eventName || "",
           eventDate: resolvedDate,
           source: source || r.source || "",
@@ -1076,9 +1115,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       }
 
-      const canonicalJobId = (source && sourceId && source !== "manual")
-        ? `${source}_${sourceId}`
-        : jobId;
       const jobRef = db.collection("scrape_jobs").doc(canonicalJobId);
       const jobDoc = await jobRef.get();
 
