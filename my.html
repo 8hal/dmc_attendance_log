@@ -63,14 +63,14 @@
     .card { background: var(--color-card); border-radius: 14px; padding: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
 
     /* PB Summary - compact strip */
-    .pb-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--color-card); border-radius: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 14px; overflow: hidden; }
-    .pb-cell { padding: 12px 6px; text-align: center; border-right: 1px solid var(--color-border-light); }
+    .pb-strip { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--color-card); border-radius: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 14px; overflow: hidden; }
+    .pb-cell { padding: 14px 8px; text-align: center; border-right: 1px solid var(--color-border-light); }
     .pb-cell:last-child { border-right: none; }
-    .pb-cell-dist { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
-    .pb-cell-time { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .pb-cell-time.empty { color: var(--color-text-muted); font-size: 13px; }
-    .pb-cell-meta { font-size: 10px; color: var(--color-text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .pb-cell.pb-5K .pb-cell-dist { color: #065F46; }
+    .pb-cell-dist { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+    .pb-cell-time { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .pb-cell-time.empty { color: var(--color-text-muted); font-size: 14px; }
+    .pb-cell-race { font-size: 10px; color: var(--color-text-secondary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pb-cell-meta { font-size: 10px; color: var(--color-text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pb-cell.pb-10K .pb-cell-dist { color: #1E40AF; }
     .pb-cell.pb-half .pb-cell-dist { color: #5B21B6; }
     .pb-cell.pb-full .pb-cell-dist { color: #991B1B; }
@@ -222,8 +222,8 @@
     .toast.show { opacity: 1; }
 
     @media (max-width: 480px) {
-      .pb-cell-time { font-size: 13px; }
-      .pb-cell-dist { font-size: 10px; }
+      .pb-cell-time { font-size: 15px; }
+      .pb-cell-dist { font-size: 11px; }
       .hero { padding: 20px 16px 18px; }
       .hero-title { font-size: 18px; }
     }
@@ -511,15 +511,17 @@ function renderPBCards(records) {
   const pbMap = {};
   for (const p of pbs) pbMap[p.distance] = p;
 
+  const PB_DISTS = ["full", "half", "10K"];
   const el = document.getElementById("pbCards");
-  el.innerHTML = `<div class="pb-strip">${DIST_ORDER.map(dist => {
+  el.innerHTML = `<div class="pb-strip">${PB_DISTS.map(dist => {
     const pb = pbMap[dist];
     const hasRecord = !!pb;
     const label = DIST_LABELS[dist] || dist;
+    const raceName = hasRecord ? (pb.raceName || "").replace(/^\d{4}\s*/, "") : "";
     return `<div class="pb-cell pb-${dist}">
       <div class="pb-cell-dist">${esc(label)}</div>
       <div class="pb-cell-time ${hasRecord ? "" : "empty"}">${hasRecord ? esc(pb.netTime) : "-"}</div>
-      ${hasRecord ? `<div class="pb-cell-meta">${formatDate(pb.raceDate)}</div>` : ""}
+      ${hasRecord ? `<div class="pb-cell-race">${esc(raceName)}</div><div class="pb-cell-meta">${formatDate(pb.raceDate)}</div>` : ""}
     </div>`;
   }).join("")}</div>`;
 }
@@ -783,19 +785,14 @@ async function loadEventsForMonths() {
 function renderEventSelector() {
   const sp = document.getElementById("searchPanel");
   const displayName = selectedMember?.nickname || selectedRealName;
-  const sources = [...new Set(searchState.allEvents.map(e => e.source))].sort();
-
   const existing = document.getElementById("eventListContainer");
   if (existing) { filterEventList(); return; }
 
   sp.innerHTML = `<div class="search-panel"><div class="card">
     <p class="search-section-title">검색할 대회 선택 <small>${esc(displayName)}님</small></p>
+    <p style="font-size:12px;color:var(--color-text-muted);margin:0 0 8px">실명으로 검색하므로 동명이인이 함께 나올 수 있습니다.</p>
     <div class="event-search-bar">
       <input type="text" id="eventSearchQ" placeholder="대회명 검색" value="" oninput="filterEventList()" />
-      <select id="eventSourceFilter" onchange="filterEventList()">
-        <option value="all">전체</option>
-        ${sources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}
-      </select>
     </div>
     <div class="event-list-actions"><a onclick="toggleAllEvents(true)">전체 선택</a><a onclick="toggleAllEvents(false)">전체 해제</a></div>
     <div class="event-list" id="eventListContainer"></div>
@@ -823,10 +820,8 @@ function renderEventSelector() {
 
 function filterEventList() {
   const query = (document.getElementById("eventSearchQ")?.value || "").toLowerCase();
-  const sourceFilter = document.getElementById("eventSourceFilter")?.value || "all";
   let events = searchState.allEvents;
   if (query) events = events.filter(e => (e.eventName || "").toLowerCase().includes(query));
-  if (sourceFilter !== "all") events = events.filter(e => e.source === sourceFilter);
   const selCount = searchState.selectedEvents.size;
 
   const container = document.getElementById("eventListContainer");
@@ -849,10 +844,8 @@ function filterEventList() {
 function toggleEvent(key, checked) { if (checked) searchState.selectedEvents.add(key); else searchState.selectedEvents.delete(key); filterEventList(); }
 function toggleAllEvents(selectAll) {
   const query = (document.getElementById("eventSearchQ")?.value || "").toLowerCase();
-  const sourceFilter = document.getElementById("eventSourceFilter")?.value || "all";
   let events = searchState.allEvents;
   if (query) events = events.filter(e => (e.eventName || "").toLowerCase().includes(query));
-  if (sourceFilter !== "all") events = events.filter(e => e.source === sourceFilter);
   for (const e of events) { const key = `${e.source}:${e.sourceId}`; if (selectAll) searchState.selectedEvents.add(key); else searchState.selectedEvents.delete(key); }
   filterEventList();
 }
@@ -867,6 +860,9 @@ async function beginSearch() {
   searchState.step = "searching";
   searchState.foundResults = [];
   searchState.selectedResults = new Map();
+  const fg = document.getElementById("filterGender")?.value || gender;
+  const fd = Array.from(document.querySelectorAll(".dist-filter-chip.active")).map(el => el.dataset.dist);
+  searchState.filterSummary = { name: realName, gender: fg, distances: fd, eventCount: eventsToSearch.length };
   const sp = document.getElementById("searchPanel");
   sp.innerHTML = `<div class="search-panel"><div class="card">
     <p class="search-section-title">검색 중... <small>0 / ${eventsToSearch.length}</small></p>
@@ -965,7 +961,11 @@ function renderSearchResults() {
   const sp = document.getElementById("searchPanel");
   const results = searchState.foundResults;
   if (!results.length) {
-    sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">🏃</span>${isGuestMode ? `${esc(selectedRealName)}님의 기록을 찾지 못했습니다.` : "선택한 대회에서 기록을 찾지 못했습니다."}</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div></div></div>`;
+    const confirmedCount = enrichResults().filter(r => r.realName === selectedRealName).length;
+    const noResultMsg = confirmedCount > 0
+      ? `선택한 대회에서 새로운 기록을 찾지 못했습니다.<br><span style="font-size:13px;color:var(--color-text-muted)">이미 등록된 기록 ${confirmedCount}건은 대시보드에서 확인할 수 있습니다.</span>`
+      : (isGuestMode ? `${esc(selectedRealName)}님의 기록을 찾지 못했습니다.` : "선택한 대회에서 기록을 찾지 못했습니다.");
+    sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">🏃</span>${noResultMsg}</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div></div></div>`;
     return;
   }
   const totalRecords = results.reduce((sum, r) => sum + r.records.length, 0);
@@ -986,14 +986,25 @@ function renderSearchResults() {
   const selCount = [...searchState.selectedResults.values()].filter(v => v !== null).length;
   const canSave = selectedMember || memberMap[selectedRealName];
 
+  const fs = searchState.filterSummary || {};
+  const filterChips = [
+    fs.gender === "M" ? "남성" : fs.gender === "F" ? "여성" : "",
+    ...(fs.distances || []),
+  ].filter(Boolean);
+  const filterLine = filterChips.length
+    ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${filterChips.map(c => `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--color-border-light);color:var(--color-text-secondary)">${esc(c)}</span>`).join("")}</div>`
+    : "";
+
   sp.innerHTML = `<div class="search-panel"><div class="card">
     <p class="search-section-title">검색 결과 <small>${results.length}개 대회, ${totalRecords}건</small></p>
+    ${filterLine}
     ${!canSave ? `<div class="guest-notice">${esc(selectedRealName)}님의 기록을 찾았습니다. 조회 전용이며 저장은 되지 않습니다.</div>` : ""}
+    ${canSave && results.every(r => r._alreadyConfirmed) ? `<div style="padding:10px 12px;margin-bottom:8px;border-radius:8px;background:#F0FDF4;font-size:13px;color:#166534">✅ ${results.length}개 대회 기록이 모두 이미 등록되어 있습니다.</div>` : ""}
     ${results.map((r, i) => {
       if (!canSave) {
         return `<div class="found-result-card">
           <div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span></div>
-          <div class="found-records" style="padding-left:4px">${r.records.map(rec => `<div class="found-record-row" style="padding:4px 0">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div>`).join("")}</div>
+          <div class="found-records" style="padding-left:4px">${r.records.map(rec => `<div class="found-record-row" style="padding:4px 0">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${calcPace(rec.netTime, rec.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(rec.netTime, rec.distance)}/km</span>` : ""}${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div>`).join("")}</div>
         </div>`;
       }
       const isMulti = r.records.length > 1;
@@ -1004,13 +1015,13 @@ function renderSearchResults() {
         const alreadyTag = r._alreadyConfirmed ? `<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:#DCFCE7;color:#166534;font-weight:600">등록됨</span>` : "";
         return `<div class="found-result-card ${included ? "selected" : ""}" style="cursor:pointer;${r._alreadyConfirmed ? "opacity:0.55;" : ""}" onclick="toggleSingleEvent(${i})">
           <div class="found-result-header"><span style="font-size:18px;flex-shrink:0">${included ? "✅" : "⬜"}</span><span class="found-event-name">${esc(r.eventName)}</span>${alreadyTag}<span class="found-event-date">${esc(r.eventDate)}</span></div>
-          <div class="found-records" style="padding-left:30px"><div class="found-record-row">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div></div>
+          <div class="found-records" style="padding-left:30px"><div class="found-record-row">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${calcPace(rec.netTime, rec.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(rec.netTime, rec.distance)}/km</span>` : ""}${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</div></div>
         </div>`;
       }
       return `<div class="found-result-card ${included ? "selected" : ""}" style="border-color:${chosen === undefined ? "var(--color-error)" : ""}">
         <div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span><span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--color-error-light);color:var(--color-error);font-weight:600">동명이인 ${r.records.length}건</span></div>
         <div class="found-records" style="padding-left:4px">
-          ${r.records.map((rec, j) => { const isSel = chosen === j; return `<label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${isSel ? "background:#EFF6FF;" : ""}"><input type="radio" name="evt_${i}" ${isSel ? "checked" : ""} onchange="pickRecord(${i}, ${j})" style="width:16px;height:16px;accent-color:var(--color-primary);flex-shrink:0" />${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</label>`; }).join("")}
+          ${r.records.map((rec, j) => { const isSel = chosen === j; return `<label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${isSel ? "background:#EFF6FF;" : ""}"><input type="radio" name="evt_${i}" ${isSel ? "checked" : ""} onchange="pickRecord(${i}, ${j})" style="width:16px;height:16px;accent-color:var(--color-primary);flex-shrink:0" />${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${calcPace(rec.netTime, rec.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(rec.netTime, rec.distance)}/km</span>` : ""}${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}${extLinkHtml(r.source, r.sourceId, rec.memberRealName || "")}</label>`; }).join("")}
           <label class="found-record-row" style="cursor:pointer;padding:8px 6px;border-radius:8px;${chosen === null ? "background:#FEF2F2;" : ""}"><input type="radio" name="evt_${i}" ${chosen === null ? "checked" : ""} onchange="pickRecord(${i}, null)" style="width:16px;height:16px;accent-color:var(--color-text-muted);flex-shrink:0" /><span style="font-size:13px;color:var(--color-text-muted)">해당 없음</span></label>
         </div>
       </div>`;
