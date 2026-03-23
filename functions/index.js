@@ -524,7 +524,8 @@ exports.weeklyDiscoverAndScrape = onSchedule(
     const existingKeys = new Set();
     existingSnap.forEach((doc) => {
       const d = doc.data();
-      existingKeys.add(`${d.source}:${d.sourceId}`);
+      const foundCount = (d.results || []).length;
+      if (foundCount > 0) existingKeys.add(`${d.source}:${d.sourceId}`);
     });
 
     const newEvents = recentEvents.filter((e) => !existingKeys.has(`${e.source}:${e.sourceId}`));
@@ -545,7 +546,7 @@ exports.weeklyDiscoverAndScrape = onSchedule(
     confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
     const pbMap = scraper.buildPBMap(confirmedResults);
 
-    for (const event of newEvents.slice(0, 3)) {
+    for (const event of newEvents.slice(0, 5)) {
       console.log(`[scrape] ${event.source}:${event.sourceId} (${event.name})`);
 
       const jobRef = db.collection("scrape_jobs").doc(`${event.source}_${event.sourceId}`);
@@ -622,6 +623,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         resultsSnap.forEach((rDoc) => {
           const r = rDoc.data();
           results.push({
+            docId: rDoc.id,
             realName: r.memberRealName,
             nickname: r.memberNickname,
             bib: r.bib || "",
@@ -1166,6 +1168,38 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       });
 
       return res.json({ ok: true, jobId: jobRef.id, eventName, eventDate: eventDate || "" });
+    }
+
+    if (action === "delete-record" && req.method === "POST") {
+      const { docId, requesterName } = req.body || {};
+      if (!docId || !requesterName) {
+        return res.status(400).json({ ok: false, error: "docId and requesterName required" });
+      }
+
+      const ref = db.collection("race_results").doc(docId);
+      const doc = await ref.get();
+      if (!doc.exists) {
+        return res.status(404).json({ ok: false, error: "record not found" });
+      }
+
+      const data = doc.data();
+      if (data.memberRealName !== requesterName) {
+        return res.status(403).json({ ok: false, error: "본인 기록만 삭제할 수 있습니다." });
+      }
+
+      await ref.delete();
+
+      if (data.jobId) {
+        const jobRef = db.collection("scrape_jobs").doc(data.jobId);
+        const jobDoc = await jobRef.get();
+        if (jobDoc.exists) {
+          const jd = jobDoc.data();
+          const newCount = Math.max(0, (jd.confirmedCount || 0) - 1);
+          await jobRef.update({ confirmedCount: newCount });
+        }
+      }
+
+      return res.json({ ok: true, deletedDocId: docId });
     }
 
     if (action === "scrape" && req.method === "POST") {

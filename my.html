@@ -140,6 +140,15 @@
     .nudge-desc { font-size: 12px; color: var(--color-text-secondary); margin: 0; line-height: 1.4; }
     .nudge-arrow { color: var(--color-primary); font-size: 18px; font-weight: 700; flex-shrink: 0; }
 
+    /* Timeline detail expand */
+    .timeline-item { cursor: pointer; }
+    .timeline-detail { display: none; margin-top: 8px; padding: 8px 0 0; border-top: 1px solid var(--color-border); font-size: 12px; color: var(--color-text-muted); }
+    .timeline-detail.open { display: flex; align-items: center; justify-content: space-between; }
+    .timeline-detail-info { line-height: 1.5; }
+    .timeline-delete { background: none; border: 1px solid #E5E7EB; color: var(--color-text-muted); cursor: pointer; font-size: 11px; padding: 3px 8px; border-radius: 6px; transition: all 0.15s; white-space: nowrap; }
+    .timeline-delete:hover { color: #DC2626; border-color: #FCA5A5; background: #FEF2F2; }
+    .timeline-content-inner { flex: 1; min-width: 0; }
+
     /* Search panel reuse styles */
     .search-panel { margin-top: 14px; }
     .search-panel .card { border: 1px solid var(--color-primary); border-left: 4px solid var(--color-primary); }
@@ -314,7 +323,7 @@ function enrichResults() {
   for (const race of racesData) {
     for (const r of race.results) {
       const member = memberMap[r.realName];
-      all.push({ ...r, nickname: member?.nickname || r.nickname || r.realName, team: member?.team || "", isGuest: !member, raceName: race.name, raceDate: race.date, raceId: race.id, source: race.source, sourceId: race.sourceId });
+      all.push({ ...r, docId: r.docId || "", nickname: member?.nickname || r.nickname || r.realName, team: member?.team || "", isGuest: !member, raceName: race.name, raceDate: race.date, raceId: race.id, source: race.source, sourceId: race.sourceId });
     }
   }
   return all;
@@ -525,12 +534,22 @@ function renderTimeline(records) {
   }
 
   let html = '<div class="card"><div class="timeline">';
-  for (const r of sorted) {
+  for (let i = 0; i < sorted.length; i++) {
+    const r = sorted[i];
     const isPb = pbSet.has(`${r.raceId}||${r.distance}||${r.netTime}`);
-    html += `<div class="timeline-item ${isPb ? "is-pb" : ""}">
+    const detailId = `tl-detail-${i}`;
+    const deleteLink = r.docId && !isGuestMode
+      ? `<button class="timeline-delete" onclick="deleteRecord('${esc(r.docId)}', '${esc(r.raceName)}', event)">삭제</button>`
+      : "";
+    const detailChips = [];
+    if (r.bib) detailChips.push(`BIB ${esc(r.bib)}`);
+    if (r.overallRank) detailChips.push(`종합 ${r.overallRank}위`);
+    if (r.gunTime && r.gunTime !== r.netTime) detailChips.push(`Gun ${esc(r.gunTime)}`);
+    const detailParts = detailChips.join(" · ");
+    html += `<div class="timeline-item ${isPb ? "is-pb" : ""}" onclick="toggleDetail('${detailId}')">
       <div class="timeline-dot"></div>
       <div class="timeline-date">${formatDate(r.raceDate)}</div>
-      <div class="timeline-content">
+      <div class="timeline-content-inner">
         <div class="timeline-race">${esc(r.raceName)}</div>
         <div class="timeline-result">
           ${distBadge(r.distance)}
@@ -538,6 +557,10 @@ function renderTimeline(records) {
           ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
           ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
           ${extLinkHtml(r.source, r.sourceId, r.realName)}
+        </div>
+        <div class="timeline-detail" id="${detailId}">
+          <span class="timeline-detail-info">${detailParts || "상세 정보 없음"}</span>
+          ${deleteLink}
         </div>
       </div>
     </div>`;
@@ -550,6 +573,32 @@ function renderTimeline(records) {
   </div>`;
 
   el.innerHTML = html;
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle("open");
+}
+
+async function deleteRecord(docId, raceName, event) {
+  event.stopPropagation();
+  const inputName = prompt(`"${raceName}" 기록을 삭제하려면\n본인 실명을 입력하세요.`);
+  if (!inputName) return;
+  try {
+    const res = await fetch(`${RACE_API}?action=delete-record`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ docId, requesterName: inputName.trim() }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    showToast("기록이 삭제되었습니다.");
+    const racesRes = await fetch(`${RACE_API}?action=confirmed-races`);
+    const racesJson = await racesRes.json();
+    if (racesJson.ok) { racesData = racesJson.races || []; renderDashboard(); }
+  } catch (err) {
+    showToast("삭제 실패: " + err.message, 3000);
+  }
 }
 
 // ─── Dashboard ────────────────────────────────────
