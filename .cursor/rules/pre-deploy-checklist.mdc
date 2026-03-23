@@ -42,3 +42,14 @@ firebase deploy --only hosting
 
 - 프로덕션 URL에서 주요 기능 수동 확인
 - `event_logs` 컬렉션에 `page_load` 이벤트 쌓이는지 확인
+
+## 6. 버전 태그 (필수)
+
+```bash
+git tag -a v{MAJOR}.{MINOR}.{PATCH} -m "배포 요약"
+git push origin v{MAJOR}.{MINOR}.{PATCH}
+```
+
+- MAJOR: 아키텍처/스키마 변경, MINOR: 새 기능, PATCH: 버그 수정
+- 현재 버전 확인: `git tag -l 'v*' --sort=-v:refname | head -1`
+- 상세 규칙: `ops-routine.mdc` 참고

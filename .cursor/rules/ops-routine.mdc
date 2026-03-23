@@ -1,0 +1,70 @@
+---
+description: 프로젝트 운영 루틴 — 모니터링, 배포, 버저닝 규칙
+globs: 
+alwaysApply: false
+---
+
+# DMC 운영 루틴
+
+`배포`, `deploy`, `모니터링`, `버전` 요청 시 이 룰을 참고한다.
+
+## 시간대
+
+모든 시간은 **KST (Asia/Seoul)** 기준이다.
+
+## 일일 루틴
+
+### 출근 (오전) — 모니터링
+
+1. `event_logs` 최근 24시간 이벤트 확인
+2. `data-integrity` API로 confirmedCount 불일치 확인
+3. 이상 발견 시 즉시 기록 (`_docs/log/YYYY-MM-DD.md`)
+
+### 퇴근 (저녁) — 배포
+
+1. 당일 변경사항 정리
+2. `pre-deploy-checklist.mdc` 순서 준수 (테스트 → 백업 → 커밋 → 배포 → 검증)
+3. 배포 후 버전 태그 부여
+
+## 버저닝
+
+### 형식: `v{MAJOR}.{MINOR}.{PATCH}`
+
+- **MAJOR**: 아키텍처 변경, 데이터 스키마 변경, 호환 불가 API 변경
+- **MINOR**: 새 기능 추가, UI 개선 (호환 유지)
+- **PATCH**: 버그 수정, 문구 변경, 스타일 미세 조정
+
+### 태그 규칙
+
+```bash
+# 배포 후 즉시 태그
+git tag -a v0.5.0 -m "검색 UX 개선 + PB 카드 리디자인"
+git push origin v0.5.0
+```
+
+- 배포마다 반드시 태그 부여
+- 태그 메시지 = 커밋 메시지 요약
+- hotfix는 PATCH 버전 증가 (예: v0.4.1)
+- 긴급 배포(functions only)도 태그 필수
+
+### 현재 버전 히스토리
+
+| 버전 | 날짜 | 내용 |
+|------|------|------|
+| v0.1.0 | 2026-03-23 | 초기 BETA 배포 (로깅, 삭제, 네비게이션) |
+| v0.2.0 | 2026-03-23 | 긴급: confirmedCount 버그 수정 + 신규 API |
+| v0.3.0 | 2026-03-23 | 검색 로그 강화 + 피드백 + ops.html |
+| v0.4.0 | 2026-03-23 | SSOT 리팩토링 + 페이스 + 성별 + 보안 |
+| v0.5.0 | 2026-03-23 | 검색 UX 개선 + PB 카드 리디자인 |
+
+## 배포 체크리스트 (요약)
+
+```
+□ 테스트 통과 (pre-deploy-test.sh)
+□ 백업 완료 (backup-firestore.js)
+□ 커밋 + 푸시
+□ firebase deploy (functions → hosting 순)
+□ 프로덕션 검증
+□ 버전 태그 + 푸시
+□ _docs/log 업데이트
+```
