@@ -941,15 +941,29 @@ function renderLiveResults() {
     wrap = el.querySelector(".live-results-wrap");
   }
 
-  wrap.querySelector(".live-results-count").innerHTML = `<span style="color:var(--color-success)">●</span> ${results.length}개 대회에서 기록 발견`;
+  const myConfirmedLive = new Set(
+    enrichResults().filter(r => r.realName === selectedRealName).map(r => `${r.source}:${r.sourceId}:${r.distance}`)
+  );
+  let newCount = 0;
+  let alreadyCount = 0;
+  for (const r of results) {
+    const isAlready = r.records.length === 1 && myConfirmedLive.has(`${r.source}:${r.sourceId}:${r.records[0].distance}`);
+    if (isAlready) alreadyCount++; else newCount++;
+  }
+  const countParts = [];
+  if (newCount > 0) countParts.push(`새 기록 ${newCount}개`);
+  if (alreadyCount > 0) countParts.push(`등록됨 ${alreadyCount}개`);
+  wrap.querySelector(".live-results-count").innerHTML = `<span style="color:var(--color-success)">●</span> ${results.length}개 대회에서 기록 발견${countParts.length ? ` (${countParts.join(", ")})` : ""}`;
 
   const rendered = wrap.querySelectorAll(".found-result-card").length;
   for (let i = rendered; i < results.length; i++) {
     const r = results[i];
+    const isAlready = r.records.length === 1 && myConfirmedLive.has(`${r.source}:${r.sourceId}:${r.records[0].distance}`);
     const card = document.createElement("div");
     card.className = "found-result-card";
-    card.style.cssText = "margin-bottom:6px;border-color:var(--color-success);animation:fadeIn 0.3s";
-    card.innerHTML = `<div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span><span class="found-event-date">${esc(r.eventDate)}</span></div>
+    card.style.cssText = `margin-bottom:6px;border-color:${isAlready ? "var(--color-border-light)" : "var(--color-success)"};animation:fadeIn 0.3s;${isAlready ? "opacity:0.55;" : ""}`;
+    const alreadyTag = isAlready ? `<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:#DCFCE7;color:#166534;font-weight:600">등록됨</span>` : "";
+    card.innerHTML = `<div class="found-result-header"><span class="found-event-name">${esc(r.eventName)}</span>${alreadyTag}<span class="found-event-date">${esc(r.eventDate)}</span></div>
       <div class="found-records" style="padding-left:4px">${r.records.map(rec =>
         `<div class="found-record-row" style="padding:2px 0">${distBadge(rec.distance || "?")}<span class="found-record-time">${esc(rec.netTime || rec.gunTime || "-")}</span>${rec.bib ? `<span style="font-size:12px;color:var(--color-text-muted)">BIB ${esc(rec.bib)}</span>` : ""}</div>`
       ).join("")}</div>`;
