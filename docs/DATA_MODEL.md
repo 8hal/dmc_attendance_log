@@ -279,3 +279,65 @@ race_results doc ID
 하나의 실제 대회를 여러 타이밍 사이트에서 스크래핑하는 운영 사례가 없다.
 따라서 `source_sourceId`가 사실상의 eventId이며, 별도 추상화는 불필요한 복잡도를 추가한다.
 크로스소스 병합이 필요해지는 시점에 재검토한다.
+
+**미확정 scrape_jobs를 search_cache 대신 활용하는 방안** (2026-03-22):
+scrape_jobs(complete 상태)에 스크랩된 대회 데이터를 개인 검색 캐시로 활용하는 방안을 검토했다.
+타이밍 사이트 기록은 대회 후 확정되면 변경되지 않으므로, 데이터 자체는 아웃데이트되지 않는다.
+그러나 미확정 scrape_jobs는 "발견됨"(긍정 캐시)은 신뢰할 수 있으나 "미발견"(부정 캐시)은
+스크랩 오류·누락 가능성이 있어 신뢰도가 낮다. 또한 확정 대회(29개)는 이미 race_results에
+반영되어 있고, 나머지를 역인덱싱하는 구현 복잡도 대비 이득(29개 스킵)이 크지 않다.
+따라서 독립적인 search_cache 컬렉션을 신설하고, 프리워밍 배치로 전체 커버하는 방식을 채택한다.
+
+---
+
+### 6. `search_cache` — 개인 기록 검색 캐시 (2026-03-22 신설)
+
+개인 검색(my.html)에서 타이밍 사이트 재조회를 방지하기 위한 캐시.
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| realName | string | 검색한 이름 |
+| source | string | 타이밍 사이트 (spct, smartchip, ...) |
+| sourceId | string | 대회 식별자 |
+| found | boolean | 기록 발견 여부 |
+| result | object \| null | found=true 시 검색 결과 (eventName, eventDate, source, sourceId, records[]) |
+| cachedAt | Timestamp | 캐시 생성 시점, TTL 판단용 (7일) |
+
+- **Doc ID**: `{source}_{sourceId}_{realName}`
+- **TTL**: 7일 (대회 후 기록 업로드 지연 고려)
+- **"미발견"도 저장**: `found: false, result: null` → 재검색 방지
+- **race_results 우선**: 검색 시 race_results → search_cache → 타이밍 사이트 3단계 레이어
+
+#### 캐시 조회 우선순위
+
+```
+1단계: race_results에 해당 회원+대회 기록 존재? → 스킵
+2단계: search_cache 히트? (TTL 내) → 캐시 결과 사용
+3단계: 타이밍 사이트 실제 조회 → search_cache에 저장
+```
+
+---
+
+## ⚠️ 핵심 JOIN 키 — 절대 깨뜨리지 말 것 (2026-03-22 추가)
+
+### 1. `race_results.jobId` ↔ `scrape_jobs` doc ID
+
+```
+scrape_jobs doc ID = canonicalJobId = `${source}_${sourceId}` (non-manual)
+race_results.jobId = 반드시 canonicalJobId와 동일
+
+confirmed-races API:
+  race_results.where("jobId", "==", scrapeJobDoc.id)
+```
+
+**위반 사례**: my.html 검색 저장 시 raw jobId(`search_xxx`)를 race_results에 저장
+→ confirmed-races에서 canonical ID로 조회 시 매칭 안 됨 → 기록 "소실"
+
+### 2. `race_results` doc ID = `{realName}_{distance}_{date}`
+
+동일인·동일거리·동일날짜 → 같은 문서 덮어쓰기 (의도된 중복 방지)
+`batch.set()` 시 모든 필수 필드 포함 필수 (누락 시 기존 데이터 손실)
+
+### 3. `search_cache` doc ID = `{source}_{sourceId}_{realName}`
+
+읽기/쓰기 양쪽에서 동일한 키 생성 로직 사용 필수 (truncate 1500자)
