@@ -6,7 +6,7 @@ const path = require("path");
 initializeApp({ projectId: "dmc-attendance" });
 const db = getFirestore();
 
-const COLLECTIONS = ["scrape_jobs", "race_results", "members", "search_cache", "member_search_jobs"];
+const COLLECTIONS = ["scrape_jobs", "race_results", "members", "search_cache", "member_search_jobs", "event_logs"];
 
 async function backup() {
   const date = new Date().toISOString().slice(0, 10);

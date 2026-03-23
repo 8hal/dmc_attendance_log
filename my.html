@@ -145,9 +145,10 @@
     .timeline-detail { display: none; margin-top: 8px; padding: 8px 0 0; border-top: 1px solid var(--color-border); font-size: 12px; color: var(--color-text-muted); }
     .timeline-detail.open { display: flex; align-items: center; justify-content: space-between; }
     .timeline-detail-info { line-height: 1.5; }
-    .timeline-delete { background: none; border: 1px solid #E5E7EB; color: var(--color-text-muted); cursor: pointer; font-size: 11px; padding: 3px 8px; border-radius: 6px; transition: all 0.15s; white-space: nowrap; }
-    .timeline-delete:hover { color: #DC2626; border-color: #FCA5A5; background: #FEF2F2; }
-    .timeline-content-inner { flex: 1; min-width: 0; }
+    
+    .timeline-content-inner { flex: 1; min-width: 0; position: relative; }
+    .timeline-x { position: absolute; top: 2px; right: 0; background: none; border: none; cursor: pointer; font-size: 11px; color: #CBD5E1; padding: 2px 4px; line-height: 1; border-radius: 4px; transition: color 0.15s; }
+    .timeline-x:hover { color: #DC2626; }
 
     /* Search panel reuse styles */
     .search-panel { margin-top: 14px; }
@@ -233,7 +234,7 @@
     <div class="header">
       <div class="brand">
         <img alt="동탄마라톤클럽 로고" src="assets/dmc_logo.png" />
-        <h1>내 기록</h1>
+        <h1>내 기록 <span style="font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;background:#DBEAFE;color:#1E40AF;vertical-align:middle">BETA</span></h1>
       </div>
       <div style="display:flex; gap:6px;">
         <a href="races.html" class="nav-link">전체 기록</a>
@@ -272,6 +273,13 @@
 const RACE_API = location.hostname === "localhost"
   ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
   : "https://race-nszximpvtq-du.a.run.app";
+
+function logEvent(event, data = {}) {
+  fetch(`${RACE_API}?action=log`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, data: { ...data, page: "my", member: selectedRealName || "" } }),
+  }).catch(() => {});
+}
 
 const DIST_LABELS = { "5K": "5K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라" };
 const DIST_ORDER = ["full", "half", "10K", "5K"];
@@ -406,6 +414,7 @@ function selectMember(realName) {
   selectedRealName = realName;
   selectedMember = memberMap[realName];
   isGuestMode = false;
+  logEvent("select_member", { nickname: selectedMember?.nickname });
   localStorage.setItem("my_selected_nickname", selectedMember.nickname);
   updateHeroSelected();
   renderDashboard();
@@ -538,8 +547,8 @@ function renderTimeline(records) {
     const r = sorted[i];
     const isPb = pbSet.has(`${r.raceId}||${r.distance}||${r.netTime}`);
     const detailId = `tl-detail-${i}`;
-    const deleteLink = r.docId && !isGuestMode
-      ? `<button class="timeline-delete" onclick="deleteRecord('${esc(r.docId)}', '${esc(r.raceName)}', event)">삭제</button>`
+    const xBtn = r.docId && !isGuestMode
+      ? `<button class="timeline-x" onclick="deleteRecord('${esc(r.docId)}', '${esc(r.raceName)}', event)" title="삭제">×</button>`
       : "";
     const detailChips = [];
     if (r.bib) detailChips.push(`BIB ${esc(r.bib)}`);
@@ -550,6 +559,7 @@ function renderTimeline(records) {
       <div class="timeline-dot"></div>
       <div class="timeline-date">${formatDate(r.raceDate)}</div>
       <div class="timeline-content-inner">
+        ${xBtn}
         <div class="timeline-race">${esc(r.raceName)}</div>
         <div class="timeline-result">
           ${distBadge(r.distance)}
@@ -560,7 +570,6 @@ function renderTimeline(records) {
         </div>
         <div class="timeline-detail" id="${detailId}">
           <span class="timeline-detail-info">${detailParts || "상세 정보 없음"}</span>
-          ${deleteLink}
         </div>
       </div>
     </div>`;
@@ -592,6 +601,7 @@ async function deleteRecord(docId, raceName, event) {
     });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
+    logEvent("delete_record", { docId, raceName });
     showToast("기록이 삭제되었습니다.");
     const racesRes = await fetch(`${RACE_API}?action=confirmed-races`);
     const racesJson = await racesRes.json();
@@ -672,6 +682,7 @@ function resetSearch() {
 }
 
 function startSearchFlow() {
+  logEvent("search_start", { isGuest: isGuestMode });
   if (!isGuestMode && selectedMember && searchState.selectedMonths.size === 0) {
     for (const m of MONTH_OPTIONS) searchState.selectedMonths.add(m.id);
   }
@@ -891,7 +902,12 @@ function pollSearchJob() {
       if (title) title.textContent = `${prog.searched || 0} / ${prog.total || 0}`;
       searchState.foundResults = data.results || [];
       renderLiveResults();
-      if (data.status === "complete") { clearInterval(searchState.pollTimer); searchState.step = "review"; renderSearchResults(); }
+      if (data.status === "complete") {
+        clearInterval(searchState.pollTimer);
+        searchState.step = "review";
+        logEvent("search_complete", { resultCount: (searchState.foundResults || []).length });
+        renderSearchResults();
+      }
     } catch (_) {}
   };
   poll();
@@ -1021,6 +1037,7 @@ async function saveSearchResults() {
     } catch (e) { errors.push(`${r.eventName}: ${e.message}`); }
   }
 
+  logEvent("search_save", { savedCount: savedTotal, errorCount: errors.length, totalSelected: entries.length });
   showToast(errors.length ? `${savedTotal}건 저장, ${errors.length}건 실패` : `${savedTotal}건 저장 완료`, errors.length ? 4000 : 2000);
   resetSearch();
 
@@ -1077,6 +1094,7 @@ async function init() {
     for (const m of membersData) { memberMap[m.realName] = m; reverseNickMap[m.nickname] = m; }
 
     document.getElementById("loadingArea").innerHTML = "";
+    logEvent("page_load", { memberCount: membersData.length, raceCount: racesData.length });
 
     const savedNick = localStorage.getItem("marathon_att_nickname") || localStorage.getItem("my_selected_nickname") || "";
     if (savedNick) {
