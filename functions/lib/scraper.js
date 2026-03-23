@@ -380,10 +380,23 @@ async function discoverMarazone(year) {
 }
 
 async function discoverMyResult(year) {
-  const res = await fetch("https://myresult.co.kr/api/event", { headers: { Accept: "application/json" } });
-  const data = await res.json();
-  const events = data.results || data;
-  return events
+  const allEvents = [];
+  let page = 1;
+  const maxPages = 20;
+
+  while (page <= maxPages) {
+    const res = await fetch(`https://myresult.co.kr/api/event?page=${page}`, { headers: { Accept: "application/json" } });
+    const data = await res.json();
+    const events = data.results || data;
+    if (!events || events.length === 0) break;
+    allEvents.push(...events);
+    const total = data.total || 0;
+    if (allEvents.length >= total) break;
+    page++;
+    await sleep(DELAY_MS);
+  }
+
+  return allEvents
     .filter((e) => e.date && e.date.startsWith(String(year)))
     .map((e) => ({
       source: "myresult", sourceId: String(e.id), name: e.name,

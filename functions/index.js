@@ -1120,24 +1120,30 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const jobRef = db.collection("scrape_jobs").doc(canonicalJobId);
       const jobDoc = await jobRef.get();
 
-      const confirmedJobData = {
-        status: "confirmed",
-        confirmedAt: now,
-        confirmedCount: results.length,
-        results,
-        eventName: eventName || "",
-        eventDate: eventDate || "",
-        source: source || "",
-        sourceId: sourceId || "",
-      };
-
       if (jobDoc.exists) {
-        batch.update(jobRef, confirmedJobData);
+        const existingCount = jobDoc.data().confirmedCount || 0;
+        batch.update(jobRef, {
+          confirmedAt: now,
+          confirmedCount: existingCount + results.length,
+          eventName: eventName || jobDoc.data().eventName || "",
+          eventDate: eventDate || jobDoc.data().eventDate || "",
+          source: source || jobDoc.data().source || "",
+          sourceId: sourceId || jobDoc.data().sourceId || "",
+        });
       } else {
-        batch.set(jobRef, { ...confirmedJobData, createdAt: now });
+        batch.set(jobRef, {
+          status: "confirmed",
+          confirmedAt: now,
+          confirmedCount: results.length,
+          results,
+          eventName: eventName || "",
+          eventDate: eventDate || "",
+          source: source || "",
+          sourceId: sourceId || "",
+          createdAt: now,
+        });
       }
 
-      // canonicalJobId가 원래 jobId와 다르면 구 문서 삭제
       if (canonicalJobId !== jobId) {
         batch.delete(db.collection("scrape_jobs").doc(jobId));
       }
@@ -1262,6 +1268,60 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         eventDate: result.eventDate,
         foundCount: result.results.length,
       });
+    }
+
+    if (action === "verify-admin" && req.method === "POST") {
+      const { pw } = req.body || {};
+      const adminPw = process.env.DMC_ADMIN_PW || "dmc2008";
+      if (pw === adminPw) {
+        return res.json({ ok: true });
+      }
+      return res.status(401).json({ ok: false, error: "invalid password" });
+    }
+
+    if (action === "event-logs") {
+      const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+      const snap = await db.collection("event_logs")
+        .orderBy("timestamp", "desc")
+        .limit(limit)
+        .get();
+      const logs = [];
+      snap.forEach((doc) => logs.push({ id: doc.id, ...doc.data() }));
+      return res.json({ ok: true, logs });
+    }
+
+    if (action === "data-integrity") {
+      const jobsSnap = await db.collection("scrape_jobs").get();
+      const rrSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
+      const rrByJob = {};
+      rrSnap.forEach((doc) => {
+        const jid = doc.data().jobId || "none";
+        rrByJob[jid] = (rrByJob[jid] || 0) + 1;
+      });
+      const issues = [];
+      jobsSnap.forEach((doc) => {
+        const d = doc.data();
+        const actual = rrByJob[doc.id] || 0;
+        const claimed = d.confirmedCount || 0;
+        if (claimed !== actual && d.status === "confirmed") {
+          issues.push({ jobId: doc.id, eventName: d.eventName || "", claimed, actual });
+        }
+      });
+      return res.json({ ok: true, totalJobs: jobsSnap.size, totalResults: rrSnap.size, issues });
+    }
+
+    if (action === "log" && req.method === "POST") {
+      const { event, data } = req.body || {};
+      if (!event) return res.status(400).json({ ok: false, error: "event required" });
+
+      await db.collection("event_logs").add({
+        event,
+        data: data || {},
+        timestamp: new Date().toISOString(),
+        ua: req.headers["user-agent"] || "",
+      });
+
+      return res.json({ ok: true });
     }
 
     return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
