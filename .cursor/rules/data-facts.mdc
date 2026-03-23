@@ -1,0 +1,36 @@
+---
+description: 시스템 데이터 팩트 — 코드/문서 작성 시 틀린 정보 방지
+globs: 
+alwaysApply: true
+---
+
+# 시스템 데이터 팩트
+
+이 프로젝트에 대해 언급할 때 반드시 아래 사실을 따른다.
+
+## race_results.source (5개)
+
+- `smartchip` — smartchip.co.kr
+- `myresult` — myresult.co.kr
+- `spct` — time.spct.kr
+- `marazone` — marazone.com
+- `manual` — 수동 입력 (엑셀 임포트 등)
+
+**"source는 N가지" 언급 시 반드시 5개 모두 열거할 것. 빠뜨리지 말 것.**
+
+## SSOT
+
+- `race_results` 컬렉션이 기록의 단일 진실 소스(SSOT)
+- `scrape_jobs.confirmedCount`는 denormalized 캐시이며 불일치 가능
+
+## gender 신뢰도
+
+- `members.gender` > `race_results.gender` (스크래퍼 추론은 오류 가능)
+
+## canonicalJobId
+
+- 형식: `{source}_{sourceId}` (예: `smartchip_202650000006`)
+
+## 상세 참조
+
+`_docs/knowledge/data-dictionary.md`

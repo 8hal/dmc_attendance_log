@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMC Ops</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0F172A; color: #E2E8F0; padding: 16px; font-size: 13px; line-height: 1.5; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .header h1 { font-size: 15px; color: #94A3B8; }
+    .header a { color: #64748B; font-size: 12px; text-decoration: none; }
+    .card { background: #1E293B; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+    .card-title { font-size: 13px; font-weight: 700; color: #CBD5E1; margin-bottom: 10px; }
+    .badge-ok { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #064E3B; color: #6EE7B7; font-size: 11px; font-weight: 600; }
+    .badge-warn { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #7C2D12; color: #FCA5A5; font-size: 11px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; padding: 4px 8px; color: #64748B; font-weight: 600; border-bottom: 1px solid #334155; }
+    td { padding: 4px 8px; border-bottom: 1px solid #1E293B; }
+    .num { text-align: center; font-variant-numeric: tabular-nums; }
+    .mismatch { color: #FCA5A5; font-weight: 600; }
+    .log-row { padding: 5px 0; border-bottom: 1px solid #334155; display: flex; gap: 10px; }
+    .log-date { color: #94A3B8; font-weight: 600; white-space: nowrap; }
+    .log-detail { color: #64748B; }
+    .loading { color: #64748B; text-align: center; padding: 20px; }
+    .refresh-btn { background: #334155; color: #94A3B8; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+    .refresh-btn:hover { background: #475569; }
+    .stat-row { display: flex; gap: 16px; margin-bottom: 10px; }
+    .stat { flex: 1; background: #334155; border-radius: 6px; padding: 10px; text-align: center; }
+    .stat-val { font-size: 20px; font-weight: 700; color: #F8FAFC; }
+    .stat-label { font-size: 11px; color: #64748B; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>⚙️ DMC Ops Console</h1>
+    <div>
+      <button class="refresh-btn" onclick="loadAll()">↻ 새로고침</button>
+      <a href="report.html">← report</a>
+    </div>
+  </div>
+
+  <div id="stats"></div>
+  <div class="card" id="integrityCard"><div class="loading">로딩 중...</div></div>
+  <div class="card" id="logsCard"><div class="loading">로딩 중...</div></div>
+
+  <script>
+    const API_BASE = location.hostname === "localhost"
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+    async function loadAll() {
+      const [logsRes, intRes] = await Promise.all([
+        fetch(`${API_BASE}?action=event-logs&limit=200`),
+        fetch(`${API_BASE}?action=data-integrity`),
+      ]);
+      const logsData = await logsRes.json();
+      const intData = await intRes.json();
+      renderStats(intData, logsData);
+      renderIntegrity(intData);
+      renderLogs(logsData);
+    }
+
+    function renderStats(intData, logsData) {
+      const logs = logsData.logs || [];
+      const issues = intData.issues || [];
+      const todayLogs = logs.filter(l => (l.timestamp || "").startsWith(new Date().toISOString().slice(0, 10)));
+      const uniqueMembers = new Set(logs.filter(l => l.data?.member).map(l => l.data.member));
+
+      document.getElementById("stats").innerHTML = `
+        <div class="stat-row">
+          <div class="stat"><div class="stat-val">${intData.totalJobs || 0}</div><div class="stat-label">총 Jobs</div></div>
+          <div class="stat"><div class="stat-val">${intData.totalResults || 0}</div><div class="stat-label">총 Records</div></div>
+          <div class="stat"><div class="stat-val">${issues.length}</div><div class="stat-label">Count 불일치</div></div>
+          <div class="stat"><div class="stat-val">${todayLogs.length}</div><div class="stat-label">오늘 이벤트</div></div>
+        </div>`;
+    }
+
+    function renderIntegrity(intData) {
+      const issues = intData.issues || [];
+      const el = document.getElementById("integrityCard");
+      let html = '<div class="card-title">🔍 confirmedCount 불일치</div>';
+
+      if (issues.length === 0) {
+        html += '<span class="badge-ok">✓ 정상</span>';
+      } else {
+        html += `<span class="badge-warn">${issues.length}건</span>
+          <div style="font-size:11px;color:#64748B;margin:6px 0;">표시 숫자 오차입니다. race_results(SSOT)에는 영향 없음.</div>
+          <table><tr><th>대회</th><th class="num">claimed</th><th class="num">actual</th></tr>`;
+        for (const iss of issues) {
+          html += `<tr><td>${esc(iss.eventName || iss.jobId)}</td><td class="num">${iss.claimed}</td><td class="num ${iss.claimed !== iss.actual ? "mismatch" : ""}">${iss.actual}</td></tr>`;
+        }
+        html += '</table>';
+      }
+      el.innerHTML = html;
+    }
+
+    function renderLogs(logsData) {
+      const logs = logsData.logs || [];
+      const el = document.getElementById("logsCard");
+      let html = `<div class="card-title">📋 이벤트 로그 <span style="color:#64748B;font-weight:400;">(최근 ${logs.length}건)</span></div>`;
+
+      if (logs.length === 0) {
+        html += '<div style="color:#64748B;">로그 없음</div>';
+      } else {
+        const grouped = {};
+        logs.forEach(l => {
+          const d = (l.timestamp || "").slice(0, 10);
+          grouped[d] = grouped[d] || [];
+          grouped[d].push(l);
+        });
+        for (const [date, items] of Object.entries(grouped)) {
+          const summary = {};
+          items.forEach(l => { summary[l.event] = (summary[l.event] || 0) + 1; });
+          const members = new Set(items.filter(l => l.data?.member).map(l => l.data.member));
+          const parts = Object.entries(summary).map(([k, v]) => `${k}:${v}`).join("  ");
+          html += `<div class="log-row">
+            <span class="log-date">${date}</span>
+            <span>${parts}</span>
+            <span class="log-detail">${members.size > 0 ? members.size + "명" : ""}</span>
+          </div>`;
+        }
+      }
+      el.innerHTML = html;
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>

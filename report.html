@@ -246,10 +246,6 @@
           <div class="tl-tab-label">✅ 완료</div>
           <div class="tl-tab-count zero" id="tabCountDone">-</div>
         </button>
-        <button class="tl-tab" data-tab="ops">
-          <div class="tl-tab-label">📋 운영</div>
-          <div class="tl-tab-count zero" id="tabCountOps">-</div>
-        </button>
       </div>
 
       <!-- 탭 패널 (탭별 콘텐츠 렌더) -->
@@ -672,7 +668,6 @@
       else if (activeTab === "collect")   renderCollectTab(available, panel);
       else if (activeTab === "done")      renderDoneTab(done, panel);
       else if (activeTab === "scheduled") renderScheduledTab(scheduled, panel);
-      else if (activeTab === "ops")       renderOpsTab(panel);
     }
 
     // ─── 통합 렌더 (API 로드 후 호출) ────────────────────
@@ -791,63 +786,6 @@
           <div class="event-info"><div class="event-name">${e.name}</div><div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div></div>
           <span class="event-badge" style="background:#F1F5F9;color:#64748B">예정</span>
         </div>`).join("") + '</div>';
-    }
-
-    // 📋 운영 탭 (로그 + 정합성)
-    async function renderOpsTab(panel) {
-      panel.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div><span>운영 데이터 로딩...</span></div>';
-      try {
-        const [logsRes, intRes] = await Promise.all([
-          fetch(`${API_BASE}?action=event-logs&limit=50`),
-          fetch(`${API_BASE}?action=data-integrity`),
-        ]);
-        const logsData = await logsRes.json();
-        const intData = await intRes.json();
-        const logs = logsData.logs || [];
-        const issues = intData.issues || [];
-
-        const opsCountEl = document.getElementById("tabCountOps");
-        if (opsCountEl) { opsCountEl.textContent = issues.length || "✓"; opsCountEl.className = "tl-tab-count" + (issues.length ? "" : " zero"); }
-
-        let html = '<div style="display:flex;flex-direction:column;gap:16px;">';
-
-        // 정합성
-        html += `<div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:8px;">🔍 데이터 정합성</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px;">scrape_jobs.confirmedCount vs 실제 race_results 수</div>`;
-        if (issues.length === 0) {
-          html += `<div style="padding:12px;background:#DCFCE7;border-radius:8px;font-size:13px;color:#166534;">✅ 불일치 없음 (전체 ${intData.totalJobs}개 job, ${intData.totalResults}개 기록)</div>`;
-        } else {
-          html += `<div style="padding:12px;background:#FEF2F2;border-radius:8px;font-size:13px;color:#991B1B;margin-bottom:6px;">⚠️ ${issues.length}건 불일치 발견</div>`;
-          html += '<div style="font-size:12px;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><tr style="background:#F8FAFC;"><th style="text-align:left;padding:4px 8px;">대회</th><th style="padding:4px 8px;">기록된 수</th><th style="padding:4px 8px;">실제 수</th></tr>';
-          for (const iss of issues.slice(0, 20)) {
-            html += `<tr style="border-top:1px solid #E2E8F0;"><td style="padding:4px 8px;font-size:12px;">${iss.eventName || iss.jobId}</td><td style="text-align:center;padding:4px 8px;">${iss.claimed}</td><td style="text-align:center;padding:4px 8px;font-weight:600;">${iss.actual}</td></tr>`;
-          }
-          html += '</table></div>';
-        }
-        html += '</div>';
-
-        // 로그
-        html += `<div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:8px;">📋 최근 이벤트 로그 <small style="color:var(--color-text-muted)">(최신 50건)</small></div>`;
-        if (logs.length === 0) {
-          html += '<div style="font-size:13px;color:var(--color-text-muted);">로그 없음</div>';
-        } else {
-          const grouped = {};
-          logs.forEach(l => { const d = (l.timestamp || "").slice(0, 10); grouped[d] = grouped[d] || []; grouped[d].push(l); });
-          for (const [date, items] of Object.entries(grouped)) {
-            const summary = {};
-            items.forEach(l => { summary[l.event] = (summary[l.event] || 0) + 1; });
-            const parts = Object.entries(summary).map(([k, v]) => `${k}: ${v}`).join(", ");
-            html += `<div style="padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:12px;"><span style="font-weight:600;margin-right:8px;">${date}</span><span style="color:var(--color-text-secondary);">${parts}</span></div>`;
-          }
-        }
-        html += '</div></div>';
-
-        panel.innerHTML = html;
-      } catch (err) {
-        panel.innerHTML = `<div class="tab-empty">운영 데이터 로딩 실패: ${err.message}</div>`;
-      }
     }
 
     // ─── 수집 실행 (공통) ─────────────────────────────────

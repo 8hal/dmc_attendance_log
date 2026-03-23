@@ -676,6 +676,7 @@ const MONTH_OPTIONS = buildMonthOptions();
 
 function resetSearch() {
   if (searchState.pollTimer) clearInterval(searchState.pollTimer);
+  if (searchState.step !== "idle") logEvent("search_cancel", { step: searchState.step });
   searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
   const sp = document.getElementById("searchPanel");
   if (sp) sp.innerHTML = "";
@@ -762,6 +763,7 @@ async function loadEventsForMonths() {
     searchState.step = "select-events";
     renderEventSelector();
   } catch (e) {
+    logEvent("search_error", { step: "discover", error: e.message });
     sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>대회 목록을 불러오지 못했습니다.</div></div></div>`;
   }
 }
@@ -871,6 +873,7 @@ async function beginSearch() {
     searchState.jobId = data.jobId;
     pollSearchJob();
   } catch (e) {
+    logEvent("search_error", { step: "begin", error: e.message, eventCount: eventsToSearch.length });
     sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>검색을 시작하지 못했습니다.<br><small style="color:var(--color-text-muted)">${esc(e.message)}</small></div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="resetSearch()">닫기</button></div></div></div>`;
   }
 }
@@ -880,6 +883,7 @@ function pollSearchJob() {
   const poll = async () => {
     if (Date.now() - startedAt > 520000) {
       clearInterval(searchState.pollTimer);
+      logEvent("search_timeout", { elapsed: Math.round((Date.now() - startedAt) / 1000) });
       document.getElementById("searchPanel").innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⏱️</span>검색 시간이 초과되었습니다.</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="startSearchFlow()">다시 선택하기</button></div></div></div>`;
       return;
     }
@@ -889,6 +893,7 @@ function pollSearchJob() {
       if (!data.ok) return;
       if (data.status === "failed") {
         clearInterval(searchState.pollTimer);
+        logEvent("search_error", { step: "poll_failed", jobId: searchState.jobId });
         document.getElementById("searchPanel").innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>검색 중 오류가 발생했습니다.</div><div style="text-align:center;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="startSearchFlow()">다시 시도</button></div></div></div>`;
         return;
       }
@@ -905,7 +910,8 @@ function pollSearchJob() {
       if (data.status === "complete") {
         clearInterval(searchState.pollTimer);
         searchState.step = "review";
-        logEvent("search_complete", { resultCount: (searchState.foundResults || []).length });
+        const resultCount = (searchState.foundResults || []).length;
+        logEvent(resultCount === 0 ? "search_no_result" : "search_complete", { resultCount, elapsed: Math.round((Date.now() - startedAt) / 1000) });
         renderSearchResults();
       }
     } catch (_) {}
@@ -1113,6 +1119,17 @@ async function init() {
 }
 
 init();
+
+function showFeedback() {
+  const msg = prompt("불편한 점이나 건의사항을 알려주세요:");
+  if (msg && msg.trim()) {
+    logEvent("feedback", { message: msg.trim() });
+    alert("소중한 의견 감사합니다! 🙏");
+  }
+}
 </script>
+<div style="text-align:center;padding:16px 0 24px;max-width:560px;margin:0 auto;">
+  <button onclick="showFeedback()" style="background:none;border:1px solid var(--color-border);border-radius:20px;padding:6px 16px;font-size:12px;color:var(--color-text-muted);cursor:pointer;">💬 불편한 점이 있나요?</button>
+</div>
 </body>
 </html>
