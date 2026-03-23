@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>대회 기록 조회 — 마라톤 기록 한번에</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <meta property="og:title" content="마라톤 대회 기록 조회 — 실명으로 바로 검색" />
+  <meta property="og:description" content="전국 주요 기록 사이트를 한번에 검색. 내 기록, 친구 기록, 경쟁자 기록을 한 곳에서." />
+  <meta property="og:image" content="https://dmc-attendance.web.app/assets/dmc_logo.png" />
+  <meta property="og:url" content="https://dmc-attendance.web.app/pamphlet-public.html" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #F0FDF4 0%, #F8FAFC 40%, #EFF6FF 100%);
+      color: #0F172A;
+      min-height: 100vh;
+    }
+    .page { max-width: 480px; margin: 0 auto; padding: 24px 20px 40px; }
+
+    .hero {
+      text-align: center;
+      padding: 36px 16px 28px;
+      background: linear-gradient(135deg, #059669, #047857);
+      border-radius: 24px;
+      color: #fff;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      font-size: 14px;
+      opacity: 0.85;
+      line-height: 1.5;
+    }
+
+    .section {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 16px rgba(15,23,42,0.06);
+    }
+    .section-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+    .section h2 { font-size: 19px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+    .section .desc { font-size: 14px; color: #64748B; line-height: 1.6; margin-bottom: 16px; }
+
+    .use-cases {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .use-case {
+      text-align: center;
+      padding: 16px 10px;
+      background: #F0FDF4;
+      border-radius: 14px;
+      border: 1px solid #D1FAE5;
+    }
+    .use-case-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+    .use-case-label { font-size: 13px; font-weight: 600; color: #065F46; }
+    .use-case-desc { font-size: 11px; color: #64748B; margin-top: 2px; }
+
+    .flow {
+      display: flex;
+      gap: 0;
+      margin: 16px 0;
+    }
+    .flow-step {
+      flex: 1;
+      text-align: center;
+      padding: 16px 8px;
+      background: linear-gradient(135deg, #F0FDF4, #ECFDF5);
+      border-radius: 14px;
+      position: relative;
+    }
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: #94A3B8;
+      z-index: 1;
+      font-weight: 700;
+    }
+    .flow-step:not(:last-child) { margin-right: 22px; }
+    .flow-num {
+      display: inline-flex;
+      width: 28px; height: 28px;
+      align-items: center; justify-content: center;
+      background: #059669;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .flow-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+    .flow-label { font-size: 12px; font-weight: 600; color: #334155; line-height: 1.3; }
+
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .src-badge {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #F1F5F9;
+      color: #64748B;
+    }
+
+    .notice {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 14px;
+      font-size: 13px;
+      color: #92400E;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .notice-icon { font-size: 20px; flex-shrink: 0; }
+
+    .cta {
+      text-align: center;
+      padding: 32px 20px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 2px 16px rgba(15,23,42,0.06);
+    }
+    .cta-emoji { font-size: 40px; margin-bottom: 12px; }
+    .cta h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .cta p { font-size: 13px; color: #64748B; margin-bottom: 20px; }
+    .cta-btn {
+      display: inline-block;
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #fff;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(5,150,105,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(5,150,105,0.45);
+    }
+    .cta-url {
+      display: block;
+      margin-top: 14px;
+      font-size: 12px;
+      color: #94A3B8;
+      word-break: break-all;
+    }
+    .cta-sub {
+      display: block;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+    .cta-sub a { color: #2563EB; text-decoration: none; }
+    .cta-sub a:hover { text-decoration: underline; }
+
+    .footer {
+      text-align: center;
+      padding: 24px 0 8px;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-badge">회원가입 없이 무료 이용</div>
+    <h1>마라톤 대회 기록,<br>실명 하나로 바로 검색 🔍</h1>
+    <p>전국 주요 기록 사이트를 한번에 조회합니다</p>
+  </div>
+
+  <div class="section">
+    <span class="section-icon">🏃</span>
+    <h2>이런 분들에게 유용합니다</h2>
+    <p class="desc">마라톤 기록을 찾으려고 여러 사이트를 돌아다녀 본 적 있다면, 여기서 한번에 해결하세요.</p>
+    <div class="use-cases">
+      <div class="use-case">
+        <span class="use-case-icon">🏅</span>
+        <span class="use-case-label">내 기록 모아보기</span>
+        <span class="use-case-desc">흩어진 기록을 한 곳에</span>
+      </div>
+      <div class="use-case">
+        <span class="use-case-icon">🤝</span>
+        <span class="use-case-label">친구 기록 확인</span>
+        <span class="use-case-desc">같이 뛴 친구의 기록도</span>
+      </div>
+      <div class="use-case">
+        <span class="use-case-icon">⚡</span>
+        <span class="use-case-label">경쟁자 분석</span>
+        <span class="use-case-desc">실력이 비슷한 러너 비교</span>
+      </div>
+      <div class="use-case">
+        <span class="use-case-icon">⭐</span>
+        <span class="use-case-label">유명 러너 기록</span>
+        <span class="use-case-desc">궁금한 러너의 기록 조회</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="section-icon">⚙️</span>
+    <h2>사용법은 간단합니다</h2>
+    <p class="desc">실명을 입력하고, 기간과 대회를 선택하면 자동으로 기록을 찾아드립니다.</p>
+    <div class="flow">
+      <div class="flow-step">
+        <span class="flow-num">1</span>
+        <span class="flow-icon">✏️</span>
+        <span class="flow-label">실명 입력</span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">2</span>
+        <span class="flow-icon">📋</span>
+        <span class="flow-label">대회 선택</span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">3</span>
+        <span class="flow-icon">✅</span>
+        <span class="flow-label">실시간 결과!</span>
+      </div>
+    </div>
+    <p class="desc" style="margin-bottom:8px">
+      2025년 1월부터 현재까지의 대회를 검색할 수 있으며,<br>
+      발견된 기록이 검색 중에도 바로 표시됩니다.
+    </p>
+    <div class="sources">
+      <span class="src-badge">SmartChip</span>
+      <span class="src-badge">MyResult</span>
+      <span class="src-badge">SPCT</span>
+      <span class="src-badge">Marazone</span>
+    </div>
+  </div>
+
+  <div class="notice">
+    <span class="notice-icon">💡</span>
+    <div>
+      <strong>알아두세요</strong><br>
+      누구나 기록을 조회할 수 있습니다. 회원가입이나 로그인 없이 실명만 입력하면 됩니다.<br>
+      동명이인이 많으면 성별·거리 필터로 좁힐 수 있습니다.<br>
+      기록 저장 기능은 동탄 마라톤 클럽 회원 전용입니다.
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-emoji">🔍</div>
+    <h2>지금 바로 조회해 보세요</h2>
+    <p>실명을 입력하면 기록이 바로 나옵니다</p>
+    <a href="https://dmc-attendance.web.app/my.html" class="cta-btn">기록 조회하기</a>
+    <span class="cta-url">dmc-attendance.web.app/my.html</span>
+    <span class="cta-sub">동탄 마라톤 클럽 회원이신가요? <a href="pamphlet.html">회원 안내 보기</a></span>
+  </div>
+
+  <div class="footer">동탄 마라톤 클럽 제공 · 비영리 서비스 © 2026</div>
+
+</div>
+</body>
+</html>

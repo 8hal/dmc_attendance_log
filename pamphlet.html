@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>동마클 새 기능 안내</title>
+  <title>동마클 대회 기록 시스템 안내</title>
   <link rel="icon" href="assets/dmc_logo.png" />
-  <meta property="og:title" content="동탄 마라톤 클럽 — 새 기능이 왔습니다!" />
-  <meta property="og:description" content="대회 기록 조회 & 내 과거 기록 자동 검색. 지금 확인하세요!" />
+  <meta property="og:title" content="동탄 마라톤 클럽 — 대회 기록 시스템" />
+  <meta property="og:description" content="대회 기록 조회 · 최고 기록 · 내 과거 기록 자동 검색. 지금 확인하세요!" />
   <meta property="og:image" content="https://dmc-attendance.web.app/assets/dmc_logo.png" />
   <meta property="og:url" content="https://dmc-attendance.web.app/pamphlet.html" />
   <style>
@@ -19,7 +19,7 @@
     }
     .page { max-width: 480px; margin: 0 auto; padding: 24px 20px 40px; }
 
-    /* Header */
+    /* Hero */
     .hero {
       text-align: center;
       padding: 40px 16px 32px;
@@ -75,7 +75,7 @@
       line-height: 1.5;
     }
 
-    /* Section card */
+    /* Section */
     .section {
       background: #fff;
       border-radius: 20px;
@@ -83,55 +83,12 @@
       margin-bottom: 16px;
       box-shadow: 0 2px 16px rgba(15,23,42,0.06);
     }
-    .section-icon {
-      font-size: 36px;
-      margin-bottom: 10px;
-      display: block;
-    }
-    .section h2 {
-      font-size: 19px;
-      font-weight: 700;
-      margin-bottom: 6px;
-      line-height: 1.3;
-    }
-    .section .desc {
-      font-size: 14px;
-      color: #64748B;
-      line-height: 1.6;
-      margin-bottom: 16px;
-    }
-
-    /* Stats row */
-    .stats {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .stat-box {
-      flex: 1;
-      text-align: center;
-      padding: 14px 8px;
-      border-radius: 14px;
-      background: #F0F7FF;
-    }
-    .stat-num {
-      font-size: 28px;
-      font-weight: 800;
-      color: #2563EB;
-      display: block;
-    }
-    .stat-label {
-      font-size: 11px;
-      color: #64748B;
-      margin-top: 2px;
-    }
+    .section-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+    .section h2 { font-size: 19px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+    .section .desc { font-size: 14px; color: #64748B; line-height: 1.6; margin-bottom: 16px; }
 
     /* Feature pills */
-    .features {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
+    .features { display: flex; gap: 6px; flex-wrap: wrap; }
     .feat-pill {
       padding: 6px 14px;
       border-radius: 999px;
@@ -143,12 +100,7 @@
     }
 
     /* Flow steps */
-    .flow {
-      display: flex;
-      align-items: stretch;
-      gap: 0;
-      margin: 16px 0;
-    }
+    .flow { display: flex; align-items: stretch; gap: 0; margin: 16px 0; }
     .flow-step {
       flex: 1;
       text-align: center;
@@ -158,7 +110,7 @@
       position: relative;
     }
     .flow-step:not(:last-child)::after {
-      content: "→";
+      content: "\2192";
       position: absolute;
       right: -14px;
       top: 50%;
@@ -184,12 +136,7 @@
     .flow-label { font-size: 12px; font-weight: 600; color: #334155; line-height: 1.3; }
 
     /* Source badges */
-    .sources {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 12px;
-    }
+    .sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
     .src-badge {
       padding: 4px 10px;
       border-radius: 8px;
@@ -199,11 +146,11 @@
       color: #64748B;
     }
 
-    /* New badge */
-    .new-tag {
+    /* Admin tag */
+    .admin-tag {
       display: inline-block;
       padding: 2px 8px;
-      background: linear-gradient(135deg, #F59E0B, #EF4444);
+      background: linear-gradient(135deg, #7C3AED, #6D28D9);
       color: #fff;
       border-radius: 6px;
       font-size: 11px;
@@ -211,6 +158,79 @@
       margin-left: 6px;
       vertical-align: middle;
     }
+
+    /* Tool cards (admin) */
+    .tool-card {
+      padding: 14px 16px;
+      background: #F8FAFC;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      border-left: 3px solid #7C3AED;
+    }
+    .tool-card:last-child { margin-bottom: 0; }
+    .tool-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: #1E293B; }
+    .tool-card p { font-size: 13px; color: #64748B; line-height: 1.5; }
+
+    /* Operational notes */
+    .feedback-section {
+      background: #FFFBEB;
+      border-radius: 20px;
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 16px rgba(15,23,42,0.06);
+      border: 1px solid #FDE68A;
+    }
+    .feedback-section h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .feedback-section .desc { font-size: 13px; color: #92400E; line-height: 1.6; margin-bottom: 14px; }
+    .feedback-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid #FDE68A;
+      font-size: 14px;
+      color: #78350F;
+      line-height: 1.5;
+    }
+    .feedback-item:first-of-type { border-top: none; }
+    .fb-num {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      background: #F59E0B;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Links grid */
+    .links-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .link-card {
+      display: block;
+      padding: 16px 14px;
+      background: #fff;
+      border-radius: 14px;
+      text-decoration: none;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+      transition: transform 0.15s;
+    }
+    .link-card:hover { transform: translateY(-2px); }
+    .link-card .link-icon { font-size: 28px; margin-bottom: 6px; display: block; }
+    .link-card .link-label { font-size: 13px; font-weight: 600; color: #1E293B; }
+    .link-card .link-desc { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+    .link-card-full {
+      grid-column: span 2;
+      background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+      border: 1px solid #BFDBFE;
+    }
+    .link-card-full .link-label { color: #1D4ED8; }
 
     /* CTA */
     .cta {
@@ -221,16 +241,8 @@
       box-shadow: 0 2px 16px rgba(15,23,42,0.06);
     }
     .cta-emoji { font-size: 40px; margin-bottom: 12px; }
-    .cta h2 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .cta p {
-      font-size: 13px;
-      color: #64748B;
-      margin-bottom: 20px;
-    }
+    .cta h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .cta p { font-size: 13px; color: #64748B; margin-bottom: 20px; }
     .cta-btn {
       display: inline-block;
       padding: 16px 40px;
@@ -274,72 +286,129 @@
     <p>대회 기록 조회 · 최고 기록 · 내 과거 기록 자동 검색</p>
   </div>
 
-  <!-- Section 1: 대회 기록 -->
+  <!-- 회원 기능: 내 기록 -->
   <div class="section">
     <span class="section-icon">🏆</span>
-    <h2>대회 기록, 한눈에</h2>
+    <h2>내 기록, 한눈에</h2>
     <p class="desc">
-      동마클 회원들의 대회 기록을 한 곳에서 확인하세요.<br>
-      2025년 1월부터 현재까지의 기록이 정리되어 있습니다.
+      닉네임을 선택하면 내 대회 기록이 바로 나타납니다.<br>
+      풀 · 하프 · 10K · 5K 최고 기록 요약과 대회별 타임라인을 제공합니다.
     </p>
     <div class="features">
-      <span class="feat-pill">🥇 최고 기록</span>
+      <span class="feat-pill">🥇 PB 요약</span>
       <span class="feat-pill">🏅 대회별 기록</span>
-      <span class="feat-pill">👤 개인 기록</span>
-      <span class="feat-pill">📊 PB 달성 추이</span>
       <span class="feat-pill">🔗 기록 사이트 바로가기</span>
     </div>
   </div>
 
-  <!-- Section 2: 내 기록 찾기 -->
+  <!-- 공통 기능: 기록 검색 -->
   <div class="section">
     <span class="section-icon">🔍</span>
-    <h2>내 기록 찾기</h2>
+    <h2>과거 기록 자동 검색</h2>
     <p class="desc">
-      닉네임을 선택하고 기간을 고르면,<br>
-      전국 대회 기록 사이트에서 내 기록을 자동으로 찾아줍니다.<br>
-      2025년 1월부터 검색 가능합니다.
+      연 단위로 기간을 선택하면 전국 기록 사이트에서<br>
+      내 기록을 자동으로 찾아줍니다.<br>
+      회원은 캐싱 덕분에 빠르게 결과를 확인할 수 있습니다.
     </p>
     <div class="flow">
       <div class="flow-step">
         <span class="flow-num">1</span>
         <span class="flow-icon">👤</span>
-        <span class="flow-label">회원 선택</span>
+        <span class="flow-label">닉네임 선택</span>
       </div>
       <div class="flow-step">
         <span class="flow-num">2</span>
-        <span class="flow-icon">📋</span>
-        <span class="flow-label">대회 선택</span>
+        <span class="flow-icon">📅</span>
+        <span class="flow-label">연도 선택</span>
       </div>
       <div class="flow-step">
         <span class="flow-num">3</span>
         <span class="flow-icon">✅</span>
-        <span class="flow-label">기록 발견!</span>
+        <span class="flow-label">실시간 결과!</span>
       </div>
     </div>
     <p class="desc" style="margin-bottom:8px">
-      전국 주요 기록 사이트를 병렬 검색하여<br>
-      빠르게 결과를 보여드립니다.
+      검색 중에도 발견된 기록이 실시간으로 표시됩니다.
     </p>
     <div class="sources">
       <span class="src-badge">SmartChip</span>
       <span class="src-badge">MyResult</span>
       <span class="src-badge">SPCT</span>
       <span class="src-badge">Marazone</span>
-      <span class="src-badge">외 다수</span>
     </div>
+  </div>
+
+  <!-- 운영 도구 -->
+  <div class="section">
+    <span class="section-icon">🔧</span>
+    <h2>운영 도구 <span class="admin-tag">운영진 전용</span></h2>
+    <p class="desc">
+      비밀번호로 보호되며, 일반 회원에게는 공개되지 않습니다.
+    </p>
+    <div class="tool-card">
+      <h3>📊 대회 기록 관리</h3>
+      <p>매주 자동 수집 → 검토 → 확정 흐름으로 운영됩니다.<br>PB 자동 감지·수동 입력·CSV 다운로드를 지원합니다.</p>
+    </div>
+    <div class="tool-card">
+      <h3>👥 회원 관리</h3>
+      <p>회원 추가/수정, 성별 변경 시 기록 자동 동기화,<br>대회 결과 일괄 업로드가 가능합니다.</p>
+    </div>
+    <div class="tool-card">
+      <p style="margin:0"><strong>접속 비밀번호</strong>는 대회 기록을 관리하시는 <span style="color:#2563EB;font-weight:700">블루</span> 님, <span style="color:#059669;font-weight:700">크로버</span> 님에게 별도 전달 예정입니다.</p>
+    </div>
+  </div>
+
+  <!-- 운영 참고 사항 -->
+  <div class="feedback-section">
+    <span style="font-size:28px;display:block;margin-bottom:8px">📋</span>
+    <h2>운영 참고 사항</h2>
+    <p class="desc">대회 기록은 다음과 같이 관리됩니다.</p>
+    <div class="feedback-item">
+      <span class="fb-num">1</span>
+      <span>매주 토·일 저녁, 최근 대회 기록이 자동 수집됩니다.</span>
+    </div>
+    <div class="feedback-item">
+      <span class="fb-num">2</span>
+      <span>"대회 기록 관리" 접속 시 비밀번호를 입력합니다.</span>
+    </div>
+    <div class="feedback-item">
+      <span class="fb-num">3</span>
+      <span>수집된 기록을 검토하고 확정합니다.</span>
+    </div>
+    <div class="feedback-item">
+      <span class="fb-num">4</span>
+      <span>자동 수집이 안 되는 대회는 수동 입력할 수 있습니다.</span>
+    </div>
+    <div class="feedback-item">
+      <span class="fb-num">5</span>
+      <span>개선 의견이나 오류 발견 시 편하게 알려주세요.</span>
+    </div>
+  </div>
+
+  <!-- 바로가기 -->
+  <div class="links-grid">
+    <a href="https://dmc-attendance.web.app/report.html" class="link-card">
+      <span class="link-icon">📊</span>
+      <span class="link-label">대회 기록 관리</span>
+      <span class="link-desc">운영진 전용</span>
+    </a>
+    <a href="https://dmc-attendance.web.app/admin.html" class="link-card">
+      <span class="link-icon">👥</span>
+      <span class="link-label">회원 관리</span>
+      <span class="link-desc">운영진 전용</span>
+    </a>
   </div>
 
   <!-- CTA -->
   <div class="cta">
     <div class="cta-emoji">🏃‍♂️💨</div>
     <h2>지금 바로 확인하세요!</h2>
-    <p>대회 기록 보기 · 내 기록 검색 · 최고 기록 확인</p>
-    <a href="https://dmc-attendance.web.app/races.html" class="cta-btn">대회 기록 보기</a>
-    <span class="cta-url">dmc-attendance.web.app/races.html</span>
+    <p>닉네임 또는 실명으로 내 기록을 바로 확인해 보세요</p>
+    <a href="https://dmc-attendance.web.app/my.html" class="cta-btn">내 기록 확인하기</a>
+    <span class="cta-url">dmc-attendance.web.app/my.html</span>
   </div>
 
-  <div class="footer">동탄 마라톤 클럽 © 2026</div>
+  <div class="footer">동탄 마라톤 클럽 © 2026<br>만든 사람: 게살볶음밥 🦀</div>
 
 </div>
 </body>
