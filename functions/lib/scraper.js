@@ -65,11 +65,42 @@ async function spctParseDetailPage(html, fallbackName) {
   const gender = inferGender(genderDist);
   const dist = normDist(genderDist.replace(/[MF]\s*/i, ""));
 
+  // 순위 파싱: .rank li 순서 → 전체/성별/연령부
+  let overallRank = null, genderRank = null, ageGroupRank = null;
+  $(".rank li").each((i, el) => {
+    const spans = $(el).find("span");
+    const rankNum = parseInt($(spans[0]).text().trim());
+    const totalText = $(spans[1]).text().replace("/", "").trim();
+    const total = parseInt(totalText) || null;
+    const label = $(el).find("p").first().text();
+    if (i === 0) {
+      overallRank = isNaN(rankNum) ? null : rankNum;
+    } else if (i === 1) {
+      genderRank = isNaN(rankNum) ? null : rankNum;
+    } else if (i === 2) {
+      ageGroupRank = isNaN(rankNum) ? null : (total ? `${rankNum}/${total}` : String(rankNum));
+    }
+  });
+
+  // 구간 스플릿: Section 1/2/3 테이블
+  const splits = [];
+  $("table tbody tr").each((_, tr) => {
+    const cells = $(tr).find("td");
+    if (cells.length < 2) return;
+    const label = $(cells[0]).text().trim();
+    const rawCell = $(cells[1]).text().trim();
+    const elapsedMatch = rawCell.match(/\((\d{2}:\d{2}:\d{2}(?:\.\d+)?)\)/);
+    if (label && elapsedMatch) {
+      splits.push({ label, time: elapsedMatch[1].substring(0, 8) });
+    }
+  });
+
   return {
     name, bib, distance: dist,
     netTime: normTime(time), gunTime: "",
     gender: gender || null,
-    overallRank: null, genderRank: null, pace: "",
+    overallRank, genderRank, ageGroupRank,
+    splits, pace: "",
   };
 }
 
@@ -155,8 +186,21 @@ function parseSmartChipResult(html, memberName) {
   const rankData = html.match(/var rawData\s*=\s*\[([^\]]*)\]/);
   const overallRank = rankData ? parseInt(rankData[1].split(",")[0]) : null;
 
+  // Total_Rank URL의 gender= 파라미터에서 성별 추출
+  const genderUrlMatch = html.match(/Total_Rank\.asp[^"']*gender=([^&"']+)/i);
+  let gender = null;
+  if (genderUrlMatch) {
+    const genderRaw = decodeURIComponent(genderUrlMatch[1]);
+    if (genderRaw === "남" || genderRaw.toLowerCase() === "male" || genderRaw.toLowerCase() === "m") gender = "M";
+    else if (genderRaw === "여" || genderRaw.toLowerCase() === "female" || genderRaw.toLowerCase() === "f") gender = "F";
+  }
+
   if (!netTime) return null;
-  return { name, bib, distance, netTime: normTime(netTime), gunTime: "", overallRank, genderRank: null, gender: null, pace: "" };
+  return {
+    name, bib, distance, netTime: normTime(netTime), gunTime: "",
+    overallRank, genderRank: null, ageGroupRank: null,
+    gender, splits: [], pace: "",
+  };
 }
 
 async function searchSmartChip(eventId, memberName) {
@@ -225,8 +269,9 @@ async function searchMyResult(eventId, memberName) {
     distance: normDist(p.course_cd || ""),
     netTime: normTime(p.result_nettime || ""),
     gunTime: normTime(p.result_guntime || ""),
-    overallRank: null, genderRank: null,
+    overallRank: null, genderRank: null, ageGroupRank: null,
     gender: p.gender ? p.gender.toUpperCase() : null,
+    splits: [],
     pace: p.pace_nettime || "",
   }));
 }
@@ -248,16 +293,47 @@ async function searchMarazone(compTitle, memberName) {
   });
   if (!res.ok) return [];
   const records = await res.json();
-  return (records || []).map((r) => ({
-    name: r.name || memberName,
-    bib: r.bib_num || "",
-    distance: normDist(r.Division || ""),
-    netTime: normTime(r.Time || ""),
-    gunTime: "",
-    overallRank: r.rank_total ? parseInt(r.rank_total) : null,
-    genderRank: r.rank_gender ? parseInt(r.rank_gender) : null,
-    gender: null, pace: r.pace || "",
-  }));
+  return (records || []).map((r) => {
+    // O_rank / G_rank / A_rank: "931/2605" 형식 → rank, total 분리
+    const parseRankStr = (s) => {
+      if (!s || s === "-") return { rank: null, total: null };
+      const [a, b] = String(s).split("/");
+      return { rank: parseInt(a) || null, total: parseInt(b) || null };
+    };
+    const oRank = parseRankStr(r.O_rank);
+    const gRank = parseRankStr(r.G_rank);
+    const aRank = parseRankStr(r.A_rank);
+
+    // 성별: "M"/"F" 또는 "남"/"여" 처리
+    let gender = null;
+    if (r.Sex) {
+      const s = r.Sex.trim();
+      if (s === "M" || s === "남" || s.toLowerCase() === "male") gender = "M";
+      else if (s === "F" || s === "여" || s.toLowerCase() === "female") gender = "F";
+    }
+
+    // 구간 스플릿: CP_01~CP_04_TIME (값이 "-" 아닌 것만)
+    const splits = [];
+    for (let i = 1; i <= 4; i++) {
+      const pad = String(i).padStart(2, "0");
+      const t = r[`CP_${pad}_TIME`];
+      const label = r[`CP_${pad}_NAME`] || `CP${pad}`;
+      if (t && t !== "-") splits.push({ label, time: t });
+    }
+
+    return {
+      name: r.Name || r.name || memberName,
+      bib: r.Bib || r.bib_num || "",
+      distance: normDist(r.Division || ""),
+      netTime: normTime(r.Time || ""),
+      gunTime: "",
+      overallRank: oRank.rank,
+      genderRank: gRank.rank,
+      ageGroupRank: aRank.rank !== null ? `${aRank.rank}/${aRank.total}` : null,
+      gender, splits,
+      pace: r.Pace || r.pace || "",
+    };
+  });
 }
 
 // ─── 검색 라우터 + 이벤트 정보 ───────────────────────────────
