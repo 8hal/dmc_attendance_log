@@ -227,6 +227,25 @@
       .hero { padding: 20px 16px 18px; }
       .hero-title { font-size: 18px; }
     }
+    /* Suggestions banner */
+    .suggest-banner { background: linear-gradient(135deg, #059669, #047857); border-radius: 14px; padding: 16px; margin-bottom: 14px; color: #fff; }
+    .suggest-banner-title { font-size: 15px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+    .suggest-card { background: rgba(255,255,255,0.95); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; color: var(--color-text); display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: opacity 0.3s; }
+    .suggest-card.dimout { opacity: 0.35; }
+    .suggest-card-info { flex: 1; min-width: 0; }
+    .suggest-card-event { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .suggest-card-record { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .suggest-card-pace { font-size: 12px; color: var(--color-text-muted); }
+    .suggest-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .suggest-btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .suggest-btn-yes { background: #059669; color: #fff; }
+    .suggest-btn-yes:hover { background: #047857; }
+    .suggest-btn-no { background: #F1F5F9; color: var(--color-text-secondary); }
+    .suggest-btn-no:hover { background: #E2E8F0; }
+    .suggest-dimmed-toggle { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; padding: 4px 0; margin-top: 4px; }
+    .suggest-dimmed-toggle:hover { color: #fff; }
+    .suggest-fallback { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 8px; }
+    .suggest-fallback a { color: #fff; text-decoration: underline; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -254,6 +273,7 @@
 
     <div id="dashboard" style="display:none;">
       <div id="pbCards"></div>
+      <div id="suggestionsPanel"></div>
       <div id="searchNudge"></div>
       <div id="recordTimeline"></div>
       <div id="searchPanel"></div>
@@ -643,6 +663,134 @@ function renderDashboard() {
 
   renderSearchNudge(all);
   renderTimeline(all);
+  if (!isGuestMode && selectedMember) loadSuggestions();
+}
+
+// ─── Proactive Suggestions ─────────────────────────
+
+let suggestionsData = null;
+let showDimmedSuggestions = false;
+const dismissedSuggestions = JSON.parse(localStorage.getItem("dismissed_suggestions") || "{}");
+
+async function loadSuggestions() {
+  const panel = document.getElementById("suggestionsPanel");
+  if (!selectedRealName) { panel.innerHTML = ""; return; }
+
+  try {
+    const res = await fetch(`${RACE_API}?action=suggestions&member=${encodeURIComponent(selectedRealName)}`);
+    const json = await res.json();
+    if (!json.ok || !json.suggestions?.length) { panel.innerHTML = ""; return; }
+    suggestionsData = json.suggestions;
+    renderSuggestions();
+  } catch {
+    panel.innerHTML = "";
+  }
+}
+
+function renderSuggestions() {
+  const panel = document.getElementById("suggestionsPanel");
+  if (!suggestionsData?.length) { panel.innerHTML = ""; return; }
+
+  const filtered = suggestionsData.filter((ev) => !dismissedSuggestions[`${ev.source}_${ev.sourceId}`]);
+  if (!filtered.length) { panel.innerHTML = ""; return; }
+
+  let html = `<div class="suggest-banner"><div class="suggest-banner-title">🏃 이 대회 뛰셨나요?</div>`;
+
+  let hasActive = false;
+  let hasDimmed = false;
+
+  for (const ev of filtered) {
+    for (let ci = 0; ci < ev.candidates.length; ci++) {
+      const c = ev.candidates[ci];
+      const isDimmed = c.dimout;
+      if (isDimmed) { hasDimmed = true; if (!showDimmedSuggestions) continue; }
+      hasActive = true;
+
+      const paceStr = c.pace ? ` · ${c.pace}/km` : "";
+      html += `<div class="suggest-card${isDimmed ? " dimout" : ""}">
+  <div class="suggest-card-info">
+    <div class="suggest-card-event">${esc(ev.eventName)} · ${esc(ev.eventDate)}</div>
+    <div class="suggest-card-record"><span class="dist-badge dist-${c.distance}">${DIST_LABELS[c.distance] || c.distance}</span> ${esc(c.netTime)}</div>
+    <div class="suggest-card-pace">${c.bib ? `#${c.bib}` : ""}${c.gender ? ` · ${c.gender === "M" ? "남" : "여"}` : ""}${paceStr}</div>
+  </div>
+  <div class="suggest-card-actions">
+    <button class="suggest-btn suggest-btn-yes" onclick="confirmSuggestion('${ev.source}','${ev.sourceId}',${ci})">내 기록</button>
+    <button class="suggest-btn suggest-btn-no" onclick="dismissSuggestion('${ev.source}','${ev.sourceId}')">아니요</button>
+  </div>
+</div>`;
+    }
+  }
+
+  if (!hasActive && !hasDimmed) { panel.innerHTML = ""; return; }
+
+  if (hasDimmed && !showDimmedSuggestions) {
+    html += `<button class="suggest-dimmed-toggle" onclick="toggleDimmedSuggestions()">관련 낮은 기록 더보기</button>`;
+  } else if (hasDimmed && showDimmedSuggestions) {
+    html += `<button class="suggest-dimmed-toggle" onclick="toggleDimmedSuggestions()">간략히 보기</button>`;
+  }
+
+  html += `</div>`;
+  panel.innerHTML = html;
+}
+
+function toggleDimmedSuggestions() {
+  showDimmedSuggestions = !showDimmedSuggestions;
+  renderSuggestions();
+}
+
+async function confirmSuggestion(source, sourceId, candidateIdx) {
+  const ev = suggestionsData.find((e) => e.source === source && e.sourceId === sourceId);
+  if (!ev) return;
+  const c = ev.candidates[candidateIdx];
+  if (!c) return;
+
+  logEvent("suggestion_confirm", { source, sourceId, distance: c.distance, netTime: c.netTime });
+
+  try {
+    const res = await fetch(`${RACE_API}?action=confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId: `${source}_${sourceId}`,
+        eventName: ev.eventName,
+        eventDate: ev.eventDate,
+        source,
+        sourceId,
+        confirmSource: "suggestion",
+        results: [{
+          distance: c.distance,
+          netTime: c.netTime,
+          gunTime: "",
+          pace: c.pace || "",
+          bib: c.bib || "",
+          overallRank: null,
+          genderRank: null,
+          memberRealName: selectedRealName,
+          memberNickname: selectedMember?.nickname || selectedRealName,
+          gender: selectedMember?.gender || "",
+        }],
+      }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "confirm failed");
+
+    showToast("기록이 등록되었습니다!");
+    suggestionsData = suggestionsData.filter((e) => !(e.source === source && e.sourceId === sourceId));
+    renderSuggestions();
+
+    const racesRes = await fetch(`${RACE_API}?action=confirmed-races`);
+    const racesJson = await racesRes.json();
+    if (racesJson.ok) { racesData = racesJson.races || []; renderDashboard(); }
+  } catch (err) {
+    showToast("등록 실패: " + err.message, 3000);
+  }
+}
+
+function dismissSuggestion(source, sourceId) {
+  logEvent("suggestion_dismiss", { source, sourceId });
+  dismissedSuggestions[`${source}_${sourceId}`] = Date.now();
+  localStorage.setItem("dismissed_suggestions", JSON.stringify(dismissedSuggestions));
+  renderSuggestions();
 }
 
 function renderSearchNudge(records) {

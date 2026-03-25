@@ -96,3 +96,43 @@ search_cache 확인 → 미스 시 scraper → search_cache 저장
 member_search_jobs에 진행률 기록
 ```
 → race_results에 직접 쓰지 않음. 저장은 별도 confirm 호출.
+
+### weeklyDiscoverAndScrape (주간 스크래퍼)
+```
+discoverAllEvents → 신규 이벤트 발견
+scrapeEvent() → scrape_jobs.results[] 저장
+              → search_cache 동시 저장 (필수!)
+```
+
+---
+
+## 6. 동일 데이터 다중 경로 쓰기 규칙 (Dual-Write Rule)
+
+> **2026-03-24 사고에서 도출**: 주간 스크래퍼와 개인 검색이 같은 `searchMember()`를
+> 호출하면서 결과를 서로 다른 컬렉션에만 저장 → search_cache가 갱신되지 않는 버그.
+
+### 원칙
+
+**`searchMember()` 결과는 반드시 `search_cache`에 저장해야 한다.**
+
+어떤 코드 경로에서 `scraper.searchMember()`를 호출하든,
+그 결과는 `search_cache` 문서로 저장되어야 한다.
+search_cache는 검색 결과의 **유일한 캐시 레이어**이며,
+다른 컬렉션(scrape_jobs 등)에 저장하는 것은 search_cache 쓰기를 **대체하지 않는다**.
+
+### 체크리스트: searchMember() 호출부 추가/수정 시
+
+- [ ] search_cache에 결과를 저장하는가?
+- [ ] 캐시 키 형식이 `{source}_{sourceId}_{realName}` 인가?
+- [ ] `found`, `result`, `cachedAt` 필드를 모두 포함하는가?
+- [ ] scrape_jobs 등 다른 컬렉션에 **추가로** 저장하는 것은 OK, **대신** 저장하는 것은 금지
+
+### 현재 searchMember() 호출부 목록
+
+| 위치 | search_cache 쓰기 |
+|------|:--:|
+| `functions/index.js` — `search-member-events` | ✅ |
+| `functions/index.js` — `weeklyDiscoverAndScrape` → `scrapeEvent()` | ✅ (2026-03-24 수정) |
+| `scripts/prewarm-search-cache.js` | ✅ |
+
+**새 호출부를 만들면 이 표에 추가하고, search_cache 쓰기 여부를 확인할 것.**

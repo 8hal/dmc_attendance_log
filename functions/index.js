@@ -567,6 +567,8 @@ exports.weeklyDiscoverAndScrape = onSchedule(
           sourceId: event.sourceId,
           members,
           pbMap,
+          db,
+          serverTimestamp: FieldValue.serverTimestamp(),
           onProgress: async (p) => {
             await jobRef.update({ progress: p });
           },
@@ -935,6 +937,111 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       enriched.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       return res.json({ ok: true, events: enriched, total: enriched.length });
+    }
+
+    // ─── 프로액티브 제안: 최근 대회 미확정 기록 ─────────────
+    if (action === "suggestions") {
+      const memberName = req.query.member;
+      if (!memberName) return res.status(400).json({ ok: false, error: "member query required" });
+
+      const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      const cacheSnap = await db.collection("search_cache")
+        .where("realName", "==", memberName)
+        .where("found", "==", true)
+        .get();
+
+      const confirmedSnap = await db.collection("race_results")
+        .where("status", "==", "confirmed")
+        .where("memberRealName", "==", memberName)
+        .get();
+      const confirmedKeys = new Set();
+      confirmedSnap.forEach((doc) => {
+        const r = doc.data();
+        confirmedKeys.add(`${r.source}_${r.sourceId}`);
+      });
+
+      const memberSnap = await db.collection("members")
+        .where("realName", "==", memberName)
+        .limit(1)
+        .get();
+      const memberGender = memberSnap.empty ? null : memberSnap.docs[0].data().gender;
+
+      const pbSnap = await db.collection("race_results")
+        .where("status", "==", "confirmed")
+        .where("memberRealName", "==", memberName)
+        .get();
+      const pbMap = {};
+      pbSnap.forEach((doc) => {
+        const r = doc.data();
+        const secs = scraper.timeToSeconds(r.netTime);
+        const km = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 }[r.distance];
+        if (!secs || secs === Infinity || !km) return;
+        const pace = secs / km;
+        if (!pbMap[r.distance] || pace < pbMap[r.distance]) pbMap[r.distance] = pace;
+      });
+
+      const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 };
+      const predictedPaces = {};
+      for (const [dist, pace] of Object.entries(pbMap)) {
+        const knownSecs = pace * DIST_KM[dist];
+        for (const [td, tk] of Object.entries(DIST_KM)) {
+          const predSecs = knownSecs * Math.pow(tk / DIST_KM[dist], 1.06);
+          const predPace = predSecs / tk;
+          if (!predictedPaces[td] || predPace < predictedPaces[td]) predictedPaces[td] = predPace;
+        }
+      }
+
+      const byEvent = {};
+      cacheSnap.forEach((doc) => {
+        const d = doc.data();
+        const eventDate = d.result?.eventDate || "";
+        if (eventDate && eventDate < twoWeeksAgo) return;
+        if (confirmedKeys.has(`${d.source}_${d.sourceId}`)) return;
+
+        const eventKey = `${d.source}_${d.sourceId}`;
+        if (!byEvent[eventKey]) {
+          byEvent[eventKey] = {
+            eventName: d.result?.eventName || d.sourceId,
+            eventDate,
+            source: d.source,
+            sourceId: d.sourceId,
+            candidates: [],
+          };
+        }
+
+        for (const r of (d.result?.records || [])) {
+          // 성별 불일치는 완전 제외
+          if (memberGender && r.gender && r.gender !== memberGender) continue;
+
+          const secs = scraper.timeToSeconds(r.netTime);
+          const km = DIST_KM[r.distance];
+          const pace = (secs && secs !== Infinity && km) ? secs / km : null;
+          const predicted = predictedPaces[r.distance];
+
+          let dimout = false;
+          if (predicted && pace) {
+            const delta = Math.abs(pace - predicted) / predicted;
+            const thresh = (r.distance === "5K") ? Infinity : (r.distance === "10K") ? 1.0 : 0.5;
+            if (delta > thresh) dimout = true;
+          }
+
+          byEvent[eventKey].candidates.push({
+            distance: r.distance,
+            netTime: r.netTime,
+            pace: pace ? `${Math.floor(pace / 60)}:${String(Math.round(pace % 60)).padStart(2, "0")}` : null,
+            gender: r.gender || null,
+            bib: r.bib || null,
+            dimout,
+          });
+        }
+      });
+
+      const suggestions = Object.values(byEvent)
+        .filter((e) => e.candidates.length > 0)
+        .sort((a, b) => (b.eventDate || "").localeCompare(a.eventDate || ""));
+
+      return res.json({ ok: true, suggestions, memberGender, hasPB: Object.keys(pbMap).length > 0 });
     }
 
     // ─── 회원별 역방향 검색 (1명 × N대회) ─────────────────

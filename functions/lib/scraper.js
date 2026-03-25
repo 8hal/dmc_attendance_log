@@ -512,7 +512,7 @@ async function discoverAllEvents(year) {
 
 // ─── 전체 스크래핑 (이벤트 1개 + 회원 N명) ──────────────────
 
-async function scrapeEvent({ source, sourceId, members, pbMap, onProgress }) {
+async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, serverTimestamp }) {
   const info = await getEventInfo(source, sourceId);
   const results = [];
 
@@ -522,6 +522,32 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress }) {
     try {
       await sleep(DELAY_MS);
       const found = await searchMember(source, sourceId, m.realName);
+
+      // search_cache 동시 쓰기 (Dual-Write Rule)
+      if (db) {
+        const cacheKey = `${source}_${sourceId}_${m.realName}`.substring(0, 1500);
+        const hasResults = found && found.length > 0;
+        db.collection("search_cache").doc(cacheKey).set({
+          realName: m.realName,
+          source,
+          sourceId,
+          found: hasResults,
+          result: hasResults ? {
+            eventName: info.title,
+            eventDate: info.date,
+            source,
+            sourceId,
+            records: found.map((r) => ({
+              ...r,
+              memberRealName: m.realName,
+              memberNickname: m.nickname,
+              memberGender: m.gender || "",
+            })),
+          } : null,
+          cachedAt: serverTimestamp || new Date(),
+        }).catch(() => {});
+      }
+
       if (!found || found.length === 0) continue;
 
       const isAmbiguous = found.length > 1;
