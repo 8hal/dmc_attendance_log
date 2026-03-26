@@ -587,8 +587,126 @@ exports.weeklyDiscoverAndScrape = onSchedule(
       } catch (err) {
         console.error(`[scrape] 오류: ${err.message}`);
         await jobRef.update({ status: "error", error: err.message });
+        await db.collection("event_logs").add({
+          type: "scrape_alert",
+          severity: "error",
+          code: "scrape_error",
+          message: `스크래핑 오류 (${event.source}:${event.sourceId}): ${err.message}`,
+          jobId: jobRef.id,
+          eventName: event.name || "",
+          timestamp: FieldValue.serverTimestamp(),
+        });
       }
     }
+
+    // 주간 스크래핑 완료 요약 로그
+    await db.collection("event_logs").add({
+      type: "scrape_summary",
+      severity: "info",
+      message: `주간 스크래핑 완료: ${newEvents.length}개 이벤트 처리`,
+      eventCount: newEvents.length,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+  }
+);
+
+/**
+ * 스크래핑 헬스체크 — 매시간 실행
+ * - stuck job (running 상태 1시간 이상) 감지
+ * - SmartChip 세션 실패 의심 (searched > 0, found = 0) 감지
+ * - 주간 스케줄 미실행 감지 (월요일 오전에 지난주 토/일 잡 없으면 경고)
+ */
+exports.scrapeHealthCheck = onSchedule(
+  {
+    schedule: "0 * * * *",
+    timeZone: "Asia/Seoul",
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    region: "asia-northeast3",
+  },
+  async () => {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    const alerts = [];
+
+    // 1. stuck job 감지: running 상태로 1시간 이상 멈춘 잡
+    const stuckSnap = await db.collection("scrape_jobs")
+      .where("status", "==", "running")
+      .where("createdAt", "<=", oneHourAgo)
+      .get();
+    stuckSnap.forEach((doc) => {
+      const d = doc.data();
+      alerts.push({
+        type: "scrape_alert",
+        severity: "error",
+        code: "stuck_job",
+        message: `스크래핑 잡이 1시간 이상 멈춤: ${d.eventName || doc.id}`,
+        jobId: doc.id,
+        eventName: d.eventName || "",
+        progress: d.progress || {},
+      });
+    });
+
+    // 2. SmartChip 세션 실패 의심: 최근 3일 내 complete 잡 중 searched > 0 이지만 found = 0
+    const recentSnap = await db.collection("scrape_jobs")
+      .where("status", "==", "complete")
+      .where("completedAt", ">=", threeDaysAgo)
+      .get();
+    recentSnap.forEach((doc) => {
+      const d = doc.data();
+      if (d.source !== "smartchip") return;
+      const searched = d.progress?.searched || 0;
+      const found = d.progress?.found || (d.results || []).length;
+      if (searched > 10 && found === 0) {
+        alerts.push({
+          type: "scrape_alert",
+          severity: "warning",
+          code: "smartchip_zero_results",
+          message: `SmartChip 스크래핑 결과 0건 (세션 문제 의심): ${d.eventName || doc.id} — ${searched}명 검색`,
+          jobId: doc.id,
+          eventName: d.eventName || "",
+        });
+      }
+    });
+
+    // 3. 주간 스케줄 미실행 감지: 월요일 오전 9시에 체크
+    const isMonday = now.getDay() === 1;
+    const isCheckHour = now.getHours() === 9;
+    if (isMonday && isCheckHour) {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const weekSnap = await db.collection("scrape_jobs")
+        .where("createdAt", ">=", sevenDaysAgo)
+        .limit(1)
+        .get();
+      if (weekSnap.empty) {
+        alerts.push({
+          type: "scrape_alert",
+          severity: "warning",
+          code: "weekly_scrape_missing",
+          message: "지난 7일 동안 스크래핑 잡이 하나도 생성되지 않았습니다. 주간 스케줄을 확인하세요.",
+        });
+      }
+    }
+
+    if (alerts.length === 0) {
+      console.log("[scrapeHealthCheck] 이상 없음");
+      return;
+    }
+
+    // 알림을 event_logs에 기록
+    const batch = db.batch();
+    for (const alert of alerts) {
+      const ref = db.collection("event_logs").doc();
+      batch.set(ref, {
+        ...alert,
+        timestamp: FieldValue.serverTimestamp(),
+        checkedAt: now.toISOString(),
+      });
+    }
+    await batch.commit();
+    console.log(`[scrapeHealthCheck] 알림 ${alerts.length}건 기록`);
   }
 );
 

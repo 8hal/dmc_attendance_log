@@ -205,16 +205,55 @@ function parseSmartChipResult(html, memberName) {
   };
 }
 
-async function searchSmartChip(eventId, memberName) {
+// SmartChip 세션 쿠키 발급 (dongma.html 방문 → ASPSESSIONID 쿠키 수령)
+// 호출 당 1회만 발급하고 재사용한다.
+async function getSmartChipSession() {
+  try {
+    const resp = await fetch("https://smartchip.co.kr/dongma.html", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+      },
+    });
+    const setCookie = resp.headers.get("set-cookie") || "";
+    // "ASPSESSIONIDXXXX=YYYY; secure; path=/" → "ASPSESSIONIDXXXX=YYYY"
+    const sessionCookie = setCookie.split(";")[0].trim();
+    if (sessionCookie) {
+      console.log(`[SmartChip] 세션 발급 완료: ${sessionCookie.substring(0, 20)}...`);
+    }
+    return sessionCookie;
+  } catch (e) {
+    console.warn(`[SmartChip] 세션 발급 실패: ${e.message}`);
+    return "";
+  }
+}
+
+// SmartChip 응답이 "잘못된 접속 경로" (세션 만료) 인지 확인
+function isSmartChipSessionExpired(html) {
+  return html.includes("잘못된 접속 경로") || html.includes("goHome=1");
+}
+
+async function searchSmartChip(eventId, memberName, session = "") {
+  const commonHeaders = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    ...(session ? { "Cookie": session } : {}),
+  };
+
   const params = new URLSearchParams();
   params.append("nameorbibno", memberName);
   params.append("usedata", eventId);
   const res = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: commonHeaders,
     body: params.toString(),
   });
   const html = await res.text();
+
+  // 세션 만료 감지 → 호출자에게 알림 (null 반환으로 구분)
+  if (isSmartChipSessionExpired(html)) {
+    console.warn(`[SmartChip] 세션 만료 감지 (${memberName})`);
+    return null;
+  }
 
   // 동명이인: name_search_result.asp로 리다이렉트 → 배번 목록 파싱 후 각각 재검색
   if (html.includes("name_search_result.asp")) {
@@ -222,7 +261,7 @@ async function searchSmartChip(eventId, memberName) {
     const rallyNo = eventId.slice(4);
     const listUrl = `https://www.smartchip.co.kr/name_search_result.asp?name=${encodeURIComponent(memberName)}&Year_Gbn=${yearGbn}&Rally_no=${rallyNo}`;
     try {
-      const listRes = await fetch(listUrl);
+      const listRes = await fetch(listUrl, { headers: { ...commonHeaders } });
       const listHtml = await listRes.text();
       const $ = cheerioLoad(listHtml);
       const bibs = [];
@@ -239,7 +278,7 @@ async function searchSmartChip(eventId, memberName) {
         bibParams.append("usedata", eventId);
         const bibRes = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          headers: commonHeaders,
           body: bibParams.toString(),
         });
         const bibHtml = await bibRes.text();
@@ -340,10 +379,10 @@ async function searchMarazone(compTitle, memberName) {
 
 // ─── 검색 라우터 + 이벤트 정보 ───────────────────────────────
 
-async function searchMember(source, sourceId, memberName) {
+async function searchMember(source, sourceId, memberName, { session = "" } = {}) {
   switch (source) {
     case "spct": return searchSPCT(sourceId, memberName);
-    case "smartchip": return searchSmartChip(sourceId, memberName);
+    case "smartchip": return searchSmartChip(sourceId, memberName, session);
     case "myresult": return searchMyResult(sourceId, memberName);
     case "marazone": return searchMarazone(sourceId, memberName);
     default: return [];
@@ -639,8 +678,12 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     }
   }
 
-  // SmartChip은 차단 방지를 위해 긴 딜레이 사용
+  // SmartChip은 차단 방지를 위해 긴 딜레이 사용 + 세션 쿠키 발급
   const delayMs = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
+  let smartchipSession = "";
+  if (source === "smartchip") {
+    smartchipSession = await getSmartChipSession();
+  }
 
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
@@ -650,7 +693,16 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
 
     try {
       await sleep(delayMs);
-      const found = await searchMember(source, sourceId, m.realName);
+      let found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
+
+      // SmartChip 세션 만료 시 1회 재발급 후 재시도
+      if (found === null && source === "smartchip") {
+        console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName})`);
+        smartchipSession = await getSmartChipSession();
+        await sleep(delayMs);
+        found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
+        if (found === null) found = [];
+      }
 
       // search_cache 동시 쓰기 (Dual-Write Rule)
       if (db) {
@@ -726,6 +778,6 @@ module.exports = {
   searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,
-  scrapeEvent,
+  scrapeEvent, getSmartChipSession,
   sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
 };

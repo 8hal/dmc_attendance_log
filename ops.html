@@ -29,6 +29,11 @@
     .stat { flex: 1; background: #334155; border-radius: 6px; padding: 10px; text-align: center; }
     .stat-val { font-size: 20px; font-weight: 700; color: #F8FAFC; }
     .stat-label { font-size: 11px; color: #64748B; margin-top: 2px; }
+    .alert-row { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid #334155; }
+    .alert-row:last-child { border-bottom: none; }
+    .alert-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .alert-msg { font-size: 12px; color: #F1F5F9; flex: 1; }
+    .alert-time { font-size: 11px; color: #64748B; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -41,6 +46,7 @@
   </div>
 
   <div id="stats"></div>
+  <div class="card" id="scrapeAlertsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="integrityCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="logsCard"><div class="loading">로딩 중...</div></div>
 
@@ -59,6 +65,7 @@
       const logsData = await logsRes.json();
       const intData = await intRes.json();
       renderStats(intData, logsData);
+      renderScrapeAlerts(logsData);
       renderIntegrity(intData);
       renderLogs(logsData);
     }
@@ -76,6 +83,30 @@
           <div class="stat"><div class="stat-val">${issues.length}</div><div class="stat-label">Count 불일치</div></div>
           <div class="stat"><div class="stat-val">${todayLogs.length}</div><div class="stat-label">오늘 이벤트</div></div>
         </div>`;
+    }
+
+    function renderScrapeAlerts(logsData) {
+      const logs = logsData.logs || [];
+      const alerts = logs.filter(l => l.type === "scrape_alert").slice(0, 10);
+      const el = document.getElementById("scrapeAlertsCard");
+      let html = '<div class="card-title">🚨 스크래핑 알림</div>';
+
+      if (alerts.length === 0) {
+        html += '<span class="badge-ok">✓ 이상 없음</span>';
+      } else {
+        html += `<span class="badge-warn">${alerts.length}건</span><div style="margin-top:8px;">`;
+        for (const a of alerts) {
+          const icon = a.severity === "error" ? "🔴" : "🟡";
+          const time = (a.timestamp || a.checkedAt || "").slice(0, 16).replace("T", " ");
+          html += `<div class="alert-row">
+            <span class="alert-icon">${icon}</span>
+            <span class="alert-msg">${esc(a.message || "")}</span>
+            <span class="alert-time">${time}</span>
+          </div>`;
+        }
+        html += '</div>';
+      }
+      el.innerHTML = html;
     }
 
     function renderIntegrity(intData) {
