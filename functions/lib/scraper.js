@@ -11,6 +11,47 @@ const DELAY_MS = 200;
 const SMARTCHIP_DELAY_MS = 3000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ─── 봇 감지 우회 유틸리티 ───────────────────────────────────
+
+// 랜덤 지터: base ± jitter 범위에서 무작위 딜레이 (기계적 고정 패턴 제거)
+function randomDelay(baseMs, jitterMs = baseMs * 0.4) {
+  const delta = (Math.random() * 2 - 1) * jitterMs;
+  return Math.max(100, Math.round(baseMs + delta));
+}
+
+// User-Agent 풀: 실제 브라우저 UA 로테이션
+const USER_AGENTS = [
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+  "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+];
+
+function randomUA() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+// 소스별 브라우저처럼 보이는 헤더 세트
+function browserHeaders(source) {
+  const ua = randomUA();
+  const base = {
+    "User-Agent": ua,
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+  };
+  const sourceReferers = {
+    smartchip: "https://smartchip.co.kr/",
+    myresult: "https://myresult.co.kr/",
+    spct: "https://time.spct.kr/",
+    marazone: "https://raceresult.co.kr/",
+  };
+  if (sourceReferers[source]) base["Referer"] = sourceReferers[source];
+  return base;
+}
+
 // ─── 거리/시간 유틸리티 ──────────────────────────────────────
 
 const DIST_ALIASES = {
@@ -109,13 +150,17 @@ async function spctParseDetailPage(html, fallbackName) {
 async function searchSPCT(eventNo, memberName) {
   const year = eventNo.substring(0, 4);
   const url = `https://time.spct.kr/m1.php?TargetYear=${year}&EVENT_NO=${eventNo}&currentPage=1&searchResultsName=${encodeURIComponent(memberName)}`;
-  const res = await fetch(url);
+  const spctHeaders = {
+    ...browserHeaders("spct"),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  };
+  const res = await fetch(url, { headers: spctHeaders });
   const html = await res.text();
   if (html.includes("alert('Something Wrong") || html.length < 200) return [];
 
   const redirectMatch = html.match(/location\.href\s*=\s*"(m2\.php[^"]+)"/);
   if (redirectMatch) {
-    const dHtml = await (await fetch(`https://time.spct.kr/${redirectMatch[1]}`)).text();
+    const dHtml = await (await fetch(`https://time.spct.kr/${redirectMatch[1]}`, { headers: spctHeaders })).text();
     const parsed = await spctParseDetailPage(dHtml, memberName);
     return parsed.netTime ? [parsed] : [];
   }
@@ -129,10 +174,10 @@ async function searchSPCT(eventNo, memberName) {
 
   const results = [];
   for (const link of links) {
-    const dHtml = await (await fetch(`https://time.spct.kr/${link}`)).text();
+    const dHtml = await (await fetch(`https://time.spct.kr/${link}`, { headers: spctHeaders })).text();
     const parsed = await spctParseDetailPage(dHtml, memberName);
     if (parsed.netTime) results.push(parsed);
-    await sleep(200);
+    await sleep(randomDelay(200));
   }
   return results;
 }
@@ -211,7 +256,8 @@ async function getSmartChipSession() {
   try {
     const resp = await fetch("https://smartchip.co.kr/dongma.html", {
       headers: {
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        ...browserHeaders("smartchip"),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
     const setCookie = resp.headers.get("set-cookie") || "";
@@ -234,8 +280,9 @@ function isSmartChipSessionExpired(html) {
 
 async function searchSmartChip(eventId, memberName, session = "") {
   const commonHeaders = {
+    ...browserHeaders("smartchip"),
     "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     ...(session ? { "Cookie": session } : {}),
   };
 
@@ -301,7 +348,12 @@ async function searchSmartChip(eventId, memberName, session = "") {
 
 async function searchMyResult(eventId, memberName) {
   const url = `https://myresult.co.kr/api/event/${eventId}/player?q=${encodeURIComponent(memberName)}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: {
+      ...browserHeaders("myresult"),
+      "Accept": "application/json, text/plain, */*",
+    },
+  });
   if (!res.ok) return [];
   const players = await res.json();
   return (players || []).map((p) => ({
@@ -329,7 +381,11 @@ async function getMyResultEventInfo(eventId) {
 async function searchMarazone(compTitle, memberName) {
   const res = await fetch("https://raceresult.co.kr/api/record-info", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      ...browserHeaders("marazone"),
+      "Content-Type": "application/json",
+      "Accept": "application/json, text/plain, */*",
+    },
     body: JSON.stringify({ comp_title: compTitle, name: memberName, bibNum: "" }),
   });
   if (!res.ok) return [];
@@ -678,8 +734,8 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     }
   }
 
-  // SmartChip은 차단 방지를 위해 긴 딜레이 사용 + 세션 쿠키 발급
-  const delayMs = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
+  // SmartChip은 차단 방지를 위해 긴 딜레이 + 랜덤 지터 사용
+  const baseDelay = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
   let smartchipSession = "";
   if (source === "smartchip") {
     smartchipSession = await getSmartChipSession();
@@ -692,14 +748,14 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     if (skipCached && cachedKeys.has(m.realName)) continue;
 
     try {
-      await sleep(delayMs);
+      await sleep(randomDelay(baseDelay));
       let found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
 
       // SmartChip 세션 만료 시 1회 재발급 후 재시도
       if (found === null && source === "smartchip") {
         console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName})`);
         smartchipSession = await getSmartChipSession();
-        await sleep(delayMs);
+        await sleep(randomDelay(baseDelay));
         found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
         if (found === null) found = [];
       }
