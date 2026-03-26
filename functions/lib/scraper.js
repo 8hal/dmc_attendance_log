@@ -7,6 +7,8 @@
 const { load: cheerioLoad } = require("cheerio");
 
 const DELAY_MS = 200;
+// SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
+const SMARTCHIP_DELAY_MS = 3000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─── 거리/시간 유틸리티 ──────────────────────────────────────
@@ -618,15 +620,36 @@ async function discoverAllEvents(year) {
 
 // ─── 전체 스크래핑 (이벤트 1개 + 회원 N명) ──────────────────
 
-async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, serverTimestamp }) {
+async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, serverTimestamp, skipCached = false }) {
   const info = await getEventInfo(source, sourceId);
   const results = [];
+
+  // skipCached=true 이면 이미 search_cache에 있는 회원은 건너뜀 (재개 용도)
+  let cachedKeys = new Set();
+  if (skipCached && db) {
+    try {
+      const snap = await db.collection("search_cache")
+        .where("source", "==", source)
+        .where("sourceId", "==", sourceId)
+        .get();
+      snap.forEach((doc) => cachedKeys.add(doc.data().realName));
+      console.log(`[scrapeEvent] 캐시 ${cachedKeys.size}명 건너뜀 (${source}_${sourceId})`);
+    } catch (e) {
+      console.warn(`[scrapeEvent] cache check failed: ${e.message}`);
+    }
+  }
+
+  // SmartChip은 차단 방지를 위해 긴 딜레이 사용
+  const delayMs = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
 
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
 
+    // 이미 캐시된 회원 건너뜀
+    if (skipCached && cachedKeys.has(m.realName)) continue;
+
     try {
-      await sleep(DELAY_MS);
+      await sleep(delayMs);
       const found = await searchMember(source, sourceId, m.realName);
 
       // search_cache 동시 쓰기 (Dual-Write Rule)
@@ -704,5 +727,5 @@ module.exports = {
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,
   scrapeEvent,
-  sleep, DELAY_MS,
+  sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
 };

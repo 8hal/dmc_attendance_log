@@ -1310,7 +1310,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "scrape" && req.method === "POST") {
-      const { source, sourceId, eventName, eventDate, replaceJobId } = req.body || {};
+      const { source, sourceId, eventName, eventDate, replaceJobId, resume } = req.body || {};
       if (!source || !sourceId) {
         return res.status(400).json({ ok: false, error: "source and sourceId required" });
       }
@@ -1331,6 +1331,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const jobRef = db.collection("scrape_jobs").doc(replaceJobId || canonicalId);
 
       const now = new Date().toISOString();
+
+      // resume=true 이면 기존 job 이어받기, 아니면 새로 시작
+      const isResume = !!resume;
       const jobData = {
         source, sourceId,
         eventName: eventName || sourceId,
@@ -1338,16 +1341,25 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         status: "running",
         progress: { searched: 0, total: members.length, found: 0 },
         results: [],
-        createdAt: now,
+        ...(isResume ? { resumedAt: now } : { createdAt: now, results: [] }),
         ...(replaceJobId ? { rescrapedAt: now } : {}),
       };
-      await jobRef.set(jobData);
+
+      if (isResume) {
+        await jobRef.update({ status: "running", resumedAt: now });
+      } else {
+        await jobRef.set(jobData);
+      }
 
       const jobId = jobRef.id;
 
       // 비동기로 스크래핑 (응답은 바로 반환하지 않고 완료까지 대기)
       const result = await scraper.scrapeEvent({
         source, sourceId, members, pbMap,
+        // resume 시 이미 캐시된 회원 건너뜀 → 중단된 지점부터 재개 효과
+        skipCached: isResume,
+        db,
+        serverTimestamp: FieldValue.serverTimestamp(),
         onProgress: async (p) => {
           await jobRef.update({ progress: p });
         },
