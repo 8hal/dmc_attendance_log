@@ -649,22 +649,30 @@ exports.scrapeHealthCheck = onSchedule(
       });
     });
 
-    // 2. SmartChip 세션 실패 의심: 최근 3일 내 complete 잡 중 searched > 0 이지만 found = 0
+    // 2. 전체 소스 결과 0건 감지: 최근 3일 내 complete 잡 중 searched > 10 이지만 found = 0
+    // SmartChip: 세션 문제 / MyResult·SPCT·Marazone: API 변경 또는 접근 불가 가능성
+    const sourceLabels = {
+      smartchip: "SmartChip (세션 문제 의심)",
+      myresult: "MyResult (API 변경 또는 접근 불가 의심)",
+      spct: "SPCT (API 변경 또는 접근 불가 의심)",
+      marazone: "Marazone (API 변경 또는 접근 불가 의심)",
+    };
     const recentSnap = await db.collection("scrape_jobs")
       .where("status", "==", "complete")
       .where("completedAt", ">=", threeDaysAgo)
       .get();
     recentSnap.forEach((doc) => {
       const d = doc.data();
-      if (d.source !== "smartchip") return;
       const searched = d.progress?.searched || 0;
       const found = d.progress?.found || (d.results || []).length;
       if (searched > 10 && found === 0) {
+        const label = sourceLabels[d.source] || `${d.source} (접근 불가 의심)`;
         alerts.push({
           type: "scrape_alert",
           severity: "warning",
-          code: "smartchip_zero_results",
-          message: `SmartChip 스크래핑 결과 0건 (세션 문제 의심): ${d.eventName || doc.id} — ${searched}명 검색`,
+          code: "zero_results",
+          source: d.source || "",
+          message: `${label}: ${d.eventName || doc.id} — ${searched}명 검색했으나 결과 0건`,
           jobId: doc.id,
           eventName: d.eventName || "",
         });
