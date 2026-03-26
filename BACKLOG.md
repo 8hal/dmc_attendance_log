@@ -39,13 +39,11 @@
   - spct: overallRank/genderRank/ageGroupRank/splits 파싱
   - smartchip: Total_Rank URL gender= 파싱
   - marazone: Sex/O_rank/G_rank/A_rank/splits 파싱 + rank 버그 수정
-- 🔴 **smartchip splits 파싱** (rawData 배열 포맷 확인 필요)
-  - rawData = `[rank, ...]` — 나머지 원소 의미 불명 (5K 구간 시간 추정)
-  - 확인 방법: Cloud Functions 로그 또는 대회 당일 console.log 찍기
-- 🔴 **myresult splits 파싱** (추가 API 호출 필요)
-  - 이름 검색 API에는 splits 없음 → `/player/${num}` 개별 호출 필요
-  - 동명이인 N명 → N번 추가 호출 (성능 비용 고려)
-  - 선행 조건: splits가 딤아웃 모델에 실제 도움이 되는지 확인 후 진행
+- 🔴 **구간 기록(splits) 완전 구현** — 아래 3개를 한 번에 처리
+  - smartchip: rawData 배열 포맷 확인 (5K 구간 시간 추정) → 대회 당일 CF 로그로 확인
+  - myresult: `/player/${num}` 개별 호출 추가 (동명이인 N명 → N번, 성능 검토 필요)
+  - **confirm API**: `genderRank`, `ageGroupRank`, `splits` race_results에 저장 추가
+    - 현재 누락 중 — splits 구현과 동시에 처리해야 의미 있음
 - 🔴 엑셀 데이터 임포트 (1,944건 중 기존 없는 것만 source:manual)
   - 정회원명단 닉네임→실명 매핑
   - 기존 race_results와 중복 체크 (실명+날짜+종목)
