@@ -522,41 +522,71 @@ async function discoverSmartChip(year) {
   const usedataPattern = /usedata=(\d+)/g;
   const eventMap = new Map(); // id → {name, date}
 
-  // main.html만 사용 (result.html은 404)
-  const html = await fetch("https://www.smartchip.co.kr/main.html").then((r) => r.text());
+  // 1) dongma.html — 동아일보 전용 대회 (일반 main.html에 노출 안 됨)
+  // e.g. 서울마라톤, SEOUL RACE, 공주백제마라톤, 경주국제마라톤 등
+  try {
+    const dongmaHtml = await fetch("https://smartchip.co.kr/dongma.html").then((r) => r.text());
 
-  // selectItem 형식 (PAST EVENTS 드롭다운): 날짜와 이름 모두 포함
-  // e.g. selectItem('(2025-04-05) 대회명', '202550000040')
-  const selectMatches = [...html.matchAll(/selectItem\s*\(\s*'([^']*)'\s*,\s*'(\d+)'/g)];
-  for (const m of selectMatches) {
-    const raw = m[1];
-    const id = m[2];
-    if (!id.startsWith(yearPrefix)) continue;
-    const dateMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
-    const name = raw.replace(/^\(\d{4}-\d{2}-\d{2}\)\s*/, "").trim();
-    eventMap.set(id, { name, date: dateMatch ? dateMatch[1] : "" });
-  }
+    // PAST EVENT 드롭다운: <option value="202550000218">(2025-10-18) 2025 경주국제마라톤</option>
+    const optionMatches = [...dongmaHtml.matchAll(/<option\s+value="(\d+)">\((\d{4}-\d{2}-\d{2})\)\s*([^<]+)<\/option>/g)];
+    for (const m of optionMatches) {
+      const id = m[1];
+      const date = m[2];
+      const name = m[3].trim();
+      if (id.startsWith(yearPrefix)) eventMap.set(id, { name, date });
+    }
 
-  // swiper 슬라이드 형식 (현재/최근 대회, 주로 올해): selectItem에 없는 것만
-  const ids = [...new Set([...html.matchAll(usedataPattern)].map((m) => m[1]))];
-  for (const id of ids.filter((id) => id.startsWith(yearPrefix) && !eventMap.has(id))) {
-    const swiperIsPresent = new RegExp(`usedata=${id}'`).test(html);
-    if (swiperIsPresent) {
-      try {
-        await sleep(DELAY_MS);
-        const pageHtml = await fetch(
-          `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${id}`
-        ).then((r) => r.text());
-
-        const nameMatch = pageHtml.match(
-          /class="box white"[^>]*>\s*([^\n<]{2,60})\s*<\/div>/
-        );
-        const realName = nameMatch ? nameMatch[1].trim() : `SmartChip ${id}`;
-        eventMap.set(id, { name: realName, date: null });
-      } catch {
+    // 현재 대회 슬라이드 (swiper): onclick="location.href='Search_Ballyno.html?usedata=XXXXXXXXX'"
+    const swiperMatches = [...dongmaHtml.matchAll(/usedata=(\d+)['"`]/g)];
+    for (const m of swiperMatches) {
+      const id = m[1];
+      if (id.startsWith(yearPrefix) && !eventMap.has(id)) {
+        // 날짜는 드롭다운에 없으니 일단 name만 등록 (getSmartChipEventInfo에서 보완)
         eventMap.set(id, { name: `SmartChip ${id}`, date: null });
       }
     }
+  } catch (err) {
+    console.warn(`[discoverSmartChip] dongma.html fetch failed: ${err.message}`);
+  }
+
+  // 2) main.html — 일반 대회 (현재 리다이렉트 이슈 있어 실패해도 무시)
+  try {
+    const html = await fetch("https://www.smartchip.co.kr/main.html").then((r) => r.text());
+
+    // selectItem 형식 (PAST EVENTS 드롭다운): 날짜와 이름 모두 포함
+    const selectMatches = [...html.matchAll(/selectItem\s*\(\s*'([^']*)'\s*,\s*'(\d+)'/g)];
+    for (const m of selectMatches) {
+      const raw = m[1];
+      const id = m[2];
+      if (!id.startsWith(yearPrefix) || eventMap.has(id)) continue;
+      const dateMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
+      const name = raw.replace(/^\(\d{4}-\d{2}-\d{2}\)\s*/, "").trim();
+      eventMap.set(id, { name, date: dateMatch ? dateMatch[1] : "" });
+    }
+
+    // swiper 슬라이드 형식 (현재/최근 대회): selectItem에 없는 것만
+    const ids = [...new Set([...html.matchAll(usedataPattern)].map((m) => m[1]))];
+    for (const id of ids.filter((id) => id.startsWith(yearPrefix) && !eventMap.has(id))) {
+      const swiperIsPresent = new RegExp(`usedata=${id}'`).test(html);
+      if (swiperIsPresent) {
+        try {
+          await sleep(DELAY_MS);
+          const pageHtml = await fetch(
+            `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${id}`
+          ).then((r) => r.text());
+
+          const nameMatch = pageHtml.match(
+            /class="box white"[^>]*>\s*([^\n<]{2,60})\s*<\/div>/
+          );
+          const realName = nameMatch ? nameMatch[1].trim() : `SmartChip ${id}`;
+          eventMap.set(id, { name: realName, date: null });
+        } catch {
+          eventMap.set(id, { name: `SmartChip ${id}`, date: null });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[discoverSmartChip] main.html fetch failed: ${err.message}`);
   }
 
   return [...eventMap.entries()].map(([id, { name, date }]) => ({
