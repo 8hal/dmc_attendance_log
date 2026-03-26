@@ -741,92 +741,144 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     smartchipSession = await getSmartChipSession();
   }
 
+  let failCount = 0;
+  const FAIL_THRESHOLD = 0.2; // 실패율 20% 초과 시 partial_failure
+
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
 
     // 이미 캐시된 회원 건너뜀
     if (skipCached && cachedKeys.has(m.realName)) continue;
 
-    try {
-      await sleep(randomDelay(baseDelay));
-      let found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
+    // ② 재시도 포함 검색 (최대 2회: 최초 시도 + 1회 재시도)
+    let found = null;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (attempt > 0) {
+          // 재시도 전 약간 더 기다림
+          await sleep(randomDelay(baseDelay * 1.5));
+          console.warn(`[scrapeEvent] 재시도 ${attempt}회 (${m.realName})`);
+        } else {
+          await sleep(randomDelay(baseDelay));
+        }
 
-      // SmartChip 세션 만료 시 1회 재발급 후 재시도
-      if (found === null && source === "smartchip") {
-        console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName})`);
-        smartchipSession = await getSmartChipSession();
-        await sleep(randomDelay(baseDelay));
         found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
-        if (found === null) found = [];
-      }
 
-      // search_cache 동시 쓰기 (Dual-Write Rule)
+        // SmartChip 세션 만료 감지 → 재발급 후 즉시 재시도
+        if (found === null && source === "smartchip") {
+          console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName})`);
+          smartchipSession = await getSmartChipSession();
+          await sleep(randomDelay(baseDelay));
+          found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
+          if (found === null) found = [];
+        }
+
+        lastErr = null;
+        break; // 성공 시 재시도 루프 탈출
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+
+    // ③ 재시도 후에도 실패 시 failCount 누적
+    if (lastErr !== null) {
+      failCount++;
+      console.warn(`[scrapeEvent] 실패 (${m.realName}): ${lastErr.message}`);
+      if (onProgress && (i + 1) % 10 === 0) {
+        await onProgress({ searched: i + 1, total: members.length, found: results.length, failCount });
+      }
+      continue;
+    }
+
+    if (!found || found.length === 0) {
+      // search_cache에 결과 없음 기록
       if (db) {
         const cacheKey = `${source}_${sourceId}_${m.realName}`.substring(0, 1500);
-        const hasResults = found && found.length > 0;
         db.collection("search_cache").doc(cacheKey).set({
-          realName: m.realName,
-          source,
-          sourceId,
-          found: hasResults,
-          result: hasResults ? {
-            eventName: info.title,
-            eventDate: info.date,
-            source,
-            sourceId,
-            records: found.map((r) => ({
-              ...r,
-              memberRealName: m.realName,
-              memberNickname: m.nickname,
-              memberGender: m.gender || "",
-            })),
-          } : null,
+          realName: m.realName, source, sourceId,
+          found: false, result: null,
           cachedAt: serverTimestamp || new Date(),
         }).catch(() => {});
       }
-
-      if (!found || found.length === 0) continue;
-
-      const isAmbiguous = found.length > 1;
-
-      for (const r of found) {
-        const pb = pbMap ? isPB(pbMap, m.realName, r.distance, r.netTime) : false;
-        results.push({
-          name: r.name,
-          bib: r.bib,
-          distance: r.distance,
-          netTime: r.netTime,
-          gunTime: r.gunTime || "",
-          overallRank: r.overallRank || null,
-          genderRank: r.genderRank || null,
-          pace: r.pace || "",
-          memberRealName: m.realName,
-          memberNickname: m.nickname,
-          memberGender: m.gender || "",
-          status: isAmbiguous ? "ambiguous" : "auto",
-          candidateCount: found.length,
-          isPB: pb,
-        });
+      if (onProgress && (i + 1) % 10 === 0) {
+        await onProgress({ searched: i + 1, total: members.length, found: results.length, failCount });
       }
-    } catch (err) {
-      // silent per-member error
+      continue;
+    }
+
+    // search_cache 동시 쓰기 (Dual-Write Rule)
+    if (db) {
+      const cacheKey = `${source}_${sourceId}_${m.realName}`.substring(0, 1500);
+      db.collection("search_cache").doc(cacheKey).set({
+        realName: m.realName,
+        source,
+        sourceId,
+        found: true,
+        result: {
+          eventName: info.title,
+          eventDate: info.date,
+          source,
+          sourceId,
+          records: found.map((r) => ({
+            ...r,
+            memberRealName: m.realName,
+            memberNickname: m.nickname,
+            memberGender: m.gender || "",
+          })),
+        },
+        cachedAt: serverTimestamp || new Date(),
+      }).catch(() => {});
+    }
+
+    const isAmbiguous = found.length > 1;
+    for (const r of found) {
+      const pb = pbMap ? isPB(pbMap, m.realName, r.distance, r.netTime) : false;
+      results.push({
+        name: r.name,
+        bib: r.bib,
+        distance: r.distance,
+        netTime: r.netTime,
+        gunTime: r.gunTime || "",
+        overallRank: r.overallRank || null,
+        genderRank: r.genderRank || null,
+        pace: r.pace || "",
+        memberRealName: m.realName,
+        memberNickname: m.nickname,
+        memberGender: m.gender || "",
+        status: isAmbiguous ? "ambiguous" : "auto",
+        candidateCount: found.length,
+        isPB: pb,
+      });
     }
 
     if (onProgress && (i + 1) % 10 === 0) {
-      await onProgress({ searched: i + 1, total: members.length, found: results.length });
+      await onProgress({ searched: i + 1, total: members.length, found: results.length, failCount });
     }
+  }
+
+  // ③ 실패율 계산 → partial_failure 플래그
+  const searched = members.length - cachedKeys.size;
+  const failRate = searched > 0 ? failCount / searched : 0;
+  const hasPartialFailure = failRate > FAIL_THRESHOLD && failCount >= 5;
+  if (hasPartialFailure) {
+    console.warn(`[scrapeEvent] 실패율 ${Math.round(failRate * 100)}% (${failCount}/${searched}명) → partial_failure`);
   }
 
   // 정렬: 종목 순 (full → half → 10K → 5K) → 기록 빠른 순
   results.sort((a, b) => {
     const dOrder = { full: 0, half: 1, "10K": 2, "5K": 3 };
     const da = dOrder[a.distance] ?? 9;
-    const db = dOrder[b.distance] ?? 9;
-    if (da !== db) return da - db;
+    const db2 = dOrder[b.distance] ?? 9;
+    if (da !== db2) return da - db2;
     return timeToSeconds(a.netTime) - timeToSeconds(b.netTime);
   });
 
-  return { eventName: info.title, eventDate: info.date, source, sourceId, results };
+  return {
+    eventName: info.title, eventDate: info.date, source, sourceId, results,
+    failCount, failRate: Math.round(failRate * 100),
+    jobStatus: hasPartialFailure ? "partial_failure" : "complete",
+  };
 }
 
 module.exports = {

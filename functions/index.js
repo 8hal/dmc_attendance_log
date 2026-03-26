@@ -574,16 +574,36 @@ exports.weeklyDiscoverAndScrape = onSchedule(
           },
         });
 
+        const finalStatus = result.jobStatus || "complete";
         await jobRef.update({
-          status: "complete",
+          status: finalStatus,
           eventName: result.eventName || event.name,
           eventDate: result.eventDate || event.date,
           results: result.results,
-          progress: { searched: members.length, total: members.length, found: result.results.length },
+          progress: {
+            searched: members.length,
+            total: members.length,
+            found: result.results.length,
+            failCount: result.failCount || 0,
+            failRate: result.failRate || 0,
+          },
           completedAt: new Date().toISOString(),
         });
 
-        console.log(`[scrape] 완료: ${result.results.length}건 (${result.eventName})`);
+        if (finalStatus === "partial_failure") {
+          await db.collection("event_logs").add({
+            type: "scrape_alert",
+            severity: "warning",
+            code: "partial_failure",
+            message: `스크래핑 실패율 ${result.failRate}% (${result.failCount}명 오류): ${result.eventName || event.sourceId}`,
+            jobId: jobRef.id,
+            source: event.source,
+            sourceId: event.sourceId,
+            timestamp: FieldValue.serverTimestamp(),
+          });
+        }
+
+        console.log(`[scrape] ${finalStatus}: ${result.results.length}건 (${result.eventName}), 실패 ${result.failCount || 0}명`);
       } catch (err) {
         console.error(`[scrape] 오류: ${err.message}`);
         await jobRef.update({ status: "error", error: err.message });
@@ -1491,14 +1511,35 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         },
       });
 
+      const finalStatus = result.jobStatus || "complete";
       await jobRef.update({
-        status: "complete",
+        status: finalStatus,
         eventName: result.eventName || eventName || sourceId,
         eventDate: result.eventDate || eventDate || "",
         results: result.results,
-        progress: { searched: members.length, total: members.length, found: result.results.length },
+        progress: {
+          searched: members.length,
+          total: members.length,
+          found: result.results.length,
+          failCount: result.failCount || 0,
+          failRate: result.failRate || 0,
+        },
         completedAt: new Date().toISOString(),
       });
+
+      // partial_failure 시 event_logs에 경고 기록
+      if (finalStatus === "partial_failure") {
+        await db.collection("event_logs").add({
+          type: "scrape_alert",
+          severity: "warning",
+          code: "partial_failure",
+          message: `스크래핑 실패율 ${result.failRate}% (${result.failCount}명 오류): ${result.eventName || sourceId}`,
+          jobId,
+          source,
+          sourceId,
+          timestamp: FieldValue.serverTimestamp(),
+        });
+      }
 
       return res.json({
         ok: true,
@@ -1506,6 +1547,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         eventName: result.eventName,
         eventDate: result.eventDate,
         foundCount: result.results.length,
+        failCount: result.failCount || 0,
+        failRate: result.failRate || 0,
+        status: finalStatus,
       });
     }
 
