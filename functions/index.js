@@ -1383,6 +1383,36 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       });
     }
 
+    if (action === "ping-smartchip") {
+      const targets = [
+        { label: "dongma.html", url: "https://smartchip.co.kr/dongma.html" },
+        { label: "main.html", url: "https://www.smartchip.co.kr/main.html" },
+        { label: "api", url: "https://smartchip.co.kr/return_data_livephoto.asp?usedata=202550000191&name=테스트&gubun=1" },
+      ];
+      const results = await Promise.all(targets.map(async ({ label, url }) => {
+        const start = Date.now();
+        try {
+          const resp = await fetch(url, {
+            signal: AbortSignal.timeout(8000),
+            headers: {
+              "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+              "Accept": "text/html,application/xhtml+xml,*/*",
+            },
+          });
+          const headers = Object.fromEntries(resp.headers.entries());
+          const body = (await resp.text()).substring(0, 300);
+          return { label, url, status: resp.status, durationMs: Date.now() - start, headers, body };
+        } catch (e) {
+          return { label, url, error: e.message, durationMs: Date.now() - start };
+        }
+      }));
+      return res.json({
+        ok: true,
+        testedAt: new Date().toISOString(),
+        results,
+      });
+    }
+
     if (action === "verify-admin" && req.method === "POST") {
       const { pw } = req.body || {};
       const adminPw = process.env.DMC_ADMIN_PW || "dmc2008";
