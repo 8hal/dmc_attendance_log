@@ -1603,6 +1603,82 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, logs });
     }
 
+    if (action === "member-stats") {
+      const LAUNCH_DATE = "2026-03-23";
+
+      // 1. race_results: confirmed 기록 전수 분석
+      const rrSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
+      const postLaunchMembers = new Set();
+      const allConfirmedMembers = new Set();
+      const confirmSourceCount = { personal: 0, event: 0, suggestion: 0, other: 0 };
+
+      rrSnap.forEach((doc) => {
+        const d = doc.data();
+        const member = d.memberRealName || "";
+        const createTime = doc.createTime?.toDate?.()?.toISOString?.() || "";
+        const src = d.confirmSource || "other";
+
+        allConfirmedMembers.add(member);
+        if (createTime >= LAUNCH_DATE) postLaunchMembers.add(member);
+
+        if (src === "personal") confirmSourceCount.personal++;
+        else if (src === "event") confirmSourceCount.event++;
+        else if (src === "suggestion") confirmSourceCount.suggestion++;
+        else confirmSourceCount.other++;
+      });
+
+      // 2. event_logs: UA 기준 퍼널 분석 (최근 30일)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const logsSnap = await db.collection("event_logs")
+        .where("timestamp", ">=", thirtyDaysAgo)
+        .get();
+
+      const FUNNEL_STAGES = ["page_load", "select_member", "search_start", "search_complete", "search_save"];
+      const uaStages = {};
+      logsSnap.forEach((doc) => {
+        const d = doc.data();
+        const ua = d.ua || "";
+        const evt = d.event || d.type || "";
+        if (!ua || !FUNNEL_STAGES.includes(evt)) return;
+        if (!uaStages[ua]) uaStages[ua] = new Set();
+        uaStages[ua].add(evt);
+      });
+
+      const funnel = {};
+      FUNNEL_STAGES.forEach((stage) => {
+        funnel[stage] = Object.values(uaStages).filter((s) => s.has(stage)).length;
+      });
+
+      // 3. search_cache: 검색됐으나 결과 없는 회원 수
+      const cacheSnap = await db.collection("search_cache").get();
+      const cacheFound = new Set();
+      const cacheNotFound = new Set();
+      cacheSnap.forEach((doc) => {
+        const d = doc.data();
+        const member = d.realName || "";
+        if (!member) return;
+        if (d.found) cacheFound.add(member);
+        else cacheNotFound.add(member);
+      });
+      const searchedNoResult = [...cacheNotFound].filter((m) => !cacheFound.has(m));
+
+      return res.json({
+        ok: true,
+        totalMembers: 154,
+        confirmedMembers: allConfirmedMembers.size,
+        postLaunchMembers: postLaunchMembers.size,
+        postLaunchRate: Math.round(postLaunchMembers.size / 154 * 100),
+        totalConfirmedRecords: rrSnap.size,
+        confirmSource: confirmSourceCount,
+        funnel,
+        searchCoverage: {
+          searched: cacheFound.size + cacheNotFound.size,
+          foundResult: cacheFound.size,
+          noResult: searchedNoResult.length,
+        },
+      });
+    }
+
     if (action === "data-integrity") {
       const jobsSnap = await db.collection("scrape_jobs").get();
       const rrSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
