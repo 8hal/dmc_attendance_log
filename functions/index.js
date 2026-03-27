@@ -1722,6 +1722,39 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
 // ==================== Attendance ====================
 
+/**
+ * SmartChip 프록시 API (개발자 전용)
+ * 로컬 IP가 SmartChip에 차단된 경우 Cloud Functions IP로 우회
+ * GET /scrapeProxy?secret=XXX&source=smartchip&sourceId=202650000016&name=임기빈
+ */
+exports.scrapeProxy = onRequest(
+  { cors: false, timeoutSeconds: 60, memory: "256MiB", region: "asia-northeast3", invoker: "public" },
+  async (req, res) => {
+    const secret = process.env.SCRAPE_PROXY_SECRET || "dmc-proxy-2026";
+    if (req.query.secret !== secret) {
+      return res.status(403).json({ ok: false, error: "forbidden" });
+    }
+
+    const { source, sourceId, name } = req.query;
+    if (!source || !sourceId || !name) {
+      return res.status(400).json({ ok: false, error: "source, sourceId, name required" });
+    }
+
+    try {
+      const scraper = require("./lib/scraper");
+      let opts = {};
+      if (source === "smartchip") {
+        const session = await scraper.getSmartChipSession();
+        opts = { session };
+      }
+      const results = await scraper.searchMember(source, sourceId, name, opts);
+      return res.json({ ok: true, results: results || [] });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+);
+
 exports.attendance = onRequest({ cors: true }, async (req, res) => {
   // CORS 헤더 설정
   res.set("Access-Control-Allow-Origin", "*");

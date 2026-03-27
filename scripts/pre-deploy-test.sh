@@ -149,6 +149,26 @@ resp=$(curl -s "$API?action=data-integrity")
 ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
 assert "data-integrity: ok=true" "True" "$ok"
 
+# member-stats
+resp=$(curl -s "$API?action=member-stats")
+ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
+assert "member-stats: ok=true" "True" "$ok"
+has_fields=$(echo "$resp" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+required=['totalMembers','confirmedMembers','postLaunchMembers','confirmSource','funnel']
+print(all(k in d for k in required))
+" 2>/dev/null)
+assert "member-stats: 필수 필드 포함" "True" "$has_fields"
+
+# scrapeProxy — 인증/파라미터 검증만 (실제 SmartChip 호출 없음)
+PROXY="http://127.0.0.1:5001/dmc-attendance/asia-northeast3/scrapeProxy"
+status=$(curl -s -o /dev/null -w "%{http_code}" "$PROXY?source=smartchip&sourceId=123&name=test")
+assert "scrapeProxy: secret 없으면 403" "403" "$status"
+
+status=$(curl -s -o /dev/null -w "%{http_code}" "$PROXY?secret=dmc-proxy-2026&source=smartchip")
+assert "scrapeProxy: 파라미터 누락 → 400" "400" "$status"
+
 # ─── 3. 호스팅 테스트 ───
 echo -e "${YELLOW}[3/4] 호스팅 테스트...${NC}"
 
