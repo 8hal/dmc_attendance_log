@@ -1,0 +1,25 @@
+---
+description: 대화 시작 시 자동 실행 훅 — using-superpowers 스킬 읽기
+alwaysApply: true
+---
+
+# 대화 시작 훅
+
+**모든 대화의 첫 번째 행동:**
+
+1. `.cursor/skills/using-superpowers/SKILL.md` 를 Read 도구로 읽어라
+2. 그 내용을 따라 관련 스킬을 체크하고 필요한 스킬을 추가로 읽어라
+3. 스킬 경로 규칙: 이 프로젝트의 `.cursor/skills/` 또는 Cursor 전역 `~/.cursor/skills-cursor/`에서만 읽는다. `~/.cursor/skills/`(다른 프로젝트용)는 무시한다.
+4. 그 다음에 사용자 요청에 응답하라
+
+이것은 협상 불가능한 규칙이다. 어떤 이유로도 생략할 수 없다.
+
+---
+
+## 배포 요청 훅 (추가)
+
+사용자 메시지에 다음 키워드가 포함된 경우:
+`배포`, `deploy`, `firebase deploy`, `functions 배포`, `올려줘`, `반영해줘`
+
+→ **반드시** `.cursor/skills/firebase-deploy/SKILL.md` 를 먼저 읽고 절차를 따른다.
+→ AI는 절대 `firebase deploy` 명령어를 Shell 도구로 직접 실행하지 않는다.

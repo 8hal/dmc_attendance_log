@@ -68,11 +68,12 @@ async function updateMembers() {
     }
 
     if (DRY_RUN) {
-      console.log(`   [DRY] ${realName} → nickName: "${nickName}"`);
+      console.log(`   [DRY] ${realName} → nickName: "${nickName}", isActive: true`);
     } else {
       await db.collection("members").doc(docId).update({
         nickName,
         joinDate: joinDate || null,
+        isActive: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
@@ -108,7 +109,8 @@ async function importRecords() {
   let batchCount = 0;
 
   for (const rec of recordsData) {
-    const key = `${rec.memberRealName}|${rec.eventName}|${rec.distance}`;
+    const keyId = rec.memberRealName || `__nick__${rec.memberNickName}`;
+    const key = `${keyId}|${rec.eventName}|${rec.distance}`;
     if (existingKeys.has(key)) {
       skipped++;
       continue;
@@ -116,8 +118,9 @@ async function importRecords() {
 
     const docRef = db.collection("race_results").doc();
     const doc = {
-      memberRealName: rec.memberRealName,
+      memberRealName: rec.memberRealName || null,
       memberNickName: rec.memberNickName || "",
+      memberStatus: rec.memberStatus || "unknown",
       eventDate: rec.eventDate,
       eventName: rec.eventName,
       distance: rec.distance,
@@ -141,7 +144,7 @@ async function importRecords() {
       }
     }
     inserted++;
-    existingKeys.add(key); // 같은 배치 내 중복 방지
+    existingKeys.add(key);
   }
 
   if (!DRY_RUN && batchCount > 0) {
@@ -156,7 +159,9 @@ async function importRecords() {
 // ── 실행 ──────────────────────────────────────────────────
 (async () => {
   try {
-    if (!RECORDS_ONLY) await updateMembers();
+    // members 업데이트는 --members-only 명시 시에만 실행
+    // (Firestore 최신 닉네임을 엑셀 구버전으로 덮어쓸 위험이 있으므로)
+    if (MEMBERS_ONLY) await updateMembers();
     if (!MEMBERS_ONLY) await importRecords();
     console.log("\n🎉 완료");
     process.exit(0);
