@@ -242,6 +242,23 @@
     .suggest-btn-yes:hover { background: #047857; }
     .suggest-btn-no { background: #F1F5F9; color: var(--color-text-secondary); }
     .suggest-btn-no:hover { background: #E2E8F0; }
+    .suggest-multi { margin: 6px 0 10px; }
+    .suggest-multi-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fef3c7;
+      background: rgba(180, 83, 9, 0.35);
+      border: 1px solid rgba(251, 191, 36, 0.6);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+    .suggest-multi-text {
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.5;
+    }
     .suggest-dimmed-toggle { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; padding: 4px 0; margin-top: 4px; }
     .suggest-dimmed-toggle:hover { color: #fff; }
     .suggest-fallback { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 8px; }
@@ -326,6 +343,14 @@ function timeToSeconds(t) {
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   return Infinity;
 }
+/** 표시용 기록 시각. SSOT는 netTime; 과거 수동 임포트만 finishTime 단독인 문서는 레거시 */
+function recordTime(r) {
+  if (!r) return "";
+  const nt = r.netTime && String(r.netTime).trim();
+  const ft = r.finishTime && String(r.finishTime).trim();
+  const gt = r.gunTime && String(r.gunTime).trim();
+  return nt || ft || gt || "";
+}
 function calcPace(netTime, distance) {
   const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5, "3K": 3, "21K": 21.0975, "42K": 42.195, "30K": 30, "32K": 32, "100K": 100, "6.5K": 6.5 };
   const km = DIST_KM[distance];
@@ -362,7 +387,18 @@ function enrichResults() {
   for (const race of racesData) {
     for (const r of race.results) {
       const member = memberMap[r.realName];
-      all.push({ ...r, docId: r.docId || "", nickname: member?.nickname || r.nickname || r.realName, team: member?.team || "", isGuest: !member, raceName: race.name, raceDate: race.date, raceId: race.id, source: race.source, sourceId: race.sourceId });
+      all.push({
+        ...r,
+        docId: r.docId || "",
+        nickname: member?.nickname || r.nickname || r.realName,
+        team: member?.team || "",
+        isGuest: !member,
+        raceName: (r.eventName && String(r.eventName).trim()) || race.name,
+        raceDate: (r.eventDate && String(r.eventDate).trim()) || race.date,
+        raceId: race.id,
+        source: race.source,
+        sourceId: race.sourceId,
+      });
     }
   }
   return all;
@@ -372,8 +408,8 @@ function computePBs(results) {
   const pbs = {};
   for (const r of results) {
     const key = `${r.realName}||${r.distance}`;
-    const sec = timeToSeconds(r.netTime);
-    if (!pbs[key] || sec < timeToSeconds(pbs[key].netTime)) pbs[key] = { ...r };
+    const sec = timeToSeconds(recordTime(r));
+    if (!pbs[key] || sec < timeToSeconds(recordTime(pbs[key]))) pbs[key] = { ...r };
   }
   return Object.values(pbs);
 }
@@ -490,7 +526,7 @@ function clearSelection() {
 function computeAchievements(records) {
   const pbs = computePBs(records);
   const pbMap = {};
-  for (const p of pbs) pbMap[p.distance] = timeToSeconds(p.netTime);
+  for (const p of pbs) pbMap[p.distance] = timeToSeconds(recordTime(p));
   const badges = [];
   const fullSec = pbMap["full"];
   const halfSec = pbMap["half"];
@@ -540,7 +576,7 @@ function renderPBCards(records) {
     const raceName = hasRecord ? (pb.raceName || "").replace(/^\d{4}\s*/, "") : "";
     return `<div class="pb-cell pb-${dist}">
       <div class="pb-cell-dist">${esc(label)}</div>
-      <div class="pb-cell-time ${hasRecord ? "" : "empty"}">${hasRecord ? esc(pb.netTime) : "-"}</div>
+      <div class="pb-cell-time ${hasRecord ? "" : "empty"}">${hasRecord ? esc(recordTime(pb)) : "-"}</div>
       ${hasRecord ? `<div class="pb-cell-race">${esc(raceName)}</div><div class="pb-cell-meta">${formatDate(pb.raceDate)}</div>` : ""}
     </div>`;
   }).join("")}</div>`;
@@ -551,7 +587,7 @@ function renderPBCards(records) {
 function renderTimeline(records) {
   const el = document.getElementById("recordTimeline");
   const pbs = computePBs(records);
-  const pbSet = new Set(pbs.map(p => `${p.raceId}||${p.distance}||${p.netTime}`));
+  const pbSet = new Set(pbs.map(p => `${p.raceId}||${p.distance}||${recordTime(p)}`));
 
   const sorted = [...records].sort((a, b) => {
     const dc = (b.raceDate || "").localeCompare(a.raceDate || "");
@@ -578,7 +614,7 @@ function renderTimeline(records) {
   let html = '<div class="card"><div class="timeline">';
   for (let i = 0; i < sorted.length; i++) {
     const r = sorted[i];
-    const isPb = pbSet.has(`${r.raceId}||${r.distance}||${r.netTime}`);
+    const isPb = pbSet.has(`${r.raceId}||${r.distance}||${recordTime(r)}`);
     const detailId = `tl-detail-${i}`;
     const xBtn = r.docId && !isGuestMode
       ? `<button class="timeline-x" onclick="deleteRecord('${esc(r.docId)}', '${esc(r.raceName)}', event)" title="삭제">×</button>`
@@ -586,7 +622,7 @@ function renderTimeline(records) {
     const detailChips = [];
     if (r.bib) detailChips.push(`BIB ${esc(r.bib)}`);
     if (r.overallRank) detailChips.push(`종합 ${r.overallRank}위`);
-    if (r.gunTime && r.gunTime !== r.netTime) detailChips.push(`Gun ${esc(r.gunTime)}`);
+    if (r.gunTime && recordTime(r) && r.gunTime !== recordTime(r)) detailChips.push(`Gun ${esc(r.gunTime)}`);
     const detailParts = detailChips.join(" · ");
     html += `<div class="timeline-item ${isPb ? "is-pb" : ""}" onclick="toggleDetail('${detailId}')">
       <div class="timeline-dot"></div>
@@ -596,8 +632,8 @@ function renderTimeline(records) {
         <div class="timeline-race">${esc(r.raceName)}</div>
         <div class="timeline-result">
           ${distBadge(r.distance)}
-          <span class="timeline-time">${esc(r.netTime)}</span>
-          ${calcPace(r.netTime, r.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(r.netTime, r.distance)}/km</span>` : ""}
+          <span class="timeline-time">${esc(recordTime(r))}</span>
+          ${calcPace(recordTime(r), r.distance) ? `<span style="font-size:11px;color:var(--color-text-muted)">${calcPace(recordTime(r), r.distance)}/km</span>` : ""}
           ${isPb || r.isPB ? '<span class="pb-badge">PB</span>' : ""}
           ${r.note ? `<span class="pb-badge" style="background:#E0E7FF;color:#3730A3">${esc(r.note)}</span>` : ""}
           ${extLinkHtml(r.source, r.sourceId, r.realName)}
@@ -700,6 +736,8 @@ function renderSuggestions() {
   let hasDimmed = false;
 
   for (const ev of filtered) {
+    const isMulti = (ev.candidates || []).length > 1;
+    let multiRendered = false;
     for (let ci = 0; ci < ev.candidates.length; ci++) {
       const c = ev.candidates[ci];
       const isDimmed = c.dimout;
@@ -707,6 +745,13 @@ function renderSuggestions() {
       hasActive = true;
 
       const paceStr = c.pace ? ` · ${c.pace}/km` : "";
+      if (isMulti && !multiRendered) {
+        html += `<div class="suggest-multi">
+  <span class="suggest-multi-badge">⚠️ 동명이인 후보 있음 (${ev.candidates.length}명)</span>
+  <div class="suggest-multi-text">같은 이름의 다른 러너 기록이 함께 잡혀 있어요. 내 기록만 선택해 주세요.</div>
+</div>`;
+        multiRendered = true;
+      }
       html += `<div class="suggest-card${isDimmed ? " dimout" : ""}">
   <div class="suggest-card-info">
     <div class="suggest-card-event">${esc(ev.eventName)} · ${esc(ev.eventDate)}</div>
