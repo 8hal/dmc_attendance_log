@@ -81,6 +81,8 @@
     .dist-half { background: #EDE9FE; color: #5B21B6; }
     .dist-full { background: #FEE2E2; color: #991B1B; }
     .dist-ultra { background: #1F2937; color: #F9FAFB; }
+    .dist-3K { background: #E0F2FE; color: #0369A1; }
+    .dist-unknown { background: #F1F5F9; color: #475569; }
 
     /* Race cards */
     .race-card { margin-bottom: 10px; }
@@ -272,6 +274,7 @@
 
   <div class="toast" id="toast"></div>
 
+<script src="race-distance-client.js"></script>
 <script>
 const TEAM_COLORS = {
   "S팀":  { bg: "#ffe8d9", text: "#8a3d00", border: "#ffd0b3" },
@@ -282,9 +285,9 @@ const TEAM_COLORS = {
   "5팀": { bg: "#ffe7f1", text: "#8a2353", border: "#ffd0e2" }
 };
 const TEAM_LABELS = { S: "S팀", T1: "1팀", T2: "2팀", T3: "3팀", T4: "4팀", T5: "5팀" };
-const DIST_LABELS = { "5K": "5K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라" };
-const DIST_ORDER = ["full", "half", "10K", "5K", "ultra"];
-const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, ultra: -1 };
+const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
+const DIST_ORDER = ["full", "half", "10K", "5K", "3K", "ultra"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, "3K": 4, ultra: -1, unknown: 100 };
 
 function sortResults(a, b) {
   const distA = DIST_SORT_ORDER[a.distance] ?? 99;
@@ -375,7 +378,8 @@ function extLinkHtml(source, sourceId, realName) {
 
 function distBadge(dist) {
   const label = DIST_LABELS[dist] || dist;
-  const cls = `dist-${dist}`;
+  const safeCls = String(dist).replace(/[^a-zA-Z0-9_-]/g, "_") || "unknown";
+  const cls = `dist-${safeCls}`;
   return `<span class="dist-badge ${cls}">${esc(label)}</span>`;
 }
 
@@ -384,8 +388,11 @@ function enrichResults() {
   for (const race of racesData) {
     for (const r of race.results) {
       const member = memberMap[r.realName];
+      const distNorm =
+        typeof normalizeRaceDistance === "function" ? normalizeRaceDistance(r.distance) : r.distance;
       allResults.push({
         ...r,
+        distance: distNorm,
         gender: member?.gender || r.gender || "",
         nickname: member?.nickname || r.nickname || r.realName,
         team: member?.team || "",

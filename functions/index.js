@@ -18,6 +18,7 @@ const {
   allocateCanonicalEventId,
   normalizeEventDateForId,
 } = require("./lib/canonicalEventId");
+const { normalizeRaceDistance } = require("./lib/raceDistance");
 const { google } = require("googleapis");
 
 // 초기화
@@ -1162,11 +1163,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const pbMap = {};
       pbSnap.forEach((doc) => {
         const r = doc.data();
+        const distN = normalizeRaceDistance(r.distance);
         const secs = scraper.timeToSeconds(r.netTime);
-        const km = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 }[r.distance];
+        const km = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 }[distN];
         if (!secs || secs === Infinity || !km) return;
         const pace = secs / km;
-        if (!pbMap[r.distance] || pace < pbMap[r.distance]) pbMap[r.distance] = pace;
+        if (!pbMap[distN] || pace < pbMap[distN]) pbMap[distN] = pace;
       });
 
       const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 };
@@ -1202,20 +1204,21 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           // 성별 불일치는 완전 제외
           if (memberGender && r.gender && r.gender !== memberGender) continue;
 
+          const distN = normalizeRaceDistance(r.distance);
           const secs = scraper.timeToSeconds(r.netTime);
-          const km = DIST_KM[r.distance];
+          const km = DIST_KM[distN];
           const pace = (secs && secs !== Infinity && km) ? secs / km : null;
-          const predicted = predictedPaces[r.distance];
+          const predicted = predictedPaces[distN];
 
           let dimout = false;
           if (predicted && pace) {
             const delta = Math.abs(pace - predicted) / predicted;
-            const thresh = (r.distance === "5K") ? Infinity : (r.distance === "10K") ? 1.0 : 0.5;
+            const thresh = (distN === "5K") ? Infinity : (distN === "10K") ? 1.0 : 0.5;
             if (delta > thresh) dimout = true;
           }
 
           byEvent[eventKey].candidates.push({
-            distance: r.distance,
+            distance: distN,
             netTime: r.netTime,
             pace: pace ? `${Math.floor(pace / 60)}:${String(Math.round(pace % 60)).padStart(2, "0")}` : null,
             gender: r.gender || null,
@@ -1389,7 +1392,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const resolvedDate = eventDate || r.eventDate || "";
         const safeDate = resolvedDate.replace(/[^0-9\-]/g, "");
         const safeName = (r.memberRealName || "").replace(/[^a-zA-Z0-9가-힣]/g, "_");
-        const safeDist = (r.distance || "").replace(/[^a-zA-Z0-9]/g, "_");
+        const distNorm = normalizeRaceDistance(r.distance);
+        const safeDist = (distNorm || "").replace(/[^a-zA-Z0-9]/g, "_");
         const docId = `${safeName}_${safeDist}_${safeDate}`;
         const ref = db.collection("race_results").doc(docId);
         const row = {
@@ -1400,7 +1404,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           sourceId: sourceId || r.sourceId || "",
           memberRealName: r.memberRealName,
           memberNickname: r.memberNickname,
-          distance: r.distance,
+          distance: distNorm,
           netTime: r.netTime,
           gunTime: r.gunTime || "",
           bib: r.bib || "",

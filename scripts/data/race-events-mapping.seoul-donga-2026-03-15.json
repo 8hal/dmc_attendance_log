@@ -1,0 +1,16 @@
+{
+  "_comment": "동아 2026-03-15: smartchip + 엑셀 manual 한 건 합치기. 먼저 migrate-manual-empty-sourceid.js 로 manual 빈 sourceId 가 excel_150af88a990c 로 바뀐 뒤 실행. race-events-mapping.json 으로 복사해 쓰거나 --config 로 직접 지정. 커밋 OK(실키 아님).",
+  "events": [
+    {
+      "docId": "evt_2026-03-15_seoul_marathon_donga",
+      "primaryName": "2026 서울마라톤 (동아)",
+      "eventDate": "2026-03-15",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202650000006" },
+        { "source": "manual", "sourceId": "excel_150af88a990c" }
+      ]
+    }
+  ],
+  "updateResultsCanonicalId": true
+}

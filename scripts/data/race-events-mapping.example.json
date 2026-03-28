@@ -1,14 +1,14 @@
 {
-  "_comment": "복사 후 race-events-mapping.json 으로 저장하고 값만 수정. 실키는 커밋하지 말 것 (.gitignore).",
+  "_comment": "복사 후 race-events-mapping.json 으로 저장. 실키/프로덕션 전용 설정은 커밋 금지 (.gitignore). 엑셀 등으로 들어온 manual 행이 sourceId 가 비어 있으면 backfill 이 거부됨 → 먼저 scripts/migrate-manual-empty-sourceid.js (DRY-RUN 후 승인 시 --apply). 동아 2026-03-15 샘플은 race-events-mapping.seoul-donga-2026-03-15.json 참고.",
   "events": [
     {
       "docId": "evt_2026-03-15_seoul-donga",
-      "primaryName": "서울 동아마라톤",
+      "primaryName": "2026 서울마라톤 (동아)",
       "eventDate": "2026-03-15",
       "merge": true,
       "sourceMappings": [
         { "source": "smartchip", "sourceId": "202650000006" },
-        { "source": "manual", "sourceId": "manual_1730000000000" }
+        { "source": "manual", "sourceId": "excel_150af88a990c" }
       ]
     }
   ],

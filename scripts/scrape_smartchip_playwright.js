@@ -17,6 +17,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
+const { normalizeRaceDistance } = require("../functions/lib/raceDistance");
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const HEADLESS = !process.argv.includes("--headless=false");
@@ -32,21 +33,8 @@ if (!sourceId || names.length === 0) {
 initializeApp({ projectId: "dmc-attendance" });
 const db = getFirestore();
 
-// ── 파싱 유틸 (scraper.js에서 복사) ──────────────────────────────
-const DIST_ALIASES = {
-  "풀코스": "full", "풀": "full", "42.195km": "full", "42km": "full", "FULL": "full", "full": "full",
-  "하프": "half", "21km": "half", "21.0975km": "half", "HALF": "half", "half": "half",
-  "10KM": "10km", "10km": "10km", "10K": "10km",
-  "5KM": "5km", "5km": "5km",
-};
-
 function normDist(raw) {
-  const t = String(raw || "").trim();
-  if (DIST_ALIASES[t]) return DIST_ALIASES[t];
-  for (const [k, v] of Object.entries(DIST_ALIASES)) {
-    if (t.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return t || "unknown";
+  return normalizeRaceDistance(raw);
 }
 
 function normTime(raw) {

@@ -5,6 +5,7 @@
  */
 
 const { load: cheerioLoad } = require("cheerio");
+const { normalizeRaceDistance } = require("./raceDistance");
 
 const DELAY_MS = 200;
 // SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
@@ -54,25 +55,9 @@ function browserHeaders(source) {
 
 // ─── 거리/시간 유틸리티 ──────────────────────────────────────
 
-const DIST_ALIASES = {
-  "5km": "5K", "5k": "5K", "5K": "5K", "3km": "3K",
-  "10km": "10K", "10k": "10K", "10K": "10K",
-  half: "half", "하프": "half", Half: "half", HALF: "half",
-  "하프마라톤": "half", "21.0975km": "half", "21km": "half",
-  full: "full", "풀": "full", Full: "full", FULL: "full",
-  "풀코스": "full", "42.195km": "full", "42km": "full",
-  marathon: "full", Marathon: "full",
-  ultra: "ultra", "울트라": "ultra",
-  "50km": "ultra", "100km": "ultra",
-};
-
+/** @deprecated use normalizeRaceDistance from ./raceDistance */
 function normDist(raw) {
-  const t = String(raw || "").trim();
-  if (DIST_ALIASES[t]) return DIST_ALIASES[t];
-  for (const [k, v] of Object.entries(DIST_ALIASES)) {
-    if (t.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return t || "unknown";
+  return normalizeRaceDistance(raw);
 }
 
 function normTime(raw) {
@@ -882,7 +867,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
 }
 
 module.exports = {
-  normDist, normTime, timeToSeconds, inferGender,
+  normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
   searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,

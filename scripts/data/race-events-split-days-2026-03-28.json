@@ -1,0 +1,1487 @@
+{
+  "backupPath": "/Users/taylor/git/dmc_attendance_log/backup/2026-03-28/race_results.json",
+  "generatedAt": "2026-03-28T16:35:14.638Z",
+  "datesWithMultipleSourceKeys": 46,
+  "dates": [
+    {
+      "eventDate": "2025-04-06",
+      "distinctSourceKeys": 8,
+      "keys": [
+        {
+          "sourceKey": "myresult_103",
+          "rowCount": 5,
+          "eventNames": [
+            "2025 고양특례시 하프마라톤"
+          ],
+          "sampleJobId": "myresult_103"
+        },
+        {
+          "sourceKey": "smartchip_202550000018",
+          "rowCount": 4,
+          "eventNames": [
+            "제5회 장수트레일레이스"
+          ],
+          "sampleJobId": "smartchip_202550000018"
+        },
+        {
+          "sourceKey": "spct_20250406009",
+          "rowCount": 3,
+          "eventNames": [
+            "제26회 이천 도자기 마라톤대회"
+          ],
+          "sampleJobId": "spct_20250406009"
+        },
+        {
+          "sourceKey": "smartchip_202550000038",
+          "rowCount": 3,
+          "eventNames": [
+            "더 레이스 서울 21K"
+          ],
+          "sampleJobId": "smartchip_202550000038"
+        },
+        {
+          "sourceKey": "manual_excel_62e9975bf031",
+          "rowCount": 1,
+          "eventNames": [
+            "군산새만금"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "manual_excel_41b503076dc7",
+          "rowCount": 1,
+          "eventNames": [
+            "예산 윤봉길"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "smartchip_202550000037",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 서울봄꽃레이스"
+          ],
+          "sampleJobId": "smartchip_202550000037"
+        },
+        {
+          "sourceKey": "manual_excel_57f266f5dbfe",
+          "rowCount": 1,
+          "eventNames": [
+            "제주국제트레일러닝"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-02-22",
+      "distinctSourceKeys": 7,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202650000005",
+          "rowCount": 26,
+          "eventNames": [
+            "2026대구마라톤"
+          ],
+          "sampleJobId": "smartchip_202650000005"
+        },
+        {
+          "sourceKey": "marazone_2026 경기수원국제하프마라톤",
+          "rowCount": 6,
+          "eventNames": [
+            "2026 경기수원국제하프마라톤",
+            "수원"
+          ],
+          "sampleJobId": "marazone_2026 경기수원국제하프마라톤"
+        },
+        {
+          "sourceKey": "manual_excel_65abd96ddcb6",
+          "rowCount": 3,
+          "eventNames": [
+            "오사카마라톤"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "myresult_140",
+          "rowCount": 2,
+          "eventNames": [
+            "2026 고구려 마라톤"
+          ],
+          "sampleJobId": "myresult_140"
+        },
+        {
+          "sourceKey": "manual_manual_1774082453953_79eb",
+          "rowCount": 1,
+          "eventNames": [
+            "대구마라톤"
+          ],
+          "sampleJobId": "xi3kVeazSfx6tDQT8ELh"
+        },
+        {
+          "sourceKey": "manual_manual_1774082454405_qh2l",
+          "rowCount": 1,
+          "eventNames": [
+            "경기수원국제하프마라톤"
+          ],
+          "sampleJobId": "rn3CYn5RAnNvAd66FlNf"
+        },
+        {
+          "sourceKey": "manual_manual_1774082454612_ew0s",
+          "rowCount": 1,
+          "eventNames": [
+            "고구려마라톤"
+          ],
+          "sampleJobId": "WReDO1OwpGceKhhZ2Zku"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-28",
+      "distinctSourceKeys": 6,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000189",
+          "rowCount": 26,
+          "eventNames": [
+            "2025 공주백제마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000189"
+        },
+        {
+          "sourceKey": "spct_20250928010",
+          "rowCount": 8,
+          "eventNames": [
+            "제36회 경기도생활체육대축전"
+          ],
+          "sampleJobId": "spct_20250928010"
+        },
+        {
+          "sourceKey": "spct_20250928009",
+          "rowCount": 3,
+          "eventNames": [
+            "2025 서산 코스모스 황금들녘 마라톤대회"
+          ],
+          "sampleJobId": "spct_20250928009"
+        },
+        {
+          "sourceKey": "marazone_2025안동마라톤",
+          "rowCount": 1,
+          "eventNames": [
+            "2025안동마라톤"
+          ],
+          "sampleJobId": "marazone_2025안동마라톤"
+        },
+        {
+          "sourceKey": "marazone_2025 동대문마라톤",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 동대문마라톤"
+          ],
+          "sampleJobId": "marazone_2025 동대문마라톤"
+        },
+        {
+          "sourceKey": "manual_excel_ab0d346672f7",
+          "rowCount": 1,
+          "eventNames": [
+            "뉴발란스"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-10-12",
+      "distinctSourceKeys": 6,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000213",
+          "rowCount": 15,
+          "eventNames": [
+            "2025 SEOUL RACE"
+          ],
+          "sampleJobId": "smartchip_202550000213"
+        },
+        {
+          "sourceKey": "manual_excel_7429dff7de4b",
+          "rowCount": 4,
+          "eventNames": [
+            "시카고"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "smartchip_202550000211",
+          "rowCount": 2,
+          "eventNames": [
+            "제11회 시흥전국하프마라톤대회"
+          ],
+          "sampleJobId": "smartchip_202550000211"
+        },
+        {
+          "sourceKey": "smartchip_202550000207",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 MBN 전국나주마라톤대회"
+          ],
+          "sampleJobId": "smartchip_202550000207"
+        },
+        {
+          "sourceKey": "manual_seoulrace_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 SEOUL RACE"
+          ],
+          "sampleJobId": "manual_seoulrace_2025"
+        },
+        {
+          "sourceKey": "smartchip_202550000210",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 뉴런 한강마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000210"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-05-17",
+      "distinctSourceKeys": 6,
+      "keys": [
+        {
+          "sourceKey": "manual_excel_a5b5905cff33",
+          "rowCount": 6,
+          "eventNames": [
+            "서울한강울트라"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "spct_2025051701",
+          "rowCount": 5,
+          "eventNames": [
+            "2025 포레스트런"
+          ],
+          "sampleJobId": "spct_2025051701"
+        },
+        {
+          "sourceKey": "smartchip_202550000090",
+          "rowCount": 4,
+          "eventNames": [
+            "2025 서울신문 하프마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000090"
+        },
+        {
+          "sourceKey": "marazone_안산청년회의소회장배마라톤",
+          "rowCount": 1,
+          "eventNames": [
+            "안산청년회의소회장배마라톤"
+          ],
+          "sampleJobId": "marazone_안산청년회의소회장배마라톤"
+        },
+        {
+          "sourceKey": "spct_2025051702",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 자이언트 설악그란폰도"
+          ],
+          "sampleJobId": "spct_2025051702"
+        },
+        {
+          "sourceKey": "manual_excel_399a03a6f916",
+          "rowCount": 1,
+          "eventNames": [
+            "포레스트런"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-09",
+      "distinctSourceKeys": 5,
+      "keys": [
+        {
+          "sourceKey": "spct_20251109009",
+          "rowCount": 7,
+          "eventNames": [
+            "제14회 부여 굿뜨래 마라톤대회"
+          ],
+          "sampleJobId": "spct_20251109009"
+        },
+        {
+          "sourceKey": "marazone_제 16회 강남구청장배 육상대회",
+          "rowCount": 3,
+          "eventNames": [
+            "제 16회 강남구청장배 육상대회"
+          ],
+          "sampleJobId": "marazone_제 16회 강남구청장배 육상대회"
+        },
+        {
+          "sourceKey": "manual_gunpo_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "군포산악마라톤"
+          ],
+          "sampleJobId": "manual_gunpo_2025"
+        },
+        {
+          "sourceKey": "manual_buyeo_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "제14회 부여 굿뜨래 마라톤대회"
+          ],
+          "sampleJobId": "manual_buyeo_2025"
+        },
+        {
+          "sourceKey": "smartchip_202550000276",
+          "rowCount": 1,
+          "eventNames": [
+            "2025년 제25회 안성맞춤전국마라톤대회"
+          ],
+          "sampleJobId": "smartchip_202550000276"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-16",
+      "distinctSourceKeys": 5,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000283",
+          "rowCount": 19,
+          "eventNames": [
+            "2025 MBN 서울마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000283"
+        },
+        {
+          "sourceKey": "myresult_134",
+          "rowCount": 16,
+          "eventNames": [
+            "제27회 국제신문 부산마라톤"
+          ],
+          "sampleJobId": "myresult_134"
+        },
+        {
+          "sourceKey": "spct_2025111604",
+          "rowCount": 4,
+          "eventNames": [
+            "2025 손기정평화마라톤"
+          ],
+          "sampleJobId": "spct_2025111604"
+        },
+        {
+          "sourceKey": "smartchip_202550000291",
+          "rowCount": 2,
+          "eventNames": [
+            "2025 평화통일마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000291"
+        },
+        {
+          "sourceKey": "manual_hangang_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "한강의기적 마라톤"
+          ],
+          "sampleJobId": "manual_hangang_2025"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-04-27",
+      "distinctSourceKeys": 5,
+      "keys": [
+        {
+          "sourceKey": "myresult_110",
+          "rowCount": 4,
+          "eventNames": [
+            "2025 서울하프마라톤"
+          ],
+          "sampleJobId": "myresult_110"
+        },
+        {
+          "sourceKey": "marazone_제 7회 기장바다마라톤",
+          "rowCount": 1,
+          "eventNames": [
+            "제 7회 기장바다마라톤"
+          ],
+          "sampleJobId": "marazone_제 7회 기장바다마라톤"
+        },
+        {
+          "sourceKey": "smartchip_202550000062",
+          "rowCount": 1,
+          "eventNames": [
+            "제19회 반기문마라톤대회"
+          ],
+          "sampleJobId": "smartchip_202550000062"
+        },
+        {
+          "sourceKey": "manual_excel_b92c97e494f7",
+          "rowCount": 1,
+          "eventNames": [
+            "런던"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "manual_excel_16340977d66c",
+          "rowCount": 1,
+          "eventNames": [
+            "전국생활체전"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-05-10",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "spct_20250510001",
+          "rowCount": 12,
+          "eventNames": [
+            "화성효마라톤"
+          ],
+          "sampleJobId": "spct_20250510001"
+        },
+        {
+          "sourceKey": "spct_2025051002",
+          "rowCount": 6,
+          "eventNames": [
+            "제71회경기도체육대회(마라톤)"
+          ],
+          "sampleJobId": "spct_2025051002"
+        },
+        {
+          "sourceKey": "smartchip_202550000073",
+          "rowCount": 2,
+          "eventNames": [
+            "BUSAN 50K"
+          ],
+          "sampleJobId": "smartchip_202550000073"
+        },
+        {
+          "sourceKey": "manual_hwasong_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "화성효마라톤"
+          ],
+          "sampleJobId": "manual_hwasong_2025"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-21",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "spct_2025092102",
+          "rowCount": 38,
+          "eventNames": [
+            "2025철원DMZ국제평화마라톤"
+          ],
+          "sampleJobId": "spct_2025092102"
+        },
+        {
+          "sourceKey": "manual_excel_07cb0c31982a",
+          "rowCount": 1,
+          "eventNames": [
+            "어스마라톤"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "ohmyrace_89",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 서울 어스마라톤"
+          ],
+          "sampleJobId": "ohmyrace_89"
+        },
+        {
+          "sourceKey": "smartchip_202550000181",
+          "rowCount": 1,
+          "eventNames": [
+            "제25회 강화해변마라톤대회"
+          ],
+          "sampleJobId": "smartchip_202550000181"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-10-18",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000218",
+          "rowCount": 26,
+          "eventNames": [
+            "2025 경주국제마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000218"
+        },
+        {
+          "sourceKey": "marazone_2025 경포마라톤",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 경포마라톤"
+          ],
+          "sampleJobId": "marazone_2025 경포마라톤"
+        },
+        {
+          "sourceKey": "manual_gyeongju_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 경주국제마라톤"
+          ],
+          "sampleJobId": "manual_gyeongju_2025"
+        },
+        {
+          "sourceKey": "smartchip_202550000233",
+          "rowCount": 1,
+          "eventNames": [
+            "2025년 렛츠런파크 서울 경주로마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000233"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-10-19",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000227",
+          "rowCount": 17,
+          "eventNames": [
+            "제22회 오산독산성 전국 하프마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000227"
+        },
+        {
+          "sourceKey": "spct_20251019009",
+          "rowCount": 1,
+          "eventNames": [
+            "제22회 여주 세종대왕 마라톤대회"
+          ],
+          "sampleJobId": "spct_20251019009"
+        },
+        {
+          "sourceKey": "manual_pyeongtaek_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 평택항 마라톤"
+          ],
+          "sampleJobId": "manual_pyeongtaek_2025"
+        },
+        {
+          "sourceKey": "manual_osan_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 오산 독산성 마라톤"
+          ],
+          "sampleJobId": "manual_osan_2025"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-10-26",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "myresult_132",
+          "rowCount": 33,
+          "eventNames": [
+            "2025 춘천마라톤"
+          ],
+          "sampleJobId": "myresult_132"
+        },
+        {
+          "sourceKey": "smartchip_202550000251",
+          "rowCount": 2,
+          "eventNames": [
+            "2025 아시아오픈마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000251"
+        },
+        {
+          "sourceKey": "smartchip_202550000246",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 감성런"
+          ],
+          "sampleJobId": "smartchip_202550000246"
+        },
+        {
+          "sourceKey": "manual_chuncheon_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 춘천 마라톤"
+          ],
+          "sampleJobId": "manual_chuncheon_2025"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-03-01",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "spct_20260301008",
+          "rowCount": 3,
+          "eventNames": [
+            "2026 머니투데이방송 3.1절 마라톤대회(풀하프)"
+          ],
+          "sampleJobId": "spct_20260301008"
+        },
+        {
+          "sourceKey": "manual_manual_1774082455008_3cpg",
+          "rowCount": 3,
+          "eventNames": [
+            "머니투데이방송마라톤"
+          ],
+          "sampleJobId": "FIVq9mP2DhP9uaogLI9t"
+        },
+        {
+          "sourceKey": "spct_20260301009",
+          "rowCount": 3,
+          "eventNames": [
+            "2026 머니투데이방송 3.1절 마라톤대회(10km)"
+          ],
+          "sampleJobId": "spct_20260301009"
+        },
+        {
+          "sourceKey": "manual_manual_1774082454817_lset",
+          "rowCount": 2,
+          "eventNames": [
+            "도쿄마라톤"
+          ],
+          "sampleJobId": "5dd5nTMuNdCABbAjHMC2"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-03-07",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "manual_manual_1774082455422_ql56",
+          "rowCount": 1,
+          "eventNames": [
+            "대전트레일"
+          ],
+          "sampleJobId": "GXKYEu9IE8iU6KuRzZ8x"
+        },
+        {
+          "sourceKey": "manual_excel_895368157014",
+          "rowCount": 1,
+          "eventNames": [
+            "대전 트레일"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "manual_manual_1774082455633_79m2",
+          "rowCount": 1,
+          "eventNames": [
+            "부산비치울트라"
+          ],
+          "sampleJobId": "QXrRSojIdwcwi7w54CAL"
+        },
+        {
+          "sourceKey": "manual_excel_381476440709",
+          "rowCount": 1,
+          "eventNames": [
+            "부산비치울트라"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-06-22",
+      "distinctSourceKeys": 4,
+      "keys": [
+        {
+          "sourceKey": "spct_2025062201",
+          "rowCount": 1,
+          "eventNames": [
+            "2025블루베리마라톤축제"
+          ],
+          "sampleJobId": "spct_2025062201"
+        },
+        {
+          "sourceKey": "manual_excel_655c50b88020",
+          "rowCount": 1,
+          "eventNames": [
+            "대마도"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "manual_excel_caeb3be76bf9",
+          "rowCount": 1,
+          "eventNames": [
+            "용인마라톤"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "smartchip_202550000106",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 동해 스카이레이스"
+          ],
+          "sampleJobId": "smartchip_202550000106"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-04-20",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000051",
+          "rowCount": 51,
+          "eventNames": [
+            "제23회 경기마라톤대회"
+          ],
+          "sampleJobId": "smartchip_202550000051"
+        },
+        {
+          "sourceKey": "manual_excel_edef4ce3d0ef",
+          "rowCount": 3,
+          "eventNames": [
+            "경기마라톤"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "spct_2025042001",
+          "rowCount": 2,
+          "eventNames": [
+            "2025 부안해변마라톤"
+          ],
+          "sampleJobId": "spct_2025042001"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-20",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "manual_excel_540889505f9d",
+          "rowCount": 3,
+          "eventNames": [
+            "서울100k"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "spct_2025092001",
+          "rowCount": 2,
+          "eventNames": [
+            "제25회 홍성마라톤대회"
+          ],
+          "sampleJobId": "spct_2025092001"
+        },
+        {
+          "sourceKey": "marazone_충주그란폰도",
+          "rowCount": 1,
+          "eventNames": [
+            "충주그란폰도"
+          ],
+          "sampleJobId": "marazone_충주그란폰도"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-14",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000170",
+          "rowCount": 3,
+          "eventNames": [
+            "2025마블런"
+          ],
+          "sampleJobId": "smartchip_202550000170"
+        },
+        {
+          "sourceKey": "spct_20250914001",
+          "rowCount": 1,
+          "eventNames": [
+            "KTX광명역평화마라톤"
+          ],
+          "sampleJobId": "spct_20250914001"
+        },
+        {
+          "sourceKey": "smartchip_202550000168",
+          "rowCount": 1,
+          "eventNames": [
+            "제15회 스마일런 페스티벌"
+          ],
+          "sampleJobId": "smartchip_202550000168"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-04-13",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "ohmyrace_62",
+          "rowCount": 16,
+          "eventNames": [
+            "2025 서울 YMCA 마라톤"
+          ],
+          "sampleJobId": "ohmyrace_62"
+        },
+        {
+          "sourceKey": "myresult_106",
+          "rowCount": 3,
+          "eventNames": [
+            "2025 Run your way HALF RACE INCHEON",
+            "2025 뉴발란스 Run Your Way 하프"
+          ],
+          "sampleJobId": "myresult_106"
+        },
+        {
+          "sourceKey": "spct_20250413001",
+          "rowCount": 3,
+          "eventNames": [
+            "김포한강마라톤"
+          ],
+          "sampleJobId": "spct_20250413001"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-03-21",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "spct_2026032101",
+          "rowCount": 3,
+          "eventNames": [
+            "2026 BULLS RACE"
+          ],
+          "sampleJobId": "spct_2026032101"
+        },
+        {
+          "sourceKey": "spct_2026032102",
+          "rowCount": 3,
+          "eventNames": [
+            "2026 내포마라톤"
+          ],
+          "sampleJobId": "vAiJU79ga2ogSC7uMDcJ"
+        },
+        {
+          "sourceKey": "smartchip_202650000017",
+          "rowCount": 1,
+          "eventNames": [
+            "2026 저스트 RUN10 청주"
+          ],
+          "sampleJobId": "OODEdvALXsoaaPY8UqW9"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-08",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "manual_relay_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "구간마라톤 (3구간)"
+          ],
+          "sampleJobId": "manual_relay_2025"
+        },
+        {
+          "sourceKey": "smartchip_202550000269",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 슈퍼블루마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000269"
+        },
+        {
+          "sourceKey": "spct_2025110802",
+          "rowCount": 1,
+          "eventNames": [
+            "제25회 순천남승룡마라톤"
+          ],
+          "sampleJobId": "spct_2025110802"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-06",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000143",
+          "rowCount": 4,
+          "eventNames": [
+            "2025 다이나핏 태백 트레일"
+          ],
+          "sampleJobId": "smartchip_202550000143"
+        },
+        {
+          "sourceKey": "manual_excel_a002b09252fd",
+          "rowCount": 1,
+          "eventNames": [
+            "태백 다이나핏"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "spct_20250906009",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 초록우산 나눔 마라톤"
+          ],
+          "sampleJobId": "spct_20250906009"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-05-18",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "marazone_2025 무의도구석구석 국제트레일런 대회",
+          "rowCount": 2,
+          "eventNames": [
+            "2025 무의도구석구석 국제트레일런 대회"
+          ],
+          "sampleJobId": "marazone_2025 무의도구석구석 국제트레일런 대회"
+        },
+        {
+          "sourceKey": "spct_2025051801",
+          "rowCount": 1,
+          "eventNames": [
+            "제3회 여의도밤섬마라톤"
+          ],
+          "sampleJobId": "spct_2025051801"
+        },
+        {
+          "sourceKey": "spct_20250518009",
+          "rowCount": 1,
+          "eventNames": [
+            "제15회 대전 서구청장배 마라톤대회"
+          ],
+          "sampleJobId": "spct_20250518009"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-03-08",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202650000016",
+          "rowCount": 3,
+          "eventNames": [
+            "2026 부천국제10km로드레이스"
+          ],
+          "sampleJobId": "smartchip_202650000016"
+        },
+        {
+          "sourceKey": "myresult_142",
+          "rowCount": 3,
+          "eventNames": [
+            "2026 고양특례시 하프마라톤"
+          ],
+          "sampleJobId": "myresult_142"
+        },
+        {
+          "sourceKey": "spct_2026030801",
+          "rowCount": 1,
+          "eventNames": [
+            "제16회 여의도벚꽃마라톤"
+          ],
+          "sampleJobId": "spct_2026030801"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-02-21",
+      "distinctSourceKeys": 3,
+      "keys": [
+        {
+          "sourceKey": "manual_manual_1774082453716_5y2e",
+          "rowCount": 1,
+          "eventNames": [
+            "동계국제마라톤"
+          ],
+          "sampleJobId": "bu1TCdkpq2e2JCeGJSfd"
+        },
+        {
+          "sourceKey": "manual_winter_2026",
+          "rowCount": 1,
+          "eventNames": [
+            "동계국제마라톤 (32km)"
+          ],
+          "sampleJobId": "manual_winter_2026"
+        },
+        {
+          "sourceKey": "spct_2026022101",
+          "rowCount": 1,
+          "eventNames": [
+            "제23회 희망드림동계국제마라톤"
+          ],
+          "sampleJobId": "spct_2026022101"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-01-31",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "myresult_138",
+          "rowCount": 11,
+          "eventNames": [
+            "2026 인사이더런 W"
+          ],
+          "sampleJobId": "myresult_138"
+        },
+        {
+          "sourceKey": "spct_20260131001",
+          "rowCount": 2,
+          "eventNames": [
+            "화성궁평항마라톤"
+          ],
+          "sampleJobId": "kCeLXrMyNxtk9ziPSJ1h"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-23",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000298",
+          "rowCount": 39,
+          "eventNames": [
+            "2025 인천마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000298"
+        },
+        {
+          "sourceKey": "smartchip_202550000296",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 YTN 서울투어 마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000296"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-01-11",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "marazone_제20회 여수해양마라톤",
+          "rowCount": 29,
+          "eventNames": [
+            "제20회 여수해양마라톤"
+          ],
+          "sampleJobId": "marazone_제20회 여수해양마라톤"
+        },
+        {
+          "sourceKey": "manual_manual_1774082451862_tnfc",
+          "rowCount": 1,
+          "eventNames": [
+            "여수해양마라톤"
+          ],
+          "sampleJobId": "43OPsAYrW6wsIf4QQ9Pc"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-03-15",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202650000006",
+          "rowCount": 74,
+          "eventNames": [
+            "2026 서울마라톤 (동아)",
+            "2026서울마라톤"
+          ],
+          "sampleJobId": "smartchip_202650000006"
+        },
+        {
+          "sourceKey": "manual_excel_150af88a990c",
+          "rowCount": 1,
+          "eventNames": [
+            "동아 마라톤"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-10-03",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000203",
+          "rowCount": 11,
+          "eventNames": [
+            "제22회 강남국제평화마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000203"
+        },
+        {
+          "sourceKey": "spct_2025100301",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 춘천연합마라톤"
+          ],
+          "sampleJobId": "spct_2025100301"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-06-15",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000114",
+          "rowCount": 3,
+          "eventNames": [
+            "2025 수원트레일레이스"
+          ],
+          "sampleJobId": "smartchip_202550000114"
+        },
+        {
+          "sourceKey": "smartchip_202550000120",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 빵트레일런"
+          ],
+          "sampleJobId": "smartchip_202550000120"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-13",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000145",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 WCTR"
+          ],
+          "sampleJobId": "smartchip_202550000145"
+        },
+        {
+          "sourceKey": "spct_2025091301",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 양양강변전국마라톤"
+          ],
+          "sampleJobId": "spct_2025091301"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-15",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "marazone_2025 안산 마스터즈 최강전",
+          "rowCount": 5,
+          "eventNames": [
+            "2025 안산 마스터즈 최강전"
+          ],
+          "sampleJobId": "marazone_2025 안산 마스터즈 최강전"
+        },
+        {
+          "sourceKey": "marazone_2025 대구그란페스타",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 대구그란페스타"
+          ],
+          "sampleJobId": "marazone_2025 대구그란페스타"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-02",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "myresult_133",
+          "rowCount": 30,
+          "eventNames": [
+            "2025 JTBC 서울마라톤"
+          ],
+          "sampleJobId": "myresult_133"
+        },
+        {
+          "sourceKey": "manual_excel_7869e29aa606",
+          "rowCount": 1,
+          "eventNames": [
+            "뉴욕 마라톤"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-08-30",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000146",
+          "rowCount": 2,
+          "eventNames": [
+            "무한도전 Run with 쿠팡플레이 in 부산"
+          ],
+          "sampleJobId": "smartchip_202550000146"
+        },
+        {
+          "sourceKey": "spct_2025083001",
+          "rowCount": 1,
+          "eventNames": [
+            "제4회 선샤인 런"
+          ],
+          "sampleJobId": "spct_2025083001"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-10-09",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000206",
+          "rowCount": 3,
+          "eventNames": [
+            "2025 수원교구 생명사랑 마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000206"
+        },
+        {
+          "sourceKey": "smartchip_202550000201",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 한글런"
+          ],
+          "sampleJobId": "smartchip_202550000201"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-02-16",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "manual_winter_2025",
+          "rowCount": 1,
+          "eventNames": [
+            "동계국제마라톤"
+          ],
+          "sampleJobId": "manual_winter_2025"
+        },
+        {
+          "sourceKey": "spct_20250216009",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 전마협 청주 무심천 투데이 마라톤(일)_10km"
+          ],
+          "sampleJobId": "spct_20250216009"
+        }
+      ]
+    },
+    {
+      "eventDate": "2026-03-02",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "myresult_141",
+          "rowCount": 10,
+          "eventNames": [
+            "2026 Run Your Way Half Race Seoul",
+            "뉴발런스"
+          ],
+          "sampleJobId": "myresult_141"
+        },
+        {
+          "sourceKey": "manual_manual_1774082455214_pwf3",
+          "rowCount": 1,
+          "eventNames": [
+            "뉴발런스하프레이스"
+          ],
+          "sampleJobId": "KhzLmBeAn7j4wRtlnMfn"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-22",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "manual_excel_415e089248f6",
+          "rowCount": 2,
+          "eventNames": [
+            "봉담알프스"
+          ],
+          "sampleJobId": "manual"
+        },
+        {
+          "sourceKey": "myresult_136",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 에버랜드 10K 서킷런"
+          ],
+          "sampleJobId": "myresult_136"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-09-27",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000187",
+          "rowCount": 4,
+          "eventNames": [
+            "제6회 장수트레일레이스 with 노스페이스"
+          ],
+          "sampleJobId": "smartchip_202550000187"
+        },
+        {
+          "sourceKey": "spct_20250927001",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 ROK Army 트레일러닝"
+          ],
+          "sampleJobId": "spct_20250927001"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-05-11",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "spct_20250511009",
+          "rowCount": 4,
+          "eventNames": [
+            "2025 전마협 창단 24주년 기념 금산 무료 초청 마라톤"
+          ],
+          "sampleJobId": "spct_20250511009"
+        },
+        {
+          "sourceKey": "manual_excel_022a6f18e5e3",
+          "rowCount": 1,
+          "eventNames": [
+            "운탄고도"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-11-30",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "smartchip_202550000303",
+          "rowCount": 3,
+          "eventNames": [
+            "2025 스포츠서울 하프 마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000303"
+        },
+        {
+          "sourceKey": "spct_2025113001",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 안양천단풍길마라톤"
+          ],
+          "sampleJobId": "spct_2025113001"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-05-03",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "spct_20250503009",
+          "rowCount": 2,
+          "eventNames": [
+            "제20회 보성 녹차 마라톤대회"
+          ],
+          "sampleJobId": "spct_20250503009"
+        },
+        {
+          "sourceKey": "spct_2025050301",
+          "rowCount": 1,
+          "eventNames": [
+            "2025 제25회 여성마라톤대회"
+          ],
+          "sampleJobId": "spct_2025050301"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-06-14",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "spct_2025061401",
+          "rowCount": 1,
+          "eventNames": [
+            "제15회 국민행복마라톤"
+          ],
+          "sampleJobId": "spct_2025061401"
+        },
+        {
+          "sourceKey": "manual_excel_8ce2edc70f98",
+          "rowCount": 1,
+          "eventNames": [
+            "빛고을울트라"
+          ],
+          "sampleJobId": "manual"
+        }
+      ]
+    },
+    {
+      "eventDate": "2025-05-24",
+      "distinctSourceKeys": 2,
+      "keys": [
+        {
+          "sourceKey": "myresult_115",
+          "rowCount": 3,
+          "eventNames": [
+            "2025 제22회 보령머드임해마라톤"
+          ],
+          "sampleJobId": "myresult_115"
+        },
+        {
+          "sourceKey": "smartchip_202550000098",
+          "rowCount": 1,
+          "eventNames": [
+            "제30회 바다의 날 마라톤"
+          ],
+          "sampleJobId": "smartchip_202550000098"
+        }
+      ]
+    }
+  ]
+}

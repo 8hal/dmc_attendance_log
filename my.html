@@ -82,6 +82,8 @@
     .dist-half { background: #EDE9FE; color: #5B21B6; }
     .dist-full { background: #FEE2E2; color: #991B1B; }
     .dist-ultra { background: #1F2937; color: #F9FAFB; }
+    .dist-3K { background: #E0F2FE; color: #0369A1; }
+    .dist-unknown { background: #F1F5F9; color: #475569; }
 
     /* PB badge */
     .pb-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #FEF3C7; color: #92400E; }
@@ -306,6 +308,7 @@
 
   <div class="toast" id="toast"></div>
 
+<script src="race-distance-client.js"></script>
 <script>
 const RACE_API = location.hostname === "localhost"
   ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
@@ -318,9 +321,9 @@ function logEvent(event, data = {}) {
   }).catch(() => {});
 }
 
-const DIST_LABELS = { "5K": "5K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라" };
-const DIST_ORDER = ["full", "half", "10K", "5K"];
-const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, ultra: -1 };
+const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
+const DIST_ORDER = ["full", "half", "10K", "5K", "3K"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, "3K": 4, ultra: -1, unknown: 100 };
 const MONTH_LABELS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 const MAX_MONTH_SELECT = 5;
 
@@ -363,7 +366,11 @@ function calcPace(netTime, distance) {
   return `${paceMin}'${String(paceSec).padStart(2, "0")}"`;
 }
 function formatDate(d) { if (!d) return ""; const [y, m, day] = d.split("-"); return `${y}.${m}.${day}`; }
-function distBadge(dist) { const label = DIST_LABELS[dist] || dist; return `<span class="dist-badge dist-${dist}">${esc(label)}</span>`; }
+function distBadge(dist) {
+  const label = DIST_LABELS[dist] || dist;
+  const safeCls = String(dist).replace(/[^a-zA-Z0-9_-]/g, "_") || "unknown";
+  return `<span class="dist-badge dist-${safeCls}">${esc(label)}</span>`;
+}
 
 function buildTimingSiteUrl(source, sourceId, realName) {
   if (!source || !sourceId || source === "manual") return null;
@@ -387,8 +394,11 @@ function enrichResults() {
   for (const race of racesData) {
     for (const r of race.results) {
       const member = memberMap[r.realName];
+      const distNorm =
+        typeof normalizeRaceDistance === "function" ? normalizeRaceDistance(r.distance) : r.distance;
       all.push({
         ...r,
+        distance: distNorm,
         docId: r.docId || "",
         nickname: member?.nickname || r.nickname || r.realName,
         team: member?.team || "",

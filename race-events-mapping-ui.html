@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>race_events 매핑 (로컬)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: #f1f5f9; color: #0f172a; max-width: 1100px; margin-inline: auto; }
+    h1 { font-size: 1.1rem; margin: 0 0 8px; }
+    p.hint { font-size: 13px; color: #64748b; margin: 0 0 16px; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+    input[type="file"] { font-size: 13px; }
+    button { padding: 8px 14px; border-radius: 8px; border: none; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; }
+    button.secondary { background: #e2e8f0; color: #334155; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .date-block { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+    .date-block h2 { font-size: 14px; margin: 0 0 10px; color: #0f172a; }
+    .key-line { font-size: 12px; padding: 8px 10px; margin: 6px 0; background: #f8fafc; border-radius: 8px; display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+    .key-line label { cursor: pointer; display: flex; gap: 8px; align-items: flex-start; flex: 1; min-width: 200px; }
+    .key-meta { color: #64748b; font-size: 11px; }
+    .warn { background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+    textarea { width: 100%; min-height: 180px; font-family: ui-monospace, monospace; font-size: 12px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 8px; }
+    .panel { background: #fff; border-radius: 12px; padding: 14px; margin-top: 16px; border: 1px solid #e2e8f0; }
+    .panel h3 { margin: 0 0 10px; font-size: 14px; }
+    input.txt { padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; width: 100%; max-width: 420px; }
+  </style>
+</head>
+<body>
+  <h1>race_events 백필 매핑 (로컬)</h1>
+  <p class="hint">
+    <code>node scripts/analyze-race-results-split-days.js backup/…/race_results.json --json-out scripts/data/race-events-split-days.json</code> 로 만든 JSON을 선택하세요.
+    체크한 소스 키들을 한 대회로 묶어 아래에 추가한 뒤 JSON을 복사해 <code>race-events-mapping.json</code> 등으로 저장합니다.
+  </p>
+
+  <div class="row">
+    <input type="file" id="file" accept=".json,application/json" />
+    <button type="button" class="secondary" id="clearBtn">초기화</button>
+  </div>
+  <div id="dates"></div>
+
+  <div class="panel">
+    <h3>새 매핑 한 건 추가</h3>
+    <p class="hint" style="margin-bottom:8px">위에서 같은 날짜 블록 안에서 묶을 항목만 체크한 뒤 버튼을 누르세요.</p>
+    <div class="row">
+      <input class="txt" id="primaryName" placeholder="대표 이름 (primaryName)" />
+    </div>
+    <div class="row">
+      <input class="txt" id="docId" placeholder="docId (비우면 evt_날짜_슬러그 자동)" />
+    </div>
+    <div class="row">
+      <button type="button" id="addBtn">선택 항목을 매핑에 추가</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>누적 매핑 JSON</h3>
+    <div class="row">
+      <label><input type="checkbox" id="updCanon" /> updateResultsCanonicalId: true</label>
+      <button type="button" id="copyBtn">클립보드 복사</button>
+      <button type="button" class="secondary" id="rmLastBtn">마지막 이벤트 제거</button>
+    </div>
+    <textarea id="out" readonly></textarea>
+  </div>
+
+  <script>
+    /** sourceKey → source, sourceId (첫 번째 _ 기준) */
+    function parseKey(sk) {
+      const i = sk.indexOf("_");
+      if (i < 0) return { source: sk, sourceId: "" };
+      return { source: sk.slice(0, i), sourceId: sk.slice(i + 1) };
+    }
+
+    function slugify(name) {
+      let s = String(name || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+      s = s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").replace(/_+/g, "_");
+      return s.slice(0, 48) || "event";
+    }
+
+    let report = null;
+    /** @type {{ docId: string, primaryName: string, eventDate: string, merge: boolean, sourceMappings: {source:string,sourceId:string}[] }[]} */
+    let events = [];
+
+    const $dates = document.getElementById("dates");
+    const $out = document.getElementById("out");
+    const $file = document.getElementById("file");
+    const $primaryName = document.getElementById("primaryName");
+    const $docId = document.getElementById("docId");
+    const $updCanon = document.getElementById("updCanon");
+
+    function renderOut() {
+      const obj = {
+        events,
+        updateResultsCanonicalId: $updCanon.checked,
+      };
+      $out.value = JSON.stringify(obj, null, 2);
+    }
+
+    function warnFor(m) {
+      if (m.source === "manual" && m.sourceId === "") return '<span class="warn">빈 sourceId → migrate 먼저</span>';
+      return "";
+    }
+
+    function renderDates() {
+      $dates.innerHTML = "";
+      if (!report || !report.dates) return;
+
+      for (const day of report.dates) {
+        const block = document.createElement("div");
+        block.className = "date-block";
+        block.dataset.date = day.eventDate;
+        const h = document.createElement("h2");
+        h.textContent = `${day.eventDate} · 소스 키 ${day.distinctSourceKeys}개`;
+        block.appendChild(h);
+
+        for (const k of day.keys) {
+          const { source, sourceId } = parseKey(k.sourceKey);
+          const line = document.createElement("div");
+          line.className = "key-line";
+          const id = `cb_${day.eventDate}_${encodeURIComponent(k.sourceKey)}`.replace(/%/g, "_");
+          const names = (k.eventNames || []).join(" · ");
+          line.innerHTML = `
+            <label for="${id}">
+              <input type="checkbox" id="${id}" data-date="${day.eventDate}" data-sk="${encodeURIComponent(k.sourceKey)}" />
+              <span><strong>${k.sourceKey}</strong> <span class="key-meta">(${k.rowCount}행)</span><br/>${names || "—"}</span>
+            </label>
+            <span>${warnFor({ source, sourceId })}</span>
+          `;
+          block.appendChild(line);
+        }
+        $dates.appendChild(block);
+      }
+    }
+
+    $file.addEventListener("change", () => {
+      const f = $file.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          report = JSON.parse(r.result);
+          renderDates();
+        } catch (e) {
+          alert("JSON 파싱 실패: " + e.message);
+        }
+      };
+      r.readAsText(f, "utf-8");
+    });
+
+    document.getElementById("clearBtn").onclick = () => {
+      report = null;
+      events = [];
+      $file.value = "";
+      $dates.innerHTML = "";
+      $primaryName.value = "";
+      $docId.value = "";
+      renderOut();
+    };
+
+    document.getElementById("addBtn").onclick = () => {
+      const boxes = [...document.querySelectorAll('#dates input[type="checkbox"]:checked')];
+      if (!boxes.length) {
+        alert("체크된 항목이 없습니다.");
+        return;
+      }
+      const date = boxes[0].dataset.date;
+      for (const b of boxes) {
+        if (b.dataset.date !== date) {
+          alert("같은 날짜 블록 안에서만 한 번에 묶을 수 있습니다.");
+          return;
+        }
+      }
+      const mappings = [];
+      const seen = new Set();
+      for (const b of boxes) {
+        const sk = decodeURIComponent(b.dataset.sk);
+        const { source, sourceId } = parseKey(sk);
+        const key = `${source}\t${sourceId}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        mappings.push({ source, sourceId });
+      }
+      let primaryName = $primaryName.value.trim();
+      if (!primaryName) {
+        const firstSk = decodeURIComponent(boxes[0].dataset.sk);
+        const k = report.dates.find((d) => d.eventDate === date).keys.find((x) => x.sourceKey === firstSk);
+        const names = k && k.eventNames && k.eventNames.length ? k.eventNames : [];
+        primaryName = names.reduce((a, b) => (b.length > a.length ? b : a), names[0] || "이벤트");
+      }
+      let docId = $docId.value.trim();
+      if (!docId) docId = `evt_${date}_${slugify(primaryName)}`;
+
+      events.push({
+        docId,
+        primaryName,
+        eventDate: date,
+        merge: true,
+        sourceMappings: mappings,
+      });
+
+      boxes.forEach((b) => { b.checked = false; });
+      $primaryName.value = "";
+      $docId.value = "";
+      renderOut();
+    };
+
+    document.getElementById("copyBtn").onclick = async () => {
+      renderOut();
+      try {
+        await navigator.clipboard.writeText($out.value);
+        alert("복사했습니다.");
+      } catch {
+        $out.select();
+        document.execCommand("copy");
+        alert("복사했습니다.");
+      }
+    };
+
+    document.getElementById("rmLastBtn").onclick = () => {
+      events.pop();
+      renderOut();
+    };
+
+    $updCanon.onchange = renderOut;
+    renderOut();
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { load: cheerioLoad } = require("cheerio");
 const fs = require("fs");
 const path = require("path");
+const { normalizeRaceDistance } = require("../functions/lib/raceDistance");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const SERVICE_ACCOUNT_PATH = path.join(__dirname, "service-account.json");
@@ -22,27 +23,8 @@ const DELAY_MS = 400;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ─── 거리/시간 정규화 (scrape-results.js에서 가져옴) ─────────
-
-const DIST_ALIASES = {
-  "5km": "5K", "5k": "5K", "5K": "5K",
-  "10km": "10K", "10k": "10K", "10K": "10K",
-  half: "half", "하프": "half", Half: "half", HALF: "half",
-  "하프마라톤": "half", "21.0975km": "half", "21km": "half",
-  full: "full", "풀": "full", Full: "full", FULL: "full",
-  "풀코스": "full", "42.195km": "full", "42km": "full",
-  marathon: "full", Marathon: "full",
-  ultra: "ultra", "울트라": "ultra",
-  "50km": "ultra", "100km": "ultra",
-};
-
 function normDist(raw) {
-  const t = String(raw || "").trim();
-  if (DIST_ALIASES[t]) return DIST_ALIASES[t];
-  for (const [k, v] of Object.entries(DIST_ALIASES)) {
-    if (t.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return t || "unknown";
+  return normalizeRaceDistance(raw);
 }
 
 function normTime(raw) {

@@ -1,0 +1,197 @@
+{
+  "_comment": "병합 후보 일괄 백필 (팀 확정본). 2025-04-20 경기마라톤은 별도 적용됨.",
+  "events": [
+    {
+      "docId": "evt_2025-05-10_hwaseong_hyo",
+      "primaryName": "화성효마라톤",
+      "eventDate": "2025-05-10",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "spct", "sourceId": "20250510001" },
+        { "source": "manual", "sourceId": "hwasong_2025" }
+      ]
+    },
+    {
+      "docId": "evt_2025-05-17_forest_run",
+      "primaryName": "2025 포레스트런",
+      "eventDate": "2025-05-17",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "spct", "sourceId": "2025051701" },
+        { "source": "manual", "sourceId": "excel_399a03a6f916" }
+      ]
+    },
+    {
+      "docId": "evt_2025-09-06_taebaek_dynafit",
+      "primaryName": "2025 다이나핏 태백 트레일",
+      "eventDate": "2025-09-06",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202550000143" },
+        { "source": "manual", "sourceId": "excel_a002b09252fd" }
+      ]
+    },
+    {
+      "docId": "evt_2025-09-21_earth_marathon",
+      "primaryName": "2025 서울 어스마라톤",
+      "eventDate": "2025-09-21",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "ohmyrace", "sourceId": "89" },
+        { "source": "manual", "sourceId": "excel_07cb0c31982a" }
+      ]
+    },
+    {
+      "docId": "evt_2025-10-12_seoul_race",
+      "primaryName": "2025 SEOUL RACE",
+      "eventDate": "2025-10-12",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202550000213" },
+        { "source": "manual", "sourceId": "seoulrace_2025" }
+      ]
+    },
+    {
+      "docId": "evt_2025-10-18_gyeongju_marathon",
+      "primaryName": "2025 경주국제마라톤",
+      "eventDate": "2025-10-18",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202550000218" },
+        { "source": "manual", "sourceId": "gyeongju_2025" }
+      ]
+    },
+    {
+      "docId": "evt_2025-10-19_osan_doksan",
+      "primaryName": "제22회 오산독산성 전국 하프마라톤",
+      "eventDate": "2025-10-19",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202550000227" },
+        { "source": "manual", "sourceId": "osan_2025" }
+      ]
+    },
+    {
+      "docId": "evt_2025-10-26_chuncheon_marathon",
+      "primaryName": "2025 춘천마라톤",
+      "eventDate": "2025-10-26",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "myresult", "sourceId": "132" },
+        { "source": "manual", "sourceId": "chuncheon_2025" }
+      ]
+    },
+    {
+      "docId": "evt_2025-11-09_buyeo_goodtrae",
+      "primaryName": "제14회 부여 굿뜨래 마라톤대회",
+      "eventDate": "2025-11-09",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "spct", "sourceId": "20251109009" },
+        { "source": "manual", "sourceId": "buyeo_2025" }
+      ]
+    },
+    {
+      "docId": "evt_2026-01-11_yeosu_ocean",
+      "primaryName": "제20회 여수해양마라톤",
+      "eventDate": "2026-01-11",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "marazone", "sourceId": "제20회 여수해양마라톤" },
+        { "source": "manual", "sourceId": "manual_1774082451862_tnfc" }
+      ]
+    },
+    {
+      "docId": "evt_2026-02-21_winter_intl",
+      "primaryName": "제23회 희망드림동계국제마라톤",
+      "eventDate": "2026-02-21",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "spct", "sourceId": "2026022101" },
+        { "source": "manual", "sourceId": "manual_1774082453716_5y2e" },
+        { "source": "manual", "sourceId": "winter_2026" }
+      ]
+    },
+    {
+      "docId": "evt_2026-02-22_daegu_marathon",
+      "primaryName": "2026대구마라톤",
+      "eventDate": "2026-02-22",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202650000005" },
+        { "source": "manual", "sourceId": "manual_1774082453953_79eb" }
+      ]
+    },
+    {
+      "docId": "evt_2026-02-22_suwon_half",
+      "primaryName": "2026 경기수원국제하프마라톤",
+      "eventDate": "2026-02-22",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "marazone", "sourceId": "2026 경기수원국제하프마라톤" },
+        { "source": "manual", "sourceId": "manual_1774082454405_qh2l" }
+      ]
+    },
+    {
+      "docId": "evt_2026-02-22_goguryeo_marathon",
+      "primaryName": "2026 고구려 마라톤",
+      "eventDate": "2026-02-22",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "myresult", "sourceId": "140" },
+        { "source": "manual", "sourceId": "manual_1774082454612_ew0s" }
+      ]
+    },
+    {
+      "docId": "evt_2026-03-01_moneytoday_31",
+      "primaryName": "2026 머니투데이방송 3.1절 마라톤대회(풀하프)",
+      "eventDate": "2026-03-01",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "spct", "sourceId": "20260301008" },
+        { "source": "manual", "sourceId": "manual_1774082455008_3cpg" }
+      ]
+    },
+    {
+      "docId": "evt_2026-03-02_newbalance_half_seoul",
+      "primaryName": "2026 Run Your Way Half Race Seoul · 뉴발런스",
+      "eventDate": "2026-03-02",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "myresult", "sourceId": "141" },
+        { "source": "manual", "sourceId": "manual_1774082455214_pwf3" }
+      ]
+    },
+    {
+      "docId": "evt_2026-03-07_daejeon_trail",
+      "primaryName": "대전 트레일",
+      "eventDate": "2026-03-07",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "manual", "sourceId": "manual_1774082455422_ql56" },
+        { "source": "manual", "sourceId": "excel_895368157014" }
+      ]
+    },
+    {
+      "docId": "evt_2026-03-07_busan_beach_ultra",
+      "primaryName": "부산비치 울트라",
+      "eventDate": "2026-03-07",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "manual", "sourceId": "manual_1774082455633_79m2" },
+        { "source": "manual", "sourceId": "excel_381476440709" }
+      ]
+    },
+    {
+      "docId": "evt_2026-03-15_seoul_marathon_donga",
+      "primaryName": "2026 서울마라톤 (동아)",
+      "eventDate": "2026-03-15",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202650000006" },
+        { "source": "manual", "sourceId": "excel_150af88a990c" }
+      ]
+    }
+  ],
+  "updateResultsCanonicalId": true
+}

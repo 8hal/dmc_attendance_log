@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>race_events 병합 후보 선택 → JSON</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #fff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: var(--bg); color: var(--text); font-size: 13px; }
+    h1 { font-size: 1.1rem; margin: 0 0 8px; }
+    .hint { color: var(--muted); margin: 0 0 16px; line-height: 1.5; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    button {
+      padding: 8px 14px; border-radius: 8px; border: none;
+      background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    button.secondary { background: #e2e8f0; color: #334155; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: #f8fafc; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+    tr:hover td { background: #f8fafc; }
+    .cb { width: 36px; text-align: center; }
+    .mono { font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; }
+    .names { font-size: 12px; color: #334155; }
+    textarea {
+      width: 100%; min-height: 220px; margin-top: 16px; font-family: ui-monospace, monospace;
+      font-size: 11px; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1;
+    }
+    label.chk { cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <h1>race_events 병합 후보 선택</h1>
+  <p class="hint">
+    체크한 행만 아래 JSON에 포함됩니다. <code>updateResultsCanonicalId</code>는 옵션으로 켜거나 끄세요.
+    <strong>primaryName</strong>은 smartchip / spct / myresult / ohmyrace / marazone 등 <strong>기록 사이트 쪽 이름</strong>을 씁니다(수동·엑셀만 있을 땐 그중 하나).
+    로컬에서만 사용하세요.
+  </p>
+
+  <div class="toolbar">
+    <button type="button" id="allOn">전체 선택</button>
+    <button type="button" id="allOff" class="secondary">전체 해제</button>
+    <label><input type="checkbox" id="updCanon" checked /> updateResultsCanonicalId</label>
+    <button type="button" id="copyBtn" class="secondary">JSON 복사</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="cb">선택</th>
+        <th>#</th>
+        <th>날짜</th>
+        <th>묶음</th>
+        <th>소스 / 이름</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <textarea id="out" readonly placeholder="행을 선택하면 JSON이 여기에 표시됩니다."></textarea>
+
+  <script>
+    /** 첫 번째 _ 기준으로 source / sourceId */
+    function parseKey(sk) {
+      const i = sk.indexOf("_");
+      if (i < 0) return { source: sk, sourceId: "" };
+      return { source: sk.slice(0, i), sourceId: sk.slice(i + 1) };
+    }
+
+    /**
+     * @type {{ id: number, eventDate: string, label: string, primaryName: string, docId: string, sourceKeys: string[] }[]}
+     */
+    const ROWS = [
+      { id: 1, eventDate: "2025-05-10", label: "화성효", primaryName: "화성효마라톤", docId: "evt_2025-05-10_hwaseong_hyo", sourceKeys: ["spct_20250510001", "manual_hwasong_2025"] },
+      { id: 2, eventDate: "2025-05-17", label: "포레스트런", primaryName: "2025 포레스트런", docId: "evt_2025-05-17_forest_run", sourceKeys: ["spct_2025051701", "manual_excel_399a03a6f916"] },
+      { id: 3, eventDate: "2025-09-06", label: "태백 다이나핏", primaryName: "2025 다이나핏 태백 트레일", docId: "evt_2025-09-06_taebaek_dynafit", sourceKeys: ["smartchip_202550000143", "manual_excel_a002b09252fd"] },
+      { id: 4, eventDate: "2025-09-21", label: "어스", primaryName: "2025 서울 어스마라톤", docId: "evt_2025-09-21_earth_marathon", sourceKeys: ["ohmyrace_89", "manual_excel_07cb0c31982a"] },
+      { id: 5, eventDate: "2025-10-12", label: "SEOUL RACE", primaryName: "2025 SEOUL RACE", docId: "evt_2025-10-12_seoul_race", sourceKeys: ["smartchip_202550000213", "manual_seoulrace_2025"] },
+      { id: 6, eventDate: "2025-10-18", label: "경주국제 (경포 제외)", primaryName: "2025 경주국제마라톤", docId: "evt_2025-10-18_gyeongju_marathon", sourceKeys: ["smartchip_202550000218", "manual_gyeongju_2025"] },
+      { id: 7, eventDate: "2025-10-19", label: "오산 독산성", primaryName: "제22회 오산독산성 전국 하프마라톤", docId: "evt_2025-10-19_osan_doksan", sourceKeys: ["smartchip_202550000227", "manual_osan_2025"] },
+      { id: 8, eventDate: "2025-10-26", label: "춘천", primaryName: "2025 춘천마라톤", docId: "evt_2025-10-26_chuncheon_marathon", sourceKeys: ["myresult_132", "manual_chuncheon_2025"] },
+      { id: 9, eventDate: "2025-11-09", label: "부여 굿뜨래", primaryName: "제14회 부여 굿뜨래 마라톤대회", docId: "evt_2025-11-09_buyeo_goodtrae", sourceKeys: ["spct_20251109009", "manual_buyeo_2025"] },
+      { id: 10, eventDate: "2026-01-11", label: "여수해양", primaryName: "제20회 여수해양마라톤", docId: "evt_2026-01-11_yeosu_ocean", sourceKeys: ["marazone_제20회 여수해양마라톤", "manual_manual_1774082451862_tnfc"] },
+      { id: 11, eventDate: "2026-02-21", label: "동계", primaryName: "제23회 희망드림동계국제마라톤", docId: "evt_2026-02-21_winter_intl", sourceKeys: ["spct_2026022101", "manual_manual_1774082453716_5y2e", "manual_winter_2026"] },
+      { id: 12, eventDate: "2026-02-22", label: "대구", primaryName: "2026대구마라톤", docId: "evt_2026-02-22_daegu_marathon", sourceKeys: ["smartchip_202650000005", "manual_manual_1774082453953_79eb"] },
+      { id: 13, eventDate: "2026-02-22", label: "수원 하프", primaryName: "2026 경기수원국제하프마라톤", docId: "evt_2026-02-22_suwon_half", sourceKeys: ["marazone_2026 경기수원국제하프마라톤", "manual_manual_1774082454405_qh2l"] },
+      { id: 14, eventDate: "2026-02-22", label: "고구려", primaryName: "2026 고구려 마라톤", docId: "evt_2026-02-22_goguryeo_marathon", sourceKeys: ["myresult_140", "manual_manual_1774082454612_ew0s"] },
+      { id: 15, eventDate: "2026-03-01", label: "머니투데이 3.1", primaryName: "2026 머니투데이방송 3.1절 마라톤대회(풀하프)", docId: "evt_2026-03-01_moneytoday_31", sourceKeys: ["spct_20260301008", "manual_manual_1774082455008_3cpg"] },
+      { id: 16, eventDate: "2026-03-02", label: "뉴발 하프", primaryName: "2026 Run Your Way Half Race Seoul · 뉴발런스", docId: "evt_2026-03-02_newbalance_half_seoul", sourceKeys: ["myresult_141", "manual_manual_1774082455214_pwf3"] },
+      { id: 17, eventDate: "2026-03-07", label: "대전 트레일", primaryName: "대전 트레일", docId: "evt_2026-03-07_daejeon_trail", sourceKeys: ["manual_manual_1774082455422_ql56", "manual_excel_895368157014"] },
+      { id: 18, eventDate: "2026-03-07", label: "부산비치 울트라", primaryName: "부산비치 울트라", docId: "evt_2026-03-07_busan_beach_ultra", sourceKeys: ["manual_manual_1774082455633_79m2", "manual_excel_381476440709"] },
+      { id: 19, eventDate: "2026-03-15", label: "동아 서울", primaryName: "2026 서울마라톤 (동아)", docId: "evt_2026-03-15_seoul_marathon_donga", sourceKeys: ["smartchip_202650000006", "manual_excel_150af88a990c"] },
+    ];
+
+    const DISPLAY = {
+      1: [
+        ["spct_20250510001", "화성효마라톤"],
+        ["manual_hwasong_2025", "화성효마라톤"],
+      ],
+      2: [
+        ["spct_2025051701", "2025 포레스트런"],
+        ["manual_excel_399a03a6f916", "포레스트런"],
+      ],
+      3: [
+        ["smartchip_202550000143", "2025 다이나핏 태백 트레일"],
+        ["manual_excel_a002b09252fd", "태백 다이나핏"],
+      ],
+      4: [
+        ["ohmyrace_89", "2025 서울 어스마라톤"],
+        ["manual_excel_07cb0c31982a", "어스마라톤"],
+      ],
+      5: [
+        ["smartchip_202550000213", "2025 SEOUL RACE"],
+        ["manual_seoulrace_2025", "2025 SEOUL RACE"],
+      ],
+      6: [
+        ["smartchip_202550000218", "2025 경주국제마라톤"],
+        ["manual_gyeongju_2025", "2025 경주국제마라톤"],
+      ],
+      7: [
+        ["smartchip_202550000227", "제22회 오산독산성 전국 하프마라톤"],
+        ["manual_osan_2025", "2025 오산 독산성 마라톤"],
+      ],
+      8: [
+        ["myresult_132", "2025 춘천마라톤"],
+        ["manual_chuncheon_2025", "2025 춘천 마라톤"],
+      ],
+      9: [
+        ["spct_20251109009", "제14회 부여 굿뜨래 마라톤대회"],
+        ["manual_buyeo_2025", "제14회 부여 굿뜨래 마라톤대회"],
+      ],
+      10: [
+        ["marazone_제20회 여수해양마라톤", "제20회 여수해양마라톤"],
+        ["manual_manual_1774082451862_tnfc", "여수해양마라톤"],
+      ],
+      11: [
+        ["spct_2026022101", "제23회 희망드림동계국제마라톤"],
+        ["manual_manual_1774082453716_5y2e", "동계국제마라톤"],
+        ["manual_winter_2026", "동계국제마라톤 (32km)"],
+      ],
+      12: [
+        ["smartchip_202650000005", "2026대구마라톤"],
+        ["manual_manual_1774082453953_79eb", "대구마라톤"],
+      ],
+      13: [
+        ["marazone_2026 경기수원국제하프마라톤", "2026 경기수원국제하프마라톤 · 수원"],
+        ["manual_manual_1774082454405_qh2l", "경기수원국제하프마라톤"],
+      ],
+      14: [
+        ["myresult_140", "2026 고구려 마라톤"],
+        ["manual_manual_1774082454612_ew0s", "고구려마라톤"],
+      ],
+      15: [
+        ["spct_20260301008", "2026 머니투데이방송 3.1절 마라톤대회(풀하프)"],
+        ["manual_manual_1774082455008_3cpg", "머니투데이방송마라톤"],
+      ],
+      16: [
+        ["myresult_141", "2026 Run Your Way Half Race Seoul · 뉴발런스"],
+        ["manual_manual_1774082455214_pwf3", "뉴발런스하프레이스"],
+      ],
+      17: [
+        ["manual_manual_1774082455422_ql56", "대전트레일"],
+        ["manual_excel_895368157014", "대전 트레일"],
+      ],
+      18: [
+        ["manual_manual_1774082455633_79m2", "부산비치울트라"],
+        ["manual_excel_381476440709", "부산비치 울트라"],
+      ],
+      19: [
+        ["smartchip_202650000006", "2026 서울마라톤 (동아) · 2026서울마라톤"],
+        ["manual_excel_150af88a990c", "동아 마라톤"],
+      ],
+    };
+
+    const tbody = document.getElementById("tbody");
+    const out = document.getElementById("out");
+    const updCanon = document.getElementById("updCanon");
+
+    for (const row of ROWS) {
+      const tr = document.createElement("tr");
+      const pairs = DISPLAY[row.id];
+      const lines = pairs
+        .map(([k, n]) => `<div class="mono">${escapeHtml(k)}</div><div class="names">${escapeHtml(n)}</div>`)
+        .join('<div style="margin:6px 0;border-top:1px dashed #e2e8f0"></div>');
+
+      tr.innerHTML = `
+        <td class="cb"><label class="chk"><input type="checkbox" class="row-cb" data-id="${row.id}" /></label></td>
+        <td>${row.id}</td>
+        <td>${row.eventDate}</td>
+        <td><strong>${escapeHtml(row.label)}</strong></td>
+        <td>${lines}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function buildJson() {
+      const checked = [...document.querySelectorAll(".row-cb:checked")].map((el) => Number(el.dataset.id));
+      const idSet = new Set(checked);
+      const events = ROWS.filter((r) => idSet.has(r.id)).map((r) => ({
+        docId: r.docId,
+        primaryName: r.primaryName,
+        eventDate: r.eventDate,
+        merge: true,
+        sourceMappings: r.sourceKeys.map((sk) => {
+          const p = parseKey(sk);
+          return { source: p.source, sourceId: p.sourceId };
+        }),
+      }));
+      return JSON.stringify(
+        { events, updateResultsCanonicalId: updCanon.checked },
+        null,
+        2
+      );
+    }
+
+    function refresh() {
+      out.value = buildJson();
+    }
+
+    tbody.addEventListener("change", (e) => {
+      if (e.target.classList.contains("row-cb")) refresh();
+    });
+    updCanon.addEventListener("change", refresh);
+
+    document.getElementById("allOn").onclick = () => {
+      document.querySelectorAll(".row-cb").forEach((c) => { c.checked = true; });
+      refresh();
+    };
+    document.getElementById("allOff").onclick = () => {
+      document.querySelectorAll(".row-cb").forEach((c) => { c.checked = false; });
+      refresh();
+    };
+    document.getElementById("copyBtn").onclick = async () => {
+      refresh();
+      try {
+        await navigator.clipboard.writeText(out.value);
+        alert("복사했습니다.");
+      } catch {
+        out.select();
+        document.execCommand("copy");
+        alert("복사했습니다.");
+      }
+    };
+
+    refresh();
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "_comment": "2025-04 월 리뷰: ① 경기마라톤 smartchip + manual_excel 병합 (팀 승인)",
+  "events": [
+    {
+      "docId": "evt_2025-04-20_gyeonggi_marathon",
+      "primaryName": "제23회 경기마라톤대회",
+      "eventDate": "2025-04-20",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202550000051" },
+        { "source": "manual", "sourceId": "excel_edef4ce3d0ef" }
+      ]
+    }
+  ],
+  "updateResultsCanonicalId": true
+}

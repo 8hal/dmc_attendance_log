@@ -17,6 +17,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
+const { normalizeRaceDistance } = require("../functions/lib/raceDistance");
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
@@ -168,7 +169,8 @@ function toSec(t) {
     const canonicalJobId = `${source}_${sourceId}`;
 
     const safeName = (ex.memberRealName || "").replace(/[^a-zA-Z0-9가-힣]/g, "_");
-    const safeDist = (ex.distance || "").replace(/[^a-zA-Z0-9]/g, "_");
+    const distNorm = normalizeRaceDistance(ex.distance);
+    const safeDist = (distNorm || "").replace(/[^a-zA-Z0-9]/g, "_");
     const safeDate = (ex.eventDate || "").replace(/[^0-9\-]/g, "");
     const docId = `${safeName}_${safeDist}_${safeDate}`;
 
@@ -181,7 +183,7 @@ function toSec(t) {
       sourceId: sourceId || "",
       memberRealName: ex.memberRealName,
       memberNickname: ex.memberNickName || "",
-      distance: ex.distance,
+      distance: distNorm,
       netTime: rec.netTime || "",
       gunTime: rec.gunTime || "",
       bib: rec.bib || "",
