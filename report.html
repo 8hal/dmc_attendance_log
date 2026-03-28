@@ -1002,7 +1002,11 @@
           document.getElementById("createJobDate").value = "";
           document.getElementById("createJobLocation").value = "";
 
+          const canonicalEventId = data.canonicalEventId || null;
           await loadJob(data.jobId);
+          if (canonicalEventId && currentJob) {
+            currentJob.canonicalEventId = canonicalEventId;
+          }
         } catch (err) {
           showToast("대회 추가 실패: " + err.message, 4000);
         } finally {
@@ -1747,6 +1751,7 @@
             eventDate: currentJob.eventDate,
             source: currentJob.source,
             sourceId: currentJob.sourceId,
+            ...(currentJob.canonicalEventId ? { canonicalEventId: currentJob.canonicalEventId } : {}),
             results: included.map(r => ({
               memberRealName: r.memberRealName,
               memberNickname: r.memberNickname,

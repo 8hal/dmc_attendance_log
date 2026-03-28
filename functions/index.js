@@ -14,11 +14,37 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const scraper = require("./lib/scraper");
+const {
+  allocateCanonicalEventId,
+  normalizeEventDateForId,
+} = require("./lib/canonicalEventId");
 const { google } = require("googleapis");
 
 // 초기화
 initializeApp();
 const db = getFirestore();
+
+/** race_events → 역색인 (source_sourceId → canonicalEventId) + 카드 메타 */
+async function buildRaceEventIndexes() {
+  const snap = await db.collection("race_events").get();
+  const eventMeta = {};
+  const sourceKeyToEventId = {};
+  snap.forEach((doc) => {
+    const d = doc.data();
+    eventMeta[doc.id] = {
+      primaryName: d.primaryName || "",
+      eventDate: d.eventDate || "",
+    };
+    const mappings = Array.isArray(d.sourceMappings) ? d.sourceMappings : [];
+    for (const m of mappings) {
+      const src = m.source != null ? String(m.source) : "";
+      const sid = m.sourceId != null ? String(m.sourceId) : "";
+      const sk = `${src}_${sid}`;
+      sourceKeyToEventId[sk] = doc.id;
+    }
+  });
+  return { eventMeta, sourceKeyToEventId };
+}
 
 // 비용 제어: 최대 인스턴스 수 제한
 setGlobalOptions({ maxInstances: 10, region: "asia-northeast3" });
@@ -753,26 +779,33 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
     if (action === "confirmed-races") {
       const year = req.query.year || null;
-      const snap = await db.collection("race_results")
-        .where("status", "==", "confirmed")
-        .get();
+      const [snap, { eventMeta, sourceKeyToEventId }] = await Promise.all([
+        db.collection("race_results").where("status", "==", "confirmed").get(),
+        buildRaceEventIndexes(),
+      ]);
 
       const groupMap = {};
       snap.forEach((rDoc) => {
         const r = rDoc.data();
-        if (year && r.eventDate && !r.eventDate.startsWith(year)) return;
-        const key = `${r.source || "unknown"}_${r.sourceId || "unknown"}`;
-        if (!groupMap[key]) {
-          groupMap[key] = {
-            id: key,
-            name: r.eventName || "",
-            date: r.eventDate || "",
+        if (year && r.eventDate && !String(r.eventDate).startsWith(year)) return;
+
+        const sourceKey = `${r.source || "unknown"}_${r.sourceId || "unknown"}`;
+        let groupKey = r.canonicalEventId || null;
+        if (!groupKey) groupKey = sourceKeyToEventId[sourceKey] || null;
+        if (!groupKey) groupKey = sourceKey;
+
+        if (!groupMap[groupKey]) {
+          const meta = eventMeta[groupKey];
+          groupMap[groupKey] = {
+            id: groupKey,
+            name: meta ? meta.primaryName : (r.eventName || ""),
+            date: meta ? meta.eventDate : (r.eventDate || ""),
             source: r.source || "",
             sourceId: r.sourceId || "",
             results: [],
           };
         }
-        groupMap[key].results.push({
+        groupMap[groupKey].results.push({
           docId: rDoc.id,
           realName: r.memberRealName,
           nickname: r.memberNickname,
@@ -952,7 +985,16 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         }
       }
 
-      return res.json({ ok: true, ...data, jobId: doc.id });
+      const { sourceKeyToEventId } = await buildRaceEventIndexes();
+      const sk = `${data.source || "unknown"}_${data.sourceId || "unknown"}`;
+      const canonicalEventId = sourceKeyToEventId[sk];
+
+      return res.json({
+        ok: true,
+        ...data,
+        jobId: doc.id,
+        ...(canonicalEventId ? { canonicalEventId } : {}),
+      });
     }
 
     if (action === "members") {
@@ -1322,9 +1364,18 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "confirm" && req.method === "POST") {
-      const { jobId, eventName, eventDate, source, sourceId, results, confirmSource } = req.body || {};
+      const {
+        jobId, eventName, eventDate, source, sourceId, results, confirmSource, canonicalEventId,
+      } = req.body || {};
       if (!jobId || !results || !Array.isArray(results)) {
         return res.status(400).json({ ok: false, error: "jobId and results[] required" });
+      }
+
+      if (canonicalEventId) {
+        const evDoc = await db.collection("race_events").doc(String(canonicalEventId)).get();
+        if (!evDoc.exists) {
+          return res.status(400).json({ ok: false, error: "invalid canonicalEventId" });
+        }
       }
 
       const batch = db.batch();
@@ -1341,7 +1392,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const safeDist = (r.distance || "").replace(/[^a-zA-Z0-9]/g, "_");
         const docId = `${safeName}_${safeDist}_${safeDate}`;
         const ref = db.collection("race_results").doc(docId);
-        batch.set(ref, {
+        const row = {
           jobId: canonicalJobId,
           eventName: eventName || "",
           eventDate: resolvedDate,
@@ -1361,7 +1412,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           status: "confirmed",
           confirmedAt: now,
           confirmSource: confirmSource || "event",
-        });
+        };
+        if (canonicalEventId) row.canonicalEventId = String(canonicalEventId);
+        batch.set(ref, row);
       }
 
       const jobRef = db.collection("scrape_jobs").doc(canonicalJobId);
@@ -1408,7 +1461,18 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const now = new Date().toISOString();
       const sourceId = `manual_${Date.now()}`;
       const jobRef = db.collection("scrape_jobs").doc(`manual_${sourceId}`);
-      await jobRef.set({
+      const normalizedDate = normalizeEventDateForId(eventDate || now.slice(0, 10));
+      const canonicalEventId = await allocateCanonicalEventId(db, eventDate || now.slice(0, 10), eventName);
+      const eventRef = db.collection("race_events").doc(canonicalEventId);
+
+      const batch = db.batch();
+      batch.set(eventRef, {
+        primaryName: eventName,
+        eventDate: normalizedDate,
+        sourceMappings: [{ source: "manual", sourceId }],
+        createdAt: now,
+      });
+      batch.set(jobRef, {
         source: "manual",
         sourceId,
         eventName,
@@ -1419,8 +1483,15 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         results: [],
         createdAt: now,
       });
+      await batch.commit();
 
-      return res.json({ ok: true, jobId: jobRef.id, eventName, eventDate: eventDate || "" });
+      return res.json({
+        ok: true,
+        jobId: jobRef.id,
+        eventName,
+        eventDate: eventDate || "",
+        canonicalEventId,
+      });
     }
 
     if (action === "delete-record" && req.method === "POST") {

@@ -71,9 +71,11 @@ node_modules/
 # Migration scripts - sensitive files
 scripts/service-account.json
 scripts/data.csv
+# 실서버 source/sourceId 가 들어가는 백필 설정 (예시만 커밋: *.example.json)
+scripts/data/race-events-mapping.json
 
-# 로컬 데이터 (실명/기록 포함, 개인정보)
-data/
+# 로컬 데이터 (실명/기록 포함, 개인정보) — 저장소 루트만
+/data/
 
 # Firestore JSON 백업 (용량 큼, 날짜별 스냅샷 — 커밋 대상 아님)
 backup/

@@ -62,3 +62,29 @@
 예: `smartchip_202650000006`, `myresult_132`
 
 같은 대회에 여러 scrape_jobs가 생길 수 있음 (과거 버그). canonical ID를 가진 job이 정본.
+
+---
+
+## race_results.canonicalEventId
+
+| 값 | 의미 |
+|----|------|
+| (없음) | `race_events.sourceMappings` 역조회 또는 `source_sourceId` fallback으로 그룹 |
+| string | `race_events` 문서 id와 동일. `confirmed-races` 카드 그룹 1순위 |
+
+---
+
+## canonicalEventId (`race_events` 문서 id)
+
+통합 대회(논리 이벤트) 식별자. **형식 (확정):** `evt_{YYYY-MM-DD}_{ascii-slug}` 전체 ≤80자, 문자 `[a-z0-9_-]`만, 동일 날짜·slug 충돌 시 `-2`, `-3` 접미. 구현: `functions/lib/canonicalEventId.js`.
+
+---
+
+## race_events (컬렉션)
+
+| 필드 | 의미 |
+|------|------|
+| `primaryName` | 카드·표시용 정본 대회명 |
+| `eventDate` | `YYYY-MM-DD` |
+| `sourceMappings` | `{ source, sourceId }[]` — 동일 `(source, sourceId)` 쌍은 전역에서 한 문서에만 |
+| `createdAt` | ISO 문자열 등 |

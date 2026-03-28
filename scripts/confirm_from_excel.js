@@ -95,8 +95,26 @@ function toSec(t) {
     }
   }
 
-  const covRate = Math.round((matched.length / activeExcel.length) * 100);
-  console.log(`✅ 매칭 성공: ${matched.length}건 (${covRate}%)`);
+  const matchedNoSource = [];
+  const matchedOk = [];
+  for (const row of matched) {
+    const { source, sourceId } = row.hit;
+    if (!source || !sourceId) {
+      matchedNoSource.push({
+        ex: row.ex,
+        hit: row.hit,
+        reason: "매칭됐으나 source/sourceId 비어 있음 (저장 스킵)",
+      });
+    } else {
+      matchedOk.push(row);
+    }
+  }
+
+  const covRate = Math.round((matchedOk.length / activeExcel.length) * 100);
+  console.log(`✅ 매칭 성공(저장 대상, source/sourceId 있음): ${matchedOk.length}건 (${covRate}%)`);
+  if (matchedNoSource.length) {
+    console.log(`⚠️ 매칭됐으나 source/sourceId 없어 스킵: ${matchedNoSource.length}건 (§4.4)`);
+  }
   console.log(`❌ 매칭 실패: ${unmatched.length}건\n`);
 
   // 실패 이유 분포
@@ -106,8 +124,17 @@ function toSec(t) {
   Object.entries(reasons).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log(`  ${k}: ${v}건`));
 
   if (DRY_RUN) {
-    console.log("\n[매칭 성공 샘플 20건]");
-    matched.slice(0, 20).forEach(({ ex, hit }) => {
+    if (matchedNoSource.length) {
+      console.log("\n[source/sourceId 없음 스킵 목록]");
+      matchedNoSource.forEach(({ ex, hit, reason }) => {
+        console.log(
+          `  ${ex.memberRealName} | ${ex.eventDate} | ${ex.finishTime} | ${reason}`
+          + `\n    hit: source=${JSON.stringify(hit.source)} sourceId=${JSON.stringify(hit.sourceId)}`
+        );
+      });
+    }
+    console.log("\n[매칭 성공(저장 대상) 샘플 20건]");
+    matchedOk.slice(0, 20).forEach(({ ex, hit }) => {
       console.log(
         `  ${ex.memberRealName} | ${ex.eventDate} | ${ex.distance} | ${ex.finishTime}`
         + `\n    → [${hit.source}_${hit.sourceId}] "${hit.eventName}" netTime=${hit.rec.netTime}`
@@ -136,9 +163,9 @@ function toSec(t) {
     }
   };
 
-  for (const { ex, hit } of matched) {
+  for (const { ex, hit } of matchedOk) {
     const { source, sourceId, eventName, eventDate, rec } = hit;
-    const canonicalJobId = (source && sourceId) ? `${source}_${sourceId}` : "manual";
+    const canonicalJobId = `${source}_${sourceId}`;
 
     const safeName = (ex.memberRealName || "").replace(/[^a-zA-Z0-9가-힣]/g, "_");
     const safeDist = (ex.distance || "").replace(/[^a-zA-Z0-9]/g, "_");

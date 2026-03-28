@@ -1,0 +1,16 @@
+{
+  "_comment": "복사 후 race-events-mapping.json 으로 저장하고 값만 수정. 실키는 커밋하지 말 것 (.gitignore).",
+  "events": [
+    {
+      "docId": "evt_2026-03-15_seoul-donga",
+      "primaryName": "서울 동아마라톤",
+      "eventDate": "2026-03-15",
+      "merge": true,
+      "sourceMappings": [
+        { "source": "smartchip", "sourceId": "202650000006" },
+        { "source": "manual", "sourceId": "manual_1730000000000" }
+      ]
+    }
+  ],
+  "updateResultsCanonicalId": false
+}
