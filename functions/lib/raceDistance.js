@@ -33,6 +33,8 @@ const DIST_ALIASES = {
   하프마라톤: "half",
   "21.0975km": "half",
   "21km": "half",
+  "21.1km": "half",
+  "Half Marathon": "half",
   full: "full",
   풀: "full",
   Full: "full",
@@ -43,10 +45,24 @@ const DIST_ALIASES = {
   marathon: "full",
   Marathon: "full",
   ultra: "ultra",
+  Ultra: "ultra",
   울트라: "ultra",
   "50km": "ultra",
+  "50k": "ultra",
   "100km": "ultra",
+  "100k": "ultra",
+  "20km": "20K",
+  "20k": "20K",
+  "20K": "20K",
+  "20Km": "20K",
 };
+
+/** 전체 문자열 일치(대소문자 무시) — includes 금지: "25k"·"8.15km" 등에서 "5k" 오탐 방지 */
+const DIST_ALIAS_LOWER = Object.freeze(
+  Object.fromEntries(
+    Object.entries(DIST_ALIASES).map(([k, v]) => [k.toLowerCase(), v])
+  )
+);
 
 /**
  * @param {unknown} raw
@@ -56,9 +72,8 @@ function normalizeRaceDistance(raw) {
   const t = String(raw || "").trim();
   if (!t) return "unknown";
   if (DIST_ALIASES[t]) return DIST_ALIASES[t];
-  for (const [k, v] of Object.entries(DIST_ALIASES)) {
-    if (t.toLowerCase().includes(k.toLowerCase())) return v;
-  }
+  const byLower = DIST_ALIAS_LOWER[t.toLowerCase()];
+  if (byLower) return byLower;
   if (RACE_DISTANCE_CANONICAL.includes(t)) return t;
   return t;
 }
@@ -74,6 +89,7 @@ function isCanonicalRaceDistance(s) {
 module.exports = {
   RACE_DISTANCE_CANONICAL,
   DIST_ALIASES,
+  DIST_ALIAS_LOWER,
   normalizeRaceDistance,
   isCanonicalRaceDistance,
 };

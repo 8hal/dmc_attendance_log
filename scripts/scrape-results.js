@@ -22,6 +22,7 @@
 const fs = require("fs");
 const path = require("path");
 const { load: cheerioLoad } = require("cheerio");
+const { normalizeRaceDistance } = require("../functions/lib/raceDistance");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const MEMBERS_PATH = path.join(DATA_DIR, "members.json");
@@ -29,27 +30,10 @@ const RACES_PATH = path.join(DATA_DIR, "races.json");
 
 // ─── Utilities ───────────────────────────────────────────────
 
-const DIST_ALIASES = {
-  "5km": "5K", "5k": "5K", "5K": "5K",
-  "10km": "10K", "10k": "10K", "10K": "10K",
-  "half": "half", "하프": "half", "Half": "half", "HALF": "half",
-  "하프마라톤": "half", "Half Marathon": "half",
-  "21.0975km": "half", "21km": "half", "21.1km": "half",
-  "full": "full", "풀": "full", "Full": "full", "FULL": "full",
-  "풀코스": "full", "42.195km": "full", "42km": "full",
-  "marathon": "full", "Marathon": "full",
-  "ultra": "ultra", "울트라": "ultra", "Ultra": "ultra",
-  "20km": "20K", "20k": "20K", "20K": "20K", "20Km": "20K",
-  "50km": "ultra", "50k": "ultra", "100km": "ultra", "100k": "ultra",
-};
-
 function normalizeDistance(raw) {
-  const trimmed = String(raw || "").trim();
-  if (DIST_ALIASES[trimmed]) return DIST_ALIASES[trimmed];
-  for (const [key, val] of Object.entries(DIST_ALIASES)) {
-    if (trimmed.toLowerCase().includes(key.toLowerCase())) return val;
-  }
-  return trimmed || "unknown";
+  const t = String(raw || "").trim();
+  if (!t) return "unknown";
+  return normalizeRaceDistance(t);
 }
 
 function normalizeTime(raw) {
