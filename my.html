@@ -579,7 +579,7 @@ function renderPBCards(records) {
   const pbMap = {};
   for (const p of pbs) pbMap[p.distance] = p;
 
-  const PB_DISTS = ["full", "half", "10K", "30K"];
+  const PB_DISTS = ["full", "half", "10K"];
   const el = document.getElementById("pbCards");
   el.innerHTML = `<div class="pb-strip">${PB_DISTS.map(dist => {
     const pb = pbMap[dist];
@@ -1011,7 +1011,7 @@ function renderEventSelector() {
           <option value="F">여성</option>
         </select>
         <div id="filterDistance" style="flex:1;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
-          ${["full","half","10K","30K","5K"].map(d => `<button type="button" class="dist-filter-chip" data-dist="${d}" onclick="this.classList.toggle('active')" style="padding:5px 10px;border:1px solid var(--color-border);border-radius:16px;font-size:12px;background:#fff;cursor:pointer;transition:all .15s">${d === "full" ? "풀" : d === "half" ? "하프" : d}</button>`).join("")}
+          ${["full","half","10K","5K"].map(d => `<button type="button" class="dist-filter-chip" data-dist="${d}" onclick="this.classList.toggle('active')" style="padding:5px 10px;border:1px solid var(--color-border);border-radius:16px;font-size:12px;background:#fff;cursor:pointer;transition:all .15s">${d === "full" ? "풀" : d === "half" ? "하프" : d}</button>`).join("")}
         </div>
       </div>
     </div>` : ""}
