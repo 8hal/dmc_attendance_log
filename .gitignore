@@ -74,3 +74,6 @@ scripts/data.csv
 
 # 로컬 데이터 (실명/기록 포함, 개인정보)
 data/
+
+# Firestore JSON 백업 (용량 큼, 날짜별 스냅샷 — 커밋 대상 아님)
+backup/

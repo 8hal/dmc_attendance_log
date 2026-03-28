@@ -29,7 +29,8 @@
       "**/node_modules/**",
       "functions/**",
       "apps-script/**",
-      "README.md"
+      "README.md",
+      "backup/**"
     ]
   },
   "emulators": {

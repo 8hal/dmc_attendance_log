@@ -56,6 +56,8 @@ cd functions && node ../scripts/backup-firestore.js
 
 변경 사항 전부 커밋 후 원격 푸시.
 
+**Hosting을 배포할 때 추가 확인:** `hosting.public`이 `.`이면 업로드 대상은 **마지막 커밋이 아니라 현재 디스크**다. Cursor 외 Codex 앱 등에서 저장만 하고 커밋하지 않은 파일이 있으면 그 내용이 올라간다. 배포 전 `git status`·`git diff`로 미커밋 변경이 없는지 본다.
+
 ### 4단계: 배포 명령어 안내 (AI가 안내, 사용자가 실행)
 
 ```bash
