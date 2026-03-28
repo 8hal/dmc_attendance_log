@@ -850,9 +850,9 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     console.warn(`[scrapeEvent] 실패율 ${Math.round(failRate * 100)}% (${failCount}/${searched}명) → partial_failure`);
   }
 
-  // 정렬: 종목 순 (full → half → 10K → 5K) → 기록 빠른 순
+  // 정렬: 종목 순 (full → half → 10K → 30K → 5K → …) → 기록 빠른 순
   results.sort((a, b) => {
-    const dOrder = { full: 0, half: 1, "10K": 2, "5K": 3 };
+    const dOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, "20K": 6 };
     const da = dOrder[a.distance] ?? 9;
     const db2 = dOrder[b.distance] ?? 9;
     if (da !== db2) return da - db2;

@@ -72,6 +72,7 @@
     .pb-cell-race { font-size: 10px; color: var(--color-text-secondary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pb-cell-meta { font-size: 10px; color: var(--color-text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pb-cell.pb-10K .pb-cell-dist { color: #1E40AF; }
+    .pb-cell.pb-30K .pb-cell-dist { color: #0E7490; }
     .pb-cell.pb-half .pb-cell-dist { color: #5B21B6; }
     .pb-cell.pb-full .pb-cell-dist { color: #991B1B; }
 
@@ -79,6 +80,7 @@
     .dist-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
     .dist-5K { background: #D1FAE5; color: #065F46; }
     .dist-10K { background: #DBEAFE; color: #1E40AF; }
+    .dist-30K { background: #CCFBF1; color: #0F766E; }
     .dist-half { background: #EDE9FE; color: #5B21B6; }
     .dist-full { background: #FEE2E2; color: #991B1B; }
     .dist-ultra { background: #1F2937; color: #F9FAFB; }
@@ -321,9 +323,9 @@ function logEvent(event, data = {}) {
   }).catch(() => {});
 }
 
-const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
-const DIST_ORDER = ["full", "half", "10K", "5K", "3K"];
-const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "5K": 3, "3K": 4, ultra: -1, unknown: 100 };
+const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "30K": "30K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
+const DIST_ORDER = ["full", "half", "10K", "30K", "5K", "3K"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, ultra: -1, unknown: 100 };
 const MONTH_LABELS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 const MAX_MONTH_SELECT = 5;
 
@@ -577,7 +579,7 @@ function renderPBCards(records) {
   const pbMap = {};
   for (const p of pbs) pbMap[p.distance] = p;
 
-  const PB_DISTS = ["full", "half", "10K"];
+  const PB_DISTS = ["full", "half", "10K", "30K"];
   const el = document.getElementById("pbCards");
   el.innerHTML = `<div class="pb-strip">${PB_DISTS.map(dist => {
     const pb = pbMap[dist];
@@ -1009,7 +1011,7 @@ function renderEventSelector() {
           <option value="F">여성</option>
         </select>
         <div id="filterDistance" style="flex:1;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
-          ${["full","half","10K","5K"].map(d => `<button type="button" class="dist-filter-chip" data-dist="${d}" onclick="this.classList.toggle('active')" style="padding:5px 10px;border:1px solid var(--color-border);border-radius:16px;font-size:12px;background:#fff;cursor:pointer;transition:all .15s">${d === "full" ? "풀" : d === "half" ? "하프" : d}</button>`).join("")}
+          ${["full","half","10K","30K","5K"].map(d => `<button type="button" class="dist-filter-chip" data-dist="${d}" onclick="this.classList.toggle('active')" style="padding:5px 10px;border:1px solid var(--color-border);border-radius:16px;font-size:12px;background:#fff;cursor:pointer;transition:all .15s">${d === "full" ? "풀" : d === "half" ? "하프" : d}</button>`).join("")}
         </div>
       </div>
     </div>` : ""}

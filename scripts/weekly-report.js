@@ -278,7 +278,7 @@ function generateReport(eventResults, pbMap) {
     const dateStr = eventDate ? eventDate.replace(/^\d{4}-/, "").replace("-", "/") : "";
 
     const sorted = [...results].sort((a, b) => {
-      const dOrder = { full: 0, half: 1, "10K": 2, "5K": 3 };
+      const dOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, "20K": 6 };
       const da = dOrder[a.distance] ?? 9;
       const db = dOrder[b.distance] ?? 9;
       if (da !== db) return da - db;
@@ -288,7 +288,7 @@ function generateReport(eventResults, pbMap) {
     for (const r of sorted) {
       no++;
       const pb = isPB(pbMap, r.memberRealName, r.distance, r.netTime);
-      const distLabel = { full: "full", half: "half", "10K": "10km", "5K": "5km" }[r.distance] || r.distance;
+      const distLabel = { full: "full", half: "half", "10K": "10km", "30K": "30km", "5K": "5km", "3K": "3km", "20K": "20km" }[r.distance] || r.distance;
 
       rows.push({
         no,

@@ -1165,13 +1165,13 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const r = doc.data();
         const distN = normalizeRaceDistance(r.distance);
         const secs = scraper.timeToSeconds(r.netTime);
-        const km = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 }[distN];
+        const km = { full: 42.195, half: 21.0975, "10K": 10, "30K": 30, "5K": 5, "3K": 3, "20K": 20 }[distN];
         if (!secs || secs === Infinity || !km) return;
         const pace = secs / km;
         if (!pbMap[distN] || pace < pbMap[distN]) pbMap[distN] = pace;
       });
 
-      const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5 };
+      const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "30K": 30, "5K": 5, "3K": 3, "20K": 20 };
       const predictedPaces = {};
       for (const [dist, pace] of Object.entries(pbMap)) {
         const knownSecs = pace * DIST_KM[dist];

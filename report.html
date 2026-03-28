@@ -336,6 +336,7 @@
               <option value="full">Full</option>
               <option value="half">Half</option>
               <option value="10K">10K</option>
+              <option value="30K">30K</option>
               <option value="5K">5K</option>
             </select>
             <input class="time-input" id="addTime" placeholder="HH:MM:SS" />
@@ -1162,7 +1163,7 @@
       }
 
       // 종목 우선순위 (길이 긴 것이 앞)
-      const distOrder = { full: 0, half: 1, "10K": 2, "5K": 3 };
+      const distOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, "20K": 6 };
       const getDistOrder = (dist) => distOrder[dist] ?? 99;
 
       // 정렬: included(종목→기록→PB→배번) → excluded/pending 일반 → 선택 미완료 ambiguous
@@ -1219,7 +1220,7 @@
           const infoColor = groupDecision === "excluded" ? "var(--color-text-muted)"
             : groupDecision === "pending" ? "var(--color-warning)" : "var(--color-text)";
 
-          const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" };
+          const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" };
           // 선택된 후보의 종목/기록/배번 (일반 행과 동일한 서식)
           const selDist = selected ? (distLabel[selected.distance] || selected.distance) : "";
           const selTime = selected ? selected.netTime : "";
@@ -1277,7 +1278,7 @@
         const rowClass = isDnf ? "row-dnf" : dec === "included" ? "row-auto" : dec === "excluded" ? "row-excluded" : "";
         const toggleClass = dec === "included" ? "" : dec === "excluded" ? "excluded" : "pending";
         const toggleIcon = dec === "included" ? "✓" : dec === "excluded" ? "✕" : "?";
-        const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" }[r.distance] || r.distance;
+        const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" }[r.distance] || r.distance;
 
         const guestBadge = r.isGuest ? ' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:4px;font-weight:500">게스트</span>' : "";
         html += `<tr class="${rowClass}" data-idx="${r.idx}">
@@ -1612,7 +1613,7 @@
       const included = reviewRows.filter(r => r.decision === "included" && r.netTime && r.netTime !== "--:--:--");
       const eventName = currentJob?.eventName || "대회";
 
-      const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" };
+      const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" };
       let text = `[동탄마라톤클럽] ${eventName} 결과\n\n`;
 
       let no = 0;
@@ -1703,7 +1704,7 @@
       document.getElementById("confirmEventDate").textContent = currentJob?.eventDate || "";
       document.getElementById("confirmCount").textContent = included.length;
 
-      const distLabel = { full: "Full", half: "Half", "10K": "10K", "5K": "5K" };
+      const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" };
       const tbody = document.getElementById("confirmBody");
       tbody.innerHTML = included.map((r, i) => `
         <tr>

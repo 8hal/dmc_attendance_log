@@ -3,12 +3,13 @@
  */
 (function (g) {
   const RACE_DISTANCE_CANONICAL = [
-    "full", "half", "10K", "5K", "3K", "ultra", "unknown",
+    "full", "half", "10K", "30K", "5K", "3K", "ultra", "unknown",
   ];
   const DIST_ALIASES = {
     "5km": "5K", "5k": "5K", "5K": "5K",
     "3km": "3K", "3k": "3K", "3K": "3K",
     "10km": "10K", "10k": "10K", "10K": "10K",
+    "30km": "30K", "30k": "30K", "30K": "30K",
     half: "half", 하프: "half", Half: "half", HALF: "half",
     하프마라톤: "half", "21.0975km": "half", "21km": "half", "21.1km": "half",
     "Half Marathon": "half",
