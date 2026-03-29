@@ -89,14 +89,19 @@ assert "members: count>0" "1" "$([ "$cnt" -gt 0 ] && echo 1 || echo 0)"
 # confirmed-races
 resp=$(curl -s "$API?action=confirmed-races")
 ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
+# 확정 기록이 없으면 results가 비어 any(docId)는 False가 되므로, 행이 있을 때만 docId 필수 검증
 has_docid=$(echo "$resp" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
 races=d.get('races',[])
-print(any('docId' in r for race in races for r in race.get('results',[])))
+rows=[r for race in races for r in race.get('results',[])]
+if not rows:
+    print(True)
+else:
+    print(all('docId' in r and r.get('docId') for r in rows))
 " 2>/dev/null)
 assert "confirmed-races: ok=true" "True" "$ok"
-assert "confirmed-races: docId 포함" "True" "$has_docid"
+assert "confirmed-races: docId(행 있을 때)" "True" "$has_docid"
 
 # log - 정상
 resp=$(curl -s -X POST "$API?action=log" -H "Content-Type: application/json" \
