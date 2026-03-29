@@ -438,62 +438,6 @@ function filterResults(results) {
   });
 }
 
-function renderSummaryStats(all) {
-  const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "5K": 5, "3K": 3, "21K": 21.0975, "42K": 42.195, "30K": 30, "32K": 32, "100K": 100, "6.5K": 6.5 };
-  const totalKm = all.reduce((s, r) => s + (DIST_KM[r.distance] || 0), 0);
-  const fullResults = all.filter(r => r.distance === "full" && timeToSeconds(r.netTime) > 0);
-  const sub3 = fullResults.filter(r => timeToSeconds(r.netTime) < 10800);
-  const pbCount = all.filter(r => r.isPB).length;
-  const memberSet = new Set(all.map(r => r.realName));
-  const raceSet = new Set(all.map(r => r.raceId));
-
-  // 가장 많이 출전한 회원 (상위 1명)
-  const memberRaceCnt = {};
-  for (const r of all) { memberRaceCnt[r.nickname || r.realName] = (memberRaceCnt[r.nickname || r.realName] || new Set()); memberRaceCnt[r.nickname || r.realName].add(r.raceId); }
-  const topActive = Object.entries(memberRaceCnt).sort((a, b) => b[1].size - a[1].size)[0];
-
-  return `<div class="card" style="margin-bottom:12px">
-    <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">동마클 하이라이트</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
-      <div style="text-align:center;padding:10px 6px;background:#F0F7FF;border-radius:12px">
-        <div style="font-size:22px;font-weight:800;color:#2563EB">${raceSet.size}</div>
-        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">대회</div>
-      </div>
-      <div style="text-align:center;padding:10px 6px;background:#F0FDF4;border-radius:12px">
-        <div style="font-size:22px;font-weight:800;color:#16A34A">${memberSet.size}</div>
-        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">참가 회원</div>
-      </div>
-      <div style="text-align:center;padding:10px 6px;background:#FFF7ED;border-radius:12px">
-        <div style="font-size:22px;font-weight:800;color:#EA580C">${pbCount}</div>
-        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">PB 달성</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
-      <div style="padding:10px 12px;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:20px">🏃</span>
-        <div>
-          <div style="font-size:13px;font-weight:700">${(totalKm / 1000).toFixed(1)}천 km</div>
-          <div style="font-size:11px;color:var(--color-text-muted)">총 달린 거리</div>
-        </div>
-      </div>
-      <div style="padding:10px 12px;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:20px">⚡</span>
-        <div>
-          <div style="font-size:13px;font-weight:700">서브3 ${sub3.length}명</div>
-          <div style="font-size:11px;color:var(--color-text-muted)">풀코스 3시간 이내</div>
-        </div>
-      </div>
-      ${topActive ? `<div style="padding:10px 12px;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;gap:8px;grid-column:span 2">
-        <span style="font-size:20px">🔥</span>
-        <div>
-          <div style="font-size:13px;font-weight:700">${esc(topActive[0])} · ${topActive[1].size}개 대회 출전</div>
-          <div style="font-size:11px;color:var(--color-text-muted)">최다 출전 회원</div>
-        </div>
-      </div>` : ""}
-    </div>
-  </div>`;
-}
-
 function renderPBTab() {
   const all = enrichResults();
   const pbs = computePBs(all);
@@ -566,8 +510,7 @@ function renderRacesTab() {
     return;
   }
 
-  const all = enrichResults();
-  let html = renderSummaryStats(all);
+  let html = "";
   for (const race of sortedRaces) {
     const results = race.results
       .map(r => {

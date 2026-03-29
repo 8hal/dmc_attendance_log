@@ -1417,6 +1417,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       if (jobDoc.exists) {
         const existingCount = jobDoc.data().confirmedCount || 0;
         batch.update(jobRef, {
+          status: "confirmed",
           confirmedAt: now,
           confirmedCount: existingCount + results.length,
           eventName: eventName || jobDoc.data().eventName || "",
