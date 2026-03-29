@@ -25,6 +25,17 @@ const { google } = require("googleapis");
 initializeApp();
 const db = getFirestore();
 
+/** confirm 시 race_results.netTime: net → finishTime → gun (DNF 플레이스홀더 제외) */
+function effectiveNetTimeForConfirm(r) {
+  const net = String(r.netTime || "").trim();
+  if (net && net !== "--:--:--" && net !== "-") return net;
+  const fin = String(r.finishTime || "").trim();
+  if (fin && fin !== "-") return fin;
+  const gun = String(r.gunTime || "").trim();
+  if (gun && gun !== "-") return gun;
+  return "";
+}
+
 /** race_events → 역색인 (source_sourceId → canonicalEventId) + 카드 메타 */
 async function buildRaceEventIndexes() {
   const snap = await db.collection("race_events").get();
@@ -515,8 +526,8 @@ async function handleGet(req, res) {
 // ==================== Race: 스케줄 + API ====================
 
 /**
- * 주간 자동 이벤트 발견 + 스크래핑 (토/일 15:00 KST)
- * 최근 2주 내 이벤트를 발견하고, 아직 스크래핑하지 않은 이벤트에 대해 전 회원 검색
+ * 주간 자동 **대회 발견만** (토/일 15:00 KST)
+ * 전 회원 스크랩은 하지 않음 — report에서 운영자가 대회 선택 후 수집.
  */
 exports.weeklyDiscoverAndScrape = onSchedule(
   {
@@ -528,22 +539,15 @@ exports.weeklyDiscoverAndScrape = onSchedule(
   },
   async () => {
     const year = new Date().getFullYear();
-    console.log(`[weeklyDiscoverAndScrape] ${year}년 이벤트 발견 시작`);
+    const runAt = new Date().toISOString();
+    console.log(`[weeklyDiscoverAndScrape] ${year}년 대회 발견만 (회원 수집 없음)`);
 
     const events = await scraper.discoverAllEvents(year);
     const now = new Date();
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const todayStr = now.toISOString().slice(0, 10);
 
-    const twoWeeksAgoStr = twoWeeksAgo.toISOString().slice(0, 10);
-    const recentEvents = events.filter((e) => {
-      if (e.date) return e.date >= twoWeeksAgoStr && e.date <= todayStr;
-      // 날짜 null인 SmartChip 슬라이더 이벤트: 올해 ID면 포함
-      if (e.sourceId && String(e.sourceId).startsWith(String(year))) return true;
-      return false;
-    });
-
-    console.log(`[weeklyDiscoverAndScrape] 최근 2주 이벤트: ${recentEvents.length}개`);
+    const { filtered: recentEvents, todayKst, startKst, endKst } = scraper.filterEventsWeeklyScrapeWindow(events, year, now);
+    console.log(`[weeklyDiscoverAndScrape] KST 윈도 ${startKst}~${endKst} 이벤트: ${recentEvents.length}개`);
 
     const existingSnap = await db.collection("scrape_jobs")
       .where("createdAt", ">=", twoWeeksAgo.toISOString())
@@ -556,102 +560,73 @@ exports.weeklyDiscoverAndScrape = onSchedule(
     });
 
     const newEvents = recentEvents.filter((e) => !existingKeys.has(`${e.source}:${e.sourceId}`));
-    console.log(`[weeklyDiscoverAndScrape] 신규 이벤트: ${newEvents.length}개`);
+    const prioritized = scraper.sortWeeklyScrapeQueue(newEvents, todayKst, startKst, endKst);
+    const previewTop = scraper.takeWeeklyScrapeSlice(prioritized);
+    console.log(`[weeklyDiscoverAndScrape] 신규 후보 ${newEvents.length}개 (우선순위 상위 ${previewTop.length}건은 로그에 샘플)`);
 
-    if (newEvents.length === 0) return;
+    const candidatesSample = prioritized.slice(0, 40).map((e) => ({
+      source: e.source,
+      sourceId: e.sourceId,
+      name: e.name,
+      date: e.date || null,
+    }));
 
-    const membersSnap = await db.collection("members").where("hidden", "==", false).get();
-    const members = [];
-    membersSnap.forEach((doc) => {
-      const d = doc.data();
-      members.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
-    });
-    console.log(`[weeklyDiscoverAndScrape] 회원: ${members.length}명`);
-
-    const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
-    const confirmedResults = [];
-    confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
-    const pbMap = scraper.buildPBMap(confirmedResults);
-
-    for (const event of newEvents.slice(0, 5)) {
-      console.log(`[scrape] ${event.source}:${event.sourceId} (${event.name})`);
-
-      const jobRef = db.collection("scrape_jobs").doc(`${event.source}_${event.sourceId}`);
-      await jobRef.set({
-        source: event.source,
-        sourceId: event.sourceId,
-        eventName: event.name,
-        eventDate: event.date,
-        status: "running",
-        progress: { searched: 0, total: members.length, found: 0 },
-        results: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      try {
-        const result = await scraper.scrapeEvent({
-          source: event.source,
-          sourceId: event.sourceId,
-          members,
-          pbMap,
-          db,
-          serverTimestamp: FieldValue.serverTimestamp(),
-          onProgress: async (p) => {
-            await jobRef.update({ progress: p });
-          },
+    // 신규 후보 상위 N건에 scrape_jobs 플레이스홀더만 생성 (회원 수집 없음, race_results 미터치).
+    // Report discover 병합 시 alreadyScraped → 검토 탭·순서 반영. 기존 문서는 덮어쓰지 않음.
+    let placeholdersCreated = 0;
+    try {
+      const slice = scraper.takeWeeklyScrapeSlice(prioritized);
+      const phBatch = db.batch();
+      let phOps = 0;
+      for (const e of slice) {
+        if (!e.source || e.sourceId == null || e.sourceId === "") continue;
+        const jobId = `${e.source}_${e.sourceId}`;
+        const ref = db.collection("scrape_jobs").doc(jobId);
+        const snap = await ref.get();
+        if (snap.exists) continue;
+        phBatch.set(ref, {
+          source: e.source,
+          sourceId: String(e.sourceId),
+          eventName: e.name || String(e.sourceId),
+          eventDate: e.date || "",
+          status: "queued",
+          progress: { searched: 0, total: 0, found: 0 },
+          results: [],
+          createdAt: runAt,
         });
-
-        const finalStatus = result.jobStatus || "complete";
-        await jobRef.update({
-          status: finalStatus,
-          eventName: result.eventName || event.name,
-          eventDate: result.eventDate || event.date,
-          results: result.results,
-          progress: {
-            searched: members.length,
-            total: members.length,
-            found: result.results.length,
-            failCount: result.failCount || 0,
-            failRate: result.failRate || 0,
-          },
-          completedAt: new Date().toISOString(),
-        });
-
-        if (finalStatus === "partial_failure") {
-          await db.collection("event_logs").add({
-            type: "scrape_alert",
-            severity: "warning",
-            code: "partial_failure",
-            message: `스크래핑 실패율 ${result.failRate}% (${result.failCount}명 오류): ${result.eventName || event.sourceId}`,
-            jobId: jobRef.id,
-            source: event.source,
-            sourceId: event.sourceId,
-            timestamp: FieldValue.serverTimestamp(),
-          });
-        }
-
-        console.log(`[scrape] ${finalStatus}: ${result.results.length}건 (${result.eventName}), 실패 ${result.failCount || 0}명`);
-      } catch (err) {
-        console.error(`[scrape] 오류: ${err.message}`);
-        await jobRef.update({ status: "error", error: err.message });
-        await db.collection("event_logs").add({
-          type: "scrape_alert",
-          severity: "error",
-          code: "scrape_error",
-          message: `스크래핑 오류 (${event.source}:${event.sourceId}): ${err.message}`,
-          jobId: jobRef.id,
-          eventName: event.name || "",
-          timestamp: FieldValue.serverTimestamp(),
-        });
+        phOps++;
+        placeholdersCreated++;
       }
+      if (phOps > 0) await phBatch.commit();
+    } catch (err) {
+      console.error(`[weeklyDiscoverAndScrape] placeholder scrape_jobs: ${err.message}`);
     }
 
-    // 주간 스크래핑 완료 요약 로그
+    await db.collection("ops_meta").doc("last_weekly_discover").set({
+      runAt,
+      year,
+      todayKst,
+      windowStartKst: startKst,
+      windowEndKst: endKst,
+      recentEventCount: recentEvents.length,
+      newEventCount: newEvents.length,
+      placeholdersCreated,
+      candidatesSample,
+    }, { merge: true });
+
     await db.collection("event_logs").add({
-      type: "scrape_summary",
+      type: "weekly_discover",
       severity: "info",
-      message: `주간 스크래핑 완료: ${newEvents.length}개 이벤트 처리`,
-      eventCount: newEvents.length,
+      message: `주간 대회 발견: 신규 후보 ${newEvents.length}건, 큐 등록 ${placeholdersCreated}건 (KST ${startKst}~${endKst}). 회원 수집은 report에서 실행.`,
+      runAt,
+      year,
+      todayKst,
+      windowStartKst: startKst,
+      windowEndKst: endKst,
+      recentEventCount: recentEvents.length,
+      newEventCount: newEvents.length,
+      placeholdersCreated,
+      candidatesSample,
       timestamp: FieldValue.serverTimestamp(),
     });
   }
@@ -661,7 +636,7 @@ exports.weeklyDiscoverAndScrape = onSchedule(
  * 스크래핑 헬스체크 — 매시간 실행
  * - stuck job (running 상태 1시간 이상) 감지
  * - SmartChip 세션 실패 의심 (searched > 0, found = 0) 감지
- * - 주간 스케줄 미실행 감지 (월요일 오전에 지난주 토/일 잡 없으면 경고)
+ * - 주간 발견 스케줄 미실행 감지 (월요일: ops_meta.last_weekly_discover)
  */
 exports.scrapeHealthCheck = onSchedule(
   {
@@ -726,21 +701,20 @@ exports.scrapeHealthCheck = onSchedule(
       }
     });
 
-    // 3. 주간 스케줄 미실행 감지: 월요일 오전 9시에 체크
+    // 3. 주간 **발견** 스케줄 미실행: 월요일 9시 — ops_meta.last_weekly_discover.runAt
     const isMonday = now.getDay() === 1;
     const isCheckHour = now.getHours() === 9;
     if (isMonday && isCheckHour) {
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const weekSnap = await db.collection("scrape_jobs")
-        .where("createdAt", ">=", sevenDaysAgo)
-        .limit(1)
-        .get();
-      if (weekSnap.empty) {
+      const sevenDaysAgoMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      const metaSnap = await db.collection("ops_meta").doc("last_weekly_discover").get();
+      const runAt = metaSnap.exists ? metaSnap.data()?.runAt : null;
+      const ok = runAt && new Date(runAt).getTime() >= sevenDaysAgoMs;
+      if (!ok) {
         alerts.push({
           type: "scrape_alert",
           severity: "warning",
-          code: "weekly_scrape_missing",
-          message: "지난 7일 동안 스크래핑 잡이 하나도 생성되지 않았습니다. 주간 스케줄을 확인하세요.",
+          code: "weekly_discover_missing",
+          message: "지난 7일 동안 주간 대회 발견(weeklyDiscoverAndScrape) 기록이 없습니다. 스케줄·로그를 확인하세요.",
         });
       }
     }
@@ -1165,13 +1139,13 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const r = doc.data();
         const distN = normalizeRaceDistance(r.distance);
         const secs = scraper.timeToSeconds(r.netTime);
-        const km = { full: 42.195, half: 21.0975, "10K": 10, "30K": 30, "5K": 5, "3K": 3, "20K": 20 }[distN];
+        const km = { full: 42.195, half: 21.0975, "10K": 10, "30K": 30, "32K": 32, "5K": 5, "3K": 3, "20K": 20 }[distN];
         if (!secs || secs === Infinity || !km) return;
         const pace = secs / km;
         if (!pbMap[distN] || pace < pbMap[distN]) pbMap[distN] = pace;
       });
 
-      const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "30K": 30, "5K": 5, "3K": 3, "20K": 20 };
+      const DIST_KM = { full: 42.195, half: 21.0975, "10K": 10, "30K": 30, "32K": 32, "5K": 5, "3K": 3, "20K": 20 };
       const predictedPaces = {};
       for (const [dist, pace] of Object.entries(pbMap)) {
         const knownSecs = pace * DIST_KM[dist];
@@ -1396,6 +1370,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const safeDist = (distNorm || "").replace(/[^a-zA-Z0-9]/g, "_");
         const docId = `${safeName}_${safeDist}_${safeDate}`;
         const ref = db.collection("race_results").doc(docId);
+        const netEff = effectiveNetTimeForConfirm(r);
+        const finishTrim = String(r.finishTime || "").trim();
         const row = {
           jobId: canonicalJobId,
           eventName: eventName || "",
@@ -1405,7 +1381,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           memberRealName: r.memberRealName,
           memberNickname: r.memberNickname,
           distance: distNorm,
-          netTime: r.netTime,
+          netTime: netEff,
           gunTime: r.gunTime || "",
           bib: r.bib || "",
           overallRank: r.overallRank || null,
@@ -1417,6 +1393,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           confirmedAt: now,
           confirmSource: confirmSource || "event",
         };
+        if (finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
         if (canonicalEventId) row.canonicalEventId = String(canonicalEventId);
         batch.set(ref, row);
       }
@@ -1629,19 +1606,22 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "ping-smartchip") {
+      const ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
       const targets = [
         { label: "dongma.html", url: "https://smartchip.co.kr/dongma.html" },
-        { label: "main.html", url: "https://www.smartchip.co.kr/main.html" },
+        { label: "main.html (www, 스텁만 올 수 있음)", url: "https://www.smartchip.co.kr/main.html" },
+        { label: "main.html (discover용: smartchip.co.kr + Referer)", url: "https://smartchip.co.kr/main.html", referer: "https://smartchip.co.kr/" },
         { label: "api", url: "https://smartchip.co.kr/return_data_livephoto.asp?usedata=202550000191&name=테스트&gubun=1" },
       ];
-      const results = await Promise.all(targets.map(async ({ label, url }) => {
+      const results = await Promise.all(targets.map(async ({ label, url, referer }) => {
         const start = Date.now();
         try {
           const resp = await fetch(url, {
             signal: AbortSignal.timeout(8000),
             headers: {
-              "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-              "Accept": "text/html,application/xhtml+xml,*/*",
+              "User-Agent": ua,
+              Accept: "text/html,application/xhtml+xml,*/*",
+              ...(referer ? { Referer: referer } : {}),
             },
           });
           const headers = Object.fromEntries(resp.headers.entries());
@@ -1751,6 +1731,67 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           foundResult: cacheFound.size,
           noResult: searchedNoResult.length,
         },
+      });
+    }
+
+    /**
+     * Ops: 주간 자동 스크랩(weeklyDiscoverAndScrape)과 동일 조건의 큐 미리보기 + KST 기준 오늘 개최일 대회
+     * discoverAllEvents 호출로 수 초 걸릴 수 있음.
+     */
+    if (action === "ops-scrape-preview") {
+      const year = new Date().getFullYear();
+      const events = await scraper.discoverAllEvents(year);
+      const now = new Date();
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const todayStr = now.toISOString().slice(0, 10);
+
+      const { filtered: recentEvents, todayKst, startKst, endKst } = scraper.filterEventsWeeklyScrapeWindow(events, year, now);
+
+      const existingSnap = await db.collection("scrape_jobs")
+        .where("createdAt", ">=", twoWeeksAgo.toISOString())
+        .get();
+      const existingKeys = new Set();
+      existingSnap.forEach((doc) => {
+        const d = doc.data();
+        const foundCount = (d.results || []).length;
+        if (foundCount > 0) existingKeys.add(`${d.source}:${d.sourceId}`);
+      });
+
+      const newEvents = recentEvents.filter((e) => !existingKeys.has(`${e.source}:${e.sourceId}`));
+      const prioritized = scraper.sortWeeklyScrapeQueue(newEvents, todayKst, startKst, endKst);
+      const newKeySet = new Set(newEvents.map((e) => `${e.source}:${e.sourceId}`));
+
+      const slim = (e) => ({
+        source: e.source,
+        sourceId: e.sourceId,
+        name: e.name,
+        date: e.date || null,
+      });
+
+      const racesHeldTodayKst = recentEvents
+        .filter((e) => e.date === todayKst)
+        .map((e) => ({
+          ...slim(e),
+          inNextQueue: newKeySet.has(`${e.source}:${e.sourceId}`),
+        }));
+
+      const maxJobs = scraper.WEEKLY_MAX_JOBS_PER_RUN;
+      const nextBatch = prioritized.slice(0, maxJobs).map((e, i) => ({ ...slim(e), order: i + 1 }));
+      const queueTail = prioritized.slice(maxJobs, maxJobs + 15).map(slim);
+
+      return res.json({
+        ok: true,
+        generatedAt: new Date().toISOString(),
+        todayKst,
+        todayUtc: todayStr,
+        windowStartKst: startKst,
+        windowEndKst: endKst,
+        weeklySchedule: `토·일 15:00 발견만(자동 회원수집 없음). 수동 수집 시 참고 순서 상위 ${maxJobs}건 · KST ${startKst}~${endKst}`,
+        recentEventCount: recentEvents.length,
+        newEventCount: newEvents.length,
+        racesHeldTodayKst,
+        nextBatch,
+        queueTail,
       });
     }
 

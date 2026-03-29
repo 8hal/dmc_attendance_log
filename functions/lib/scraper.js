@@ -10,6 +10,8 @@ const { normalizeRaceDistance } = require("./raceDistance");
 const DELAY_MS = 200;
 // SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
 const SMARTCHIP_DELAY_MS = 3000;
+/** discover / main.html 은 이 호스트 + Referer 조합으로만 전체 HTML 제공 */
+const SMARTCHIP_ORIGIN = "https://smartchip.co.kr";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─── 봇 감지 우회 유틸리티 ───────────────────────────────────
@@ -48,6 +50,7 @@ function browserHeaders(source) {
     myresult: "https://myresult.co.kr/",
     spct: "https://time.spct.kr/",
     marazone: "https://raceresult.co.kr/",
+    gorunning: "https://gorunning.kr/",
   };
   if (sourceReferers[source]) base["Referer"] = sourceReferers[source];
   return base;
@@ -170,7 +173,9 @@ async function searchSPCT(eventNo, memberName) {
 async function getSPCTEventInfo(eventNo) {
   const year = eventNo.substring(0, 4);
   const url = `https://time.spct.kr/m1.php?TargetYear=${year}&EVENT_NO=${eventNo}&currentPage=1`;
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    headers: { ...browserHeaders("spct"), Accept: "text/html,*/*" },
+  });
   const html = await res.text();
   const $ = cheerioLoad(html);
   const h3 = $("h3").first().text().trim();
@@ -239,7 +244,7 @@ function parseSmartChipResult(html, memberName) {
 // 호출 당 1회만 발급하고 재사용한다.
 async function getSmartChipSession() {
   try {
-    const resp = await fetch("https://smartchip.co.kr/dongma.html", {
+    const resp = await fetch(`${SMARTCHIP_ORIGIN}/dongma.html`, {
       headers: {
         ...browserHeaders("smartchip"),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -341,21 +346,29 @@ async function searchMyResult(eventId, memberName) {
   });
   if (!res.ok) return [];
   const players = await res.json();
-  return (players || []).map((p) => ({
+  return (players || []).map((p) => {
+    const rawNet = p.result_nettime != null ? String(p.result_nettime) : "";
+    const rawGun = p.result_guntime != null ? String(p.result_guntime) : "";
+    const nNet = normTime(rawNet);
+    const nGun = normTime(rawGun);
+    return {
     name: p.name || memberName,
     bib: String(p.num || ""),
     distance: normDist(p.course_cd || ""),
-    netTime: normTime(p.result_nettime || ""),
-    gunTime: normTime(p.result_guntime || ""),
+    netTime: nNet || nGun,
+    gunTime: nGun,
     overallRank: null, genderRank: null, ageGroupRank: null,
     gender: p.gender ? p.gender.toUpperCase() : null,
     splits: [],
     pace: p.pace_nettime || "",
-  }));
+    };
+  });
 }
 
 async function getMyResultEventInfo(eventId) {
-  const res = await fetch(`https://myresult.co.kr/api/event/${eventId}`, { headers: { Accept: "application/json" } });
+  const res = await fetch(`https://myresult.co.kr/api/event/${eventId}`, {
+    headers: { ...browserHeaders("myresult"), Accept: "application/json" },
+  });
   if (!res.ok) return { title: `MyResult #${eventId}`, date: null };
   const data = await res.json();
   return { title: data.name || `MyResult #${eventId}`, date: data.date || null };
@@ -433,11 +446,13 @@ async function searchMember(source, sourceId, memberName, { session = "" } = {})
 async function getSmartChipEventInfo(sourceId) {
   let title = `SmartChip ${sourceId}`;
   let date = null;
+  const scHeaders = browserHeaders("smartchip");
 
   // 1) Search_Ballyno.html에서 정확한 대회명
   try {
     const res = await fetch(
-      `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${sourceId}`
+      `${SMARTCHIP_ORIGIN}/Search_Ballyno.html?usedata=${sourceId}`,
+      { headers: scHeaders }
     );
     const html = await res.text();
     const nameMatch = html.match(/class="box white"[^>]*>\s*([^\n<]{2,80})\s*<\/div>/);
@@ -445,8 +460,9 @@ async function getSmartChipEventInfo(sourceId) {
   } catch { /* ignore */ }
 
   // 2) main.html selectItem 드롭다운에서 날짜 (과거 대회)
+  // Referer 없으면 318B 리다이렉트 스텁만 옴 — discover 와 동일 조건 필수
   try {
-    const mainRes = await fetch("https://www.smartchip.co.kr/main.html");
+    const mainRes = await fetch(`${SMARTCHIP_ORIGIN}/main.html`, { headers: scHeaders });
     const mainHtml = await mainRes.text();
     const dateMatch = mainHtml.match(
       new RegExp(`selectItem\\s*\\(\\s*'\\((\\d{4}-\\d{2}-\\d{2})\\)[^']*'\\s*,\\s*'${sourceId}'`)
@@ -494,7 +510,9 @@ async function getEventInfo(source, sourceId) {
     case "myresult": return getMyResultEventInfo(sourceId);
     case "smartchip": return getSmartChipEventInfo(sourceId);
     case "marazone": {
-      const comps = await (await fetch("https://raceresult.co.kr/api/record-competitions")).json();
+      const comps = await (await fetch("https://raceresult.co.kr/api/record-competitions", {
+        headers: { ...browserHeaders("marazone"), Accept: "application/json" },
+      })).json();
       const match = comps.find((c) => c.comp_title === sourceId);
       return { title: sourceId, date: match?.comp_date || null };
     }
@@ -527,7 +545,9 @@ function isPB(pbMap, realName, distance, netTime) {
 // ─── 이벤트 발견 ─────────────────────────────────────────────
 
 async function discoverMarazone(year) {
-  const res = await fetch("https://raceresult.co.kr/api/record-competitions");
+  const res = await fetch("https://raceresult.co.kr/api/record-competitions", {
+    headers: { ...browserHeaders("marazone"), Accept: "application/json" },
+  });
   const data = await res.json();
   return data
     .filter((e) => e.comp_date && e.comp_date.startsWith(String(year)))
@@ -540,10 +560,12 @@ async function discoverMarazone(year) {
 async function discoverMyResult(year) {
   const allEvents = [];
   let page = 1;
-  const maxPages = 20;
+  const maxPages = 35;
 
   while (page <= maxPages) {
-    const res = await fetch(`https://myresult.co.kr/api/event?page=${page}`, { headers: { Accept: "application/json" } });
+    const res = await fetch(`https://myresult.co.kr/api/event?page=${page}`, {
+      headers: { ...browserHeaders("myresult"), Accept: "application/json" },
+    });
     const data = await res.json();
     const events = data.results || data;
     if (!events || events.length === 0) break;
@@ -569,7 +591,9 @@ async function discoverSPCT(year) {
 
   while (page <= totalPages) {
     const url = `https://time.spct.kr/main.php?TargetYear=${year}&searchEventName=&currentPage=${page}`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: { ...browserHeaders("spct"), Accept: "text/html,*/*" },
+    });
     const html = await res.text();
     const $ = cheerioLoad(html);
 
@@ -603,11 +627,12 @@ async function discoverSmartChip(year) {
   const yearPrefix = String(year);
   const usedataPattern = /usedata=(\d+)/g;
   const eventMap = new Map(); // id → {name, date}
+  const scHeaders = browserHeaders("smartchip");
 
   // 1) dongma.html — 동아일보 전용 대회 (일반 main.html에 노출 안 됨)
   // e.g. 서울마라톤, SEOUL RACE, 공주백제마라톤, 경주국제마라톤 등
   try {
-    const dongmaHtml = await fetch("https://smartchip.co.kr/dongma.html").then((r) => r.text());
+    const dongmaHtml = await fetch(`${SMARTCHIP_ORIGIN}/dongma.html`, { headers: scHeaders }).then((r) => r.text());
 
     // PAST EVENT 드롭다운: <option value="202550000218">(2025-10-18) 2025 경주국제마라톤</option>
     const optionMatches = [...dongmaHtml.matchAll(/<option\s+value="(\d+)">\((\d{4}-\d{2}-\d{2})\)\s*([^<]+)<\/option>/g)];
@@ -631,9 +656,10 @@ async function discoverSmartChip(year) {
     console.warn(`[discoverSmartChip] dongma.html fetch failed: ${err.message}`);
   }
 
-  // 2) main.html — 일반 대회 (현재 리다이렉트 이슈 있어 실패해도 무시)
+  // 2) main.html — 일반 대회
+  // www 또는 Referer 없이 요청하면 318B JS 스텁만 옴. smartchip.co.kr + Referer 필수.
   try {
-    const html = await fetch("https://www.smartchip.co.kr/main.html").then((r) => r.text());
+    const html = await fetch(`${SMARTCHIP_ORIGIN}/main.html`, { headers: scHeaders }).then((r) => r.text());
 
     // selectItem 형식 (PAST EVENTS 드롭다운): 날짜와 이름 모두 포함
     const selectMatches = [...html.matchAll(/selectItem\s*\(\s*'([^']*)'\s*,\s*'(\d+)'/g)];
@@ -649,12 +675,15 @@ async function discoverSmartChip(year) {
     // swiper 슬라이드 형식 (현재/최근 대회): selectItem에 없는 것만
     const ids = [...new Set([...html.matchAll(usedataPattern)].map((m) => m[1]))];
     for (const id of ids.filter((id) => id.startsWith(yearPrefix) && !eventMap.has(id))) {
-      const swiperIsPresent = new RegExp(`usedata=${id}'`).test(html);
+      const swiperIsPresent =
+        new RegExp(`usedata=${id}['"]`).test(html) ||
+        new RegExp(`usedata=${id}(?=[^0-9])`).test(html);
       if (swiperIsPresent) {
         try {
           await sleep(DELAY_MS);
           const pageHtml = await fetch(
-            `https://www.smartchip.co.kr/Search_Ballyno.html?usedata=${id}`
+            `${SMARTCHIP_ORIGIN}/Search_Ballyno.html?usedata=${id}`,
+            { headers: scHeaders }
           ).then((r) => r.text());
 
           const nameMatch = pageHtml.match(
@@ -676,6 +705,152 @@ async function discoverSmartChip(year) {
   }));
 }
 
+const GORUNNING_ORIGIN = "https://gorunning.kr";
+
+/**
+ * 고러닝 월간 일정 (예: https://gorunning.kr/races/monthly/2026-03/)
+ * 날짜 앵커 div#race-YYYY-MM-DD + 데스크톱 표(table.min-w-full)만 사용 (모바일 카드 중복 제외)
+ */
+async function discoverGoRunningMonthly(yearMonth) {
+  const url = `${GORUNNING_ORIGIN}/races/monthly/${yearMonth}/`;
+  const res = await fetch(url, {
+    headers: { ...browserHeaders("gorunning"), Accept: "text/html,*/*" },
+  });
+  if (!res.ok) {
+    console.warn(`[discoverGoRunningMonthly] ${yearMonth} HTTP ${res.status}`);
+    return [];
+  }
+  const html = await res.text();
+  const $ = cheerioLoad(html);
+  const out = [];
+
+  $('div[id^="race-"]').each((_, el) => {
+    const idAttr = $(el).attr("id") || "";
+    const m = idAttr.match(/^race-(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return;
+    const dateStr = `${m[1]}-${m[2]}-${m[3]}`;
+    $(el).find("table.min-w-full tbody tr").each((__, tr) => {
+      const a = $(tr).find('a[href^="/races/"]').first();
+      const name = (a.text() || "").trim();
+      const href = a.attr("href") || "";
+      if (!name) return;
+      out.push({
+        name,
+        date: dateStr,
+        gorunningUrl: href.startsWith("http") ? href : `${GORUNNING_ORIGIN}${href}`,
+      });
+    });
+  });
+
+  return out;
+}
+
+/** KST 기준 이번 달·다음 달 `YYYY-MM` (날짜 보강은 이 두 페이지만 호출) */
+function goRunningThisAndNextMonthKst(now = new Date()) {
+  const todayKst = now.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  const [yy, mm] = todayKst.split("-").map(Number);
+  const thisYm = `${yy}-${String(mm).padStart(2, "0")}`;
+  let nm = mm + 1;
+  let ny = yy;
+  if (nm > 12) {
+    nm = 1;
+    ny += 1;
+  }
+  const nextYm = `${ny}-${String(nm).padStart(2, "0")}`;
+  return [thisYm, nextYm];
+}
+
+async function discoverGoRunningThisAndNextMonth(now = new Date()) {
+  const months = goRunningThisAndNextMonthKst(now);
+  const all = [];
+  for (let i = 0; i < months.length; i++) {
+    const ym = months[i];
+    try {
+      all.push(...(await discoverGoRunningMonthly(ym)));
+    } catch (err) {
+      console.warn(`[discoverGoRunningThisAndNextMonth] ${ym}: ${err.message}`);
+    }
+    if (i < months.length - 1) await sleep(DELAY_MS);
+  }
+  return all;
+}
+
+/** 해당 연도 1~12월 (스크립트·수동 점검용 — discover 기본 경로는 이번달+다음달만) */
+async function discoverGoRunningYear(year) {
+  const y = parseInt(String(year), 10);
+  if (Number.isNaN(y)) return [];
+  const all = [];
+  for (let mo = 1; mo <= 12; mo++) {
+    const yearMonth = `${y}-${String(mo).padStart(2, "0")}`;
+    try {
+      const rows = await discoverGoRunningMonthly(yearMonth);
+      all.push(...rows);
+    } catch (err) {
+      console.warn(`[discoverGoRunningYear] ${yearMonth}: ${err.message}`);
+    }
+    if (mo < 12) await sleep(DELAY_MS);
+  }
+  return all;
+}
+
+function normalizeForGoRunningMatch(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[\s\u3000]/g, "")
+    .replace(/[·•\-_/.,()[\]「」'"“”]/g, "");
+}
+
+/** 스마트칩 플레이스홀더 이름은 매칭 불가 */
+function isUnmatchableDiscoverName(name) {
+  return /^smartchip\s*\d+$/i.test(String(name || "").trim());
+}
+
+/**
+ * discover 병합 결과에서 date 가 비어 있는 행만 고러닝 대회명으로 개최일 보강.
+ * 고러닝은 KST 기준 이번 달·다음 달 월간 목록만 조회 (`year` 인자는 호환용).
+ */
+async function enrichMissingDatesFromGoRunning(events, _year) {
+  const need = events.filter((e) => !(e.date && String(e.date).trim()));
+  if (need.length === 0) return events;
+
+  let grRows;
+  try {
+    grRows = await discoverGoRunningThisAndNextMonth();
+  } catch (err) {
+    console.warn(`[enrichMissingDatesFromGoRunning] gorunning 실패: ${err.message}`);
+    return events;
+  }
+  if (grRows.length === 0) return events;
+
+  return events.map((e) => {
+    if (e.date && String(e.date).trim()) return e;
+    if (isUnmatchableDiscoverName(e.name)) return e;
+    const n = normalizeForGoRunningMatch(e.name);
+    if (n.length < 4) return e;
+
+    let bestDate = null;
+    let bestKeyLen = 0;
+
+    for (const row of grRows) {
+      const g = normalizeForGoRunningMatch(row.name);
+      if (!g.length) continue;
+      if (n === g) {
+        return { ...e, date: row.date, gorunningUrl: row.gorunningUrl };
+      }
+      if (g.length >= 6 && n.includes(g) && g.length > bestKeyLen) {
+        bestKeyLen = g.length;
+        bestDate = row.date;
+      } else if (n.length >= 6 && g.includes(n) && n.length > bestKeyLen) {
+        bestKeyLen = n.length;
+        bestDate = row.date;
+      }
+    }
+
+    if (bestDate) return { ...e, date: bestDate };
+    return e;
+  });
+}
+
 async function discoverAllEvents(year) {
   const sources = [
     { name: "marazone", fn: discoverMarazone },
@@ -694,8 +869,72 @@ async function discoverAllEvents(year) {
     }
   }
 
+  await enrichMissingDatesFromGoRunning(allEvents, year);
+
   allEvents.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   return allEvents;
+}
+
+// ─── 주간 자동 스크랩: KST 윈도 + 큐 우선순위 ─────────────────
+// 과거엔 UTC 오늘까지만 포함해 '이번 주 일요일 대회'가 큐에서 빠졌음 → KST + 앞으로 N일 포함
+
+const WEEKLY_LOOKBACK_DAYS = 14;
+const WEEKLY_LOOKAHEAD_DAYS = 7;
+/** ops 미리보기·문서용 “수동 수집 시 참고 순서” 상한 (자동 배치 스크랩은 사용 안 함) */
+const WEEKLY_MAX_JOBS_PER_RUN = 5;
+
+function kstTodayYmd(now = new Date()) {
+  return now.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+}
+
+function kstAddDays(ymdStr, deltaDays) {
+  const m = String(ymdStr || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return ymdStr;
+  const t = new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00+09:00`);
+  t.setTime(t.getTime() + deltaDays * 864e5);
+  return t.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+}
+
+/**
+ * 주간 스케줄 후보: 개최일이 KST 기준 [오늘-lookback .. 오늘+lookahead] 안에 드는 대회
+ * (날짜 없는 올해 SmartChip 등은 기존과 동일하게 포함)
+ */
+function filterEventsWeeklyScrapeWindow(events, year, now = new Date(), lookback = WEEKLY_LOOKBACK_DAYS, lookahead = WEEKLY_LOOKAHEAD_DAYS) {
+  const todayKst = kstTodayYmd(now);
+  const startKst = kstAddDays(todayKst, -lookback);
+  const endKst = kstAddDays(todayKst, lookahead);
+  const filtered = events.filter((e) => {
+    if (e.date) return e.date >= startKst && e.date <= endKst;
+    if (e.sourceId && String(e.sourceId).startsWith(String(year))) return true;
+    return false;
+  });
+  return { filtered, todayKst, startKst, endKst };
+}
+
+/**
+ * 신규 큐 정렬: ① 오늘~endKst 다가오는 개최일 오름차순 ② 그 전 2주 지난 대회(누락 스크랩) 최신순 ③ 날짜 없음
+ */
+function sortWeeklyScrapeQueue(events, todayKst, startKst, endKst) {
+  const hasYmd = (d) => d && /^\d{4}-\d{2}-\d{2}$/.test(String(d));
+  const tier = (e) => {
+    const d = e.date;
+    if (!hasYmd(d)) return 3;
+    if (d >= todayKst && d <= endKst) return 1;
+    if (d >= startKst && d < todayKst) return 2;
+    return 4;
+  };
+  return [...events].sort((a, b) => {
+    const ta = tier(a);
+    const tb = tier(b);
+    if (ta !== tb) return ta - tb;
+    if (ta === 1) return String(a.date).localeCompare(String(b.date));
+    if (ta === 2) return String(b.date).localeCompare(String(a.date));
+    return 0;
+  });
+}
+
+function takeWeeklyScrapeSlice(sortedNewEvents, maxJobs = WEEKLY_MAX_JOBS_PER_RUN) {
+  return sortedNewEvents.slice(0, maxJobs);
 }
 
 // ─── 전체 스크래핑 (이벤트 1개 + 회원 N명) ──────────────────
@@ -852,7 +1091,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
 
   // 정렬: 종목 순 (full → half → 10K → 30K → 5K → …) → 기록 빠른 순
   results.sort((a, b) => {
-    const dOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, "20K": 6 };
+    const dOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "32K": 4, "5K": 5, "3K": 6, "20K": 7 };
     const da = dOrder[a.distance] ?? 9;
     const db2 = dOrder[b.distance] ?? 9;
     if (da !== db2) return da - db2;
@@ -871,6 +1110,10 @@ module.exports = {
   searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,
+  discoverGoRunningMonthly, discoverGoRunningThisAndNextMonth, discoverGoRunningYear, enrichMissingDatesFromGoRunning,
+  kstTodayYmd, kstAddDays,
+  filterEventsWeeklyScrapeWindow, sortWeeklyScrapeQueue, takeWeeklyScrapeSlice,
+  WEEKLY_LOOKBACK_DAYS, WEEKLY_LOOKAHEAD_DAYS, WEEKLY_MAX_JOBS_PER_RUN,
   scrapeEvent, getSmartChipSession,
   sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
 };
