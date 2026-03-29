@@ -31,6 +31,12 @@ alwaysApply: true
 
 - 형식: `{source}_{sourceId}` (예: `smartchip_202650000006`)
 
+## scrape_jobs.status vs 대회별 기록
+
+- 리포트 **완료 탭**(`events` API): `scrape_jobs.status === "confirmed"` 인 잡만 노출.
+- **대회별 기록**(`confirmed-races` / `races.html`): `race_results` 에서 `status === "confirmed"` 인 행만 집계 — **잡 `status`와 무관**.
+- `confirm` 액션에서 기존 잡을 `update` 할 때 **`status: "confirmed"`** 를 반드시 포함할 것. 2026-03-23 `33e7d4c` 핫픽스에서 누락되어 확정 후에도 완료 탭에 안 보이는 회귀가 있었음.
+
 ## 상세 참조
 
 `_docs/knowledge/data-dictionary.md`

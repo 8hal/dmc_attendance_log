@@ -19,7 +19,7 @@ alwaysApply: true
 ## 배포 요청 훅 (추가)
 
 사용자 메시지에 다음 키워드가 포함된 경우:
-`배포`, `deploy`, `firebase deploy`, `functions 배포`, `올려줘`, `반영해줘`
+`배포`, `deploy`, `firebase deploy`, `functions 배포`, `hosting 배포`, `올려줘`, `반영해줘`
 
 → **반드시** `.cursor/skills/firebase-deploy/SKILL.md` 를 먼저 읽고 절차를 따른다.
 → AI는 절대 `firebase deploy` 명령어를 Shell 도구로 직접 실행하지 않는다.
