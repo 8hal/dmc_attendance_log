@@ -603,6 +603,15 @@
     /** 마지막 members API가 ok:true로 끝났는지 (빈 배열과 네트워크 실패 구분) */
     let lastMembersFetchOk = false;
     let lastMembersError = "";
+    /** 확정 API 요청 중 — 이탈 시 저장 여부를 알 수 없으므로 beforeunload로 경고 */
+    let confirmSaveInFlight = false;
+
+    window.addEventListener("beforeunload", (e) => {
+      if (confirmSaveInFlight) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
 
     /** 스크랩 대상 회원 선택 모달 컨텍스트 */
     let scrapePickContext = null;
@@ -1952,6 +1961,7 @@
           showToast("대회일을 입력한 뒤 확정해 주세요.", 4000);
           return;
         }
+        confirmSaveInFlight = true;
         const res = await fetch(`${raceApiBase()}?action=confirm`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1980,7 +1990,7 @@
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
 
-        showToast(`${data.savedCount}건 기록 저장 완료!`);
+        showToast(`${data.savedCount}건 기록 저장 완료. 완료 탭에서 반영 여부를 확인한 뒤 탭을 닫아 주세요.`, 5000);
         activeTab = "done";
         hasAutoSelected = true;
         showScreen("screenSelect");
@@ -1988,6 +1998,7 @@
       } catch (err) {
         showToast("저장 실패: " + err.message, 4000);
       } finally {
+        confirmSaveInFlight = false;
         btn.disabled = false;
         btn.textContent = "확정";
       }
