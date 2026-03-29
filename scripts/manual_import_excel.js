@@ -5,7 +5,7 @@
  * confirm_from_excel.js에서 매칭 실패한 47건 중
  * 박조련(정식 등록 아님) 제외한 46건을 수동으로 race_results에 저장합니다.
  *
- * 저장 방식: source="manual", confirmSource="excel_import", finishTime 사용
+ * 저장 방식: source="manual", confirmSource="excel_import", netTime=finishTime(표시·PB용), finishTime 유지
  *
  * 실행:
  *   node scripts/manual_import_excel.js --dry-run
@@ -103,7 +103,7 @@ const SKIP_NAMES = new Set();
       memberRealName: ex.memberRealName,
       memberNickname: ex.memberNickName || "",
       distance: ex.distance,
-      netTime: "",
+      netTime: ex.finishTime,
       gunTime: "",
       finishTime: ex.finishTime,
       bib: "",

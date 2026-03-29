@@ -191,6 +191,8 @@ assert_contains "races.html: gender 우선순위" "member?.gender" "$TMP_DIR/rac
 assert_contains "races.html: confirmSource" "confirmSource" "$TMP_DIR/races.html"
 assert_contains "report.html: BETA 태그" "BETA" "$TMP_DIR/report.html"
 assert_contains "report.html: verify-admin" "verify-admin" "$TMP_DIR/report.html"
+assert_contains "report.html: 대회 예정 탭" 'data-tab="scheduled"' "$TMP_DIR/report.html"
+assert_contains "report.html: 수집/예정 구분 KST" "Asia/Seoul" "$TMP_DIR/report.html"
 
 curl -s "$HOST/admin.html" > "$TMP_DIR/admin.html"
 assert_contains "admin.html: verify-admin" "verify-admin" "$TMP_DIR/admin.html"
@@ -200,6 +202,10 @@ assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
 
 curl -s "$HOST/ops.html" > "$TMP_DIR/ops.html"
 assert_contains "ops.html: Ops Console" "Ops Console" "$TMP_DIR/ops.html"
+assert_contains "ops.html: ops-scrape-preview 연동" "ops-scrape-preview" "$TMP_DIR/ops.html"
+
+curl -s "$HOST/race-distance-client.js" > "$TMP_DIR/race-distance-client.js"
+assert_contains "race-distance-client.js: 32K 정규화" '"32K"' "$TMP_DIR/race-distance-client.js"
 
 # 비밀번호 평문 노출 없음 확인
 ! grep -q "dmc2008" "$TMP_DIR/report.html" 2>/dev/null
