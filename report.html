@@ -406,7 +406,12 @@
           </div>
           <button class="btn btn-outline btn-sm" id="confirmBackBtn">← 리뷰로 돌아가기</button>
         </div>
-        <div style="font-size:14px; color:var(--color-text-secondary); margin-bottom:12px">
+        <div id="confirmDateMissingWrap" style="display:none; margin-top:12px; padding:12px 14px; background:var(--color-warning-light); border-radius:10px; border:1px solid var(--color-warning);">
+          <label for="confirmEventDateInput" style="font-size:13px; font-weight:600; display:block; margin-bottom:6px; color:var(--color-warning);">대회일이 비어 있습니다. 확정 전에 입력해 주세요.</label>
+          <input type="date" id="confirmEventDateInput" style="padding:8px 12px; border-radius:8px; border:1px solid var(--color-border); font-size:14px; max-width:220px;" />
+          <div style="font-size:11px; color:var(--color-text-muted); margin-top:6px;">날짜가 없으면 동일 대회·동명 참가자 문서가 겹쳐 저장이 실패할 수 있습니다.</div>
+        </div>
+        <div style="font-size:14px; color:var(--color-text-secondary); margin-bottom:12px; margin-top:12px">
           아래 기록이 저장됩니다. 확인 후 확정 버튼을 눌러주세요.
         </div>
       </div>
@@ -1889,7 +1894,13 @@
       }
 
       document.getElementById("confirmEventName").textContent = currentJob?.eventName || "대회";
-      document.getElementById("confirmEventDate").textContent = currentJob?.eventDate || "";
+      const jobDateRaw = (currentJob?.eventDate && String(currentJob.eventDate).trim()) ? String(currentJob.eventDate).trim() : "";
+      const dateMissing = !jobDateRaw;
+      document.getElementById("confirmEventDate").textContent = jobDateRaw || "— (미입력)";
+      document.getElementById("confirmEventDate").style.color = dateMissing ? "var(--color-warning)" : "var(--color-text-secondary)";
+      document.getElementById("confirmDateMissingWrap").style.display = dateMissing ? "block" : "none";
+      const dateInp = document.getElementById("confirmEventDateInput");
+      dateInp.value = jobDateRaw ? jobDateRaw.slice(0, 10) : "";
       document.getElementById("confirmCount").textContent = included.length;
 
       const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "32K": "32K", "5K": "5K", "3K": "3K", "20K": "20K" };
@@ -1931,13 +1942,23 @@
 
       try {
         const included = getIncludedRows();
+        let eventDateForSave = (currentJob.eventDate && String(currentJob.eventDate).trim())
+          ? String(currentJob.eventDate).trim().slice(0, 10)
+          : "";
+        if (!eventDateForSave) {
+          eventDateForSave = (document.getElementById("confirmEventDateInput").value || "").trim();
+        }
+        if (!eventDateForSave) {
+          showToast("대회일을 입력한 뒤 확정해 주세요.", 4000);
+          return;
+        }
         const res = await fetch(`${raceApiBase()}?action=confirm`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             jobId: currentJob.jobId,
             eventName: currentJob.eventName,
-            eventDate: currentJob.eventDate,
+            eventDate: eventDateForSave,
             source: currentJob.source,
             sourceId: currentJob.sourceId,
             ...(currentJob.canonicalEventId ? { canonicalEventId: currentJob.canonicalEventId } : {}),
