@@ -47,6 +47,7 @@
   </div>
 
   <div id="stats"></div>
+  <div class="card" id="scrapeScheduleCard"><div class="loading">스크랩 큐 확인 중… (발견 API, 수 초 걸릴 수 있음)</div></div>
   <div class="card" id="memberStatsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="scrapeAlertsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="integrityCard"><div class="loading">로딩 중...</div></div>
@@ -73,6 +74,61 @@
       renderScrapeAlerts(logsData);
       renderIntegrity(intData);
       renderLogs(logsData);
+
+      try {
+        const scRes = await fetch(`${API_BASE}?action=ops-scrape-preview`);
+        const scData = await scRes.json();
+        renderScrapeSchedule(scData);
+      } catch (e) {
+        document.getElementById("scrapeScheduleCard").innerHTML =
+          '<div class="card-title">📅 자동 스크랩 예정</div><span class="badge-warn">로드 실패</span>';
+      }
+    }
+
+    function renderScrapeSchedule(d) {
+      const el = document.getElementById("scrapeScheduleCard");
+      if (!d || !d.ok) {
+        el.innerHTML = '<div class="card-title">📅 자동 스크랩 예정</div><span class="badge-warn">API 실패</span>';
+        return;
+      }
+
+      const rows = (list, cols) => {
+        if (!list || list.length === 0) return '<tr><td colspan="' + cols + '" style="color:#64748B;">없음</td></tr>';
+        return list.map((r) => {
+          const job = `${esc(r.source)} / ${esc(String(r.sourceId))}`;
+          const q = r.inNextQueue !== undefined
+            ? (r.inNextQueue ? '<span class="badge-warn">다음 배치 후보</span>' : '<span class="badge-ok">이미 스크랩됨</span>')
+            : (r.order != null ? `<span class="badge-warn">#${r.order} 다음 실행</span>` : "");
+          return `<tr><td>${job}</td><td>${esc(r.name || "")}</td><td>${esc(r.date || "—")}</td><td>${q}</td></tr>`;
+        }).join("");
+      };
+
+      const today = d.racesHeldTodayKst || [];
+      const next = d.nextBatch || [];
+      const tail = d.queueTail || [];
+
+      el.innerHTML = `
+        <div class="card-title">📅 주간 발견 큐 <span style="color:#64748B;font-weight:400;">(자동 회원수집 없음 · report에서 수동)</span></div>
+        <div style="font-size:11px;color:#94A3B8;margin-bottom:10px;line-height:1.5;">
+          스케줄: <strong>${esc(d.weeklySchedule || "")}</strong><br/>
+          KST 오늘: <strong>${esc(d.todayKst || "")}</strong> · 개최일 윈도(KST): ${esc(d.windowStartKst || d.windowStart || "")} ~ ${esc(d.windowEndKst || "")} · (참고 UTC): ${esc(d.todayUtc || "")}<br/>
+          최근창 이벤트 ${d.recentEventCount ?? "—"}개 · 신규 큐 ${d.newEventCount ?? "—"}개
+        </div>
+
+        <div style="font-size:11px;color:#64748B;margin:10px 0 6px;font-weight:600;">오늘(KST) 개최일로 잡힌 대회 (최근 2주 윈도우 안)</div>
+        <table><tr><th>출처 / ID</th><th>이름</th><th>날짜</th><th>상태</th></tr>
+          ${rows(today, 4)}
+        </table>
+
+        <div style="font-size:11px;color:#64748B;margin:14px 0 6px;font-weight:600;">다음 실행 시 먼저 스크랩될 후보 (최대 5건/회)</div>
+        <table><tr><th>출처 / ID</th><th>이름</th><th>날짜</th><th></th></tr>
+          ${rows(next, 4)}
+        </table>
+
+        <div style="font-size:11px;color:#64748B;margin:14px 0 6px;font-weight:600;">그 다음 대기 (동일 규칙, 미리보기 최대 15건)</div>
+        <table><tr><th>출처 / ID</th><th>이름</th><th>날짜</th><th></th></tr>
+          ${rows(tail, 4)}
+        </table>`;
     }
 
     function renderStats(intData, logsData) {

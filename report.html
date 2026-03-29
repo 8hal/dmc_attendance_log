@@ -227,13 +227,10 @@
 
       <!-- 타임라인 탭 바 -->
       <div class="tl-tab-bar">
-        <!-- TODO: events 컬렉션 + gorunning.kr 통합 후 복원 (docs/events-collection-design.md 참고) -->
-        <!--
         <button class="tl-tab" data-tab="scheduled">
           <div class="tl-tab-label">📅 대회 예정</div>
           <div class="tl-tab-count zero" id="tabCountScheduled">-</div>
         </button>
-        -->
         <button class="tl-tab" data-tab="collect">
           <div class="tl-tab-label">🔍 수집 가능</div>
           <div class="tl-tab-count zero" id="tabCountCollect">-</div>
@@ -336,6 +333,8 @@
               <option value="full">Full</option>
               <option value="half">Half</option>
               <option value="10K">10K</option>
+              <option value="30K">30K</option>
+              <option value="32K">32K</option>
               <option value="5K">5K</option>
             </select>
             <input class="time-input" id="addTime" placeholder="HH:MM:SS" />
@@ -612,7 +611,8 @@
 
     // ─── 데이터 & 상태 ───────────────────────────────────
     const PAGE_SIZE = 10;
-    const TODAY_STR = new Date().toISOString().slice(0, 10);
+    /** KST 달력 기준 오늘 (수집 가능 vs 대회 예정 구분 — UTC만 쓰면 한국 자정 전후·주말 대회가 잘못 분류됨) */
+    const TODAY_STR = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
     let discoverAllEvents = [];
     let scrapedAllJobs = [];
     let isScraping = false;
@@ -745,7 +745,7 @@
     // 🔍 수집 가능 탭
     function renderCollectTab(items, panel) {
       if (!items.length) {
-        panel.innerHTML = '<div class="tab-empty">수집 가능한 대회가 없습니다.<br><span style="font-size:12px;">최근 2주 기준으로 발견된 대회를 표시합니다.</span></div>';
+        panel.innerHTML = '<div class="tab-empty">수집 가능한 대회가 없습니다.<br><span style="font-size:12px;">최근 2주 안에서 발견된 대회 중, <b>개최일이 오늘(KST) 이전·당일</b>이고 아직 수집하지 않은 항목만 여기에 나옵니다.<br/>개최일이 아직 남았으면 <b>📅 대회 예정</b> 탭을, 이미 수집을 돌렸다면 <b>✏️ 검토 필요</b>를 확인하세요.</span></div>';
         return;
       }
       const totalPages = Math.ceil(items.length / PAGE_SIZE) || 1;
@@ -792,10 +792,10 @@
     // 📅 대회 예정 탭
     function renderScheduledTab(items, panel) {
       if (!items.length) {
-        panel.innerHTML = '<div class="tab-empty">예정된 대회가 없습니다.</div>';
+        panel.innerHTML = '<div class="tab-empty">예정된 대회가 없습니다.<br><span style="font-size:12px;">발견 목록에서 개최일이 오늘(KST) 이후인 대회입니다. 결과 수집은 보통 개최일 이후에 시도하세요.</span></div>';
         return;
       }
-      panel.innerHTML = '<div class="event-list">' + items.map(e => `
+      panel.innerHTML = '<p style="font-size:12px;color:var(--color-text-secondary);padding:0 8px 10px;margin:0;">개최일이 오늘 이후입니다. 아래는 미리보기이며, 수집은 🔍 수집 가능으로 넘어간 뒤 또는 이벤트 ID 검색으로 진행할 수 있습니다.</p><div class="event-list">' + items.map(e => `
         <div class="event-item" style="cursor:default;opacity:0.75">
           <div class="event-info"><div class="event-name">${e.name}</div><div class="event-meta">${e.date || "날짜 미확인"} · ${e.source}${e.location ? " · " + e.location : ""}</div></div>
           <span class="event-badge" style="background:#F1F5F9;color:#64748B">예정</span>
@@ -1162,7 +1162,7 @@
       }
 
       // 종목 우선순위 (길이 긴 것이 앞)
-      const distOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, "20K": 6 };
+      const distOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "32K": 4, "5K": 5, "3K": 6, "20K": 7 };
       const getDistOrder = (dist) => distOrder[dist] ?? 99;
 
       // 정렬: included(종목→기록→PB→배번) → excluded/pending 일반 → 선택 미완료 ambiguous
@@ -1219,7 +1219,7 @@
           const infoColor = groupDecision === "excluded" ? "var(--color-text-muted)"
             : groupDecision === "pending" ? "var(--color-warning)" : "var(--color-text)";
 
-          const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" };
+          const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "32K": "32K", "5K": "5K", "3K": "3K", "20K": "20K" };
           // 선택된 후보의 종목/기록/배번 (일반 행과 동일한 서식)
           const selDist = selected ? (distLabel[selected.distance] || selected.distance) : "";
           const selTime = selected ? selected.netTime : "";
@@ -1277,7 +1277,7 @@
         const rowClass = isDnf ? "row-dnf" : dec === "included" ? "row-auto" : dec === "excluded" ? "row-excluded" : "";
         const toggleClass = dec === "included" ? "" : dec === "excluded" ? "excluded" : "pending";
         const toggleIcon = dec === "included" ? "✓" : dec === "excluded" ? "✕" : "?";
-        const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" }[r.distance] || r.distance;
+        const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "32K": "32K", "5K": "5K", "3K": "3K", "20K": "20K" }[r.distance] || r.distance;
 
         const guestBadge = r.isGuest ? ' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:4px;font-weight:500">게스트</span>' : "";
         html += `<tr class="${rowClass}" data-idx="${r.idx}">
@@ -1612,7 +1612,7 @@
       const included = reviewRows.filter(r => r.decision === "included" && r.netTime && r.netTime !== "--:--:--");
       const eventName = currentJob?.eventName || "대회";
 
-      const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" };
+      const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "32K": "32K", "5K": "5K", "3K": "3K", "20K": "20K" };
       let text = `[동탄마라톤클럽] ${eventName} 결과\n\n`;
 
       let no = 0;
@@ -1703,7 +1703,7 @@
       document.getElementById("confirmEventDate").textContent = currentJob?.eventDate || "";
       document.getElementById("confirmCount").textContent = included.length;
 
-      const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "5K": "5K", "3K": "3K", "20K": "20K" };
+      const distLabel = { full: "Full", half: "Half", "10K": "10K", "30K": "30K", "32K": "32K", "5K": "5K", "3K": "3K", "20K": "20K" };
       const tbody = document.getElementById("confirmBody");
       tbody.innerHTML = included.map((r, i) => `
         <tr>

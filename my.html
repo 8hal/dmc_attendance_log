@@ -73,6 +73,7 @@
     .pb-cell-meta { font-size: 10px; color: var(--color-text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pb-cell.pb-10K .pb-cell-dist { color: #1E40AF; }
     .pb-cell.pb-30K .pb-cell-dist { color: #0E7490; }
+    .pb-cell.pb-32K .pb-cell-dist { color: #0E7490; }
     .pb-cell.pb-half .pb-cell-dist { color: #5B21B6; }
     .pb-cell.pb-full .pb-cell-dist { color: #991B1B; }
 
@@ -81,6 +82,7 @@
     .dist-5K { background: #D1FAE5; color: #065F46; }
     .dist-10K { background: #DBEAFE; color: #1E40AF; }
     .dist-30K { background: #CCFBF1; color: #0F766E; }
+    .dist-32K { background: #CFFAFE; color: #0E7490; }
     .dist-half { background: #EDE9FE; color: #5B21B6; }
     .dist-full { background: #FEE2E2; color: #991B1B; }
     .dist-ultra { background: #1F2937; color: #F9FAFB; }
@@ -323,9 +325,11 @@ function logEvent(event, data = {}) {
   }).catch(() => {});
 }
 
-const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "30K": "30K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
-const DIST_ORDER = ["full", "half", "10K", "30K", "5K", "3K"];
-const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, ultra: -1, unknown: 100 };
+const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "30K": "30K", "32K": "32K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
+const DIST_ORDER = ["full", "half", "10K", "30K", "32K", "5K", "3K"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "30K": 3, "32K": 4, "5K": 5, "3K": 6, ultra: -1, unknown: 100 };
+/** PB 카드·검색 넛지에서 “채우면 좋은 거리”로 보는 3종 */
+const PB_SLOT_DISTS = ["full", "half", "10K"];
 const MONTH_LABELS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 const MAX_MONTH_SELECT = 5;
 
@@ -579,9 +583,8 @@ function renderPBCards(records) {
   const pbMap = {};
   for (const p of pbs) pbMap[p.distance] = p;
 
-  const PB_DISTS = ["full", "half", "10K"];
   const el = document.getElementById("pbCards");
-  el.innerHTML = `<div class="pb-strip">${PB_DISTS.map(dist => {
+  el.innerHTML = `<div class="pb-strip">${PB_SLOT_DISTS.map(dist => {
     const pb = pbMap[dist];
     const hasRecord = !!pb;
     const label = DIST_LABELS[dist] || dist;
@@ -855,7 +858,7 @@ function renderSearchNudge(records) {
   if (searchState.step !== "idle") { el.innerHTML = ""; return; }
 
   const count = records.length;
-  const emptyPBs = DIST_ORDER.filter(d => !records.some(r => r.distance === d)).length;
+  const emptyPbSlots = PB_SLOT_DISTS.filter(d => !records.some(r => r.distance === d)).length;
   const displayName = selectedMember?.nickname || selectedRealName;
 
   if (count === 0) {
@@ -867,8 +870,8 @@ function renderSearchNudge(records) {
       </div>
       <span class="nudge-arrow">→</span>
     </div>`;
-  } else if (count <= 5 || emptyPBs >= 2) {
-    const hint = emptyPBs > 0 ? `아직 ${emptyPBs}개 거리의 기록이 비어 있어요.` : "다른 대회 기록이 더 있을 수 있어요.";
+  } else if (count <= 5 || emptyPbSlots >= 2) {
+    const hint = emptyPbSlots > 0 ? `아직 풀·하프·10K 중 ${emptyPbSlots}개 거리 기록이 비어 있어요.` : "다른 대회 기록이 더 있을 수 있어요.";
     el.innerHTML = `<div class="nudge" onclick="startSearchFlow()">
       <span class="nudge-icon">📊</span>
       <div class="nudge-body">

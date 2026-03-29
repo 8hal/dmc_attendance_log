@@ -79,6 +79,7 @@
     .dist-5K { background: #D1FAE5; color: #065F46; }
     .dist-10K { background: #DBEAFE; color: #1E40AF; }
     .dist-30K { background: #CCFBF1; color: #0F766E; }
+    .dist-32K { background: #CFFAFE; color: #0E7490; }
     .dist-half { background: #EDE9FE; color: #5B21B6; }
     .dist-full { background: #FEE2E2; color: #991B1B; }
     .dist-ultra { background: #1F2937; color: #F9FAFB; }
@@ -255,11 +256,10 @@
     <!-- Distance Filter -->
     <div class="filters" id="distFilter">
       <button class="filter-pill active" data-dist="all">전체</button>
-      <button class="filter-pill" data-dist="5K">5K</button>
-      <button class="filter-pill" data-dist="10K">10K</button>
-      <button class="filter-pill" data-dist="half">하프</button>
       <button class="filter-pill" data-dist="full">풀</button>
-      <button class="filter-pill" data-dist="ultra">울트라</button>
+      <button class="filter-pill" data-dist="half">하프</button>
+      <button class="filter-pill" data-dist="10K">10K</button>
+      <button class="filter-pill" data-dist="other">기타</button>
     </div>
 
     <!-- Gender filter -->
@@ -286,9 +286,9 @@ const TEAM_COLORS = {
   "5팀": { bg: "#ffe7f1", text: "#8a2353", border: "#ffd0e2" }
 };
 const TEAM_LABELS = { S: "S팀", T1: "1팀", T2: "2팀", T3: "3팀", T4: "4팀", T5: "5팀" };
-const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "30K": "30K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
-const DIST_ORDER = ["full", "half", "10K", "30K", "5K", "3K", "ultra"];
-const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "30K": 3, "5K": 4, "3K": 5, ultra: -1, unknown: 100 };
+const DIST_LABELS = { "5K": "5K", "3K": "3K", "10K": "10K", "30K": "30K", "32K": "32K", "half": "하프", "full": "풀", "ultra": "울트라", unknown: "?" };
+const DIST_ORDER = ["full", "half", "10K", "30K", "32K", "5K", "3K", "ultra"];
+const DIST_SORT_ORDER = { full: 0, half: 1, "10K": 2, "30K": 3, "32K": 4, "5K": 5, "3K": 6, ultra: -1, unknown: 100 };
 
 function sortResults(a, b) {
   const distA = DIST_SORT_ORDER[a.distance] ?? 99;
@@ -311,6 +311,14 @@ let memberMap = {};
 let currentTab = "pb";
 let currentDist = "all";
 let currentGender = "all";
+
+/** 거리 필터 pill: 풀·하프·10K만 단독, 나머지(5K·30K·32K·울트라 등)는 「기타」 */
+const FILTER_MAIN_DISTS = ["full", "half", "10K"];
+function matchesDistanceFilter(r) {
+  if (currentDist === "all") return true;
+  if (currentDist === "other") return !FILTER_MAIN_DISTS.includes(r.distance);
+  return r.distance === currentDist;
+}
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -424,7 +432,7 @@ function computePBs(allResults) {
 
 function filterResults(results) {
   return results.filter(r => {
-    if (currentDist !== "all" && r.distance !== currentDist) return false;
+    if (!matchesDistanceFilter(r)) return false;
     if (currentGender !== "all" && r.gender !== currentGender) return false;
     return true;
   });
@@ -502,6 +510,20 @@ function renderPBTab() {
     }
     if (!html) html = emptyState("등록된 기록이 없습니다.");
     document.getElementById("content").innerHTML = html;
+  } else if (currentDist === "other") {
+    const dists = [...new Set(filtered.map(r => r.distance))]
+      .filter(d => !FILTER_MAIN_DISTS.includes(d))
+      .sort((a, b) => (DIST_SORT_ORDER[a] ?? 99) - (DIST_SORT_ORDER[b] ?? 99));
+    let html = "";
+    for (const dist of dists) {
+      const distPbs = filtered.filter(r => r.distance === dist).sort((a, b) => timeToSeconds(a.netTime) - timeToSeconds(b.netTime));
+      if (!distPbs.length) continue;
+      html += `<div class="card"><h3 style="margin:0 0 10px;font-size:15px;">${distBadge(dist)} 최고 기록</h3>`;
+      html += renderRankingList(distPbs);
+      html += `</div>`;
+    }
+    if (!html) html = emptyState("해당 거리의 기록이 없습니다.");
+    document.getElementById("content").innerHTML = html;
   } else {
     const distPbs = filtered.sort((a, b) => timeToSeconds(a.netTime) - timeToSeconds(b.netTime));
     if (!distPbs.length) {
@@ -553,7 +575,7 @@ function renderRacesTab() {
         return { ...r, nickname: member?.nickname || r.nickname || r.realName, team: member?.team || "", isGuest: !member };
       })
       .filter(r => {
-        if (currentDist !== "all" && r.distance !== currentDist) return false;
+        if (!matchesDistanceFilter(r)) return false;
         if (currentGender !== "all" && r.gender !== currentGender) return false;
         return true;
       })
@@ -669,7 +691,7 @@ function renderMemberDetail() {
     const totalRaces = new Set(filtered.map(r => r.raceId)).size;
     const distances = [...new Set(filtered.map(r => r.distance))];
     const pbCount = pbs.filter(p => {
-      if (currentDist !== "all" && p.distance !== currentDist) return false;
+      if (!matchesDistanceFilter(p)) return false;
       if (currentGender !== "all" && p.gender !== currentGender) return false;
       return true;
     }).length;
