@@ -36,6 +36,17 @@ function effectiveNetTimeForConfirm(r) {
   return "";
 }
 
+/** scrape_jobs.results 정렬 (scrapeEvent 반환과 동일 기준) */
+function sortScrapeJobResults(rows) {
+  const dOrder = { full: 0, half: 1, "10K": 2, "30K": 3, "32K": 4, "5K": 5, "3K": 6, "20K": 7 };
+  return [...(rows || [])].sort((a, b) => {
+    const da = dOrder[a.distance] ?? 9;
+    const db2 = dOrder[b.distance] ?? 9;
+    if (da !== db2) return da - db2;
+    return scraper.timeToSeconds(a.netTime) - scraper.timeToSeconds(b.netTime);
+  });
+}
+
 /** race_events → 역색인 (source_sourceId → canonicalEventId) + 카드 메타 */
 async function buildRaceEventIndexes() {
   const snap = await db.collection("race_events").get();
@@ -973,10 +984,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "members") {
-      const snap = await db.collection("members").where("hidden", "==", false).get();
+      // hidden 필드가 없는 레거시 문서는 미숨김으로 간주 (where("hidden","==",false)는 필드 누락 문서를 제외함)
+      const snap = await db.collection("members").get();
       const members = [];
       snap.forEach((doc) => {
         const d = doc.data();
+        if (d.hidden === true) return;
         members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "", team: d.team || "" });
       });
       members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
@@ -1508,17 +1521,42 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "scrape" && req.method === "POST") {
-      const { source, sourceId, eventName, eventDate, replaceJobId, resume } = req.body || {};
+      const {
+        source, sourceId, eventName, eventDate, replaceJobId, resume, memberRealNames,
+      } = req.body || {};
       if (!source || !sourceId) {
         return res.status(400).json({ ok: false, error: "source and sourceId required" });
       }
 
-      const membersSnap = await db.collection("members").where("hidden", "==", false).get();
-      const members = [];
+      const membersSnap = await db.collection("members").get();
+      const allMembers = [];
       membersSnap.forEach((doc) => {
         const d = doc.data();
-        members.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
+        if (d.hidden === true) return;
+        allMembers.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
       });
+
+      let members = allMembers;
+      if (memberRealNames !== undefined && memberRealNames !== null) {
+        if (!Array.isArray(memberRealNames)) {
+          return res.status(400).json({ ok: false, error: "memberRealNames must be an array" });
+        }
+        const want = [...new Set(
+          memberRealNames.map((n) => String(n || "").trim()).filter(Boolean),
+        )];
+        if (want.length === 0) {
+          return res.status(400).json({ ok: false, error: "memberRealNames: 한 명 이상 선택하세요" });
+        }
+        const byName = new Map(allMembers.map((m) => [m.realName, m]));
+        const missing = want.filter((n) => !byName.has(n));
+        if (missing.length > 0) {
+          return res.status(400).json({
+            ok: false,
+            error: `등록·미숨김 회원에 없는 실명: ${missing.join(", ")}`,
+          });
+        }
+        members = want.map((n) => byName.get(n));
+      }
 
       const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
       const confirmedResults = [];
@@ -1527,6 +1565,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       const canonicalId = `${source}_${sourceId}`;
       const jobRef = db.collection("scrape_jobs").doc(replaceJobId || canonicalId);
+
+      const partialRescrape = !!(replaceJobId
+        && Array.isArray(memberRealNames)
+        && memberRealNames.length > 0);
+      let previousResults = [];
+      if (partialRescrape) {
+        const prev = await jobRef.get();
+        if (prev.exists && Array.isArray(prev.data().results)) {
+          previousResults = prev.data().results;
+        }
+      }
 
       const now = new Date().toISOString();
 
@@ -1563,16 +1612,25 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         },
       });
 
+      let mergedResults = result.results;
+      if (partialRescrape) {
+        const sel = new Set(
+          memberRealNames.map((n) => String(n || "").trim()).filter(Boolean),
+        );
+        const kept = previousResults.filter((r) => r && !sel.has(r.memberRealName));
+        mergedResults = sortScrapeJobResults([...kept, ...result.results]);
+      }
+
       const finalStatus = result.jobStatus || "complete";
       await jobRef.update({
         status: finalStatus,
         eventName: result.eventName || eventName || sourceId,
         eventDate: result.eventDate || eventDate || "",
-        results: result.results,
+        results: mergedResults,
         progress: {
           searched: members.length,
           total: members.length,
-          found: result.results.length,
+          found: mergedResults.length,
           failCount: result.failCount || 0,
           failRate: result.failRate || 0,
         },
@@ -1599,6 +1657,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         eventName: result.eventName,
         eventDate: result.eventDate,
         foundCount: result.results.length,
+        mergedResultCount: mergedResults.length,
+        partialRescrape,
         failCount: result.failCount || 0,
         failRate: result.failRate || 0,
         status: finalStatus,

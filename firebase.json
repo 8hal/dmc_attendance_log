@@ -21,6 +21,12 @@
   ],
   "hosting": {
     "public": ".",
+    "rewrites": [
+      {
+        "source": "/api/race",
+        "function": { "functionId": "race", "region": "asia-northeast3" }
+      }
+    ],
     "ignore": [
       "firebase.json",
       "firestore.rules",

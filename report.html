@@ -470,7 +470,7 @@
         <div class="help-section">
           <h3>🔍 1단계: 기록 수집</h3>
           <ul style="font-size:13px;color:var(--color-text-secondary);padding-left:18px;line-height:1.9;margin:0;">
-            <li><b>수집 가능</b> 탭에서 대회를 선택하면 자동으로 기록을 수집합니다.</li>
+            <li><b>수집 가능</b> 탭에서 대회를 선택하면 <b>스크랩할 회원을 먼저 고른 뒤</b> 기록을 수집합니다.</li>
             <li>목록에 없는 대회는 하단 <b>+ 직접 추가</b>에서 대회명·날짜를 입력하세요.</li>
             <li>이벤트 ID를 알고 있다면 <b>이벤트 ID로 직접 검색</b>을 사용하세요.</li>
           </ul>
@@ -508,6 +508,30 @@
     </div>
   </div>
 
+  <!-- 스크랩 대상 회원 선택 -->
+  <div class="modal-backdrop" id="scrapeMembersModal">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-header">
+        <h2 id="scrapeMembersTitle" style="font-size:17px;">스크랩할 회원 선택</h2>
+        <button type="button" class="modal-close" id="scrapeMembersModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="scrapeMembersHint" style="font-size:12px;color:var(--color-text-secondary);margin:0 0 10px;line-height:1.5;"></p>
+        <input type="text" id="scrapeMembersFilter" placeholder="닉네임·실명으로 필터…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;margin-bottom:8px;" />
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="scrapeMembersSelectAll">전체 선택</button>
+          <button type="button" class="btn btn-outline btn-sm" id="scrapeMembersClearAll">선택 해제</button>
+        </div>
+        <div id="scrapeMembersList" style="max-height:42vh;overflow-y:auto;border:1px solid var(--color-border);border-radius:8px;padding:6px 8px;font-size:13px;"></div>
+        <p style="font-size:11px;color:var(--color-text-muted);margin:8px 0 0;">한 명 이상 선택해야 스크랩을 시작할 수 있습니다.</p>
+      </div>
+      <div style="padding:12px 20px 20px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--color-border);">
+        <button type="button" class="btn btn-outline" id="scrapeMembersCancel">취소</button>
+        <button type="button" class="btn btn-primary" id="scrapeMembersOk">스크랩 시작</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ─── 비밀번호 인증 (서버사이드 검증) ─────────────────
     const AUTH_KEY = "dmc_report_auth";
@@ -532,10 +556,7 @@
       const btn = document.getElementById("authBtn");
       btn.disabled = true; btn.textContent = "확인 중...";
       try {
-        const base = location.hostname === "localhost"
-          ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
-          : "https://race-nszximpvtq-du.a.run.app";
-        const res = await fetch(`${base}?action=verify-admin`, {
+        const res = await fetch(`${raceApiBase()}?action=verify-admin`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pw }),
         });
@@ -543,6 +564,7 @@
         if (data.ok) {
           sessionStorage.setItem(AUTH_KEY, "verified");
           checkAuth();
+          void loadMembers();
         } else {
           document.getElementById("authError").style.display = "block";
           document.getElementById("authPw").value = "";
@@ -554,13 +576,175 @@
       btn.disabled = false; btn.textContent = "확인";
     }
 
-    const API_BASE = location.hostname === "localhost"
-      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
-      : "https://race-nszximpvtq-du.a.run.app";
+    const RACE_DIRECT_SESSION_KEY = "dmc_race_use_direct";
+
+    /** 로컬은 호스팅 에뮬(5000)일 때 /api/race 리라이트(같은 origin). 리라이트 404·미반영 시 sessionStorage로 functions 포트 직접 호출. */
+    function raceApiBase() {
+      const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      if (!isLocal) return "https://race-nszximpvtq-du.a.run.app";
+      if (sessionStorage.getItem(RACE_DIRECT_SESSION_KEY) === "1") {
+        return `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/race`;
+      }
+      if (location.protocol.startsWith("http") && location.port === "5000") {
+        return `${location.origin}/api/race`;
+      }
+      return `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/race`;
+    }
 
     let currentJob = null;
     let reviewRows = [];
     let allMembers = [];
+    let isScraping = false;
+    /** 마지막 members API가 ok:true로 끝났는지 (빈 배열과 네트워크 실패 구분) */
+    let lastMembersFetchOk = false;
+    let lastMembersError = "";
+
+    /** 스크랩 대상 회원 선택 모달 컨텍스트 */
+    let scrapePickContext = null;
+
+    function closeScrapeMembersModal() {
+      document.getElementById("scrapeMembersModal").classList.remove("open");
+      scrapePickContext = null;
+    }
+
+    function renderScrapeMembersChecklist(filterQ) {
+      const listEl = document.getElementById("scrapeMembersList");
+      const q = (filterQ || "").trim().toLowerCase();
+      const rows = allMembers.filter((m) => {
+        if (!(m.realName || "").trim()) return false;
+        if (!q) return true;
+        return (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q);
+      });
+      if (!rows.length) {
+        listEl.innerHTML = '<div style="color:var(--color-text-muted);padding:8px;">일치하는 회원이 없습니다.</div>';
+        return;
+      }
+      listEl.innerHTML = rows.map((m) => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:6px;cursor:pointer;">
+          <input type="checkbox" class="scrape-mem-cb" value="${escAttr(m.realName)}" />
+          <span>${escAttr(m.nickname || "")}</span>
+          <span style="color:var(--color-text-muted);">${escAttr(m.realName || "")}</span>
+        </label>`).join("");
+    }
+
+    function openScrapeMembersModal(ctx) {
+      scrapePickContext = ctx;
+      document.getElementById("scrapeMembersTitle").textContent = ctx.title || "스크랩할 회원 선택";
+      const hint = document.getElementById("scrapeMembersHint");
+      if (ctx.subtitle) {
+        hint.textContent = ctx.subtitle;
+        hint.style.display = "block";
+      } else {
+        hint.textContent = "";
+        hint.style.display = "none";
+      }
+      document.getElementById("scrapeMembersFilter").value = "";
+      renderScrapeMembersChecklist("");
+      document.getElementById("scrapeMembersModal").classList.add("open");
+    }
+
+    async function runScrapeWithMemberRealNames(ctx, realNames) {
+      const {
+        source, sourceId, eventName, eventDate, replaceJobId,
+        collectEl, rescrapeBtn, manualBtn, manualProgress,
+      } = ctx;
+      const body = {
+        source,
+        sourceId,
+        eventName: eventName || "",
+        eventDate: eventDate || "",
+        memberRealNames: realNames,
+      };
+      if (replaceJobId) body.replaceJobId = replaceJobId;
+
+      let badge = null;
+      let origText = "";
+      let origStyle = "";
+      if (collectEl) {
+        badge = collectEl.querySelector(".event-badge");
+        if (badge) {
+          origText = badge.textContent;
+          origStyle = badge.style.cssText;
+          badge.textContent = "수집 중...";
+          badge.style.cssText = "background:#FEF3C7;color:#92400E";
+        }
+      }
+      if (rescrapeBtn) {
+        rescrapeBtn.disabled = true;
+        rescrapeBtn.textContent = "스크랩 중...";
+      }
+      if (manualBtn) manualBtn.disabled = true;
+      if (manualProgress) {
+        manualProgress.style.display = "block";
+        const pt = document.getElementById("manualProgressText");
+        const pf = document.getElementById("manualProgressFill");
+        if (pt) pt.textContent = "스크랩 중...";
+        if (pf) pf.style.width = "30%";
+      }
+
+      try {
+        const res = await fetch(`${raceApiBase()}?action=scrape`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+
+        if (data.partialRescrape) {
+          showToast(`이번 조회 ${data.foundCount}건 · 잡 합계 ${data.mergedResultCount}행`, 3500);
+        } else {
+          showToast(`완료: ${data.foundCount}명 발견`);
+        }
+        if (replaceJobId) {
+          localStorage.removeItem(`review_${replaceJobId}`);
+        }
+        await loadJob(data.jobId);
+        reloadEvents();
+      } catch (err) {
+        showToast("오류: " + err.message, 4000);
+        if (badge) {
+          badge.textContent = origText;
+          badge.style.cssText = origStyle;
+        }
+      } finally {
+        isScraping = false;
+        if (rescrapeBtn) {
+          rescrapeBtn.disabled = false;
+          rescrapeBtn.textContent = "다시 스크래핑";
+        }
+        if (manualBtn) manualBtn.disabled = false;
+        if (manualProgress) manualProgress.style.display = "none";
+      }
+    }
+
+    document.getElementById("scrapeMembersFilter").addEventListener("input", (e) => {
+      renderScrapeMembersChecklist(e.target.value);
+    });
+    document.getElementById("scrapeMembersSelectAll").addEventListener("click", () => {
+      document.querySelectorAll("#scrapeMembersList .scrape-mem-cb").forEach((cb) => { cb.checked = true; });
+    });
+    document.getElementById("scrapeMembersClearAll").addEventListener("click", () => {
+      document.querySelectorAll("#scrapeMembersList .scrape-mem-cb").forEach((cb) => { cb.checked = false; });
+    });
+    document.getElementById("scrapeMembersCancel").addEventListener("click", closeScrapeMembersModal);
+    document.getElementById("scrapeMembersModalClose").addEventListener("click", closeScrapeMembersModal);
+    document.getElementById("scrapeMembersModal").addEventListener("click", (e) => {
+      if (e.target.id === "scrapeMembersModal") closeScrapeMembersModal();
+    });
+    document.getElementById("scrapeMembersOk").addEventListener("click", async () => {
+      if (!scrapePickContext) return;
+      const cbs = document.querySelectorAll("#scrapeMembersList .scrape-mem-cb:checked");
+      const names = [...cbs].map((cb) => cb.value.trim()).filter(Boolean);
+      if (!names.length) {
+        showToast("회원을 한 명 이상 선택하세요", 3000);
+        return;
+      }
+      const ctx = scrapePickContext;
+      closeScrapeMembersModal();
+      isScraping = true;
+      await runScrapeWithMemberRealNames(ctx, names);
+    });
 
     // ─── 유틸 ────────────────────────────────────────────
     function escAttr(s) { return String(s || "").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
@@ -615,7 +799,6 @@
     const TODAY_STR = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
     let discoverAllEvents = [];
     let scrapedAllJobs = [];
-    let isScraping = false;
     let eventSearchQuery = "";
     let activeTab = "review";
     let hasAutoSelected = false;
@@ -802,33 +985,19 @@
         </div>`).join("") + '</div>';
     }
 
-    // ─── 수집 실행 (공통) ─────────────────────────────────
+    // ─── 수집 실행: 회원 선택 모달 후 스크랩 ───────────────
     async function scrapeEvent(el) {
       if (isScraping) { showToast("다른 대회 수집이 진행 중입니다."); return; }
-      isScraping = true;
-      const badge = el.querySelector(".event-badge");
-      const origText = badge.textContent;
-      const origStyle = badge.style.cssText;
-      badge.textContent = "수집 중...";
-      badge.style.cssText = "background:#FEF3C7;color:#92400E";
-      try {
-        const res = await fetch(`${API_BASE}?action=scrape`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ source: el.dataset.source, sourceId: el.dataset.sourceId, eventName: el.dataset.name, eventDate: el.dataset.date }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
-        showToast(`완료: ${data.foundCount}명 발견`);
-        await loadJob(data.jobId);
-        reloadEvents();
-      } catch (err) {
-        showToast("오류: " + err.message, 4000);
-        badge.textContent = origText;
-        badge.style.cssText = origStyle;
-      } finally {
-        isScraping = false;
-      }
+      if (!(await ensureMembersLoadedForScrape())) return;
+      openScrapeMembersModal({
+        title: "스크랩할 회원 선택",
+        subtitle: `${el.dataset.name || el.dataset.sourceId} — 스크랩할 실명을 선택하세요.`,
+        source: el.dataset.source,
+        sourceId: el.dataset.sourceId,
+        eventName: el.dataset.name,
+        eventDate: el.dataset.date || "",
+        collectEl: el,
+      });
     }
 
     // ─── 글로벌 검색 결과 ─────────────────────────────────
@@ -913,7 +1082,7 @@
 
     async function loadDiscoveredEvents() {
       try {
-        const res = await fetch(`${API_BASE}?action=discover`);
+        const res = await fetch(`${raceApiBase()}?action=discover`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
         discoverAllEvents = data.events;
@@ -927,7 +1096,7 @@
 
     async function loadScrapedJobs() {
       try {
-        const res = await fetch(`${API_BASE}?action=events`);
+        const res = await fetch(`${raceApiBase()}?action=events`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
         scrapedAllJobs = data.jobs;
@@ -988,7 +1157,7 @@
         confirmBtn.textContent = "생성 중...";
 
         try {
-          const res = await fetch(`${API_BASE}?action=create-job`, {
+          const res = await fetch(`${raceApiBase()}?action=create-job`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ eventName, eventDate, location }),
@@ -1018,21 +1187,76 @@
 
     // ─── 회원 목록 로드 ──────────────────────────────────
     async function loadMembers() {
+      lastMembersError = "";
+      lastMembersFetchOk = false;
       try {
-        const res = await fetch(`${API_BASE}?action=members`);
-        const data = await res.json();
-        if (data.ok) {
-          allMembers = data.members;
-          const datalist = document.getElementById("memberList");
-          datalist.innerHTML = allMembers.map(m => `<option value="${m.nickname}">${m.nickname} (${m.realName})</option>`).join("");
+        const url = `${raceApiBase()}?action=members`;
+        let res = await fetch(url);
+        let raw = await res.text();
+        if (raw.trimStart().startsWith("<")) {
+          sessionStorage.setItem(RACE_DIRECT_SESSION_KEY, "1");
+          res = await fetch(`${raceApiBase()}?action=members`);
+          raw = await res.text();
         }
-      } catch (e) { /* ignore */ }
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          lastMembersError = "API 응답이 JSON이 아닙니다(에뮬·리라이트 확인)";
+          allMembers = [];
+          return;
+        }
+        if (!data.ok) {
+          lastMembersError = data.error || `HTTP ${res.status}`;
+          allMembers = [];
+          return;
+        }
+        lastMembersFetchOk = true;
+        allMembers = data.members || [];
+        const datalist = document.getElementById("memberList");
+        datalist.innerHTML = allMembers.map(m => `<option value="${m.nickname}">${m.nickname} (${m.realName})</option>`).join("");
+      } catch (e) {
+        lastMembersError = e.message || String(e);
+        allMembers = [];
+      }
+    }
+
+    function membersWithRealNameCount() {
+      return allMembers.filter((m) => (m.realName || "").trim()).length;
+    }
+
+    /** 스크랩 모달 열기 전: 목록이 비어 있으면 한 번 다시 불러오고, 실패·0명이면 안내 */
+    async function ensureMembersLoadedForScrape() {
+      if (membersWithRealNameCount()) return true;
+      showToast("회원 목록을 불러오는 중…", 2500);
+      await loadMembers();
+      if (membersWithRealNameCount()) return true;
+      if (lastMembersFetchOk && allMembers.length > 0) {
+        showToast(
+          "회원 문서는 있으나 realName(실명)이 비어 있어 선택할 수 없습니다. Firestore members에 realName을 채워주세요.",
+          6500,
+        );
+        return false;
+      }
+      if (!lastMembersFetchOk) {
+        showToast(
+          "회원 목록을 가져오지 못했습니다. " + (lastMembersError || "알 수 없는 오류") +
+            " — 에뮬: functions+hosting+firestore 함께 실행 후 http://localhost:5000/report.html (호스팅 5000번으로 열기)",
+          7500,
+        );
+      } else {
+        showToast(
+          "미숨김 회원이 한 명도 없습니다. 로컬이면 Firestore Emulator의 members 컬렉션에 문서가 있는지 확인하세요.",
+          5500,
+        );
+      }
+      return false;
     }
 
     // ─── Job 로드 → 리뷰 화면 ───────────────────────────
     async function loadJob(jobId) {
       try {
-        const res = await fetch(`${API_BASE}?action=job&jobId=${jobId}`);
+        const res = await fetch(`${raceApiBase()}?action=job&jobId=${jobId}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
         openReview(data);
@@ -1431,36 +1655,23 @@
       saveReviewState();
     }
 
-    // ─── 수동 스크래핑 ───────────────────────────────────
+    // ─── 수동 스크래핑 (회원 선택 후) ─────────────────────
     document.getElementById("manualScrapeBtn").addEventListener("click", async () => {
       const source = document.getElementById("manualSource").value;
       const sourceId = document.getElementById("manualId").value.trim();
       if (!sourceId) { showToast("이벤트 ID를 입력하세요"); return; }
-
-      const btn = document.getElementById("manualScrapeBtn");
-      const progress = document.getElementById("manualProgress");
-      btn.disabled = true;
-      progress.style.display = "block";
-      document.getElementById("manualProgressText").textContent = "검색 시작...";
-      document.getElementById("manualProgressFill").style.width = "0%";
-
-      try {
-        const res = await fetch(`${API_BASE}?action=scrape`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ source, sourceId }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
-
-        showToast(`완료: ${data.foundCount}명 발견`);
-        await loadJob(data.jobId);
-      } catch (err) {
-        showToast("오류: " + err.message, 4000);
-      } finally {
-        btn.disabled = false;
-        progress.style.display = "none";
-      }
+      if (isScraping) { showToast("다른 대회 수집이 진행 중입니다."); return; }
+      if (!(await ensureMembersLoadedForScrape())) return;
+      openScrapeMembersModal({
+        title: "스크랩할 회원 선택",
+        subtitle: `${source} / ${sourceId} — 스크랩할 실명을 선택하세요.`,
+        source,
+        sourceId,
+        eventName: sourceId,
+        eventDate: "",
+        manualBtn: document.getElementById("manualScrapeBtn"),
+        manualProgress: document.getElementById("manualProgress"),
+      });
     });
 
     // ─── 수동 기록 추가 ──────────────────────────────────
@@ -1569,42 +1780,20 @@
       renderAllFromCache();
     });
 
-    // ─── 다시 스크래핑 ────────────────────────────────────
+    // ─── 다시 스크래핑 (선택 실명만 재조회, 나머지 행 유지) ──
     document.getElementById("rescrapeBtn").addEventListener("click", async () => {
-      if (!currentJob) return;
-      if (!confirm("기존 결과가 새 결과로 교체됩니다.\n이전 리뷰 작업(포함/제외/PB 결정)도 초기화됩니다.\n\n진행하시겠습니까?")) return;
-
-      const btn = document.getElementById("rescrapeBtn");
-      btn.disabled = true;
-      btn.textContent = "스크래핑 중...";
-
-      try {
-        const res = await fetch(`${API_BASE}?action=scrape`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            source: currentJob.source,
-            sourceId: currentJob.sourceId,
-            eventName: currentJob.eventName,
-            eventDate: currentJob.eventDate,
-            replaceJobId: currentJob.jobId,
-          }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
-
-        // localStorage 초기화
-        const key = `review_${currentJob.jobId || currentJob.sourceId}`;
-        localStorage.removeItem(key);
-
-        showToast(`재스크래핑 완료: ${data.foundCount}명 발견`);
-        await loadJob(data.jobId);
-      } catch (err) {
-        showToast("오류: " + err.message, 4000);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "다시 스크래핑";
-      }
+      if (!currentJob || isScraping) return;
+      if (!(await ensureMembersLoadedForScrape())) return;
+      openScrapeMembersModal({
+        title: "다시 스크랩할 회원",
+        subtitle: "선택한 실명만 재조회합니다. 그 외 결과 행은 그대로 둡니다. 해당 실명의 기존 행은 새 조회로 바뀝니다.",
+        source: currentJob.source,
+        sourceId: currentJob.sourceId,
+        eventName: currentJob.eventName,
+        eventDate: currentJob.eventDate || "",
+        replaceJobId: currentJob.jobId,
+        rescrapeBtn: document.getElementById("rescrapeBtn"),
+      });
     });
 
     // ─── 요약 텍스트 생성 ────────────────────────────────
@@ -1742,7 +1931,7 @@
 
       try {
         const included = getIncludedRows();
-        const res = await fetch(`${API_BASE}?action=confirm`, {
+        const res = await fetch(`${raceApiBase()}?action=confirm`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1827,12 +2016,15 @@
       }
     });
 
-    // ─── 초기화 ──────────────────────────────────────────
-    history.replaceState({ screen: "screenSelect" }, "");
-    initEventSearch();
-    initCreateJobUI();
-    reloadEvents();
-    loadMembers();
+    // ─── 초기화 (회원 API 베이스 확정 후 discover/events — /api/race 404 시 직접 5001로 전환) ───
+    async function initReportPage() {
+      await loadMembers();
+      history.replaceState({ screen: "screenSelect" }, "");
+      initEventSearch();
+      initCreateJobUI();
+      reloadEvents();
+    }
+    void initReportPage();
   </script>
 
 </body>

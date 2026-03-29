@@ -279,7 +279,7 @@ async function searchSmartChip(eventId, memberName, session = "") {
   const params = new URLSearchParams();
   params.append("nameorbibno", memberName);
   params.append("usedata", eventId);
-  const res = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
+  const res = await fetch(`${SMARTCHIP_ORIGIN}/return_data_livephoto.asp`, {
     method: "POST",
     headers: commonHeaders,
     body: params.toString(),
@@ -296,7 +296,7 @@ async function searchSmartChip(eventId, memberName, session = "") {
   if (html.includes("name_search_result.asp")) {
     const yearGbn = eventId.slice(0, 4);
     const rallyNo = eventId.slice(4);
-    const listUrl = `https://www.smartchip.co.kr/name_search_result.asp?name=${encodeURIComponent(memberName)}&Year_Gbn=${yearGbn}&Rally_no=${rallyNo}`;
+    const listUrl = `${SMARTCHIP_ORIGIN}/name_search_result.asp?name=${encodeURIComponent(memberName)}&Year_Gbn=${yearGbn}&Rally_no=${rallyNo}`;
     try {
       const listRes = await fetch(listUrl, { headers: { ...commonHeaders } });
       const listHtml = await listRes.text();
@@ -313,7 +313,7 @@ async function searchSmartChip(eventId, memberName, session = "") {
         const bibParams = new URLSearchParams();
         bibParams.append("nameorbibno", bib);
         bibParams.append("usedata", eventId);
-        const bibRes = await fetch("https://www.smartchip.co.kr/return_data_livephoto.asp", {
+        const bibRes = await fetch(`${SMARTCHIP_ORIGIN}/return_data_livephoto.asp`, {
           method: "POST",
           headers: commonHeaders,
           body: bibParams.toString(),
@@ -951,7 +951,10 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         .where("source", "==", source)
         .where("sourceId", "==", sourceId)
         .get();
-      snap.forEach((doc) => cachedKeys.add(doc.data().realName));
+      snap.forEach((doc) => {
+        const d = doc.data();
+        if (d && d.found === true && d.realName) cachedKeys.add(d.realName);
+      });
       console.log(`[scrapeEvent] 캐시 ${cachedKeys.size}명 건너뜀 (${source}_${sourceId})`);
     } catch (e) {
       console.warn(`[scrapeEvent] cache check failed: ${e.message}`);
