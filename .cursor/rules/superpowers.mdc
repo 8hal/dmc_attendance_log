@@ -14,6 +14,7 @@ alwaysApply: true
 
 | 상황 | 스킬 경로 |
 |---|---|
+| 매일 새 대화로 작업 시작 (브리핑·일지 스텁) | `.cursor/skills/day-start/SKILL.md` |
 | 새 기능 설계 / 코딩 시작 전 | `.cursor/skills/brainstorming/SKILL.md` |
 | 구현 계획 수립 | `.cursor/skills/writing-plans/SKILL.md` |
 | 계획 실행 | `.cursor/skills/executing-plans/SKILL.md` |
@@ -21,6 +22,7 @@ alwaysApply: true
 | 버그 / 오류 디버깅 | `.cursor/skills/systematic-debugging/SKILL.md` |
 | 완료 주장 전 검증 | `.cursor/skills/verification-before-completion/SKILL.md` |
 | 배포 전 로컬 테스트 / 에뮬 점검 | `.cursor/skills/pre-deploy-test/SKILL.md` |
+| 주간 회고 후 운영진(비IT) 안내 문구 | `.cursor/skills/weekly-ops-bulletin/SKILL.md` |
 | Firebase 배포 (절차·금지 사항) | `.cursor/skills/firebase-deploy/SKILL.md` |
 | TDD 구현 | `.cursor/skills/test-driven-development/SKILL.md` |
 | 코드 리뷰 요청 | `.cursor/skills/requesting-code-review/SKILL.md` |

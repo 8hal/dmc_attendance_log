@@ -1,0 +1,416 @@
+{
+  "capturedAt": "2026-03-29T23:21:40.905Z",
+  "environment": "production",
+  "executor": "plan-exec (agent)",
+  "endpoint": "https://race-nszximpvtq-du.a.run.app?action=data-integrity",
+  "note": "race_results SSOT; scrape_jobs.confirmedCount denormalized — many mismatches expected after job merges / canonicalJobId vs doc.id",
+  "response": {
+    "ok": true,
+    "totalJobs": 144,
+    "totalResults": 838,
+    "issues": [
+      {
+        "jobId": "43OPsAYrW6wsIf4QQ9Pc",
+        "eventName": "여수해양마라톤",
+        "claimed": 28,
+        "actual": 1
+      },
+      {
+        "jobId": "Bkb2bk32dN18280FAPjB",
+        "eventName": "2026 고양특례시 하프마라톤",
+        "claimed": 2,
+        "actual": 1
+      },
+      {
+        "jobId": "FIVq9mP2DhP9uaogLI9t",
+        "eventName": "머니투데이방송마라톤",
+        "claimed": 5,
+        "actual": 3
+      },
+      {
+        "jobId": "GMVYn1ixPXQMOdHutHn9",
+        "eventName": "오사카마라톤",
+        "claimed": 3,
+        "actual": 0
+      },
+      {
+        "jobId": "KhzLmBeAn7j4wRtlnMfn",
+        "eventName": "뉴발런스하프레이스",
+        "claimed": 7,
+        "actual": 1
+      },
+      {
+        "jobId": "QXrRSojIdwcwi7w54CAL",
+        "eventName": "부산비치울트라",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "UKYoStdb2MwETP0LZ2T6",
+        "eventName": "2026서울마라톤",
+        "claimed": 71,
+        "actual": 4
+      },
+      {
+        "jobId": "WReDO1OwpGceKhhZ2Zku",
+        "eventName": "고구려마라톤",
+        "claimed": 2,
+        "actual": 0
+      },
+      {
+        "jobId": "marazone_2025 경기수원 국제하프마라톤",
+        "eventName": "2025 경기수원 국제하프마라톤",
+        "claimed": 6,
+        "actual": 12
+      },
+      {
+        "jobId": "marazone_2025 안산 마스터즈 최강전",
+        "eventName": "2025 안산 마스터즈 최강전",
+        "claimed": 2,
+        "actual": 3
+      },
+      {
+        "jobId": "marazone_2026 경기수원국제하프마라톤",
+        "eventName": "2026 경기수원국제하프마라톤",
+        "claimed": 2,
+        "actual": 6
+      },
+      {
+        "jobId": "marazone_제 16회 강남구청장배 육상대회",
+        "eventName": "제 16회 강남구청장배 육상대회",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "marazone_제19회 여수해양마라톤",
+        "eventName": "제19회 여수해양마라톤",
+        "claimed": 3,
+        "actual": 6
+      },
+      {
+        "jobId": "marazone_제20회 여수해양마라톤",
+        "eventName": "제20회 여수해양마라톤",
+        "claimed": 4,
+        "actual": 28
+      },
+      {
+        "jobId": "myresult_103",
+        "eventName": "2025 고양특례시 하프마라톤",
+        "claimed": 2,
+        "actual": 5
+      },
+      {
+        "jobId": "myresult_115",
+        "eventName": "2025 제22회 보령머드임해마라톤",
+        "claimed": 1,
+        "actual": 3
+      },
+      {
+        "jobId": "myresult_132",
+        "eventName": "2025 춘천마라톤",
+        "claimed": 4,
+        "actual": 33
+      },
+      {
+        "jobId": "myresult_133",
+        "eventName": "2025 JTBC 서울마라톤",
+        "claimed": 4,
+        "actual": 29
+      },
+      {
+        "jobId": "myresult_141",
+        "eventName": "2026 Run Your Way Half Race Seoul",
+        "claimed": 2,
+        "actual": 10
+      },
+      {
+        "jobId": "rn3CYn5RAnNvAd66FlNf",
+        "eventName": "경기수원국제하프마라톤",
+        "claimed": 6,
+        "actual": 1
+      },
+      {
+        "jobId": "search_3tShsj67juAa2UWk8NeM_0",
+        "eventName": "무한도전 Run with 쿠팡플레이",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_3tShsj67juAa2UWk8NeM_1",
+        "eventName": "제 7회 기장바다마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_3tShsj67juAa2UWk8NeM_2",
+        "eventName": "2025 부안해변마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_3tShsj67juAa2UWk8NeM_3",
+        "eventName": "2025 경기수원 국제하프마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_ybLLXH8sBo2PCMRuxZnD_0",
+        "eventName": "2025 JTBC 서울마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_ybLLXH8sBo2PCMRuxZnD_1",
+        "eventName": "2025 안양천단풍길마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_ybLLXH8sBo2PCMRuxZnD_3",
+        "eventName": "2025 슈퍼블루마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_ybLLXH8sBo2PCMRuxZnD_4",
+        "eventName": "제22회 여주 세종대왕 마라톤대회",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_ybLLXH8sBo2PCMRuxZnD_5",
+        "eventName": "2025 MBN 전국나주마라톤대회",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "search_ybLLXH8sBo2PCMRuxZnD_6",
+        "eventName": "2025철원DMZ국제평화마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "smartchip_202550000018",
+        "eventName": "제5회 장수트레일레이스",
+        "claimed": 1,
+        "actual": 4
+      },
+      {
+        "jobId": "smartchip_202550000047",
+        "eventName": "2025 KOREA 50K",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000051",
+        "eventName": "제23회 경기마라톤대회",
+        "claimed": 3,
+        "actual": 47
+      },
+      {
+        "jobId": "smartchip_202550000078",
+        "eventName": "무한도전 Run with 쿠팡플레이",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000090",
+        "eventName": "2025 서울신문 하프마라톤",
+        "claimed": 1,
+        "actual": 3
+      },
+      {
+        "jobId": "smartchip_202550000114",
+        "eventName": "2025 수원트레일레이스",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000143",
+        "eventName": "2025 다이나핏 태백 트레일",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000170",
+        "eventName": "2025마블런",
+        "claimed": 1,
+        "actual": 3
+      },
+      {
+        "jobId": "smartchip_202550000187",
+        "eventName": "제6회 장수트레일레이스 with 노스페이스",
+        "claimed": 1,
+        "actual": 4
+      },
+      {
+        "jobId": "smartchip_202550000189",
+        "eventName": "2025 공주백제마라톤",
+        "claimed": 3,
+        "actual": 26
+      },
+      {
+        "jobId": "smartchip_202550000203",
+        "eventName": "제22회 강남국제평화마라톤",
+        "claimed": 1,
+        "actual": 10
+      },
+      {
+        "jobId": "smartchip_202550000206",
+        "eventName": "2025 수원교구 생명사랑 마라톤",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000211",
+        "eventName": "제11회 시흥전국하프마라톤대회",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000227",
+        "eventName": "제22회 오산독산성 전국 하프마라톤",
+        "claimed": 3,
+        "actual": 15
+      },
+      {
+        "jobId": "smartchip_202550000283",
+        "eventName": "2025 MBN 서울마라톤",
+        "claimed": 1,
+        "actual": 18
+      },
+      {
+        "jobId": "smartchip_202550000291",
+        "eventName": "2025 평화통일마라톤",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202550000298",
+        "eventName": "2025 인천마라톤",
+        "claimed": 2,
+        "actual": 38
+      },
+      {
+        "jobId": "smartchip_202550000303",
+        "eventName": "2025 스포츠서울 하프 마라톤",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "smartchip_202650000005",
+        "eventName": "2026대구마라톤",
+        "claimed": 0,
+        "actual": 27
+      },
+      {
+        "jobId": "smartchip_202650000006",
+        "eventName": "2026서울마라톤",
+        "claimed": 4,
+        "actual": 68
+      },
+      {
+        "jobId": "spct_20250223001",
+        "eventName": "2025 챌린지레이스",
+        "claimed": 2,
+        "actual": 1
+      },
+      {
+        "jobId": "spct_20250413001",
+        "eventName": "김포한강마라톤",
+        "claimed": 1,
+        "actual": 3
+      },
+      {
+        "jobId": "spct_2025042001",
+        "eventName": "2025 부안해변마라톤",
+        "claimed": 1,
+        "actual": 2
+      },
+      {
+        "jobId": "spct_20250510001",
+        "eventName": "화성효마라톤",
+        "claimed": 5,
+        "actual": 12
+      },
+      {
+        "jobId": "spct_2025051002",
+        "eventName": "제71회경기도체육대회(마라톤)",
+        "claimed": 1,
+        "actual": 5
+      },
+      {
+        "jobId": "spct_20250511009",
+        "eventName": "2025 전마협 창단 24주년 기념 금산 무료 초청 마라톤",
+        "claimed": 1,
+        "actual": 3
+      },
+      {
+        "jobId": "spct_2025051701",
+        "eventName": "2025 포레스트런",
+        "claimed": 1,
+        "actual": 4
+      },
+      {
+        "jobId": "spct_20250817001",
+        "eventName": "2025 HAPPY700 평창 대관령 전국 하프마라톤대회",
+        "claimed": 4,
+        "actual": 33
+      },
+      {
+        "jobId": "spct_2025092102",
+        "eventName": "2025철원DMZ국제평화마라톤",
+        "claimed": 4,
+        "actual": 36
+      },
+      {
+        "jobId": "spct_20250928009",
+        "eventName": "2025 서산 코스모스 황금들녘 마라톤대회",
+        "claimed": 3,
+        "actual": 2
+      },
+      {
+        "jobId": "spct_20250928010",
+        "eventName": "제36회 경기도생활체육대축전",
+        "claimed": 3,
+        "actual": 7
+      },
+      {
+        "jobId": "spct_2025111604",
+        "eventName": "2025 손기정평화마라톤",
+        "claimed": 1,
+        "actual": 4
+      },
+      {
+        "jobId": "spct_2026022101",
+        "eventName": "제23회 희망드림동계국제마라톤",
+        "claimed": 1,
+        "actual": 0
+      },
+      {
+        "jobId": "spct_20260301008",
+        "eventName": "2026 머니투데이방송 3.1절 마라톤대회(풀하프)",
+        "claimed": 2,
+        "actual": 3
+      },
+      {
+        "jobId": "spct_2026032101",
+        "eventName": "2026 BULLS RACE",
+        "claimed": 1,
+        "actual": 3
+      },
+      {
+        "jobId": "spct_2026032102",
+        "eventName": "2026 내포마라톤",
+        "claimed": 3,
+        "actual": 2
+      },
+      {
+        "jobId": "xi3kVeazSfx6tDQT8ELh",
+        "eventName": "대구마라톤",
+        "claimed": 27,
+        "actual": 1
+      }
+    ]
+  }
+}

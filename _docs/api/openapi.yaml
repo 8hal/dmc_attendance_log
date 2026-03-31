@@ -1,0 +1,380 @@
+# DMC HTTP API (Cloud Functions)
+# 유지보수: 신규 race action → 아래 RaceAction enum + functions/index.js 분기 동시 갱신
+openapi: 3.0.3
+info:
+  title: DMC Attendance / Race HTTP API
+  version: "0.1.0"
+  description: |
+    Firebase Cloud Functions `onRequest` 엔드포인트 계약.
+
+    **Base URL:** `https://asia-northeast3-{projectId}.cloudfunctions.net`
+
+    | Function | Path (상대) |
+    |----------|-------------|
+    | `race` | `/race` |
+    | `attendance` | `/attendance` |
+    | `scrapeProxy` | `/scrapeProxy` |
+
+    **`race`:** 단일 엔드포인트에서 `action` 쿼리로 RPC 분기.
+
+    - **엔드포인트별 입출력·동작(사람용):** [http-api-actions.md](./http-api-actions.md)
+    - **시나리오·화면 ↔ API:** [user-scenarios-api-map.md](./user-scenarios-api-map.md)
+    - **필드 스키마 병행:** `functions/index.js`, `_docs/knowledge/data-dictionary.md`
+
+    이 파일(`openapi.yaml`)은 주로 **경로·메서드·action 목록·검증 스크립트**용이다.
+
+    **기본 `action` 생략 시:** `GET` → `events`, `POST` → `scrape`.
+
+    **POST 전용 `action`:** `add-member`, `update-member`, `hide-member`,
+    `search-member-events`, `confirm`, `create-job`, `delete-record`, `scrape`,
+    `verify-admin`, `log` — 다른 메서드로 호출 시 해당 분기에 도달하지 않을 수 있음.
+
+servers:
+  - url: https://asia-northeast3-{projectId}.cloudfunctions.net
+    variables:
+      projectId:
+        default: YOUR_GCP_PROJECT_ID
+        description: Firebase / GCP 프로젝트 ID
+
+tags:
+  - name: race
+    description: 대회 스크랩·회원·확정 등 메인 API
+  - name: attendance
+    description: 동아리 출석 설문/조회
+  - name: scrapeProxy
+    description: SmartChip 등 스크랩 우회 (시크릿 필요)
+
+paths:
+  /race:
+    get:
+      tags: [race]
+      operationId: raceGet
+      summary: Race API (쿼리 action)
+      parameters:
+        - $ref: "#/components/parameters/RaceAction"
+      responses:
+        "200":
+          description: 성공 — 페이로드는 action별 상이
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceJsonResponse"
+        "4XX":
+          description: 클라이언트 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "5XX":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [race]
+      operationId: racePost
+      summary: Race API (쿼리 action + POST 본문)
+      parameters:
+        - $ref: "#/components/parameters/RaceAction"
+      requestBody:
+        required: false
+        description: action별 상이 (JSON). 예 — `scrape`, `confirm`, `log` 등
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceJsonResponse"
+        "4XX":
+          description: 클라이언트 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "5XX":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /attendance:
+    get:
+      tags: [attendance]
+      operationId: attendanceGet
+      summary: 출석 조회
+      parameters:
+        - name: action
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AttendanceGetAction"
+          description: 생략 시 `status`
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "action=status 일 때 날짜 키 (YYYY/MM/DD). 생략 시 KST 당일"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 500
+          description: action=nicknames 일 때 최대 개수
+        - name: nickname
+          in: query
+          required: false
+          schema:
+            type: string
+          description: action=history 일 때 필수
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "action=history 일 때 월 키 (YYYY-MM). 생략 시 KST 이번 달"
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                additionalProperties: true
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [attendance]
+      operationId: attendancePost
+      summary: 출석 기록 제출
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendancePostBody"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AttendancePostBody"
+      responses:
+        "200":
+          description: 저장 후 해당일 status 포함
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, written, status]
+                properties:
+                  ok:
+                    type: boolean
+                  written:
+                    type: object
+                    properties:
+                      nicknameStored:
+                        type: string
+                      team:
+                        type: string
+                      teamLabel:
+                        type: string
+                      meetingType:
+                        type: string
+                      meetingTypeLabel:
+                        type: string
+                      meetingDate:
+                        type: string
+                      timeText:
+                        type: string
+                  status:
+                    type: object
+                    additionalProperties: true
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scrapeProxy:
+    get:
+      tags: [scrapeProxy]
+      operationId: scrapeProxyGet
+      summary: 스크랩 프록시 (시크릿 + 소스 파라미터)
+      parameters:
+        - name: secret
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 환경변수 SCRAPE_PROXY_SECRET (미설정 시 코드 내 기본값과 일치해야 함)
+        - name: source
+          in: query
+          required: true
+          schema:
+            type: string
+            example: smartchip
+        - name: sourceId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 검색할 참가자 이름
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, results]
+                properties:
+                  ok:
+                    type: boolean
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    RaceAction:
+      name: action
+      in: query
+      required: false
+      description: |
+        Race RPC 액션명. `enum`은 코드 분기와 동기화됨 (`functions/index.js` `exports.race`).
+      schema:
+        $ref: "#/components/schemas/RaceAction"
+
+  schemas:
+    RaceAction:
+      type: string
+      enum:
+        - confirmed-races
+        - events
+        - discover
+        - job
+        - members
+        - add-member
+        - update-member
+        - hide-member
+        - all-members
+        - discover-all
+        - suggestions
+        - search-member-events
+        - member-search-job
+        - confirm
+        - create-job
+        - delete-record
+        - scrape
+        - ping-smartchip
+        - verify-admin
+        - event-logs
+        - member-stats
+        - ops-scrape-preview
+        - data-integrity
+        - log
+
+    AttendanceGetAction:
+      type: string
+      enum:
+        - nicknames
+        - status
+        - history
+
+    AttendancePostBody:
+      type: object
+      required:
+        - nickname
+        - team
+        - meetingType
+        - meetingDate
+      properties:
+        nickname:
+          type: string
+        team:
+          type: string
+          description: TEAM 코드 (대문자)
+          enum:
+            - T1
+            - T2
+            - T3
+            - T4
+            - T5
+            - S
+        meetingType:
+          type: string
+          description: 모임 유형 코드 (대문자)
+          enum:
+            - ETC
+            - TUE
+            - THU
+            - SAT
+        meetingDate:
+          type: string
+          description: YYYY/MM/DD
+          pattern: "^\\d{4}/\\d{2}/\\d{2}$"
+
+    RaceJsonResponse:
+      type: object
+      description: 대부분 `{ ok: true, ... }` 형태. 실패 시 `ok: false` 및 `error`
+      properties:
+        ok:
+          type: boolean
+      additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
