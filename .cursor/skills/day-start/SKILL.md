@@ -9,6 +9,8 @@ description: Use when the user opens a fresh daily session for this repo or says
 
 회사 워크스페이스 `meta-agent.mdc`의 **Morning Boot**는 새 세션에서 동일 질문 반복을 줄이기 위해 **날짜 고정 → 문서 로딩 → 브리핑 → 일지** 순으로 정리한다. 이 레포는 Jira·`HANDOFF_*`·`WORKSPACE_MAP` 대신 **`_docs/log`**, **주간/테마 플랜**, **Git 작업 트리**가 SSOT에 가깝다.
 
+**EOD 백업:** 전역 퇴근 루틴(`~/.cursor/skills/end-of-day/SKILL.md`)이 이 레포를 항상 커버하지 않거나, 전날에 못 돌린 경우 **미커밋 변경이 원격에 없으면** 기기 손실·다중 편집기 미동기만으로 작업이 사라질 수 있다. 아래 **EOD 미실행 시 작업 트리 백업** 절차를 day-start에서 함께 안내한다.
+
 ## 개요
 
 매일 **새 대화**로 시작할 때 한 번 실행하는 부팅 시퀀스. 코딩보다 **맥락 복구**가 우선이다.
@@ -46,6 +48,7 @@ description: Use when the user opens a fresh daily session for this repo or says
 
 4. **Git 작업 트리**  
    - `git status -sb` 와 간단한 `git branch --show-current`로 **미커밋 변경·브랜치**를 파악한다.  
+   - **미커밋이 있고** 어제 EOD·푸시를 못 했을 가능성이 있으면: 브리핑 **「이어서 할 것」**에 **커밋·푸시로 원격 백업**을 한 줄 넣고, Step 5 다음의 **EOD 미실행 시 작업 트리 백업** 절차를 따르라고 안내한다 (사용자가 거절하면 존중).  
    - **배포 직전**이면: `hosting.public`이 디스크 기준이라 **미커밋이 프로덕션에 섞일 수 있음**을 브리핑에 한 줄 넣는다 (`.cursor/rules/pre-deploy-checklist.mdc` 근거).
 
 5. **Jira / 외부 보드**  
@@ -107,6 +110,17 @@ description: Use when the user opens a fresh daily session for this repo or says
 ## 수동 메모
 ```
 
+### EOD 미실행 시 작업 트리 백업
+
+전날 **퇴근 루틴을 건너뛰었거나** day-start 시점에 **미커밋·미푸시**가 남아 있으면, 사용자가 원할 때 **원격에 백업**한다.
+
+1. **`git status -sb`** 로 변경 범위 확인. 배포 예정이면 `.cursor/rules/pre-deploy-checklist.mdc`와 같이 **의도한 것만** 스테이징할 것.
+2. **의도한 파일만** `git add` (로컬 전용·비밀 파일 제외).
+3. **한 커밋 또는 논리 단위**로 `git commit` (본문에 맥락 한 줄, 예: 문서·룰·스킬 정리).
+4. **`git push origin $(git branch --show-current)`** 로 원격 반영까지 하면 EOD 미실행에 대비한 백업으로 충분하다.
+
+**금지·주의:** `data-write-safety.mdc`가 적용되는 **Firestore 대량 쓰기·임포트 스크립트 실행**은 커밋과 별도로 사용자 승인·dry-run을 따른다. **AI는 `firebase deploy`를 실행하지 않는다** (배포 스킬·체크리스트).
+
 ## When NOT to use
 
 - 이미 구체적 작업 지시만 있고 맥락 로딩이 불필요할 때 — 바로 실행 요청에 응답한다.
@@ -118,4 +132,4 @@ description: Use when the user opens a fresh daily session for this repo or says
 |------|------|
 | 주간 목표를 새로 잡는 날 | `.cursor/skills/weekly-plan-creation/SKILL.md` (전역 스킬 사용 시 그 절차) |
 | 회고 후 운영진 안내 문구 | `.cursor/skills/weekly-ops-bulletin/SKILL.md` |
-| 퇴근·하루 마무리 | `~/.cursor/skills/end-of-day/SKILL.md` (이 레포 외 개인 루틴) |
+| 퇴근·하루 마무리 | `~/.cursor/skills/end-of-day/SKILL.md` (전역; 이 레포만 쓸 때는 미커밋 백업은 본 스킬 **EOD 미실행** 절차) |
