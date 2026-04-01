@@ -30,11 +30,10 @@
   - report.html에서 race_results(SSOT) 직접 조회·수정·삭제
   - scrape_jobs 없는 고아 124건 포함 전체 커버
   - update-record API 신규 추가
-- 🔴 **"이 대회 뛰셨나요?" 프로액티브 제안 기능** (P1 승격 검토)
-  - 주간 스크래퍼 결과(search_cache) 기반, 검색 퍼널 완전 생략
-  - my.html 접속 시 최근 2주 미확정 기록 자동 제안 → 원탭 확정
-  - 이미 search_cache에 15,736건 미확정 기록 존재 (152명)
-  - 구현: suggestions API + 배너 UI + confirm 원탭 + dismiss
+- ✅ **"이 대회 뛰셨나요?" 프로액티브 제안 기능** — 구현 완료
+  - suggestions API (search_cache 기반, 최근 2주, 이미 확정 제외)
+  - my.html suggestionsPanel + 원탭 확정 + dismiss
+  - 2026-04-01 코드 확인 기준 배포 상태 점검 필요
 
 ## P2 — 다음 주
 
