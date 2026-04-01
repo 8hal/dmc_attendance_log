@@ -26,6 +26,10 @@
 - ✅ 검색 UX 개선 + PB 카드 리디자인 (2026-03-24)
 - ✅ 운영 루틴 룰 + 배포 체크리스트 버저닝 (2026-03-24)
 - 🟡 3/30 전환율 비교 (로그 분석) — 스크립트 `scripts/analyze-funnel-windows.js` 추가; **2026-03-29일 프로덕션 로그 이후 트래픽 없음** → 3/30~ 구간 비교는 재방문·로깅 확인 후 재측정
+- 🔴 **대회 파이프라인 (예정→참가→기록 자동화)** — 지시서: `_docs/plans/event-pipeline.md`
+  - Phase 1: 고러닝 수집 + ops.html 예정 탭 + 모니터링
+  - Phase 2: 참가자 목록 입력 (운영자/회원)
+  - Phase 3: 자동 스크랩 트리거 + 구멍 탐지
 - 🔴 **확정 기록 운영자 편집 기능** — 지시서: `_docs/plans/edit-confirmed-record.md`
   - report.html에서 race_results(SSOT) 직접 조회·수정·삭제
   - scrape_jobs 없는 고아 124건 포함 전체 커버
