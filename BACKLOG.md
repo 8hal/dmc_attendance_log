@@ -26,6 +26,10 @@
 - ✅ 검색 UX 개선 + PB 카드 리디자인 (2026-03-24)
 - ✅ 운영 루틴 룰 + 배포 체크리스트 버저닝 (2026-03-24)
 - 🟡 3/30 전환율 비교 (로그 분석) — 스크립트 `scripts/analyze-funnel-windows.js` 추가; **2026-03-29일 프로덕션 로그 이후 트래픽 없음** → 3/30~ 구간 비교는 재방문·로깅 확인 후 재측정
+- 🔴 **확정 기록 운영자 편집 기능** — 지시서: `_docs/plans/edit-confirmed-record.md`
+  - report.html에서 race_results(SSOT) 직접 조회·수정·삭제
+  - scrape_jobs 없는 고아 124건 포함 전체 커버
+  - update-record API 신규 추가
 - 🔴 **"이 대회 뛰셨나요?" 프로액티브 제안 기능** (P1 승격 검토)
   - 주간 스크래퍼 결과(search_cache) 기반, 검색 퍼널 완전 생략
   - my.html 접속 시 최근 2주 미확정 기록 자동 제안 → 원탭 확정
@@ -48,7 +52,7 @@
   - 정회원명단 닉네임→실명 매핑
   - 기존 race_results와 중복 체크 (실명+날짜+종목)
   - 팀 배정 데이터 반영
-- 🔴 confirmedCount 일괄 재계산 스크립트
+- ✅ confirmedCount 제거 (2026-04-01) — scrape_jobs.confirmedCount 전면 제거, events API를 race_results 직접 카운트로 교체
 - 🔴 회원 프로필에 팀 정보 활용 (엑셀 팀 데이터 기반)
 - 🔴 전환율 미개선 시 단톡방 3문항 설문
 
