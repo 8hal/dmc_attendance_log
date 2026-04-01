@@ -80,6 +80,30 @@
 
 ---
 
+## race_results.confirmSource
+
+확정 행위자. **누가** 확정했는지를 나타낸다. 어떤 방식(수동/자동/스크립트)인지는 `race_results.source`로 알 수 있다.
+
+| 값 | 의미 |
+|----|------|
+| `personal` | 회원 본인이 확정 (직접 검색 또는 시스템 제안 수락 등 방식 무관) |
+| `operator` | 운영자가 확정 (report.html, 엑셀 임포트, 현장 입력 등 방식 무관) |
+
+**두 필드 조합 예시:**
+
+| source | confirmSource | 의미 |
+|--------|---------------|------|
+| `smartchip` | `operator` | 운영자가 스마트칩 데이터로 확정 |
+| `manual` | `operator` | 운영자가 기록 사이트 없이 수동 입력 |
+| `smartchip` | `personal` | 회원이 직접 검색 후 확정 |
+| `smartchip` | `personal` | 회원이 시스템 제안 수락으로 확정 |
+
+**UX 경로 분석** (어떤 방식으로 확정했는지)은 `event_logs`에서 추적한다. `confirmSource`는 행위자만 담는다.
+
+**주의:** `(없음)` 122건은 confirmSource 필드 도입 이전(2026-03-23 이전) 데이터로 추적 불가. 정상으로 취급.
+
+---
+
 ## race_events (컬렉션)
 
 | 필드 | 의미 |

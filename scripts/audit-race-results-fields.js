@@ -33,7 +33,7 @@ const db = getFirestore();
 
 const VALID_SOURCES = new Set(["smartchip", "myresult", "spct", "marazone", "manual"]);
 const VALID_STATUSES = new Set(["confirmed", "auto", "ambiguous"]);
-const VALID_CONFIRM_SOURCES = new Set(["personal", "event", "suggestion", "other"]);
+const VALID_CONFIRM_SOURCES = new Set(["personal", "operator"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{1,2}:\d{2}(:\d{2})?$/;
 

@@ -1412,7 +1412,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           note: r.note || "",
           status: "confirmed",
           confirmedAt: now,
-          confirmSource: confirmSource || "event",
+          confirmSource: confirmSource || "operator",
         };
         if (finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
         if (canonicalEventId) row.canonicalEventId = String(canonicalEventId);
@@ -1721,7 +1721,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const rrSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
       const postLaunchMembers = new Set();
       const allConfirmedMembers = new Set();
-      const confirmSourceCount = { personal: 0, event: 0, suggestion: 0, other: 0 };
+      const confirmSourceCount = { personal: 0, operator: 0, other: 0 };
 
       rrSnap.forEach((doc) => {
         const d = doc.data();
@@ -1733,8 +1733,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         if (createTime >= LAUNCH_DATE) postLaunchMembers.add(member);
 
         if (src === "personal") confirmSourceCount.personal++;
-        else if (src === "event") confirmSourceCount.event++;
-        else if (src === "suggestion") confirmSourceCount.suggestion++;
+        else if (src === "operator") confirmSourceCount.operator++;
         else confirmSourceCount.other++;
       });
 
