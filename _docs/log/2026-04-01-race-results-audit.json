@@ -1,0 +1,739 @@
+{
+  "capturedAt": "2026-04-01T12:40:55.212Z",
+  "environment": "production",
+  "total": 838,
+  "checks": {
+    "missing_eventName": 0,
+    "missing_eventDate": 1,
+    "bad_eventDate_format": 0,
+    "missing_memberRealName": 0,
+    "missing_distance": 0,
+    "missing_source": 0,
+    "invalid_source": 17,
+    "missing_sourceId": 5,
+    "missing_jobId": 0,
+    "no_time": 15,
+    "invalid_confirmSource": 622,
+    "missing_confirmedAt": 0
+  },
+  "orphanJobId": 124,
+  "ghostMember": 2,
+  "canonicalEventIdFilled": 335,
+  "canonicalEventIdMissing": 503,
+  "sourceCount": {
+    "myresult": 158,
+    "smartchip": 361,
+    "spct": 164,
+    "marazone": 65,
+    "manual": 73,
+    "ohmyrace": 17
+  },
+  "distanceCount": {
+    "10K": 204,
+    "full": 321,
+    "half": 244,
+    "20K": 2,
+    "28K": 1,
+    "32km": 6,
+    "5K": 6,
+    "Granfondo": 2,
+    "3구간(10.4km)": 1,
+    "11km": 4,
+    "20.18K": 1,
+    "25k": 2,
+    "30K": 1,
+    "38K-J": 2,
+    "38K-P": 1,
+    "44k": 2,
+    "ultra": 21,
+    "38p": 1,
+    "8.15km": 1,
+    "40K": 2,
+    "11K": 2,
+    "32K": 3,
+    "38-j": 2,
+    "6.5K": 1,
+    "Granfondo  208": 1,
+    "23k": 1,
+    "3.6km": 1,
+    "18k": 1,
+    "10.9km": 1
+  },
+  "confirmSourceCount": {
+    "event": 70,
+    "excel_verified": 572,
+    "(없음)": 122,
+    "excel_import": 45,
+    "suggestion": 2,
+    "personal": 22,
+    "liverun_manual": 5
+  },
+  "orphanJobIdSamples": [
+    {
+      "id": "강동원_full_2025-11-09",
+      "jobId": "spct_20251109009",
+      "eventName": "제14회 부여 굿뜨래 마라톤대회",
+      "memberRealName": "강동원"
+    },
+    {
+      "id": "김경섭_full_2026-02-22",
+      "jobId": "manual",
+      "eventName": "오사카마라톤",
+      "memberRealName": "김경섭"
+    },
+    {
+      "id": "김상배_half_2025-04-13",
+      "jobId": "ohmyrace_62",
+      "eventName": "2025 서울 YMCA 마라톤",
+      "memberRealName": "김상배"
+    },
+    {
+      "id": "김성운_full_2025-11-09",
+      "jobId": "spct_20251109009",
+      "eventName": "제14회 부여 굿뜨래 마라톤대회",
+      "memberRealName": "김성운"
+    },
+    {
+      "id": "김성한_3___10_4km__2025-11-08",
+      "jobId": "manual_relay_2025",
+      "eventName": "구간마라톤 (3구간)",
+      "memberRealName": "김성한"
+    },
+    {
+      "id": "김성한_full_2025-04-06",
+      "jobId": "manual",
+      "eventName": "군산새만금",
+      "memberRealName": "김성한"
+    },
+    {
+      "id": "김성한_half_2025-04-13",
+      "jobId": "myresult_106",
+      "eventName": "2025 뉴발란스 Run Your Way 하프",
+      "memberRealName": "김성한"
+    },
+    {
+      "id": "김유정_10K_2025-02-16",
+      "jobId": "manual_winter_2025",
+      "eventName": "동계국제마라톤",
+      "memberRealName": "김유정"
+    },
+    {
+      "id": "김유정_half_2025-04-06",
+      "jobId": "spct_20250406009",
+      "eventName": "제26회 이천 도자기 마라톤대회",
+      "memberRealName": "김유정"
+    },
+    {
+      "id": "김유정_half_2025-04-13",
+      "jobId": "ohmyrace_62",
+      "eventName": "2025 서울 YMCA 마라톤",
+      "memberRealName": "김유정"
+    },
+    {
+      "id": "김재호_10K_2025-09-20",
+      "jobId": "spct_2025092001",
+      "eventName": "제25회 홍성마라톤대회",
+      "memberRealName": "김재호"
+    },
+    {
+      "id": "김정국_10K_2025-11-09",
+      "jobId": "manual_gunpo_2025",
+      "eventName": "군포산악마라톤",
+      "memberRealName": "김정국"
+    },
+    {
+      "id": "김정국_11km_2025-11-22",
+      "jobId": "manual",
+      "eventName": "봉담알프스",
+      "memberRealName": "김정국"
+    },
+    {
+      "id": "김정국_44k_2025-10-11",
+      "jobId": "manual",
+      "eventName": "아산이순신트레일",
+      "memberRealName": "김정국"
+    },
+    {
+      "id": "김종훈_full_2025-11-09",
+      "jobId": "spct_20251109009",
+      "eventName": "제14회 부여 굿뜨래 마라톤대회",
+      "memberRealName": "김종훈"
+    },
+    {
+      "id": "김태영_ultra_2025-06-21",
+      "jobId": "manual",
+      "eventName": "울산태화강울트라",
+      "memberRealName": "김태영"
+    },
+    {
+      "id": "김형석_half_2025-04-13",
+      "jobId": "ohmyrace_62",
+      "eventName": "2025 서울 YMCA 마라톤",
+      "memberRealName": "김형석"
+    },
+    {
+      "id": "김형진_10K_2025-06-22",
+      "jobId": "spct_2025062201",
+      "eventName": "2025블루베리마라톤축제",
+      "memberRealName": "김형진"
+    },
+    {
+      "id": "동은철_half_2026-03-21",
+      "jobId": "vAiJU79ga2ogSC7uMDcJ",
+      "eventName": "2026 내포마라톤",
+      "memberRealName": "동은철"
+    },
+    {
+      "id": "박경원_half_2025-10-19",
+      "jobId": "manual_pyeongtaek_2025",
+      "eventName": "2025 평택항 마라톤",
+      "memberRealName": "박경원"
+    }
+  ],
+  "ghostMemberSamples": [
+    {
+      "id": "고자경_full_2026-03-15",
+      "memberRealName": "고자경",
+      "eventName": "2026서울마라톤"
+    },
+    {
+      "id": "허혜원_half_2026-03-02",
+      "memberRealName": "허혜원",
+      "eventName": "뉴발런스하프레이스"
+    }
+  ],
+  "issueDetails": {
+    "missing_eventDate": [
+      {
+        "docId": "김정찬_full_",
+        "memberRealName": "김정찬",
+        "eventName": "2026대구마라톤",
+        "eventDate": "",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202650000005"
+      }
+    ],
+    "invalid_source": [
+      {
+        "docId": "김상배_half_2025-04-13",
+        "memberRealName": "김상배",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "김유정_half_2025-04-13",
+        "memberRealName": "김유정",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "김형석_half_2025-04-13",
+        "memberRealName": "김형석",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "박세진_half_2025-04-13",
+        "memberRealName": "박세진",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "박유진_half_2025-04-13",
+        "memberRealName": "박유진",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "설민태_half_2025-04-13",
+        "memberRealName": "설민태",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "이강원_half_2025-04-13",
+        "memberRealName": "이강원",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "이원기_half_2025-04-13",
+        "memberRealName": "이원기",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "이은주_half_2025-04-13",
+        "memberRealName": "이은주",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "장성남_half_2025-04-13",
+        "memberRealName": "장성남",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "전남석_half_2025-04-13",
+        "memberRealName": "전남석",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "전남석_half_2025-09-21",
+        "memberRealName": "전남석",
+        "eventName": "2025 서울 어스마라톤",
+        "eventDate": "2025-09-21",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_89"
+      },
+      {
+        "docId": "정선옥_half_2025-04-13",
+        "memberRealName": "정선옥",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "진형권_half_2025-04-13",
+        "memberRealName": "진형권",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "한남규_half_2025-04-13",
+        "memberRealName": "한남규",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "홍승연_half_2025-04-13",
+        "memberRealName": "홍승연",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      },
+      {
+        "docId": "황순길_half_2025-04-13",
+        "memberRealName": "황순길",
+        "eventName": "2025 서울 YMCA 마라톤",
+        "eventDate": "2025-04-13",
+        "source": "ohmyrace",
+        "distance": "half",
+        "jobId": "ohmyrace_62"
+      }
+    ],
+    "missing_sourceId": [
+      {
+        "docId": "서정모_half_2026-03-29",
+        "memberRealName": "서정모",
+        "eventName": "2026 서울 K 마라톤",
+        "eventDate": "2026-03-29",
+        "source": "manual",
+        "distance": "half",
+        "jobId": "manual"
+      },
+      {
+        "docId": "송진수_10K_2026-03-29",
+        "memberRealName": "송진수",
+        "eventName": "2026 서울 K 마라톤",
+        "eventDate": "2026-03-29",
+        "source": "manual",
+        "distance": "10K",
+        "jobId": "manual"
+      },
+      {
+        "docId": "장성남_half_2026-03-29",
+        "memberRealName": "장성남",
+        "eventName": "2026 서울 K 마라톤",
+        "eventDate": "2026-03-29",
+        "source": "manual",
+        "distance": "half",
+        "jobId": "manual"
+      },
+      {
+        "docId": "진형권_half_2026-03-29",
+        "memberRealName": "진형권",
+        "eventName": "2026 서울 K 마라톤",
+        "eventDate": "2026-03-29",
+        "source": "manual",
+        "distance": "half",
+        "jobId": "manual"
+      },
+      {
+        "docId": "한남규_half_2026-03-29",
+        "memberRealName": "한남규",
+        "eventName": "2026 서울 K 마라톤",
+        "eventDate": "2026-03-29",
+        "source": "manual",
+        "distance": "half",
+        "jobId": "manual"
+      }
+    ],
+    "no_time": [
+      {
+        "docId": "강동원_half_2025-05-04",
+        "memberRealName": "강동원",
+        "eventName": "제22회 서울시민마라톤",
+        "eventDate": "2025-05-04",
+        "source": "myresult",
+        "distance": "half",
+        "jobId": "myresult_112"
+      },
+      {
+        "docId": "김경란_10K_2025-05-04",
+        "memberRealName": "김경란",
+        "eventName": "제22회 서울시민마라톤",
+        "eventDate": "2025-05-04",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_112"
+      },
+      {
+        "docId": "김유정_10K_2025-05-04",
+        "memberRealName": "김유정",
+        "eventName": "제22회 서울시민마라톤",
+        "eventDate": "2025-05-04",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_112"
+      },
+      {
+        "docId": "김유정_10K_2025-11-16",
+        "memberRealName": "김유정",
+        "eventName": "제27회 국제신문 부산마라톤",
+        "eventDate": "2025-11-16",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_134"
+      },
+      {
+        "docId": "김정숙_half_2025-05-04",
+        "memberRealName": "김정숙",
+        "eventName": "제22회 서울시민마라톤",
+        "eventDate": "2025-05-04",
+        "source": "myresult",
+        "distance": "half",
+        "jobId": "myresult_112"
+      },
+      {
+        "docId": "김종현_half_2025-03-30",
+        "memberRealName": "김종현",
+        "eventName": "제24회 합천벚꽃마라톤대회",
+        "eventDate": "2025-03-30",
+        "source": "myresult",
+        "distance": "half",
+        "jobId": "myresult_102"
+      },
+      {
+        "docId": "김진석_10K_2026-01-31",
+        "memberRealName": "김진석",
+        "eventName": "2026 인사이더런 W",
+        "eventDate": "2026-01-31",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_138"
+      },
+      {
+        "docId": "김태영_half_2025-03-30",
+        "memberRealName": "김태영",
+        "eventName": "제24회 합천벚꽃마라톤대회",
+        "eventDate": "2025-03-30",
+        "source": "myresult",
+        "distance": "half",
+        "jobId": "myresult_102"
+      },
+      {
+        "docId": "김형석_half_2025-03-30",
+        "memberRealName": "김형석",
+        "eventName": "제24회 합천벚꽃마라톤대회",
+        "eventDate": "2025-03-30",
+        "source": "myresult",
+        "distance": "half",
+        "jobId": "myresult_102"
+      },
+      {
+        "docId": "박경원_10K_2026-01-31",
+        "memberRealName": "박경원",
+        "eventName": "2026 인사이더런 W",
+        "eventDate": "2026-01-31",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_138"
+      },
+      {
+        "docId": "박소영_10K_2025-03-30",
+        "memberRealName": "박소영",
+        "eventName": "제24회 합천벚꽃마라톤대회",
+        "eventDate": "2025-03-30",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_102"
+      },
+      {
+        "docId": "박은정_10K_2025-03-30",
+        "memberRealName": "박은정",
+        "eventName": "제24회 합천벚꽃마라톤대회",
+        "eventDate": "2025-03-30",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_102"
+      },
+      {
+        "docId": "이기수_10K_2025-05-04",
+        "memberRealName": "이기수",
+        "eventName": "제22회 서울시민마라톤",
+        "eventDate": "2025-05-04",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_112"
+      },
+      {
+        "docId": "이민주_10K_2025-03-30",
+        "memberRealName": "이민주",
+        "eventName": "제24회 합천벚꽃마라톤대회",
+        "eventDate": "2025-03-30",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_102"
+      },
+      {
+        "docId": "최정민_10K_2025-05-04",
+        "memberRealName": "최정민",
+        "eventName": "제22회 서울시민마라톤",
+        "eventDate": "2025-05-04",
+        "source": "myresult",
+        "distance": "10K",
+        "jobId": "myresult_112"
+      }
+    ],
+    "invalid_confirmSource": [
+      {
+        "docId": "강동원_full_2025-04-20",
+        "memberRealName": "강동원",
+        "eventName": "제23회 경기마라톤대회",
+        "eventDate": "2025-04-20",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202550000051"
+      },
+      {
+        "docId": "강동원_full_2025-09-28",
+        "memberRealName": "강동원",
+        "eventName": "2025 공주백제마라톤",
+        "eventDate": "2025-09-28",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202550000189"
+      },
+      {
+        "docId": "강동원_full_2025-11-09",
+        "memberRealName": "강동원",
+        "eventName": "제14회 부여 굿뜨래 마라톤대회",
+        "eventDate": "2025-11-09",
+        "source": "spct",
+        "distance": "full",
+        "jobId": "spct_20251109009"
+      },
+      {
+        "docId": "강동원_full_2025-11-23",
+        "memberRealName": "강동원",
+        "eventName": "2025 인천마라톤",
+        "eventDate": "2025-11-23",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202550000298"
+      },
+      {
+        "docId": "강동원_full_2026-01-11",
+        "memberRealName": "강동원",
+        "eventName": "제20회 여수해양마라톤",
+        "eventDate": "2026-01-11",
+        "source": "marazone",
+        "distance": "full",
+        "jobId": "marazone_제20회 여수해양마라톤"
+      },
+      {
+        "docId": "강동원_full_2026-02-22",
+        "memberRealName": "강동원",
+        "eventName": "2026대구마라톤",
+        "eventDate": "2026-02-22",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202650000005"
+      },
+      {
+        "docId": "강동원_full_2026-03-15",
+        "memberRealName": "강동원",
+        "eventName": "2026 서울마라톤 (동아)",
+        "eventDate": "2026-03-15",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202650000006"
+      },
+      {
+        "docId": "강동원_half_2025-05-10",
+        "memberRealName": "강동원",
+        "eventName": "화성효마라톤",
+        "eventDate": "2025-05-10",
+        "source": "spct",
+        "distance": "half",
+        "jobId": "spct_20250510001"
+      },
+      {
+        "docId": "강동원_half_2025-09-21",
+        "memberRealName": "강동원",
+        "eventName": "2025철원DMZ국제평화마라톤",
+        "eventDate": "2025-09-21",
+        "source": "spct",
+        "distance": "half",
+        "jobId": "spct_2025092102"
+      },
+      {
+        "docId": "강동원_half_2025-11-16",
+        "memberRealName": "강동원",
+        "eventName": "2025 MBN 서울마라톤",
+        "eventDate": "2025-11-16",
+        "source": "smartchip",
+        "distance": "half",
+        "jobId": "smartchip_202550000283"
+      },
+      {
+        "docId": "강창기_full_2026-01-11",
+        "memberRealName": "강창기",
+        "eventName": "제20회 여수해양마라톤",
+        "eventDate": "2026-01-11",
+        "source": "marazone",
+        "distance": "full",
+        "jobId": "marazone_제20회 여수해양마라톤"
+      },
+      {
+        "docId": "강창기_full_2026-03-15",
+        "memberRealName": "강창기",
+        "eventName": "2026 서울마라톤 (동아)",
+        "eventDate": "2026-03-15",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202650000006"
+      },
+      {
+        "docId": "김경란_10K_2025-10-03",
+        "memberRealName": "김경란",
+        "eventName": "제22회 강남국제평화마라톤",
+        "eventDate": "2025-10-03",
+        "source": "smartchip",
+        "distance": "10K",
+        "jobId": "smartchip_202550000203"
+      },
+      {
+        "docId": "김경란_10K_2025-11-16",
+        "memberRealName": "김경란",
+        "eventName": "2025 MBN 서울마라톤",
+        "eventDate": "2025-11-16",
+        "source": "smartchip",
+        "distance": "10K",
+        "jobId": "smartchip_202550000283"
+      },
+      {
+        "docId": "김경란_full_2025-11-23",
+        "memberRealName": "김경란",
+        "eventName": "2025 인천마라톤",
+        "eventDate": "2025-11-23",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202550000298"
+      },
+      {
+        "docId": "김경란_half_2025-10-12",
+        "memberRealName": "김경란",
+        "eventName": "2025 SEOUL RACE",
+        "eventDate": "2025-10-12",
+        "source": "smartchip",
+        "distance": "half",
+        "jobId": "smartchip_202550000213"
+      },
+      {
+        "docId": "김경섭_32km_2025-09-28",
+        "memberRealName": "김경섭",
+        "eventName": "2025 공주백제마라톤",
+        "eventDate": "2025-09-28",
+        "source": "smartchip",
+        "distance": "32km",
+        "jobId": "smartchip_202550000189"
+      },
+      {
+        "docId": "김경섭_full_2025-11-02",
+        "memberRealName": "김경섭",
+        "eventName": "2025 JTBC 서울마라톤",
+        "eventDate": "2025-11-02",
+        "source": "myresult",
+        "distance": "full",
+        "jobId": "myresult_133"
+      },
+      {
+        "docId": "김경섭_full_2026-02-22",
+        "memberRealName": "김경섭",
+        "eventName": "오사카마라톤",
+        "eventDate": "2026-02-22",
+        "source": "manual",
+        "distance": "full",
+        "jobId": "manual"
+      },
+      {
+        "docId": "김경섭_full_2026-03-15",
+        "memberRealName": "김경섭",
+        "eventName": "2026서울마라톤",
+        "eventDate": "2026-03-15",
+        "source": "smartchip",
+        "distance": "full",
+        "jobId": "smartchip_202650000006"
+      }
+    ]
+  }
+}
