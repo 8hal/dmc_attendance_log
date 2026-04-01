@@ -231,16 +231,16 @@
     function renderIntegrity(intData) {
       const issues = intData.issues || [];
       const el = document.getElementById("integrityCard");
-      let html = '<div class="card-title">🔍 confirmedCount 불일치</div>';
+      let html = `<div class="card-title">🔍 데이터 무결성 <span style="color:#64748B;font-weight:400;">(전체 ${intData.totalJobs ?? "-"}잡 / ${intData.totalResults ?? "-"}건)</span></div>`;
 
       if (issues.length === 0) {
         html += '<span class="badge-ok">✓ 정상</span>';
       } else {
-        html += `<span class="badge-warn">${issues.length}건</span>
-          <div style="font-size:11px;color:#64748B;margin:6px 0;">표시 숫자 오차입니다. race_results(SSOT)에는 영향 없음.</div>
-          <table><tr><th>대회</th><th class="num">claimed</th><th class="num">actual</th></tr>`;
+        html += `<span class="badge-warn">phantom ${issues.length}건</span>
+          <div style="font-size:11px;color:#64748B;margin:6px 0;">confirmed 상태이나 race_results가 없는 잡입니다.</div>
+          <table><tr><th>대회</th><th>jobId</th></tr>`;
         for (const iss of issues) {
-          html += `<tr><td>${esc(iss.eventName || iss.jobId)}</td><td class="num">${iss.claimed}</td><td class="num ${iss.claimed !== iss.actual ? "mismatch" : ""}">${iss.actual}</td></tr>`;
+          html += `<tr><td>${esc(iss.eventName || "-")}</td><td style="font-size:11px;color:#94A3B8;">${esc(iss.jobId)}</td></tr>`;
         }
         html += '</table>';
       }

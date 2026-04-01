@@ -811,9 +811,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "events") {
-      const snap = await db.collection("scrape_jobs")
-        .orderBy("createdAt", "desc")
-        .get();
+      const [snap, rrSnap] = await Promise.all([
+        db.collection("scrape_jobs").orderBy("createdAt", "desc").get(),
+        db.collection("race_results").where("status", "==", "confirmed").get(),
+      ]);
+
+      // SSOT(race_results) 기준 jobId별 확정 건수
+      const rrCountByJob = {};
+      rrSnap.forEach((doc) => {
+        const jid = doc.data().jobId || "none";
+        rrCountByJob[jid] = (rrCountByJob[jid] || 0) + 1;
+      });
 
       const jobs = [];
       const fixPromises = [];
@@ -839,7 +847,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
                 eventDate: patch.eventDate || d.eventDate,
                 status: d.status,
                 foundCount: d.status === "confirmed"
-                  ? (d.confirmedCount ?? 0)
+                  ? (rrCountByJob[doc.id] || 0)
                   : (d.results?.length ?? 0),
                 createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
               };
@@ -851,7 +859,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             eventName: d.eventName, eventDate: d.eventDate,
             status: d.status,
             foundCount: d.status === "confirmed"
-              ? (d.confirmedCount ?? 0)
+              ? (rrCountByJob[doc.id] || 0)
               : (d.results?.length ?? 0),
             createdAt: d.createdAt, confirmedAt: d.confirmedAt || null,
           });
@@ -1415,11 +1423,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const jobDoc = await jobRef.get();
 
       if (jobDoc.exists) {
-        const existingCount = jobDoc.data().confirmedCount || 0;
         batch.update(jobRef, {
           status: "confirmed",
           confirmedAt: now,
-          confirmedCount: existingCount + results.length,
           eventName: eventName || jobDoc.data().eventName || "",
           eventDate: eventDate || jobDoc.data().eventDate || "",
           source: source || jobDoc.data().source || "",
@@ -1429,7 +1435,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         batch.set(jobRef, {
           status: "confirmed",
           confirmedAt: now,
-          confirmedCount: results.length,
           results,
           eventName: eventName || "",
           eventDate: eventDate || "",
@@ -1507,16 +1512,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
 
       await ref.delete();
-
-      if (data.jobId) {
-        const jobRef = db.collection("scrape_jobs").doc(data.jobId);
-        const jobDoc = await jobRef.get();
-        if (jobDoc.exists) {
-          const jd = jobDoc.data();
-          const newCount = Math.max(0, (jd.confirmedCount || 0) - 1);
-          await jobRef.update({ confirmedCount: newCount });
-        }
-      }
 
       return res.json({ ok: true, deletedDocId: docId });
     }
@@ -1857,20 +1852,21 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "data-integrity") {
-      const jobsSnap = await db.collection("scrape_jobs").get();
-      const rrSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
+      const [jobsSnap, rrSnap] = await Promise.all([
+        db.collection("scrape_jobs").get(),
+        db.collection("race_results").where("status", "==", "confirmed").get(),
+      ]);
       const rrByJob = {};
       rrSnap.forEach((doc) => {
         const jid = doc.data().jobId || "none";
         rrByJob[jid] = (rrByJob[jid] || 0) + 1;
       });
+      // confirmed 상태인데 실제 race_results가 0건인 phantom job만 이슈로 보고
       const issues = [];
       jobsSnap.forEach((doc) => {
         const d = doc.data();
-        const actual = rrByJob[doc.id] || 0;
-        const claimed = d.confirmedCount || 0;
-        if (claimed !== actual && d.status === "confirmed") {
-          issues.push({ jobId: doc.id, eventName: d.eventName || "", claimed, actual });
+        if (d.status === "confirmed" && (rrByJob[doc.id] || 0) === 0) {
+          issues.push({ jobId: doc.id, eventName: d.eventName || "", actual: 0 });
         }
       });
       return res.json({ ok: true, totalJobs: jobsSnap.size, totalResults: rrSnap.size, issues });
