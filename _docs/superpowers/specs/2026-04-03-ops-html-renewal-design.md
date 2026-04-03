@@ -1,7 +1,8 @@
-# ops.html 리뉴얼 설계 문서
+# ops.html 리뉴얼 설계 문서 (v2 - 고러닝 예정 대회 통합)
 
 > 작성일: 2026-04-03  
-> 목표: 스크래핑 모니터링 강화 + 모범 사례 적용 + 주말 대회 자동 알림
+> 업데이트: 2026-04-03 (고러닝 대회 예측 UI 추가)  
+> 목표: 스크래핑 모니터링 강화 + 모범 사례 적용 + 주말 대회 자동 알림 + **고러닝 예정 대회 표시**
 
 ## 1. 배경 및 목표
 
@@ -12,6 +13,7 @@
 2. **모범 사례 미준수** — 15+ 메트릭 표시 (권장: 5-7 KPI)
 3. **액션 불가능한 정보** — "다음 실행 시" 섹션 (자동 스크랩 없음)
 4. **수동 점검 의존** — 주말 대회 전 스크래핑 상태 직접 확인 필요
+5. **예정 대회 blind spot** — 어떤 대회가 다가오는지, 스크랩 가능한지 알 수 없음
 
 **실제 사례 (2026-04-03):**
 - 스마트칩 스크래퍼 "결과 안 오는 것 같다" 제보
@@ -25,19 +27,26 @@
    - 주말 대회 전 자동 점검 (목/금 18:00)
 
 2. **모범 사례 적용**
-   - 5-7 KPI 원칙 (6개 핵심 섹션으로 재구성)
+   - 5-7 KPI 원칙 (7개 핵심 섹션으로 재구성)
    - 액션 가능한 메트릭만 표시
 
 3. **자동 알림 시스템**
    - 이메일 알림 (목/금 저녁, 이슈 발견 시)
    - 모바일에서 확인 가능
 
+4. **예정 대회 가시성 (신규)**
+   - 고러닝 기반 향후 2개월 대회 목록
+   - 자동 매칭으로 스크랩 가능 여부 표시
+   - 수동 입력 필요한 대회 안내
+
 ### 성공 기준
 
 - [ ] 소스별 success rate 실시간 확인 가능
 - [ ] 목/금 18:00 자동 체크 + 이메일 알림 (주말 직전 점검)
-- [ ] ops.html 메트릭 6개 이하로 단순화
+- [ ] ops.html 메트릭 7개 이하로 단순화
 - [ ] 주말 대회 직전(목/금) 이슈 조기 발견
+- [ ] **향후 2개월 예정 대회 목록 표시 (고러닝 기반)**
+- [ ] **스크랩 가능/불가 여부 자동 판단 + 액션 가이드**
 
 ---
 
@@ -45,7 +54,7 @@
 
 ### 2.1 신규 컴포넌트
 
-#### Backend: 3개 신규 항목
+#### Backend: 4개 신규 항목 (고러닝 추가)
 
 **1. Cloud Function: `weekendScrapeReadinessCheck`**
 ```javascript
@@ -98,6 +107,57 @@ exports.weekendScrapeReadinessCheck = onSchedule({
 **기존 `scrapeHealthCheck`와의 역할 구분:**
 - **`scrapeHealthCheck`** (매시간): `stuck_job`, `zero_results` 등 즉시 대응 필요한 긴급 이슈
 - **`weekendScrapeReadinessCheck`** (목/금 18:00): 주말 대회 준비 상태 종합 점검 + 이메일 알림
+
+**4. HTTP API: `ops-gorunning-events` (신규)**
+```javascript
+// GET /race?action=ops-gorunning-events
+if (action === "ops-gorunning-events") {
+  // 고러닝에서 향후 2개월 대회 목록 크롤링
+  // 기존 scrape_jobs와 자동 매칭 (이름/날짜 기반)
+  
+  return res.json({
+    ok: true,
+    events: [
+      {
+        id: "gorunning_12345",
+        name: "춘천마라톤",
+        date: "2026-04-05",
+        location: "춘천",
+        distance: ["풀코스", "하프"],
+        url: "https://gorunning.co.kr/event/12345",
+        matchStatus: "matched" | "not_matched",
+        matchedJob: {
+          source: "smartchip",
+          sourceId: "202650000006",
+          jobId: "smartchip_202650000006"
+        } | null,
+        actionRequired: "none" | "manual_search" | "check_source_site"
+      }
+    ],
+    lastCrawled: timestamp
+  });
+}
+```
+
+**자동 매칭 로직:**
+```javascript
+function matchGorunningToJob(gorunningEvent, scrapeJobs) {
+  // 1. 날짜 일치 (±2일 허용)
+  // 2. 이름 유사도 (Levenshtein distance < 5 또는 주요 키워드 일치)
+  // 3. 위치 키워드 일치 (선택)
+  
+  const candidates = scrapeJobs.filter(job => {
+    const dateDiff = Math.abs(daysDiff(job.eventDate, gorunningEvent.date));
+    if (dateDiff > 2) return false;
+    
+    const nameSimilarity = calculateSimilarity(job.eventName, gorunningEvent.name);
+    return nameSimilarity > 0.7;
+  });
+  
+  // 가장 유사도 높은 후보 반환
+  return candidates.length > 0 ? candidates[0] : null;
+}
+```
 
 **2. HTTP API: `ops-scrape-health`**
 ```javascript
@@ -159,14 +219,15 @@ ADMIN_EMAIL=taylor@example.com
 
 #### Frontend: ops.html 재설계
 
-**6개 섹션 구성:**
+**7개 섹션 구성:**
 
 1. **시스템 건강도** (요약 카드)
 2. **스크래핑 건강도** (신규 - 핵심)
 3. **주말 준비 상태** (목/금만 표시)
-4. **전환율 & 퍼널** (기존 유지)
-5. **최근 알림** (기존 개선)
-6. **이벤트 로그** (기존 축소)
+4. **고러닝 예정 대회** (신규 - Section 7)
+5. **전환율 & 퍼널** (기존 유지)
+6. **최근 알림** (기존 개선)
+7. **이벤트 로그** (기존 축소)
 
 **제거:**
 - ❌ "다음 실행 시 먼저 스크랩될 후보"
@@ -490,24 +551,103 @@ await db.collection("ops_meta")
 
 **제거**: 이벤트 상세 (과도한 정보)
 
+### 4.7 Section 7: 고러닝 예정 대회 (신규)
+
+**위치**: Section 6 위 (이벤트 로그 바로 위)
+
+**목적**: 향후 2개월 예정 대회 목록 + 스크랩 가능 여부 표시
+
+**레이아웃:**
+```
+┌──────────────────────────────────────────────────────────┐
+│ 📅 고러닝 예정 대회 (향후 2개월)          [새로고침 ↻]   │
+├──────────────────────────────────────────────────────────┤
+│                                                           │
+│  마지막 업데이트: 2026-04-03 09:00 (데이터: 고러닝)      │
+│  총 18개 대회 | 스크랩 가능: 12개 | 수동 필요: 6개       │
+│                                                           │
+├──────────────────────────────────────────────────────────┤
+│  2026-04-05 (토) 춘천마라톤                              │
+│  ✅ 스크랩 가능 (smartchip_202650000006)                │
+│  [발견 완료 →]                                           │
+├──────────────────────────────────────────────────────────┤
+│  2026-04-06 (일) 서울숲10K                               │
+│  ✅ 스크랩 가능 (myresult_20260406001)                  │
+│  [발견 완료 →]                                           │
+├──────────────────────────────────────────────────────────┤
+│  2026-04-12 (토) 양평두물머리마라톤                      │
+│  🔍 수동 검색 필요                                       │
+│  💡 액션: report.html "발견"에서 수동 검색 또는          │
+│           기록 사이트(smartchip, myresult 등)에서 직접   │
+│           확인 필요                                       │
+│  [수동 검색 →]                                           │
+├──────────────────────────────────────────────────────────┤
+│  2026-04-19 (토) 경주벚꽃마라톤                          │
+│  🔍 수동 검색 필요                                       │
+│  💡 액션: 기록 사이트 직접 확인                          │
+│  [수동 검색 →]                                           │
+└──────────────────────────────────────────────────────────┘
+```
+
+**데이터 소스**: `GET /race?action=ops-gorunning-events` (신규)
+
+**카드 구성:**
+- **헤더**: 마지막 업데이트 시각 + 요약 통계
+- **대회별 카드**: 
+  - 날짜 + 대회명
+  - 매칭 상태 아이콘 (✅ / 🔍)
+  - 매칭 성공 시: 소스 정보 + "발견 완료" 링크
+  - 매칭 실패 시: 액션 가이드 + "수동 검색" 링크
+
+**매칭 상태 표시:**
+- ✅ **스크랩 가능**: 자동 매칭 성공 (이름/날짜 유사도 >70%)
+  - 표시: `(source_sourceId)` 형식
+  - 액션: report.html에서 해당 job 확인 가능
+  
+- 🔍 **수동 검색 필요**: 자동 매칭 실패
+  - 안내 1: "report.html 발견에서 수동 검색"
+  - 안내 2: "기록 사이트에서 직접 확인 필요"
+  - 링크: report.html로 이동
+
+**인터랙션:**
+- **[새로고침]** 버튼: API 재호출 (고러닝 크롤링 + 매칭 재실행)
+- **[발견 완료 →]** 링크: `report.html?tab=review&jobId={jobId}`로 이동
+- **[수동 검색 →]** 링크: `report.html?tab=discover`로 이동
+
+**필터링 (선택 - Phase 2):**
+- 날짜 범위: 1주 / 1개월 / 2개월
+- 매칭 상태: 전체 / 스크랩 가능 / 수동 필요
+- 거리: 풀코스 / 하프 / 10K / 기타
+
+**데이터 캐싱:**
+- 고러닝 크롤링 결과는 `ops_meta.last_gorunning_crawl`에 저장
+- 유효 기간: 6시간 (이후 자동 갱신)
+- 수동 새로고침 시 즉시 크롤링
+
 ---
 
 ## 5. 구현 우선순위
 
-### Phase 1: Core (필수 - 1주)
+### Phase 1: Core (필수 - 1.5주)
 
 1. **Backend API: `ops-scrape-health`**
    - 최근 7일 scrape_jobs 분석
    - 소스별 success rate 계산
    - 주말 대회 목록 조회
 
-2. **Cloud Function: `weekendScrapeReadinessCheck`**
+2. **Backend API: `ops-gorunning-events` (신규)**
+   - 고러닝 크롤러 (Cheerio 사용)
+   - 자동 매칭 로직 (이름/날짜 유사도)
+   - 캐싱 (6시간 유효)
+
+3. **Cloud Function: `weekendScrapeReadinessCheck`**
    - 목/금 18:00 스케줄
    - ops-scrape-health 로직 재사용
    - 이메일 발송 (Nodemailer)
 
-3. **ops.html 리뉴얼**
-   - Section 1, 2, 3 구현 (핵심)
+4. **ops.html 리뉴얼**
+   - Section 1, 2, 3 구현 (핵심 모니터링)
+   - **Section 7 구현 (고러닝 예정 대회)**
    - Section 4, 5, 6 기존 코드 정리
    - "다음 실행 시" 섹션 제거
 
@@ -521,13 +661,129 @@ await db.collection("ops_meta")
    - 소스별 failed jobs 상세 모달
    - 자동 새로고침 (30초 간격)
 
-6. **히스토리 보관**
+6. **고러닝 UI 필터링**
+   - 날짜 범위 / 매칭 상태 / 거리 필터
+
+7. **히스토리 보관**
    - `ops_meta_history` 서브컬렉션
    - 주간 트렌드 차트 (선택)
 
 ---
 
-## 6. 의존성 및 제약사항
+## 6. 고러닝 크롤러 상세 설계
+
+### 6.1 크롤링 대상
+
+**URL**: `https://gorunning.co.kr/race/event`
+
+**추출 데이터:**
+- 대회명
+- 개최일
+- 지역 (시/도)
+- 거리 (풀코스, 하프, 10K 등)
+- 상세 URL
+
+**크롤링 주기:**
+- **수동**: ops.html에서 [새로고침] 버튼
+- **자동**: 매일 09:00 KST (Cloud Scheduler, Phase 2)
+
+### 6.2 자동 매칭 로직
+
+**입력:**
+- 고러닝 이벤트 리스트
+- 기존 `scrape_jobs` (최근 3개월)
+
+**매칭 알고리즘:**
+```javascript
+function matchEvent(gorunningEvent, scrapeJobs) {
+  // Step 1: 날짜 필터 (±2일)
+  const dateMatches = scrapeJobs.filter(job => {
+    const diff = Math.abs(daysDiff(job.eventDate, gorunningEvent.date));
+    return diff <= 2;
+  });
+  
+  if (dateMatches.length === 0) return null;
+  
+  // Step 2: 이름 유사도 계산
+  const scored = dateMatches.map(job => ({
+    job,
+    score: calculateNameSimilarity(job.eventName, gorunningEvent.name)
+  }));
+  
+  // Step 3: 임계치 적용 (>0.7)
+  const qualified = scored.filter(s => s.score > 0.7);
+  
+  if (qualified.length === 0) return null;
+  
+  // Step 4: 가장 높은 점수 반환
+  qualified.sort((a, b) => b.score - a.score);
+  return qualified[0].job;
+}
+
+function calculateNameSimilarity(name1, name2) {
+  // 1. 정규화 (공백 제거, 소문자, 숫자/연도 제거)
+  const normalize = (s) => s.replace(/\s+/g, '').toLowerCase()
+    .replace(/\d{4}/g, '') // 연도 제거
+    .replace(/마라톤|대회|레이스/g, ''); // 공통 단어 제거
+  
+  const n1 = normalize(name1);
+  const n2 = normalize(name2);
+  
+  // 2. Levenshtein distance
+  const distance = levenshteinDistance(n1, n2);
+  const maxLen = Math.max(n1.length, n2.length);
+  
+  // 3. 유사도 점수 (0~1)
+  return 1 - (distance / maxLen);
+}
+```
+
+**매칭 결과:**
+- `matched`: 점수 >0.7
+- `not_matched`: 점수 ≤0.7 또는 후보 없음
+
+**Edge Cases:**
+- 동일 날짜 여러 대회: 가장 높은 점수 선택
+- 정확한 일치 (1.0): 즉시 반환
+- 과거 대회: 매칭하지 않음 (날짜 < 오늘)
+
+### 6.3 데이터 저장
+
+**`ops_meta.last_gorunning_crawl` 문서:**
+```javascript
+{
+  crawledAt: "2026-04-03T09:00:00Z",
+  events: [
+    {
+      id: "gorunning_12345",
+      name: "춘천마라톤",
+      date: "2026-04-05",
+      location: "강원 춘천",
+      distance: ["풀코스", "하프"],
+      url: "https://gorunning.co.kr/race/12345",
+      matchStatus: "matched",
+      matchedJob: {
+        source: "smartchip",
+        sourceId: "202650000006",
+        jobId: "smartchip_202650000006",
+        similarity: 0.95
+      }
+    },
+    // ... more events
+  ],
+  stats: {
+    total: 18,
+    matched: 12,
+    notMatched: 6
+  }
+}
+```
+
+**캐시 유효 기간**: 6시간
+
+---
+
+## 7. 의존성 및 제약사항
 
 ### 기술 스택
 
@@ -535,6 +791,8 @@ await db.collection("ops_meta")
 - Firebase Functions v2
 - Node.js 18+
 - Nodemailer 6.9+
+- Cheerio 1.0+ (고러닝 크롤링)
+- string-similarity 4.0+ (이름 매칭)
 
 **Frontend:**
 - Vanilla JS (기존 유지)
@@ -558,7 +816,9 @@ ADMIN_EMAIL=taylor@example.com
 
 1. **이메일 발송 제한**: Gmail 하루 500통 (충분)
 2. **Cloud Scheduler 비용**: 월 $0.10 (무시 가능)
-3. **Firestore 읽기**: 주당 ~1,000 reads 추가 (무료 할당 내)
+3. **Firestore 읽기**: 주당 ~1,500 reads 추가 (무료 할당 내)
+4. **고러닝 크롤링**: robots.txt 준수, User-Agent 설정 필요
+5. **매칭 정확도**: 이름 변형 (예: "서울마라톤" vs "서울국제마라톤") 처리 한계
 
 ---
 
