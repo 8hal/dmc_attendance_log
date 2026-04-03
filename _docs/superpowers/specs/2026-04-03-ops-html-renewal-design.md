@@ -71,7 +71,7 @@ exports.weekendScrapeReadinessCheck = onSchedule({
   // 3. 소스별 건강도 평가
   // 4. 이슈 발견 시 이메일 발송 (성공/실패 분기)
   // 5. 결과를 ops_meta 저장
-  // 6. event_logs에 weekend_check 이벤트 기록 (Section 5용)
+  // 6. event_logs에 weekend_check 이벤트 기록 (Section 6 최근 알림용)
   
   try {
     // ... 건강도 체크 로직 ...
@@ -154,8 +154,10 @@ function matchGorunningToJob(gorunningEvent, scrapeJobs) {
     return nameSimilarity > 0.7;
   });
   
-  // 가장 유사도 높은 후보 반환
-  return candidates.length > 0 ? candidates[0] : null;
+  // 가장 유사도 높은 후보 반환 (점수 정렬)
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.similarity - a.similarity);
+  return candidates[0];
 }
 ```
 
@@ -657,8 +659,8 @@ await db.collection("ops_meta")
 
 4. **ops.html 리뉴얼**
    - Section 1, 2, 3 구현 (핵심 모니터링)
-   - **Section 7 구현 (고러닝 예정 대회)**
-   - Section 4, 5, 6 기존 코드 정리
+   - **Section 5 구현 (고러닝 예정 대회)**
+   - Section 4, 6, 7 기존 코드 정리
    - "다음 실행 시" 섹션 제거
 
 ### Phase 2: Polish (선택 - 3일)
@@ -802,7 +804,7 @@ function calculateNameSimilarity(name1, name2) {
 - Node.js 18+
 - Nodemailer 6.9+
 - Cheerio 1.0+ (고러닝 크롤링)
-- string-similarity 4.0+ (이름 매칭)
+- (Levenshtein distance는 직접 구현, 라이브러리 불필요)
 
 **Frontend:**
 - Vanilla JS (기존 유지)
