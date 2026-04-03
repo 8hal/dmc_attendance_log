@@ -771,6 +771,43 @@ async function discoverSmartChip(year) {
   }));
 }
 
+// ─── Ohmyrace 대회 발견 ──────────────────────────────────────
+async function discoverOhmyrace(year) {
+  const res = await fetch("http://record.ohmyrace.co.kr/event");
+  const html = await res.text();
+  const $ = cheerioLoad(html);
+
+  const events = [];
+  $("li").each((_, el) => {
+    const nameEl = $(el).find(".new_sbj a");
+    if (!nameEl.length) return;
+
+    const name = nameEl.text()
+      .replace(/예정|종료/g, "")
+      .trim();
+    const dateText = $(el).find(".new_data").text().trim();
+
+    if (name && dateText.startsWith(String(year))) {
+      const date = dateText.replace(/\.\s*/g, "-").trim();
+      const href = nameEl.attr("href") || "";
+      const idMatch = href.match(/event\/(\d+)/);
+
+      if (idMatch) {
+        events.push({
+          source: "ohmyrace",
+          sourceId: idMatch[1],
+          name,
+          date,
+          distances: "",
+          location: "",
+        });
+      }
+    }
+  });
+
+  return events;
+}
+
 const GORUNNING_ORIGIN = "https://gorunning.kr";
 
 /**
@@ -923,6 +960,7 @@ async function discoverAllEvents(year) {
     { name: "myresult", fn: discoverMyResult },
     { name: "spct", fn: discoverSPCT },
     { name: "smartchip", fn: discoverSmartChip },
+    { name: "ohmyrace", fn: discoverOhmyrace },
   ];
 
   const allEvents = [];
