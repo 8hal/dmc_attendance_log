@@ -1189,7 +1189,8 @@ function matchGorunningToJob(gorunningEvent, scrapeJobs) {
 
   const candidates = scrapeJobs.filter((job) => {
     if (!job?.eventDate) return false;
-    const jobDate = new Date(job.eventDate);
+    const jobYmd = String(job.eventDate).slice(0, 10);
+    const jobDate = new Date(`${jobYmd}T12:00:00+09:00`);
     if (Number.isNaN(jobDate.getTime())) return false;
     const diffDays = Math.abs((eventDate - jobDate) / (1000 * 60 * 60 * 24));
     return diffDays <= 2;

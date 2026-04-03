@@ -2241,6 +2241,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "ops-gorunning-events") {
+      // 캐시: ops_meta/last_gorunning_crawl, TTL 6시간 (아래 sixHoursAgo)
       const cacheDoc = await db.collection("ops_meta").doc("last_gorunning_crawl").get();
       const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
 
