@@ -308,6 +308,7 @@
         fetch(`${API_BASE}?action=member-stats`),
         renderScrapeHealth(),
         renderWeekendReadiness(),
+        renderGorunningEvents(),
       ]);
       const logsRes = results[0];
       const intRes = results[1];
@@ -319,7 +320,6 @@
 
       renderSystemHealth(intData);
       renderMemberStats(statsData);
-      await renderGorunningEvents();
       renderScrapeAlerts(logsData);
       renderLogs(logsData);
       renderIntegrity(intData);

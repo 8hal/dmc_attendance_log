@@ -156,7 +156,8 @@ assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
 
 curl -s "$HOST/ops.html" > "$TMP_DIR/ops.html"
 assert_contains "ops.html: Ops Console" "Ops Console" "$TMP_DIR/ops.html"
-assert_contains "ops.html: ops-scrape-preview 연동" "ops-scrape-preview" "$TMP_DIR/ops.html"
+assert_contains "ops.html: ops-scrape-health 연동" "ops-scrape-health" "$TMP_DIR/ops.html"
+assert_contains "ops.html: 시스템 건강도" "systemHealth" "$TMP_DIR/ops.html"
 
 curl -s "$HOST/race-distance-client.js" > "$TMP_DIR/race-distance-client.js"
 assert_contains "race-distance-client.js: 32K 정규화" '"32K"' "$TMP_DIR/race-distance-client.js"
