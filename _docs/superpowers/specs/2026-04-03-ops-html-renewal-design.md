@@ -35,9 +35,9 @@
 ### 성공 기준
 
 - [ ] 소스별 success rate 실시간 확인 가능
-- [ ] 목/금 18:00 자동 체크 + 이메일 알림
+- [ ] 목/금 18:00 자동 체크 + 이메일 알림 (주말 직전 점검)
 - [ ] ops.html 메트릭 6개 이하로 단순화
-- [ ] 주말 대회 3일 전 이슈 조기 발견
+- [ ] 주말 대회 직전(목/금) 이슈 조기 발견
 
 ---
 
@@ -61,8 +61,24 @@ exports.weekendScrapeReadinessCheck = onSchedule({
   // 3. 소스별 건강도 평가
   // 4. 이슈 발견 시 이메일 발송
   // 5. 결과를 ops_meta 저장
+  // 6. event_logs에 weekend_check 이벤트 기록 (Section 5용)
+  
+  await db.collection("event_logs").add({
+    type: "weekend_check",
+    severity: overallStatus, // "info" | "warning" | "error"
+    message: `주말 준비 체크 완료: ${upcomingCount}개 대회, ${overallSuccessRate}% 건강도`,
+    checkedAt: new Date().toISOString(),
+    upcomingWeekend: weekendEvents,
+    healthSummary: { overall, bySource },
+    emailSent: true,
+    timestamp: FieldValue.serverTimestamp()
+  });
 })
 ```
+
+**기존 `scrapeHealthCheck`와의 역할 구분:**
+- **`scrapeHealthCheck`** (매시간): `stuck_job`, `zero_results` 등 즉시 대응 필요한 긴급 이슈
+- **`weekendScrapeReadinessCheck`** (목/금 18:00): 주말 대회 준비 상태 종합 점검 + 이메일 알림
 
 **2. HTTP API: `ops-scrape-health`**
 ```javascript
@@ -144,20 +160,44 @@ ADMIN_EMAIL=taylor@example.com
 |--------|------|--------|
 | **Success Rate** | `(complete + confirmed) / (total - queued)` | ⚠️ <90%, 🔴 <80% |
 | **Failed Jobs** | `status === "failed"` | ⚠️ ≥3건, 🔴 ≥5건 |
-| **Stale Jobs** | `status === "complete"` + 결과 3일 이상 미확정 | ⚠️ ≥5건 |
-| **Stuck Jobs** | `status === "running"` + 1시간 이상 | 🔴 ≥1건 (긴급) |
+| **Stale Jobs** | `status === "complete"` + `updatedAt` 3일 이상 + `results.length > 0` (즉, 스크랩 완료했으나 운영자가 확정 안 한 잡) | ⚠️ ≥5건 |
+| **Stuck Jobs** | `status === "running"` + `updatedAt` 1시간 이상 (기존 `scrapeHealthCheck`와 동일) | 🔴 ≥1건 (긴급) |
+
+**Stale Jobs 쿼리 로직:**
+```javascript
+const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+const staleSnap = await db.collection("scrape_jobs")
+  .where("status", "==", "complete")
+  .where("updatedAt", "<=", threeDaysAgo)
+  .get();
+
+const staleJobs = [];
+staleSnap.forEach(doc => {
+  const d = doc.data();
+  if ((d.results || []).length > 0) {
+    staleJobs.push({ jobId: doc.id, ...d });
+  }
+});
+```
 
 **데이터 기간**: 최근 7일 (rolling window)
 
 #### 소스별 건강도
 
-| 소스 | Success Rate 임계치 | 특이사항 |
-|------|-------------------|---------|
-| smartchip | ⚠️ <95% | 세션 이슈 민감 |
-| myresult | ⚠️ <90% | API 변경 빈번 |
-| spct | ⚠️ <90% | — |
-| marazone | ⚠️ <90% | — |
-| manual | — | 수동 입력 (건강도 미측정) |
+**통합 색상 규칙 (모든 소스 공통):**
+- ✅ 초록: ≥90%
+- ⚠️ 노랑: 80-89%
+- 🔴 빨강: <80%
+
+**소스별 특이사항:**
+
+| 소스 | 참고 |
+|------|------|
+| smartchip | 세션 이슈 민감 (95% 이상 권장, 단 90% 이상이면 ✅) |
+| myresult | API 변경 빈번 |
+| spct | — |
+| marazone | — |
+| manual | 수동 입력 (건강도 미측정) |
 
 ### 3.2 주말 준비 체크 로직
 
@@ -538,9 +578,15 @@ node scripts/seed-scrape-jobs.js
 # 3. API 호출 테스트
 curl "http://localhost:5001/dmc-attendance/asia-northeast3/race?action=ops-scrape-health"
 
-# 4. 스케줄 함수 수동 트리거
-curl -X POST \
-  http://localhost:5001/dmc-attendance/asia-northeast3/weekendScrapeReadinessCheck
+# 4. 스케줄 함수 수동 트리거 (HTTP 래퍼 생성 필요)
+# 방법 1: 임시 HTTP 엔드포인트 추가
+# exports.testWeekendCheck = onRequest(async (req, res) => {
+#   await weekendScrapeReadinessCheck(); // 로직 재사용
+#   res.json({ ok: true });
+# });
+
+# 방법 2: Firebase Console에서 Functions → weekendScrapeReadinessCheck → "함수 실행" 버튼
+# 방법 3: scripts/test-weekend-check.js 작성 (Admin SDK 사용)
 ```
 
 **프로덕션 검증:**

@@ -141,7 +141,7 @@
         <div class="stat-row">
           <div class="stat"><div class="stat-val">${intData.totalJobs || 0}</div><div class="stat-label">총 Jobs</div></div>
           <div class="stat"><div class="stat-val">${intData.totalResults || 0}</div><div class="stat-label">총 Records</div></div>
-          <div class="stat"><div class="stat-val">${issues.length}</div><div class="stat-label">Count 불일치</div></div>
+          <div class="stat"><div class="stat-val">${issues.length}</div><div class="stat-label">Phantom Jobs</div></div>
           <div class="stat"><div class="stat-val">${todayLogs.length}</div><div class="stat-label">오늘 이벤트</div></div>
         </div>`;
     }
@@ -160,7 +160,7 @@
       };
 
       const src = s.confirmSource || {};
-      const totalSrc = (src.personal||0) + (src.event||0) + (src.suggestion||0) + (src.other||0);
+      const totalSrc = (src.personal||0) + (src.operator||0) + (src.other||0);
       const srcPct = (n) => totalSrc > 0 ? Math.round(n/totalSrc*100) : 0;
 
       const sc = s.searchCoverage || {};
@@ -196,9 +196,8 @@
         <div>
           <div style="font-size:11px;color:#64748B;margin-bottom:6px;font-weight:600;">확정 경로 (건 기준)</div>
           <table><tr><th>경로</th><th class="num">건수</th><th class="num">비율</th></tr>
-            <tr><td>🔍 개인 검색 (personal)</td><td class="num">${src.personal||0}</td><td class="num">${srcPct(src.personal||0)}%</td></tr>
-            <tr><td>✨ 제안 (suggestion)</td><td class="num">${src.suggestion||0}</td><td class="num">${srcPct(src.suggestion||0)}%</td></tr>
-            <tr><td>📋 이벤트 (event)</td><td class="num">${src.event||0}</td><td class="num">${srcPct(src.event||0)}%</td></tr>
+            <tr><td>🔍 회원 직접 입력 (personal)</td><td class="num">${src.personal||0}</td><td class="num">${srcPct(src.personal||0)}%</td></tr>
+            <tr><td>📋 운영자 입력 (operator)</td><td class="num">${src.operator||0}</td><td class="num">${srcPct(src.operator||0)}%</td></tr>
             <tr><td>기타/이전</td><td class="num">${src.other||0}</td><td class="num">${srcPct(src.other||0)}%</td></tr>
           </table>
         </div>`;
