@@ -133,6 +133,11 @@ GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
 ADMIN_EMAIL=taylor@example.com
 ```
 
+**주의사항:**
+- `emailSent: true` 플래그는 발송 시도 시점에 기록
+- 실패 시 `event_logs`에 `severity: "error"` + `emailSent: false` 기록
+- 재시도는 다음 스케줄 실행 시 자동 (별도 재시도 로직 불필요)
+
 #### Frontend: ops.html 재설계
 
 **6개 섹션 구성:**
@@ -160,24 +165,38 @@ ADMIN_EMAIL=taylor@example.com
 |--------|------|--------|
 | **Success Rate** | `(complete + confirmed) / (total - queued)` | ⚠️ <90%, 🔴 <80% |
 | **Failed Jobs** | `status === "failed"` | ⚠️ ≥3건, 🔴 ≥5건 |
-| **Stale Jobs** | `status === "complete"` + `updatedAt` 3일 이상 + `results.length > 0` (즉, 스크랩 완료했으나 운영자가 확정 안 한 잡) | ⚠️ ≥5건 |
-| **Stuck Jobs** | `status === "running"` + `updatedAt` 1시간 이상 (기존 `scrapeHealthCheck`와 동일) | 🔴 ≥1건 (긴급) |
+| **Stale Jobs** | `status === "complete"` + `completedAt` 3일 이상 (즉, 스크랩 완료했으나 운영자가 확정 안 한 잡) | ⚠️ ≥5건 |
+| **Stuck Jobs** | `status === "running"` + `createdAt` 1시간 이상 (기존 `scrapeHealthCheck`와 동일) | 🔴 ≥1건 (긴급) |
+
+**데이터 기간:**
+- Success Rate: 최근 7일 (`createdAt` 또는 `completedAt` 기준)
+- Failed/Stale/Stuck: 전체 (시간 제한 없음, 단 Stale은 `completedAt` 3일 이상)
 
 **Stale Jobs 쿼리 로직:**
 ```javascript
 const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 const staleSnap = await db.collection("scrape_jobs")
   .where("status", "==", "complete")
-  .where("updatedAt", "<=", threeDaysAgo)
+  .where("completedAt", "<=", threeDaysAgo)
   .get();
 
+// completedAt 없는 오래된 문서는 제외 (백필 불필요)
 const staleJobs = [];
 staleSnap.forEach(doc => {
   const d = doc.data();
-  if ((d.results || []).length > 0) {
+  if (d.completedAt) {
     staleJobs.push({ jobId: doc.id, ...d });
   }
 });
+```
+
+**Stuck Jobs 쿼리 로직 (기존 `scrapeHealthCheck`와 동일):**
+```javascript
+const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+const stuckSnap = await db.collection("scrape_jobs")
+  .where("status", "==", "running")
+  .where("createdAt", "<=", oneHourAgo)
+  .get();
 ```
 
 **데이터 기간**: 최근 7일 (rolling window)
