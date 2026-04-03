@@ -59,20 +59,39 @@ exports.weekendScrapeReadinessCheck = onSchedule({
   // 1. 스크래핑 건강도 체크 (최근 7일)
   // 2. 주말 대회 목록 확인 (토/일 개최)
   // 3. 소스별 건강도 평가
-  // 4. 이슈 발견 시 이메일 발송
+  // 4. 이슈 발견 시 이메일 발송 (성공/실패 분기)
   // 5. 결과를 ops_meta 저장
   // 6. event_logs에 weekend_check 이벤트 기록 (Section 5용)
   
-  await db.collection("event_logs").add({
-    type: "weekend_check",
-    severity: overallStatus, // "info" | "warning" | "error"
-    message: `주말 준비 체크 완료: ${upcomingCount}개 대회, ${overallSuccessRate}% 건강도`,
-    checkedAt: new Date().toISOString(),
-    upcomingWeekend: weekendEvents,
-    healthSummary: { overall, bySource },
-    emailSent: true,
-    timestamp: FieldValue.serverTimestamp()
-  });
+  try {
+    // ... 건강도 체크 로직 ...
+    
+    // 이메일 발송 시도
+    await sendEmail({ to, subject, html });
+    
+    // 성공 시
+    await db.collection("event_logs").add({
+      type: "weekend_check",
+      severity: overallStatus, // "info" | "warning" | "error"
+      message: `주말 준비 체크 완료: ${upcomingCount}개 대회, ${overallSuccessRate}% 건강도`,
+      checkedAt: new Date().toISOString(),
+      upcomingWeekend: weekendEvents,
+      healthSummary: { overall, bySource },
+      emailSent: true,
+      timestamp: FieldValue.serverTimestamp()
+    });
+  } catch (emailError) {
+    // 이메일 발송 실패 시
+    await db.collection("event_logs").add({
+      type: "weekend_check",
+      severity: "error",
+      message: `주말 준비 체크 완료했으나 이메일 발송 실패: ${emailError.message}`,
+      checkedAt: new Date().toISOString(),
+      emailSent: false,
+      emailError: emailError.message,
+      timestamp: FieldValue.serverTimestamp()
+    });
+  }
 })
 ```
 
@@ -199,8 +218,6 @@ const stuckSnap = await db.collection("scrape_jobs")
   .get();
 ```
 
-**데이터 기간**: 최근 7일 (rolling window)
-
 #### 소스별 건강도
 
 **통합 색상 규칙 (모든 소스 공통):**
@@ -236,7 +253,7 @@ const stuckSnap = await db.collection("scrape_jobs")
 
 **🟡 Warning (모니터링 필요):**
 - 주말 대회 소스의 Success Rate <90%
-- Stale jobs ≥5건
+- 전체 Stale jobs ≥5건 (모든 소스 합산)
 
 **✅ OK:**
 - 모든 메트릭 정상
