@@ -46,9 +46,17 @@
     </div>
   </div>
 
-  <div id="stats"></div>
+  <!-- Section 1: 시스템 건강도 -->
+  <div id="systemHealth"></div>
+
+  <!-- Section 2: 스크래핑 건강도 -->
+  <div class="card" id="scrapeHealthCard"><div class="loading">로딩 중...</div></div>
+
+  <!-- Section 3: 주말 준비 상태 (목/금만 표시) -->
+  <div class="card" id="weekendReadinessCard" style="display: none;"><div class="loading">로딩 중...</div></div>
+
+  <!-- Section 4: 전환율 · Section 5: 고러닝 · Section 6–7: 알림·로그 · 하단: 무결성 -->
   <div class="card" id="memberStatsCard"><div class="loading">로딩 중...</div></div>
-  <!-- Section 5: 고러닝 예정 대회 -->
   <div class="card" id="gorunningEventsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="scrapeAlertsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="logsCard"><div class="loading">로딩 중...</div></div>
@@ -61,90 +69,260 @@
 
     function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
-    async function loadAll() {
-      const [logsRes, intRes, statsRes] = await Promise.all([
-        fetch(`${API_BASE}?action=event-logs&limit=200`),
-        fetch(`${API_BASE}?action=data-integrity`),
-        fetch(`${API_BASE}?action=member-stats`),
-      ]);
-      const logsData = await logsRes.json();
-      const intData = await intRes.json();
-      const statsData = await statsRes.json();
-      renderStats(intData, logsData);
-      renderMemberStats(statsData);
-      renderScrapeAlerts(logsData);
-      renderIntegrity(intData);
-      renderLogs(logsData);
+    function renderSystemHealth(intData) {
+      const issues = intData.issues || [];
+      const totalJobs = intData.totalJobs || 0;
+      const totalResults = intData.totalResults || 0;
 
+      let status = "✅ 시스템 정상 운영 중";
+      let statusColor = "#064E3B";
+
+      if (issues.length >= 6) {
+        status = "🔴 긴급: 시스템 점검 필요";
+        statusColor = "#7C2D12";
+      } else if (issues.length >= 1) {
+        status = "⚠️ 주의: 데이터 무결성 이슈";
+        statusColor = "#78350F";
+      }
+
+      document.getElementById("systemHealth").innerHTML = `
+        <div class="stat-row" style="margin-bottom: 16px;">
+          <div class="card" style="flex: 1; background: ${statusColor};">
+            <div style="font-size: 15px; font-weight: 700; color: #F8FAFC;">${status}</div>
+            <div style="font-size: 13px; color: #E2E8F0; margin-top: 4px;">
+              총 Jobs: ${totalJobs} | 총 Records: ${totalResults} | Phantom Jobs: ${issues.length}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function renderScrapeHealth() {
       try {
-        const scRes = await fetch(`${API_BASE}?action=ops-scrape-preview`);
-        const scData = await scRes.json();
-        renderScrapeSchedule(scData);
+        const res = await fetch(`${API_BASE}?action=ops-scrape-health`);
+        const data = await res.json();
+
+        if (!data.ok) {
+          document.getElementById("scrapeHealthCard").innerHTML =
+            '<div class="card-title">🔍 스크래핑 건강도</div><span class="badge-warn">로드 실패</span>';
+          return;
+        }
+
+        const overall = data.overall || {};
+        const bySource = data.bySource || {};
+
+        const statusBadge = (rate) => {
+          if (rate >= 90) return '<span class="badge-ok">✅ 정상</span>';
+          if (rate >= 80) return '<span class="badge-partial">⚠️ 주의</span>';
+          return '<span class="badge-warn">🔴 긴급</span>';
+        };
+
+        let html = `
+        <div class="card-title">🔍 스크래핑 건강도 (최근 7일) <button type="button" class="refresh-btn" onclick="renderScrapeHealth()">↻</button></div>
+
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 16px; font-weight: 700; color: #F8FAFC;">
+            전체 Success Rate: ${overall.rate || 0}% (${overall.success || 0}/${overall.total || 0} jobs)
+          </div>
+          <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">
+            Failed: ${overall.failed || 0}건 | Stale: ${overall.stale || 0}건 | Stuck: ${overall.stuck || 0}건
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #64748B; margin: 10px 0 6px; font-weight: 600;">소스별 건강도:</div>
+        <table><tr><th>소스</th><th class="num">Success Rate</th><th>상태</th></tr>`;
+
+        for (const [src, s] of Object.entries(bySource)) {
+          if (src === "manual") {
+            html += `<tr><td>${src}</td><td class="num">—</td><td>수동 입력</td></tr>`;
+          } else {
+            html += `<tr><td>${src}</td><td class="num">${s.rate || 0}% (${s.success || 0}/${s.total || 0})</td><td>${statusBadge(s.rate || 0)}</td></tr>`;
+          }
+        }
+
+        html += `</table>
+        <div style="font-size: 11px; color: #64748B; margin-top: 10px;">
+          마지막 업데이트: ${new Date(data.lastCheck).toLocaleString("ko-KR")}
+        </div>`;
+
+        document.getElementById("scrapeHealthCard").innerHTML = html;
       } catch (e) {
-        document.getElementById("scrapeScheduleCard").innerHTML =
-          '<div class="card-title">📅 자동 스크랩 예정</div><span class="badge-warn">로드 실패</span>';
+        document.getElementById("scrapeHealthCard").innerHTML =
+          '<div class="card-title">🔍 스크래핑 건강도</div><span class="badge-warn">로드 실패</span>';
       }
     }
 
-    function renderScrapeSchedule(d) {
-      const el = document.getElementById("scrapeScheduleCard");
-      if (!d || !d.ok) {
-        el.innerHTML = '<div class="card-title">📅 자동 스크랩 예정</div><span class="badge-warn">API 실패</span>';
+    async function renderWeekendReadiness() {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+
+      if (dayOfWeek !== 4 && dayOfWeek !== 5) {
+        document.getElementById("weekendReadinessCard").style.display = "none";
         return;
       }
 
-      const rows = (list, cols) => {
-        if (!list || list.length === 0) return '<tr><td colspan="' + cols + '" style="color:#64748B;">없음</td></tr>';
-        return list.map((r) => {
-          const job = `${esc(r.source)} / ${esc(String(r.sourceId))}`;
-          const q = r.inNextQueue !== undefined
-            ? (r.inNextQueue ? '<span class="badge-warn">다음 배치 후보</span>' : '<span class="badge-ok">이미 스크랩됨</span>')
-            : (r.order != null ? `<span class="badge-warn">#${r.order} 다음 실행</span>` : "");
-          return `<tr><td>${job}</td><td>${esc(r.name || "")}</td><td>${esc(r.date || "—")}</td><td>${q}</td></tr>`;
-        }).join("");
-      };
+      document.getElementById("weekendReadinessCard").style.display = "block";
 
-      const today = d.racesHeldTodayKst || [];
-      const next = d.nextBatch || [];
-      const tail = d.queueTail || [];
+      try {
+        const res = await fetch(`${API_BASE}?action=ops-scrape-health`);
+        const data = await res.json();
 
-      el.innerHTML = `
-        <div class="card-title">📅 주간 발견 큐 <span style="color:#64748B;font-weight:400;">(자동 회원수집 없음 · report에서 수동)</span></div>
-        <div style="font-size:11px;color:#94A3B8;margin-bottom:10px;line-height:1.5;">
-          스케줄: <strong>${esc(d.weeklySchedule || "")}</strong><br/>
-          KST 오늘: <strong>${esc(d.todayKst || "")}</strong> · 개최일 윈도(KST): ${esc(d.windowStartKst || d.windowStart || "")} ~ ${esc(d.windowEndKst || "")} · (참고 UTC): ${esc(d.todayUtc || "")}<br/>
-          최근창 이벤트 ${d.recentEventCount ?? "—"}개 · 신규 큐 ${d.newEventCount ?? "—"}개
+        if (!data.ok) {
+          document.getElementById("weekendReadinessCard").innerHTML =
+            '<div class="card-title">🏃 주말 대회 준비 상태</div><span class="badge-warn">로드 실패</span>';
+          return;
+        }
+
+        const upcomingWeekend = data.upcomingWeekend || [];
+        const bySource = data.bySource || {};
+
+        let overallStatus = "✅ 정상";
+        for (const e of upcomingWeekend) {
+          const src = e.source;
+          if (bySource[src] && bySource[src].rate < 80) {
+            overallStatus = "🔴 긴급 (점검 필요)";
+            break;
+          } else if (bySource[src] && bySource[src].rate < 90) {
+            overallStatus = "⚠️ 주의 (모니터링 필요)";
+          }
+        }
+
+        let html = `
+        <div class="card-title">🏃 주말 대회 준비 상태</div>
+
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 15px; font-weight: 700; color: #F8FAFC;">
+            다가오는 주말 대회: ${upcomingWeekend.length}개
+          </div>
+          <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">
+            전체 준비 상태: ${overallStatus}
+          </div>
         </div>
 
-        <div style="font-size:11px;color:#64748B;margin:10px 0 6px;font-weight:600;">오늘(KST) 개최일로 잡힌 대회 (최근 2주 윈도우 안)</div>
-        <table><tr><th>출처 / ID</th><th>이름</th><th>날짜</th><th>상태</th></tr>
-          ${rows(today, 4)}
-        </table>
+        <div style="font-size: 11px; color: #64748B; margin: 10px 0 6px; font-weight: 600;">예정 대회:</div>`;
 
-        <div style="font-size:11px;color:#64748B;margin:14px 0 6px;font-weight:600;">다음 실행 시 먼저 스크랩될 후보 (최대 5건/회)</div>
-        <table><tr><th>출처 / ID</th><th>이름</th><th>날짜</th><th></th></tr>
-          ${rows(next, 4)}
-        </table>
+        if (upcomingWeekend.length === 0) {
+          html += '<div style="color: #64748B;">주말 예정 대회 없음</div>';
+        } else {
+          const dowKo = ["일", "월", "화", "수", "목", "금", "토"];
+          upcomingWeekend.forEach((e) => {
+            const srcHealth = bySource[e.source];
+            const srcStatus = srcHealth && srcHealth.rate >= 90 ? "✅" : srcHealth && srcHealth.rate >= 80 ? "⚠️" : "🔴";
+            html += `<div style="padding: 5px 0; border-bottom: 1px solid #334155;">
+            ${esc(e.date)} (${dowKo[new Date(e.date).getDay()]}) ${esc(e.eventName)} [${esc(e.source)} ${srcStatus}]
+          </div>`;
+          });
+        }
 
-        <div style="font-size:11px;color:#64748B;margin:14px 0 6px;font-weight:600;">그 다음 대기 (동일 규칙, 미리보기 최대 15건)</div>
-        <table><tr><th>출처 / ID</th><th>이름</th><th>날짜</th><th></th></tr>
-          ${rows(tail, 4)}
-        </table>`;
+        const metaRes = await fetch(`${API_BASE}?action=ops-meta-last-weekend-check`).catch(() => null);
+        if (metaRes && metaRes.ok) {
+          const metaData = await metaRes.json();
+          if (metaData.checkedAt) {
+            html += `<div style="font-size: 11px; color: #64748B; margin-top: 10px;">
+            📧 마지막 이메일 알림: ${new Date(metaData.checkedAt).toLocaleString("ko-KR")}
+          </div>`;
+          }
+        }
+
+        document.getElementById("weekendReadinessCard").innerHTML = html;
+      } catch (e) {
+        document.getElementById("weekendReadinessCard").innerHTML =
+          '<div class="card-title">🏃 주말 대회 준비 상태</div><span class="badge-warn">로드 실패</span>';
+      }
     }
 
-    function renderStats(intData, logsData) {
-      const logs = logsData.logs || [];
-      const issues = intData.issues || [];
-      const todayLogs = logs.filter(l => (l.timestamp || "").startsWith(new Date().toISOString().slice(0, 10)));
-      const uniqueMembers = new Set(logs.filter(l => l.data?.member).map(l => l.data.member));
+    async function renderGorunningEvents() {
+      try {
+        const res = await fetch(`${API_BASE}?action=ops-gorunning-events`);
+        const data = await res.json();
 
-      document.getElementById("stats").innerHTML = `
-        <div class="stat-row">
-          <div class="stat"><div class="stat-val">${intData.totalJobs || 0}</div><div class="stat-label">총 Jobs</div></div>
-          <div class="stat"><div class="stat-val">${intData.totalResults || 0}</div><div class="stat-label">총 Records</div></div>
-          <div class="stat"><div class="stat-val">${issues.length}</div><div class="stat-label">Phantom Jobs</div></div>
-          <div class="stat"><div class="stat-val">${todayLogs.length}</div><div class="stat-label">오늘 이벤트</div></div>
-        </div>`;
+        if (!data.ok) {
+          document.getElementById("gorunningEventsCard").innerHTML =
+            '<div class="card-title">📅 고러닝 예정 대회</div><span class="badge-warn">로드 실패</span>';
+          return;
+        }
+
+        const events = data.events || [];
+        const matched = events.filter(e => e.matchStatus === "matched").length;
+        const notMatched = events.filter(e => e.matchStatus === "not_matched").length;
+
+        const lastStr = data.lastCrawled
+          ? new Date(data.lastCrawled).toLocaleString("ko-KR")
+          : "—";
+        const dowKo = ["일", "월", "화", "수", "목", "금", "토"];
+
+        let html = `
+          <div class="card-title">
+            📅 고러닝 예정 대회 (향후 2개월)
+            <button type="button" class="refresh-btn" onclick="renderGorunningEvents()">↻</button>
+          </div>
+
+          <div style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">
+            마지막 업데이트: ${lastStr} ${data.cached ? "(캐시)" : ""}<br/>
+            총 ${events.length}개 대회 | 스크랩 가능: ${matched}개 | 수동 필요: ${notMatched}개
+          </div>`;
+
+        if (events.length === 0) {
+          html += '<div style="color: #64748B;">예정 대회 없음</div>';
+        } else {
+          events.slice(0, 20).forEach((e) => {
+            const isMatched = e.matchStatus === "matched";
+            const statusIcon = isMatched ? "✅" : "🔍";
+            const statusText = isMatched ? "스크랩 가능" : "수동 검색 필요";
+            const d = e.date ? new Date(e.date) : null;
+            const dow = d && !isNaN(d.getTime()) ? dowKo[d.getDay()] : "?";
+
+            html += `
+              <div style="padding: 10px; margin: 8px 0; background: #0F172A; border-radius: 6px; border-left: 3px solid ${isMatched ? "#6EE7B7" : "#FCA5A5"};">
+                <div style="font-size: 13px; font-weight: 700; color: #F8FAFC;">
+                  ${esc(e.date || "")} (${dow}) ${esc(e.name || "")}
+                </div>
+                <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">
+                  ${statusIcon} ${statusText}`;
+
+            if (isMatched && e.matchedJob) {
+              html += ` (${esc(String(e.matchedJob.source || ""))}_${esc(String(e.matchedJob.sourceId || ""))})`;
+              html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[발견 완료 →]</a>`;
+            } else {
+              html += `<br/><span style="font-size: 11px; color: #64748B;">
+                💡 액션: report.html "발견"에서 수동 검색 또는 기록 사이트(smartchip, myresult, spct, marazone 등)에서 직접 확인 필요
+              </span>`;
+              html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[수동 검색 →]</a>`;
+            }
+
+            html += `</div></div>`;
+          });
+        }
+
+        document.getElementById("gorunningEventsCard").innerHTML = html;
+      } catch (err) {
+        console.error("고러닝 로드 실패:", err);
+        document.getElementById("gorunningEventsCard").innerHTML =
+          '<div class="card-title">📅 고러닝 예정 대회</div><span class="badge-warn">오류 발생</span>';
+      }
+    }
+
+    async function loadAll() {
+      const results = await Promise.all([
+        fetch(`${API_BASE}?action=event-logs&limit=200`),
+        fetch(`${API_BASE}?action=data-integrity`),
+        fetch(`${API_BASE}?action=member-stats`),
+        renderScrapeHealth(),
+        renderWeekendReadiness(),
+      ]);
+      const logsRes = results[0];
+      const intRes = results[1];
+      const statsRes = results[2];
+
+      const logsData = await logsRes.json();
+      const intData = await intRes.json();
+      const statsData = await statsRes.json();
+
+      renderSystemHealth(intData);
+      renderMemberStats(statsData);
+      await renderGorunningEvents();
+      renderScrapeAlerts(logsData);
+      renderLogs(logsData);
+      renderIntegrity(intData);
     }
 
     function renderMemberStats(s) {
