@@ -1904,6 +1904,106 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, totalJobs: jobsSnap.size, totalResults: rrSnap.size, issues });
     }
 
+    if (action === "ops-scrape-health") {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // TODO: 구현
+
+      return res.json({
+        ok: true,
+        period: { start: sevenDaysAgo, end: new Date().toISOString() },
+        overall: {},
+        bySource: {},
+        upcomingWeekend: [],
+        lastCheck: new Date().toISOString(),
+      });
+    }
+
+    if (action === "ops-gorunning-events") {
+      const cacheDoc = await db.collection("ops_meta").doc("last_gorunning_crawl").get();
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+
+      let cachedData = null;
+      if (cacheDoc.exists) {
+        const d = cacheDoc.data();
+        const crawledAt = new Date(d.crawledAt);
+        if (crawledAt >= sixHoursAgo) {
+          cachedData = d;
+        }
+      }
+
+      if (cachedData) {
+        return res.json({
+          ok: true,
+          events: cachedData.events || [],
+          lastCrawled: cachedData.crawledAt,
+          cached: true,
+        });
+      }
+
+      try {
+        const gorunningEvents = await scraper.crawlGorunningEvents();
+
+        const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        const jobsSnap = await db.collection("scrape_jobs").where("createdAt", ">=", threeMonthsAgo).get();
+
+        const scrapeJobs = [];
+        jobsSnap.forEach((doc) => {
+          const d = doc.data();
+          scrapeJobs.push({
+            jobId: doc.id,
+            source: d.source,
+            sourceId: d.sourceId,
+            eventName: d.eventName,
+            eventDate: d.eventDate,
+          });
+        });
+
+        const enrichedEvents = gorunningEvents.map((e) => {
+          const match = scraper.matchGorunningToJob(e, scrapeJobs);
+
+          return {
+            id: e.id,
+            name: e.name,
+            date: e.date,
+            location: e.location,
+            distance: e.distance,
+            url: e.url,
+            matchStatus: match ? "matched" : "not_matched",
+            matchedJob: match
+              ? {
+                  source: match.job.source,
+                  sourceId: match.job.sourceId,
+                  jobId: match.job.jobId,
+                  similarity: match.similarity,
+                }
+              : null,
+          };
+        });
+
+        const crawledAt = new Date().toISOString();
+        await db.collection("ops_meta").doc("last_gorunning_crawl").set({
+          crawledAt,
+          events: enrichedEvents,
+          stats: {
+            total: enrichedEvents.length,
+            matched: enrichedEvents.filter((ev) => ev.matchStatus === "matched").length,
+            notMatched: enrichedEvents.filter((ev) => ev.matchStatus === "not_matched").length,
+          },
+        });
+
+        return res.json({
+          ok: true,
+          events: enrichedEvents,
+          lastCrawled: crawledAt,
+          cached: false,
+        });
+      } catch (err) {
+        console.error("[ops-gorunning-events] error:", err);
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === "log" && req.method === "POST") {
       const { event, data } = req.body || {};
       if (!event) return res.status(400).json({ ok: false, error: "event required" });

@@ -47,11 +47,12 @@
   </div>
 
   <div id="stats"></div>
-  <div class="card" id="scrapeScheduleCard"><div class="loading">스크랩 큐 확인 중… (발견 API, 수 초 걸릴 수 있음)</div></div>
   <div class="card" id="memberStatsCard"><div class="loading">로딩 중...</div></div>
+  <!-- Section 5: 고러닝 예정 대회 -->
+  <div class="card" id="gorunningEventsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="scrapeAlertsCard"><div class="loading">로딩 중...</div></div>
-  <div class="card" id="integrityCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="logsCard"><div class="loading">로딩 중...</div></div>
+  <div class="card" id="integrityCard"><div class="loading">로딩 중...</div></div>
 
   <script>
     const API_BASE = location.hostname === "localhost"
@@ -163,8 +164,6 @@
       const totalSrc = (src.personal||0) + (src.operator||0) + (src.other||0);
       const srcPct = (n) => totalSrc > 0 ? Math.round(n/totalSrc*100) : 0;
 
-      const sc = s.searchCoverage || {};
-
       el.innerHTML = `
         <div class="card-title">📊 전환율 & 퍼널 (UA 기준, 최근 30일)</div>
         <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
@@ -175,10 +174,6 @@
           <div class="stat" style="min-width:100px;">
             <div class="stat-val">${s.totalConfirmedRecords || 0}</div>
             <div class="stat-label">총 확정 기록</div>
-          </div>
-          <div class="stat" style="min-width:100px;">
-            <div class="stat-val">${sc.noResult || 0}명</div>
-            <div class="stat-label">검색했지만<br/>결과 없음</div>
           </div>
         </div>
 
@@ -205,9 +200,9 @@
 
     function renderScrapeAlerts(logsData) {
       const logs = logsData.logs || [];
-      const alerts = logs.filter(l => l.type === "scrape_alert").slice(0, 10);
+      const alerts = logs.filter(l => l.type === "scrape_alert" || l.type === "weekend_check").slice(0, 10);
       const el = document.getElementById("scrapeAlertsCard");
-      let html = '<div class="card-title">🚨 스크래핑 알림</div>';
+      let html = '<div class="card-title">🚨 최근 알림</div>';
 
       if (alerts.length === 0) {
         html += '<span class="badge-ok">✓ 이상 없음</span>';
