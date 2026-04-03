@@ -25,6 +25,28 @@ const { google } = require("googleapis");
 initializeApp();
 const db = getFirestore();
 
+/**
+ * 이메일 발송 헬퍼
+ */
+async function sendEmail({ to, subject, html }) {
+  const nodemailer = require("nodemailer");
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"DMC Ops" <${process.env.GMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
 /** confirm 시 race_results.netTime: net → finishTime → gun (DNF 플레이스홀더 제외) */
 function effectiveNetTimeForConfirm(r) {
   const net = String(r.netTime || "").trim();
