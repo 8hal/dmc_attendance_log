@@ -1318,6 +1318,48 @@ function matchGorunningToJob(gorunningEvent, scrapeJobs) {
 }
 
 /**
+ * 고러닝 이벤트와 discovered-events.json 매칭
+ * @param {Object} gorunningEvent - 고러닝 대회 { name, date, ... }
+ * @param {Array} discoveredEvents - discovered-events-YYYY.json의 events 배열
+ * @returns {Object|null} - 매칭된 event 또는 null
+ */
+function matchGorunningToDiscovered(gorunningEvent, discoveredEvents) {
+  if (!gorunningEvent?.date || !Array.isArray(discoveredEvents)) return null;
+
+  const eventDate = new Date(`${String(gorunningEvent.date).slice(0, 10)}T12:00:00+09:00`);
+  if (Number.isNaN(eventDate.getTime())) return null;
+
+  // Step 1: 날짜 필터 (±2일)
+  const candidates = discoveredEvents.filter((ev) => {
+    if (!ev?.date) return false;
+    const evYmd = String(ev.date).slice(0, 10);
+    const evDate = new Date(`${evYmd}T12:00:00+09:00`);
+    if (Number.isNaN(evDate.getTime())) return false;
+    const diffDays = Math.abs((eventDate - evDate) / (1000 * 60 * 60 * 24));
+    return diffDays <= 2;
+  });
+
+  if (candidates.length === 0) return null;
+
+  // Step 2: 이름 유사도
+  const scored = candidates.map((ev) => ({
+    event: ev,
+    similarity: calculateNameSimilarity(ev.name || "", gorunningEvent.name || ""),
+  }));
+
+  // Step 3: 임계치 (>0.7)
+  const qualified = scored.filter((s) => s.similarity > 0.7);
+  if (qualified.length === 0) return null;
+
+  // Step 4: 최고 점수
+  qualified.sort((a, b) => b.similarity - a.similarity);
+  return {
+    event: qualified[0].event,
+    similarity: qualified[0].similarity,
+  };
+}
+
+/**
  * 고러닝 향후 약 2개월 대회 목록 (KST 기준 이번 달·다음 달 월간 페이지)
  * @returns {Promise<Array<{ id: string, name: string, date: string, location: string, distance: string[], url: string }>>}
  */
@@ -1353,5 +1395,6 @@ module.exports = {
   sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
   crawlGorunningEvents,
   matchGorunningToJob,
+  matchGorunningToDiscovered,
   calculateNameSimilarity,
 };

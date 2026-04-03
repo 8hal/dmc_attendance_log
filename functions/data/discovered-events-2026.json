@@ -1,0 +1,1027 @@
+{
+  "year": 2026,
+  "events": [
+    {
+      "source": "chuncheon",
+      "sourceId": "year=2026",
+      "name": "2026 춘천마라톤",
+      "date": "2026-10-26",
+      "distances": "full,half,10K,5K,3K",
+      "location": "춘천"
+    },
+    {
+      "source": "marazone",
+      "sourceId": "제12회 나주영산강마라톤대회",
+      "name": "제12회 나주영산강마라톤대회",
+      "date": "2026-04-05",
+      "distances": "Half, 10Km, 5Km",
+      "location": "나주종합스포츠파크"
+    },
+    {
+      "source": "myresult",
+      "sourceId": "147",
+      "name": "제22회 예산윤봉길 전국마라톤대회",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": "예산종합운동장"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026040504",
+      "name": "2026 무해런",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026040503",
+      "name": "제1회 전남대518캠퍼스 마라톤",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026040502",
+      "name": "2026 서울봄꽃레이스",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026040501",
+      "name": "진주남강마라톤",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260405009",
+      "name": "제27회 이천 도자기 마라톤대회",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260405006",
+      "name": "2026 영주소백산마라톤",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "153",
+      "name": "Final_창원_SY",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "150",
+      "name": "최종 군산 Test",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "143",
+      "name": "260402_군산 TEST",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "142",
+      "name": "260402_창원 TEST",
+      "date": "2026-04-05",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "marazone",
+      "sourceId": "2026 건양대 마라톤",
+      "name": "2026 건양대 마라톤",
+      "date": "2026-04-04",
+      "distances": "하프, 10km, 5km",
+      "location": "건양대 글로컬캠퍼스 운동장"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026040402",
+      "name": "대한경제마라톤",
+      "date": "2026-04-04",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026040401",
+      "name": "2026 고성공룡나라그란폰도",
+      "date": "2026-04-04",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260404001",
+      "name": "k 국방마라톤",
+      "date": "2026-04-04",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "144",
+      "name": "260402 API 테스트",
+      "date": "2026-04-02",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "myresult",
+      "sourceId": "146",
+      "name": "2026 GOGUMA RUN THE MATCH",
+      "date": "2026-03-30",
+      "distances": "",
+      "location": "여의도 한강 민속놀이마당"
+    },
+    {
+      "source": "marazone",
+      "sourceId": "제 33회 3.15 마라톤",
+      "name": "제 33회 3.15 마라톤",
+      "date": "2026-03-29",
+      "distances": "10km. 5km",
+      "location": "마산 3.15 해양누리공원"
+    },
+    {
+      "source": "marazone",
+      "sourceId": "2026 은평 불광천 벚꽃마라톤 대회",
+      "name": "2026 은평 불광천 벚꽃마라톤 대회",
+      "date": "2026-03-29",
+      "distances": "10km, 5km",
+      "location": "불광천 특설수상무대"
+    },
+    {
+      "source": "marazone",
+      "sourceId": "2026 성북 사랑 전국 마라톤",
+      "name": "2026 성북 사랑 전국 마라톤",
+      "date": "2026-03-29",
+      "distances": "하프, 10km, 5km",
+      "location": "중랑천 체육공원"
+    },
+    {
+      "source": "myresult",
+      "sourceId": "145",
+      "name": "제25회 합천벚꽃마라톤대회",
+      "date": "2026-03-29",
+      "distances": "",
+      "location": "합천공설운동장"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032904",
+      "name": "2026 안양천 벚꽃 마라톤",
+      "date": "2026-03-29",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032903",
+      "name": "제20회 정남진장흥마라톤",
+      "date": "2026-03-29",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032902",
+      "name": "청라 하늘대교마라톤 2026",
+      "date": "2026-03-29",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032901",
+      "name": "제2회 한강 벚꽃 마라톤",
+      "date": "2026-03-29",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260329009",
+      "name": "2026 무주반딧불 하프마라톤대회",
+      "date": "2026-03-29",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032802",
+      "name": "2026 유러닝페스타",
+      "date": "2026-03-28",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032801",
+      "name": "제2회 의성마늘마라톤",
+      "date": "2026-03-28",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000031",
+      "name": "2026 팀 K리그 런",
+      "date": "2026-03-28",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "myresult",
+      "sourceId": "143",
+      "name": "제24회 성우하이텍배 KNN 환경마라톤",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": "해운대 벡스코 제1전시장"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032203",
+      "name": "시흥시 육상연맹 회장배 갯골 마라톤",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032202",
+      "name": "제3회 불패마라톤",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032201",
+      "name": "2026 정읍동학마라톤",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260322009",
+      "name": "제2회 영광 광풍 마라톤대회",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000026",
+      "name": "제26회 인천국제 하프마라톤대회",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000028",
+      "name": "2026 HEAT&RUN 히트앤런 - YTN",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000022",
+      "name": "2026 릴레이 마라톤",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "133",
+      "name": "260405_테스트",
+      "date": "2026-03-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "marazone",
+      "sourceId": "춘천 소양강 마라톤",
+      "name": "춘천 소양강 마라톤",
+      "date": "2026-03-21",
+      "distances": "10km, 5km",
+      "location": "소양강댐 하류"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032102",
+      "name": "2026 내포마라톤",
+      "date": "2026-03-21",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026032101",
+      "name": "2026 BULLS RACE",
+      "date": "2026-03-21",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000023",
+      "name": "2026 남해트레일레이스",
+      "date": "2026-03-21",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000024",
+      "name": "2026 지리산 봄꽃레이스",
+      "date": "2026-03-21",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000025",
+      "name": "2026 제6회 버킷런",
+      "date": "2026-03-21",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000017",
+      "name": "2026 저스트 RUN10 청주",
+      "date": "2026-03-21",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000020",
+      "name": "제1회 인천연수구청장배 트레일런대회",
+      "date": "2026-03-15",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260314009",
+      "name": "2026 금산 인삼 웰빙 마라톤대회",
+      "date": "2026-03-14",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000021",
+      "name": "제20회 창녕부곡온천 마라톤",
+      "date": "2026-03-14",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "myresult",
+      "sourceId": "142",
+      "name": "2026 고양특례시 하프마라톤",
+      "date": "2026-03-08",
+      "distances": "",
+      "location": "고양종합운동장"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026030802",
+      "name": "2026 전국민 러닝크루 패밀리 마라톤",
+      "date": "2026-03-08",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026030801",
+      "name": "제16회 여의도벚꽃마라톤",
+      "date": "2026-03-08",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260308009",
+      "name": "2026 MBN 블루레이스 거제",
+      "date": "2026-03-08",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000009",
+      "name": "2026 성주참외전국마라톤대회",
+      "date": "2026-03-08",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000016",
+      "name": "2026 부천국제10km로드레이스",
+      "date": "2026-03-08",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026030702",
+      "name": "제4회 코리아오픈레이스",
+      "date": "2026-03-07",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026030701",
+      "name": "제 2회 서울경기육상연합 하프마라톤",
+      "date": "2026-03-07",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "myresult",
+      "sourceId": "141",
+      "name": "2026 Run Your Way Half Race Seoul",
+      "date": "2026-03-02",
+      "distances": "",
+      "location": "광화문/잠실"
+    },
+    {
+      "source": "marazone",
+      "sourceId": "2026 구미 박정희 마라톤",
+      "name": "2026 구미 박정희 마라톤",
+      "date": "2026-03-01",
+      "distances": "Full,Half,10km,5km",
+      "location": "낙동강체육공원"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026030102",
+      "name": "제 13회 안중근 평화 마라톤",
+      "date": "2026-03-01",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026030101",
+      "name": "제61회 광주일보3.1절마라톤",
+      "date": "2026-03-01",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260301009",
+      "name": "2026 머니투데이방송 3.1절 마라톤대회(10km)",
+      "date": "2026-03-01",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260301008",
+      "name": "2026 머니투데이방송 3.1절 마라톤대회(풀하프)",
+      "date": "2026-03-01",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260301001",
+      "name": "3.1절 107주년 기념 단축마라톤",
+      "date": "2026-03-01",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000010",
+      "name": "제27회 3.1절 건강달리기",
+      "date": "2026-03-01",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026022801",
+      "name": "2026 보스턴 영웅 마라톤",
+      "date": "2026-02-28",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000008",
+      "name": "2026 저스트 RUN10 세종",
+      "date": "2026-02-28",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "marazone",
+      "sourceId": "2026 경기수원국제하프마라톤",
+      "name": "2026 경기수원국제하프마라톤",
+      "date": "2026-02-22",
+      "distances": "Half,10km,5km",
+      "location": "수원종합운동장"
+    },
+    {
+      "source": "myresult",
+      "sourceId": "140",
+      "name": "2026 고구려 마라톤",
+      "date": "2026-02-22",
+      "distances": "",
+      "location": "한강시민공원 뚝섬유원지 수변마당"
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260222091",
+      "name": "제주MBC 2026 국제평화마라톤대회",
+      "date": "2026-02-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260222009",
+      "name": "2026 전마협 청주 무심천 투데이 마라톤대회 (일)",
+      "date": "2026-02-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260222001",
+      "name": "2026 챌린지 레이스",
+      "date": "2026-02-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000004",
+      "name": "2026 PIS전국마스터즈1500M수영대회",
+      "date": "2026-02-22",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "117",
+      "name": "제22회 밀양 아리랑 마라톤대회",
+      "date": "2026-02-22",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026022102",
+      "name": "2026 청춘 릴레이 마라톤",
+      "date": "2026-02-21",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026022101",
+      "name": "제23회 희망드림동계국제마라톤",
+      "date": "2026-02-21",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260221009",
+      "name": "2026 전마협 청주 무심천 투데이 마라톤대회 (토)",
+      "date": "2026-02-21",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260221008",
+      "name": "2026 전마협 청주 무심천 노을 마라톤 대회",
+      "date": "2026-02-21",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026021401",
+      "name": "2026 Training Day",
+      "date": "2026-02-14",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000007",
+      "name": "2026 WINTER 평창 알몸마라톤",
+      "date": "2026-02-14",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260208091",
+      "name": "2026 전국로드레이스 대회(대설로 취소)",
+      "date": "2026-02-08",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026020801",
+      "name": "제3회 산들소리 향기마라톤",
+      "date": "2026-02-08",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260208009",
+      "name": "2026 전마협 별들의 전쟁 & 꽃들의 전쟁 클럽대항전",
+      "date": "2026-02-08",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "ohmyrace",
+      "sourceId": "121",
+      "name": "API 테스트 - 마라톤",
+      "date": "2026-02-02",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "myresult",
+      "sourceId": "138",
+      "name": "2026 인사이더런 W",
+      "date": "2026-01-31",
+      "distances": "",
+      "location": "일산 킨텍스 1전시관 2,3홀"
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260131001",
+      "name": "2026 화성궁평항 마라톤",
+      "date": "2026-01-31",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260126009",
+      "name": "2026 전마협 제주 4Full 마라톤대회(4일차)",
+      "date": "2026-01-26",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026012501",
+      "name": "제2회 한강 서울 하프 마라톤",
+      "date": "2026-01-25",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260125009",
+      "name": "2026 전마협 제주 4Full 마라톤대회(3일차)",
+      "date": "2026-01-25",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260125008",
+      "name": "2026 전마협 제주 10km 마라톤",
+      "date": "2026-01-25",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000003",
+      "name": "2026 진주지역 달림이 합동훈련",
+      "date": "2026-01-25",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026012401",
+      "name": "2026 똥바람 알통구보대회",
+      "date": "2026-01-24",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260124009",
+      "name": "2026 전마협 제주 4Full 마라톤대회(2일차)",
+      "date": "2026-01-24",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260123009",
+      "name": "2026 전마협 제주 4Full 마라톤대회(1일차)",
+      "date": "2026-01-23",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000001",
+      "name": "2026 코리아 스노우 트레일",
+      "date": "2026-01-18",
+      "distances": "",
+      "location": "",
+      "posterUrl": null,
+      "needsNameResolution": false
+    },
+    {
+      "source": "marazone",
+      "sourceId": "제20회 여수해양마라톤",
+      "name": "제20회 여수해양마라톤",
+      "date": "2026-01-11",
+      "distances": "Full, Half, 10km, 5km",
+      "location": "여수 진남경기장"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026011101",
+      "name": "제18회 의림지삼한 초록길 알몸마라톤",
+      "date": "2026-01-11",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026010401",
+      "name": "제18회 전국새해알몸마라톤",
+      "date": "2026-01-04",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "spct",
+      "sourceId": "20260104009",
+      "name": "2026 전마협 새해 맞이 마라톤 대회",
+      "date": "2026-01-04",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "marazone",
+      "sourceId": "2026 선양맨몸마라톤",
+      "name": "2026 선양맨몸마라톤",
+      "date": "2026-01-01",
+      "distances": "7Km",
+      "location": "엑스포과학공원 물빛광"
+    },
+    {
+      "source": "spct",
+      "sourceId": "2026010101",
+      "name": "2026 새해일출런",
+      "date": "2026-01-01",
+      "distances": "",
+      "location": ""
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000044",
+      "name": "경주벚꽃",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026경주벚꽃_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000041",
+      "name": "26영암벚꽃",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/26영암벚꽃_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000027",
+      "name": "jangsu spring",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026_02_jangsu_spring_poster.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000045",
+      "name": "하이브리드",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026하이브리드_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000040",
+      "name": "SmartChip Event 202650000040",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/포스터_HILLS_나이트_레이스.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000037",
+      "name": "26더레이스서울",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/26더레이스서울_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000042",
+      "name": "26튼튼이",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/26튼튼이_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000039",
+      "name": "안성41런",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026_안성41런_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000036",
+      "name": "제13회기브앤레이스",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026제13회기브앤레이스_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000034",
+      "name": "김포한강",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026김포한강_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000030",
+      "name": "geumgang ultra mrt",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026_geumgang_ultra_mrt.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000035",
+      "name": "태화강",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026태화강_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000029",
+      "name": "yeosu jdr",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026_yeosu_jdr_poster.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000033",
+      "name": "오산미군",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026오산미군_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000032",
+      "name": "나이트런",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026나이트런_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000006",
+      "name": "서울마라톤",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026서울마라톤_포스터.jpg",
+      "needsNameResolution": true
+    },
+    {
+      "source": "smartchip",
+      "sourceId": "202650000005",
+      "name": "대구국제마라톤대회",
+      "date": "",
+      "distances": "",
+      "location": "",
+      "posterUrl": "https://smartchip.co.kr/images/2026_대구국제마라톤대회포스터0829국문.jpg",
+      "needsNameResolution": true
+    }
+  ]
+}

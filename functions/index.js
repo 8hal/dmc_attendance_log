@@ -2266,6 +2266,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       try {
         const gorunningEvents = await scraper.crawlGorunningEvents();
 
+        // 1. scrape_jobs 매칭 (대회 후)
         const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
         const jobsSnap = await db.collection("scrape_jobs").where("createdAt", ">=", threeMonthsAgo).get();
 
@@ -2281,9 +2282,62 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           });
         });
 
-        const enrichedEvents = gorunningEvents.map((e) => {
-          const match = scraper.matchGorunningToJob(e, scrapeJobs);
+        // 2. discovered-events.json 로드 (대회 전)
+        const fs = require("fs");
+        const path = require("path");
+        const discoveredPath = path.join(__dirname, "data/discovered-events-2026.json");
+        let discoveredEvents = [];
+        try {
+          const discoveredData = JSON.parse(fs.readFileSync(discoveredPath, "utf8"));
+          discoveredEvents = discoveredData.events || [];
+        } catch (err) {
+          console.warn("[ops-gorunning-events] discovered-events 로드 실패:", err.message);
+        }
 
+        // 3. 2단계 매칭
+        const enrichedEvents = gorunningEvents.map((e) => {
+          // Step 1: scrape_jobs 매칭 (이미 스크랩됨)
+          const jobMatch = scraper.matchGorunningToJob(e, scrapeJobs);
+          if (jobMatch) {
+            return {
+              id: e.id,
+              name: e.name,
+              date: e.date,
+              location: e.location,
+              distance: e.distance,
+              url: e.url,
+              matchStatus: "scraped",
+              matchedJob: {
+                source: jobMatch.job.source,
+                sourceId: jobMatch.job.sourceId,
+                jobId: jobMatch.job.jobId,
+                similarity: jobMatch.similarity,
+              },
+            };
+          }
+
+          // Step 2: discovered-events 매칭 (발견됨)
+          const discoveredMatch = scraper.matchGorunningToDiscovered(e, discoveredEvents);
+          if (discoveredMatch) {
+            return {
+              id: e.id,
+              name: e.name,
+              date: e.date,
+              location: e.location,
+              distance: e.distance,
+              url: e.url,
+              matchStatus: "discovered",
+              matchedEvent: {
+                source: discoveredMatch.event.source,
+                sourceId: discoveredMatch.event.sourceId,
+                eventName: discoveredMatch.event.name,
+                eventDate: discoveredMatch.event.date,
+                similarity: discoveredMatch.similarity,
+              },
+            };
+          }
+
+          // Step 3: 매칭 실패
           return {
             id: e.id,
             name: e.name,
@@ -2291,15 +2345,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             location: e.location,
             distance: e.distance,
             url: e.url,
-            matchStatus: match ? "matched" : "not_matched",
-            matchedJob: match
-              ? {
-                  source: match.job.source,
-                  sourceId: match.job.sourceId,
-                  jobId: match.job.jobId,
-                  similarity: match.similarity,
-                }
-              : null,
+            matchStatus: "not_matched",
+            matchedJob: null,
           };
         });
 
@@ -2309,7 +2356,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           events: enrichedEvents,
           stats: {
             total: enrichedEvents.length,
-            matched: enrichedEvents.filter((ev) => ev.matchStatus === "matched").length,
+            scraped: enrichedEvents.filter((ev) => ev.matchStatus === "scraped").length,
+            discovered: enrichedEvents.filter((ev) => ev.matchStatus === "discovered").length,
             notMatched: enrichedEvents.filter((ev) => ev.matchStatus === "not_matched").length,
           },
         });
