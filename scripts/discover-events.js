@@ -137,25 +137,82 @@ async function discoverSPCT(year) {
 // ─── SmartChip (smartchip.co.kr) ─────────────────────────────
 
 async function discoverSmartChip(year) {
-  const res = await fetch("https://www.smartchip.co.kr/main.html");
+  const res = await fetch("https://smartchip.co.kr/main.html", {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Referer': 'https://smartchip.co.kr/',
+      'Connection': 'keep-alive'
+    },
+    redirect: 'follow'
+  });
   const html = await res.text();
+  const $ = cheerio.load(html);
 
   const events = [];
-  const usedataPattern = /usedata=(\d+)/g;
-  const ids = [...new Set([...html.matchAll(usedataPattern)].map((m) => m[1]))];
+  const idToMeta = new Map();
+
+  // 포스터 슬라이드에서 이미지와 ID 매핑 추출
+  $(".swiper-slide[onclick*='usedata=']").each((_, el) => {
+    const onclick = $(el).attr("onclick") || "";
+    const style = $(el).attr("style") || "";
+    
+    const idMatch = onclick.match(/usedata=(\d+)/);
+    const imgMatch = style.match(/url\(images\/([^)]+)\)/);
+    
+    if (idMatch && imgMatch) {
+      const id = idMatch[1];
+      const posterFile = imgMatch[1];
+      // 파일명에서 대회명 추론 (예: "2026경주벚꽃_포스터.jpg" → "경주벚꽃")
+      const nameGuess = posterFile
+        .replace(/^20\d{2}_?\d*_?/, "") // 연도 제거
+        .replace(/_?포스터.*/, "") // 포스터 제거
+        .replace(/_poster.*/, "")
+        .replace(/\.jpg$/, "")
+        .replace(/_/g, " ")
+        .trim();
+      
+      idToMeta.set(id, {
+        posterUrl: `https://smartchip.co.kr/images/${posterFile}`,
+        nameGuess: nameGuess || null,
+      });
+    }
+  });
+
+  // 리스트에서 대회명과 날짜 추출
+  $("li[onclick*='selectItem']").each((_, el) => {
+    const onclick = $(el).attr("onclick") || "";
+    const match = onclick.match(/selectItem\('([^']+)',\s*'(\d+)'\)/);
+    if (match) {
+      const fullText = match[1]; // "(2026-03-28) 2026 팀 K리그 런"
+      const id = match[2];
+      
+      const dateMatch = fullText.match(/\((\d{4}-\d{2}-\d{2})\)/);
+      const nameMatch = fullText.replace(/^\([^)]+\)\s*/, "");
+      
+      if (!idToMeta.has(id)) {
+        idToMeta.set(id, {});
+      }
+      const meta = idToMeta.get(id);
+      meta.name = nameMatch || null;
+      meta.date = dateMatch ? dateMatch[1] : "";
+    }
+  });
 
   const yearPrefix = String(year);
-  const filtered = ids.filter((id) => id.startsWith(yearPrefix));
-
-  for (const id of filtered) {
+  for (const [id, meta] of idToMeta.entries()) {
+    if (!id.startsWith(yearPrefix)) continue;
+    
     events.push({
       source: "smartchip",
       sourceId: id,
-      name: `SmartChip Event ${id}`,
-      date: "",
+      name: meta.name || meta.nameGuess || `SmartChip Event ${id}`,
+      date: meta.date || "",
       distances: "",
       location: "",
-      needsNameResolution: true,
+      posterUrl: meta.posterUrl || null,
+      needsNameResolution: !meta.name,
     });
   }
 
