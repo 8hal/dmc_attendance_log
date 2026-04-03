@@ -25,6 +25,28 @@ const { google } = require("googleapis");
 initializeApp();
 const db = getFirestore();
 
+/**
+ * 이메일 발송 헬퍼
+ */
+async function sendEmail({ to, subject, html }) {
+  const nodemailer = require("nodemailer");
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"DMC Ops" <${process.env.GMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
 /** confirm 시 race_results.netTime: net → finishTime → gun (DNF 플레이스홀더 제외) */
 function effectiveNetTimeForConfirm(r) {
   const net = String(r.netTime || "").trim();
@@ -748,6 +770,228 @@ exports.scrapeHealthCheck = onSchedule(
     await batch.commit();
     console.log(`[scrapeHealthCheck] 알림 ${alerts.length}건 기록`);
   }
+);
+
+/**
+ * 주말 대회 스크래핑 준비 상태 체크 (스케줄 + testWeekendCheck 공통)
+ */
+async function runWeekendScrapeReadinessCheck() {
+  const now = new Date();
+  console.log(`[weekendScrapeReadinessCheck] ${now.toISOString()}`);
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const recentJobsSnap = await db.collection("scrape_jobs").where("createdAt", ">=", sevenDaysAgo).get();
+
+  let totalJobs = 0;
+  let successJobs = 0;
+  const bySource = {
+    smartchip: { total: 0, success: 0 },
+    myresult: { total: 0, success: 0 },
+    spct: { total: 0, success: 0 },
+    marazone: { total: 0, success: 0 },
+  };
+
+  recentJobsSnap.forEach((doc) => {
+    const d = doc.data();
+    const status = d.status;
+    const source = d.source;
+
+    if (status === "queued") return;
+
+    totalJobs++;
+    if (status === "complete" || status === "confirmed") successJobs++;
+
+    if (bySource[source]) {
+      bySource[source].total++;
+      if (status === "complete" || status === "confirmed") bySource[source].success++;
+    }
+  });
+
+  for (const src of Object.keys(bySource)) {
+    const s = bySource[src];
+    s.rate = s.total > 0 ? Math.round((s.success / s.total) * 100) : 0;
+  }
+
+  const overallSuccessRate = totalJobs > 0 ? Math.round((successJobs / totalJobs) * 100) : 0;
+
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const staleSnap = await db
+    .collection("scrape_jobs")
+    .where("status", "==", "complete")
+    .where("completedAt", "<=", threeDaysAgo)
+    .get();
+  const staleCount = staleSnap.size;
+
+  const year = new Date().getFullYear();
+  const events = await scraper.discoverAllEvents(year);
+  const { filtered: recentEvents } = scraper.filterEventsWeeklyScrapeWindow(events, year, now);
+
+  const upcomingWeekend = recentEvents
+    .filter((e) => {
+      if (!e.date) return false;
+      const eventDate = new Date(e.date);
+      const dayOfWeek = eventDate.getDay();
+      return (dayOfWeek === 0 || dayOfWeek === 6) && eventDate >= now;
+    })
+    .slice(0, 5);
+
+  let overallStatus = "info";
+  const issues = [];
+
+  for (const e of upcomingWeekend) {
+    const src = e.source;
+    if (bySource[src] && bySource[src].rate < 80) {
+      overallStatus = "error";
+      issues.push(`🔴 ${src} success rate ${bySource[src].rate}% (임계치: 80%)`);
+    } else if (bySource[src] && bySource[src].rate < 90) {
+      if (overallStatus === "info") overallStatus = "warning";
+      issues.push(`⚠️ ${src} success rate ${bySource[src].rate}% (임계치: 90%)`);
+    }
+  }
+
+  if (staleCount >= 5) {
+    if (overallStatus !== "error") overallStatus = "warning";
+    issues.push(`⚠️ Stale jobs ${staleCount}건 (임계치: 5건)`);
+  }
+
+  const statusEmoji = { info: "✅", warning: "⚠️", error: "🔴" };
+  const statusText = { info: "정상", warning: "주의", error: "긴급" };
+
+  const subject = `[DMC Ops] 주말 대회 준비 체크 - ${statusEmoji[overallStatus]} ${statusText[overallStatus]}`;
+
+  const html = `
+<h2>🏃 주말 대회 스크래핑 준비 상태</h2>
+
+<div style="background: #f0f0f0; padding: 15px; border-radius: 8px;">
+  <h3>체크 시각: ${now.toISOString().slice(0, 16).replace("T", " ")}</h3>
+  <p><strong>주말 예정 대회:</strong> ${upcomingWeekend.length}개</p>
+</div>
+
+<h3>📊 스크래핑 건강도 (최근 7일)</h3>
+<table border="1" cellpadding="5" style="border-collapse: collapse;">
+  <tr><th>소스</th><th>Success Rate</th><th>상태</th></tr>
+  ${Object.entries(bySource)
+    .map(([src, s]) => {
+      const cellStatus = s.rate >= 90 ? "✅ 정상" : s.rate >= 80 ? "⚠️ 주의" : "🔴 긴급";
+      return `<tr><td>${src}</td><td>${s.rate}% (${s.success}/${s.total})</td><td>${cellStatus}</td></tr>`;
+    })
+    .join("")}
+</table>
+
+<h3>${issues.length > 0 ? "⚠️ 발견된 이슈" : "✅ 이슈 없음"}</h3>
+${issues.length > 0 ? `<ul>${issues.map((i) => `<li>${i}</li>`).join("")}</ul>` : "<p>모든 메트릭이 정상입니다.</p>"}
+
+<h3>🔗 액션</h3>
+<ul>
+  <li>ops.html 확인: <a href="https://dmc-attendance.web.app/ops.html">바로가기</a></li>
+  <li>report.html에서 stale jobs 확정: <a href="https://dmc-attendance.web.app/report.html">바로가기</a></li>
+</ul>
+
+<hr/>
+<p style="color: #999; font-size: 12px;">
+  이 알림은 매주 목/금 18:00에 자동 발송됩니다.<br/>
+  문제가 있으면 ops.html에서 상세 내역을 확인하세요.
+</p>
+`;
+
+  const healthSummary = { overall: { rate: overallSuccessRate }, bySource };
+  const upcomingPayload = upcomingWeekend.map((e) => ({
+    date: e.date,
+    name: e.name,
+    source: e.source,
+  }));
+
+  let emailSent = false;
+
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) throw new Error("ADMIN_EMAIL not set");
+
+    await sendEmail({
+      to: adminEmail,
+      subject,
+      html,
+    });
+
+    await db.collection("event_logs").add({
+      type: "weekend_check",
+      severity: overallStatus,
+      message: `주말 준비 체크 완료: ${upcomingWeekend.length}개 대회, ${overallSuccessRate}% 건강도`,
+      checkedAt: now.toISOString(),
+      upcomingWeekend: upcomingPayload,
+      healthSummary,
+      emailSent: true,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    await db.collection("ops_meta").doc("last_weekend_check").set(
+      {
+        checkedAt: now.toISOString(),
+        upcomingWeekend,
+        healthSummary,
+        emailSent: true,
+        emailRecipient: adminEmail,
+      },
+      { merge: true },
+    );
+
+    emailSent = true;
+    console.log(`[weekendScrapeReadinessCheck] 완료: ${upcomingWeekend.length}개 대회, ${issues.length}개 이슈`);
+  } catch (emailError) {
+    await db.collection("event_logs").add({
+      type: "weekend_check",
+      severity: "error",
+      message: `주말 준비 체크 완료했으나 이메일 발송 실패: ${emailError.message}`,
+      checkedAt: now.toISOString(),
+      emailSent: false,
+      emailError: emailError.message,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    console.error("[weekendScrapeReadinessCheck] 이메일 실패:", emailError.message);
+  }
+
+  return {
+    overallStatus,
+    upcomingCount: upcomingWeekend.length,
+    issuesCount: issues.length,
+    emailSent,
+    overallSuccessRate,
+    staleCount,
+  };
+}
+
+/**
+ * 주말 대회 스크래핑 준비 상태 체크 (목/금 18:00 KST)
+ */
+exports.weekendScrapeReadinessCheck = onSchedule(
+  {
+    schedule: "0 18 * * 4,5",
+    timeZone: "Asia/Seoul",
+    timeoutSeconds: 120,
+    memory: "512MiB",
+    region: "asia-northeast3",
+  },
+  async () => {
+    try {
+      await runWeekendScrapeReadinessCheck();
+    } catch (err) {
+      console.error("[weekendScrapeReadinessCheck] error:", err);
+    }
+  },
+);
+
+/** 로컬/수동 검증용 — 에뮬에서 curl로 트리거 */
+exports.testWeekendCheck = onRequest(
+  { cors: true, timeoutSeconds: 120, memory: "512MiB", region: "asia-northeast3" },
+  async (req, res) => {
+    try {
+      const result = await runWeekendScrapeReadinessCheck();
+      res.json({ ok: true, message: "테스트 완료, 이메일 확인", ...result });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  },
 );
 
 /**
@@ -1880,6 +2124,206 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         }
       });
       return res.json({ ok: true, totalJobs: jobsSnap.size, totalResults: rrSnap.size, issues });
+    }
+
+    if (action === "ops-scrape-health") {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // 최근 7일 jobs 조회
+      const recentJobsSnap = await db
+        .collection("scrape_jobs")
+        .where("createdAt", ">=", sevenDaysAgo)
+        .get();
+
+      let totalJobs = 0;
+      let successJobs = 0;
+      let failedJobs = 0;
+      const bySource = {
+        smartchip: { total: 0, success: 0 },
+        myresult: { total: 0, success: 0 },
+        spct: { total: 0, success: 0 },
+        marazone: { total: 0, success: 0 },
+        manual: { total: 0, success: 0 },
+      };
+
+      recentJobsSnap.forEach((doc) => {
+        const d = doc.data();
+        const status = d.status;
+        const source = d.source || "unknown";
+
+        if (status === "queued") return; // 대기중은 제외
+
+        totalJobs++;
+        const isSuccess = status === "complete" || status === "confirmed";
+        if (isSuccess) successJobs++;
+        if (status === "failed") failedJobs++;
+
+        if (bySource[source]) {
+          bySource[source].total++;
+          if (isSuccess) bySource[source].success++;
+        }
+      });
+
+      const overallRate = totalJobs > 0 ? Math.round((successJobs / totalJobs) * 100) : 0;
+
+      // bySource rate 계산
+      for (const src in bySource) {
+        if (src === "manual") continue;
+        const s = bySource[src];
+        s.rate = s.total > 0 ? Math.round((s.success / s.total) * 100) : 0;
+      }
+
+      // Stale jobs: status=complete + completedAt 3일 이상
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+      const staleSnap = await db
+        .collection("scrape_jobs")
+        .where("status", "==", "complete")
+        .where("completedAt", "<=", threeDaysAgo)
+        .get();
+
+      const staleJobs = [];
+      staleSnap.forEach((doc) => {
+        const d = doc.data();
+        if (d.completedAt) {
+          staleJobs.push({ jobId: doc.id, eventName: d.eventName, completedAt: d.completedAt });
+        }
+      });
+
+      // Stuck jobs: status=running + createdAt 1시간 이상
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const stuckSnap = await db
+        .collection("scrape_jobs")
+        .where("status", "==", "running")
+        .where("createdAt", "<=", oneHourAgo)
+        .get();
+
+      const stuckJobs = [];
+      stuckSnap.forEach((doc) => {
+        const d = doc.data();
+        stuckJobs.push({ jobId: doc.id, eventName: d.eventName, createdAt: d.createdAt });
+      });
+
+      // 주말 대회 (토/일 개최, 최근 2주 윈도우)
+      const year = new Date().getFullYear();
+      const events = await scraper.discoverAllEvents(year);
+      const now = new Date();
+      const { filtered: recentEvents } = scraper.filterEventsWeeklyScrapeWindow(events, year, now);
+
+      const upcomingWeekend = recentEvents
+        .filter((e) => {
+          if (!e.date) return false;
+          const eventDate = new Date(e.date);
+          const dayOfWeek = eventDate.getDay();
+          return (dayOfWeek === 0 || dayOfWeek === 6) && eventDate >= now; // 토/일, 미래
+        })
+        .slice(0, 10) // 최대 10개
+        .map((e) => ({
+          date: e.date,
+          eventName: e.name,
+          source: e.source,
+        }));
+
+      return res.json({
+        ok: true,
+        period: { start: sevenDaysAgo, end: new Date().toISOString() },
+        overall: {
+          total: totalJobs,
+          success: successJobs,
+          failed: failedJobs,
+          stale: staleJobs.length,
+          stuck: stuckJobs.length,
+          rate: overallRate,
+        },
+        bySource,
+        upcomingWeekend,
+        lastCheck: new Date().toISOString(),
+      });
+    }
+
+    if (action === "ops-gorunning-events") {
+      // 캐시: ops_meta/last_gorunning_crawl, TTL 6시간 (아래 sixHoursAgo)
+      const cacheDoc = await db.collection("ops_meta").doc("last_gorunning_crawl").get();
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+
+      let cachedData = null;
+      if (cacheDoc.exists) {
+        const d = cacheDoc.data();
+        const crawledAt = new Date(d.crawledAt);
+        if (crawledAt >= sixHoursAgo) {
+          cachedData = d;
+        }
+      }
+
+      if (cachedData) {
+        return res.json({
+          ok: true,
+          events: cachedData.events || [],
+          lastCrawled: cachedData.crawledAt,
+          cached: true,
+        });
+      }
+
+      try {
+        const gorunningEvents = await scraper.crawlGorunningEvents();
+
+        const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        const jobsSnap = await db.collection("scrape_jobs").where("createdAt", ">=", threeMonthsAgo).get();
+
+        const scrapeJobs = [];
+        jobsSnap.forEach((doc) => {
+          const d = doc.data();
+          scrapeJobs.push({
+            jobId: doc.id,
+            source: d.source,
+            sourceId: d.sourceId,
+            eventName: d.eventName,
+            eventDate: d.eventDate,
+          });
+        });
+
+        const enrichedEvents = gorunningEvents.map((e) => {
+          const match = scraper.matchGorunningToJob(e, scrapeJobs);
+
+          return {
+            id: e.id,
+            name: e.name,
+            date: e.date,
+            location: e.location,
+            distance: e.distance,
+            url: e.url,
+            matchStatus: match ? "matched" : "not_matched",
+            matchedJob: match
+              ? {
+                  source: match.job.source,
+                  sourceId: match.job.sourceId,
+                  jobId: match.job.jobId,
+                  similarity: match.similarity,
+                }
+              : null,
+          };
+        });
+
+        const crawledAt = new Date().toISOString();
+        await db.collection("ops_meta").doc("last_gorunning_crawl").set({
+          crawledAt,
+          events: enrichedEvents,
+          stats: {
+            total: enrichedEvents.length,
+            matched: enrichedEvents.filter((ev) => ev.matchStatus === "matched").length,
+            notMatched: enrichedEvents.filter((ev) => ev.matchStatus === "not_matched").length,
+          },
+        });
+
+        return res.json({
+          ok: true,
+          events: enrichedEvents,
+          lastCrawled: crawledAt,
+          cached: false,
+        });
+      } catch (err) {
+        console.error("[ops-gorunning-events] error:", err);
+        return res.status(500).json({ ok: false, error: err.message });
+      }
     }
 
     if (action === "log" && req.method === "POST") {

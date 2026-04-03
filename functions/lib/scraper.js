@@ -1108,6 +1108,134 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
   };
 }
 
+// ─── 고러닝 예정 대회 크롤 + scrape_jobs 매칭 (ops-gorunning-events) ──
+
+/**
+ * Levenshtein distance 계산
+ * @param {string} str1
+ * @param {string} str2
+ * @returns {number}
+ */
+function levenshteinDistance(str1, str2) {
+  const a = String(str1 || "");
+  const b = String(str2 || "");
+  const m = a.length;
+  const n = b.length;
+  const dp = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + 1
+        );
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+/**
+ * 대회 이름 정규화 (유사도 비교용)
+ * @param {string} name
+ * @returns {string}
+ */
+function normalizeEventName(name) {
+  return String(name || "")
+    .replace(/\s+/g, "")
+    .toLowerCase()
+    .replace(/\d{4}/g, "")
+    .replace(/마라톤|대회|레이스|러닝/g, "");
+}
+
+/**
+ * 이름 유사도 계산 (0~1)
+ * @param {string} name1
+ * @param {string} name2
+ * @returns {number}
+ */
+function calculateNameSimilarity(name1, name2) {
+  const n1 = normalizeEventName(name1);
+  const n2 = normalizeEventName(name2);
+
+  const distance = levenshteinDistance(n1, n2);
+  const maxLen = Math.max(n1.length, n2.length);
+
+  if (maxLen === 0) return 0;
+  return 1 - distance / maxLen;
+}
+
+/**
+ * 고러닝 이벤트와 scrape_jobs 자동 매칭
+ * @param {{ date: string, name: string }} gorunningEvent
+ * @param {Array<{ jobId: string, eventName?: string, eventDate?: string }>} scrapeJobs
+ * @returns {{ job: object, similarity: number } | null}
+ */
+function matchGorunningToJob(gorunningEvent, scrapeJobs) {
+  if (!gorunningEvent?.date || !Array.isArray(scrapeJobs)) return null;
+
+  const eventDate = new Date(`${String(gorunningEvent.date).slice(0, 10)}T12:00:00+09:00`);
+  if (Number.isNaN(eventDate.getTime())) return null;
+
+  const candidates = scrapeJobs.filter((job) => {
+    if (!job?.eventDate) return false;
+    const jobYmd = String(job.eventDate).slice(0, 10);
+    const jobDate = new Date(`${jobYmd}T12:00:00+09:00`);
+    if (Number.isNaN(jobDate.getTime())) return false;
+    const diffDays = Math.abs((eventDate - jobDate) / (1000 * 60 * 60 * 24));
+    return diffDays <= 2;
+  });
+
+  if (candidates.length === 0) return null;
+
+  const scored = candidates.map((job) => ({
+    job,
+    similarity: calculateNameSimilarity(job.eventName || "", gorunningEvent.name || ""),
+  }));
+
+  const qualified = scored.filter((s) => s.similarity > 0.7);
+  if (qualified.length === 0) return null;
+
+  qualified.sort((a, b) => b.similarity - a.similarity);
+  return {
+    job: qualified[0].job,
+    similarity: qualified[0].similarity,
+  };
+}
+
+/**
+ * 고러닝 향후 약 2개월 대회 목록 (KST 기준 이번 달·다음 달 월간 페이지)
+ * @returns {Promise<Array<{ id: string, name: string, date: string, location: string, distance: string[], url: string }>>}
+ */
+async function crawlGorunningEvents() {
+  const rows = await discoverGoRunningThisAndNextMonth();
+  const sorted = [...rows].sort((x, y) => {
+    const da = String(x.date || "");
+    const db = String(y.date || "");
+    if (da !== db) return da.localeCompare(db);
+    return String(x.name || "").localeCompare(String(y.name || ""));
+  });
+
+  return sorted.map((row, i) => ({
+    id: `gorunning_${row.date}_${i}`,
+    name: row.name,
+    date: row.date,
+    location: "",
+    distance: [],
+    url: row.gorunningUrl || "",
+  }));
+}
+
 module.exports = {
   normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
   searchMember, getEventInfo,
@@ -1119,4 +1247,7 @@ module.exports = {
   WEEKLY_LOOKBACK_DAYS, WEEKLY_LOOKAHEAD_DAYS, WEEKLY_MAX_JOBS_PER_RUN,
   scrapeEvent, getSmartChipSession,
   sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
+  crawlGorunningEvents,
+  matchGorunningToJob,
+  calculateNameSimilarity,
 };
