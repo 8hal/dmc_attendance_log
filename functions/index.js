@@ -1907,14 +1907,113 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     if (action === "ops-scrape-health") {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // TODO: 구현
+      // 최근 7일 jobs 조회
+      const recentJobsSnap = await db
+        .collection("scrape_jobs")
+        .where("createdAt", ">=", sevenDaysAgo)
+        .get();
+
+      let totalJobs = 0;
+      let successJobs = 0;
+      let failedJobs = 0;
+      const bySource = {
+        smartchip: { total: 0, success: 0 },
+        myresult: { total: 0, success: 0 },
+        spct: { total: 0, success: 0 },
+        marazone: { total: 0, success: 0 },
+        manual: { total: 0, success: 0 },
+      };
+
+      recentJobsSnap.forEach((doc) => {
+        const d = doc.data();
+        const status = d.status;
+        const source = d.source || "unknown";
+
+        if (status === "queued") return; // 대기중은 제외
+
+        totalJobs++;
+        const isSuccess = status === "complete" || status === "confirmed";
+        if (isSuccess) successJobs++;
+        if (status === "failed") failedJobs++;
+
+        if (bySource[source]) {
+          bySource[source].total++;
+          if (isSuccess) bySource[source].success++;
+        }
+      });
+
+      const overallRate = totalJobs > 0 ? Math.round((successJobs / totalJobs) * 100) : 0;
+
+      // bySource rate 계산
+      for (const src in bySource) {
+        if (src === "manual") continue;
+        const s = bySource[src];
+        s.rate = s.total > 0 ? Math.round((s.success / s.total) * 100) : 0;
+      }
+
+      // Stale jobs: status=complete + completedAt 3일 이상
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+      const staleSnap = await db
+        .collection("scrape_jobs")
+        .where("status", "==", "complete")
+        .where("completedAt", "<=", threeDaysAgo)
+        .get();
+
+      const staleJobs = [];
+      staleSnap.forEach((doc) => {
+        const d = doc.data();
+        if (d.completedAt) {
+          staleJobs.push({ jobId: doc.id, eventName: d.eventName, completedAt: d.completedAt });
+        }
+      });
+
+      // Stuck jobs: status=running + createdAt 1시간 이상
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const stuckSnap = await db
+        .collection("scrape_jobs")
+        .where("status", "==", "running")
+        .where("createdAt", "<=", oneHourAgo)
+        .get();
+
+      const stuckJobs = [];
+      stuckSnap.forEach((doc) => {
+        const d = doc.data();
+        stuckJobs.push({ jobId: doc.id, eventName: d.eventName, createdAt: d.createdAt });
+      });
+
+      // 주말 대회 (토/일 개최, 최근 2주 윈도우)
+      const year = new Date().getFullYear();
+      const events = await scraper.discoverAllEvents(year);
+      const now = new Date();
+      const { filtered: recentEvents } = scraper.filterEventsWeeklyScrapeWindow(events, year, now);
+
+      const upcomingWeekend = recentEvents
+        .filter((e) => {
+          if (!e.date) return false;
+          const eventDate = new Date(e.date);
+          const dayOfWeek = eventDate.getDay();
+          return (dayOfWeek === 0 || dayOfWeek === 6) && eventDate >= now; // 토/일, 미래
+        })
+        .slice(0, 10) // 최대 10개
+        .map((e) => ({
+          date: e.date,
+          eventName: e.name,
+          source: e.source,
+        }));
 
       return res.json({
         ok: true,
         period: { start: sevenDaysAgo, end: new Date().toISOString() },
-        overall: {},
-        bySource: {},
-        upcomingWeekend: [],
+        overall: {
+          total: totalJobs,
+          success: successJobs,
+          failed: failedJobs,
+          stale: staleJobs.length,
+          stuck: stuckJobs.length,
+          rate: overallRate,
+        },
+        bySource,
+        upcomingWeekend,
         lastCheck: new Date().toISOString(),
       });
     }
