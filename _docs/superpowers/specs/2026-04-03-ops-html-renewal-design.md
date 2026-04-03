@@ -31,7 +31,8 @@
    - 액션 가능한 메트릭만 표시
 
 3. **자동 알림 시스템**
-   - 이메일 알림 (목/금 저녁, 이슈 발견 시)
+   - 이메일 알림 (목/금 18:00, 정기 발송)
+   - Critical 이슈는 다음 스케줄 실행 시 긴급 제목으로 발송
    - 모바일에서 확인 가능
 
 4. **예정 대회 가시성 (신규)**
@@ -130,8 +131,7 @@ if (action === "ops-gorunning-events") {
           source: "smartchip",
           sourceId: "202650000006",
           jobId: "smartchip_202650000006"
-        } | null,
-        actionRequired: "none" | "manual_search" | "check_source_site"
+        } | null
       }
     ],
     lastCrawled: timestamp
@@ -143,14 +143,14 @@ if (action === "ops-gorunning-events") {
 ```javascript
 function matchGorunningToJob(gorunningEvent, scrapeJobs) {
   // 1. 날짜 일치 (±2일 허용)
-  // 2. 이름 유사도 (Levenshtein distance < 5 또는 주요 키워드 일치)
-  // 3. 위치 키워드 일치 (선택)
+  // 2. 이름 정규화 후 유사도 계산 (normalized Levenshtein ratio >0.7)
+  // 3. 가장 유사도 높은 후보 반환
   
   const candidates = scrapeJobs.filter(job => {
     const dateDiff = Math.abs(daysDiff(job.eventDate, gorunningEvent.date));
     if (dateDiff > 2) return false;
     
-    const nameSimilarity = calculateSimilarity(job.eventName, gorunningEvent.name);
+    const nameSimilarity = calculateNameSimilarity(job.eventName, gorunningEvent.name);
     return nameSimilarity > 0.7;
   });
   
@@ -219,13 +219,13 @@ ADMIN_EMAIL=taylor@example.com
 
 #### Frontend: ops.html 재설계
 
-**7개 섹션 구성:**
+**7개 섹션 구성 (상단 → 하단 순서):**
 
 1. **시스템 건강도** (요약 카드)
 2. **스크래핑 건강도** (신규 - 핵심)
 3. **주말 준비 상태** (목/금만 표시)
-4. **고러닝 예정 대회** (신규 - Section 7)
-5. **전환율 & 퍼널** (기존 유지)
+4. **전환율 & 퍼널** (기존 유지)
+5. **고러닝 예정 대회** (신규)
 6. **최근 알림** (기존 개선)
 7. **이벤트 로그** (기존 축소)
 
@@ -304,6 +304,12 @@ const stuckSnap = await db.collection("scrape_jobs")
 1. 다가오는 토/일 대회 목록 조회 (`ops-scrape-preview` 활용)
 2. 해당 대회 소스의 최근 7일 건강도 확인
 3. 이슈 평가 (아래 규칙)
+4. 이메일 발송 (정기)
+
+**이메일 긴급도:**
+- Critical 이슈 발견 시: 제목에 "🔴 긴급" 표시 (같은 스케줄 실행, 별도 즉시 발송 없음)
+- Warning 이슈: 제목에 "⚠️ 주의"
+- 정상: 제목에 "✅ 정상"
 
 #### 이슈 판정 규칙
 
@@ -323,8 +329,8 @@ const stuckSnap = await db.collection("scrape_jobs")
 
 #### 발송 조건
 
-1. **정기 발송**: 목/금 18:00 (이슈 유무 관계없이)
-2. **긴급 발송**: Critical 이슈 발견 시 즉시
+1. **정기 발송**: 목/금 18:00 (이슈 유무 관계없이 항상 발송)
+2. **긴급 발송**: 없음 (Critical 이슈도 다음 스케줄까지 대기)
 
 #### 이메일 템플릿
 
@@ -503,9 +509,9 @@ await db.collection("ops_meta")
 **제거:**
 - "검색했지만 결과 없음" (운영 액션 없음)
 
-### 4.5 Section 5: 최근 알림
+### 4.6 Section 6: 최근 알림
 
-**위치**: Section 4 아래
+**위치**: Section 5 아래
 
 **레이아웃:**
 ```
@@ -530,7 +536,7 @@ await db.collection("ops_meta")
 - 🟡 `severity: "warning"`
 - ✅ `severity: "info"`
 
-### 4.6 Section 6: 이벤트 로그
+### 4.7 Section 7: 이벤트 로그
 
 **위치**: 최하단
 
@@ -551,9 +557,9 @@ await db.collection("ops_meta")
 
 **제거**: 이벤트 상세 (과도한 정보)
 
-### 4.7 Section 7: 고러닝 예정 대회 (신규)
+### 4.5 Section 5: 고러닝 예정 대회 (신규)
 
-**위치**: Section 6 위 (이벤트 로그 바로 위)
+**위치**: Section 4 (전환율 & 퍼널) 아래
 
 **목적**: 향후 2개월 예정 대회 목록 + 스크랩 가능 여부 표시
 
@@ -611,8 +617,12 @@ await db.collection("ops_meta")
 
 **인터랙션:**
 - **[새로고침]** 버튼: API 재호출 (고러닝 크롤링 + 매칭 재실행)
-- **[발견 완료 →]** 링크: `report.html?tab=review&jobId={jobId}`로 이동
-- **[수동 검색 →]** 링크: `report.html?tab=discover`로 이동
+- **[발견 완료 →]** 링크: `report.html`로 이동 (Phase 1에서는 단순 이동, 딥링크는 Phase 2)
+- **[수동 검색 →]** 링크: `report.html`로 이동
+
+**Phase 2 개선 (선택):**
+- report.html 딥링크 (`?jobId={jobId}` 쿼리 파라미터 지원)
+- URL 파라미터 기반 탭/job 자동 선택
 
 **필터링 (선택 - Phase 2):**
 - 날짜 범위: 1주 / 1개월 / 2개월
@@ -822,7 +832,7 @@ ADMIN_EMAIL=taylor@example.com
 
 ---
 
-## 7. 테스트 계획
+## 8. 테스트 계획
 
 ### 단위 테스트
 
@@ -893,7 +903,7 @@ curl "http://localhost:5001/dmc-attendance/asia-northeast3/race?action=ops-scrap
 
 ---
 
-## 8. 롤백 계획
+## 9. 롤백 계획
 
 ### 문제 발생 시
 
@@ -924,7 +934,7 @@ firebase deploy --only functions,hosting
 
 ---
 
-## 9. 향후 개선 방향
+## 10. 향후 개선 방향
 
 ### Phase 3: 고급 기능 (백로그)
 
@@ -946,7 +956,7 @@ firebase deploy --only functions,hosting
 
 ---
 
-## 10. 참고 자료
+## 11. 참고 자료
 
 ### 외부 모범 사례
 - [Operations Dashboard Best Practices 2026](https://dev.to/godofgeeks/building-operational-dashboards-20h2)
