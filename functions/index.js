@@ -1383,6 +1383,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         ? `${source}_${sourceId}`
         : jobId;
 
+      // ✅ P0 수정 (2026-04-03): 재확정 시 기존 race_results 삭제
+      // 기존: 새 results만 set() → 이전 기록이 남아 중복 발생
+      // 수정: canonicalJobId 기준 기존 문서 전체 삭제 후 새 results 저장
+      const oldResultsSnap = await db.collection("race_results")
+        .where("jobId", "==", canonicalJobId)
+        .get();
+
+      oldResultsSnap.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
       for (const r of results) {
         const resolvedDate = eventDate || r.eventDate || "";
         const safeDate = resolvedDate.replace(/[^0-9\-]/g, "");

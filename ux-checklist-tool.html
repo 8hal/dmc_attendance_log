@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>주간 UX 체크리스트 도구</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      background: #f8fafc;
+      padding: 20px;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 32px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+    .meta {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .section {
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #334155;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+    th {
+      background: #f1f5f9;
+      text-align: left;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      color: #475569;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+    td:first-child {
+      font-weight: 500;
+      color: #334155;
+      width: 180px;
+    }
+    td:nth-child(2) {
+      color: #64748b;
+      font-size: 13px;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    select {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+      min-width: 120px;
+      transition: border-color 0.2s;
+    }
+    select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .pass { background: #dcfce7; color: #166534; font-weight: 600; }
+    .fail { background: #fee2e2; color: #991b1b; font-weight: 600; }
+    .skip { background: #f1f5f9; color: #64748b; }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 2px solid #e2e8f0;
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .btn-secondary {
+      background: #64748b;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #475569;
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .summary {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 24px;
+    }
+    .summary-item {
+      flex: 1;
+      text-align: center;
+    }
+    .summary-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .summary-value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .summary-value.pass { color: #10b981; }
+    .summary-value.fail { color: #ef4444; }
+    .summary-value.skip { color: #94a3b8; }
+    .prod-link {
+      display: inline-block;
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      background: #eff6ff;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      color: #1e40af;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .prod-link:hover {
+      background: #dbeafe;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .note {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      margin-top: 24px;
+      font-size: 13px;
+      color: #78350f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 주간 UX 체크리스트 도구</h1>
+    <div class="meta">2026-03-30 주차 | 작성일: <span id="currentDate"></span></div>
+
+    <a href="https://dmc-attendance.web.app" target="_blank" class="prod-link">
+      🚀 프로덕션 열기 (새 탭)
+    </a>
+
+    <div class="summary">
+      <div class="summary-item">
+        <div class="summary-label">통과</div>
+        <div class="summary-value pass" id="passCount">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">실패</div>
+        <div class="summary-value fail" id="failCount">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">스킵</div>
+        <div class="summary-value skip" id="skipCount">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">전체</div>
+        <div class="summary-value" id="totalCount">15</div>
+      </div>
+    </div>
+
+    <!-- 공통 -->
+    <div class="section">
+      <h2>공통</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>단계</th>
+            <th>기대 동작</th>
+            <th>실제 (관찰 결과)</th>
+            <th>결과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>members 로딩</td>
+            <td>닉·실명 목록 표시, 오류 시 메시지</td>
+            <td><textarea data-key="common-members" placeholder="예: 콤보박스에 30명 로딩됨"></textarea></td>
+            <td>
+              <select data-key="common-members-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>confirmed-races 로딩</td>
+            <td>카드/목록 표시, 빈 경우 안내</td>
+            <td><textarea data-key="common-races" placeholder="예: 838건 카드 렌더됨"></textarea></td>
+            <td>
+              <select data-key="common-races-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>log (해당 페이지)</td>
+            <td>네트워크 실패해도 UI 막히지 않음</td>
+            <td><textarea data-key="common-log" placeholder="예: 오프라인 상태에서도 페이지 표시됨"></textarea></td>
+            <td>
+              <select data-key="common-log-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- my.html -->
+    <div class="section">
+      <h2>my.html — 개인 기록</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>단계</th>
+            <th>기대 동작</th>
+            <th>실제 (관찰 결과)</th>
+            <th>결과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>콤보 검색·선택</td>
+            <td>닉/실명으로 선택, localStorage 복원</td>
+            <td><textarea data-key="my-combo" placeholder="예: 홍길동 선택 → 새로고침 후 복원됨"></textarea></td>
+            <td>
+              <select data-key="my-combo-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>PB·카드</td>
+            <td>거리별 요약·카드 펼침</td>
+            <td><textarea data-key="my-pb" placeholder="예: 풀 PB 2:45:30, 카드 클릭 시 상세 표시"></textarea></td>
+            <td>
+              <select data-key="my-pb-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>상세·삭제</td>
+            <td>delete-record 후 목록 반영</td>
+            <td><textarea data-key="my-delete" placeholder="예: 테스트 기록 삭제 → 목록에서 사라짐"></textarea></td>
+            <td>
+              <select data-key="my-delete-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>제안/검색잡</td>
+            <td>suggestions → 필요 시 search-member-events / member-search-job</td>
+            <td><textarea data-key="my-suggestion" placeholder="예: 3개 제안 표시, 검색잡 버튼 동작"></textarea></td>
+            <td>
+              <select data-key="my-suggestion-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>확정</td>
+            <td>confirm 후 confirmed-races 갱신</td>
+            <td><textarea data-key="my-confirm" placeholder="예: 제안 수락 → 카드에 즉시 반영"></textarea></td>
+            <td>
+              <select data-key="my-confirm-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- report.html -->
+    <div class="section">
+      <h2>report.html — 운영</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>단계</th>
+            <th>기대 동작</th>
+            <th>실제 (관찰 결과)</th>
+            <th>결과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>verify-admin</td>
+            <td>관리자만 이후 단계 사용 가능</td>
+            <td><textarea data-key="report-verify" placeholder="예: 비관리자는 '권한 없음' 메시지"></textarea></td>
+            <td>
+              <select data-key="report-verify-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>discover/events/job</td>
+            <td>잡 목록·상세 일관</td>
+            <td><textarea data-key="report-discover" placeholder="예: discover 3건 → events 탭에 동일 표시"></textarea></td>
+            <td>
+              <select data-key="report-discover-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>scrape</td>
+            <td>완료 후 잡 상태·건수 갱신</td>
+            <td><textarea data-key="report-scrape" placeholder="예: 스크랩 완료 → foundCount 50건 표시"></textarea></td>
+            <td>
+              <select data-key="report-scrape-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>검토 탭</td>
+            <td>activeTab·reloadEvents 전환 시 올바른 탭 렌더</td>
+            <td><textarea data-key="report-tab" placeholder="예: 검토 탭 전환 시 데이터 정상 표시"></textarea></td>
+            <td>
+              <select data-key="report-tab-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>기록 저장·날짜</td>
+            <td>빈 eventDate 가드·입력 흐름</td>
+            <td><textarea data-key="report-date" placeholder="예: 날짜 없으면 경고, 입력 후 저장 가능"></textarea></td>
+            <td>
+              <select data-key="report-date-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>confirm</td>
+            <td>완료 탭·저장 건수 일치</td>
+            <td><textarea data-key="report-confirm" placeholder="예: 50건 확정 → 완료 탭에 50건 표시"></textarea></td>
+            <td>
+              <select data-key="report-confirm-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>create-job</td>
+            <td>수동 대회 생성 후 이어서 스크랩/확정 가능</td>
+            <td><textarea data-key="report-create" placeholder="예: 수동 잡 생성 → 스크랩 버튼 활성화"></textarea></td>
+            <td>
+              <select data-key="report-create-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- races.html -->
+    <div class="section">
+      <h2>races.html — 클럽 대회별</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>단계</th>
+            <th>기대 동작</th>
+            <th>실제 (관찰 결과)</th>
+            <th>결과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>초기 로드</td>
+            <td>members + confirmed-races</td>
+            <td><textarea data-key="races-load" placeholder="예: 30명 회원, 838건 기록 로딩"></textarea></td>
+            <td>
+              <select data-key="races-load-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>discover-all/검색</td>
+            <td>연도·회원 검색 흐름</td>
+            <td><textarea data-key="races-search" placeholder="예: 2025년 검색 → 필터링된 대회 표시"></textarea></td>
+            <td>
+              <select data-key="races-search-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>confirm</td>
+            <td>확정 후 UI 반영</td>
+            <td><textarea data-key="races-confirm" placeholder="예: 대회 확정 → 목록에 즉시 추가"></textarea></td>
+            <td>
+              <select data-key="races-confirm-result" onchange="updateSummary()">
+                <option value="">-</option>
+                <option value="pass">✅ 통과</option>
+                <option value="fail">❌ 실패</option>
+                <option value="skip">⊘ 스킵</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      💡 <strong>Tip:</strong> 프로덕션 링크를 새 탭으로 열고, 각 시나리오를 테스트하면서 실시간으로 결과를 입력하세요.
+      모든 데이터는 자동으로 localStorage에 저장됩니다.
+    </div>
+
+    <div class="actions">
+      <button class="btn-success" onclick="exportMarkdown()">📄 Markdown 내보내기</button>
+      <button class="btn-primary" onclick="saveToLocalStorage()">💾 저장</button>
+      <button class="btn-secondary" onclick="loadFromLocalStorage()">📥 불러오기</button>
+      <button class="btn-secondary" onclick="clearAll()">🗑️ 초기화</button>
+    </div>
+
+    <div id="output" style="display:none; margin-top: 24px;">
+      <h2>Markdown 출력</h2>
+      <pre id="markdownOutput"></pre>
+    </div>
+  </div>
+
+  <script>
+    // 현재 날짜 표시
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('ko-KR');
+
+    // 자동 저장
+    document.querySelectorAll('textarea, select').forEach(el => {
+      el.addEventListener('change', () => {
+        saveToLocalStorage();
+      });
+    });
+
+    // 요약 업데이트
+    function updateSummary() {
+      const results = document.querySelectorAll('select[data-key$="-result"]');
+      let pass = 0, fail = 0, skip = 0;
+      
+      results.forEach(select => {
+        const value = select.value;
+        if (value === 'pass') pass++;
+        else if (value === 'fail') fail++;
+        else if (value === 'skip') skip++;
+      });
+
+      document.getElementById('passCount').textContent = pass;
+      document.getElementById('failCount').textContent = fail;
+      document.getElementById('skipCount').textContent = skip;
+    }
+
+    // localStorage 저장
+    function saveToLocalStorage() {
+      const data = {};
+      document.querySelectorAll('[data-key]').forEach(el => {
+        data[el.dataset.key] = el.value;
+      });
+      localStorage.setItem('ux-checklist-2026-03-30', JSON.stringify(data));
+      updateSummary();
+    }
+
+    // localStorage 불러오기
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem('ux-checklist-2026-03-30');
+      if (!saved) {
+        alert('저장된 데이터가 없습니다.');
+        return;
+      }
+      const data = JSON.parse(saved);
+      Object.keys(data).forEach(key => {
+        const el = document.querySelector(`[data-key="${key}"]`);
+        if (el) el.value = data[key];
+      });
+      updateSummary();
+      alert('데이터를 불러왔습니다.');
+    }
+
+    // Markdown 내보내기
+    function exportMarkdown() {
+      const data = {};
+      document.querySelectorAll('[data-key]').forEach(el => {
+        data[el.dataset.key] = el.value;
+      });
+
+      let md = `# 주간 UX 시나리오 체크리스트 (my / report / races)\n\n`;
+      md += `> 플랜: 주간 버그·무결성 MVP — 축 A 필수 산출물\n`;
+      md += `> 작성일: ${new Date().toLocaleDateString('ko-KR')}\n\n`;
+
+      // 요약
+      const results = document.querySelectorAll('select[data-key$="-result"]');
+      let pass = 0, fail = 0, skip = 0;
+      results.forEach(select => {
+        const value = select.value;
+        if (value === 'pass') pass++;
+        else if (value === 'fail') fail++;
+        else if (value === 'skip') skip++;
+      });
+      md += `**요약:** ✅ ${pass}개 통과 | ❌ ${fail}개 실패 | ⊘ ${skip}개 스킵\n\n---\n\n`;
+
+      // 공통
+      md += `## 공통\n\n`;
+      md += `| 단계 | 기대 | 실제 | 결과 |\n`;
+      md += `|------|------|------|------|\n`;
+      md += `| members 로딩 | 닉·실명 목록 표시, 오류 시 메시지 | ${data['common-members'] || ''} | ${formatResult(data['common-members-result'])} |\n`;
+      md += `| confirmed-races 로딩 | 카드/목록 표시, 빈 경우 안내 | ${data['common-races'] || ''} | ${formatResult(data['common-races-result'])} |\n`;
+      md += `| log (해당 페이지) | 네트워크 실패해도 UI 막히지 않음 | ${data['common-log'] || ''} | ${formatResult(data['common-log-result'])} |\n\n`;
+
+      // my.html
+      md += `## my.html — 개인 기록\n\n`;
+      md += `| 단계 | 기대 | 실제 | 결과 |\n`;
+      md += `|------|------|------|------|\n`;
+      md += `| 콤보 검색·선택 | 닉/실명으로 선택, localStorage 복원 | ${data['my-combo'] || ''} | ${formatResult(data['my-combo-result'])} |\n`;
+      md += `| PB·카드 | 거리별 요약·카드 펼침 | ${data['my-pb'] || ''} | ${formatResult(data['my-pb-result'])} |\n`;
+      md += `| 상세·삭제 | delete-record 후 목록 반영 | ${data['my-delete'] || ''} | ${formatResult(data['my-delete-result'])} |\n`;
+      md += `| 제안/검색잡 | suggestions → 필요 시 search-member-events / member-search-job | ${data['my-suggestion'] || ''} | ${formatResult(data['my-suggestion-result'])} |\n`;
+      md += `| 확정 | confirm 후 confirmed-races 갱신 | ${data['my-confirm'] || ''} | ${formatResult(data['my-confirm-result'])} |\n\n`;
+
+      // report.html
+      md += `## report.html — 운영\n\n`;
+      md += `| 단계 | 기대 | 실제 | 결과 |\n`;
+      md += `|------|------|------|------|\n`;
+      md += `| verify-admin | 관리자만 이후 단계 사용 가능 | ${data['report-verify'] || ''} | ${formatResult(data['report-verify-result'])} |\n`;
+      md += `| discover/events/job | 잡 목록·상세 일관 | ${data['report-discover'] || ''} | ${formatResult(data['report-discover-result'])} |\n`;
+      md += `| scrape | 완료 후 잡 상태·건수 갱신 | ${data['report-scrape'] || ''} | ${formatResult(data['report-scrape-result'])} |\n`;
+      md += `| 검토 탭 | activeTab·reloadEvents 전환 시 올바른 탭 렌더 | ${data['report-tab'] || ''} | ${formatResult(data['report-tab-result'])} |\n`;
+      md += `| 기록 저장·날짜 | 빈 eventDate 가드·입력 흐름 | ${data['report-date'] || ''} | ${formatResult(data['report-date-result'])} |\n`;
+      md += `| confirm | 완료 탭·저장 건수 일치 | ${data['report-confirm'] || ''} | ${formatResult(data['report-confirm-result'])} |\n`;
+      md += `| create-job | 수동 대회 생성 후 이어서 스크랩/확정 가능 | ${data['report-create'] || ''} | ${formatResult(data['report-create-result'])} |\n\n`;
+
+      // races.html
+      md += `## races.html — 클럽 대회별\n\n`;
+      md += `| 단계 | 기대 | 실제 | 결과 |\n`;
+      md += `|------|------|------|------|\n`;
+      md += `| 초기 로드 | members + confirmed-races | ${data['races-load'] || ''} | ${formatResult(data['races-load-result'])} |\n`;
+      md += `| discover-all/검색 | 연도·회원 검색 흐름 | ${data['races-search'] || ''} | ${formatResult(data['races-search-result'])} |\n`;
+      md += `| confirm | 확정 후 UI 반영 | ${data['races-confirm'] || ''} | ${formatResult(data['races-confirm-result'])} |\n\n`;
+
+      // P0 트리아지
+      md += `## P0 트리아지\n\n`;
+      const failures = [];
+      results.forEach((select, idx) => {
+        if (select.value === 'fail') {
+          const row = select.closest('tr');
+          const step = row.querySelector('td:first-child').textContent;
+          const section = row.closest('.section').querySelector('h2').textContent;
+          failures.push(`- ${section} > ${step}`);
+        }
+      });
+      if (failures.length > 0) {
+        md += `실패 항목 (우선순위 선정 필요):\n\n`;
+        md += failures.join('\n') + '\n\n';
+        md += `이번 주 **최대 2건**만 수정; 나머지는 백로그.\n`;
+      } else {
+        md += `✅ 실패 항목 없음\n`;
+      }
+
+      document.getElementById('markdownOutput').textContent = md;
+      document.getElementById('output').style.display = 'block';
+      document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function formatResult(value) {
+      if (value === 'pass') return '✅ 통과';
+      if (value === 'fail') return '❌ 실패';
+      if (value === 'skip') return '⊘ 스킵';
+      return '';
+    }
+
+    function clearAll() {
+      if (!confirm('모든 데이터를 초기화하시겠습니까?')) return;
+      localStorage.removeItem('ux-checklist-2026-03-30');
+      document.querySelectorAll('textarea, select').forEach(el => {
+        el.value = '';
+      });
+      updateSummary();
+      alert('초기화 완료');
+    }
+
+    // 페이지 로드 시 자동 복원
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem('ux-checklist-2026-03-30');
+      if (saved) {
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach(key => {
+          const el = document.querySelector(`[data-key="${key}"]`);
+          if (el) el.value = data[key];
+        });
+        updateSummary();
+      }
+    });
+  </script>
+</body>
+</html>
