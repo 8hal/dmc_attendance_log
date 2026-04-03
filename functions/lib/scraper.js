@@ -431,6 +431,66 @@ async function searchMarazone(compTitle, memberName) {
   });
 }
 
+// ─── Ohmyrace 검색 ────────────────────────────────────────────
+
+async function searchOhmyrace(eventId, memberName) {
+  const url = "http://record.ohmyrace.co.kr/theme/ohmyrace/mobile/skin/board/event/view.data.php";
+
+  const params = new URLSearchParams();
+  params.append("table", "event");
+  params.append("wr_id", eventId);
+  params.append("bib", memberName);
+  params.append("cate", "");
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      "Referer": `http://record.ohmyrace.co.kr/event/${eventId}`,
+    },
+    body: params.toString(),
+  });
+
+  if (!res.ok) return [];
+  const html = await res.text();
+
+  if (html.includes("검색 결과가 없습니다") || html.includes("조회된 데이터가 없습니다")) {
+    return [];
+  }
+
+  const $ = cheerioLoad(html);
+  const results = [];
+
+  $("tr").each((_, row) => {
+    const cells = $(row).find("td");
+    if (cells.length < 4) return;
+
+    const bib = $(cells[0]).text().trim();
+    const name = $(cells[1]).text().trim();
+    const distance = $(cells[2]).text().trim();
+    const time = $(cells[3]).text().trim();
+
+    if (name && time) {
+      results.push({
+        name,
+        bib,
+        distance: normDist(distance),
+        netTime: normTime(time),
+        gunTime: "",
+        overallRank: null,
+        genderRank: null,
+        ageGroupRank: null,
+        gender: null,
+        splits: [],
+        pace: "",
+      });
+    }
+  });
+
+  return results;
+}
+
 // ─── 검색 라우터 + 이벤트 정보 ───────────────────────────────
 
 async function searchMember(source, sourceId, memberName, { session = "" } = {}) {
@@ -439,6 +499,7 @@ async function searchMember(source, sourceId, memberName, { session = "" } = {})
     case "smartchip": return searchSmartChip(sourceId, memberName, session);
     case "myresult": return searchMyResult(sourceId, memberName);
     case "marazone": return searchMarazone(sourceId, memberName);
+    case "ohmyrace": return searchOhmyrace(sourceId, memberName);
     default: return [];
   }
 }
@@ -504,11 +565,16 @@ async function getSmartChipEventInfo(sourceId) {
   return { title, date };
 }
 
+async function getOhmyraceEventInfo(sourceId) {
+  return { title: `Ohmyrace Event ${sourceId}`, date: null };
+}
+
 async function getEventInfo(source, sourceId) {
   switch (source) {
     case "spct": return getSPCTEventInfo(sourceId);
     case "myresult": return getMyResultEventInfo(sourceId);
     case "smartchip": return getSmartChipEventInfo(sourceId);
+    case "ohmyrace": return getOhmyraceEventInfo(sourceId);
     case "marazone": {
       const comps = await (await fetch("https://raceresult.co.kr/api/record-competitions", {
         headers: { ...browserHeaders("marazone"), Accept: "application/json" },
