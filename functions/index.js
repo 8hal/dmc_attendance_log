@@ -2374,6 +2374,19 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
     }
 
+    if (action === "clear-gorunning-cache" && req.method === "POST") {
+      // 고러닝 캐시 무효화 (테스트용)
+      const { secret } = req.body || {};
+      
+      const expectedSecret = process.env.ADMIN_SECRET || "dmc-admin-2026";
+      if (secret !== expectedSecret) {
+        return res.status(403).json({ ok: false, error: "forbidden" });
+      }
+
+      await db.collection("ops_meta").doc("last_gorunning_crawl").delete();
+      return res.json({ ok: true, message: "캐시 삭제됨. 다음 ops-gorunning-events 호출 시 재크롤링됩니다." });
+    }
+
     if (action === "fix-phantom-jobs" && req.method === "POST") {
       // Phantom Jobs 일괄 다운그레이드 (confirmed → complete)
       const { jobIds, secret } = req.body || {};
