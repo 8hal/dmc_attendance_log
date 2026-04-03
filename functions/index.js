@@ -2374,6 +2374,59 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
     }
 
+    if (action === "fix-phantom-jobs" && req.method === "POST") {
+      // Phantom Jobs 일괄 다운그레이드 (confirmed → complete)
+      const { jobIds, secret } = req.body || {};
+      
+      // 간단한 시크릿 체크 (옵션)
+      const expectedSecret = process.env.ADMIN_SECRET || "dmc-admin-2026";
+      if (secret !== expectedSecret) {
+        return res.status(403).json({ ok: false, error: "forbidden" });
+      }
+
+      if (!Array.isArray(jobIds) || jobIds.length === 0) {
+        return res.status(400).json({ ok: false, error: "jobIds required" });
+      }
+
+      const batch = db.batch();
+      const updated = [];
+      const notFound = [];
+      const alreadyComplete = [];
+
+      for (const jobId of jobIds) {
+        const docRef = db.collection("scrape_jobs").doc(jobId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+          notFound.push(jobId);
+          continue;
+        }
+
+        const data = doc.data();
+        if (data.status === "confirmed") {
+          batch.update(docRef, {
+            status: "complete",
+            confirmedAt: FieldValue.delete(),
+          });
+          updated.push({ jobId, eventName: data.eventName });
+        } else {
+          alreadyComplete.push({ jobId, status: data.status });
+        }
+      }
+
+      if (updated.length > 0) {
+        await batch.commit();
+      }
+
+      return res.json({
+        ok: true,
+        updated: updated.length,
+        notFound: notFound.length,
+        alreadyComplete: alreadyComplete.length,
+        details: { updated, notFound, alreadyComplete },
+      });
+    }
+
     if (action === "log" && req.method === "POST") {
       const { event, data } = req.body || {};
       if (!event) return res.status(400).json({ ok: false, error: "event required" });
