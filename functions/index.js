@@ -773,6 +773,228 @@ exports.scrapeHealthCheck = onSchedule(
 );
 
 /**
+ * 주말 대회 스크래핑 준비 상태 체크 (스케줄 + testWeekendCheck 공통)
+ */
+async function runWeekendScrapeReadinessCheck() {
+  const now = new Date();
+  console.log(`[weekendScrapeReadinessCheck] ${now.toISOString()}`);
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const recentJobsSnap = await db.collection("scrape_jobs").where("createdAt", ">=", sevenDaysAgo).get();
+
+  let totalJobs = 0;
+  let successJobs = 0;
+  const bySource = {
+    smartchip: { total: 0, success: 0 },
+    myresult: { total: 0, success: 0 },
+    spct: { total: 0, success: 0 },
+    marazone: { total: 0, success: 0 },
+  };
+
+  recentJobsSnap.forEach((doc) => {
+    const d = doc.data();
+    const status = d.status;
+    const source = d.source;
+
+    if (status === "queued") return;
+
+    totalJobs++;
+    if (status === "complete" || status === "confirmed") successJobs++;
+
+    if (bySource[source]) {
+      bySource[source].total++;
+      if (status === "complete" || status === "confirmed") bySource[source].success++;
+    }
+  });
+
+  for (const src of Object.keys(bySource)) {
+    const s = bySource[src];
+    s.rate = s.total > 0 ? Math.round((s.success / s.total) * 100) : 0;
+  }
+
+  const overallSuccessRate = totalJobs > 0 ? Math.round((successJobs / totalJobs) * 100) : 0;
+
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const staleSnap = await db
+    .collection("scrape_jobs")
+    .where("status", "==", "complete")
+    .where("completedAt", "<=", threeDaysAgo)
+    .get();
+  const staleCount = staleSnap.size;
+
+  const year = new Date().getFullYear();
+  const events = await scraper.discoverAllEvents(year);
+  const { filtered: recentEvents } = scraper.filterEventsWeeklyScrapeWindow(events, year, now);
+
+  const upcomingWeekend = recentEvents
+    .filter((e) => {
+      if (!e.date) return false;
+      const eventDate = new Date(e.date);
+      const dayOfWeek = eventDate.getDay();
+      return (dayOfWeek === 0 || dayOfWeek === 6) && eventDate >= now;
+    })
+    .slice(0, 5);
+
+  let overallStatus = "info";
+  const issues = [];
+
+  for (const e of upcomingWeekend) {
+    const src = e.source;
+    if (bySource[src] && bySource[src].rate < 80) {
+      overallStatus = "error";
+      issues.push(`🔴 ${src} success rate ${bySource[src].rate}% (임계치: 80%)`);
+    } else if (bySource[src] && bySource[src].rate < 90) {
+      if (overallStatus === "info") overallStatus = "warning";
+      issues.push(`⚠️ ${src} success rate ${bySource[src].rate}% (임계치: 90%)`);
+    }
+  }
+
+  if (staleCount >= 5) {
+    if (overallStatus !== "error") overallStatus = "warning";
+    issues.push(`⚠️ Stale jobs ${staleCount}건 (임계치: 5건)`);
+  }
+
+  const statusEmoji = { info: "✅", warning: "⚠️", error: "🔴" };
+  const statusText = { info: "정상", warning: "주의", error: "긴급" };
+
+  const subject = `[DMC Ops] 주말 대회 준비 체크 - ${statusEmoji[overallStatus]} ${statusText[overallStatus]}`;
+
+  const html = `
+<h2>🏃 주말 대회 스크래핑 준비 상태</h2>
+
+<div style="background: #f0f0f0; padding: 15px; border-radius: 8px;">
+  <h3>체크 시각: ${now.toISOString().slice(0, 16).replace("T", " ")}</h3>
+  <p><strong>주말 예정 대회:</strong> ${upcomingWeekend.length}개</p>
+</div>
+
+<h3>📊 스크래핑 건강도 (최근 7일)</h3>
+<table border="1" cellpadding="5" style="border-collapse: collapse;">
+  <tr><th>소스</th><th>Success Rate</th><th>상태</th></tr>
+  ${Object.entries(bySource)
+    .map(([src, s]) => {
+      const cellStatus = s.rate >= 90 ? "✅ 정상" : s.rate >= 80 ? "⚠️ 주의" : "🔴 긴급";
+      return `<tr><td>${src}</td><td>${s.rate}% (${s.success}/${s.total})</td><td>${cellStatus}</td></tr>`;
+    })
+    .join("")}
+</table>
+
+<h3>${issues.length > 0 ? "⚠️ 발견된 이슈" : "✅ 이슈 없음"}</h3>
+${issues.length > 0 ? `<ul>${issues.map((i) => `<li>${i}</li>`).join("")}</ul>` : "<p>모든 메트릭이 정상입니다.</p>"}
+
+<h3>🔗 액션</h3>
+<ul>
+  <li>ops.html 확인: <a href="https://dmc-attendance.web.app/ops.html">바로가기</a></li>
+  <li>report.html에서 stale jobs 확정: <a href="https://dmc-attendance.web.app/report.html">바로가기</a></li>
+</ul>
+
+<hr/>
+<p style="color: #999; font-size: 12px;">
+  이 알림은 매주 목/금 18:00에 자동 발송됩니다.<br/>
+  문제가 있으면 ops.html에서 상세 내역을 확인하세요.
+</p>
+`;
+
+  const healthSummary = { overall: { rate: overallSuccessRate }, bySource };
+  const upcomingPayload = upcomingWeekend.map((e) => ({
+    date: e.date,
+    name: e.name,
+    source: e.source,
+  }));
+
+  let emailSent = false;
+
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) throw new Error("ADMIN_EMAIL not set");
+
+    await sendEmail({
+      to: adminEmail,
+      subject,
+      html,
+    });
+
+    await db.collection("event_logs").add({
+      type: "weekend_check",
+      severity: overallStatus,
+      message: `주말 준비 체크 완료: ${upcomingWeekend.length}개 대회, ${overallSuccessRate}% 건강도`,
+      checkedAt: now.toISOString(),
+      upcomingWeekend: upcomingPayload,
+      healthSummary,
+      emailSent: true,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    await db.collection("ops_meta").doc("last_weekend_check").set(
+      {
+        checkedAt: now.toISOString(),
+        upcomingWeekend,
+        healthSummary,
+        emailSent: true,
+        emailRecipient: adminEmail,
+      },
+      { merge: true },
+    );
+
+    emailSent = true;
+    console.log(`[weekendScrapeReadinessCheck] 완료: ${upcomingWeekend.length}개 대회, ${issues.length}개 이슈`);
+  } catch (emailError) {
+    await db.collection("event_logs").add({
+      type: "weekend_check",
+      severity: "error",
+      message: `주말 준비 체크 완료했으나 이메일 발송 실패: ${emailError.message}`,
+      checkedAt: now.toISOString(),
+      emailSent: false,
+      emailError: emailError.message,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    console.error("[weekendScrapeReadinessCheck] 이메일 실패:", emailError.message);
+  }
+
+  return {
+    overallStatus,
+    upcomingCount: upcomingWeekend.length,
+    issuesCount: issues.length,
+    emailSent,
+    overallSuccessRate,
+    staleCount,
+  };
+}
+
+/**
+ * 주말 대회 스크래핑 준비 상태 체크 (목/금 18:00 KST)
+ */
+exports.weekendScrapeReadinessCheck = onSchedule(
+  {
+    schedule: "0 18 * * 4,5",
+    timeZone: "Asia/Seoul",
+    timeoutSeconds: 120,
+    memory: "512MiB",
+    region: "asia-northeast3",
+  },
+  async () => {
+    try {
+      await runWeekendScrapeReadinessCheck();
+    } catch (err) {
+      console.error("[weekendScrapeReadinessCheck] error:", err);
+    }
+  },
+);
+
+/** 로컬/수동 검증용 — 에뮬에서 curl로 트리거 */
+exports.testWeekendCheck = onRequest(
+  { cors: true, timeoutSeconds: 120, memory: "512MiB", region: "asia-northeast3" },
+  async (req, res) => {
+    try {
+      const result = await runWeekendScrapeReadinessCheck();
+      res.json({ ok: true, message: "테스트 완료, 이메일 확인", ...result });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  },
+);
+
+/**
  * Race API - 대회 결과 조회 및 수동 스크래핑
  */
 exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", region: "asia-northeast3" }, async (req, res) => {
