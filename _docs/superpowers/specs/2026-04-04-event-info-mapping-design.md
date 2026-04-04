@@ -113,9 +113,13 @@
 - 하나의 canonicalEventId는 **여러 대회 정보 매핑** 가질 수 있음 (다대일)
 
 **인덱스**:
-- `(infoSource, infoSourceId)` 복합 유니크 (중복 방지)
+- `(infoSource, infoSourceId)` 복합 인덱스 (쿼리 최적화용)
 - `canonicalEventId` (역조회: "이 evt에 연결된 정보 소스는?")
 - `infoDate, mappedBy, status` (날짜 범위 + 미확인 매핑 조회)
+
+**중복 방지**: Firestore 네이티브 유니크 제약은 없으므로, 
+트랜잭션 또는 쿼리로 `WHERE infoSource == X AND infoSourceId == Y AND status == "active"` 결과가 
+비어있을 때만 새 문서 생성 (섹션 5.3 참조)
 
 ---
 
@@ -379,12 +383,14 @@ event_info_mappings (이 evt를 가리키는 문서들)
 
 ### 5.3 (infoSource, infoSourceId) 유일성
 
-**강제 방법**:
-- Firestore 복합 유니크 인덱스 생성: `(infoSource, infoSourceId)`
-- Cloud Functions에서 중복 체크 후 생성
+**제약**: 같은 (infoSource, infoSourceId)에 대해 **active 상태는 최대 1개**
 
-**검증**:
+**강제 방법** (Firestore 네이티브 유니크 제약 없음):
+- 트랜잭션 또는 쿼리로 active 중복 체크 후 생성
+
+**검증 로직**:
 ```javascript
+// active 중복 체크
 const snap = await db.collection("event_info_mappings")
   .where("infoSource", "==", infoSource)
   .where("infoSourceId", "==", infoSourceId)
@@ -392,13 +398,17 @@ const snap = await db.collection("event_info_mappings")
   .get();
 
 if (!snap.empty) {
-  throw new Error(`이미 매핑된 (${infoSource}, ${infoSourceId})`);
+  throw new Error(`이미 active 매핑이 있음: (${infoSource}, ${infoSourceId})`);
 }
 
 // 새 문서 생성 (auto-ID)
 const ref = db.collection("event_info_mappings").doc();
-await ref.set({ infoSource, infoSourceId, ... });
+await ref.set({ infoSource, infoSourceId, status: "active", ... });
 ```
+
+**재등록 시나리오**:
+- 기존 active 매핑을 `status: "rejected"`로 변경 (update)
+- 새 active 문서 생성 가능 (rejected 문서는 감사 추적용으로 유지)
 
 ---
 
@@ -488,9 +498,10 @@ await ref.set({ infoSource, infoSourceId, ... });
 - [ ] 16개 수동 매핑이 모두 정상 투입되는가?
 - [ ] race_events 스텁이 정상 생성되는가? (sourceMappings 빈 배열)
 - [ ] ops-gorunning-events API가 canonicalEventId를 반환하는가?
-- [ ] 날짜 검증 (±7일) 규칙이 작동하는가?
-- [ ] (infoSource, infoSourceId) 중복 생성이 차단되는가?
+- [ ] 날짜 검증 (±7일) 규칙이 작동하는가? (경고 출력)
+- [ ] **(infoSource, infoSourceId, status="active") 중복 생성이 차단되는가?**
 - [ ] 자동 매칭 저신뢰 큐가 표시되는가?
+- [ ] **ops-gorunning-events 캐시 무효화** (`ops_meta/last_gorunning_crawl` 삭제) 후 재크롤 확인
 
 ---
 
