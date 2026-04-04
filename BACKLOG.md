@@ -41,6 +41,12 @@
 
 ## P2 — 다음 주
 
+- 🔴 **대회 정보 매핑 시스템 (고러닝)** — 조기 대회 발견으로 사전 준비 지원
+  - 설계: `_docs/superpowers/specs/2026-04-04-event-info-mapping-design.md`
+  - 계획: `_docs/superpowers/plans/2026-04-04-event-info-mapping-impl.md`
+  - 핵심: 기록 사이트보다 2~3개월 먼저 대회 파악 → 참가 독려, 카풀 조직 등
+  - 구현: event_info_mappings 컬렉션 + 고러닝 16개 매핑 투입
+  - 관련: 기존 "대회 파이프라인" Phase 1 대체 가능
 - ✅ **스크래퍼 피처 수집 구조 통일** (2026-03-25, v0.8.0)
   - 4개 소스 gender/ageGroupRank/splits 스키마 통일
   - spct: overallRank/genderRank/ageGroupRank/splits 파싱
