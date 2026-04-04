@@ -105,7 +105,10 @@
 ```
 
 **제약 조건**:
-- **(infoSource, infoSourceId) → 전역 유일**: 복합 유니크 인덱스로 강제
+- **(infoSource, infoSourceId, status="active") → 전역 유일**: 
+  - 같은 (infoSource, infoSourceId)에 대해 active 매핑은 최대 1개
+  - rejected 상태로 전환 후 재등록 시: 기존 rejected 문서는 유지, 새 active 문서 생성
+  - 쿼리: `WHERE infoSource == X AND infoSourceId == Y AND status == "active"`
 - 하나의 (infoSource, infoSourceId)는 **최대 하나의 active canonicalEventId**만 가짐
 - 하나의 canonicalEventId는 **여러 대회 정보 매핑** 가질 수 있음 (다대일)
 
@@ -241,18 +244,62 @@ FOR EACH 매핑 IN 16개:
 }
 ```
 
-**매칭 우선순위**:
-1. `event_info_mappings` 조회 (고러닝 URL slug → canonicalEventId)
-2. 매핑이 있고 `race_events.sourceMappings`도 있으면: `mapped` 상태
-3. 매핑이 있지만 `sourceMappings` 비어있으면: `mapped_pending` (스텁만 존재)
-4. 매핑 없으면 기존 로직:
-   - `scrape_jobs` 매칭 → `scraped`
-   - `discovered-events` 매칭 → `discovered`
-   - 없으면 → `not_matched`
+**매칭 우선순위 (결정 트리)**:
+```
+1. event_info_mappings 조회 (고러닝 URL slug → canonicalEventId)
+   ├─ 매핑 없음 → 4번으로
+   └─ 매핑 있음 → 2번으로
+   
+2. 매핑된 race_events의 sourceMappings 확인
+   ├─ sourceMappings 있음 (기록 사이트 연결됨) → mapped
+   └─ sourceMappings 비어있음 (스텁만) → 3번으로
+   
+3. scrape_jobs 별도 매칭 확인
+   ├─ scrape_jobs 매칭 있음 → mapped_with_jobs (스텁 + 별도 잡)
+   └─ 없음 → mapped_pending (스텁만, 기록 아직 없음)
+   
+4. 기존 로직 (매핑 없을 때)
+   ├─ scrape_jobs 매칭 → scraped
+   ├─ discovered-events 매칭 → discovered
+   └─ 없음 → not_matched
+```
 
-**중요**: 매핑과 스크랩이 동시 존재하는 경우 (예: 스텁 race_events + scrape_jobs 있음)
-- `matchStatus: "mapped_with_jobs"` 로 구분
+**응답 예시**:
+
+```javascript
+// 케이스 1: mapped (매핑 + sourceMappings 있음)
+{
+  "matchStatus": "mapped",
+  "canonicalEventId": "evt_2026-04-04_k-defense",
+  "recordSources": [
+    { "source": "spct", "sourceId": "20260404001" },
+    { "source": "smartchip", "sourceId": "202650000040" }
+  ]
+}
+
+// 케이스 2: mapped_pending (매핑 있지만 sourceMappings 비어있음)
+{
+  "matchStatus": "mapped_pending",
+  "canonicalEventId": "evt_2026-04-04_k-defense",
+  "recordSources": []
+}
+
+// 케이스 3: mapped_with_jobs (스텁 + 별도 scrape_jobs 매칭)
+{
+  "matchStatus": "mapped_with_jobs",
+  "canonicalEventId": "evt_2026-04-04_k-defense",
+  "recordSources": [],
+  "matchedJob": {  // scrape_jobs 매칭 정보
+    "jobId": "spct_20260404001",
+    "source": "spct",
+    "sourceId": "20260404001"
+  }
+}
+```
+
+**중요**: 매핑과 스크랩이 동시 존재하는 경우는 **운영자 검토 필요**
 - UI에서 두 정보 모두 표시 (매핑된 evt + 별도 잡)
+- 운영자가 잡을 evt에 통합하거나, 별도 유지 결정
 
 ---
 
@@ -271,10 +318,11 @@ FOR EACH 매핑 IN 16개:
 3. event_info_mappings 생성
    - mappedBy: "auto_suggested"
    - confirmedBy: null (운영자 확인 필요)
+   - status: "active"
 
 4. ops 화면에 "확인 필요" 큐 표시
    - 운영자가 승인 → confirmedBy: "operator"
-   - 거부 → 문서 삭제 또는 상태 변경
+   - 거부 → status: "rejected" (문서는 유지, 감사 추적용)
 ```
 
 ---
@@ -370,25 +418,30 @@ await ref.set({ infoSource, infoSourceId, ... });
 **ops.html 수정**:
 1. 고러닝 이벤트 행에 `canonicalEventId` 표시
    - 링크: `races.html?highlight={canonicalEventId}`로 이동
-   - races.html에 쿼리 파라미터 처리 추가 (해당 카드로 스크롤+강조)
-2. 매칭 상태 4단계:
-   - ✅ `mapped`: event_info_mappings에 있음 + sourceMappings 있음
-   - ⏳ `mapped_pending`: 매핑 있지만 sourceMappings 비어있음 (스텁)
-   - ⚠️ `mapped_with_jobs`: 매핑 + scrape_jobs 동시 존재 (검토 필요)
+2. 매칭 상태 표시:
+   - ✅ `mapped`: 매핑 + sourceMappings 있음
+   - ⏳ `mapped_pending`: 매핑 있지만 sourceMappings 비어있음
+   - ⚠️ `mapped_with_jobs`: 매핑 + 별도 scrape_jobs 존재 (검토 필요)
    - ✅ `scraped`: scrape_jobs에 있음 (기존)
    - 🔍 `discovered`: discovered-events에 있음 (기존)
    - ❓ `not_matched`: 없음 (기존)
 3. "확인 필요" 탭 추가 (자동 제안 매핑 목록)
+
+**races.html 수정** (Phase 1 포함):
+- 쿼리 파라미터 `highlight` 처리 추가
+- URL 예: `races.html?highlight=evt_2026-04-04_k-defense`
+- 해당 canonicalEventId 카드로 스크롤 + 시각적 강조 (예: 테두리, 배경색)
 
 ---
 
 ## 6. 단계적 구현 전략
 
 ### Phase 1: MVP (초기 16개 매핑)
-- [ ] `event_info_mappings` 컬렉션 생성
+- [ ] `event_info_mappings` 컬렉션 생성 + 인덱스 설정
 - [ ] 16개 수동 매핑 스크립트 작성 (섹션 4.1)
 - [ ] `ops-gorunning-events` API 수정 (섹션 4.2)
 - [ ] ops.html UI 업데이트 (매핑 상태 표시)
+- [ ] **races.html 쿼리 파라미터 처리** (`?highlight=canonicalEventId`)
 
 ### Phase 2: 자동 매칭
 - [ ] 날짜+이름 유사도 로직 개선
