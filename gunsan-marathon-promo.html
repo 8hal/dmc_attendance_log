@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>군산 마라톤 뛰셨나요? — 동마클</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <meta property="og:title" content="군산 마라톤 뛰셨나요? — 동마클" />
+  <meta property="og:description" content="새로운 기능으로 1분 안에 내 기록을 자동으로 찾아드립니다" />
+  <meta property="og:image" content="https://dmc-attendance.web.app/assets/gunsan-feature-screenshot.png" />
+  <meta property="og:url" content="https://dmc-attendance.web.app/gunsan-marathon-promo.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      background: linear-gradient(180deg, #e3f2fd 0%, #f1f8fd 50%, #ffffff 100%);
+      color: #1a1a1a;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+    
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .hero-title {
+      font-size: 2em;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 12px;
+      color: #1a1a1a;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.05em;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #555;
+    }
+    
+    /* Mockup Section */
+    .mockup-section {
+      position: relative;
+      margin: 48px 0;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
+      border-radius: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .mockup-section img {
+      width: 100%;
+      max-width: 340px;
+      height: auto;
+      border-radius: 24px;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Feature Description */
+    .description {
+      text-align: center;
+      margin: 40px 0;
+      padding: 0 12px;
+    }
+    
+    .description p {
+      font-size: 1.05em;
+      line-height: 1.8;
+      color: #444;
+      margin-bottom: 8px;
+    }
+    
+    .description p:last-child {
+      font-weight: 600;
+      color: #1976d2;
+    }
+    
+    /* CTA Button */
+    .cta-section {
+      text-align: center;
+      margin: 48px 0 24px;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      width: 100%;
+      max-width: 340px;
+      padding: 18px 32px;
+      font-size: 1.25em;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
+      border: none;
+      border-radius: 16px;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 
+        0 8px 24px rgba(33, 150, 243, 0.35),
+        0 2px 8px rgba(33, 150, 243, 0.2);
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 32px rgba(33, 150, 243, 0.45),
+        0 4px 12px rgba(33, 150, 243, 0.3);
+    }
+    
+    .cta-button:active {
+      transform: translateY(0);
+    }
+    
+    .cta-subtext {
+      margin-top: 12px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    
+    /* Steps (Optional) */
+    .steps {
+      margin: 48px 0;
+      padding: 32px 24px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 20px;
+      border: 1px solid rgba(33, 150, 243, 0.1);
+    }
+    
+    .steps h3 {
+      text-align: center;
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 24px;
+    }
+    
+    .step-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 1em;
+      color: #444;
+    }
+    
+    .step-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .step-icon {
+      font-size: 1.8em;
+      margin-right: 16px;
+      flex-shrink: 0;
+    }
+    
+    .step-text {
+      flex: 1;
+      line-height: 1.5;
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .footer-logo {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      opacity: 0.5;
+    }
+    
+    .footer-text {
+      font-size: 0.85em;
+      color: #888;
+    }
+    
+    /* Responsive */
+    @media (max-width: 400px) {
+      .hero-title {
+        font-size: 1.75em;
+      }
+      
+      .mockup-section img {
+        max-width: 300px;
+      }
+      
+      .cta-button {
+        font-size: 1.15em;
+        padding: 16px 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero Section -->
+    <div class="hero">
+      <h1 class="hero-title">🏃‍♂️ 군산 마라톤,<br/>뛰셨나요?</h1>
+      <p class="hero-subtitle">새로운 기능으로 1분 안에<br/>내 기록을 자동으로 찾아드립니다</p>
+    </div>
+    
+    <!-- Mockup Section -->
+    <div class="mockup-section">
+      <img src="assets/gunsan-feature-screenshot.png" alt="이 대회 뛰었나요 기능 화면" />
+    </div>
+    
+    <!-- Feature Description -->
+    <div class="description">
+      <p>대회 후 내 기록을 찾기 위해</p>
+      <p>여러 사이트를 뒤지셨나요?</p>
+      <p><br/>이제 동마클이 자동으로 찾아드립니다.</p>
+      <p>이름만 입력하면 끝!</p>
+    </div>
+    
+    <!-- CTA Button -->
+    <div class="cta-section">
+      <a href="my.html?source=gunsan-promo" class="cta-button">
+        지금 확인하기 →
+      </a>
+      <p class="cta-subtext">1분이면 끝 · 회원가입 불필요</p>
+    </div>
+    
+    
+    <!-- Footer -->
+    <div class="footer">
+      <img src="assets/dmc_logo.png" alt="동마클 로고" class="footer-logo" />
+      <p class="footer-text">동아마라톤클럽</p>
+    </div>
+  </div>
+</body>
+</html>

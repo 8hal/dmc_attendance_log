@@ -633,6 +633,9 @@
         listEl.innerHTML = '<div style="color:var(--color-text-muted);padding:8px;">일치하는 회원이 없습니다.</div>';
         return;
       }
+      // 실명 오름차순 정렬
+      rows.sort((a, b) => (a.realName || "").localeCompare(b.realName || ""));
+      
       listEl.innerHTML = rows.map((m) => `
         <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:6px;cursor:pointer;">
           <input type="checkbox" class="scrape-mem-cb" value="${escAttr(m.realName)}" />
