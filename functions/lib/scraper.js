@@ -585,7 +585,36 @@ async function getSmartChipEventInfo(sourceId) {
 }
 
 async function getOhmyraceEventInfo(sourceId) {
-  return { title: `Ohmyrace Event ${sourceId}`, date: null };
+  let title = `Ohmyrace Event ${sourceId}`;
+  let date = null;
+
+  try {
+    const res = await fetch(`http://record.ohmyrace.co.kr/event/${sourceId}`);
+    const html = await res.text();
+    
+    // 제목 추출: <title>대회명 > EVENT | (주)오마이레이스</title>
+    const titleMatch = html.match(/<title>([^>]+) > EVENT/);
+    if (titleMatch) {
+      title = titleMatch[1].trim();
+    }
+    
+    // 날짜 추출 시도: 여러 패턴
+    // 패턴 1: <span class="new_data">2026. 04. 05</span>
+    const dateMatch1 = html.match(/<span class="new_data">(\d{4}\.\s*\d{2}\.\s*\d{2})<\/span>/);
+    if (dateMatch1) {
+      date = dateMatch1[1].replace(/\.\s*/g, '-'); // "2026. 04. 05" → "2026-04-05"
+    }
+    
+    // 패턴 2: YYYY-MM-DD 형식이 있으면
+    if (!date) {
+      const dateMatch2 = html.match(/(\d{4}-\d{2}-\d{2})/);
+      if (dateMatch2) date = dateMatch2[1];
+    }
+  } catch (err) {
+    // 네트워크 오류 등 무시, 기본값 반환
+  }
+
+  return { title, date };
 }
 
 async function getEventInfo(source, sourceId) {
