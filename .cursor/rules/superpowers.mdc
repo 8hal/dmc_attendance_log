@@ -24,6 +24,7 @@ alwaysApply: true
 | 배포 전 로컬 테스트 / 에뮬 점검 | `.cursor/skills/pre-deploy-test/SKILL.md` |
 | 주간 회고 후 운영진(비IT) 안내 문구 | `.cursor/skills/weekly-ops-bulletin/SKILL.md` |
 | Firebase 배포 (절차·금지 사항) | `.cursor/skills/firebase-deploy/SKILL.md` |
+| **Firestore 데이터 수정 스크립트 작성** | `.cursor/skills/firestore-data-modification/SKILL.md` |
 | TDD 구현 | `.cursor/skills/test-driven-development/SKILL.md` |
 | 코드 리뷰 요청 | `.cursor/skills/requesting-code-review/SKILL.md` |
 | 코드 리뷰 수신 | `.cursor/skills/receiving-code-review/SKILL.md` |
