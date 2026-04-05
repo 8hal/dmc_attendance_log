@@ -462,26 +462,45 @@ async function searchOhmyrace(eventId, memberName) {
   const $ = cheerioLoad(html);
   const results = [];
 
-  $("tr").each((_, row) => {
-    const cells = $(row).find("td");
-    if (cells.length < 4) return;
+  $(".name-card").each((_, card) => {
+    const $card = $(card);
+    
+    const name = $card.find(".name-box h3").text().trim();
+    const bibText = $card.find(".name-box li").last().text().trim();
+    const bib = bibText.replace("#", "").trim();
+    
+    const infoText = $card.find(".name-box li").first().text().trim();
+    const [distance, genderText] = infoText.split("/").map(s => s.trim());
+    
+    const timeText = $card.find(".record-box h3").first().text().trim();
+    
+    const rankTexts = $card.find(".record-box h4");
+    let overallRank = null;
+    let genderRank = null;
+    
+    rankTexts.each((i, el) => {
+      const text = $(el).text().trim();
+      if (text.includes("/")) {
+        const [rank, total] = text.split("/").map(s => s.trim());
+        if (i === 0) {
+          overallRank = parseInt(rank);
+        } else if (i === 1) {
+          genderRank = parseInt(rank);
+        }
+      }
+    });
 
-    const bib = $(cells[0]).text().trim();
-    const name = $(cells[1]).text().trim();
-    const distance = $(cells[2]).text().trim();
-    const time = $(cells[3]).text().trim();
-
-    if (name && time) {
+    if (name && timeText) {
       results.push({
         name,
         bib,
         distance: normDist(distance),
-        netTime: normTime(time),
+        netTime: normTime(timeText),
         gunTime: "",
-        overallRank: null,
-        genderRank: null,
+        overallRank,
+        genderRank,
         ageGroupRank: null,
-        gender: null,
+        gender: genderText === "남" ? "M" : genderText === "여" ? "F" : null,
         splits: [],
         pace: "",
       });
