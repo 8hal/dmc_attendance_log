@@ -84,3 +84,40 @@ backup/
 
 # Git worktrees (isolated workspaces)
 .worktrees/
+
+# Superpowers 브레인스토밍 캐시
+.superpowers/
+
+# 임시 조사/디버깅 스크립트 (2026-04-05~06 군산 마라톤 디버깅)
+scripts/analyze-job-status.js
+scripts/check-bib-78-1.js
+scripts/check-event-logs-gunsan.js
+scripts/check-event-logs-simple.js
+scripts/check-gunsan-33.js
+scripts/check-job-results-detail.js
+scripts/check-job-timestamps.js
+scripts/check-one-race-result.js
+scripts/check-premium-attendance-at-event.js
+scripts/check-race-results-gunsan.js
+scripts/check-race-results-names.js
+scripts/check-scrape-job-gunsan.js
+scripts/check-son-duhyun-detail.js
+scripts/check-specific-member-gunsan.js
+scripts/cleanup-ohmyrace-118-cache.js
+scripts/compare-dmc-confirmed.js
+scripts/compare-name-vs-bib-search.js
+scripts/deep-search-missing-8.js
+scripts/fetch-bib-78-1.js
+scripts/fix-ohmyrace-118-member-search.js
+scripts/fix-ohmyrace-118-results.js
+scripts/fix-ohmyrace-118-search-cache-real.js
+scripts/fix-ohmyrace-118-search-cache.js
+scripts/fix-search-cache-eventinfo.js
+scripts/inspect-ohmyrace-event-page.js
+scripts/rescrape-gunsan-33.js
+scripts/search-8-members-correctly.js
+scripts/search-missing-8-members.js
+scripts/test-name-param-search.js
+scripts/verify-dmc-members-gunsan.js
+scripts/verify-search-ohmyrace-fix.js
+gorunning-matcher.html
