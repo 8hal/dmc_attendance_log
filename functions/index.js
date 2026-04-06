@@ -1965,9 +1965,13 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
     if (action === "verify-admin" && req.method === "POST") {
       const { pw } = req.body || {};
+      const ownerPw = process.env.DMC_OWNER_PW;
       const adminPw = process.env.DMC_ADMIN_PW || "dmc2008";
+      if (ownerPw && pw === ownerPw) {
+        return res.json({ ok: true, role: "owner" });
+      }
       if (pw === adminPw) {
-        return res.json({ ok: true });
+        return res.json({ ok: true, role: "operator" });
       }
       return res.status(401).json({ ok: false, error: "invalid password" });
     }

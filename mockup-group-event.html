@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>[목업] 단체 대회 관리 - 동탄 마라톤 클럽</title>
+  <style>
+    :root {
+      --primary: #2563EB; --primary-hover: #1D4ED8; --primary-light: #DBEAFE;
+      --bg: #F8FAFC; --card: #FFFFFF;
+      --text: #0F172A; --text-sub: #64748B; --text-muted: #94A3B8;
+      --border: #E2E8F0; --border-light: #F1F5F9;
+      --green: #059669; --green-light: #D1FAE5;
+      --yellow: #D97706; --yellow-light: #FEF3C7;
+      --red: #DC2626; --red-light: #FEE2E2;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 800px; margin: 0 auto; padding: 16px; }
+
+    /* 헤더 */
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .back-link { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); text-decoration: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+    .back-link:hover { border-color: var(--primary); color: var(--primary); }
+    .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); margin: 2px 0 0; }
+
+    /* 버튼 */
+    .btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--text-sub); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-confirm { background: var(--green-light); color: var(--green); border: 1px solid #6EE7B7; }
+    .btn-confirm:hover { background: #A7F3D0; }
+
+    /* 배지 */
+    .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+    .badge-blue   { background: var(--primary-light); color: var(--primary); }
+    .badge-green  { background: var(--green-light); color: var(--green); }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-red    { background: var(--red-light); color: var(--red); }
+    .badge-gray   { background: var(--border); color: var(--text-sub); }
+
+    /* 섹션 레이블 */
+    .section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 20px 0 8px; }
+
+    /* 그룹 이벤트 카드 */
+    .gcard { background: var(--card); border: 1.5px solid var(--primary); border-radius: 14px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 12px rgba(37,99,235,0.07); }
+    .gcard.done { border-color: var(--border); opacity: 0.75; }
+    .gcard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .gcard-title { font-size: 15px; font-weight: 700; }
+    .gcard-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 12px; color: var(--text-sub); }
+    .gcard-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* 구분선 */
+    .divider { border: none; border-top: 1px solid var(--border-light); margin: 12px 0; }
+
+    /* info row */
+    .info-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .row-label { font-size: 12px; color: var(--text-muted); font-weight: 600; min-width: 60px; }
+
+    /* 참가자 칩 */
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; font-weight: 500; }
+    .chip-default { background: var(--border-light); color: var(--text); }
+    .chip-more    { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+
+    /* 소스 상태 (읽기 전용) */
+    .source-status { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--border-light); border-radius: 8px; font-size: 13px; color: var(--text-sub); }
+    .source-status a { font-size: 12px; color: var(--primary); }
+
+    /* 고러닝 목록 */
+    .glist-card { background: var(--card); border-radius: 14px; padding: 4px 8px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); margin-bottom: 10px; }
+    .glist-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 8px; border-bottom: 1px solid var(--border-light); }
+    .glist-item:last-child { border-bottom: none; }
+    .glist-name { font-weight: 600; font-size: 14px; }
+    .glist-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+    /* 배너 */
+    .banner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; line-height: 1.6; }
+    .banner-warn { background: var(--yellow-light); color: #78350F; border: 1px solid #FDE68A; }
+    .banner-info { background: var(--primary-light); color: #1e3a8a; border: 1px solid #BFDBFE; }
+
+    /* 빈 상태 */
+    .empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; }
+
+    /* ── 기록 확정 뷰 ── */
+    .result-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+    /* 개별 참가자 결과 행 */
+    .result-row { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .result-row-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; background: #fff; transition: background 0.1s; }
+    .result-row-header:hover { background: var(--border-light); }
+    .result-row.ok    .result-row-header { border-left: 3px solid var(--green); }
+    .result-row.warn  .result-row-header { border-left: 3px solid var(--yellow); }
+    .result-row.err   .result-row-header { border-left: 3px solid var(--red); }
+    .result-status-icon { font-size: 16px; flex-shrink: 0; }
+    .result-nick { font-weight: 700; font-size: 14px; flex: 1; }
+    .result-time { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .result-rank { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+    .result-action { flex-shrink: 0; }
+
+    /* 기록 상세 (expand) */
+    .result-detail { display: none; padding: 12px 16px; background: var(--border-light); border-top: 1px solid var(--border); }
+    .result-detail.open { display: block; }
+    .record-card { background: #fff; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+    .record-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 8px; }
+    .record-field { display: flex; gap: 6px; }
+    .field-label { color: var(--text-muted); font-size: 12px; min-width: 52px; }
+    .field-value { font-weight: 600; font-size: 13px; }
+
+    /* 동명이인 후보 선택 */
+    .candidates { display: flex; flex-direction: column; gap: 6px; }
+    .candidate-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; transition: all 0.15s; }
+    .candidate-option:hover { border-color: var(--primary); background: var(--primary-light); }
+    .candidate-option input[type=radio] { accent-color: var(--primary); flex-shrink: 0; }
+    .candidate-time { font-weight: 700; color: var(--primary); font-size: 14px; }
+    .candidate-detail { font-size: 12px; color: var(--text-sub); }
+
+    /* 모달 */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; max-width: 460px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(15,23,42,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px 14px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { margin: 0; font-size: 16px; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .modal-body { padding: 14px 24px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 14px 24px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+
+    /* 회원 선택 */
+    .member-search { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
+    .member-list { display: flex; flex-direction: column; gap: 1px; }
+    .member-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 8px; cursor: pointer; }
+    .member-item:hover { background: var(--border-light); }
+    .member-item.selected { background: var(--primary-light); }
+    .member-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+    .member-nickname { font-weight: 600; font-size: 14px; }
+    .member-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+
+    /* 목업 안내 */
+    .mockup-bar { background: #ECFDF5; border: 1.5px dashed #34D399; border-radius: 10px; padding: 10px 16px; font-size: 12px; color: #065F46; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .state-link { font-size: 12px; color: var(--primary); cursor: pointer; text-decoration: underline; margin-right: 8px; }
+
+    /* 일괄 확정 바 */
+    .bulk-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--green-light); border-radius: 10px; margin-bottom: 8px; }
+    .bulk-bar span { font-size: 13px; color: var(--green); font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mockup-bar">
+    <strong>목업</strong>
+    <div>
+      <span class="state-link" onclick="setState('empty')">① 등록 전</span>
+      <span class="state-link" onclick="setState('registered')">② 참가자 등록</span>
+      <span class="state-link" onclick="setState('raceday')">③ 대회 당일</span>
+      <span class="state-link" onclick="setState('result')">④ 갭 탐지·기록 확정</span>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <a class="back-link" href="#">← 기록 관리</a>
+    <div>
+      <h1 class="page-title">👥 단체 대회 관리</h1>
+      <div class="page-subtitle">단체 신청 대회의 참가자 등록 및 기록 수집 관리</div>
+    </div>
+  </div>
+
+  <!-- ① 등록 전 -->
+  <div id="state-empty">
+    <div class="section-label">등록된 단체 대회</div>
+    <div class="empty">아직 단체 대회가 없습니다.<br>아래 목록에서 등록할 수 있습니다.</div>
+
+    <div class="section-label">고러닝 예정 대회</div>
+    <div class="glist-card">
+      <div class="glist-item">
+        <div>
+          <div class="glist-name">2026 서울국제마라톤</div>
+          <div class="glist-meta">📅 2026-03-22 · 서울 광화문</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="setState('registered')">단체 대회로 등록</button>
+      </div>
+      <div class="glist-item">
+        <div>
+          <div class="glist-name">2026 춘천조양강마라톤</div>
+          <div class="glist-meta">📅 2026-10-18 · 춘천</div>
+        </div>
+        <button class="btn btn-outline btn-sm">단체 대회로 등록</button>
+      </div>
+      <div class="glist-item">
+        <div>
+          <div class="glist-name">2026 JTBC 마라톤</div>
+          <div class="glist-meta">📅 2026-11-01 · 서울</div>
+        </div>
+        <button class="btn btn-outline btn-sm">단체 대회로 등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 참가자 등록됨 -->
+  <div id="state-registered" style="display:none;">
+    <div class="section-label">등록된 단체 대회</div>
+
+    <!-- 소스 미지정 -->
+    <div class="gcard">
+      <div class="gcard-header">
+        <div>
+          <div class="gcard-title">2026 서울국제마라톤</div>
+          <div class="gcard-meta">
+            <span>📅 2026-03-22</span>
+            <span class="badge badge-gray">⚪ 소스 미지정</span>
+          </div>
+        </div>
+        <div class="gcard-actions">
+          <button class="btn btn-ghost btn-sm">삭제</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="info-row">
+        <span class="row-label">참가자</span>
+        <div class="chips">
+          <span class="chip chip-default">길동이</span>
+          <span class="chip chip-default">마라토너K</span>
+          <span class="chip chip-default">달리기좋아</span>
+          <span class="chip chip-default">뚜벅뚜벅</span>
+          <span class="chip chip-more">+4명</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal()" style="margin-left:auto;">수정</button>
+      </div>
+      <div class="info-row">
+        <span class="row-label">기록 소스</span>
+        <div class="source-status">
+          ⚪ 미지정 — <a href="#">ops.html에서 입력</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 소스 지정됨 -->
+    <div class="gcard">
+      <div class="gcard-header">
+        <div>
+          <div class="gcard-title">2026 춘천조양강마라톤</div>
+          <div class="gcard-meta">
+            <span>📅 2026-10-18</span>
+            <span class="badge badge-green">✅ 준비 완료</span>
+          </div>
+        </div>
+        <div class="gcard-actions">
+          <button class="btn btn-ghost btn-sm">삭제</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="info-row">
+        <span class="row-label">참가자</span>
+        <div class="chips">
+          <span class="chip chip-default">길동이</span>
+          <span class="chip chip-default">마라토너K</span>
+          <span class="chip chip-more">+6명</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal()" style="margin-left:auto;">수정</button>
+      </div>
+      <div class="info-row">
+        <span class="row-label">기록 소스</span>
+        <div class="source-status">
+          ✅ smartchip_202650000120 <span style="color:var(--text-muted);">(오후 3시 자동 스크랩)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">고러닝 예정 대회</div>
+    <div class="glist-card">
+      <div class="glist-item">
+        <div>
+          <div class="glist-name">2026 JTBC 마라톤</div>
+          <div class="glist-meta">📅 2026-11-01</div>
+        </div>
+        <button class="btn btn-outline btn-sm">단체 대회로 등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 대회 당일 -->
+  <div id="state-raceday" style="display:none;">
+
+    <div class="banner banner-warn">
+      ⚠️ <strong>오늘 단체 대회 — 소스 미지정</strong><br>
+      2026 서울국제마라톤의 기록 소스가 아직 없습니다. 결과가 올라오면 <a href="#" style="color:var(--yellow);font-weight:700;">ops.html</a>에서 입력해 주세요.
+    </div>
+
+    <div class="section-label">오늘 단체 대회</div>
+
+    <div class="gcard" style="border-color: var(--yellow);">
+      <div class="gcard-header">
+        <div>
+          <div class="gcard-title">2026 서울국제마라톤</div>
+          <div class="gcard-meta">
+            <span>📅 오늘</span>
+            <span class="badge badge-yellow">⚠️ 소스 대기 중</span>
+          </div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="info-row">
+        <span class="row-label">참가자</span>
+        <div class="chips">
+          <span class="chip chip-default">길동이</span>
+          <span class="chip chip-default">마라토너K</span>
+          <span class="chip chip-more">+6명</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="row-label">기록 소스</span>
+        <div class="source-status" style="background: var(--yellow-light);">
+          ⚠️ 미지정 — <a href="#" style="color:var(--yellow);">ops.html에서 입력</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="gcard">
+      <div class="gcard-header">
+        <div>
+          <div class="gcard-title">2026 춘천조양강마라톤</div>
+          <div class="gcard-meta">
+            <span>📅 오늘</span>
+            <span class="badge badge-blue">⏳ 오후 3시 자동 스크랩</span>
+          </div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="info-row">
+        <span class="row-label">참가자</span>
+        <div class="chips">
+          <span class="chip chip-default">길동이</span>
+          <span class="chip chip-more">+7명</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="row-label">기록 소스</span>
+        <div class="source-status">✅ smartchip_202650000120</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 갭 탐지 + 기록 확정 -->
+  <div id="state-result" style="display:none;">
+    <div class="section-label">등록된 단체 대회</div>
+
+    <div class="gcard">
+      <div class="gcard-header">
+        <div>
+          <div class="gcard-title">2026 서울국제마라톤</div>
+          <div class="gcard-meta">
+            <span>📅 2026-03-22</span>
+            <span class="badge badge-yellow">확정 필요 2명</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- 일괄 확정 -->
+      <div class="bulk-bar">
+        <span>✅ 자동 매칭 6명 — 일괄 확정 가능</span>
+        <button class="btn btn-confirm btn-sm">6명 일괄 확정</button>
+      </div>
+
+      <!-- 참가자별 기록 목록 -->
+      <div class="result-list">
+
+        <!-- ✅ 정상 매칭 -->
+        <div class="result-row ok">
+          <div class="result-row-header" onclick="toggleDetail(this)">
+            <span class="result-status-icon">✅</span>
+            <span class="result-nick">길동이</span>
+            <span class="result-time">2:58:26</span>
+            <span class="result-rank">종합 14위 · 남</span>
+            <button class="btn btn-confirm btn-sm result-action" onclick="event.stopPropagation()">확정</button>
+          </div>
+          <div class="result-detail">
+            <div class="record-card">
+              <div style="font-weight:700; font-size:14px;">홍길동</div>
+              <div class="record-fields">
+                <div class="record-field"><span class="field-label">기록</span><span class="field-value">2:58:26</span></div>
+                <div class="record-field"><span class="field-label">배번</span><span class="field-value">43410</span></div>
+                <div class="record-field"><span class="field-label">종합 순위</span><span class="field-value">14위</span></div>
+                <div class="record-field"><span class="field-label">성별 순위</span><span class="field-value">남 4위</span></div>
+                <div class="record-field"><span class="field-label">종목</span><span class="field-value">풀코스</span></div>
+                <div class="record-field"><span class="field-label">출처</span><span class="field-value">smartchip</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ✅ 정상 매칭 2 -->
+        <div class="result-row ok">
+          <div class="result-row-header" onclick="toggleDetail(this)">
+            <span class="result-status-icon">✅</span>
+            <span class="result-nick">마라토너K</span>
+            <span class="result-time">3:12:04</span>
+            <span class="result-rank">종합 38위 · 남</span>
+            <button class="btn btn-confirm btn-sm result-action" onclick="event.stopPropagation()">확정</button>
+          </div>
+          <div class="result-detail">
+            <div class="record-card">
+              <div style="font-weight:700; font-size:14px;">김민수</div>
+              <div class="record-fields">
+                <div class="record-field"><span class="field-label">기록</span><span class="field-value">3:12:04</span></div>
+                <div class="record-field"><span class="field-label">배번</span><span class="field-value">51022</span></div>
+                <div class="record-field"><span class="field-label">종합 순위</span><span class="field-value">38위</span></div>
+                <div class="record-field"><span class="field-label">성별 순위</span><span class="field-value">남 21위</span></div>
+                <div class="record-field"><span class="field-label">종목</span><span class="field-value">풀코스</span></div>
+                <div class="record-field"><span class="field-label">출처</span><span class="field-value">smartchip</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🟡 동명이인 — 선택 필요 -->
+        <div class="result-row warn">
+          <div class="result-row-header" onclick="toggleDetail(this)">
+            <span class="result-status-icon">🟡</span>
+            <span class="result-nick">달리기좋아</span>
+            <span style="font-size:12px; color:var(--yellow); font-weight:600;">동명이인 — 선택 필요</span>
+            <span style="flex:1;"></span>
+          </div>
+          <div class="result-detail">
+            <div style="font-size:13px; color:var(--text-sub); margin-bottom:10px;">이지은 검색 결과 2건. 해당 회원의 기록을 선택해 주세요.</div>
+            <div class="candidates">
+              <label class="candidate-option">
+                <input type="radio" name="dup_leejieun" value="1" />
+                <div>
+                  <div class="candidate-time">2:45:12</div>
+                  <div class="candidate-detail">배번 28043 · 종합 5위 · 여 2위 · 풀코스</div>
+                </div>
+              </label>
+              <label class="candidate-option">
+                <input type="radio" name="dup_leejieun" value="2" />
+                <div>
+                  <div class="candidate-time">3:10:05</div>
+                  <div class="candidate-detail">배번 61234 · 종합 92위 · 여 31위 · 풀코스</div>
+                </div>
+              </label>
+            </div>
+            <button class="btn btn-confirm btn-sm" style="margin-top:10px;">선택한 기록으로 확정</button>
+          </div>
+        </div>
+
+        <!-- 🔴 기록 없음 -->
+        <div class="result-row err">
+          <div class="result-row-header" onclick="toggleDetail(this)">
+            <span class="result-status-icon">🔴</span>
+            <span class="result-nick">철수아빠</span>
+            <span style="font-size:12px; color:var(--red); font-weight:600;">기록 없음</span>
+            <span style="flex:1;"></span>
+          </div>
+          <div class="result-detail">
+            <div style="font-size:13px; color:var(--text-sub); margin-bottom:10px;">이철수 — 스크랩 결과 없음</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm">재스크랩</button>
+              <button class="btn btn-ghost btn-sm">DNS (불참)</button>
+              <button class="btn btn-ghost btn-sm">DNF (완주 실패)</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /result-list -->
+    </div>
+
+    <!-- 완료된 대회 -->
+    <div class="gcard done">
+      <div class="gcard-header">
+        <div>
+          <div class="gcard-title">2026 춘천조양강마라톤</div>
+          <div class="gcard-meta">
+            <span>📅 2026-10-18</span>
+            <span class="badge badge-green">✅ 전원 확정 (8/8)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /state-result -->
+
+</div><!-- /wrap -->
+
+<!-- 회원 선택 모달 -->
+<div class="modal-backdrop" id="memberModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>참가자 선택</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input class="member-search" type="text" placeholder="닉네임 또는 실명 검색" oninput="filterMembers(this.value)" />
+      <div class="member-list" id="memberList"></div>
+    </div>
+    <div class="modal-footer">
+      <span style="font-size:13px; color:var(--text-sub);" id="selCount">0명 선택됨</span>
+      <div style="flex:1;"></div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ALL_MEMBERS = [
+    { id:1,  nick:"길동이",    name:"홍길동" },
+    { id:2,  nick:"마라토너K", name:"김민수" },
+    { id:3,  nick:"달리기좋아",name:"이지은" },
+    { id:4,  nick:"뚜벅뚜벅", name:"박정수" },
+    { id:5,  nick:"봄날",      name:"최수진" },
+    { id:6,  nick:"하늘바라기",name:"정태준" },
+    { id:7,  nick:"철수아빠",  name:"이철수" },
+    { id:8,  nick:"레이서",    name:"강동원" },
+    { id:9,  nick:"주말전사",  name:"윤상혁" },
+    { id:10, nick:"페이서J",   name:"장지영" },
+    { id:11, nick:"새벽런너",  name:"이지은" },
+    { id:12, nick:"바람개비",  name:"조미란" },
+  ];
+  const selected = new Set([1,2,3,4,5,6,7,8]);
+  let view = [...ALL_MEMBERS];
+
+  function setState(s) {
+    ['empty','registered','raceday','result'].forEach(id =>
+      document.getElementById('state-'+id).style.display = 'none');
+    document.getElementById('state-'+s).style.display = 'block';
+  }
+
+  function openModal() {
+    view = [...ALL_MEMBERS]; render();
+    document.getElementById('memberModal').classList.add('open');
+  }
+  function closeModal() { document.getElementById('memberModal').classList.remove('open'); }
+  function filterMembers(q) {
+    const t = q.trim().toLowerCase();
+    view = t ? ALL_MEMBERS.filter(m => m.nick.includes(t) || m.name.includes(t)) : [...ALL_MEMBERS];
+    render();
+  }
+  function render() {
+    document.getElementById('memberList').innerHTML = view.map(m => `
+      <div class="member-item ${selected.has(m.id)?'selected':''}" onclick="toggle(${m.id},this)">
+        <input type="checkbox" ${selected.has(m.id)?'checked':''} onclick="event.stopPropagation();toggle(${m.id},this.closest('.member-item'))" />
+        <span class="member-nickname">${m.nick}</span>
+        <span class="member-realname">(${m.name})</span>
+      </div>`).join('');
+    document.getElementById('selCount').textContent = `${selected.size}명 선택됨`;
+  }
+  function toggle(id, row) {
+    selected.has(id) ? selected.delete(id) : selected.add(id);
+    row.classList.toggle('selected', selected.has(id));
+    row.querySelector('input').checked = selected.has(id);
+    document.getElementById('selCount').textContent = `${selected.size}명 선택됨`;
+  }
+
+  function toggleDetail(header) {
+    const detail = header.nextElementSibling;
+    detail.classList.toggle('open');
+  }
+
+  setState('empty');
+</script>
+</body>
+</html>
