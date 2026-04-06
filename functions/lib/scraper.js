@@ -436,76 +436,106 @@ async function searchMarazone(compTitle, memberName) {
 async function searchOhmyrace(eventId, memberName) {
   const url = "http://record.ohmyrace.co.kr/theme/ohmyrace/mobile/skin/board/event/view.data.php";
 
-  const params = new URLSearchParams();
-  params.append("table", "event");
-  params.append("wr_id", eventId);
-  params.append("bib", memberName);
-  params.append("cate", "");
+  async function postOhmyrace(bib, cate = "") {
+    const params = new URLSearchParams();
+    params.append("table", "event");
+    params.append("wr_id", eventId);
+    params.append("bib", bib);
+    params.append("cate", cate);
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      "Referer": `http://record.ohmyrace.co.kr/event/${eventId}`,
-    },
-    body: params.toString(),
-  });
-
-  if (!res.ok) return [];
-  const html = await res.text();
-
-  if (html.includes("검색 결과가 없습니다") || html.includes("조회된 데이터가 없습니다")) {
-    return [];
-  }
-
-  const $ = cheerioLoad(html);
-  const results = [];
-
-  $(".name-card").each((_, card) => {
-    const $card = $(card);
-    
-    const name = $card.find(".name-box h3").text().trim();
-    const bibText = $card.find(".name-box li").last().text().trim();
-    const bib = bibText.replace("#", "").trim();
-    
-    const infoText = $card.find(".name-box li").first().text().trim();
-    const [distance, genderText] = infoText.split("/").map(s => s.trim());
-    
-    const timeText = $card.find(".record-box h3").first().text().trim();
-    
-    const rankTexts = $card.find(".record-box h4");
-    let overallRank = null;
-    let genderRank = null;
-    
-    rankTexts.each((i, el) => {
-      const text = $(el).text().trim();
-      if (text.includes("/")) {
-        const [rank, total] = text.split("/").map(s => s.trim());
-        if (i === 0) {
-          overallRank = parseInt(rank);
-        } else if (i === 1) {
-          genderRank = parseInt(rank);
-        }
-      }
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Referer": `http://record.ohmyrace.co.kr/event/${eventId}`,
+      },
+      body: params.toString(),
     });
 
-    if (name && timeText) {
-      results.push({
-        name,
-        bib,
-        distance: normDist(distance),
-        netTime: normTime(timeText),
-        gunTime: "",
-        overallRank,
-        genderRank,
-        ageGroupRank: null,
-        gender: genderText === "남" ? "M" : genderText === "여" ? "F" : null,
-        splits: [],
-        pace: "",
+    if (!res.ok) return null;
+    return res.text();
+  }
+
+  function parseNameCards($) {
+    const results = [];
+    $(".name-card").each((_, card) => {
+      const $card = $(card);
+
+      const name = $card.find(".name-box h3").text().trim();
+      const bibText = $card.find(".name-box li").last().text().trim();
+      const bib = bibText.replace("#", "").trim();
+
+      const infoText = $card.find(".name-box li").first().text().trim();
+      const [distance, genderText] = infoText.split("/").map(s => s.trim());
+
+      const timeText = $card.find(".record-box h3").first().text().trim();
+
+      const rankTexts = $card.find(".record-box h4");
+      let overallRank = null;
+      let genderRank = null;
+
+      rankTexts.each((i, el) => {
+        const text = $(el).text().trim();
+        if (text.includes("/")) {
+          const [rank] = text.split("/").map(s => s.trim());
+          if (i === 0) overallRank = parseInt(rank);
+          else if (i === 1) genderRank = parseInt(rank);
+        }
       });
+
+      if (name && timeText) {
+        results.push({
+          name,
+          bib,
+          distance: normDist(distance),
+          netTime: normTime(timeText),
+          gunTime: "",
+          overallRank,
+          genderRank,
+          ageGroupRank: null,
+          gender: genderText === "남" ? "M" : genderText === "여" ? "F" : null,
+          splits: [],
+          pace: "",
+        });
+      }
+    });
+    return results;
+  }
+
+  // 1단계: 이름(또는 배번)으로 검색
+  const html = await postOhmyrace(memberName, "");
+  if (!html) return [];
+
+  const $ = cheerioLoad(html);
+
+  // 직접 기록이 반환된 경우
+  const directResults = parseNameCards($);
+  if (directResults.length > 0) return directResults;
+
+  // 동명이인 목록이 반환된 경우 — bib별로 중복 제거 후 2차 조회
+  const nameEntries = [];
+  const seenBibs = new Set();
+  $(".name-result").each((_, el) => {
+    const bib = $(el).attr("data-bib");
+    const cate = $(el).attr("data-cate") || "";
+    if (bib && !seenBibs.has(bib)) {
+      seenBibs.add(bib);
+      nameEntries.push({ bib, cate });
     }
   });
+
+  if (nameEntries.length === 0) return [];
+
+  // 2단계: 각 배번으로 병렬 조회
+  const htmls = await Promise.all(nameEntries.map(({ bib, cate }) => postOhmyrace(bib, cate)));
+
+  const results = [];
+  for (const html2 of htmls) {
+    if (!html2) continue;
+    const $2 = cheerioLoad(html2);
+    results.push(...parseNameCards($2));
+  }
 
   return results;
 }
