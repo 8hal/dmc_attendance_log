@@ -1832,6 +1832,20 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       // resume=true 이면 기존 job 이어받기, 아니면 새로 시작
       const isResume = !!resume;
+
+      // confirmed 잡 덮어쓰기 방지 — replaceJobId나 resume 없이 confirmed 잡 재스크래핑 시 거부
+      if (!isResume && !replaceJobId) {
+        const existingDoc = await jobRef.get();
+        if (existingDoc.exists && existingDoc.data().status === "confirmed") {
+          return res.status(409).json({
+            ok: false,
+            error: "이미 확정된 대회입니다. 재수집하려면 replaceJobId를 명시하세요.",
+            jobId: jobRef.id,
+            status: "confirmed",
+          });
+        }
+      }
+
       const jobData = {
         source, sourceId,
         eventName: eventName || sourceId,
