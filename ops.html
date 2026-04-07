@@ -38,6 +38,18 @@
   </style>
 </head>
 <body>
+  <div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+    <div class="auth-card" style="background:#fff;padding:32px;border-radius:12px;min-width:320px;text-align:center;">
+      <h2 style="margin-bottom:8px;">운영 콘솔</h2>
+      <p style="font-size:13px;color:#64748B;margin-bottom:16px;">오너 전용 페이지입니다.</p>
+      <input id="authPw" type="password" placeholder="비밀번호" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;" />
+      <button onclick="tryAuth()" style="width:100%;padding:8px;background:#3b82f6;color:#fff;border:none;border-radius:8px;cursor:pointer;">확인</button>
+      <div id="authError" style="display:none;color:#DC2626;font-size:12px;margin-top:8px;">
+        비밀번호가 올바르지 않습니다.
+      </div>
+    </div>
+  </div>
+
   <div class="header">
     <h1>⚙️ DMC Ops Console</h1>
     <div>
@@ -68,6 +80,33 @@
     const API_BASE = location.hostname === "localhost"
       ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
       : "https://race-nszximpvtq-du.a.run.app";
+
+    const OPS_AUTH_KEY = "dmc_ops_owner_verified";
+
+    function apiBase() {
+      return API_BASE;
+    }
+
+    function getOwnerPw() {
+      return sessionStorage.getItem(OPS_AUTH_KEY) || "";
+    }
+
+    async function tryAuth() {
+      const pw = document.getElementById("authPw").value;
+      const res = await fetch(`${apiBase()}?action=verify-admin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pw }),
+      });
+      const data = await res.json();
+      if (data.ok && data.role === "owner") {
+        sessionStorage.setItem(OPS_AUTH_KEY, pw);
+        document.getElementById("authOverlay").style.display = "none";
+        initOps();
+      } else {
+        document.getElementById("authError").style.display = "block";
+      }
+    }
 
     function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
@@ -468,7 +507,20 @@
       el.innerHTML = html;
     }
 
-    loadAll();
+    function initOps() {
+      loadAll();
+    }
+
+    document.getElementById("authPw").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryAuth();
+    });
+
+    if (!sessionStorage.getItem(OPS_AUTH_KEY)) {
+      document.getElementById("authOverlay").style.display = "flex";
+    } else {
+      document.getElementById("authOverlay").style.display = "none";
+      initOps();
+    }
   </script>
 </body>
 </html>
