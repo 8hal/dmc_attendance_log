@@ -532,7 +532,7 @@
       const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
       const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
 
-      const alerts = data.groupEvents.filter(e =>
+      const alerts = (data.groupEvents || []).filter(e =>
         (e.eventDate === today || e.eventDate === tomorrow) && !e.groupSource
       );
       const banner = document.getElementById("groupAlertBanner");
@@ -556,15 +556,16 @@
       const data = await res.json();
       if (!data.ok) return;
 
+      const events = data.groupEvents || [];
       const container = document.getElementById("groupEventsList");
       if (!container) return;
 
-      if (data.groupEvents.length === 0) {
+      if (events.length === 0) {
         container.innerHTML = '<p style="color:#64748b;font-size:14px;">등록된 단체 대회가 없습니다.</p>';
         return;
       }
 
-      container.innerHTML = data.groupEvents.map(e => renderGroupEventCard(e)).join("");
+      container.innerHTML = events.map(e => renderGroupEventCard(e)).join("");
     }
 
     function renderGroupEventCard(event) {
