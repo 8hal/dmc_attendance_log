@@ -666,6 +666,56 @@ exports.weeklyDiscoverAndScrape = onSchedule(
 );
 
 /**
+ * 그룹 대회 당일 자동 스크랩 (매일 15:00 KST)
+ * isGroupEvent + eventDate(오늘 KST)인 race_events에 대해 triggerGroupScrape 호출.
+ */
+exports.groupEventAutoScrape = onSchedule(
+  { schedule: "0 15 * * *", timeZone: "Asia/Seoul", region: "asia-northeast3" },
+  async () => {
+    const todayKst = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+    console.log(`[groupEventAutoScrape] 오늘 KST: ${todayKst}`);
+
+    const snap = await db.collection("race_events")
+      .where("isGroupEvent", "==", true)
+      .where("eventDate", "==", todayKst)
+      .get();
+
+    for (const doc of snap.docs) {
+      const event = doc.data();
+      if (!event.groupSource) {
+        console.log(`[groupEventAutoScrape] 소스 미입력 건너뜀: ${doc.id}`);
+        continue;
+      }
+      if (event.groupScrapeStatus === "done" || event.groupScrapeStatus === "running") {
+        console.log(`[groupEventAutoScrape] 이미 스크랩됨 건너뜀: ${doc.id}`);
+        continue;
+      }
+      if (!event.participants || event.participants.length === 0) {
+        console.log(`[groupEventAutoScrape] 참가자 없음 건너뜀: ${doc.id}`);
+        continue;
+      }
+
+      console.log(`[groupEventAutoScrape] 스크랩 시작: ${doc.id}`);
+      await db.collection("race_events").doc(doc.id).update({
+        groupScrapeStatus: "running",
+        groupScrapeTriggeredAt: new Date().toISOString(),
+      });
+
+      triggerGroupScrape({
+        canonicalEventId: doc.id,
+        source: event.groupSource.source,
+        sourceId: event.groupSource.sourceId,
+        memberRealNames: event.participants.map((p) => p.realName),
+        event,
+        db,
+        scraper,
+      }).catch((err) => console.error(`[groupEventAutoScrape] 오류 ${doc.id}:`, err));
+    }
+    console.log(`[groupEventAutoScrape] 완료. 처리 대상: ${snap.docs.length}개 검사`);
+  }
+);
+
+/**
  * 스크래핑 헬스체크 — 매시간 실행
  * - stuck job (running 상태 1시간 이상) 감지
  * - SmartChip 세션 실패 의심 (searched > 0, found = 0) 감지
