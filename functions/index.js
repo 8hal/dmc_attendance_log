@@ -1817,11 +1817,11 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           pbConfirmed: r.pbConfirmed || false,
           isGuest: r.isGuest || false,
           note: r.note || "",
-          status: "confirmed",
+          status: r.dnStatus || "confirmed",
           confirmedAt: now,
           confirmSource: confirmSource || "operator",
         };
-        if (finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
+        if (!r.dnStatus && finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
         if (canonicalEventId) row.canonicalEventId = String(canonicalEventId);
         batch.set(ref, row);
       }

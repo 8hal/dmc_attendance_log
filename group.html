@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>단체 대회 관리 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB; --primary-hover: #1D4ED8; --primary-light: #DBEAFE;
+      --bg: #F8FAFC; --card: #FFFFFF;
+      --text: #0F172A; --text-sub: #64748B; --text-muted: #94A3B8;
+      --border: #E2E8F0; --border-light: #F1F5F9;
+      --green: #059669; --green-light: #D1FAE5;
+      --yellow: #D97706; --yellow-light: #FEF3C7;
+      --red: #DC2626; --red-light: #FEE2E2;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 800px; margin: 0 auto; padding: 16px; }
+
+    .page-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); text-decoration: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+    .back-link:hover { border-color: var(--primary); color: var(--primary); }
+    .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); margin: 2px 0 0; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--text-sub); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-confirm { background: var(--green-light); color: var(--green); border: 1px solid #6EE7B7; }
+    .btn-confirm:hover { background: #A7F3D0; }
+    .btn-danger { background: var(--red-light); color: var(--red); border: 1px solid #FCA5A5; }
+    .btn-danger:hover { background: #FECACA; }
+
+    .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+    .badge-blue   { background: var(--primary-light); color: var(--primary); }
+    .badge-green  { background: var(--green-light); color: var(--green); }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-red    { background: var(--red-light); color: var(--red); }
+    .badge-gray   { background: var(--border); color: var(--text-sub); }
+
+    .section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 20px 0 8px; }
+
+    .gcard { background: var(--card); border: 1.5px solid var(--primary); border-radius: 14px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 12px rgba(37,99,235,0.07); }
+    .gcard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .gcard-title { font-size: 15px; font-weight: 700; }
+    .gcard-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 12px; color: var(--text-sub); }
+    .divider { border: none; border-top: 1px solid var(--border-light); margin: 12px 0; }
+
+    .info-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .row-label { font-size: 12px; color: var(--text-muted); font-weight: 600; min-width: 72px; flex-shrink: 0; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+    .chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; font-weight: 500; background: var(--border-light); color: var(--text); }
+    .chip-more { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+
+    .source-status { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--border-light); border-radius: 8px; font-size: 13px; color: var(--text-sub); flex: 1; }
+
+    .glist-card { background: var(--card); border-radius: 14px; padding: 4px 8px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); margin-bottom: 10px; }
+    .glist-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 8px; border-bottom: 1px solid var(--border-light); }
+    .glist-item:last-child { border-bottom: none; }
+    .glist-name { font-weight: 600; font-size: 14px; }
+    .glist-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+    .empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; }
+
+    .result-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .result-row { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .result-row.ok .result-row-header { border-left: 3px solid var(--green); }
+    .result-row.warn .result-row-header { border-left: 3px solid var(--yellow); }
+    .result-row.err .result-row-header { border-left: 3px solid var(--red); }
+    .result-row-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; background: #fff; }
+    .result-nick { font-weight: 700; font-size: 14px; }
+    .result-time { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .result-rank { font-size: 12px; color: var(--text-muted); }
+
+    .candidates { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .candidate-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; }
+    .candidate-option:hover { border-color: var(--primary); background: var(--primary-light); }
+    .candidate-option input { accent-color: var(--primary); margin-top: 3px; flex-shrink: 0; }
+    .candidate-time { font-weight: 700; color: var(--primary); font-size: 14px; }
+    .candidate-detail { font-size: 12px; color: var(--text-sub); }
+
+    .bulk-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: var(--green-light); border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .bulk-bar span { font-size: 13px; color: var(--green); font-weight: 600; }
+
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; max-width: 460px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(15,23,42,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { margin: 0; font-size: 16px; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .modal-body { padding: 12px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 12px 20px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    .member-search { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
+    .member-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 8px; cursor: pointer; }
+    .member-item:hover { background: var(--border-light); }
+    .member-item input { width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+    .member-nickname { font-weight: 600; font-size: 14px; }
+    .member-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; display: none; z-index: 200; max-width: 90vw; }
+    .toast.show { display: block; }
+    .toast.err { background: var(--red); }
+
+    .gap-loading { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+    @media (max-width: 600px) {
+      .gcard-header { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="authOverlay" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;">
+    <div style="text-align:center;max-width:320px;padding:20px;">
+      <img src="assets/dmc_logo.png" alt="DMC" style="width:48px;height:48px;border-radius:12px;margin-bottom:12px;" />
+      <h2 style="margin:0 0 4px;font-size:18px;">단체 대회 관리</h2>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--text-sub);">운영자·오너 전용입니다.</p>
+      <div style="display:flex;gap:8px;">
+        <input id="authPw" type="password" placeholder="비밀번호" style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;" />
+        <button type="button" id="authBtn" class="btn btn-primary" style="white-space:nowrap;">확인</button>
+      </div>
+      <div id="authError" style="display:none;margin-top:8px;font-size:12px;color:var(--red);">비밀번호가 올바르지 않습니다.</div>
+    </div>
+  </div>
+
+  <div class="wrap" id="mainWrap" style="display:none;">
+    <div class="page-header">
+      <a class="back-link" href="report.html">← 기록 관리</a>
+      <div>
+        <h1 class="page-title">단체 대회 관리</h1>
+        <p class="page-subtitle">단체 신청 대회 참가자·갭 탐지·기록 확정</p>
+      </div>
+    </div>
+
+    <div class="section-label">등록된 단체 대회</div>
+    <div id="groupEventsRoot"></div>
+
+    <div class="section-label">고러닝 예정 대회</div>
+    <div id="availableGorunningRoot"></div>
+  </div>
+
+  <div id="participantModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog">
+      <div class="modal-header">
+        <h2>참가자 선택</h2>
+        <button type="button" class="modal-close" id="participantModalClose" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="memberFilter" class="member-search" placeholder="닉네임·실명으로 검색…" />
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost btn-sm" id="memberSelectAll">전체 선택</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="memberClearAll">선택 해제</button>
+        </div>
+        <div id="memberList" style="max-height:48vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 6px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="participantModalCancel">취소</button>
+        <button type="button" class="btn btn-primary" id="participantModalSave">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const GROUP_AUTH_KEY = "dmc_group_auth";
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+
+    let membersCache = null;
+    let editingEventId = null;
+    const selectedMemberIds = new Set();
+
+    function showToast(msg, isErr) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.toggle("err", !!isErr);
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 3800);
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function eventDisplayName(ev) {
+      return ev.eventName || ev.primaryName || "—";
+    }
+
+    function scrapeStatusBadge(st) {
+      const map = {
+        pending: ["badge-gray", "대기"],
+        running: ["badge-blue", "스크랩 중"],
+        done: ["badge-green", "완료"],
+        partial_failure: ["badge-yellow", "부분 실패"],
+        failed: ["badge-red", "실패"],
+      };
+      const [cls, label] = map[st] || ["badge-gray", st || "—"];
+      return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+    }
+
+    function groupSourceLabel(ev) {
+      const gs = ev.groupSource;
+      if (!gs || !gs.source || !gs.sourceId) {
+        return "소스 미설정 — 오너가 ops.html에서 기록 소스를 지정합니다.";
+      }
+      return `소스: ${gs.source} / ${gs.sourceId}`;
+    }
+
+    function scrapeRowToConfirmPayload(r) {
+      return {
+        memberRealName: r.memberRealName,
+        memberNickname: r.memberNickname,
+        distance: r.distance,
+        netTime: r.netTime,
+        gunTime: r.gunTime || "",
+        finishTime: r.finishTime,
+        bib: r.bib || "",
+        overallRank: r.overallRank != null ? r.overallRank : null,
+        gender: r.gender || "",
+        pbConfirmed: r.pbConfirmed || false,
+        isGuest: r.isGuest || false,
+        note: r.note || "",
+        source: r.source || "",
+        sourceId: r.sourceId || "",
+      };
+    }
+
+    async function postConfirm(event, results) {
+      const gs = event.groupSource || {};
+      const res = await fetch(`${API_BASE}?action=confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: event.groupScrapeJobId,
+          eventName: eventDisplayName(event),
+          eventDate: event.eventDate || "",
+          source: gs.source || undefined,
+          sourceId: gs.sourceId || undefined,
+          results,
+          confirmSource: "operator",
+          canonicalEventId: event.id,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "confirm failed");
+      return data;
+    }
+
+    async function markDnsDnf(event, participant, status) {
+      if (!event.groupScrapeJobId) {
+        showToast("스크랩 job이 없어 DNS/DNF를 저장할 수 없습니다.", true);
+        return;
+      }
+      try {
+        await postConfirm(event, [{
+          memberRealName: participant.realName,
+          memberNickname: participant.nickname,
+          dnStatus: status,
+        }]);
+        showToast(`${status} 저장됨`);
+        await loadGroupEvents();
+      } catch (e) {
+        showToast(e.message || String(e), true);
+      }
+    }
+
+    async function confirmOkRows(event, rows) {
+      if (!event.groupScrapeJobId) {
+        showToast("스크랩 job이 없습니다.", true);
+        return;
+      }
+      try {
+        const results = rows.map((r) => scrapeRowToConfirmPayload(r));
+        await postConfirm(event, results);
+        showToast(`${results.length}건 확정 저장`);
+        await loadGroupEvents();
+      } catch (e) {
+        showToast(e.message || String(e), true);
+      }
+    }
+
+    async function tryAuth() {
+      const pw = document.getElementById("authPw").value;
+      const btn = document.getElementById("authBtn");
+      btn.disabled = true;
+      btn.textContent = "확인 중…";
+      try {
+        const res = await fetch(`${API_BASE}?action=verify-admin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pw }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          sessionStorage.setItem(GROUP_AUTH_KEY, "verified");
+          document.getElementById("authOverlay").style.display = "none";
+          document.getElementById("mainWrap").style.display = "";
+          document.getElementById("authError").style.display = "none";
+          await init();
+        } else {
+          document.getElementById("authError").style.display = "block";
+        }
+      } catch (e) {
+        document.getElementById("authError").style.display = "block";
+      }
+      btn.disabled = false;
+      btn.textContent = "확인";
+    }
+
+    async function init() {
+      await loadGroupEvents();
+    }
+
+    async function loadGroupEvents() {
+      const root = document.getElementById("groupEventsRoot");
+      const avRoot = document.getElementById("availableGorunningRoot");
+      root.innerHTML = '<p class="gap-loading">불러오는 중…</p>';
+      avRoot.innerHTML = "";
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`);
+        const data = await res.json();
+        if (!data.ok) {
+          root.innerHTML = `<p class="empty">목록을 불러오지 못했습니다.</p>`;
+          return;
+        }
+        const events = data.groupEvents || [];
+        const available = data.availableGorunning || [];
+
+        const gapById = {};
+        await Promise.all(
+          events.map(async (ev) => {
+            const st = ev.groupScrapeStatus;
+            if (st !== "done" && st !== "partial_failure") return;
+            if (!ev.id) return;
+            try {
+              const gr = await fetch(
+                `${API_BASE}?action=group-events&subAction=gap&canonicalEventId=${encodeURIComponent(ev.id)}`,
+              );
+              const gd = await gr.json();
+              if (gd.ok && Array.isArray(gd.gap)) gapById[ev.id] = gd.gap;
+            } catch (_) { /* ignore */ }
+          }),
+        );
+
+        renderGroupEvents(events, gapById);
+        renderAvailableGorunning(available);
+      } catch (e) {
+        root.innerHTML = `<p class="empty">네트워크 오류: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    function renderParticipantChips(ev) {
+      const parts = ev.participants || [];
+      if (parts.length === 0) {
+        return '<span class="text-muted" style="font-size:13px;color:var(--text-muted)">참가자 없음</span>';
+      }
+      const max = 6;
+      const shown = parts.slice(0, max);
+      const more = parts.length - shown.length;
+      let html = shown.map((p) => `<span class="chip">${escapeHtml(p.nickname || p.realName || "")}</span>`).join("");
+      if (more > 0) html += `<span class="chip chip-more">+${more}명</span>`;
+      return html;
+    }
+
+    function renderGapSection(ev, gap) {
+      if (!gap || gap.length === 0) {
+        return '<p class="gap-loading">갭 정보가 없습니다.</p>';
+      }
+      const okItems = gap.filter((g) => g.gapStatus === "ok" && g.result);
+      let bulkHtml = "";
+      if (okItems.length > 0) {
+        bulkHtml = `
+          <div class="bulk-bar">
+            <span>자동 매칭 ${okItems.length}명 — 일괄 확정</span>
+            <button type="button" class="btn btn-confirm btn-sm" data-bulk-confirm="${escapeHtml(ev.id)}">일괄 확정</button>
+          </div>`;
+      }
+
+      const rows = gap.map((g, idx) => {
+        const nick = escapeHtml(g.nickname || "");
+        if (g.gapStatus === "ok" && g.result) {
+          const r = g.result;
+          const ft = escapeHtml(r.finishTime || r.netTime || "—");
+          const rank = r.overallRank != null ? `${escapeHtml(String(r.overallRank))}위` : "";
+          return `
+            <div class="result-row ok" data-event-id="${escapeHtml(ev.id)}">
+              <div class="result-row-header">
+                <span>✅</span>
+                <span class="result-nick">${nick}</span>
+                <span class="result-time">${ft}</span>
+                ${rank ? `<span class="result-rank">(${rank})</span>` : ""}
+                <span style="flex:1"></span>
+                <button type="button" class="btn btn-confirm btn-sm" data-one-confirm="${escapeHtml(ev.id)}" data-gap-idx="${idx}">확정</button>
+              </div>
+            </div>`;
+        }
+        if (g.gapStatus === "missing") {
+          const disabled = !ev.groupScrapeJobId ? "disabled" : "";
+          return `
+            <div class="result-row err" data-event-id="${escapeHtml(ev.id)}">
+              <div class="result-row-header">
+                <span>🔴</span>
+                <span class="result-nick">${nick}</span>
+                <span style="font-size:13px;color:var(--text-sub)">기록 없음</span>
+                <span style="flex:1"></span>
+                <button type="button" class="btn btn-sm btn-outline" data-dns="${escapeHtml(ev.id)}" data-gap-idx="${idx}" ${disabled}>DNS</button>
+                <button type="button" class="btn btn-sm btn-danger" data-dnf="${escapeHtml(ev.id)}" data-gap-idx="${idx}" ${disabled}>DNF</button>
+              </div>
+            </div>`;
+        }
+        if (g.gapStatus === "ambiguous") {
+          const cands = g.candidates || [];
+          const radioName = `amb-${ev.id}-${idx}`;
+          const opts = cands.slice(0, 3).map((c, ci) => `
+            <label class="candidate-option">
+              <input type="radio" name="${escapeHtml(radioName)}" value="${ci}" ${ci === 0 ? "checked" : ""} />
+              <div>
+                <div class="candidate-time">${escapeHtml(c.finishTime || c.netTime || "—")}</div>
+                <div class="candidate-detail">${escapeHtml([c.bib, c.distance, c.overallRank != null ? `${c.overallRank}위` : ""].filter(Boolean).join(" · "))}</div>
+              </div>
+            </label>
+          `).join("");
+          const dis = !ev.groupScrapeJobId ? "disabled" : "";
+          return `
+            <div class="result-row warn" data-event-id="${escapeHtml(ev.id)}">
+              <div class="result-row-header" style="flex-direction:column;align-items:stretch;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span>⚠️</span>
+                  <span class="result-nick">${nick}</span>
+                  <span style="font-size:12px;color:var(--yellow);font-weight:600">동명이인 — 후보 선택</span>
+                </div>
+                <div class="candidates">${opts}</div>
+                <button type="button" class="btn btn-confirm btn-sm" style="align-self:flex-start;margin-top:6px" data-amb-confirm="${escapeHtml(ev.id)}" data-gap-idx="${idx}" ${dis}>선택 기록으로 확정</button>
+              </div>
+            </div>`;
+        }
+        return "";
+      }).join("");
+
+      return bulkHtml + `<div class="result-list">${rows}</div>`;
+    }
+
+    window.__groupEvents = [];
+    function renderGroupEvents(events, gapById) {
+      window.__groupEvents = events;
+      const root = document.getElementById("groupEventsRoot");
+      if (events.length === 0) {
+        root.innerHTML = '<div class="empty">등록된 단체 대회가 없습니다.<br>아래 고러닝 목록에서 등록할 수 있습니다.</div>';
+        return;
+      }
+      root.innerHTML = events.map((ev) => {
+        const id = escapeHtml(ev.id);
+        const title = escapeHtml(eventDisplayName(ev));
+        const date = escapeHtml(ev.eventDate || "");
+        const gap = gapById[ev.id];
+        const gapBlock = (ev.groupScrapeStatus === "done" || ev.groupScrapeStatus === "partial_failure")
+          ? `<div class="info-row" style="flex-direction:column;align-items:stretch;"><span class="row-label">갭·확정</span>${renderGapSection(ev, gap)}</div>`
+          : "";
+        return `
+          <div class="gcard" data-event-card="${id}">
+            <div class="gcard-header">
+              <div>
+                <div class="gcard-title">${title}</div>
+                <div class="gcard-meta">
+                  <span>📅 ${date || "날짜 미입력"}</span>
+                  ${scrapeStatusBadge(ev.groupScrapeStatus)}
+                </div>
+              </div>
+            </div>
+            <hr class="divider" />
+            <div class="info-row">
+              <span class="row-label">참가자</span>
+              <div class="chips">${renderParticipantChips(ev)}</div>
+              <button type="button" class="btn btn-ghost btn-sm" data-edit-parts="${id}" style="margin-left:auto;">참가자 편집</button>
+            </div>
+            <div class="info-row">
+              <span class="row-label">기록 소스</span>
+              <div class="source-status">${escapeHtml(groupSourceLabel(ev))}</div>
+            </div>
+            ${gapBlock}
+          </div>`;
+      }).join("");
+
+      root.querySelectorAll("[data-edit-parts]").forEach((btn) => {
+        btn.addEventListener("click", () => openParticipantModal(btn.getAttribute("data-edit-parts")));
+      });
+
+      root.querySelectorAll("[data-bulk-confirm]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const eid = btn.getAttribute("data-bulk-confirm");
+          const ev = events.find((x) => x.id === eid);
+          const gap = gapById[eid] || [];
+          const rows = gap.filter((g) => g.gapStatus === "ok" && g.result).map((g) => g.result);
+          if (ev && rows.length) void confirmOkRows(ev, rows);
+        });
+      });
+
+      root.querySelectorAll("[data-one-confirm]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const eid = btn.getAttribute("data-one-confirm");
+          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
+          const ev = events.find((x) => x.id === eid);
+          const gap = gapById[eid] || [];
+          const row = gap[idx];
+          if (ev && row && row.result) void confirmOkRows(ev, [row.result]);
+        });
+      });
+
+      root.querySelectorAll("[data-dns]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const eid = btn.getAttribute("data-dns");
+          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
+          const ev = events.find((x) => x.id === eid);
+          const gap = gapById[eid] || [];
+          const row = gap[idx];
+          if (ev && row) void markDnsDnf(ev, row, "DNS");
+        });
+      });
+
+      root.querySelectorAll("[data-dnf]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const eid = btn.getAttribute("data-dnf");
+          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
+          const ev = events.find((x) => x.id === eid);
+          const gap = gapById[eid] || [];
+          const row = gap[idx];
+          if (ev && row) void markDnsDnf(ev, row, "DNF");
+        });
+      });
+
+      root.querySelectorAll("[data-amb-confirm]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const eid = btn.getAttribute("data-amb-confirm");
+          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
+          const ev = events.find((x) => x.id === eid);
+          const gap = gapById[eid] || [];
+          const row = gap[idx];
+          const rowEl = btn.closest(".result-row");
+          const sel = rowEl && rowEl.querySelector("input[type=radio]:checked");
+          if (!ev || !row || !row.candidates) return;
+          const ci = sel ? parseInt(sel.value, 10) : 0;
+          const chosen = row.candidates[ci];
+          if (chosen) void confirmOkRows(ev, [chosen]);
+        });
+      });
+    }
+
+    function renderAvailableGorunning(list) {
+      const avRoot = document.getElementById("availableGorunningRoot");
+      if (!list.length) {
+        avRoot.innerHTML = '<div class="empty">표시할 예정 대회가 없습니다.<br>(고러닝 캐시가 비었거나 모두 등록됨)</div>';
+        return;
+      }
+      avRoot.innerHTML = `<div class="glist-card">${list.map((e) => `
+        <div class="glist-item">
+          <div>
+            <div class="glist-name">${escapeHtml(e.name || "—")}</div>
+            <div class="glist-meta">📅 ${escapeHtml(e.date || "—")}${e.location ? " · " + escapeHtml(e.location) : ""}</div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" data-promote="${escapeHtml(e.id)}"
+            data-name="${escapeHtml(e.name || "")}" data-date="${escapeHtml(e.date || "")}">단체 대회 등록</button>
+        </div>
+      `).join("")}</div>`;
+
+      avRoot.querySelectorAll("[data-promote]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const gorunningId = btn.getAttribute("data-promote");
+          const eventName = btn.getAttribute("data-name");
+          const eventDate = btn.getAttribute("data-date");
+          await registerGroupEvent(gorunningId, eventName, eventDate);
+        });
+      });
+    }
+
+    async function registerGroupEvent(gorunningId, eventName, eventDate) {
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subAction: "promote", gorunningId, eventName, eventDate }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "promote failed");
+        showToast("단체 대회로 등록했습니다.");
+        await loadGroupEvents();
+      } catch (e) {
+        showToast(e.message || String(e), true);
+      }
+    }
+
+    async function loadAllMembers() {
+      if (membersCache) return membersCache;
+      const res = await fetch(`${API_BASE}?action=all-members`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "all-members failed");
+      membersCache = (data.members || []).filter((m) => !m.hidden);
+      return membersCache;
+    }
+
+    function openParticipantModal(canonicalEventId) {
+      editingEventId = canonicalEventId;
+      const ev = window.__groupEvents.find((x) => x.id === canonicalEventId);
+      selectedMemberIds.clear();
+      (ev && ev.participants || []).forEach((p) => {
+        if (p.memberId) selectedMemberIds.add(p.memberId);
+      });
+      document.getElementById("participantModal").classList.add("open");
+      document.getElementById("memberFilter").value = "";
+      void renderMemberList();
+    }
+
+    function closeParticipantModal() {
+      document.getElementById("participantModal").classList.remove("open");
+      editingEventId = null;
+    }
+
+    async function renderMemberList() {
+      const listEl = document.getElementById("memberList");
+      try {
+        const members = await loadAllMembers();
+        const q = (document.getElementById("memberFilter").value || "").trim().toLowerCase();
+        const filtered = !q
+          ? members
+          : members.filter((m) =>
+              (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q),
+            );
+        listEl.innerHTML = filtered
+          .map(
+            (m) => `
+          <label class="member-item">
+            <input type="checkbox" data-mid="${escapeHtml(m.id)}" ${selectedMemberIds.has(m.id) ? "checked" : ""} />
+            <span class="member-nickname">${escapeHtml(m.nickname || "")}<span class="member-realname">${escapeHtml(m.realName || "")}</span></span>
+          </label>`,
+          )
+          .join("");
+
+        listEl.querySelectorAll("input[data-mid]").forEach((inp) => {
+          inp.addEventListener("change", () => {
+            const id = inp.getAttribute("data-mid");
+            if (inp.checked) selectedMemberIds.add(id);
+            else selectedMemberIds.delete(id);
+          });
+        });
+      } catch (e) {
+        listEl.innerHTML = `<p style="color:var(--red);font-size:13px;">${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    document.getElementById("memberFilter").addEventListener("input", () => void renderMemberList());
+    document.getElementById("memberSelectAll").addEventListener("click", async () => {
+      const members = await loadAllMembers();
+      const q = (document.getElementById("memberFilter").value || "").trim().toLowerCase();
+      const filtered = !q
+        ? members
+        : members.filter(
+            (m) =>
+              (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q),
+          );
+      filtered.forEach((m) => selectedMemberIds.add(m.id));
+      void renderMemberList();
+    });
+    document.getElementById("memberClearAll").addEventListener("click", () => {
+      selectedMemberIds.clear();
+      void renderMemberList();
+    });
+
+    document.getElementById("participantModalSave").addEventListener("click", async () => {
+      if (!editingEventId) return;
+      try {
+        const members = await loadAllMembers();
+        const byId = new Map(members.map((m) => [m.id, m]));
+        const participants = [...selectedMemberIds].map((id) => {
+          const m = byId.get(id);
+          return { memberId: id, realName: m.realName, nickname: m.nickname };
+        });
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "participants",
+            canonicalEventId: editingEventId,
+            participants,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "save failed");
+        showToast("참가자를 저장했습니다.");
+        closeParticipantModal();
+        await loadGroupEvents();
+      } catch (e) {
+        showToast(e.message || String(e), true);
+      }
+    });
+
+    ["participantModalClose", "participantModalCancel"].forEach((id) => {
+      document.getElementById(id).addEventListener("click", closeParticipantModal);
+    });
+
+    function checkAuth() {
+      if (sessionStorage.getItem(GROUP_AUTH_KEY) === "verified") {
+        document.getElementById("authOverlay").style.display = "none";
+        document.getElementById("mainWrap").style.display = "";
+        return true;
+      }
+      return false;
+    }
+
+    if (checkAuth()) {
+      void init();
+    } else {
+      document.getElementById("authBtn").addEventListener("click", tryAuth);
+      document.getElementById("authPw").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") tryAuth();
+      });
+      document.getElementById("authPw").focus();
+    }
+  </script>
+</body>
+</html>
