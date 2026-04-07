@@ -93,17 +93,22 @@
 
     async function tryAuth() {
       const pw = document.getElementById("authPw").value;
-      const res = await fetch(`${apiBase()}?action=verify-admin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pw }),
-      });
-      const data = await res.json();
-      if (data.ok && data.role === "owner") {
-        sessionStorage.setItem(OPS_AUTH_KEY, pw);
-        document.getElementById("authOverlay").style.display = "none";
-        initOps();
-      } else {
+      try {
+        const res = await fetch(`${apiBase()}?action=verify-admin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pw }),
+        });
+        const data = await res.json();
+        if (data.ok && data.role === "owner") {
+          sessionStorage.setItem(OPS_AUTH_KEY, pw);
+          document.getElementById("authOverlay").style.display = "none";
+          initOps();
+        } else {
+          document.getElementById("authError").style.display = "block";
+        }
+      } catch (e) {
+        console.error("[tryAuth]", e);
         document.getElementById("authError").style.display = "block";
       }
     }
