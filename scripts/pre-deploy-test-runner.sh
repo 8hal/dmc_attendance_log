@@ -159,6 +159,11 @@ assert_contains "ops.html: Ops Console" "Ops Console" "$TMP_DIR/ops.html"
 assert_contains "ops.html: ops-scrape-health 연동" "ops-scrape-health" "$TMP_DIR/ops.html"
 assert_contains "ops.html: 시스템 건강도" "systemHealth" "$TMP_DIR/ops.html"
 
+curl -s "$HOST/group.html" > "$TMP_DIR/group.html"
+assert_contains "group.html: 단체 대회 관리" "group-events" "$TMP_DIR/group.html"
+assert_contains "group.html: verify-admin" "verify-admin" "$TMP_DIR/group.html"
+assert_contains "group.html: gap 탐지" "subAction=gap" "$TMP_DIR/group.html"
+
 curl -s "$HOST/race-distance-client.js" > "$TMP_DIR/race-distance-client.js"
 assert_contains "race-distance-client.js: 32K 정규화" '"32K"' "$TMP_DIR/race-distance-client.js"
 
