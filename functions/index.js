@@ -1070,7 +1070,7 @@ async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRe
 
     await db.collection("race_events").doc(canonicalEventId).update({
       groupScrapeJobId: jobId,
-      groupScrapeStatus: "done",
+      groupScrapeStatus: finalStatus === "partial_failure" ? "partial_failure" : "done",
     });
   } catch (err) {
     try {
@@ -2638,6 +2638,10 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
       if (!eventRow.participants || eventRow.participants.length === 0) {
         return res.status(400).json({ ok: false, error: "참가자 미등록" });
+      }
+
+      if (eventRow.groupScrapeStatus === "running") {
+        return res.status(400).json({ ok: false, error: "이미 스크랩이 진행 중입니다" });
       }
 
       const { source: src, sourceId: sid } = eventRow.groupSource;
