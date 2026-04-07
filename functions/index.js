@@ -995,6 +995,108 @@ exports.testWeekendCheck = onRequest(
 );
 
 /**
+ * 단체 대회(group-events) 수동 스크랩: scrape_jobs 자동 ID + scrapeEvent (기존 scrape 액션과 동일 패턴)
+ */
+async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRealNames, event, db, scraper }) {
+  const jobRef = db.collection("scrape_jobs").doc();
+  const jobId = jobRef.id;
+  const now = new Date().toISOString();
+  try {
+    const membersSnap = await db.collection("members").get();
+    const allMembers = [];
+    membersSnap.forEach((doc) => {
+      const d = doc.data();
+      if (d.hidden === true) return;
+      allMembers.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
+    });
+    const want = [...new Set(
+      (memberRealNames || []).map((n) => String(n || "").trim()).filter(Boolean),
+    )];
+    if (want.length === 0) {
+      throw new Error("memberRealNames: 한 명 이상 필요");
+    }
+    const byName = new Map(allMembers.map((m) => [m.realName, m]));
+    const missingNames = want.filter((n) => !byName.has(n));
+    if (missingNames.length > 0) {
+      throw new Error(`등록·미숨김 회원에 없는 실명: ${missingNames.join(", ")}`);
+    }
+    const members = want.map((n) => byName.get(n));
+
+    const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
+    const confirmedResults = [];
+    confirmedSnap.forEach((doc) => confirmedResults.push(doc.data()));
+    const pbMap = scraper.buildPBMap(confirmedResults);
+
+    await jobRef.set({
+      source,
+      sourceId,
+      memberRealNames: want,
+      eventName: (event && event.eventName) || sourceId,
+      eventDate: (event && event.eventDate) || "",
+      status: "running",
+      progress: { searched: 0, total: members.length, found: 0 },
+      results: [],
+      createdAt: now,
+    });
+
+    const result = await scraper.scrapeEvent({
+      source,
+      sourceId,
+      members,
+      pbMap,
+      skipCached: false,
+      db,
+      serverTimestamp: FieldValue.serverTimestamp(),
+      onProgress: async (p) => {
+        await jobRef.update({ progress: p });
+      },
+    });
+
+    const finalStatus = result.jobStatus || "complete";
+    await jobRef.update({
+      status: finalStatus,
+      eventName: result.eventName || (event && event.eventName) || sourceId,
+      eventDate: result.eventDate || (event && event.eventDate) || "",
+      results: sortScrapeJobResults(result.results),
+      progress: {
+        searched: members.length,
+        total: members.length,
+        found: (result.results && result.results.length) || 0,
+        failCount: result.failCount || 0,
+        failRate: result.failRate || 0,
+      },
+      completedAt: new Date().toISOString(),
+    });
+
+    await db.collection("race_events").doc(canonicalEventId).update({
+      groupScrapeJobId: jobId,
+      groupScrapeStatus: "done",
+    });
+  } catch (err) {
+    try {
+      await db.collection("race_events").doc(canonicalEventId).update({
+        groupScrapeStatus: "failed",
+      });
+    } catch (e) {
+      console.error("[triggerGroupScrape] race_events failed update:", e);
+    }
+    try {
+      const snap = await jobRef.get();
+      if (snap.exists) {
+        await jobRef.update({
+          status: "failed",
+          completedAt: new Date().toISOString(),
+          error: err.message || String(err),
+        });
+      }
+    } catch (e) {
+      console.error("[triggerGroupScrape] job failed update:", e);
+    }
+    throw err;
+  }
+}
+
+/**
  * Race API - 대회 결과 조회 및 수동 스크래핑
  */
 exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", region: "asia-northeast3" }, async (req, res) => {
@@ -2403,6 +2505,160 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       await db.collection("ops_meta").doc("last_gorunning_crawl").delete();
       return res.json({ ok: true, message: "캐시 삭제됨. 다음 ops-gorunning-events 호출 시 재크롤링됩니다." });
+    }
+
+    if (action === "group-events" && req.method === "GET" && !req.query.subAction) {
+      const groupSnap = await db.collection("race_events")
+        .where("isGroupEvent", "==", true)
+        .get();
+      const groupEvents = [];
+      groupSnap.forEach((doc) => groupEvents.push({ id: doc.id, ...doc.data() }));
+
+      const cacheDoc = await db.collection("ops_meta").doc("last_gorunning_crawl").get();
+      const gorunningEvents = cacheDoc.exists ? (cacheDoc.data().events || []) : [];
+
+      const promotedGorunningIds = new Set(groupEvents.map((e) => e.gorunningId).filter(Boolean));
+      const availableGorunning = gorunningEvents.filter((e) => !promotedGorunningIds.has(e.id));
+
+      return res.json({ ok: true, groupEvents, availableGorunning });
+    }
+
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "gap") {
+      const { canonicalEventId } = req.query;
+      if (!canonicalEventId) {
+        return res.status(400).json({ ok: false, error: "canonicalEventId required" });
+      }
+
+      const eventDoc = await db.collection("race_events").doc(canonicalEventId).get();
+      if (!eventDoc.exists) return res.status(404).json({ ok: false, error: "대회 없음" });
+
+      const eventRow = eventDoc.data();
+      const participants = eventRow.participants || [];
+
+      if (!eventRow.groupScrapeJobId) {
+        return res.json({ ok: true, status: "not_scraped", participants, results: [] });
+      }
+
+      const jobDoc = await db.collection("scrape_jobs").doc(eventRow.groupScrapeJobId).get();
+      const scrapeResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+
+      const resultsByName = scrapeResults.reduce((acc, r) => {
+        const key = r.memberRealName;
+        (acc[key] = acc[key] || []).push(r);
+        return acc;
+      }, {});
+
+      const gap = participants.map((p) => {
+        const matches = resultsByName[p.realName] || [];
+        if (matches.length === 0) {
+          return { ...p, gapStatus: "missing", result: null };
+        }
+        if (matches.length > 1 || matches[0].status === "ambiguous") {
+          return { ...p, gapStatus: "ambiguous", candidates: matches.slice(0, 3) };
+        }
+        return { ...p, gapStatus: "ok", result: matches[0] };
+      });
+
+      return res.json({ ok: true, status: "scraped", gap });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "promote") {
+      const { gorunningId, eventName, eventDate } = req.body;
+      if (!gorunningId || !eventName || !eventDate) {
+        return res.status(400).json({ ok: false, error: "gorunningId, eventName, eventDate required" });
+      }
+
+      const canonicalEventId = await allocateCanonicalEventId(db, eventDate, eventName);
+      const ref = db.collection("race_events").doc(canonicalEventId);
+
+      await ref.set({
+        eventName,
+        eventDate,
+        isGroupEvent: true,
+        participants: [],
+        groupSource: null,
+        groupScrapeStatus: "pending",
+        groupScrapeJobId: null,
+        groupScrapeTriggeredAt: null,
+        gorunningId,
+        promotedAt: new Date().toISOString(),
+      }, { merge: true });
+
+      return res.json({ ok: true, canonicalEventId });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "participants") {
+      const { canonicalEventId, participants } = req.body;
+      if (!canonicalEventId || !Array.isArray(participants)) {
+        return res.status(400).json({ ok: false, error: "canonicalEventId and participants[] required" });
+      }
+
+      const memberIds = participants.map((p) => p.memberId);
+      const memberDocs = await Promise.all(memberIds.map((id) => db.collection("members").doc(id).get()));
+      const invalid = memberIds.filter((id, i) => !memberDocs[i].exists);
+      if (invalid.length > 0) {
+        return res.status(400).json({ ok: false, error: `유효하지 않은 memberId: ${invalid.join(", ")}` });
+      }
+
+      await db.collection("race_events").doc(canonicalEventId).update({ participants });
+      return res.json({ ok: true });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "source") {
+      const { ownerPw, canonicalEventId, source, sourceId } = req.body;
+
+      const expectedOwnerPw = process.env.DMC_OWNER_PW;
+      if (!expectedOwnerPw || ownerPw !== expectedOwnerPw) {
+        return res.status(403).json({ ok: false, error: "오너 권한 필요" });
+      }
+      if (!canonicalEventId || !source || !sourceId) {
+        return res.status(400).json({ ok: false, error: "canonicalEventId, source, sourceId required" });
+      }
+
+      await db.collection("race_events").doc(canonicalEventId).update({
+        groupSource: { source, sourceId },
+      });
+      return res.json({ ok: true });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "scrape") {
+      const { ownerPw, canonicalEventId } = req.body;
+
+      const expectedOwnerPw = process.env.DMC_OWNER_PW;
+      if (!expectedOwnerPw || ownerPw !== expectedOwnerPw) {
+        return res.status(403).json({ ok: false, error: "오너 권한 필요" });
+      }
+
+      const eventDoc = await db.collection("race_events").doc(canonicalEventId).get();
+      if (!eventDoc.exists) return res.status(404).json({ ok: false, error: "대회 없음" });
+
+      const eventRow = eventDoc.data();
+      if (!eventRow.groupSource) {
+        return res.status(400).json({ ok: false, error: "기록 소스 미입력" });
+      }
+      if (!eventRow.participants || eventRow.participants.length === 0) {
+        return res.status(400).json({ ok: false, error: "참가자 미등록" });
+      }
+
+      const { source: src, sourceId: sid } = eventRow.groupSource;
+      const memberRealNames = eventRow.participants.map((p) => p.realName);
+
+      await db.collection("race_events").doc(canonicalEventId).update({
+        groupScrapeStatus: "running",
+        groupScrapeTriggeredAt: new Date().toISOString(),
+      });
+
+      triggerGroupScrape({
+        canonicalEventId,
+        source: src,
+        sourceId: sid,
+        memberRealNames,
+        event: eventRow,
+        db,
+        scraper,
+      }).catch((err) => console.error("[group-events scrape]", err));
+
+      return res.json({ ok: true, message: "스크랩 시작됨" });
     }
 
     if (action === "fix-phantom-jobs" && req.method === "POST") {
