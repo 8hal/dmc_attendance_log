@@ -12,10 +12,11 @@ if (!fs.existsSync(nm)) {
   console.error("functions/node_modules 없음. cd functions && npm ci");
   process.exit(1);
 }
-require("module").globalPaths.unshift(nm);
+const { createRequire } = require("module");
+const requireFromFunctions = createRequire(path.join(nm, "_"));
 
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { initializeApp } = requireFromFunctions("firebase-admin/app");
+const { getFirestore } = requireFromFunctions("firebase-admin/firestore");
 
 if (!process.env.FIRESTORE_EMULATOR_HOST) {
   console.error(
