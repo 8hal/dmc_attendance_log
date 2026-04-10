@@ -2598,7 +2598,22 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return acc;
       }, {});
 
+      // race_results에서 이미 확정된 기록 조회 (canonicalEventId 기준)
+      const confirmedSnap = await db.collection("race_results")
+        .where("canonicalEventId", "==", canonicalEventId)
+        .get();
+      const confirmedByName = {};
+      confirmedSnap.forEach((doc) => {
+        const d = doc.data();
+        confirmedByName[d.memberRealName] = d;
+      });
+
       const gap = participants.map((p) => {
+        // 이미 확정된 기록이 있으면 scrape 결과보다 우선
+        const confirmed = confirmedByName[p.realName];
+        if (confirmed) {
+          return { ...p, gapStatus: "ok", confirmed: true, result: confirmed };
+        }
         const matches = resultsByName[p.realName] || [];
         if (matches.length === 0) {
           return { ...p, gapStatus: "missing", result: null };
@@ -2713,6 +2728,56 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }).catch((err) => console.error("[group-events scrape]", err));
 
       return res.json({ ok: true, message: "스크랩 시작됨" });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "confirm-one") {
+      const { canonicalEventId, participant, confirmSource: cs } = req.body;
+      if (!canonicalEventId || !participant || !participant.realName) {
+        return res.status(400).json({ ok: false, error: "canonicalEventId and participant.realName required" });
+      }
+
+      const eventDoc = await db.collection("race_events").doc(canonicalEventId).get();
+      if (!eventDoc.exists) return res.status(404).json({ ok: false, error: "대회 없음" });
+      const ev = eventDoc.data();
+
+      const now = new Date().toISOString();
+      const resolvedDate = ev.eventDate || "";
+      const safeDate = resolvedDate.replace(/[^0-9\-]/g, "");
+      const safeName = (participant.realName || "").replace(/[^a-zA-Z0-9가-힣]/g, "_");
+      const distNorm = normalizeRaceDistance(participant.distance);
+      const safeDist = (distNorm || "").replace(/[^a-zA-Z0-9]/g, "_");
+      const docId = `${safeName}_${safeDist}_${safeDate}`;
+      const ref = db.collection("race_results").doc(docId);
+
+      const finishTrim = String(participant.finishTime || "").trim();
+      const netEff = effectiveNetTimeForConfirm(participant);
+
+      const row = {
+        jobId: ev.groupScrapeJobId || canonicalEventId,
+        canonicalEventId,
+        eventName: ev.eventName || "",
+        eventDate: resolvedDate,
+        source: ev.groupSource?.source || "manual",
+        sourceId: ev.groupSource?.sourceId || "",
+        memberRealName: participant.realName,
+        memberNickname: participant.nickname || participant.realName,
+        distance: distNorm,
+        netTime: netEff,
+        gunTime: participant.gunTime || "",
+        bib: participant.bib || "",
+        overallRank: participant.overallRank || null,
+        gender: participant.gender || "",
+        pbConfirmed: false,
+        isGuest: false,
+        note: participant.note || "",
+        status: participant.dnStatus ? participant.dnStatus.toLowerCase() : "confirmed",
+        confirmedAt: now,
+        confirmSource: cs || "operator",
+      };
+      if (!participant.dnStatus && finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
+
+      await ref.set(row);
+      return res.json({ ok: true, docId });
     }
 
     if (action === "fix-phantom-jobs" && req.method === "POST") {
