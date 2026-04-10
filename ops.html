@@ -320,11 +320,20 @@
         if (events.length === 0) {
           html += '<div style="color: #64748B;">예정 대회 없음</div>';
         } else {
-          // 날짜순 정렬 (최신순)
-          const sorted = events.sort((a, b) => {
-            const dateA = a.date ? new Date(a.date).getTime() : 0;
-            const dateB = b.date ? new Date(b.date).getTime() : 0;
-            return dateA - dateB; // 오름차순 (가까운 대회부터)
+          // 오늘 이후 대회만 필터링
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const upcoming = events.filter(e => {
+            if (!e.date) return false;
+            const eventDate = new Date(e.date);
+            return eventDate >= today;
+          });
+          
+          // 날짜순 정렬 (가까운 대회부터)
+          const sorted = upcoming.sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            return dateA - dateB;
           });
           
           sorted.slice(0, 20).forEach((e) => {
