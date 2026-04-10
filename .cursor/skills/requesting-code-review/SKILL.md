@@ -31,7 +31,11 @@ HEAD_SHA=$(git rev-parse HEAD)
 
 **2. Dispatch code-reviewer subagent:**
 
-Use Task tool with superpowers:code-reviewer type, fill template at `code-reviewer.md`
+Use Task tool with generalPurpose subagent (DO NOT use fast model), fill template at `code-reviewer.md`
+
+**Model Selection:**
+- ❌ `fast` — 품질 낮음, 코드 리뷰 부적합
+- ✅ `default` (model 파라미터 생략) — 높은 품질, 깊은 분석
 
 **Placeholders:**
 - `{WHAT_WAS_IMPLEMENTED}` - What you just built
