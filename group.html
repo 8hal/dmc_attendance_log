@@ -823,6 +823,9 @@
       }
     }
 
+    // 검색어 입력 시 리스트 필터링
+    document.getElementById("memberFilter").addEventListener("input", () => void renderMemberList());
+    
     let isEnterProcessing = false;
     let isComposing = false;
     
