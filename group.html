@@ -52,6 +52,11 @@
     .gcard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .gcard-title { font-size: 15px; font-weight: 700; }
     .gcard-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 12px; color: var(--text-sub); }
+    
+    .more-menu { position: absolute; right: 0; top: 100%; margin-top: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; min-width: 120px; }
+    .more-menu button { display: block; width: 100%; text-align: left; padding: 10px 14px; border: none; background: none; font-size: 13px; color: var(--text); cursor: pointer; }
+    .more-menu button:hover { background: var(--bg); }
+    
     .divider { border: none; border-top: 1px solid var(--border-light); margin: 12px 0; }
 
     .info-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
@@ -553,6 +558,12 @@
                   ${scrapeStatusBadge(ev.groupScrapeStatus)}
                 </div>
               </div>
+              <div style="position:relative;">
+                <button type="button" class="btn btn-ghost btn-sm" data-more-menu="${id}" style="font-size:18px;padding:4px 8px;">⋮</button>
+                <div id="more-menu-${id}" class="more-menu" style="display:none;">
+                  <button type="button" data-delete-event="${id}">🗑️ 삭제</button>
+                </div>
+              </div>
             </div>
             <hr class="divider" />
             <div class="info-row">
@@ -681,7 +692,61 @@
           }).catch((e) => showToast(e.message || String(e), true));
         });
       });
+      
+      // 더보기 메뉴 이벤트
+      root.querySelectorAll("[data-more-menu]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const id = btn.getAttribute("data-more-menu");
+          const menu = document.getElementById(`more-menu-${id}`);
+          if (menu) {
+            const isOpen = menu.style.display !== "none";
+            document.querySelectorAll(".more-menu").forEach(m => m.style.display = "none");
+            menu.style.display = isOpen ? "none" : "block";
+          }
+          e.stopPropagation();
+        });
+      });
+      
+      // 삭제 버튼 이벤트
+      root.querySelectorAll("[data-delete-event]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const eventId = btn.getAttribute("data-delete-event");
+          const event = events.find(ev => ev.id === eventId);
+          
+          if (!event) {
+            showToast("대회를 찾을 수 없습니다", true);
+            return;
+          }
+          
+          const confirmMsg = `"${event.eventName}" 대회를 삭제하시겠습니까?\n\n참가자 정보와 확정된 기록은 유지되지만,\n단체 대회 목록에서 제거됩니다.`;
+          if (!confirm(confirmMsg)) return;
+          
+          try {
+            const res = await fetch(`${apiBase()}?action=group-events`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                subAction: "delete",
+                canonicalEventId: eventId,
+              }),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || "삭제 실패");
+            
+            showToast("대회가 삭제되었습니다");
+            await loadGroupEvents();
+          } catch (err) {
+            console.error("삭제 오류:", err);
+            showToast(err.message || "삭제 중 오류 발생", true);
+          }
+        });
+      });
     }
+    
+    // 메뉴 외부 클릭 시 닫기
+    document.addEventListener("click", () => {
+      document.querySelectorAll(".more-menu").forEach(m => m.style.display = "none");
+    });
 
     let availableGorunningCache = [];
 

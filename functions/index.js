@@ -2780,6 +2780,21 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, docId });
     }
 
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "delete") {
+      const { canonicalEventId } = req.body;
+      if (!canonicalEventId) {
+        return res.status(400).json({ ok: false, error: "canonicalEventId required" });
+      }
+
+      const eventDoc = await db.collection("race_events").doc(canonicalEventId).get();
+      if (!eventDoc.exists) {
+        return res.status(404).json({ ok: false, error: "대회를 찾을 수 없습니다" });
+      }
+
+      await db.collection("race_events").doc(canonicalEventId).delete();
+      return res.json({ ok: true, message: "대회가 삭제되었습니다" });
+    }
+
     if (action === "fix-phantom-jobs" && req.method === "POST") {
       // Phantom Jobs 일괄 다운그레이드 (confirmed → complete)
       const { jobIds, secret } = req.body || {};
