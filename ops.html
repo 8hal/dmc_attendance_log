@@ -70,7 +70,7 @@
   <!-- Section 4: 전환율 -->
   <div class="card" id="memberStatsCard"><div class="loading">로딩 중...</div></div>
 
-  <!-- Section 5: 고러닝 예정 대회 -->
+  <!-- Section 5: 예정 대회 -->
   <div class="card" id="gorunningEventsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="scrapeAlertsCard"><div class="loading">로딩 중...</div></div>
   <div class="card" id="logsCard"><div class="loading">로딩 중...</div></div>
@@ -295,7 +295,7 @@
 
         if (!data.ok) {
           document.getElementById("gorunningEventsCard").innerHTML =
-            '<div class="card-title">📅 고러닝 예정 대회</div><span class="badge-warn">로드 실패</span>';
+            '<div class="card-title">📅 예정 대회 (고러닝 + 러닝위키)</div><span class="badge-warn">로드 실패</span>';
           return;
         }
 
@@ -327,7 +327,7 @@
       } catch (err) {
         console.error("고러닝 로드 실패:", err);
         document.getElementById("gorunningEventsCard").innerHTML =
-          '<div class="card-title">📅 고러닝 예정 대회</div><span class="badge-warn">오류 발생</span>';
+          '<div class="card-title">📅 예정 대회 (고러닝 + 러닝위키)</div><span class="badge-warn">오류 발생</span>';
       }
     }
 
@@ -378,7 +378,7 @@
       
       let html = `
         <div class="card-title">
-          📅 고러닝 예정 대회 (향후 2개월)
+          📅 예정 대회 (고러닝 + 러닝위키)
           <button type="button" class="refresh-btn" onclick="renderGorunningEvents()">↻</button>
         </div>
 
