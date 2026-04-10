@@ -285,6 +285,9 @@
       }
     }
 
+    let gorunningDisplayCount = 20;
+    let gorunningFilteredEvents = [];
+
     async function renderGorunningEvents() {
       try {
         const res = await fetch(`${API_BASE}?action=ops-gorunning-events`);
@@ -297,97 +300,181 @@
         }
 
         const events = data.events || [];
-        const scraped = events.filter(e => e.matchStatus === "scraped").length;
-        const discovered = events.filter(e => e.matchStatus === "discovered").length;
-        const notMatched = events.filter(e => e.matchStatus === "not_matched").length;
-
-        const lastStr = data.lastCrawled
-          ? new Date(data.lastCrawled).toLocaleString("ko-KR")
-          : "—";
-        const dowKo = ["일", "월", "화", "수", "목", "금", "토"];
-
-        let html = `
-          <div class="card-title">
-            📅 고러닝 예정 대회 (향후 2개월)
-            <button type="button" class="refresh-btn" onclick="renderGorunningEvents()">↻</button>
-          </div>
-
-          <div style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">
-            마지막 업데이트: ${lastStr} ${data.cached ? "(캐시)" : ""}<br/>
-            총 ${events.length}개 대회 | ✅ 스크랩 완료: ${scraped}개 | 🔍 발견: ${discovered}개 | ❓ 수동: ${notMatched}개
-          </div>`;
-
-        if (events.length === 0) {
-          html += '<div style="color: #64748B;">예정 대회 없음</div>';
-        } else {
-          // 오늘 이후 대회만 필터링
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const upcoming = events.filter(e => {
-            if (!e.date) return false;
-            const eventDate = new Date(e.date);
-            return eventDate >= today;
-          });
-          
-          // 날짜순 정렬 (가까운 대회부터)
-          const sorted = upcoming.sort((a, b) => {
-            const dateA = new Date(a.date).getTime();
-            const dateB = new Date(b.date).getTime();
-            return dateA - dateB;
-          });
-          
-          sorted.slice(0, 20).forEach((e) => {
-            const status = e.matchStatus;
-            let statusIcon, statusText, borderColor;
-
-            if (status === "scraped") {
-              statusIcon = "✅";
-              statusText = "스크랩 완료";
-              borderColor = "#6EE7B7"; // 초록
-            } else if (status === "discovered") {
-              statusIcon = "🔍";
-              statusText = "발견 가능";
-              borderColor = "#60A5FA"; // 파랑
-            } else {
-              statusIcon = "❓";
-              statusText = "수동 검색 필요";
-              borderColor = "#FCA5A5"; // 빨강
-            }
-
-            const d = e.date ? new Date(e.date) : null;
-            const dow = d && !isNaN(d.getTime()) ? dowKo[d.getDay()] : "?";
-
-            html += `
-              <div style="padding: 10px; margin: 8px 0; background: #1E293B; border-radius: 6px; border-left: 3px solid ${borderColor};">
-                <div style="font-size: 13px; font-weight: 700; color: #F8FAFC;">
-                  ${esc(e.date || "")} (${dow}) ${esc(e.name || "")}
-                </div>
-                <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">
-                  ${statusIcon} ${statusText}`;
-
-            if (status === "scraped" && e.matchedJob) {
-              html += ` (${esc(String(e.matchedJob.source || ""))}_${esc(String(e.matchedJob.sourceId || ""))})`;
-              html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[확정 완료 →]</a>`;
-            } else if (status === "discovered" && e.matchedEvent) {
-              html += ` (${esc(String(e.matchedEvent.source || ""))}_${esc(String(e.matchedEvent.sourceId || ""))})`;
-              html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[스크랩 시작 →]</a>`;
-            } else {
-              html += `<br/><span style="font-size: 11px; color: #64748B;">
-                💡 액션: report.html "발견"에서 수동 검색 또는 기록 사이트에서 직접 확인 필요
-              </span>`;
-              html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[수동 검색 →]</a>`;
-            }
-
-            html += `</div></div>`;
-          });
-        }
-
-        document.getElementById("gorunningEventsCard").innerHTML = html;
+        
+        // 전역 변수에 저장 (필터링에 사용)
+        window.gorunningAllEvents = events;
+        window.gorunningLastCrawled = data.lastCrawled;
+        window.gorunningCached = data.cached;
+        
+        // 오늘 이후 대회만 필터링
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const upcoming = events.filter(e => {
+          if (!e.date) return false;
+          const eventDate = new Date(e.date);
+          return eventDate >= today;
+        });
+        
+        // 날짜순 정렬 (가까운 대회부터)
+        gorunningFilteredEvents = upcoming.sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateA - dateB;
+        });
+        
+        gorunningDisplayCount = 20;
+        renderGorunningList();
       } catch (err) {
         console.error("고러닝 로드 실패:", err);
         document.getElementById("gorunningEventsCard").innerHTML =
           '<div class="card-title">📅 고러닝 예정 대회</div><span class="badge-warn">오류 발생</span>';
       }
+    }
+
+    function filterGorunningEvents() {
+      const searchQuery = (document.getElementById("gorunningSearch")?.value || "").trim().toLowerCase();
+      const monthFilter = document.getElementById("gorunningMonth")?.value || "all";
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      gorunningFilteredEvents = [];
+      
+      // 전체 이벤트 다시 가져오기 (renderGorunningEvents에서 이미 정렬됨)
+      const allEvents = window.gorunningAllEvents || [];
+      
+      gorunningFilteredEvents = allEvents.filter(e => {
+        // 검색어 필터
+        if (searchQuery && !(e.name || "").toLowerCase().includes(searchQuery)) {
+          return false;
+        }
+        
+        // 월 필터
+        if (monthFilter !== "all" && e.date) {
+          const eventDate = new Date(e.date);
+          const eventMonth = eventDate.getMonth() + 1; // 1-12
+          if (String(eventMonth) !== monthFilter) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      gorunningDisplayCount = 20;
+      renderGorunningList();
+    }
+
+    function renderGorunningList() {
+      const events = window.gorunningAllEvents || [];
+      const scraped = events.filter(e => e.matchStatus === "scraped").length;
+      const discovered = events.filter(e => e.matchStatus === "discovered").length;
+      const notMatched = events.filter(e => e.matchStatus === "not_matched").length;
+      
+      const lastStr = window.gorunningLastCrawled
+        ? new Date(window.gorunningLastCrawled).toLocaleString("ko-KR")
+        : "—";
+      const dowKo = ["일", "월", "화", "수", "목", "금", "토"];
+      
+      let html = `
+        <div class="card-title">
+          📅 고러닝 예정 대회 (향후 2개월)
+          <button type="button" class="refresh-btn" onclick="renderGorunningEvents()">↻</button>
+        </div>
+
+        <div style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">
+          마지막 업데이트: ${lastStr} ${window.gorunningCached ? "(캐시)" : ""}<br/>
+          총 ${events.length}개 대회 | ✅ 스크랩 완료: ${scraped}개 | 🔍 발견: ${discovered}개 | ❓ 수동: ${notMatched}개
+        </div>
+        
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <input type="text" id="gorunningSearch" placeholder="대회명 검색..." 
+            style="flex:1;min-width:200px;padding:6px 10px;border:1px solid #475569;border-radius:6px;background:#0F172A;color:#E2E8F0;font-size:13px;"
+            oninput="filterGorunningEvents()" />
+          <select id="gorunningMonth" onchange="filterGorunningEvents()"
+            style="padding:6px 10px;border:1px solid #475569;border-radius:6px;background:#0F172A;color:#E2E8F0;font-size:13px;">
+            <option value="all">전체 월</option>
+            <option value="4">4월</option>
+            <option value="5">5월</option>
+            <option value="6">6월</option>
+            <option value="7">7월</option>
+            <option value="8">8월</option>
+            <option value="9">9월</option>
+            <option value="10">10월</option>
+            <option value="11">11월</option>
+            <option value="12">12월</option>
+          </select>
+        </div>`;
+
+      if (gorunningFilteredEvents.length === 0) {
+        html += '<div style="color: #64748B;">검색 결과 없음</div>';
+      } else {
+        const displayEvents = gorunningFilteredEvents.slice(0, gorunningDisplayCount);
+        
+        displayEvents.forEach((e) => {
+          const status = e.matchStatus;
+          let statusIcon, statusText, borderColor;
+
+          if (status === "scraped") {
+            statusIcon = "✅";
+            statusText = "스크랩 완료";
+            borderColor = "#6EE7B7";
+          } else if (status === "discovered") {
+            statusIcon = "🔍";
+            statusText = "발견 가능";
+            borderColor = "#60A5FA";
+          } else {
+            statusIcon = "❓";
+            statusText = "수동 검색 필요";
+            borderColor = "#FCA5A5";
+          }
+
+          const d = e.date ? new Date(e.date) : null;
+          const dow = d && !isNaN(d.getTime()) ? dowKo[d.getDay()] : "?";
+
+          html += `
+            <div style="padding: 10px; margin: 8px 0; background: #1E293B; border-radius: 6px; border-left: 3px solid ${borderColor};">
+              <div style="font-size: 13px; font-weight: 700; color: #F8FAFC;">
+                ${esc(e.date || "")} (${dow}) ${esc(e.name || "")}
+              </div>
+              <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">
+                ${statusIcon} ${statusText}`;
+
+          if (status === "scraped" && e.matchedJob) {
+            html += ` (${esc(String(e.matchedJob.source || ""))}_${esc(String(e.matchedJob.sourceId || ""))})`;
+            html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[확정 완료 →]</a>`;
+          } else if (status === "discovered" && e.matchedEvent) {
+            html += ` (${esc(String(e.matchedEvent.source || ""))}_${esc(String(e.matchedEvent.sourceId || ""))})`;
+            html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[스크랩 시작 →]</a>`;
+          } else {
+            html += `<br/><span style="font-size: 11px; color: #64748B;">
+              💡 액션: report.html "발견"에서 수동 검색 또는 기록 사이트에서 직접 확인 필요
+            </span>`;
+            html += ` <a href="report.html" style="color: #60A5FA; text-decoration: none;">[수동 검색 →]</a>`;
+          }
+
+          html += `</div></div>`;
+        });
+        
+        // 더보기 버튼
+        if (gorunningDisplayCount < gorunningFilteredEvents.length) {
+          const remaining = gorunningFilteredEvents.length - gorunningDisplayCount;
+          html += `
+            <div style="text-align:center;margin-top:12px;">
+              <button onclick="loadMoreGorunning()" 
+                style="padding:8px 16px;background:#475569;color:#E2E8F0;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
+                더보기 (${remaining}개 남음)
+              </button>
+            </div>`;
+        }
+      }
+
+      document.getElementById("gorunningEventsCard").innerHTML = html;
+    }
+
+    function loadMoreGorunning() {
+      gorunningDisplayCount += 20;
+      renderGorunningList();
     }
 
     async function loadAll() {
