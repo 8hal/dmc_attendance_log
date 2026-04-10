@@ -855,31 +855,20 @@
             (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q),
         );
         
-        console.log(`[Enter] 검색어: "${q}", 필터링 결과: ${filtered.length}명`, filtered.map(m => m.nickname));
-        
         if (filtered.length === 0) {
           showToast("검색 결과가 없습니다.", true);
           return;
         }
         
         const first = filtered[0];
-        console.log(`[Enter] 첫 번째 결과: ${first.nickname} (id: ${first.id})`);
         
         if (selectedMemberIds.has(first.id)) {
           showToast(`${first.nickname}은 이미 선택됨`, true);
         } else {
           selectedMemberIds.add(first.id);
-          console.log(`[Enter] ${first.id} 추가됨. 현재 선택: ${Array.from(selectedMemberIds)}`);
           showToast(`${first.nickname} 선택됨`);
-          
-          // 검색창 초기화 (input 이벤트 트리거하지 않도록 직접 설정)
-          const input = e.target;
-          input.value = "";
-          
-          // 체크박스만 직접 업데이트 (전체 재렌더링 없이)
-          const checkbox = document.querySelector(`input[type="checkbox"][value="${first.id}"]`);
-          if (checkbox) checkbox.checked = true;
-          updateSelectedCount();
+          e.target.value = "";
+          void renderMemberList();
         }
       } finally {
         isEnterProcessing = false;
