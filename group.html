@@ -824,32 +824,41 @@
     }
 
     document.getElementById("memberFilter").addEventListener("input", () => void renderMemberList());
+    let isEnterProcessing = false;
     document.getElementById("memberFilter").addEventListener("keydown", async (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
+      e.stopPropagation();
       
-      const q = (e.target.value || "").trim().toLowerCase();
-      if (!q) return;
+      if (isEnterProcessing) return;
+      isEnterProcessing = true;
       
-      const members = await loadAllMembers();
-      const filtered = members.filter(
-        (m) =>
-          (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q),
-      );
-      
-      if (filtered.length === 0) {
-        showToast("검색 결과가 없습니다.", true);
-        return;
-      }
-      
-      const first = filtered[0];
-      if (selectedMemberIds.has(first.id)) {
-        showToast(`${first.nickname}은 이미 선택됨`, true);
-      } else {
-        selectedMemberIds.add(first.id);
-        showToast(`${first.nickname} 선택됨`);
-        e.target.value = "";
-        void renderMemberList();
+      try {
+        const q = (e.target.value || "").trim().toLowerCase();
+        if (!q) return;
+        
+        const members = await loadAllMembers();
+        const filtered = members.filter(
+          (m) =>
+            (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q),
+        );
+        
+        if (filtered.length === 0) {
+          showToast("검색 결과가 없습니다.", true);
+          return;
+        }
+        
+        const first = filtered[0];
+        if (selectedMemberIds.has(first.id)) {
+          showToast(`${first.nickname}은 이미 선택됨`, true);
+        } else {
+          selectedMemberIds.add(first.id);
+          showToast(`${first.nickname} 선택됨`);
+          e.target.value = "";
+          void renderMemberList();
+        }
+      } finally {
+        isEnterProcessing = false;
       }
     });
     document.getElementById("memberSelectAll").addEventListener("click", async () => {
