@@ -615,7 +615,12 @@
           style="padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;width:200px;background:#0F172A;color:#E2E8F0;" />
         <button onclick="saveGroupSource('${event.id.replace(/'/g, "\\'")}')"
           style="padding:4px 12px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
-          저장 + 스크랩
+          저장
+        </button>
+        <button onclick="scrapeGroupEvent('${event.id.replace(/'/g, "\\'")}')" id="scrape-btn-${event.id}"
+          ${!event.groupSource?.source ? 'disabled' : ''}
+          style="padding:4px 12px;background:${!event.groupSource?.source ? '#64748B' : '#10b981'};color:#fff;border:none;border-radius:6px;cursor:${!event.groupSource?.source ? 'not-allowed' : 'pointer'};font-size:13px;">
+          스크랩
         </button>
         ${event.groupScrapeStatus === 'running' ? '<span style="font-size:12px;color:#94A3B8;">스크랩 진행중...</span>' : ''}
       </div>
@@ -653,6 +658,20 @@
         return;
       }
 
+      alert("소스 저장 완료. 스크랩 버튼을 눌러 기록을 수집하세요.");
+      
+      // 스크랩 버튼 활성화
+      const scrapeBtn = document.getElementById(`scrape-btn-${canonicalEventId}`);
+      if (scrapeBtn) {
+        scrapeBtn.disabled = false;
+        scrapeBtn.style.background = "#10b981";
+        scrapeBtn.style.cursor = "pointer";
+      }
+      
+      await loadGroupEvents();
+    }
+
+    async function scrapeGroupEvent(canonicalEventId) {
       try {
         const scrapeRes = await fetch(`${apiBase()}?action=group-events`, {
           method: "POST",
@@ -665,15 +684,15 @@
         });
         const scrapeData = await scrapeRes.json();
         if (scrapeData.ok) {
-          alert("소스 저장 완료. 스크랩이 시작되었습니다.");
+          alert("스크랩이 시작되었습니다. 잠시 후 새로고침하세요.");
+          await loadGroupEvents();
         } else {
-          alert("소스 저장 완료. 스크랩 트리거 실패: " + (scrapeData.error || "") + " — 다시 시도하거나 자동 스케줄러(15:00)를 기다리세요.");
+          alert("스크랩 실패: " + (scrapeData.error || "알 수 없는 오류"));
         }
-      } catch (e) {
-        alert("소스 저장 완료. 스크랩 트리거 실패 — 다시 시도하거나 자동 스케줄러(15:00)를 기다리세요.");
+      } catch (err) {
+        console.error("스크랩 오류:", err);
+        alert("스크랩 중 오류 발생");
       }
-
-      await loadGroupEvents();
     }
 
     function initOps() {
