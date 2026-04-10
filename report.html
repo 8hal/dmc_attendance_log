@@ -735,9 +735,67 @@
       }
     }
 
-    document.getElementById("scrapeMembersFilter").addEventListener("input", (e) => {
+    // Enter 키 선택 관련 상태
+    let isEnterProcessing = false;
+    let isComposing = false;
+
+    const scrapeMembersFilterInput = document.getElementById("scrapeMembersFilter");
+    
+    scrapeMembersFilterInput.addEventListener("compositionstart", () => {
+      isComposing = true;
+    });
+    
+    scrapeMembersFilterInput.addEventListener("compositionend", () => {
+      isComposing = false;
+    });
+    
+    scrapeMembersFilterInput.addEventListener("input", (e) => {
       renderScrapeMembersChecklist(e.target.value);
     });
+    
+    scrapeMembersFilterInput.addEventListener("keydown", async (e) => {
+      if (e.key !== "Enter") return;
+      if (isComposing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (isEnterProcessing) return;
+      isEnterProcessing = true;
+      
+      try {
+        const q = (e.target.value || "").trim().toLowerCase();
+        if (!q) return;
+        
+        // 필터링된 회원 목록 가져오기
+        const filtered = allMembers.filter((m) => {
+          if (!(m.realName || "").trim()) return false;
+          return (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q);
+        });
+        
+        if (filtered.length === 0) {
+          showToast("검색 결과가 없습니다.", 3000);
+          return;
+        }
+        
+        // 첫 번째 결과 선택
+        const first = filtered[0];
+        const firstCheckbox = Array.from(document.querySelectorAll("#scrapeMembersList .scrape-mem-cb"))
+          .find(cb => cb.value === first.realName);
+        
+        if (firstCheckbox) {
+          if (firstCheckbox.checked) {
+            showToast(`${first.nickname}은 이미 선택됨`, 3000);
+          } else {
+            firstCheckbox.checked = true;
+            showToast(`${first.nickname} 선택됨`);
+          }
+          e.target.value = "";
+          renderScrapeMembersChecklist("");
+        }
+      } finally {
+        isEnterProcessing = false;
+      }
+    });
+    
     document.getElementById("scrapeMembersSelectAll").addEventListener("click", () => {
       document.querySelectorAll("#scrapeMembersList .scrape-mem-cb").forEach((cb) => { cb.checked = true; });
     });
