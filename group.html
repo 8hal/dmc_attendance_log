@@ -142,11 +142,24 @@
       </div>
     </div>
 
-    <div class="section-label">등록된 단체 대회</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="section-label" style="margin:0;">등록된 단체 대회</div>
+      <button type="button" class="btn btn-outline btn-sm" id="openRegisterModalBtn">+ 단체 대회 등록</button>
+    </div>
     <div id="groupEventsRoot"></div>
+  </div>
 
-    <div class="section-label">고러닝 예정 대회</div>
-    <div id="availableGorunningRoot"></div>
+  <div id="registerModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" style="max-width:500px;">
+      <div class="modal-header">
+        <h2>단체 대회 등록</h2>
+        <button type="button" class="modal-close" id="registerModalClose" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="gorunningSearch" class="member-search" placeholder="대회명으로 검색…" />
+        <div id="gorunningList"></div>
+      </div>
+    </div>
   </div>
 
   <div id="participantModal" class="modal-backdrop" aria-hidden="true">
@@ -364,9 +377,7 @@
 
     async function loadGroupEvents() {
       const root = document.getElementById("groupEventsRoot");
-      const avRoot = document.getElementById("availableGorunningRoot");
       root.innerHTML = '<p class="gap-loading">불러오는 중…</p>';
-      avRoot.innerHTML = "";
       try {
         const res = await fetch(`${API_BASE}?action=group-events`);
         const data = await res.json();
@@ -521,7 +532,7 @@
       window.__groupEvents = events;
       const root = document.getElementById("groupEventsRoot");
       if (events.length === 0) {
-        root.innerHTML = '<div class="empty">등록된 단체 대회가 없습니다.<br>아래 고러닝 목록에서 등록할 수 있습니다.</div>';
+        root.innerHTML = '<div class="empty">등록된 단체 대회가 없습니다.<br><span style="font-size:12px;">위의 <b>+ 단체 대회 등록</b> 버튼으로 추가하세요.</span></div>';
         return;
       }
       root.innerHTML = events.map((ev) => {
@@ -672,31 +683,63 @@
       });
     }
 
-    function renderAvailableGorunning(list) {
-      const avRoot = document.getElementById("availableGorunningRoot");
-      if (!list.length) {
-        avRoot.innerHTML = '<div class="empty">표시할 예정 대회가 없습니다.<br>(고러닝 캐시가 비었거나 모두 등록됨)</div>';
+    let availableGorunningCache = [];
+
+    function renderGorunningList(filter) {
+      const listEl = document.getElementById("gorunningList");
+      if (!listEl) return;
+      const q = (filter || "").trim().toLowerCase();
+      const filtered = availableGorunningCache.filter(
+        (e) => !q || (e.name || "").toLowerCase().includes(q) || (e.date || "").includes(q)
+      );
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="empty" style="padding:20px 0;">해당하는 예정 대회가 없습니다.<br><span style="font-size:12px;">고러닝 캐시가 비었거나 모두 등록됨</span></div>';
         return;
       }
-      avRoot.innerHTML = `<div class="glist-card">${list.map((e) => `
+      listEl.innerHTML = `<div class="glist-card">${filtered.map((e) => `
         <div class="glist-item">
           <div>
             <div class="glist-name">${escapeHtml(e.name || "—")}</div>
             <div class="glist-meta">📅 ${escapeHtml(e.date || "—")}${e.location ? " · " + escapeHtml(e.location) : ""}</div>
           </div>
           <button type="button" class="btn btn-outline btn-sm" data-promote="${escapeHtml(e.id)}"
-            data-name="${escapeHtml(e.name || "")}" data-date="${escapeHtml(e.date || "")}">단체 대회 등록</button>
+            data-name="${escapeHtml(e.name || "")}" data-date="${escapeHtml(e.date || "")}">등록</button>
         </div>
       `).join("")}</div>`;
 
-      avRoot.querySelectorAll("[data-promote]").forEach((btn) => {
+      listEl.querySelectorAll("[data-promote]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const gorunningId = btn.getAttribute("data-promote");
           const eventName = btn.getAttribute("data-name");
           const eventDate = btn.getAttribute("data-date");
+          closeRegisterModal();
           await registerGroupEvent(gorunningId, eventName, eventDate);
         });
       });
+    }
+
+    function renderAvailableGorunning(list) {
+      availableGorunningCache = list || [];
+      renderGorunningList("");
+    }
+
+    function openRegisterModal() {
+      const modal = document.getElementById("registerModal");
+      if (modal) {
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        const searchEl = document.getElementById("gorunningSearch");
+        if (searchEl) { searchEl.value = ""; searchEl.focus(); }
+        renderGorunningList("");
+      }
+    }
+
+    function closeRegisterModal() {
+      const modal = document.getElementById("registerModal");
+      if (modal) {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+      }
     }
 
     async function registerGroupEvent(gorunningId, eventName, eventDate) {
@@ -829,6 +872,15 @@
 
     ["participantModalClose", "participantModalCancel"].forEach((id) => {
       document.getElementById(id).addEventListener("click", closeParticipantModal);
+    });
+
+    document.getElementById("openRegisterModalBtn").addEventListener("click", openRegisterModal);
+    document.getElementById("registerModalClose").addEventListener("click", closeRegisterModal);
+    document.getElementById("registerModal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeRegisterModal();
+    });
+    document.getElementById("gorunningSearch").addEventListener("input", (e) => {
+      renderGorunningList(e.target.value);
     });
 
     document.getElementById("participantModalRefresh").addEventListener("click", async () => {
