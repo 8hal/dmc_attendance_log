@@ -721,24 +721,24 @@
           const confirmMsg = `"${event.eventName}" 대회를 삭제하시겠습니까?\n\n참가자 정보와 확정된 기록은 유지되지만,\n단체 대회 목록에서 제거됩니다.`;
           if (!confirm(confirmMsg)) return;
           
-          try {
-            const res = await fetch(`${apiBase()}?action=group-events`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                subAction: "delete",
-                canonicalEventId: eventId,
-              }),
-            });
-            const data = await res.json();
-            if (!data.ok) throw new Error(data.error || "삭제 실패");
-            
-            showToast("대회가 삭제되었습니다");
-            await loadGroupEvents();
-          } catch (err) {
-            console.error("삭제 오류:", err);
-            showToast(err.message || "삭제 중 오류 발생", true);
-          }
+        try {
+          const res = await fetch(`${API_BASE}?action=group-events`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subAction: "delete",
+              canonicalEventId: eventId,
+            }),
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "삭제 실패");
+          
+          showToast("대회가 삭제되었습니다");
+          await loadGroupEvents();
+        } catch (err) {
+          console.error("삭제 오류:", err);
+          showToast(err.message || "삭제 중 오류 발생", true);
+        }
         });
       });
     }
