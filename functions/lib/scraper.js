@@ -887,6 +887,7 @@ async function discoverOhmyrace(year) {
 }
 
 const GORUNNING_ORIGIN = "https://gorunning.kr";
+const RUNNINGWIKII_ORIGIN = "https://runningwikii.com";
 
 /**
  * 고러닝 월간 일정 (예: https://gorunning.kr/races/monthly/2026-03/)
@@ -1460,6 +1461,102 @@ async function crawlGorunningEvents() {
   }));
 }
 
+// ─── 러닝위키 예정 대회 크롤 ──────────────────────────────────────
+
+/**
+ * 러닝위키 월별 일정 (https://runningwikii.com/entry/2026-marathon-running-schedule/)
+ * 탭 구조: 1월~12월, 각 탭 내 테이블 파싱
+ */
+async function crawlRunningwikiiEvents() {
+  const url = `${RUNNINGWIKII_ORIGIN}/entry/2026-marathon-running-schedule/`;
+  const res = await fetch(url, {
+    headers: { ...browserHeaders("gorunning"), Accept: "text/html,*/*" },
+  });
+  if (!res.ok) {
+    console.warn(`[crawlRunningwikiiEvents] HTTP ${res.status}`);
+    return [];
+  }
+  const html = await res.text();
+  const $ = cheerioLoad(html);
+  const out = [];
+
+  // 테이블 파싱: | 대회일 | 대회명 | 지역 | 접수 |
+  $("table tbody tr").each((_, tr) => {
+    const cells = $(tr).find("td");
+    if (cells.length < 2) return;
+    
+    const dateText = $(cells[0]).text().trim(); // "4월 19일 (일)"
+    const nameCell = $(cells[1]);
+    const a = nameCell.find("a").first();
+    const name = a.text().trim().replace(/NEW$/, "").trim();
+    const href = a.attr("href") || "";
+    
+    if (!name || !dateText) return;
+    
+    // 날짜 파싱: "4월 19일" → "2026-04-19"
+    const m = dateText.match(/(\d+)월\s*(\d+)일/);
+    if (!m) return;
+    const month = m[1].padStart(2, "0");
+    const day = m[2].padStart(2, "0");
+    const date = `2026-${month}-${day}`;
+    
+    out.push({
+      name,
+      date,
+      runningwikiiUrl: href.startsWith("http") ? href : `${RUNNINGWIKII_ORIGIN}${href}`,
+    });
+  });
+
+  return out;
+}
+
+/**
+ * 고러닝 + 러닝위키 통합 크롤: 중복 제거 (날짜+이름 기준)
+ */
+async function crawlAllUpcomingEvents() {
+  const [gorunning, runningwikii] = await Promise.all([
+    crawlGorunningEvents().catch(err => { console.warn(`[crawlAll] gorunning: ${err.message}`); return []; }),
+    crawlRunningwikiiEvents().catch(err => { console.warn(`[crawlAll] runningwikii: ${err.message}`); return []; }),
+  ]);
+
+  const combined = [];
+  const seen = new Set();
+
+  for (const e of gorunning) {
+    const key = `${e.date}_${e.name}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      combined.push({ ...e, source: "gorunning" });
+    }
+  }
+
+  for (const e of runningwikii) {
+    const key = `${e.date}_${e.name}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      combined.push({
+        id: `runningwikii_${e.date}_${combined.length}`,
+        name: e.name,
+        date: e.date,
+        location: "",
+        distance: [],
+        url: e.runningwikiiUrl || "",
+        source: "runningwikii",
+      });
+    }
+  }
+
+  // 날짜순 정렬
+  combined.sort((a, b) => {
+    const da = String(a.date || "");
+    const db = String(b.date || "");
+    if (da !== db) return da.localeCompare(db);
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  return combined;
+}
+
 module.exports = {
   normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
   searchMember, getEventInfo,
@@ -1472,6 +1569,8 @@ module.exports = {
   scrapeEvent, getSmartChipSession,
   sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
   crawlGorunningEvents,
+  crawlRunningwikiiEvents,
+  crawlAllUpcomingEvents,
   matchGorunningToJob,
   matchGorunningToDiscovered,
   calculateNameSimilarity,

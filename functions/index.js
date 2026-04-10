@@ -2434,7 +2434,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
 
       try {
-        const gorunningEvents = await scraper.crawlGorunningEvents();
+        const upcomingEvents = await scraper.crawlAllUpcomingEvents();
 
         // 1. scrape_jobs 매칭 (대회 후)
         const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
@@ -2465,7 +2465,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         }
 
         // 3. 2단계 매칭
-        const enrichedEvents = gorunningEvents.map((e) => {
+        const enrichedEvents = upcomingEvents.map((e) => {
           // Step 1: scrape_jobs 매칭 (이미 스크랩됨)
           const jobMatch = scraper.matchGorunningToJob(e, scrapeJobs);
           if (jobMatch) {
