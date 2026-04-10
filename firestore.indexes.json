@@ -81,6 +81,14 @@
         { "fieldPath": "jobId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "race_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isGroupEvent", "order": "ASCENDING" },
+        { "fieldPath": "eventDate", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -292,6 +292,56 @@ verify_fail=$(curl_post "$API?action=verify-admin" '{"pw":"wrong_password"}')
 assert_not_contains "REG: verify-admin 틀린 비밀번호 → ok 아님" '"ok":true' "$verify_fail"
 
 # ────────────────────────────────────────────────────────────────────
+# C1-xx: confirm-one (개별 확정 API)
+# ────────────────────────────────────────────────────────────────────
+
+# C1-01: DNS 개별 확정 (evt_qa_done: scrape job 있음, 최출발없음 missing)
+c1_dns=$(curl_post "$API?action=group-events" \
+  "{\"subAction\":\"confirm-one\",\"canonicalEventId\":\"evt_qa_done\",\"participant\":{\"realName\":\"최출발없음\",\"nickname\":\"최출발없음\",\"dnStatus\":\"DNS\"},\"confirmSource\":\"operator\"}")
+assert_contains "C1-01: confirm-one DNS 저장 ok" '"ok":true' "$c1_dns"
+
+# C1-02: gap 재조회 시 DNS 확정됨으로 표시
+c1_gap=$(curl_get "$API?action=group-events&subAction=gap&canonicalEventId=evt_qa_done")
+c1_gap_choi=$(echo "$c1_gap" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+gap=d.get('gap',[])
+item=next((x for x in gap if x.get('realName')=='최출발없음'),{})
+print(json.dumps(item))
+" 2>/dev/null || echo "{}")
+assert_contains "C1-02: DNS 확정 후 gap에서 confirmed=true" '"confirmed": true' "$c1_gap_choi"
+assert_contains "C1-02: DNS 확정 후 status=dns" '"status": "dns"' "$c1_gap_choi"
+
+# C1-03: 수동 기록 확정 (김없음 missing → finishTime 입력)
+c1_manual=$(curl_post "$API?action=group-events" \
+  "{\"subAction\":\"confirm-one\",\"canonicalEventId\":\"evt_qa_done\",\"participant\":{\"realName\":\"김없음\",\"nickname\":\"김없음\",\"finishTime\":\"4:22:11\",\"distance\":\"42.195km\"},\"confirmSource\":\"operator\"}")
+assert_contains "C1-03: confirm-one 수동 기록 저장 ok" '"ok":true' "$c1_manual"
+
+# C1-04: 두 확정 기록이 모두 남아 있는지 확인 (개별 set이므로 다른 기록 삭제 없음)
+c1_gap2=$(curl_get "$API?action=group-events&subAction=gap&canonicalEventId=evt_qa_done")
+c1_gap2_kim=$(echo "$c1_gap2" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+gap=d.get('gap',[])
+item=next((x for x in gap if x.get('realName')=='김없음'),{})
+print(json.dumps(item))
+" 2>/dev/null || echo "{}")
+c1_gap2_choi=$(echo "$c1_gap2" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+gap=d.get('gap',[])
+item=next((x for x in gap if x.get('realName')=='최출발없음'),{})
+print(json.dumps(item))
+" 2>/dev/null || echo "{}")
+assert_contains "C1-04: 수동 기록 저장 후 김없음 confirmed=true" '"confirmed": true' "$c1_gap2_kim"
+assert_contains "C1-04: 수동 기록 저장 후 최출발없음 confirmed=true (삭제 안 됨)" '"confirmed": true' "$c1_gap2_choi"
+
+# C1-05: 파라미터 누락 → 400
+c1_bad_code=$(curl_post_code "$API?action=group-events" \
+  "{\"subAction\":\"confirm-one\",\"canonicalEventId\":\"evt_qa_done\"}")
+assert_code "C1-05: participant 없으면 400" "400" "$c1_bad_code"
+
+# ────────────────────────────────────────────────────────────────────
 # 결과 출력
 # ────────────────────────────────────────────────────────────────────
 echo ""

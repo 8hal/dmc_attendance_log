@@ -112,3 +112,20 @@
 | `eventDate` | `YYYY-MM-DD` |
 | `sourceMappings` | `{ source, sourceId }[]` — 동일 `(source, sourceId)` 쌍은 전역에서 한 문서에만 |
 | `createdAt` | ISO 문자열 등 |
+| `isGroupEvent` | `boolean` — 단체 대회 여부. 필드 없음이면 일반 대회로 취급 |
+| `participants` | 배열. 요소: `{ memberId: string, realName: string, nickname: string }` — 참가자 목록 |
+| `groupSource` | `object` 또는 `null` — 단체 기록 소스(오너 입력). `{ source: string, sourceId: string }`. `source`는 `race_results.source`와 동일 범주(`smartchip`, `myresult`, `spct`, `marazone`, `ohmyrace`, `manual` 중 하나) |
+| `groupScrapeStatus` | 문자열 — 단체용 스크랩 상태. 아래 표 참조 |
+| `groupScrapeJobId` | `string` 또는 `null` — 스크랩 완료 후 대응 `scrape_jobs` 문서 ID |
+| `groupScrapeTriggeredAt` | `string` 또는 `null` — 스크랩 트리거 시각, ISO KST |
+| `promotedAt` | ISO KST 문자열 — 단체 대회로 승격된 시각 |
+| `gorunningId` | 문자열 — 고러닝 예정 대회 ID |
+
+### race_events.groupScrapeStatus
+
+| 값 | 의미 |
+|----|------|
+| `pending` | 스크랩 대기 |
+| `running` | 스크랩 진행 중 |
+| `done` | 스크랩 완료 |
+| `failed` | 스크랩 실패 |
