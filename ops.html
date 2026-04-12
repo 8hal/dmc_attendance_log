@@ -377,13 +377,15 @@
       const dowKo = ["일", "월", "화", "수", "목", "금", "토"];
       
       let html = `
-        <div class="card-title">
-          📅 예정 대회 (고러닝 + 러닝위키)
-          <button type="button" class="refresh-btn" onclick="renderGorunningEvents()">↻</button>
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>📅 예정 대회 (고러닝 + 러닝위키)</span>
+          <button type="button" class="refresh-btn" onclick="refreshGorunningCache()" id="refreshCacheBtn" title="캐시를 새로고침합니다">
+            🔄 캐시 새로고침
+          </button>
         </div>
 
         <div style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">
-          마지막 업데이트: ${lastStr} ${window.gorunningCached ? "(캐시)" : ""}<br/>
+          마지막 업데이트: ${lastStr} ${window.gorunningCached ? "(캐시)" : "(실시간)"}<br/>
           총 ${events.length}개 대회 | ✅ 스크랩 완료: ${scraped}개 | 🔍 발견: ${discovered}개 | ❓ 수동: ${notMatched}개
         </div>
         
@@ -475,6 +477,45 @@
     function loadMoreGorunning() {
       gorunningDisplayCount += 20;
       renderGorunningList();
+    }
+
+    async function refreshGorunningCache() {
+      const btn = document.getElementById("refreshCacheBtn");
+      if (!btn) return;
+      
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "⏳ 새로고침 중...";
+      btn.style.cursor = "not-allowed";
+      
+      try {
+        // forceRefresh=true로 API 호출
+        const res = await fetch(`${API_BASE}?action=ops-gorunning-events&forceRefresh=true`);
+        const data = await res.json();
+        
+        if (!data.ok) {
+          alert("캐시 새로고침 실패: " + (data.error || "알 수 없는 오류"));
+          return;
+        }
+        
+        // 전역 변수 업데이트
+        window.gorunningAllEvents = data.events || [];
+        window.gorunningLastCrawled = data.lastCrawled;
+        window.gorunningCached = data.cached;
+        
+        // 화면 다시 렌더링
+        gorunningDisplayCount = 20;
+        renderGorunningList();
+        
+        alert(`✅ 캐시가 새로고침되었습니다!\n총 ${data.events?.length || 0}개 대회가 발견되었습니다.`);
+      } catch (err) {
+        console.error("캐시 새로고침 오류:", err);
+        alert("캐시 새로고침 중 오류가 발생했습니다: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        btn.style.cursor = "pointer";
+      }
     }
 
     async function loadAll() {

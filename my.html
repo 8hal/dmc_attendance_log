@@ -342,7 +342,7 @@ let selectedRealName = null;
 let selectedMember = null;
 let isGuestMode = false;
 
-let searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
+let searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map(), recentEvents: [] };
 
 function esc(s) { return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
 function timeToSeconds(t) {
@@ -899,26 +899,128 @@ const MONTH_OPTIONS = buildMonthOptions();
 function resetSearch() {
   if (searchState.pollTimer) clearInterval(searchState.pollTimer);
   if (searchState.step !== "idle") logEvent("search_cancel", { step: searchState.step });
-  searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map() };
+  searchState = { step: "idle", selectedMonths: new Set(), jobId: null, pollTimer: null, selectedEvents: new Set(), allEvents: [], foundResults: [], selectedResults: new Map(), recentEvents: [] };
   const sp = document.getElementById("searchPanel");
   if (sp) sp.innerHTML = "";
 }
 
 function startSearchFlow() {
   logEvent("search_start", { isGuest: isGuestMode });
-  if (!isGuestMode && selectedMember && searchState.selectedMonths.size === 0) {
-    for (const m of MONTH_OPTIONS) searchState.selectedMonths.add(m.id);
-  }
-  renderMonthSelector();
+  searchState.step = "recent-events";
+  renderRecentEvents();
   setTimeout(() => {
     const sp = document.getElementById("searchPanel");
     if (sp) sp.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 50);
 }
 
-function renderMonthSelector() {
+async function renderRecentEvents() {
   const sp = document.getElementById("searchPanel");
-  searchState.step = "select-period";
+  sp.innerHTML = `<div class="search-panel"><div class="card"><p class="search-section-title">최근 대회 불러오는 중...</p><div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:30%;animation:shimmer 1.2s infinite"></div></div></div></div></div>`;
+  
+  try {
+    // 최근 2주 날짜 계산
+    const today = new Date();
+    const twoWeeksAgo = new Date(today);
+    twoWeeksAgo.setDate(today.getDate() - 14);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+    
+    // 최근 2주에 해당하는 연도 가져오기
+    const years = [today.getFullYear()];
+    if (twoWeeksAgo.getFullYear() !== today.getFullYear()) {
+      years.push(twoWeeksAgo.getFullYear());
+    }
+    
+    // discover-all API 호출
+    const results = await Promise.all(years.map(y => fetch(`${RACE_API}?action=discover-all&year=${y}`).then(r => r.json())));
+    const allEvents = results.flatMap(d => d.events || [])
+      .map(e => ({ ...e, eventName: e.name || e.eventName || e.sourceId, eventDate: e.date || e.eventDate || "" }))
+      .filter(e => {
+        if (!e.eventDate) return false;
+        return e.eventDate >= twoWeeksAgoStr && e.eventDate <= todayStr;
+      })
+      .sort((a, b) => (b.eventDate || "").localeCompare(a.eventDate || ""));  // 내림차순 (최신 먼저)
+    
+    searchState.recentEvents = allEvents;
+    
+    const dowKo = ["일", "월", "화", "수", "목", "금", "토"];
+    
+    sp.innerHTML = `
+      <div class="search-panel">
+        <div class="card">
+          <p class="search-section-title">📅 최근 2주 대회 <span style="font-weight:400;color:var(--color-text-muted);font-size:12px;">${allEvents.length}개 대회</span></p>
+          
+          ${allEvents.length === 0 
+            ? `<div class="empty" style="padding:24px 0;"><span class="empty-icon">📭</span>최근 2주 대회가 없습니다.</div>`
+            : `<div class="event-list" style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                ${allEvents.map(e => {
+                  const key = `${e.source}:${e.sourceId}`;
+                  const d = e.eventDate ? new Date(e.eventDate) : null;
+                  const dow = d && !isNaN(d.getTime()) ? dowKo[d.getDay()] : "?";
+                  return `
+                    <div class="event-card-recent" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-bg-subtle);cursor:pointer;" onclick="selectRecentEvent('${esc(key)}')">
+                      <div>
+                        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">${esc(e.eventDate || "")} (${dow})</div>
+                        <div style="font-size:14px;font-weight:600;color:var(--color-text);">${esc(e.eventName || "")}</div>
+                      </div>
+                      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); selectRecentEvent('${esc(key)}')">선택</button>
+                    </div>
+                  `;
+                }).join("")}
+              </div>`
+          }
+          
+          <div style="text-align:center;margin:32px 0;position:relative;">
+            <span style="font-size:13px;color:var(--color-text-muted);background:white;padding:0 16px;">더 많은 기록 찾아볼까요?</span>
+          </div>
+          
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="toggleMonthSelector()">
+            <span id="monthSelectorToggleText">▼ 월별로 검색하기</span>
+          </button>
+          
+          <div id="monthSelectorContainer" style="display:none;margin-top:16px;">
+            ${renderMonthSelectorContent()}
+          </div>
+          
+          <div style="display:flex;justify-content:space-between;margin-top:16px;">
+            <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    logEvent("search_error", { step: "recent-events", error: e.message });
+    sp.innerHTML = `<div class="search-panel"><div class="card"><div class="empty"><span class="empty-icon">⚠️</span>최근 대회를 불러오지 못했습니다.</div></div></div>`;
+  }
+}
+
+function selectRecentEvent(eventKey) {
+  const event = searchState.recentEvents.find(e => `${e.source}:${e.sourceId}` === eventKey);
+  if (!event) return;
+  
+  // 해당 이벤트만 선택하여 검색 진행
+  searchState.allEvents = [event];
+  searchState.selectedEvents = new Set([eventKey]);
+  searchState.step = "select-events";
+  renderEventSelector();
+}
+
+function toggleMonthSelector() {
+  const container = document.getElementById("monthSelectorContainer");
+  const toggleText = document.getElementById("monthSelectorToggleText");
+  
+  if (container.style.display === "none") {
+    container.style.display = "block";
+    toggleText.textContent = "▲ 월별 검색 접기";
+  } else {
+    container.style.display = "none";
+    toggleText.textContent = "▼ 월별로 검색하기";
+  }
+}
+
+function renderMonthSelectorContent() {
   const selCount = searchState.selectedMonths.size;
   const isMember = !isGuestMode && selectedMember;
   const maxMonth = isMember ? 24 : MAX_MONTH_SELECT;
@@ -937,23 +1039,29 @@ function renderMonthSelector() {
   }
 
   const limitHint = isMember
-    ? `<small>회원은 연 단위 선택 가능 · 캐시 적용</small>`
+    ? `<small>회원은 연 단위 선택 가능</small>`
     : `<small>최대 ${MAX_MONTH_SELECT}개</small>`;
 
-  sp.innerHTML = `<div class="search-panel"><div class="card">
-    <p class="search-section-title">검색할 기간 선택 ${limitHint}</p>
-    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">${isGuestMode ? "조회할 대회가 있는 달을 선택하세요." : "참가한 대회가 있는 달을 선택하세요."}</p>
-    ${by2026.length ? `<div class="year-group"><div class="year-group-header"><span class="year-group-label">2026</span>${isMember ? `<button class="year-select-btn ${allOf(2026) ? "active" : ""}" onclick="toggleYear(2026)">${toggleYearLabel(2026)}</button>` : ""}</div>${monthGrid(by2026)}</div>` : ""}
-    <div class="year-group"><div class="year-group-header"><span class="year-group-label">2025</span>${isMember ? `<button class="year-select-btn ${allOf(2025) ? "active" : ""}" onclick="toggleYear(2025)">${toggleYearLabel(2025)}</button>` : ""}</div>${monthGrid(by2025)}</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-      <span style="font-size:13px;color:${selCount > 0 ? "var(--color-primary)" : "var(--color-text-muted)"}">${selCount}개월 선택됨</span>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="resetSearch()">취소</button>
+  return `
+    <div style="padding:16px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-bg-subtle);">
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">${limitHint}</p>
+      ${by2026.length ? `<div class="year-group"><div class="year-group-header"><span class="year-group-label">2026</span>${isMember ? `<button class="year-select-btn ${allOf(2026) ? "active" : ""}" onclick="toggleYear(2026)">${toggleYearLabel(2026)}</button>` : ""}</div>${monthGrid(by2026)}</div>` : ""}
+      <div class="year-group"><div class="year-group-header"><span class="year-group-label">2025</span>${isMember ? `<button class="year-select-btn ${allOf(2025) ? "active" : ""}" onclick="toggleYear(2025)">${toggleYearLabel(2025)}</button>` : ""}</div>${monthGrid(by2025)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span style="font-size:13px;color:${selCount > 0 ? "var(--color-primary)" : "var(--color-text-muted)"}">${selCount}개월 선택됨</span>
         <button class="btn btn-primary btn-sm" ${selCount === 0 ? "disabled" : ""} onclick="loadEventsForMonths()">대회 불러오기</button>
       </div>
     </div>
-  </div></div>`;
+  `;
 }
+
+function renderMonthSelector() {
+  const container = document.getElementById("monthSelectorContainer");
+  if (container) {
+    container.innerHTML = renderMonthSelectorContent();
+  }
+}
+
 
 function toggleYear(year) {
   const months = MONTH_OPTIONS.filter(m => m.year === year);

@@ -1469,9 +1469,30 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, members });
     }
 
-    // ─── 연도 전체 대회 목록 ──────────────────────────────
+    // ─── 연도 전체 대회 목록 (캐시 적용) ──────────────────────────────
     if (action === "discover-all") {
       const year = parseInt(req.query.year) || new Date().getFullYear();
+      const forceRefresh = req.query.forceRefresh === "true";
+      const cacheKey = `discover_all_${year}`;
+      const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3시간
+
+      // 1. 캐시 확인 (forceRefresh가 아닐 때만)
+      if (!forceRefresh) {
+        const cacheDoc = await db.collection("search_cache").doc(cacheKey).get();
+        if (cacheDoc.exists) {
+          const cached = cacheDoc.data();
+          const age = Date.now() - cached.timestamp;
+          if (age < CACHE_TTL_MS) {
+            console.log(`[discover-all] Cache HIT for ${year} (age: ${Math.round(age / 1000 / 60)}min)`);
+            return res.json({ ok: true, events: cached.events, total: cached.events.length, cached: true });
+          }
+        }
+      } else {
+        console.log(`[discover-all] Force refresh for ${year}`);
+      }
+
+      // 2. 캐시 미스 또는 강제 갱신 → 크롤링 + 저장
+      console.log(`[discover-all] Cache MISS for ${year} → crawling`);
       const allEvents = await scraper.discoverAllEvents(year);
 
       const existingSnap = await db.collection("scrape_jobs").get();
@@ -1516,7 +1537,15 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }));
 
       enriched.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      return res.json({ ok: true, events: enriched, total: enriched.length });
+
+      // 3. 캐시 저장
+      await db.collection("search_cache").doc(cacheKey).set({
+        events: enriched,
+        timestamp: Date.now(),
+        year,
+      });
+
+      return res.json({ ok: true, events: enriched, total: enriched.length, cached: false });
     }
 
     // ─── 프로액티브 제안: 최근 대회 미확정 기록 ─────────────
@@ -2411,20 +2440,23 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "ops-gorunning-events") {
-      // 캐시: ops_meta/last_gorunning_crawl, TTL 6시간 (아래 sixHoursAgo)
+      const forceRefresh = req.query.forceRefresh === "true";
+      
+      // 캐시: ops_meta/last_gorunning_crawl, TTL 3시간
       const cacheDoc = await db.collection("ops_meta").doc("last_gorunning_crawl").get();
-      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
 
       let cachedData = null;
-      if (cacheDoc.exists) {
+      if (!forceRefresh && cacheDoc.exists) {
         const d = cacheDoc.data();
         const crawledAt = new Date(d.crawledAt);
-        if (crawledAt >= sixHoursAgo) {
+        if (crawledAt >= threeHoursAgo) {
           cachedData = d;
         }
       }
 
       if (cachedData) {
+        console.log(`[ops-gorunning-events] Cache HIT (age: ${Math.round((Date.now() - new Date(cachedData.crawledAt).getTime()) / 1000 / 60)}min)`);
         return res.json({
           ok: true,
           events: cachedData.events || [],
@@ -2433,6 +2465,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       }
 
+      console.log(`[ops-gorunning-events] Cache ${forceRefresh ? 'FORCE REFRESH' : 'MISS'} → crawling`);
+      
       try {
         const upcomingEvents = await scraper.crawlAllUpcomingEvents();
 
