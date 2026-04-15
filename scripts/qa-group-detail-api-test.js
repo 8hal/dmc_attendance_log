@@ -331,7 +331,7 @@ function ok(name, cond, detail) {
       r.json.saved === 83 &&
       Array.isArray(r.json.errors) &&
       r.json.errors.length === 2 &&
-      /83건 저장.*2건 실패/.test(r.json.message || "")
+      (r.json.message || "") === "일부 실패"
   );
 
   const evtDns = "qa_evt_dns";

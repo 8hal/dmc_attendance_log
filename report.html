@@ -740,91 +740,53 @@
     let isComposing = false;
 
     const scrapeMembersFilterInput = document.getElementById("scrapeMembersFilter");
-    
-    // #region agent log
-    console.log('[DEBUG 742] Element lookup:', {found: !!scrapeMembersFilterInput, elementId: 'scrapeMembersFilter'});
-    fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:742',message:'Element lookup',data:{found:!!scrapeMembersFilterInput,elementId:'scrapeMembersFilter'},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    
+
     if (!scrapeMembersFilterInput) {
       console.error('[DEBUG] scrapeMembersFilterInput not found! Enter key handler not registered.');
-      // #region agent log
-      fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:750',message:'Element not found - EARLY EXIT',data:{},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
     } else {
       scrapeMembersFilterInput.addEventListener("compositionstart", () => {
         isComposing = true;
       });
-      
+
       scrapeMembersFilterInput.addEventListener("compositionend", () => {
         isComposing = false;
       });
-      
+
       scrapeMembersFilterInput.addEventListener("input", (e) => {
         renderScrapeMembersChecklist(e.target.value);
       });
-      
+
       scrapeMembersFilterInput.addEventListener("keydown", async (e) => {
-        // #region agent log
-        console.log('[DEBUG 756] Keydown fired:', {key: e.key, isComposing, isEnterProcessing, query: e.target.value});
-        fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:756',message:'Keydown fired',data:{key:e.key,isComposing,isEnterProcessing,query:e.target.value},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        
         if (e.key !== "Enter") return;
         if (isComposing) return;
         e.preventDefault();
         e.stopPropagation();
         if (isEnterProcessing) return;
         isEnterProcessing = true;
-        
+
         try {
           const q = (e.target.value || "").trim().toLowerCase();
           if (!q) return;
-          
-          // #region agent log
-          console.log('[DEBUG 766] Before filter:', {query: q, allMembersCount: allMembers.length});
-          fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:766',message:'Before filter',data:{query:q,allMembersCount:allMembers.length},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
-          
-          // 필터링된 회원 목록 가져오기
+
           const filtered = allMembers.filter((m) => {
             if (!(m.realName || "").trim()) return false;
             return (m.nickname || "").toLowerCase().includes(q) || (m.realName || "").toLowerCase().includes(q);
           });
-          
-          // #region agent log
-          console.log('[DEBUG 774] After filter:', {filteredCount: filtered.length, firstMember: filtered[0]});
-          fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:774',message:'After filter',data:{filteredCount:filtered.length,firstMember:filtered[0]},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
-          
+
           if (filtered.length === 0) {
             showToast("검색 결과가 없습니다.", 3000);
             return;
           }
-          
-          // 첫 번째 결과 선택
+
           const first = filtered[0];
           const firstCheckbox = Array.from(document.querySelectorAll("#scrapeMembersList .scrape-mem-cb"))
             .find(cb => cb.value === first.realName);
-          
-          // #region agent log
-          console.log('[DEBUG 784] Checkbox lookup:', {found: !!firstCheckbox, firstRealName: first.realName, allCheckboxes: Array.from(document.querySelectorAll("#scrapeMembersList .scrape-mem-cb")).map(cb=>cb.value)});
-          fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:784',message:'Checkbox lookup',data:{found:!!firstCheckbox,firstRealName:first.realName,allCheckboxes:Array.from(document.querySelectorAll("#scrapeMembersList .scrape-mem-cb")).map(cb=>cb.value)},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          
+
           if (firstCheckbox) {
             if (firstCheckbox.checked) {
-              // #region agent log
-              console.log('[DEBUG 786] Already checked toast:', {nickname: first.nickname});
-              fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:786',message:'Already checked toast',data:{nickname:first.nickname},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-              // #endregion
               showToast(`${first.nickname}은 이미 선택됨`, 3000);
             } else {
               firstCheckbox.checked = true;
-              // #region agent log
-              console.log('[DEBUG 789] Member selected toast:', {nickname: first.nickname, checkboxChecked: firstCheckbox.checked});
-              fetch('http://127.0.0.1:7631/ingest/d15e14a2-373e-41df-8cf0-26d64459231f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'56fd51'},body:JSON.stringify({sessionId:'56fd51',location:'report.html:789',message:'Member selected toast',data:{nickname:first.nickname,checkboxChecked:firstCheckbox.checked},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-              // #endregion
               showToast(`${first.nickname} 선택됨`);
             }
             e.target.value = "";

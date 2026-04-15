@@ -2842,19 +2842,19 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       const event = { ...eventDoc.data(), id: eventDoc.id };
 
+      const confirmedSnap = await db.collection("race_results")
+        .where("canonicalEventId", "==", eventId)
+        .get();
+      const confirmedByName = {};
+      confirmedSnap.forEach((doc) => {
+        const d = doc.data();
+        confirmedByName[d.memberRealName] = true;
+      });
+
       let gap = [];
       if (event.groupScrapeJobId) {
         const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
         const scrapeResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
-
-        const confirmedSnap = await db.collection("race_results")
-          .where("canonicalEventId", "==", eventId)
-          .get();
-        const confirmedByName = {};
-        confirmedSnap.forEach((doc) => {
-          const d = doc.data();
-          confirmedByName[d.memberRealName] = true;
-        });
 
         const resultsByName = scrapeResults.reduce((acc, r) => {
           const key = r.memberRealName;
@@ -2874,6 +2874,15 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           }
           return { ...p, gapStatus: "missing" };
         });
+      } else {
+        gap = (event.participants || []).map((p, idx) => ({
+          ...p,
+          memberId: p.memberId || `temp-${idx}`,
+          gapStatus: confirmedByName[p.realName] ? "confirmed" : "missing",
+          result: null,
+          candidates: [],
+          confirmed: false,
+        }));
       }
 
       const confirmedCount = gap.filter((g) => g.gapStatus === "confirmed").length;
@@ -2963,20 +2972,37 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         }
       }
 
-      if (event.groupScrapeJobId) {
-        await db.collection("scrape_jobs").doc(event.groupScrapeJobId).update({
-          status: "confirmed",
-          confirmedAt: new Date().toISOString(),
-          confirmedCount: saved,
-        });
-      }
+      const jobRef = event.groupScrapeJobId
+        ? db.collection("scrape_jobs").doc(event.groupScrapeJobId)
+        : null;
 
-      if (errors.length > 0) {
+      if (jobRef) {
+        if (errors.length > 0) {
+          await jobRef.update({
+            confirmedCount: saved,
+            lastModified: FieldValue.serverTimestamp(),
+            partialErrors: errors.slice(0, 10),
+          });
+          return res.status(207).json({
+            ok: false,
+            saved,
+            errors,
+            message: "일부 실패",
+          });
+        }
+        await jobRef.update({
+          status: "confirmed",
+          confirmedCount: saved,
+          confirmedAt: FieldValue.serverTimestamp(),
+          lastModified: FieldValue.serverTimestamp(),
+          partialErrors: FieldValue.delete(),
+        });
+      } else if (errors.length > 0) {
         return res.status(207).json({
           ok: false,
           saved,
           errors,
-          message: `${saved}건 저장, ${errors.length}건 실패`,
+          message: "일부 실패",
         });
       }
 

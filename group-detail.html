@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>제24회 경기마라톤대회 - 동탄 마라톤 클럽</title>
+  <title>단체 대회 상세 - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
   <style>
     :root {
@@ -45,6 +45,7 @@
     .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
     .badge-red    { background: var(--red-light); color: var(--red); }
     .badge-gray   { background: var(--border); color: var(--text-sub); }
+    .badge-blue   { background: var(--blue-light); color: var(--blue); }
 
     .section { background: var(--card); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); }
     .section-title { font-size: 16px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
@@ -170,8 +171,8 @@
     <div class="page-header">
       <a class="back-link" href="group.html">← 단체 대회 관리</a>
       <div>
-        <h1 class="page-title">제24회 경기마라톤대회</h1>
-        <p class="page-subtitle">2026-04-19 (토) · <span class="badge badge-green">✅ 스크랩 완료</span></p>
+        <h1 class="page-title">대회 상세</h1>
+        <p class="page-subtitle"><span id="pageSubtitleText"></span> · <span id="headerScrapeBadge" class="badge badge-gray">—</span></p>
       </div>
     </div>
 
@@ -182,19 +183,19 @@
       <div class="stat-grid" style="margin-bottom: 16px;">
         <div class="stat-card">
           <div class="stat-label">등록 인원</div>
-          <div class="stat-value">8명</div>
+          <div class="stat-value" id="statRegistered">—</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">확정 기록</div>
-          <div class="stat-value" style="color: var(--red);">0명</div>
+          <div class="stat-value" id="statConfirmed">—</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">미확정</div>
-          <div class="stat-value" style="color: var(--yellow);">8명</div>
+          <div class="stat-value" id="statUnconfirmed">—</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">완주율</div>
-          <div class="stat-value" style="color: var(--text-muted);">0%</div>
+          <div class="stat-value" id="statRate">—</div>
         </div>
       </div>
 
@@ -253,16 +254,16 @@
       <h2 class="section-title">📋 대회 정보</h2>
       <div class="info-grid">
         <div class="info-label">대회명</div>
-        <div class="info-value">제24회 경기마라톤대회</div>
+        <div class="info-value" id="infoEventName">—</div>
         
         <div class="info-label">날짜</div>
-        <div class="info-value">2026-04-19 (토)</div>
+        <div class="info-value" id="infoEventDate">—</div>
         
         <div class="info-label">기록 소스</div>
-        <div class="info-value">smartchip (202650000123)</div>
+        <div class="info-value" id="infoEventSource">—</div>
         
         <div class="info-label">스크랩 상태</div>
-        <div class="info-value"><span class="badge badge-green">✅ 완료</span> (2026-04-19 15:05)</div>
+        <div class="info-value" id="infoScrapeRow">—</div>
       </div>
     </div>
   </div>
@@ -366,6 +367,91 @@
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+    }
+
+    /** group.html scrapeStatusBadge와 동일한 상태 라벨 */
+    function scrapeStatusBadgeMeta(st) {
+      const map = {
+        pending: ["badge-gray", "대기"],
+        running: ["badge-blue", "스크랩 중"],
+        done: ["badge-green", "완료"],
+        partial_failure: ["badge-yellow", "부분 실패"],
+        failed: ["badge-red", "실패"],
+      };
+      return map[st] || ["badge-gray", st || "—"];
+    }
+
+    function updatePageHeader(event, gap) {
+      if (!event) return;
+      const arr = Array.isArray(gap) ? gap : [];
+      const total = arr.length;
+      const confirmed = arr.filter((g) => g.gapStatus === "confirmed").length;
+      const unconfirmed = Math.max(0, total - confirmed);
+      const ratePct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+
+      document.title = `${event.eventName || "대회"} - 동탄 마라톤 클럽`;
+      const titleEl = document.querySelector(".page-title");
+      if (titleEl) titleEl.textContent = event.eventName || "대회 상세";
+
+      const sub = document.getElementById("pageSubtitleText");
+      if (sub) {
+        const dateStr = event.eventDate || "";
+        const loc = event.location ? String(event.location) : "";
+        sub.textContent = loc ? `${dateStr} · ${loc}` : dateStr;
+      }
+
+      const badgeEl = document.getElementById("headerScrapeBadge");
+      if (badgeEl) {
+        const [cls, label] = scrapeStatusBadgeMeta(event.groupScrapeStatus);
+        badgeEl.className = `badge ${cls}`;
+        badgeEl.textContent = label;
+      }
+
+      const reg = document.getElementById("statRegistered");
+      if (reg) {
+        reg.textContent = `${total}명`;
+        reg.style.color = "var(--primary)";
+      }
+      const conf = document.getElementById("statConfirmed");
+      if (conf) {
+        conf.textContent = `${confirmed}명`;
+        conf.style.color = total > 0 && confirmed === total ? "var(--green)" : "var(--red)";
+      }
+      const unc = document.getElementById("statUnconfirmed");
+      if (unc) {
+        unc.textContent = `${unconfirmed}명`;
+        unc.style.color = unconfirmed > 0 ? "var(--yellow)" : "var(--text-muted)";
+      }
+      const rate = document.getElementById("statRate");
+      if (rate) {
+        rate.textContent = `${ratePct}%`;
+        rate.style.color = "var(--text-muted)";
+      }
+
+      const infoName = document.getElementById("infoEventName");
+      if (infoName) infoName.textContent = event.eventName || "—";
+      const infoDate = document.getElementById("infoEventDate");
+      if (infoDate) infoDate.textContent = event.eventDate || "—";
+      const infoSrc = document.getElementById("infoEventSource");
+      if (infoSrc) {
+        const gs = event.groupSource;
+        infoSrc.textContent = gs && gs.source && gs.sourceId
+          ? `${gs.source} (${gs.sourceId})`
+          : "소스 미설정";
+      }
+      const infoScrape = document.getElementById("infoScrapeRow");
+      if (infoScrape) {
+        infoScrape.textContent = "";
+        const [cls, label] = scrapeStatusBadgeMeta(event.groupScrapeStatus);
+        const span = document.createElement("span");
+        span.className = `badge ${cls}`;
+        span.textContent = label;
+        infoScrape.appendChild(span);
+        const ts = event.groupScrapeTriggeredAt;
+        if (ts) {
+          infoScrape.appendChild(document.createTextNode(` (${ts})`));
+        }
+      }
     }
 
     function distanceLabel(g) {
@@ -935,6 +1021,16 @@
         
         clearTimeout(timeoutId);
         const data = await response.json();
+
+        if (response.status === 207) {
+          const errCount = Array.isArray(data.errors) ? data.errors.length : 0;
+          document.getElementById("errorMsg").textContent =
+            `${data.saved ?? 0}건 저장 성공, ${errCount}건 실패. 실패 항목을 확인하세요.`;
+          document.getElementById("errorDetail").style.display = "block";
+          document.getElementById("errorModal").classList.add("open");
+          return;
+        }
+
         if (!data.ok) throw new Error(data.error || "저장 실패");
 
         sessionStorage.removeItem(`gap-${currentEventId}`);
@@ -1052,6 +1148,7 @@
         currentEvent = data.event;
         currentEventId = data.event.id;
         gapResults = Array.isArray(data.gap) ? data.gap : [];
+        updatePageHeader(data.event, gapResults);
 
         // 참가자 0명 체크
         if (!data.event.participants || data.event.participants.length === 0) {

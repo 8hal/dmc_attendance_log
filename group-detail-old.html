@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>제24회 경기마라톤대회 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB; --primary-hover: #1D4ED8; --primary-light: #DBEAFE;
+      --bg: #F8FAFC; --card: #FFFFFF;
+      --text: #0F172A; --text-sub: #64748B; --text-muted: #94A3B8;
+      --border: #E2E8F0; --border-light: #F1F5F9;
+      --green: #059669; --green-light: #D1FAE5;
+      --yellow: #D97706; --yellow-light: #FEF3C7;
+      --red: #DC2626; --red-light: #FEE2E2;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+    .page-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); text-decoration: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+    .back-link:hover { border-color: var(--primary); color: var(--primary); }
+    .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); margin: 2px 0 0; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--text-sub); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-confirm { background: var(--green-light); color: var(--green); border: 1px solid #6EE7B7; }
+    .btn-confirm:hover { background: #A7F3D0; }
+    .btn-danger { background: var(--red-light); color: var(--red); border: 1px solid #FCA5A5; }
+    .btn-danger:hover { background: #FECACA; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+    .badge-green  { background: var(--green-light); color: var(--green); }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-red    { background: var(--red-light); color: var(--red); }
+    .badge-gray   { background: var(--border); color: var(--text-sub); }
+
+    .section { background: var(--card); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); }
+    .section-title { font-size: 16px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .stat-card { background: var(--border-light); border-radius: 10px; padding: 12px 14px; }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+
+    .progress-bar { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+    .progress-bar.complete { background: var(--green-light); border-color: var(--green); }
+    .progress-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .progress-title.complete { color: var(--green); }
+    .progress-title.incomplete { color: var(--yellow); }
+    .progress-track { height: 24px; background: var(--border-light); border-radius: 12px; overflow: hidden; margin-bottom: 8px; position: relative; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), #10B981); transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; }
+    .progress-fill.incomplete { background: linear-gradient(90deg, var(--yellow), #F59E0B); }
+    .progress-detail { font-size: 13px; color: var(--text-sub); line-height: 1.6; margin-bottom: 10px; }
+    .progress-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .unprocessed-list { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
+    .unprocessed-list-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+    .unprocessed-item { font-size: 13px; color: var(--text-sub); padding: 4px 0; }
+    .unprocessed-item::before { content: "• "; color: var(--red); }
+
+    .search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .search-input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+
+    .filter-chips { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .filter-chip { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: var(--card); transition: all 0.15s; }
+    .filter-chip:hover { border-color: var(--primary); }
+    .filter-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .result-list { display: flex; flex-direction: column; gap: 8px; }
+    .result-row { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: all 0.15s; }
+    .result-row.processed { opacity: 0.7; }
+    .result-row.ok { border-left: 3px solid var(--green); }
+    .result-row.warn { border-left: 3px solid var(--yellow); }
+    .result-row.err { border-left: 3px solid var(--red); }
+    .result-row-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; background: #fff; }
+    .result-nick { font-weight: 700; font-size: 14px; }
+    .result-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+    .result-time { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .result-rank { font-size: 12px; color: var(--text-muted); }
+    .result-detail { font-size: 12px; color: var(--text-sub); }
+
+    .candidates { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg); }
+    .candidate-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; transition: all 0.15s; }
+    .candidate-option:hover { border-color: var(--primary); background: var(--primary-light); }
+    .candidate-option input { accent-color: var(--primary); margin-top: 3px; flex-shrink: 0; }
+    .candidate-time { font-weight: 700; color: var(--primary); font-size: 14px; }
+    .candidate-detail { font-size: 12px; color: var(--text-sub); }
+
+    .manual-input-row { padding: 10px 12px; background: var(--bg); display: none; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .manual-input-row.show { display: flex; }
+
+    .info-grid { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; font-size: 13px; }
+    .info-label { font-weight: 600; color: var(--text-muted); }
+    .info-value { color: var(--text); }
+
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; max-width: 460px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(15,23,42,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { margin: 0; font-size: 16px; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .modal-body { padding: 12px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 12px 20px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    .member-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 8px; cursor: pointer; }
+    .member-item:hover { background: var(--border-light); }
+    .member-item input { width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+    .member-nickname { font-weight: 600; font-size: 14px; }
+    .member-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; display: none; z-index: 200; max-width: 90vw; }
+    .toast.show { display: block; }
+    .toast.err { background: var(--red); }
+
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; gap: 6px; }
+      .info-label::after { content: ':'; }
+      .progress-actions { flex-direction: column; }
+      .progress-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <!-- 헤더 -->
+    <div class="page-header">
+      <a class="back-link" href="group.html">← 단체 대회 관리</a>
+      <div>
+        <h1 class="page-title">제24회 경기마라톤대회</h1>
+        <p class="page-subtitle">2026-04-19 (토) · <span class="badge badge-green">✅ 스크랩 완료</span></p>
+      </div>
+    </div>
+
+    <!-- 통계 요약 -->
+    <div class="section">
+      <h2 class="section-title">📊 통계 요약</h2>
+      
+      <div class="stat-grid" style="margin-bottom: 16px;">
+        <div class="stat-card">
+          <div class="stat-label">등록 인원</div>
+          <div class="stat-value">85명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">확정 기록</div>
+          <div class="stat-value" style="color: var(--red);">0명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">미확정</div>
+          <div class="stat-value" style="color: var(--yellow);">85명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">완주율</div>
+          <div class="stat-value" style="color: var(--text-muted);">0%</div>
+        </div>
+      </div>
+
+      <!-- 처리 진행률 (State 2, 3에만 표시) -->
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-title incomplete" id="progressTitle">⚠️ 미처리 5명 — 모든 참가자를 처리해야 일괄 확정할 수 있습니다</div>
+        
+        <div class="progress-track">
+          <div class="progress-fill incomplete" id="progressFill" style="width: 94%;">80 / 85명 (94%)</div>
+        </div>
+        
+        <div class="progress-detail" id="progressDetail">
+          자동 매칭 78명 · 동명이인 2명 · 기록 없음 3명 · DNS/DNF 2명
+        </div>
+
+        <!-- 미처리 목록 -->
+        <div class="unprocessed-list" id="unprocessedList">
+          <div class="unprocessed-list-title">미처리 목록 (5명)</div>
+          <div class="unprocessed-item">디모 (동명이인 선택 필요)</div>
+          <div class="unprocessed-item">초보러너 (동명이인 선택 필요)</div>
+          <div class="unprocessed-item">SJ (DNS/DNF/직접입력 필요)</div>
+          <div class="unprocessed-item">해피러너 (기록 없음)</div>
+          <div class="unprocessed-item">햇살 (기록 없음)</div>
+        </div>
+
+        <div class="progress-actions">
+          <button class="btn btn-outline btn-sm" id="detectGapBtn">🔍 갭 탐지</button>
+          <button class="btn btn-confirm btn-sm" id="bulkConfirmBtn" disabled title="모든 참가자를 처리해야 일괄 확정할 수 있습니다">일괄 확정 (미처리 5명)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참가자 목록 + 확정 -->
+    <div class="section">
+      <h2 class="section-title">👥 참가자 목록 (85명)</h2>
+      
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="🔍 닉네임, 실명으로 검색…" id="searchInput" />
+        <button class="btn btn-outline btn-sm" id="editParticipantsBtn">참가자 편집</button>
+        <button class="btn btn-ghost btn-sm" id="refreshBtn">🔄</button>
+      </div>
+
+      <!-- 필터 칩 -->
+      <div class="filter-chips">
+        <div class="filter-chip active" data-filter="all">전체 (85)</div>
+        <div class="filter-chip" data-filter="unprocessed">미처리만 (5)</div>
+        <div class="filter-chip" data-filter="processed">처리 완료 (80)</div>
+        <div class="filter-chip" data-filter="ambiguous">동명이인 (2)</div>
+        <div class="filter-chip" data-filter="missing">기록 없음 (3)</div>
+      </div>
+
+      <div class="result-list" id="participantList">
+        <!-- 1. 자동 매칭 (처리 완료) -->
+        <div class="result-row ok processed" data-status="processed" data-gap-status="ok">
+          <div class="result-row-header">
+            <span>✅</span>
+            <span class="result-nick">라우펜더만</span>
+            <span class="result-realname">이원기</span>
+            <span style="flex: 1;"></span>
+            <span class="result-time">1:45:23</span>
+            <span class="result-rank">(125위)</span>
+            <span style="font-size: 11px; color: var(--text-muted);">HALF</span>
+            <span class="badge badge-green" style="font-size: 11px;">처리 완료</span>
+          </div>
+        </div>
+
+        <!-- 2. 동명이인 (미처리) -->
+        <div class="result-row warn" data-status="unprocessed" data-gap-status="ambiguous">
+          <div class="result-row-header" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span>⚠️</span>
+              <span class="result-nick">디모</span>
+              <span class="result-realname">김성한</span>
+              <span style="flex: 1;"></span>
+              <span style="font-size: 12px; color: var(--yellow); font-weight: 600;">동명이인 2명</span>
+              <span style="font-size: 11px; color: var(--text-muted);">FULL</span>
+            </div>
+          </div>
+          <div class="candidates">
+            <label class="candidate-option">
+              <input type="radio" name="amb-1" value="0" checked />
+              <div>
+                <div class="candidate-time">3:28:15</div>
+                <div class="candidate-detail">배번 99999 · 45세 · 234위</div>
+              </div>
+            </label>
+            <label class="candidate-option">
+              <input type="radio" name="amb-1" value="1" />
+              <div>
+                <div class="candidate-time">4:12:30</div>
+                <div class="candidate-detail">배번 88888 · 52세 · 567위</div>
+              </div>
+            </label>
+            <button class="btn btn-confirm btn-sm" style="align-self: flex-start; margin-top: 6px;" data-amb-confirm="1">선택 기록으로 처리</button>
+          </div>
+        </div>
+
+        <!-- 3. 기록 없음 (미처리) -->
+        <div class="result-row err" data-status="unprocessed" data-gap-status="missing">
+          <div class="result-row-header">
+            <span>🔴</span>
+            <span class="result-nick">SJ</span>
+            <span class="result-realname">이수진</span>
+            <span style="flex: 1;"></span>
+            <span style="font-size: 12px; color: var(--red); font-weight: 600;">기록 없음</span>
+            <span style="font-size: 11px; color: var(--text-muted);">10K</span>
+            <button class="btn btn-sm btn-outline" data-dns="3">DNS</button>
+            <button class="btn btn-sm btn-danger" data-dnf="3">DNF</button>
+            <button class="btn btn-sm btn-ghost" data-manual-toggle="3">직접 입력</button>
+          </div>
+          <div class="manual-input-row" id="manual-3">
+            <input type="text" placeholder="기록 (예: 56:23)" maxlength="10" style="width: 130px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;" />
+            <button class="btn btn-sm btn-primary" data-manual-confirm="3">처리</button>
+          </div>
+        </div>
+
+        <!-- 4. 자동 매칭 (처리 완료) -->
+        <div class="result-row ok processed" data-status="processed" data-gap-status="ok">
+          <div class="result-row-header">
+            <span>✅</span>
+            <span class="result-nick">바람요정</span>
+            <span class="result-realname">김유정</span>
+            <span style="flex: 1;"></span>
+            <span class="result-time">56:12</span>
+            <span class="result-rank">(48위)</span>
+            <span style="font-size: 11px; color: var(--text-muted);">10K</span>
+            <span class="badge badge-green" style="font-size: 11px;">처리 완료</span>
+          </div>
+        </div>
+
+        <!-- 5. 자동 매칭 (처리 완료) -->
+        <div class="result-row ok processed" data-status="processed" data-gap-status="ok">
+          <div class="result-row-header">
+            <span>✅</span>
+            <span class="result-nick">쌩메</span>
+            <span class="result-realname">서윤석</span>
+            <span style="flex: 1;"></span>
+            <span class="result-time">1:58:45</span>
+            <span class="result-rank">(203위)</span>
+            <span style="font-size: 11px; color: var(--text-muted);">HALF</span>
+            <span class="badge badge-green" style="font-size: 11px;">처리 완료</span>
+          </div>
+        </div>
+
+        <!-- ... 나머지 80명 (대부분 처리 완료) -->
+      </div>
+    </div>
+
+    <!-- 대회 정보 -->
+    <div class="section">
+      <h2 class="section-title">📋 대회 정보</h2>
+      <div class="info-grid">
+        <div class="info-label">대회명</div>
+        <div class="info-value">제24회 경기마라톤대회</div>
+        
+        <div class="info-label">날짜</div>
+        <div class="info-value">2026-04-19 (토)</div>
+        
+        <div class="info-label">기록 소스</div>
+        <div class="info-value">smartchip (202650000123)</div>
+        
+        <div class="info-label">스크랩 상태</div>
+        <div class="info-value"><span class="badge badge-green">✅ 완료</span> (2026-04-19 15:05)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 참가자 편집 모달 -->
+  <div id="participantModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog">
+      <div class="modal-header">
+        <h2>참가자 선택 <span id="selectedCount" style="font-size:13px;font-weight:400;color:var(--primary);margin-left:6px;"></span></h2>
+        <button type="button" class="modal-close" id="participantModalClose" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="memberFilter" class="search-input" placeholder="닉네임·실명으로 검색…" />
+        <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost btn-sm" id="memberSelectAll">전체 선택</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="memberClearAll">선택 해제</button>
+        </div>
+        <div id="memberList" style="max-height:48vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 6px;">
+          <!-- 회원 목록 (예시) -->
+          <label class="member-item">
+            <input type="checkbox" checked />
+            <span class="member-nickname">라우펜더만<span class="member-realname">이원기</span></span>
+          </label>
+          <label class="member-item">
+            <input type="checkbox" checked />
+            <span class="member-nickname">쌩메<span class="member-realname">서윤석</span></span>
+          </label>
+          <!-- ... 나머지 회원들 -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="participantModalCancel">취소</button>
+        <button type="button" class="btn btn-primary" id="participantModalSave">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    let gapData = []; // 갭 데이터 저장
+
+    function showToast(msg, isErr) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.toggle("err", !!isErr);
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 3800);
+    }
+
+    // 처리 상태 분석
+    function analyzeProcessingStatus() {
+      const rows = document.querySelectorAll("#participantList .result-row");
+      const stats = {
+        total: rows.length,
+        processed: 0,
+        unprocessed: 0,
+        unprocessedList: []
+      };
+
+      rows.forEach(row => {
+        const status = row.getAttribute("data-status");
+        if (status === "processed") {
+          stats.processed++;
+        } else {
+          stats.unprocessed++;
+          const nick = row.querySelector(".result-nick")?.textContent || "";
+          const realName = row.querySelector(".result-realname")?.textContent || "";
+          const gapStatus = row.getAttribute("data-gap-status");
+          let reason = "";
+          if (gapStatus === "ambiguous") reason = "동명이인 선택 필요";
+          else if (gapStatus === "missing") reason = "DNS/DNF/직접입력 필요";
+          stats.unprocessedList.push({ nick, realName, reason });
+        }
+      });
+
+      return stats;
+    }
+
+    // UI 업데이트
+    function updateProgressUI() {
+      const stats = analyzeProcessingStatus();
+      const percentage = Math.round((stats.processed / stats.total) * 100);
+      
+      const progressBar = document.getElementById("progressBar");
+      const progressTitle = document.getElementById("progressTitle");
+      const progressFill = document.getElementById("progressFill");
+      const unprocessedList = document.getElementById("unprocessedList");
+      const bulkBtn = document.getElementById("bulkConfirmBtn");
+
+      // 진행률
+      progressFill.style.width = percentage + "%";
+      progressFill.textContent = `${stats.processed} / ${stats.total}명 (${percentage}%)`;
+
+      if (stats.unprocessed === 0) {
+        // 전원 처리 완료
+        progressBar.classList.add("complete");
+        progressBar.classList.remove("incomplete");
+        progressTitle.classList.add("complete");
+        progressTitle.classList.remove("incomplete");
+        progressTitle.textContent = "✅ 처리 완료 — 모든 참가자의 기록이 확인되었습니다";
+        progressFill.classList.remove("incomplete");
+        unprocessedList.style.display = "none";
+        
+        bulkBtn.disabled = false;
+        bulkBtn.textContent = `일괄 확정 (${stats.total}건)`;
+        bulkBtn.title = "";
+      } else {
+        // 미처리 있음
+        progressBar.classList.remove("complete");
+        progressTitle.classList.add("incomplete");
+        progressTitle.textContent = `⚠️ 미처리 ${stats.unprocessed}명 — 모든 참가자를 처리해야 일괄 확정할 수 있습니다`;
+        progressFill.classList.add("incomplete");
+        
+        // 미처리 목록 렌더링
+        unprocessedList.innerHTML = `
+          <div class="unprocessed-list-title">미처리 목록 (${stats.unprocessed}명)</div>
+          ${stats.unprocessedList.map(p => `<div class="unprocessed-item">${p.nick} (${p.reason})</div>`).join("")}
+        `;
+        unprocessedList.style.display = "block";
+        
+        bulkBtn.disabled = true;
+        bulkBtn.textContent = `일괄 확정 (미처리 ${stats.unprocessed}명)`;
+        bulkBtn.title = "모든 참가자를 처리해야 일괄 확정할 수 있습니다";
+      }
+    }
+
+    // 일괄 확정
+    document.getElementById("bulkConfirmBtn").addEventListener("click", () => {
+      const stats = analyzeProcessingStatus();
+      if (stats.unprocessed > 0) {
+        showToast(`미처리 ${stats.unprocessed}명이 있습니다`, true);
+        return;
+      }
+      
+      if (confirm(`${stats.total}명의 기록을 일괄 확정하시겠습니까?`)) {
+        showToast(`${stats.total}건 확정 중…`);
+        // TODO: API 호출
+        setTimeout(() => {
+          showToast(`${stats.total}건 확정 완료`);
+        }, 1500);
+      }
+    });
+
+    // 동명이인 처리
+    document.querySelectorAll("[data-amb-confirm]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const row = btn.closest(".result-row");
+        row.setAttribute("data-status", "processed");
+        row.classList.add("processed");
+        row.classList.remove("warn");
+        row.classList.add("ok");
+        
+        // 후보 섹션 숨기고 처리 완료 표시
+        const candidates = row.querySelector(".candidates");
+        const selected = row.querySelector("input[type=radio]:checked");
+        const selectedTime = selected?.closest(".candidate-option").querySelector(".candidate-time")?.textContent;
+        
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span class="result-time">${selectedTime}</span>
+          <span style="font-size: 11px; color: var(--text-muted);">FULL</span>
+          <span class="badge badge-green" style="font-size: 11px;">처리 완료</span>
+        `;
+        
+        if (candidates) candidates.remove();
+        
+        showToast("선택 기록으로 처리됨");
+        updateProgressUI();
+      });
+    });
+
+    // DNS/DNF 처리
+    document.querySelectorAll("[data-dns], [data-dnf]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const status = btn.getAttribute("data-dns") ? "DNS" : "DNF";
+        const row = btn.closest(".result-row");
+        row.setAttribute("data-status", "processed");
+        row.classList.add("processed");
+        row.classList.remove("err");
+        row.classList.add("ok");
+        
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--red);">${status}</span>
+          <span style="font-size: 11px; color: var(--text-muted);">10K</span>
+          <span class="badge badge-green" style="font-size: 11px;">처리 완료</span>
+        `;
+        
+        showToast(`${status} 처리됨`);
+        updateProgressUI();
+      });
+    });
+
+    // 직접 입력 토글
+    document.querySelectorAll("[data-manual-toggle]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-manual-toggle");
+        const manualRow = document.getElementById(`manual-${id}`);
+        if (manualRow) {
+          manualRow.classList.toggle("show");
+          btn.textContent = manualRow.classList.contains("show") ? "취소" : "직접 입력";
+        }
+      });
+    });
+
+    // 직접 입력 처리
+    document.querySelectorAll("[data-manual-confirm]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = btn.previousElementSibling;
+        const time = input?.value.trim();
+        if (!time) {
+          showToast("기록을 입력해주세요", true);
+          return;
+        }
+        
+        const row = btn.closest(".result-row");
+        row.setAttribute("data-status", "processed");
+        row.classList.add("processed");
+        row.classList.remove("err");
+        row.classList.add("ok");
+        
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span class="result-time">${time}</span>
+          <span style="font-size: 11px; color: var(--text-muted);">10K</span>
+          <span class="badge badge-green" style="font-size: 11px;">처리 완료</span>
+        `;
+        
+        const manualRow = row.querySelector(".manual-input-row");
+        if (manualRow) manualRow.remove();
+        
+        showToast(`기록 ${time} 처리됨`);
+        updateProgressUI();
+      });
+    });
+
+    // 필터
+    document.querySelectorAll(".filter-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        
+        const filter = chip.getAttribute("data-filter");
+        const rows = document.querySelectorAll("#participantList .result-row");
+        
+        rows.forEach(row => {
+          const status = row.getAttribute("data-status");
+          const gapStatus = row.getAttribute("data-gap-status");
+          let show = false;
+          
+          if (filter === "all") show = true;
+          else if (filter === "unprocessed") show = status === "unprocessed";
+          else if (filter === "processed") show = status === "processed";
+          else if (filter === "ambiguous") show = gapStatus === "ambiguous";
+          else if (filter === "missing") show = gapStatus === "missing";
+          
+          row.style.display = show ? "" : "none";
+        });
+      });
+    });
+
+    // 검색
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const rows = document.querySelectorAll("#participantList .result-row");
+      rows.forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+      });
+    });
+
+    // 참가자 편집 모달
+    document.getElementById("editParticipantsBtn").addEventListener("click", () => {
+      document.getElementById("participantModal").classList.add("open");
+    });
+    document.getElementById("participantModalClose").addEventListener("click", () => {
+      document.getElementById("participantModal").classList.remove("open");
+    });
+    document.getElementById("participantModalCancel").addEventListener("click", () => {
+      document.getElementById("participantModal").classList.remove("open");
+    });
+    document.getElementById("participantModalSave").addEventListener("click", () => {
+      showToast("참가자 저장됨");
+      document.getElementById("participantModal").classList.remove("open");
+      // TODO: API 호출
+    });
+
+    // 초기 로드
+    updateProgressUI();
+  </script>
+</body>
+</html>
