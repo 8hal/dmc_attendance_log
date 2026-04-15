@@ -1,0 +1,427 @@
+[
+  {
+    "nickname": "라우펜더만",
+    "realName": "이원기",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "쌩메",
+    "realName": "서윤석",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "SJ",
+    "realName": "이수진",
+    "distance": "10K"
+  },
+  {
+    "nickname": "바람요정",
+    "realName": "김유정",
+    "distance": "10K"
+  },
+  {
+    "nickname": "게살볶음밥",
+    "realName": "문광명",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "디모",
+    "realName": "김성한",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "오구오구",
+    "realName": "김경란",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "달다",
+    "realName": "서호성",
+    "distance": "10K"
+  },
+  {
+    "nickname": "보라미",
+    "realName": "한남규",
+    "distance": "10K"
+  },
+  {
+    "nickname": "루이",
+    "realName": "김종훈",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "개마고원",
+    "realName": "박세진",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "된다",
+    "realName": "황순길",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "바우돌리노",
+    "realName": "서동욱",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "초보러너",
+    "realName": "손기현",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "서비",
+    "realName": "김경섭",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "정쩡민",
+    "realName": "최정민",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "심온",
+    "realName": "심재용",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "환희",
+    "realName": "김진석",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "한쓰",
+    "realName": "한인수",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "우상향",
+    "realName": "김형진",
+    "distance": "10K"
+  },
+  {
+    "nickname": "무천",
+    "realName": "이완희",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "뛰는자",
+    "realName": "오현진",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "cj",
+    "realName": "최진",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "BigC",
+    "realName": "김정찬",
+    "distance": "10K"
+  },
+  {
+    "nickname": "헥사",
+    "realName": "손동휘",
+    "distance": "10K"
+  },
+  {
+    "nickname": "zepi",
+    "realName": "장성남",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "마디마디홍",
+    "realName": "홍석의",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "본능",
+    "realName": "배대식",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "두두",
+    "realName": "손두현",
+    "distance": "10K"
+  },
+  {
+    "nickname": "마그마그",
+    "realName": "장대섭",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "시카고",
+    "realName": "이은주",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "다니엘",
+    "realName": "이순실",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "바람",
+    "realName": "김홍준",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "포레스트",
+    "realName": "오종환",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "james",
+    "realName": "김형석",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "신뽀리",
+    "realName": "신귀용",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "안드로메다",
+    "realName": "박유진",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "바비",
+    "realName": "신동원",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "블루",
+    "realName": "조영진",
+    "distance": "10K"
+  },
+  {
+    "nickname": "말아톤",
+    "realName": "조학구",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "롸져",
+    "realName": "설민태",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "하니",
+    "realName": "오현미",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "해피하우스",
+    "realName": "강동원",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "치동런",
+    "realName": "강창기",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "쌤마",
+    "realName": "이계환",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "깜보",
+    "realName": "최종한",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "민주아빠",
+    "realName": "김종현",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "스마일",
+    "realName": "반영미",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "희형제",
+    "realName": "신주수",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "비타88",
+    "realName": "이생수",
+    "distance": "10K"
+  },
+  {
+    "nickname": "즐런",
+    "realName": "박조련",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "보보스",
+    "realName": "황선령",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "푸른하늘",
+    "realName": "정임식",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "죽부인",
+    "realName": "박명숙",
+    "distance": "10K"
+  },
+  {
+    "nickname": "블랙스왈로",
+    "realName": "이상렬",
+    "distance": "10K"
+  },
+  {
+    "nickname": "스카이",
+    "realName": "윤상기",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "송송",
+    "realName": "송진수",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "랜디스",
+    "realName": "한명석",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "삼드",
+    "realName": "김삼룡",
+    "distance": "10K"
+  },
+  {
+    "nickname": "리치아이",
+    "realName": "박소영",
+    "distance": "10K"
+  },
+  {
+    "nickname": "언스파",
+    "realName": "엄인용",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "째쯔",
+    "realName": "어승인",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "지디",
+    "realName": "장봉근",
+    "distance": "10K"
+  },
+  {
+    "nickname": "햇살",
+    "realName": "임예니",
+    "distance": "10K"
+  },
+  {
+    "nickname": "목우인",
+    "realName": "류해준",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "율라훤",
+    "realName": "허환",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "잴킴",
+    "realName": "김재헌",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "Josh",
+    "realName": "조상현",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "완주",
+    "realName": "박은정",
+    "distance": "10K"
+  },
+  {
+    "nickname": "크로버",
+    "realName": "김정국",
+    "distance": "10K"
+  },
+  {
+    "nickname": "매드캣",
+    "realName": "김정숙",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "진달",
+    "realName": "김진규",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "카멜",
+    "realName": "김상배",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "비상",
+    "realName": "배진호",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "째쑈맘",
+    "realName": "배영아",
+    "distance": "10K"
+  },
+  {
+    "nickname": "다빈",
+    "realName": "심다혜",
+    "distance": "10K"
+  },
+  {
+    "nickname": "동동",
+    "realName": "신동택",
+    "distance": "10K"
+  },
+  {
+    "nickname": "별빛",
+    "realName": "이경자",
+    "distance": "10K"
+  },
+  {
+    "nickname": "필봉타령",
+    "realName": "서정모",
+    "distance": "10K"
+  },
+  {
+    "nickname": "반달",
+    "realName": "이세우",
+    "distance": "HALF"
+  },
+  {
+    "nickname": "소이",
+    "realName": "이소연",
+    "distance": "10K"
+  },
+  {
+    "nickname": "쌍둥이 아빠",
+    "realName": "김선홍",
+    "distance": "10K"
+  },
+  {
+    "nickname": "탁사마",
+    "realName": "조성호",
+    "distance": "10k"
+  },
+  {
+    "nickname": "쭈야",
+    "realName": "김정주",
+    "distance": "FULL"
+  },
+  {
+    "nickname": "동초딩",
+    "realName": "동은철",
+    "distance": "FULL"
+  }
+]

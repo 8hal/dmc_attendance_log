@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>상태 2: 스크랩 완료 (확정 전) - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB; --primary-hover: #1D4ED8; --primary-light: #DBEAFE;
+      --bg: #F8FAFC; --card: #FFFFFF;
+      --text: #0F172A; --text-sub: #64748B; --text-muted: #94A3B8;
+      --border: #E2E8F0; --border-light: #F1F5F9;
+      --green: #059669; --green-light: #D1FAE5;
+      --yellow: #D97706; --yellow-light: #FEF3C7;
+      --red: #DC2626; --red-light: #FEE2E2;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+    .page-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); text-decoration: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+    .back-link:hover { border-color: var(--primary); color: var(--primary); }
+    .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); margin: 2px 0 0; }
+
+    .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+    .badge-green  { background: var(--green-light); color: var(--green); }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-red    { background: var(--red-light); color: var(--red); }
+    .badge-gray   { background: var(--border); color: var(--text-sub); }
+
+    .section { background: var(--card); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); }
+    .section-title { font-size: 16px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .stat-card { background: var(--border-light); border-radius: 10px; padding: 12px 14px; }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+
+    .warning-banner { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+    .warning-banner-icon { font-size: 24px; flex-shrink: 0; }
+    .warning-banner-text { flex: 1; font-size: 14px; line-height: 1.6; }
+    .warning-banner-text strong { color: var(--yellow); }
+    .warning-banner a { color: var(--primary); text-decoration: underline; font-weight: 600; }
+
+    .search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .search-input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--text-sub); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .participant-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .participant-table thead { background: var(--bg); }
+    .participant-table th { padding: 10px 8px; text-align: left; font-weight: 600; color: var(--text-sub); border-bottom: 2px solid var(--border); }
+    .participant-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-light); }
+    .participant-table tr:last-child td { border-bottom: none; }
+    .participant-table tbody tr:hover { background: var(--border-light); }
+    
+    .participant-nickname { font-weight: 600; color: var(--text); }
+    .participant-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+    
+    .bib-input { width: 70px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; text-align: center; }
+    .bib-input:focus { outline: none; border-color: var(--primary); }
+    .bib-save { margin-left: 4px; cursor: pointer; font-size: 14px; opacity: 0.5; transition: opacity 0.15s; }
+    .bib-save:hover { opacity: 1; }
+
+    .record-time { font-weight: 600; color: var(--primary); }
+    .record-rank { font-size: 12px; color: var(--text-muted); }
+    .record-detail { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+    .info-grid { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; font-size: 13px; }
+    .info-label { font-weight: 600; color: var(--text-muted); }
+    .info-value { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .participant-table { font-size: 12px; }
+      .participant-table th, .participant-table td { padding: 8px 6px; }
+      .info-grid { grid-template-columns: 1fr; gap: 6px; }
+      .info-label::after { content: ':'; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <!-- 헤더 -->
+    <div class="page-header">
+      <a class="back-link" href="group.html">← 단체 대회 관리</a>
+      <div>
+        <h1 class="page-title">제24회 경기마라톤대회</h1>
+        <p class="page-subtitle">2026-04-19 (토) · <span class="badge badge-green">✅ 스크랩 완료</span></p>
+      </div>
+    </div>
+
+    <!-- 통계 요약: 확정 0명 경고 -->
+    <div class="section">
+      <h2 class="section-title">📊 통계 요약</h2>
+      
+      <div class="stat-grid" style="margin-bottom: 16px;">
+        <div class="stat-card">
+          <div class="stat-label">등록 인원</div>
+          <div class="stat-value">85명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">확정 기록</div>
+          <div class="stat-value" style="color: var(--red);">0명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">미확정</div>
+          <div class="stat-value" style="color: var(--yellow);">85명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">완주율</div>
+          <div class="stat-value" style="color: var(--text-muted);">0%</div>
+        </div>
+      </div>
+
+      <div class="warning-banner">
+        <div class="warning-banner-icon">⚠️</div>
+        <div class="warning-banner-text">
+          <strong>확정된 기록이 없습니다.</strong><br>
+          <a href="group.html">group.html</a>에서 갭 탐지 후 기록을 확정하세요.<br>
+          확정 완료 후 종목별 통계가 표시됩니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- 참가자 목록: 갭 결과 표시 (미확정) -->
+    <div class="section">
+      <h2 class="section-title">👥 참가자 목록 (85명)</h2>
+      
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="🔍 닉네임, 실명, 배번으로 검색…" id="searchInput" />
+        <button class="btn btn-ghost btn-sm" id="refreshBtn">🔄 새로고침</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="participant-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th>참가자</th>
+              <th style="width: 80px;">종목</th>
+              <th style="width: 110px;">배번</th>
+              <th>기록 (갭 결과)</th>
+              <th style="width: 60px;">순위</th>
+              <th style="width: 80px;">상태</th>
+            </tr>
+          </thead>
+          <tbody id="participantTableBody">
+            <!-- 1. 자동 매칭 성공 (미확정) -->
+            <tr>
+              <td>1</td>
+              <td>
+                <span class="participant-nickname">라우펜더만</span>
+                <span class="participant-realname">이원기</span>
+              </td>
+              <td>HALF</td>
+              <td>
+                <input type="text" class="bib-input" value="12345" maxlength="6" />
+                <span class="bib-save" title="저장">💾</span>
+              </td>
+              <td>
+                <div class="record-time">1:45:23</div>
+                <div class="record-detail">✅ 매칭됨 (미확정)</div>
+              </td>
+              <td><span class="record-rank">125위</span></td>
+              <td><span class="badge badge-gray">⏸️ 미확정</span></td>
+            </tr>
+
+            <!-- 2. 동명이인 -->
+            <tr>
+              <td>2</td>
+              <td>
+                <span class="participant-nickname">디모</span>
+                <span class="participant-realname">김성한</span>
+              </td>
+              <td>FULL</td>
+              <td>
+                <input type="text" class="bib-input" value="99999" maxlength="6" />
+                <span class="bib-save" title="저장">💾</span>
+              </td>
+              <td>
+                <div style="font-size: 12px; color: var(--yellow); font-weight: 600; margin-bottom: 4px;">
+                  ⚠️ 동명이인 2명
+                </div>
+                <div class="record-detail" style="line-height: 1.5;">
+                  ◉ 3:28:15 (45세, 배번 99999)<br>
+                  ○ 4:12:30 (52세, 배번 88888)
+                </div>
+              </td>
+              <td>—</td>
+              <td><span class="badge badge-yellow">⚠️ 선택</span></td>
+            </tr>
+
+            <!-- 3. 기록 없음 -->
+            <tr>
+              <td>3</td>
+              <td>
+                <span class="participant-nickname">SJ</span>
+                <span class="participant-realname">이수진</span>
+              </td>
+              <td>10K</td>
+              <td>
+                <input type="text" class="bib-input" placeholder="미입력" maxlength="6" />
+                <span class="bib-save" title="저장">💾</span>
+              </td>
+              <td style="color: var(--red); font-size: 12px; font-weight: 600;">
+                🔴 기록 없음
+              </td>
+              <td>—</td>
+              <td><span class="badge badge-red">🔴 확인</span></td>
+            </tr>
+
+            <!-- 4. 자동 매칭 (미확정) -->
+            <tr>
+              <td>4</td>
+              <td>
+                <span class="participant-nickname">바람요정</span>
+                <span class="participant-realname">김유정</span>
+              </td>
+              <td>10K</td>
+              <td>
+                <input type="text" class="bib-input" value="54321" maxlength="6" />
+                <span class="bib-save" title="저장">💾</span>
+              </td>
+              <td>
+                <div class="record-time">56:12</div>
+                <div class="record-detail">✅ 매칭됨 (미확정)</div>
+              </td>
+              <td><span class="record-rank">48위</span></td>
+              <td><span class="badge badge-gray">⏸️ 미확정</span></td>
+            </tr>
+
+            <!-- 5. 자동 매칭 (미확정) -->
+            <tr>
+              <td>5</td>
+              <td>
+                <span class="participant-nickname">쌩메</span>
+                <span class="participant-realname">서윤석</span>
+              </td>
+              <td>HALF</td>
+              <td>
+                <input type="text" class="bib-input" placeholder="미입력" maxlength="6" />
+                <span class="bib-save" title="저장">💾</span>
+              </td>
+              <td>
+                <div class="record-time">1:58:45</div>
+                <div class="record-detail">✅ 매칭됨 (미확정)</div>
+              </td>
+              <td><span class="record-rank">203위</span></td>
+              <td><span class="badge badge-gray">⏸️ 미확정</span></td>
+            </tr>
+
+            <!-- ... 나머지 80명 (비슷한 패턴) -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 대회 정보 -->
+    <div class="section">
+      <h2 class="section-title">📋 대회 정보</h2>
+      <div class="info-grid">
+        <div class="info-label">대회명</div>
+        <div class="info-value">제24회 경기마라톤대회</div>
+        
+        <div class="info-label">날짜</div>
+        <div class="info-value">2026-04-19 (토)</div>
+        
+        <div class="info-label">기록 소스</div>
+        <div class="info-value">smartchip (202650000123)</div>
+        
+        <div class="info-label">스크랩 상태</div>
+        <div class="info-value"><span class="badge badge-green">✅ 완료</span> (2026-04-19 15:05)</div>
+        
+        <div class="info-label">다음 단계</div>
+        <div class="info-value" style="color: var(--yellow); font-weight: 600;">
+          → <a href="group.html" style="color: var(--primary); text-decoration: underline;">group.html</a>에서 기록 확정
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const rows = document.querySelectorAll("#participantTableBody tr");
+      rows.forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+      });
+    });
+  </script>
+</body>
+</html>

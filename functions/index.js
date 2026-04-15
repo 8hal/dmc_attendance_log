@@ -2829,6 +2829,160 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, message: "대회가 삭제되었습니다" });
     }
 
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "detail") {
+      const { eventId } = req.query;
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+
+      const eventDoc = await db.collection("race_events").doc(eventId).get();
+      if (!eventDoc.exists) {
+        return res.status(404).json({ ok: false, error: "대회 없음" });
+      }
+
+      const event = { ...eventDoc.data(), id: eventDoc.id };
+
+      let gap = [];
+      if (event.groupScrapeJobId) {
+        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+        const scrapeResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+
+        const confirmedSnap = await db.collection("race_results")
+          .where("canonicalEventId", "==", eventId)
+          .get();
+        const confirmedByName = {};
+        confirmedSnap.forEach((doc) => {
+          const d = doc.data();
+          confirmedByName[d.memberRealName] = true;
+        });
+
+        const resultsByName = scrapeResults.reduce((acc, r) => {
+          const key = r.memberRealName;
+          (acc[key] = acc[key] || []).push(r);
+          return acc;
+        }, {});
+
+        gap = (event.participants || []).map((p) => {
+          const matches = resultsByName[p.realName] || [];
+
+          if (confirmedByName[p.realName]) {
+            return { ...p, gapStatus: "confirmed" };
+          } else if (matches.length === 1) {
+            return { ...p, gapStatus: "ok", result: matches[0] };
+          } else if (matches.length > 1) {
+            return { ...p, gapStatus: "ambiguous", candidates: matches };
+          }
+          return { ...p, gapStatus: "missing" };
+        });
+      }
+
+      const confirmedCount = gap.filter((g) => g.gapStatus === "confirmed").length;
+      const stats = null;
+      // stats 계산 생략 (Phase 2)
+
+      return res.json({ ok: true, event, gap, confirmedCount, stats });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "bulk-confirm") {
+      const { eventId, confirmSource, results } = req.body;
+
+      if (!eventId || !Array.isArray(results) || results.length === 0) {
+        return res.status(400).json({ ok: false, error: "eventId and results[] required" });
+      }
+
+      const eventDoc = await db.collection("race_events").doc(eventId).get();
+      if (!eventDoc.exists) {
+        return res.status(404).json({ ok: false, error: "대회 없음" });
+      }
+      const event = eventDoc.data();
+
+      let saved = 0;
+      const errors = [];
+
+      for (let i = 0; i < results.length; i += 500) {
+        const chunk = results.slice(i, i + 500);
+        const batch = db.batch();
+        let pendingWrites = 0;
+
+        for (const participant of chunk) {
+          try {
+            const { realName, nickname, distance, finishTime, dnStatus } = participant;
+            if (!realName) {
+              errors.push("realName 누락");
+              continue;
+            }
+
+            const safeDate = (event.eventDate || "").replace(/[^0-9\-]/g, "");
+            const safeName = realName.replace(/[^a-zA-Z0-9가-힣]/g, "_");
+            const distNorm = normalizeRaceDistance(distance);
+            const safeDist = (distNorm || "").replace(/[^a-zA-Z0-9]/g, "_");
+            const docId = `${safeName}_${safeDist}_${safeDate}`;
+
+            const existing = await db.collection("race_results").doc(docId).get();
+            if (existing.exists) {
+              saved++;
+              continue;
+            }
+
+            const finishTrim = String(finishTime || "").trim();
+            const netEff = effectiveNetTimeForConfirm(participant);
+            const row = {
+              jobId: event.groupScrapeJobId || eventId,
+              canonicalEventId: eventId,
+              eventName: event.eventName || "",
+              eventDate: event.eventDate || "",
+              source: event.groupSource?.source || "manual",
+              sourceId: event.groupSource?.sourceId || "",
+              memberRealName: realName,
+              memberNickname: nickname || realName,
+              distance: distNorm,
+              netTime: netEff,
+              gunTime: participant.gunTime || "",
+              bib: participant.bib || "",
+              overallRank: participant.overallRank || null,
+              gender: participant.gender || "",
+              pbConfirmed: false,
+              isGuest: false,
+              note: participant.note || "",
+              status: dnStatus ? dnStatus.toLowerCase() : "confirmed",
+              confirmedAt: new Date().toISOString(),
+              confirmSource: confirmSource || "operator",
+            };
+            if (!dnStatus && finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
+
+            batch.set(db.collection("race_results").doc(docId), row);
+            pendingWrites++;
+            saved++;
+          } catch (err) {
+            errors.push(`${participant.realName || "?"}: ${err.message}`);
+          }
+        }
+
+        if (pendingWrites > 0) {
+          await batch.commit();
+        }
+      }
+
+      if (event.groupScrapeJobId) {
+        await db.collection("scrape_jobs").doc(event.groupScrapeJobId).update({
+          status: "confirmed",
+          confirmedAt: new Date().toISOString(),
+          confirmedCount: saved,
+        });
+      }
+
+      if (errors.length > 0) {
+        return res.status(207).json({
+          ok: false,
+          saved,
+          errors,
+          message: `${saved}건 저장, ${errors.length}건 실패`,
+        });
+      }
+
+      return res.json({ ok: true, saved });
+    }
+
     if (action === "fix-phantom-jobs" && req.method === "POST") {
       // Phantom Jobs 일괄 다운그레이드 (confirmed → complete)
       const { jobIds, secret } = req.body || {};

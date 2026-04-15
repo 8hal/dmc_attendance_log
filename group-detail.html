@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>제24회 경기마라톤대회 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB; --primary-hover: #1D4ED8; --primary-light: #DBEAFE;
+      --bg: #F8FAFC; --card: #FFFFFF;
+      --text: #0F172A; --text-sub: #64748B; --text-muted: #94A3B8;
+      --border: #E2E8F0; --border-light: #F1F5F9;
+      --green: #059669; --green-light: #D1FAE5;
+      --yellow: #D97706; --yellow-light: #FEF3C7;
+      --red: #DC2626; --red-light: #FEE2E2;
+      --blue: #0EA5E9; --blue-light: #E0F2FE;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 80px; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+    .page-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); text-decoration: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+    .back-link:hover { border-color: var(--primary); color: var(--primary); }
+    .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); margin: 2px 0 0; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--text-sub); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-confirm { background: var(--green); color: white; border: none; }
+    .btn-confirm:hover { background: #047857; }
+    .btn-danger { background: var(--red-light); color: var(--red); border: 1px solid #FCA5A5; }
+    .btn-danger:hover { background: #FECACA; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+    .badge-green  { background: var(--green-light); color: var(--green); }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-red    { background: var(--red-light); color: var(--red); }
+    .badge-gray   { background: var(--border); color: var(--text-sub); }
+
+    .section { background: var(--card); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); }
+    .section-title { font-size: 16px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .stat-card { background: var(--border-light); border-radius: 10px; padding: 12px 14px; }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+
+    .progress-bar { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+    .progress-bar.complete { background: var(--green-light); border-color: var(--green); }
+    .progress-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .progress-title.complete { color: var(--green); }
+    .progress-title.incomplete { color: var(--yellow); }
+    .progress-track { height: 24px; background: var(--border-light); border-radius: 12px; overflow: hidden; margin-bottom: 8px; position: relative; }
+    .progress-fill { height: 100%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; }
+    .progress-fill.incomplete { background: linear-gradient(90deg, var(--yellow), #F59E0B); }
+    .progress-fill.complete { background: linear-gradient(90deg, var(--green), #10B981); }
+    .progress-detail { font-size: 13px; color: var(--text-sub); line-height: 1.6; margin-bottom: 10px; }
+    .progress-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .unprocessed-list { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
+    .unprocessed-list-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+    .unprocessed-item { font-size: 13px; color: var(--text-sub); padding: 4px 0; cursor: pointer; transition: color 0.15s; }
+    .unprocessed-item:hover { color: var(--primary); text-decoration: underline; }
+    .unprocessed-item::before { content: "• "; color: var(--red); }
+
+    .search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .search-input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+
+    .filter-chips { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .filter-chip { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: var(--card); transition: all 0.15s; }
+    .filter-chip:hover { border-color: var(--primary); }
+    .filter-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .section-separator { font-size: 13px; font-weight: 700; color: var(--text-muted); padding: 12px 0 8px; border-bottom: 2px solid var(--border); margin: 16px 0 12px; display: flex; align-items: center; justify-content: space-between; }
+    .section-separator-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--border-light); color: var(--text-sub); }
+    .section-collapse { cursor: pointer; user-select: none; }
+    .section-collapse:hover { color: var(--primary); }
+
+    .result-list { display: flex; flex-direction: column; gap: 8px; }
+    .result-row { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: all 0.15s; scroll-margin-top: 80px; }
+    .result-row.highlighted { animation: highlight 1s ease-out; }
+    @keyframes highlight {
+      0% { background: var(--yellow-light); }
+      100% { background: transparent; }
+    }
+    .result-row.processed { opacity: 0.6; }
+    .result-row.ok { border-left: 3px solid var(--green); }
+    .result-row.warn { border-left: 3px solid var(--yellow); }
+    .result-row.err { border-left: 3px solid var(--red); }
+    .result-row-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; background: #fff; }
+    .result-nick { font-weight: 700; font-size: 14px; }
+    .result-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+    .result-time { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .result-rank { font-size: 12px; color: var(--text-muted); }
+    .result-bib { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .result-detail { font-size: 12px; color: var(--text-sub); }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1; color: var(--text-sub); border-radius: 6px; }
+    .btn-icon:hover { background: var(--border-light); color: var(--text); }
+    .bib-edit-row { display: none; padding: 8px 12px; background: var(--bg); gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border-light); }
+    .bib-edit-row input { width: 130px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+
+    .candidates { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg); }
+    .candidate-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; transition: all 0.15s; }
+    .candidate-option:hover { border-color: var(--primary); background: var(--primary-light); }
+    .candidate-option input { accent-color: var(--primary); margin-top: 3px; flex-shrink: 0; }
+    .candidate-time { font-weight: 700; color: var(--primary); font-size: 14px; }
+    .candidate-detail { font-size: 12px; color: var(--text-sub); }
+
+    .manual-input-row { padding: 10px 12px; background: var(--bg); display: none; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .manual-input-row.show { display: flex; }
+
+    .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 50; box-shadow: 0 -4px 12px rgba(0,0,0,0.05); }
+    .sticky-footer-info { font-size: 13px; font-weight: 600; }
+    .sticky-footer-info.complete { color: var(--green); }
+    .sticky-footer-info.incomplete { color: var(--yellow); }
+    
+    .info-grid { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; font-size: 13px; }
+    .info-label { font-weight: 600; color: var(--text-muted); }
+    .info-value { color: var(--text); }
+
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; max-width: 500px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(15,23,42,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { margin: 0; font-size: 16px; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .modal-body { padding: 12px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 12px 20px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .modal-icon { font-size: 48px; text-align: center; margin-bottom: 12px; }
+    .modal-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .modal-desc { font-size: 14px; color: var(--text-sub); text-align: center; line-height: 1.6; margin-bottom: 16px; }
+    .modal-error-detail { background: var(--red-light); border: 1px solid var(--red); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+    .modal-error-title { font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+    .modal-error-msg { font-size: 13px; color: var(--text); }
+
+    .member-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 8px; cursor: pointer; }
+    .member-item:hover { background: var(--border-light); }
+    .member-item input { width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+    .member-nickname { font-weight: 600; font-size: 14px; }
+    .member-realname { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; display: none; z-index: 200; max-width: 90vw; }
+    .toast.show { display: block; }
+    .toast.err { background: var(--red); }
+
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; gap: 6px; }
+      .info-label::after { content: ':'; }
+      .progress-actions { flex-direction: column; }
+      .progress-actions .btn { width: 100%; }
+      .sticky-footer { flex-direction: column; align-items: stretch; }
+      .sticky-footer .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <!-- 헤더 -->
+    <div class="page-header">
+      <a class="back-link" href="group.html">← 단체 대회 관리</a>
+      <div>
+        <h1 class="page-title">제24회 경기마라톤대회</h1>
+        <p class="page-subtitle">2026-04-19 (토) · <span class="badge badge-green">✅ 스크랩 완료</span></p>
+      </div>
+    </div>
+
+    <!-- 통계 요약 -->
+    <div class="section">
+      <h2 class="section-title">📊 통계 요약</h2>
+      
+      <div class="stat-grid" style="margin-bottom: 16px;">
+        <div class="stat-card">
+          <div class="stat-label">등록 인원</div>
+          <div class="stat-value">8명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">확정 기록</div>
+          <div class="stat-value" style="color: var(--red);">0명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">미확정</div>
+          <div class="stat-value" style="color: var(--yellow);">8명</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">완주율</div>
+          <div class="stat-value" style="color: var(--text-muted);">0%</div>
+        </div>
+      </div>
+
+      <!-- 처리 진행률 -->
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-title incomplete" id="progressTitle">⚠️ 미처리 5명 — 모든 참가자의 기록을 선택해야 일괄 저장할 수 있습니다</div>
+        
+        <div class="progress-track">
+          <div class="progress-fill incomplete" id="progressFill" style="width: 94%;">80 / 85명 (94%)</div>
+        </div>
+        
+        <div class="progress-detail" id="progressDetail">
+          자동 매칭 3명 · 동명이인 2명 · 기록 없음 3명 (데모 8명)
+        </div>
+
+        <!-- 미처리 목록 (클릭 가능) -->
+        <div class="unprocessed-list" id="unprocessedList">
+          <div class="unprocessed-list-title">미처리 목록 (5명) — 클릭하면 해당 참가자로 이동</div>
+          <div class="unprocessed-item" data-scroll-to="participant-2">디모 (동명이인 선택 필요)</div>
+          <div class="unprocessed-item" data-scroll-to="participant-10">초보러너 (동명이인 선택 필요)</div>
+          <div class="unprocessed-item" data-scroll-to="participant-3">SJ (DNS/DNF/직접입력 필요)</div>
+          <div class="unprocessed-item" data-scroll-to="participant-15">해피러너 (기록 없음)</div>
+          <div class="unprocessed-item" data-scroll-to="participant-20">햇살 (기록 없음)</div>
+        </div>
+
+        <div class="progress-actions">
+          <button class="btn btn-outline btn-sm" id="detectGapBtn">🔍 갭 탐지</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참가자 목록 -->
+    <div class="section">
+      <h2 class="section-title" id="participantSectionTitle">👥 참가자 목록</h2>
+      
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="🔍 닉네임, 실명으로 검색…" id="searchInput" />
+        <button class="btn btn-outline btn-sm" id="editParticipantsBtn">참가자 편집</button>
+        <button class="btn btn-ghost btn-sm" id="refreshBtn">🔄</button>
+      </div>
+
+      <!-- 필터 칩 -->
+      <div class="filter-chips" id="filterChips">
+        <div class="filter-chip active" data-filter="all">전체 (0)</div>
+        <div class="filter-chip" data-filter="unprocessed">미처리만 (0)</div>
+        <div class="filter-chip" data-filter="processed">선택 완료 (0)</div>
+        <div class="filter-chip" data-filter="ambiguous">동명이인 (0)</div>
+        <div class="filter-chip" data-filter="missing">기록 없음 (0)</div>
+      </div>
+
+      <div class="result-list" id="participantList"></div>
+    </div>
+
+    <!-- 대회 정보 -->
+    <div class="section">
+      <h2 class="section-title">📋 대회 정보</h2>
+      <div class="info-grid">
+        <div class="info-label">대회명</div>
+        <div class="info-value">제24회 경기마라톤대회</div>
+        
+        <div class="info-label">날짜</div>
+        <div class="info-value">2026-04-19 (토)</div>
+        
+        <div class="info-label">기록 소스</div>
+        <div class="info-value">smartchip (202650000123)</div>
+        
+        <div class="info-label">스크랩 상태</div>
+        <div class="info-value"><span class="badge badge-green">✅ 완료</span> (2026-04-19 15:05)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky Footer (하단 고정) -->
+  <div class="sticky-footer" id="stickyFooter">
+    <div class="sticky-footer-info incomplete" id="footerInfo">
+      ⚠️ 미처리 5명
+    </div>
+    <button class="btn btn-confirm" id="bulkConfirmBtn" disabled title="모든 참가자의 기록을 선택해야 저장할 수 있습니다">
+      일괄 저장 (미처리 5명)
+    </button>
+  </div>
+
+  <!-- 참가자 편집 모달 -->
+  <div id="participantModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog">
+      <div class="modal-header">
+        <h2>참가자 선택</h2>
+        <button type="button" class="modal-close" id="participantModalClose" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="memberFilter" class="search-input" placeholder="닉네임·실명으로 검색…" />
+        <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost btn-sm" id="memberSelectAll">전체 선택</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="memberClearAll">선택 해제</button>
+        </div>
+        <div id="memberList" style="max-height:48vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 6px;">
+          <label class="member-item">
+            <input type="checkbox" checked />
+            <span class="member-nickname">라우펜더만<span class="member-realname">이원기</span></span>
+          </label>
+          <label class="member-item">
+            <input type="checkbox" checked />
+            <span class="member-nickname">쌩메<span class="member-realname">서윤석</span></span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="participantModalCancel">취소</button>
+        <button type="button" class="btn btn-primary" id="participantModalSave">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 성공 모달 -->
+  <div id="successModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" style="max-width: 400px;">
+      <div class="modal-body" style="padding: 24px;">
+        <div class="modal-icon">✅</div>
+        <div class="modal-title" style="color: var(--green);">저장 완료</div>
+        <div class="modal-desc">
+          85건의 기록이 race_results에 저장되었습니다.<br>
+          report.html에서 확인할 수 있습니다.
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline" style="flex: 1;" id="successModalClose">닫기</button>
+          <button class="btn btn-primary" style="flex: 1;" id="goToReport">report.html 이동</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실패 모달 -->
+  <div id="errorModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" style="max-width: 440px;">
+      <div class="modal-body" style="padding: 24px;">
+        <div class="modal-icon">❌</div>
+        <div class="modal-title" style="color: var(--red);">저장 실패</div>
+        <div class="modal-desc">
+          일부 기록만 저장되었을 수 있습니다.<br>
+          다시 시도하면 중복 저장되지 않습니다.
+        </div>
+        <div class="modal-error-detail" id="errorDetail" style="display: none;">
+          <div class="modal-error-title">오류 상세</div>
+          <div class="modal-error-msg" id="errorMsg"></div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button class="btn btn-ghost" style="flex: 1;" id="errorModalClose">닫기</button>
+          <button class="btn btn-primary" style="flex: 1;" id="retryBtn">다시 시도</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    let currentEventId = null;
+    let gapResults = [];
+    let currentEvent = null;
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function distanceLabel(g) {
+      const d = (g && g.distance) ? String(g.distance) : "";
+      const u = d.toUpperCase();
+      if (!u) return "—";
+      if (u.includes("10") && (u.includes("K") || u === "10K")) return "10K";
+      if (u.includes("HALF") || u === "HALF") return "HALF";
+      if (u.includes("FULL") || u === "FULL" || u.includes("MARATHON")) return "FULL";
+      return d;
+    }
+
+    function initialBibFromGap(g) {
+      const fromP = (g && g.bib != null) ? String(g.bib).trim() : "";
+      const fromR = g && g.result && g.result.bib != null ? String(g.result.bib).trim() : "";
+      return fromP || fromR || "";
+    }
+
+    function buildParticipantRowHtml(g, i) {
+      const num = i + 1;
+      const rowId = `participant-${num}`;
+      const nick = escapeHtml(g.nickname || "");
+      const realName = escapeHtml(g.realName || "");
+      const dist = distanceLabel(g);
+      const bibVal = escapeHtml(initialBibFromGap(g));
+
+      if (g.gapStatus === "confirmed") {
+        return `
+          <div class="result-row ok processed" data-status="processed" data-gap-status="ok" id="${rowId}" data-bib="${bibVal}">
+            <div class="result-row-header">
+              <span>✅</span>
+              <span class="result-nick">${nick}</span>
+              <span class="result-realname">${realName}</span>
+              <span style="flex: 1;"></span>
+              <span class="result-time">이미 확정</span>
+              <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
+              <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
+              <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+            </div>
+            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+            </div>
+          </div>`;
+      }
+
+      if (g.gapStatus === "ok" && g.result) {
+        const r = g.result;
+        const time = escapeHtml(r.netTime || r.finishTime || "—");
+        const rank = r.overallRank != null ? `(${escapeHtml(String(r.overallRank))}위)` : "";
+        const rbib = initialBibFromGap(g) || (r.bib != null ? String(r.bib).trim() : "");
+        const rbibEsc = escapeHtml(rbib);
+        return `
+          <div class="result-row ok processed" data-status="processed" data-gap-status="ok" id="${rowId}" data-bib="${rbibEsc}">
+            <div class="result-row-header">
+              <span>✅</span>
+              <span class="result-nick">${nick}</span>
+              <span class="result-realname">${realName}</span>
+              <span style="flex: 1;"></span>
+              <span class="result-time">${time}</span>
+              <span class="result-rank">${rank}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
+              <span class="result-bib">${rbib ? `배번 ${escapeHtml(rbib)}` : "배번 미입력"}</span>
+              <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+            </div>
+            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${rbibEsc}" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+            </div>
+          </div>`;
+      }
+
+      if (g.gapStatus === "ambiguous" && Array.isArray(g.candidates) && g.candidates.length > 0) {
+        const cands = g.candidates.map((c, ci) => {
+          const ct = escapeHtml(c.netTime || c.finishTime || "—");
+          const cbib = c.bib != null ? escapeHtml(String(c.bib)) : "—";
+          const cage = c.age != null ? escapeHtml(String(c.age)) : "";
+          const crank = c.overallRank != null ? escapeHtml(String(c.overallRank)) : "";
+          return `
+            <label class="candidate-option">
+              <input type="radio" name="amb-${i}" value="${ci}" ${ci === 0 ? "checked" : ""} />
+              <div>
+                <div class="candidate-time">${ct}</div>
+                <div class="candidate-detail">배번 ${cbib}${cage ? ` · ${cage}세` : ""}${crank ? ` · ${crank}위` : ""}</div>
+              </div>
+            </label>`;
+        }).join("");
+        return `
+          <div class="result-row warn" data-status="unprocessed" data-gap-status="ambiguous" id="${rowId}" data-bib="${bibVal}" data-distance="${escapeHtml(dist)}">
+            <div class="result-row-header" style="flex-direction: column; align-items: stretch;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>⚠️</span>
+                <span class="result-nick">${nick}</span>
+                <span class="result-realname">${realName}</span>
+                <span style="flex: 1;"></span>
+                <span style="font-size: 12px; color: var(--yellow); font-weight: 600;">동명이인 ${g.candidates.length}명</span>
+                <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
+                <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
+                <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+              </div>
+            </div>
+            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+            </div>
+            <div class="candidates">
+              ${cands}
+              <button type="button" class="btn btn-confirm btn-sm" style="align-self: flex-start; margin-top: 6px;" data-amb-confirm="${num}">선택 기록 사용</button>
+            </div>
+          </div>`;
+      }
+
+      return `
+        <div class="result-row err" data-status="unprocessed" data-gap-status="missing" id="${rowId}" data-bib="${bibVal}" data-distance="${escapeHtml(dist)}">
+          <div class="result-row-header">
+            <span>🔴</span>
+            <span class="result-nick">${nick}</span>
+            <span class="result-realname">${realName}</span>
+            <span style="flex: 1;"></span>
+            <span style="font-size: 12px; color: var(--red); font-weight: 600;">기록 없음</span>
+            <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
+            <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
+            <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+            <button type="button" class="btn btn-sm btn-outline" data-dns="${num}">DNS</button>
+            <button type="button" class="btn btn-sm btn-danger" data-dnf="${num}">DNF</button>
+            <button type="button" class="btn btn-sm btn-ghost" data-manual-toggle="${num}">직접 입력</button>
+          </div>
+          <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+            <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
+            <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+            <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+          </div>
+          <div class="manual-input-row" id="manual-${num}">
+            <input type="text" placeholder="기록 (예: 56:23)" maxlength="10" style="width: 130px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;" />
+            <button type="button" class="btn btn-sm btn-primary" data-manual-confirm="${num}">확인</button>
+          </div>
+        </div>`;
+    }
+
+    function renderParticipantList(gap) {
+      const list = document.getElementById("participantList");
+      const title = document.getElementById("participantSectionTitle");
+      if (!list) return;
+      const arr = Array.isArray(gap) ? gap : [];
+      list.innerHTML = arr.map((g, i) => buildParticipantRowHtml(g, i)).join("");
+      if (title) title.textContent = `👥 참가자 목록 (${arr.length}명)`;
+    }
+
+    function showToast(msg, isErr) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.toggle("err", !!isErr);
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 3800);
+    }
+
+    function bibLabelFromRow(row) {
+      const bib = (row.dataset.bib || "").trim();
+      return bib ? `배번 ${bib}` : "배번 미입력";
+    }
+
+    function bibControlsHtml(row) {
+      const id = row.id;
+      return `<span class="result-bib">${bibLabelFromRow(row)}</span><button type="button" class="btn-icon" data-edit-bib="${id}" title="배번 편집">✏️</button>`;
+    }
+
+    function closeBibEdit(rowId) {
+      const editRow = document.getElementById(`bib-edit-${rowId}`);
+      if (!editRow) return;
+      editRow.style.display = "none";
+      const row = document.getElementById(rowId);
+      const input = editRow.querySelector("input");
+      if (row && input) input.value = (row.dataset.bib || "").trim();
+    }
+
+    // 참가자 행: 배번 / 동명이인 / DNS·DNF / 직접입력 (위임)
+    document.getElementById("participantList").addEventListener("click", (e) => {
+      const editBtn = e.target.closest && e.target.closest("[data-edit-bib]");
+      if (editBtn) {
+        e.stopPropagation();
+        const id = editBtn.getAttribute("data-edit-bib");
+        const editRow = document.getElementById(`bib-edit-${id}`);
+        const row = document.getElementById(id);
+        if (editRow && row) {
+          const input = editRow.querySelector("input");
+          const showing = editRow.style.display === "flex";
+          if (showing) {
+            editRow.style.display = "none";
+          } else {
+            if (input) input.value = (row.dataset.bib || "").trim();
+            editRow.style.display = "flex";
+          }
+        }
+        return;
+      }
+      const saveBtn = e.target.closest && e.target.closest("[data-bib-save]");
+      if (saveBtn) {
+        e.stopPropagation();
+        const id = saveBtn.getAttribute("data-bib-save");
+        const row = document.getElementById(id);
+        const editRow = document.getElementById(`bib-edit-${id}`);
+        if (!row || !editRow) return;
+        const input = editRow.querySelector("input");
+        const bib = (input && input.value) ? input.value.trim() : "";
+        row.dataset.bib = bib;
+        const bibSpan = row.querySelector(".result-bib");
+        if (bibSpan) bibSpan.textContent = bibLabelFromRow(row);
+        editRow.style.display = "none";
+        showToast("배번 저장됨");
+        return;
+      }
+      const cancelBtn = e.target.closest && e.target.closest("[data-bib-cancel]");
+      if (cancelBtn) {
+        e.stopPropagation();
+        closeBibEdit(cancelBtn.getAttribute("data-bib-cancel"));
+        return;
+      }
+
+      const ambBtn = e.target.closest && e.target.closest("[data-amb-confirm]");
+      if (ambBtn) {
+        e.stopPropagation();
+        const n = parseInt(ambBtn.getAttribute("data-amb-confirm"), 10);
+        const row = document.getElementById(`participant-${n}`);
+        if (!row) return;
+        const idx = n - 1;
+        const selected = row.querySelector("input[type=radio]:checked");
+        const candIdx = selected ? parseInt(selected.value, 10) : 0;
+        const g = gapResults[idx];
+        if (g && Array.isArray(g.candidates) && g.candidates[candIdx]) {
+          g.selectedCandidate = g.candidates[candIdx];
+        }
+        const selectedTime = selected?.closest(".candidate-option")?.querySelector(".candidate-time")?.textContent || "—";
+        const dist = row.dataset.distance || distanceLabel(g || {});
+        row.setAttribute("data-status", "processed");
+        row.setAttribute("data-gap-status", "ok");
+        row.classList.add("processed");
+        row.classList.remove("warn");
+        row.classList.add("ok");
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span class="result-time">${selectedTime}</span>
+          <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+          ${bibControlsHtml(row)}
+        `;
+        const candidates = row.querySelector(".candidates");
+        if (candidates) candidates.remove();
+        showToast("선택 기록 사용됨");
+        updateProgressUI();
+        return;
+      }
+
+      const dnsBtn = e.target.closest && e.target.closest("[data-dns]");
+      if (dnsBtn) {
+        e.stopPropagation();
+        const n = parseInt(dnsBtn.getAttribute("data-dns"), 10);
+        const row = document.getElementById(`participant-${n}`);
+        if (!row) return;
+        const idx = n - 1;
+        if (gapResults[idx]) gapResults[idx].dnStatus = "DNS";
+        const dist = row.dataset.distance || "10K";
+        row.setAttribute("data-status", "processed");
+        row.setAttribute("data-gap-status", "ok");
+        row.classList.add("processed");
+        row.classList.remove("err");
+        row.classList.add("ok");
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNS</span>
+          <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+          ${bibControlsHtml(row)}
+        `;
+        showToast("DNS 처리됨");
+        updateProgressUI();
+        return;
+      }
+
+      const dnfBtn = e.target.closest && e.target.closest("[data-dnf]");
+      if (dnfBtn) {
+        e.stopPropagation();
+        const n = parseInt(dnfBtn.getAttribute("data-dnf"), 10);
+        const row = document.getElementById(`participant-${n}`);
+        if (!row) return;
+        const idx = n - 1;
+        if (gapResults[idx]) gapResults[idx].dnStatus = "DNF";
+        const dist = row.dataset.distance || "10K";
+        row.setAttribute("data-status", "processed");
+        row.setAttribute("data-gap-status", "ok");
+        row.classList.add("processed");
+        row.classList.remove("err");
+        row.classList.add("ok");
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNF</span>
+          <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+          ${bibControlsHtml(row)}
+        `;
+        showToast("DNF 처리됨");
+        updateProgressUI();
+        return;
+      }
+
+      const manualToggle = e.target.closest && e.target.closest("[data-manual-toggle]");
+      if (manualToggle) {
+        e.stopPropagation();
+        const n = manualToggle.getAttribute("data-manual-toggle");
+        const manualRow = document.getElementById(`manual-${n}`);
+        if (manualRow) {
+          manualRow.classList.toggle("show");
+          manualToggle.textContent = manualRow.classList.contains("show") ? "취소" : "직접 입력";
+        }
+        return;
+      }
+
+      const manualConfirm = e.target.closest && e.target.closest("[data-manual-confirm]");
+      if (manualConfirm) {
+        e.stopPropagation();
+        const n = manualConfirm.getAttribute("data-manual-confirm");
+        const row = document.getElementById(`participant-${n}`);
+        if (!row) return;
+        const input = manualConfirm.previousElementSibling;
+        const time = input && input.value ? input.value.trim() : "";
+        if (!time) {
+          showToast("기록을 입력해주세요", true);
+          return;
+        }
+        const idx = parseInt(n, 10) - 1;
+        if (gapResults[idx]) {
+          gapResults[idx].manualTime = time;
+          gapResults[idx].dnStatus = null;
+        }
+        const distManual = row.dataset.distance || "10K";
+        row.setAttribute("data-status", "processed");
+        row.setAttribute("data-gap-status", "ok");
+        row.classList.add("processed");
+        row.classList.remove("err");
+        row.classList.add("ok");
+        row.querySelector(".result-row-header").innerHTML = `
+          <span>✅</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+          <span style="flex: 1;"></span>
+          <span class="result-time">${time}</span>
+          <span style="font-size: 11px; color: var(--text-muted);">${distManual}</span>
+          ${bibControlsHtml(row)}
+        `;
+        const manualRow = row.querySelector(".manual-input-row");
+        if (manualRow) manualRow.remove();
+        showToast(`기록 ${time} 사용됨`);
+        updateProgressUI();
+      }
+    });
+
+    // 처리 상태 분석
+    function analyzeProcessingStatus() {
+      const rows = document.querySelectorAll("#participantList .result-row");
+      const stats = {
+        total: rows.length,
+        processed: 0,
+        unprocessed: 0,
+        unprocessedList: []
+      };
+
+      rows.forEach(row => {
+        const status = row.getAttribute("data-status");
+        if (status === "processed") {
+          stats.processed++;
+        } else {
+          stats.unprocessed++;
+          const nick = row.querySelector(".result-nick")?.textContent || "";
+          const realName = row.querySelector(".result-realname")?.textContent || "";
+          const gapStatus = row.getAttribute("data-gap-status");
+          let reason = "";
+          if (gapStatus === "ambiguous") reason = "동명이인 선택 필요";
+          else if (gapStatus === "missing") reason = "DNS/DNF/직접입력 필요";
+          stats.unprocessedList.push({ 
+            nick, 
+            realName, 
+            reason,
+            id: row.id
+          });
+        }
+      });
+
+      return stats;
+    }
+
+    // UI 업데이트
+    function updateProgressUI() {
+      const stats = analyzeProcessingStatus();
+      const percentage = stats.total ? Math.round((stats.processed / stats.total) * 100) : 0;
+      
+      const progressBar = document.getElementById("progressBar");
+      const progressTitle = document.getElementById("progressTitle");
+      const progressFill = document.getElementById("progressFill");
+      const unprocessedList = document.getElementById("unprocessedList");
+      const bulkBtn = document.getElementById("bulkConfirmBtn");
+      const footerInfo = document.getElementById("footerInfo");
+
+      // 진행률
+      progressFill.style.width = percentage + "%";
+      progressFill.textContent = `${stats.processed} / ${stats.total}명 (${percentage}%)`;
+
+      if (stats.unprocessed === 0) {
+        // 전원 선택 완료
+        progressBar.classList.add("complete");
+        progressTitle.classList.add("complete");
+        progressTitle.classList.remove("incomplete");
+        progressTitle.textContent = "✅ 선택 완료 — 모든 참가자의 기록이 선택되었습니다";
+        progressFill.classList.add("complete");
+        progressFill.classList.remove("incomplete");
+        unprocessedList.style.display = "none";
+        
+        bulkBtn.disabled = stats.total === 0;
+        bulkBtn.textContent = stats.total === 0 ? "일괄 저장" : `일괄 저장 (${stats.total}건)`;
+        bulkBtn.title = stats.total === 0 ? "참가자가 없습니다" : "";
+        
+        footerInfo.classList.add("complete");
+        footerInfo.classList.remove("incomplete");
+        footerInfo.textContent = `✅ ${stats.total}명 선택 완료`;
+      } else {
+        // 미처리 있음
+        progressBar.classList.remove("complete");
+        progressTitle.classList.add("incomplete");
+        progressTitle.classList.remove("complete");
+        progressTitle.textContent = `⚠️ 미처리 ${stats.unprocessed}명 — 모든 참가자의 기록을 선택해야 일괄 저장할 수 있습니다`;
+        progressFill.classList.remove("complete");
+        progressFill.classList.add("incomplete");
+        
+        // 미처리 목록 렌더링 (클릭 가능)
+        unprocessedList.innerHTML = `
+          <div class="unprocessed-list-title">미처리 목록 (${stats.unprocessed}명) — 클릭하면 해당 참가자로 이동</div>
+          ${stats.unprocessedList.map(p => `<div class="unprocessed-item" data-scroll-to="${p.id}">${p.nick} (${p.reason})</div>`).join("")}
+        `;
+        unprocessedList.style.display = "block";
+        
+        // 미처리 목록 클릭 이벤트
+        unprocessedList.querySelectorAll(".unprocessed-item").forEach(item => {
+          item.addEventListener("click", () => {
+            const targetId = item.getAttribute("data-scroll-to");
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+              targetEl.classList.add("highlighted");
+              setTimeout(() => targetEl.classList.remove("highlighted"), 1000);
+            }
+          });
+        });
+        
+        bulkBtn.disabled = true;
+        bulkBtn.textContent = `일괄 저장 (미처리 ${stats.unprocessed}명)`;
+        bulkBtn.title = "모든 참가자의 기록을 선택해야 저장할 수 있습니다";
+        
+        footerInfo.classList.remove("complete");
+        footerInfo.classList.add("incomplete");
+        footerInfo.textContent = `⚠️ 미처리 ${stats.unprocessed}명`;
+      }
+
+      const rows = document.querySelectorAll("#participantList .result-row");
+      let ambN = 0;
+      let missN = 0;
+      rows.forEach((row) => {
+        const gs = row.getAttribute("data-gap-status");
+        if (gs === "ambiguous") ambN++;
+        if (gs === "missing") missN++;
+      });
+      const chipAll = document.querySelector('#filterChips [data-filter="all"]');
+      const chipUn = document.querySelector('#filterChips [data-filter="unprocessed"]');
+      const chipProc = document.querySelector('#filterChips [data-filter="processed"]');
+      const chipAmb = document.querySelector('#filterChips [data-filter="ambiguous"]');
+      const chipMiss = document.querySelector('#filterChips [data-filter="missing"]');
+      if (chipAll) chipAll.textContent = `전체 (${stats.total})`;
+      if (chipUn) chipUn.textContent = `미처리만 (${stats.unprocessed})`;
+      if (chipProc) chipProc.textContent = `선택 완료 (${stats.processed})`;
+      if (chipAmb) chipAmb.textContent = `동명이인 (${ambN})`;
+      if (chipMiss) chipMiss.textContent = `기록 없음 (${missN})`;
+    }
+
+    // 일괄 저장 (에러 처리 포함)
+    document.getElementById("bulkConfirmBtn").addEventListener("click", async () => {
+      const stats = analyzeProcessingStatus();
+      if (stats.unprocessed > 0) {
+        showToast(`미처리 ${stats.unprocessed}명이 있습니다`, true);
+        return;
+      }
+      
+      if (!confirm(`${stats.total}건의 기록을 Firestore에 저장하시겠습니까?\n\n저장 후에는 report.html에서 확인할 수 있습니다.`)) {
+        return;
+      }
+
+      const btn = document.getElementById("bulkConfirmBtn");
+      btn.disabled = true;
+      btn.textContent = "저장 중…";
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        
+        const response = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "bulk-confirm",
+            eventId: currentEventId,
+            confirmSource: "operator",
+            results: gapResults.map((g, idx) => {
+              const row = document.getElementById(`participant-${idx + 1}`);
+              const bib = row ? (row.dataset.bib || "").trim() : "";
+
+              if (g.gapStatus === "ok" && g.result) {
+                return {
+                  ...g.result,
+                  memberId: g.memberId,
+                  realName: g.realName,
+                  nickname: g.nickname,
+                  distance: g.distance,
+                  bib: bib || (g.result.bib != null ? String(g.result.bib).trim() : ""),
+                };
+              }
+              if (g.gapStatus === "ambiguous" && g.selectedCandidate) {
+                return {
+                  ...g.selectedCandidate,
+                  memberId: g.memberId,
+                  realName: g.realName,
+                  nickname: g.nickname,
+                  distance: g.distance,
+                  bib: bib || (g.selectedCandidate.bib != null ? String(g.selectedCandidate.bib).trim() : ""),
+                };
+              }
+              if (g.dnStatus) {
+                return {
+                  memberId: g.memberId,
+                  realName: g.realName,
+                  nickname: g.nickname,
+                  distance: g.distance,
+                  dnStatus: g.dnStatus,
+                  bib,
+                };
+              }
+              if (g.manualTime) {
+                return {
+                  memberId: g.memberId,
+                  realName: g.realName,
+                  nickname: g.nickname,
+                  distance: g.distance,
+                  finishTime: g.manualTime,
+                  bib,
+                };
+              }
+              return null;
+            }).filter(Boolean)
+          })
+        });
+        
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error || "저장 실패");
+
+        sessionStorage.removeItem(`gap-${currentEventId}`);
+        document.getElementById("successModal").classList.add("open");
+        
+      } catch (error) {
+        console.error("일괄 저장 오류:", error);
+        
+        let errorMessage = error.message || String(error);
+        if (error.name === "AbortError") {
+          errorMessage = "서버 응답 시간 초과 (60초). 네트워크를 확인하세요.";
+        } else if (!navigator.onLine) {
+          errorMessage = "인터넷 연결이 끊어졌습니다.";
+        }
+        
+        document.getElementById("errorMsg").textContent = errorMessage;
+        document.getElementById("errorDetail").style.display = "block";
+        document.getElementById("errorModal").classList.add("open");
+        
+      } finally {
+        btn.disabled = false;
+        btn.textContent = `일괄 저장 (${stats.total}건)`;
+      }
+    });
+
+    // 성공 모달 닫기
+    document.getElementById("successModalClose").addEventListener("click", () => {
+      document.getElementById("successModal").classList.remove("open");
+    });
+    document.getElementById("goToReport").addEventListener("click", () => {
+      window.location.href = "report.html";
+    });
+
+    // 실패 모달 닫기/재시도
+    document.getElementById("errorModalClose").addEventListener("click", () => {
+      document.getElementById("errorModal").classList.remove("open");
+    });
+    document.getElementById("retryBtn").addEventListener("click", () => {
+      document.getElementById("errorModal").classList.remove("open");
+      document.getElementById("bulkConfirmBtn").click();
+    });
+
+    // 필터
+    document.querySelectorAll(".filter-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        
+        const filter = chip.getAttribute("data-filter");
+        const rows = document.querySelectorAll("#participantList .result-row");
+        
+        rows.forEach(row => {
+          const status = row.getAttribute("data-status");
+          const gapStatus = row.getAttribute("data-gap-status");
+          let show = false;
+          
+          if (filter === "all") show = true;
+          else if (filter === "unprocessed") show = status === "unprocessed";
+          else if (filter === "processed") show = status === "processed";
+          else if (filter === "ambiguous") show = gapStatus === "ambiguous";
+          else if (filter === "missing") show = gapStatus === "missing";
+          
+          row.style.display = show ? "" : "none";
+        });
+      });
+    });
+
+    // 검색
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const rows = document.querySelectorAll("#participantList .result-row");
+      rows.forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+      });
+    });
+
+    // 참가자 편집 모달
+    document.getElementById("editParticipantsBtn").addEventListener("click", () => {
+      document.getElementById("participantModal").classList.add("open");
+    });
+    document.getElementById("participantModalClose").addEventListener("click", () => {
+      document.getElementById("participantModal").classList.remove("open");
+    });
+    document.getElementById("participantModalCancel").addEventListener("click", () => {
+      document.getElementById("participantModal").classList.remove("open");
+    });
+    document.getElementById("participantModalSave").addEventListener("click", () => {
+      showToast("참가자 저장됨");
+      document.getElementById("participantModal").classList.remove("open");
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      loadEventDetail();
+    });
+
+    // 초기 로드
+    async function loadEventDetail() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get("eventId");
+      
+      if (!eventId) {
+        showToast("대회 ID가 없습니다", true);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events&subAction=detail&eventId=${encodeURIComponent(eventId)}`);
+        const data = await res.json();
+        
+        if (!data.ok) {
+          throw new Error(data.error || "대회 정보를 불러올 수 없습니다");
+        }
+
+        currentEvent = data.event;
+        currentEventId = data.event.id;
+        gapResults = Array.isArray(data.gap) ? data.gap : [];
+
+        // 참가자 0명 체크
+        if (!data.event.participants || data.event.participants.length === 0) {
+          showEmptyStateUI("참가자가 없습니다. group.html에서 참가자를 추가하세요.");
+          return;
+        }
+
+        // 스크랩 실패 체크
+        if (data.event.groupScrapeStatus === "failed") {
+          showEmptyStateUI("스크랩 실패했습니다. group.html에서 재시도하세요.");
+          return;
+        }
+
+        renderParticipantList(gapResults);
+        updateProgressUI();
+        
+      } catch (error) {
+        console.error("로드 오류:", error);
+        if (error.name === "AbortError") {
+          showToast("서버 응답 시간 초과. 네트워크를 확인하세요.", true);
+        } else {
+          showToast(error.message || "오류 발생", true);
+        }
+      }
+    }
+
+    function showEmptyStateUI(message) {
+      const participantSection = document.querySelector("#participantList").closest(".section");
+      participantSection.innerHTML = `
+        <h2 class="section-title">⚠️ 알림</h2>
+        <div style="text-align:center;padding:40px 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;">처리 불가</div>
+          <div style="font-size:14px;color:var(--text-sub);">${message}</div>
+          <a href="group.html" class="btn btn-primary" style="margin-top:20px;text-decoration:none;">← 단체 대회 목록으로</a>
+        </div>`;
+      
+      document.getElementById("stickyFooter").style.display = "none";
+    }
+
+    loadEventDetail();
+  </script>
+</body>
+</html>

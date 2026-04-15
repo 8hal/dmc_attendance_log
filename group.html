@@ -244,110 +244,6 @@
       return `소스: ${escapeHtml(gs.source)} / ${escapeHtml(gs.sourceId)}`;
     }
 
-    function scrapeRowToConfirmPayload(r) {
-      return {
-        memberRealName: r.memberRealName,
-        memberNickname: r.memberNickname,
-        distance: r.distance,
-        netTime: r.netTime,
-        gunTime: r.gunTime || "",
-        finishTime: r.finishTime,
-        bib: r.bib || "",
-        overallRank: r.overallRank != null ? r.overallRank : null,
-        gender: r.gender || "",
-        pbConfirmed: r.pbConfirmed || false,
-        isGuest: r.isGuest || false,
-        note: r.note || "",
-        source: r.source || "",
-        sourceId: r.sourceId || "",
-      };
-    }
-
-    async function postConfirm(event, results) {
-      const gs = event.groupSource || {};
-      const res = await fetch(`${API_BASE}?action=confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobId: event.groupScrapeJobId,
-          eventName: eventDisplayName(event),
-          eventDate: event.eventDate || "",
-          source: gs.source || undefined,
-          sourceId: gs.sourceId || undefined,
-          results,
-          confirmSource: "operator",
-          canonicalEventId: event.id,
-        }),
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "confirm failed");
-      return data;
-    }
-
-    async function postConfirmOne(event, participant) {
-      const res = await fetch(`${API_BASE}?action=group-events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subAction: "confirm-one",
-          canonicalEventId: event.id,
-          participant,
-          confirmSource: "operator",
-        }),
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "confirm-one failed");
-      return data;
-    }
-
-    async function markManualEntry(event, participant, finishTime) {
-      if (!finishTime.trim()) {
-        showToast("기록을 입력해 주세요.", true);
-        return;
-      }
-      try {
-        await postConfirmOne(event, {
-          realName: participant.realName,
-          nickname: participant.nickname,
-          finishTime: finishTime.trim(),
-          distance: participant.distance || event.defaultDistance || "",
-        });
-        showToast(`${participant.nickname} 기록 저장됨`);
-        await loadGroupEvents();
-      } catch (e) {
-        showToast(e.message || String(e), true);
-      }
-    }
-
-    async function markDnsDnf(event, participant, status) {
-      try {
-        await postConfirmOne(event, {
-          realName: participant.realName,
-          nickname: participant.nickname,
-          dnStatus: status,
-        });
-        showToast(`${status} 저장됨`);
-        await loadGroupEvents();
-      } catch (e) {
-        showToast(e.message || String(e), true);
-      }
-    }
-
-    async function confirmOkRows(event, rows) {
-      if (!event.groupScrapeJobId) {
-        showToast("스크랩 job이 없습니다.", true);
-        return;
-      }
-      try {
-        const results = rows.map((r) => scrapeRowToConfirmPayload(r));
-        await postConfirm(event, results);
-        showToast(`${results.length}건 확정 저장`);
-        await loadGroupEvents();
-      } catch (e) {
-        showToast(e.message || String(e), true);
-      }
-    }
-
     async function tryAuth() {
       const pw = document.getElementById("authPw").value;
       const btn = document.getElementById("authBtn");
@@ -429,107 +325,35 @@
       return html;
     }
 
-    function renderGapSection(ev, gap) {
-      if (!gap || gap.length === 0) {
-        return '<p class="gap-loading">갭 정보가 없습니다.</p>';
-      }
-      const okItems = gap.filter((g) => g.gapStatus === "ok" && g.result && !g.confirmed);
-      let bulkHtml = "";
-      if (okItems.length > 0) {
-        bulkHtml = `
-          <div class="bulk-bar">
-            <span>자동 매칭 ${okItems.length}명 — 일괄 확정</span>
-            <button type="button" class="btn btn-confirm btn-sm" data-bulk-confirm="${escapeHtml(ev.id)}">일괄 확정</button>
-          </div>`;
-      }
+    function renderGapSummary(gap) {
+      if (!gap || gap.length === 0) return "";
 
-      const rows = gap.map((g, idx) => {
-        const nick = escapeHtml(g.nickname || "");
-        if (g.gapStatus === "ok" && g.result) {
-          const r = g.result;
-          const ft = escapeHtml(r.finishTime || r.netTime || "—");
-          const rank = r.overallRank != null ? `${escapeHtml(String(r.overallRank))}위` : "";
-          if (g.confirmed) {
-            const statusLabel = r.status === "dns" ? "DNS" : r.status === "dnf" ? "DNF" : ft;
-            const statusIcon = (r.status === "dns" || r.status === "dnf") ? "⛔" : "✅";
-            return `
-              <div class="result-row ok" data-event-id="${escapeHtml(ev.id)}" style="opacity:0.75;">
-                <div class="result-row-header">
-                  <span>${statusIcon}</span>
-                  <span class="result-nick">${nick}</span>
-                  <span class="result-time">${statusLabel}</span>
-                  ${rank && r.status === "confirmed" ? `<span class="result-rank">(${rank})</span>` : ""}
-                  <span style="flex:1"></span>
-                  <span style="font-size:12px;color:var(--green);font-weight:600;">확정됨</span>
-                  <button type="button" class="btn btn-ghost btn-sm" data-one-confirm="${escapeHtml(ev.id)}" data-gap-idx="${idx}" title="수정">수정</button>
-                </div>
-              </div>`;
-          }
-          return `
-            <div class="result-row ok" data-event-id="${escapeHtml(ev.id)}">
-              <div class="result-row-header">
-                <span>✅</span>
-                <span class="result-nick">${nick}</span>
-                <span class="result-time">${ft}</span>
-                ${rank ? `<span class="result-rank">(${rank})</span>` : ""}
-                <span style="flex:1"></span>
-                <button type="button" class="btn btn-confirm btn-sm" data-one-confirm="${escapeHtml(ev.id)}" data-gap-idx="${idx}">확정</button>
-              </div>
-            </div>`;
-        }
-        if (g.gapStatus === "missing") {
-          const disabled = !ev.groupScrapeJobId ? "disabled" : "";
-          const manualId = `manual-${escapeHtml(ev.id)}-${idx}`;
-          return `
-            <div class="result-row err" data-event-id="${escapeHtml(ev.id)}">
-              <div class="result-row-header">
-                <span>🔴</span>
-                <span class="result-nick">${nick}</span>
-                <span style="font-size:13px;color:var(--text-sub)">기록 없음</span>
-                <span style="flex:1"></span>
-                <button type="button" class="btn btn-sm btn-outline" data-dns="${escapeHtml(ev.id)}" data-gap-idx="${idx}" ${disabled}>DNS</button>
-                <button type="button" class="btn btn-sm btn-danger" data-dnf="${escapeHtml(ev.id)}" data-gap-idx="${idx}" ${disabled}>DNF</button>
-                <button type="button" class="btn btn-sm btn-ghost" data-toggle-manual="${manualId}" ${disabled}>직접 입력</button>
-              </div>
-              <div id="${manualId}" style="display:none;margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                <input type="text" placeholder="기록 (예: 3:45:22)" maxlength="10"
-                  style="width:130px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;"
-                  data-manual-input="${manualId}" />
-                <button type="button" class="btn btn-sm btn-primary"
-                  data-manual-confirm="${escapeHtml(ev.id)}" data-gap-idx="${idx}" data-manual-id="${manualId}" ${disabled}>확정</button>
-              </div>
-            </div>`;
-        }
-        if (g.gapStatus === "ambiguous") {
-          const cands = g.candidates || [];
-          const radioName = `amb-${ev.id}-${idx}`;
-          const opts = cands.slice(0, 3).map((c, ci) => `
-            <label class="candidate-option">
-              <input type="radio" name="${escapeHtml(radioName)}" value="${ci}" ${ci === 0 ? "checked" : ""} />
-              <div>
-                <div class="candidate-time">${escapeHtml(c.finishTime || c.netTime || "—")}</div>
-                <div class="candidate-detail">${escapeHtml([c.bib, c.distance, c.overallRank != null ? `${c.overallRank}위` : ""].filter(Boolean).join(" · "))}</div>
-              </div>
-            </label>
-          `).join("");
-          const dis = !ev.groupScrapeJobId ? "disabled" : "";
-          return `
-            <div class="result-row warn" data-event-id="${escapeHtml(ev.id)}">
-              <div class="result-row-header" style="flex-direction:column;align-items:stretch;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <span>⚠️</span>
-                  <span class="result-nick">${nick}</span>
-                  <span style="font-size:12px;color:var(--yellow);font-weight:600">동명이인 — 후보 선택</span>
-                </div>
-                <div class="candidates">${opts}</div>
-                <button type="button" class="btn btn-confirm btn-sm" style="align-self:flex-start;margin-top:6px" data-amb-confirm="${escapeHtml(ev.id)}" data-gap-idx="${idx}" ${dis}>선택 기록으로 확정</button>
-              </div>
-            </div>`;
-        }
-        return "";
-      }).join("");
+      const ok = gap.filter((g) => g.gapStatus === "ok" && !g.confirmed).length;
+      const amb = gap.filter((g) => g.gapStatus === "ambiguous").length;
+      const miss = gap.filter((g) => g.gapStatus === "missing").length;
+      const confirmed = gap.filter((g) => g.confirmed).length;
+      const total = gap.length;
+      const percentage = total > 0 ? Math.round((confirmed / total) * 100) : 0;
 
-      return bulkHtml + `<div class="result-list">${rows}</div>`;
+      return `
+    <div class="info-row">
+      <span class="row-label">매칭 현황</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${ok > 0 ? `<span class="badge badge-green">✅ ${ok}명</span>` : ""}
+        ${amb > 0 ? `<span class="badge badge-yellow">⚠️ ${amb}명</span>` : ""}
+        ${miss > 0 ? `<span class="badge badge-red">🔴 ${miss}명</span>` : ""}
+      </div>
+    </div>
+    <div class="info-row">
+      <span class="row-label">확정 진행</span>
+      <div style="flex:1;display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;height:18px;background:#f0f0f0;border-radius:9px;overflow:hidden;">
+          <div style="height:100%;background:var(--green);width:${percentage}%;transition:width 0.3s;display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">
+            ${confirmed} / ${total}
+          </div>
+        </div>
+      </div>
+    </div>`;
     }
 
     window.__groupEvents = [];
@@ -545,9 +369,10 @@
         const title = escapeHtml(eventDisplayName(ev));
         const date = escapeHtml(ev.eventDate || "");
         const gap = gapById[ev.id];
-        const gapBlock = (ev.groupScrapeStatus === "done" || ev.groupScrapeStatus === "partial_failure")
-          ? `<div class="info-row" style="flex-direction:column;align-items:stretch;"><span class="row-label">갭·확정</span>${renderGapSection(ev, gap)}</div>`
-          : "";
+        const gapSummaryHtml =
+          (ev.groupScrapeStatus === "done" || ev.groupScrapeStatus === "partial_failure")
+            ? renderGapSummary(gap)
+            : "";
         return `
           <div class="gcard" data-event-card="${id}">
             <div class="gcard-header">
@@ -569,130 +394,15 @@
             <div class="info-row">
               <span class="row-label">참가자</span>
               <div class="chips">${renderParticipantChips(ev)}</div>
-              <button type="button" class="btn btn-ghost btn-sm" data-edit-parts="${id}" style="margin-left:auto;">참가자 편집</button>
             </div>
             <div class="info-row">
               <span class="row-label">기록 소스</span>
               <div class="source-status">${groupSourceHtml(ev)}</div>
             </div>
-            ${gapBlock}
+            ${gapSummaryHtml}
           </div>`;
       }).join("");
 
-      root.querySelectorAll("[data-edit-parts]").forEach((btn) => {
-        btn.addEventListener("click", () => openParticipantModal(btn.getAttribute("data-edit-parts")));
-      });
-
-      root.querySelectorAll("[data-bulk-confirm]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const eid = btn.getAttribute("data-bulk-confirm");
-          const ev = events.find((x) => x.id === eid);
-          const gap = gapById[eid] || [];
-          const rows = gap.filter((g) => g.gapStatus === "ok" && g.result).map((g) => g.result);
-          if (ev && rows.length) void confirmOkRows(ev, rows);
-        });
-      });
-
-      root.querySelectorAll("[data-one-confirm]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const eid = btn.getAttribute("data-one-confirm");
-          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
-          const ev = events.find((x) => x.id === eid);
-          const gap = gapById[eid] || [];
-          const row = gap[idx];
-          if (ev && row && row.result) {
-            const r = row.result;
-            void postConfirmOne(ev, {
-              realName: r.memberRealName || row.realName,
-              nickname: r.memberNickname || row.nickname,
-              finishTime: r.finishTime || r.netTime,
-              distance: r.distance,
-              bib: r.bib,
-              overallRank: r.overallRank,
-              gender: r.gender,
-              dnStatus: (r.status === "dns" || r.status === "dnf") ? r.status.toUpperCase() : undefined,
-            }).then(() => {
-              showToast("수정 저장됨");
-              return loadGroupEvents();
-            }).catch((e) => showToast(e.message || String(e), true));
-          }
-        });
-      });
-
-      root.querySelectorAll("[data-dns]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const eid = btn.getAttribute("data-dns");
-          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
-          const ev = events.find((x) => x.id === eid);
-          const gap = gapById[eid] || [];
-          const row = gap[idx];
-          if (ev && row) void markDnsDnf(ev, row, "DNS");
-        });
-      });
-
-      root.querySelectorAll("[data-dnf]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const eid = btn.getAttribute("data-dnf");
-          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
-          const ev = events.find((x) => x.id === eid);
-          const gap = gapById[eid] || [];
-          const row = gap[idx];
-          if (ev && row) void markDnsDnf(ev, row, "DNF");
-        });
-      });
-
-      root.querySelectorAll("[data-toggle-manual]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const targetId = btn.getAttribute("data-toggle-manual");
-          const el = document.getElementById(targetId);
-          if (!el) return;
-          const visible = el.style.display === "flex";
-          el.style.display = visible ? "none" : "flex";
-          btn.textContent = visible ? "직접 입력" : "취소";
-          if (!visible) el.querySelector("input").focus();
-        });
-      });
-
-      root.querySelectorAll("[data-manual-confirm]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const eid = btn.getAttribute("data-manual-confirm");
-          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
-          const manualId = btn.getAttribute("data-manual-id");
-          const ev = events.find((x) => x.id === eid);
-          const gap = gapById[eid] || [];
-          const row = gap[idx];
-          const input = manualId && document.querySelector(`[data-manual-input="${manualId}"]`);
-          if (ev && row && input) void markManualEntry(ev, row, input.value);
-        });
-      });
-
-      root.querySelectorAll("[data-amb-confirm]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const eid = btn.getAttribute("data-amb-confirm");
-          const idx = parseInt(btn.getAttribute("data-gap-idx"), 10);
-          const ev = events.find((x) => x.id === eid);
-          const gap = gapById[eid] || [];
-          const row = gap[idx];
-          const rowEl = btn.closest(".result-row");
-          const sel = rowEl && rowEl.querySelector("input[type=radio]:checked");
-          if (!ev || !row || !row.candidates) return;
-          const ci = sel ? parseInt(sel.value, 10) : 0;
-          const chosen = row.candidates[ci];
-          if (chosen) void postConfirmOne(ev, {
-            realName: row.realName,
-            nickname: row.nickname,
-            finishTime: chosen.finishTime || chosen.netTime,
-            distance: chosen.distance,
-            bib: chosen.bib,
-            overallRank: chosen.overallRank,
-            gender: chosen.gender,
-          }).then(() => {
-            showToast("확정 저장됨");
-            return loadGroupEvents();
-          }).catch((e) => showToast(e.message || String(e), true));
-        });
-      });
-      
       // 더보기 메뉴 이벤트
       root.querySelectorAll("[data-more-menu]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
@@ -739,6 +449,15 @@
           console.error("삭제 오류:", err);
           showToast(err.message || "삭제 중 오류 발생", true);
         }
+        });
+      });
+
+      root.querySelectorAll("[data-event-card]").forEach((card) => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", (e) => {
+          if (e.target.closest("button") || e.target.closest(".more-menu")) return;
+          const eventId = card.getAttribute("data-event-card");
+          window.location.href = `group-detail.html?eventId=${encodeURIComponent(eventId)}`;
         });
       });
     }
