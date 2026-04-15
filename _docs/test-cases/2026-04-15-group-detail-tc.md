@@ -214,7 +214,9 @@
 ```
 **Status**: 404
 
-### TC-004-5: Idempotent 보장
+### TC-004-5: 멱등성 보장 (Idempotent)
+- 같은 결과를 2번 저장해도 1건만 존재 (중복 문서 없음)
+
 **Given:** 이미 저장된 85건  
 **When:** 동일 데이터로 bulk-confirm 재호출  
 **Then:**
@@ -226,7 +228,18 @@
 ```
 - race_results 중복 생성 없음
 
-### TC-004-6: 부분 실패
+### TC-004-6: 재확정 시 이전 기록 삭제 (docId 변경 케이스)
+- **시나리오**: 첫 확정 후 배번 입력, 재확정
+- **기대 동작**: 이전 기록 삭제 후 새 기록만 저장 (1건 유지)
+- **검증**:
+  1. 배번 없이 첫 확정: 85명
+  2. race_results 확인: 85건
+  3. 배번 추가 후 재확정: 85명 (bib 포함)
+  4. race_results 확인: 여전히 85건 (배번 포함된 최신 데이터만)
+- **자동화 (`scripts/qa-group-detail-api-test.js`)**: 동일 시나리오를 1명 표본으로 검증
+- **목적**: docId 생성 로직 변경 시에도 중복 방지 보장
+
+### TC-004-7: 부분 실패
 **Given:** 85건 중 2건 realName 누락  
 **When:** bulk-confirm API 호출  
 **Then:**
@@ -240,14 +253,14 @@
 ```
 **Status**: 207
 
-### TC-004-7: DNS/DNF 처리
+### TC-004-8: DNS/DNF 처리
 **Given:** `results[i].dnStatus === "DNS"`  
 **When:** bulk-confirm API 호출  
 **Then:**
 - race_results[i].status === "dns"
 - finishTime 없음
 
-### TC-004-8: 배번 저장
+### TC-004-9: 배번 저장
 **Given:** `results[i].bib === "12345"`  
 **When:** bulk-confirm API 호출  
 **Then:**
@@ -328,7 +341,7 @@
 
 ### 자동 테스트
 - [ ] TC-003 (GET detail) 7개 모두 통과
-- [ ] TC-004 (POST bulk-confirm) 8개 모두 통과
+- [ ] TC-004 (POST bulk-confirm) 9개 모두 통과
 
 ### 수동 테스트
 - [ ] TC-001 (group.html) 6개 모두 통과

@@ -44,8 +44,8 @@ AI가 코드를 작성하기 전 반드시 따라야 하는 워크플로우.
 ```
 Task: explore 에이전트
 Query: "How are API calls made in group.html?"
-       "What naming patterns are used for event handlers?"
-       "How is error handling done in this codebase?"
+      "What naming patterns are used for event handlers?"
+      "How is error handling done in this codebase?"
 ```
 
 **방법 B: Grep (빠른 확인)**
@@ -59,6 +59,18 @@ Grep: "addEventListener.*click"
 - 오류 처리 방법
 - 이벤트 리스너 등록 방식
 - 변수명 컨벤션
+- **유사 기능의 전역 검색** (예: confirm 관련 API → `action.*confirm` 전역 Grep)
+
+**⚠️ 중요: 협소한 검색 금지**
+- ❌ 특정 블록 내부만 검색 (예: `action === "group-events"` 내부만)
+- ✅ 전역 검색으로 모든 유사 패턴 확인 (예: `action.*confirm`, `batch.*save`)
+- 예: confirm API 구현 시 → `"confirm"` 전역 검색 → `action === "confirm"`, `confirm-one`, `bulk-confirm` 모두 확인
+
+**체크리스트:**
+- [ ] 기존 코드에서 유사 기능 찾기
+- [ ] **전역 검색으로 모든 변형 확인** (함수명, API 액션 등)
+- [ ] 패턴 차이점 분석 (왜 다르게 구현되었는가?)
+- [ ] 공통 패턴 추출 (재사용 가능한 부분)
 
 ---
 
@@ -198,6 +210,7 @@ Critical/Important 수정
 ☐ api-patterns.md 읽음
 ☐ naming-conventions.md 읽음
 ☐ explore 에이전트로 기존 패턴 확인
+☐ 유사 기능 전역 검색 완료 (함수명/API 액션 등)
 
 구현 중:
 ☐ 기존 패턴 준수

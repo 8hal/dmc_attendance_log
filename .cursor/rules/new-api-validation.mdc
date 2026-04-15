@@ -1,0 +1,224 @@
+---
+description: 신규 API 추가 시 필수 검증 프로세스
+alwaysApply: true
+---
+
+# 신규 API 추가 검증 규칙
+
+## 근거
+
+2026-04-15, `bulk-confirm` API 구현 시 기존 `action === "confirm"` API의 재확정 패턴을 참조하지 않아 중복 저장 버그 발생.
+원인: 전역 검색 생략 + 유사 API 전수 조사 누락 + 사용자 사전 승인 없음.
+
+상세 분석: `_docs/postmortem/2026-04-15-bulk-confirm-reconfirm-bug.md`
+
+---
+
+## 핵심 원칙
+
+> **신규 API 추가 전, 반드시 기존 유사 API를 전수 조사하고 사용자 승인을 받는다.**
+
+---
+
+## 필수 절차 (5단계)
+
+### 1단계: 유사 API 전역 검색
+
+**방법:**
+```bash
+# 키워드 기반 전역 검색 (예: confirm 관련 API)
+Grep: "action.*confirm" (모든 파일)
+Grep: "subAction.*confirm" (모든 파일)
+Grep: "confirm.*API|API.*confirm" (함수명, 주석 포함)
+```
+
+**목표:**
+- 프로젝트 전체에서 유사 기능 API 모두 찾기
+- 단순히 같은 블록(`action === "group-events"`) 내부만 보지 말 것
+- **다른 action, 다른 파일에도 유사 기능이 있을 수 있음**
+
+**체크리스트:**
+- [ ] 전역 검색 완료 (최소 3가지 패턴)
+- [ ] 발견된 API 목록 작성
+- [ ] 각 API의 용도·호출처 파악
+
+---
+
+### 2단계: 기존 API 사용처 조사
+
+**Frontend 조사:**
+```bash
+# 모든 HTML에서 API 호출 검색
+Grep: "fetch.*action=confirm" (*.html)
+Grep: "subAction.*confirm" (*.html)
+```
+
+**Backend 조사:**
+```bash
+# functions/index.js에서 API 구현 읽기
+Read: functions/index.js (각 API 블록)
+```
+
+**작성할 것:**
+```markdown
+## 기존 API 사용처
+
+### API 1: action=confirm
+- 호출처: report.html, my.html, races.html
+- 용도: 스크랩 잡 확정
+- 특징: 재확정 시 기존 결과 전체 삭제
+
+### API 2: confirm-one
+- 호출처: 없음 (사용되지 않음)
+- 용도: 개별 확정
+- 특징: ...
+```
+
+---
+
+### 3단계: 신규 API 필요성 문서화
+
+**필수 작성: `_docs/justification/YYYY-MM-DD-[api-name]-justification.md`**
+
+```markdown
+# [API명] 추가 필요성 검증
+
+## 기존 API 목록
+1. action=confirm - [용도]
+2. confirm-one - [용도]
+
+## 신규 API: [이름]
+- 용도: [무엇을 위한 API인가?]
+- 호출처: [어디서 사용?]
+
+## 기존 API로 대체 불가능한 이유
+
+### 왜 API 1을 재사용하지 않는가?
+- 이유: [구체적으로]
+- 근거: [코드 분석, 아키텍처 차이 등]
+
+### 왜 API 2를 반복 호출하지 않는가?
+- 이유: [성능? 원자성? 기타?]
+- 근거: [구체적으로]
+
+## 신규 API 추가 결정
+- ✅ 추가 필요: [요약]
+- ⚠️ 대안: [있다면]
+```
+
+---
+
+### 4단계: 사용자 승인 (필수)
+
+**AI는 다음을 사용자에게 보고하고 승인을 받는다:**
+
+```
+신규 API 추가가 필요합니다.
+
+📋 기존 API 현황:
+- action=confirm (report.html 등에서 사용)
+- confirm-one (사용처 없음)
+
+🆕 신규 API 제안:
+- 이름: bulk-confirm
+- 용도: 단체 대회 일괄 확정
+- 호출처: group-detail.html
+
+❓ 대체 불가 이유:
+- action=confirm: 입력 모델 다름 (jobId vs eventId)
+- confirm-one: 반복 호출 비효율 + scrape_jobs 미갱신
+
+📄 상세 문서: _docs/justification/2026-04-15-bulk-confirm-justification.md
+
+승인하시겠습니까?
+```
+
+**사용자 승인 없이 구현 시작 금지.**
+
+---
+
+### 5단계: 기존 패턴 준수 구현
+
+승인 받은 후:
+
+**필수 체크리스트:**
+- [ ] 기존 API 중 가장 유사한 것의 **핵심 패턴** 참조
+      예: 재확정 처리, 삭제 로직, 배치 크기 등
+- [ ] 패턴 차이가 있다면 **의도적 차이**인지 확인
+      예: "confirm은 전체 삭제하는데 왜 우리는 개별 체크?"
+- [ ] 차이의 근거를 문서화
+
+**참조 문서:**
+- `_docs/development/api-patterns.md`
+- `_docs/development/batch-save-pattern.md` (배치 저장 API 전용)
+
+---
+
+## 자가 점검 체크리스트 (AI 필수)
+
+구현 후 스스로에게 묻기:
+
+```markdown
+## 신규 API 추가 - 배포 전 자가 점검
+
+- [ ] 유사 API **전역 검색** 완료 (최소 3가지 키워드)
+- [ ] 모든 유사 API의 **사용처** 조사 완료
+- [ ] **필요성 문서** 작성 완료 (`_docs/justification/`)
+- [ ] **사용자 승인** 받음
+- [ ] 기존 API와 **패턴 일치** 확인
+      예: 재확정 처리, 삭제 로직, 에러 처리 등
+- [ ] 패턴 차이의 **근거** 문서화
+- [ ] TC에 **실제 사용 시나리오** 포함
+      예: 수정 후 재저장, 배번 추가 후 재확정 등
+```
+
+**위 항목 중 하나라도 미완료 시 → 배포 금지**
+
+---
+
+## 금지 패턴
+
+### ❌ 절대 하지 말 것
+
+1. **협소한 검색**
+   - ❌ 특정 블록 내부만 검색 (`action === "group-events"` 내부만)
+   - ✅ 전역 검색 (`action.*confirm`, `batch.*save` 등)
+
+2. **확증 편향**
+   - ❌ "유사 API 하나 찾았으니 됐다"
+   - ✅ "다른 곳에도 있을 수 있다" 가정하고 계속 검색
+
+3. **사용자 승인 없이 구현 시작**
+   - ❌ "간단하니까 바로 만들자"
+   - ✅ "신규 API는 반드시 사용자 승인 필요"
+
+4. **패턴 무시**
+   - ❌ "내 방식이 더 나아" (근거 없이)
+   - ✅ "기존 패턴을 따르고, 차이는 문서화"
+
+---
+
+## 예외 처리
+
+### 승인 생략 가능한 경우
+
+**없음.**
+
+신규 API 추가는 항상 사용자 승인 필요.
+
+---
+
+## 위반 시 결과
+
+1. **배포 전 발견**: 롤백 + 재작업 + 재검증
+2. **배포 후 발견**: 프로덕션 버그 + 긴급 핫픽스 + 사용자 신뢰 하락
+
+**결론:** 처음부터 절차를 따르는 것이 가장 빠르고 안전함.
+
+---
+
+## 참고 문서
+
+- `_docs/development/api-patterns.md` - API 호출 패턴
+- `_docs/development/batch-save-pattern.md` - 배치 저장 API 패턴
+- `_docs/postmortem/2026-04-15-bulk-confirm-reconfirm-bug.md` - 실패 사례

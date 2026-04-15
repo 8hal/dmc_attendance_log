@@ -2908,9 +2908,25 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       let saved = 0;
       const errors = [];
 
-      for (let i = 0; i < results.length; i += 500) {
-        const chunk = results.slice(i, i + 500);
+      // ✅ 재확정 시 중복 방지: 기존 결과 전체 삭제 후 재저장
+      // 참고: action=confirm API와 동일 패턴 (라인 1814~1820)
+      const oldResultsSnap = await db.collection("race_results")
+        .where("canonicalEventId", "==", eventId)
+        .get();
+
+      const BATCH_SIZE = 500;
+      const oldDocs = oldResultsSnap.docs;
+      for (let i = 0; i < oldDocs.length; i += BATCH_SIZE) {
+        const deleteBatch = db.batch();
+        oldDocs.slice(i, i + BATCH_SIZE).forEach((doc) => {
+          deleteBatch.delete(doc.ref);
+        });
+        await deleteBatch.commit();
+      }
+
+      for (let i = 0; i < results.length; i += BATCH_SIZE) {
         const batch = db.batch();
+        const chunk = results.slice(i, i + BATCH_SIZE);
         let pendingWrites = 0;
 
         for (const participant of chunk) {
@@ -2926,12 +2942,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             const distNorm = normalizeRaceDistance(distance);
             const safeDist = (distNorm || "").replace(/[^a-zA-Z0-9]/g, "_");
             const docId = `${safeName}_${safeDist}_${safeDate}`;
-
-            const existing = await db.collection("race_results").doc(docId).get();
-            if (existing.exists) {
-              saved++;
-              continue;
-            }
 
             const finishTrim = String(finishTime || "").trim();
             const netEff = effectiveNetTimeForConfirm(participant);

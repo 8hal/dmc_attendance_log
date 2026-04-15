@@ -35,18 +35,21 @@ git diff {BASE_SHA}..{HEAD_SHA}
 - Type safety (if applicable)?
 - DRY principle followed?
 - Edge cases handled?
+- **유사 기능과 패턴 일치?** (기존 API/함수 참조했는가?)
 
 **Architecture:**
 - Sound design decisions?
 - Scalability considerations?
 - Performance implications?
 - Security concerns?
+- **신규 API 추가 시: 필요성 문서 (`_docs/justification/`) 있는가?**
 
 **Testing:**
 - Tests actually test logic (not mocks)?
 - Edge cases covered?
 - Integration tests where needed?
 - All tests passing?
+- **배치 저장 API: 재확정 시나리오 테스트 포함?**
 
 **Requirements:**
 - All plan requirements met?
@@ -59,6 +62,7 @@ git diff {BASE_SHA}..{HEAD_SHA}
 - Backward compatibility considered?
 - Documentation complete?
 - No obvious bugs?
+- **재실행/재확정 시나리오 처리?** (멱등성, 중복 방지)
 
 ## Output Format
 

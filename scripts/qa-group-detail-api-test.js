@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * TC-003 / TC-004 — group-events detail & bulk-confirm (Firestore 에뮬 + Functions 에뮬)
+ * TC-004: bulk-confirm 9케이스 (TC-004-6 재확정·docId/배번 포함)
  * 실행: firebase emulators:exec --only functions,firestore --project dmc-attendance "node scripts/qa-group-detail-api-test.js"
  */
 const fs = require("fs");
@@ -75,6 +76,7 @@ function ok(name, cond, detail) {
   const evtConf = "qa_evt_conf";
   const evtBulk = "qa_evt_bulk";
   const evtPartial = "qa_evt_partial";
+  const evtReconfirm = "qa_evt_reconfirm";
 
   // scrape job shared results structure
   const baseResults = [
@@ -167,6 +169,18 @@ function ok(name, cond, detail) {
     .set({
       eventName: "QA PARTIAL",
       eventDate: "2026-04-18",
+      isGroupEvent: true,
+      groupScrapeJobId: jobId,
+      groupScrapeStatus: "done",
+      participants: [],
+    });
+
+  await db
+    .collection("race_events")
+    .doc(evtReconfirm)
+    .set({
+      eventName: "QA RECONFIRM",
+      eventDate: "2026-04-19",
       isGroupEvent: true,
       groupScrapeJobId: jobId,
       groupScrapeStatus: "done",
@@ -308,6 +322,58 @@ function ok(name, cond, detail) {
     r.status === 200 && r.json.ok === true && r.json.saved === 85
   );
 
+  const firstReconfirm = [
+    {
+      realName: "이원기",
+      nickname: "라우펜더만",
+      distance: "HALF",
+      finishTime: "1:45:23",
+      bib: "",
+    },
+  ];
+  r = await httpJson("POST", `${API}?action=group-events`, {
+    subAction: "bulk-confirm",
+    eventId: evtReconfirm,
+    confirmSource: "test",
+    results: firstReconfirm,
+  });
+  let rrSnap = await db
+    .collection("race_results")
+    .where("canonicalEventId", "==", evtReconfirm)
+    .get();
+  let forName = rrSnap.docs
+    .map((d) => d.data())
+    .filter((row) => row.memberRealName === "이원기");
+  ok(
+    "TC-004-6: 첫 확정 후 이원기 1건·배번 없음",
+    r.status === 200 &&
+      r.json.ok === true &&
+      forName.length === 1 &&
+      (forName[0].bib || "") === ""
+  );
+
+  const secondReconfirm = [{ ...firstReconfirm[0], bib: "12345" }];
+  r = await httpJson("POST", `${API}?action=group-events`, {
+    subAction: "bulk-confirm",
+    eventId: evtReconfirm,
+    confirmSource: "test",
+    results: secondReconfirm,
+  });
+  rrSnap = await db
+    .collection("race_results")
+    .where("canonicalEventId", "==", evtReconfirm)
+    .get();
+  forName = rrSnap.docs
+    .map((d) => d.data())
+    .filter((row) => row.memberRealName === "이원기");
+  ok(
+    "TC-004-6: 재확정 후 여전히 1건·최신 bib",
+    r.status === 200 &&
+      r.json.ok === true &&
+      forName.length === 1 &&
+      forName[0].bib === "12345"
+  );
+
   const partial = [];
   for (let i = 0; i < 83; i++) {
     partial.push({
@@ -325,7 +391,7 @@ function ok(name, cond, detail) {
     results: partial,
   });
   ok(
-    "TC-004-6: 부분 실패 207 errors message",
+    "TC-004-7: 부분 실패 207 errors message",
     r.status === 207 &&
       r.json.ok === false &&
       r.json.saved === 83 &&
@@ -362,7 +428,7 @@ function ok(name, cond, detail) {
     .get();
   const dnsData = dnsQ.empty ? {} : dnsQ.docs[0].data();
   ok(
-    "TC-004-7: DNS status + no finishTime",
+    "TC-004-8: DNS status + no finishTime",
     r.json.ok === true &&
       dnsData.status === "dns" &&
       dnsData.finishTime === undefined
@@ -397,7 +463,7 @@ function ok(name, cond, detail) {
     .get();
   const bibRow = bibQ.empty ? {} : bibQ.docs[0].data();
   ok(
-    "TC-004-8: bib 저장",
+    "TC-004-9: bib 저장",
     r.json.ok === true && bibRow.bib === "12345"
   );
 
