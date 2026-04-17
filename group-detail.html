@@ -222,7 +222,7 @@
         </div>
 
         <div class="progress-actions">
-          <button class="btn btn-outline btn-sm" id="detectGapBtn">🔍 갭 탐지</button>
+          <button class="btn btn-outline btn-sm" id="detectGapBtn">🔍 기록 매칭</button>
         </div>
       </div>
     </div>
@@ -1162,6 +1162,12 @@
           return;
         }
 
+        // 대회 전 모드 (pending 상태)
+        if (data.event.groupScrapeStatus === "pending") {
+          showPreEventMode(data.event);
+          return;
+        }
+
         renderParticipantList(gapResults);
         updateProgressUI();
         
@@ -1187,6 +1193,80 @@
         </div>`;
       
       document.getElementById("stickyFooter").style.display = "none";
+    }
+
+    function showPreEventMode(event) {
+      // 대회 날짜 계산
+      const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+      const today = new Date();
+      const diffDays = eventDate ? Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24)) : null;
+      const daysText = diffDays !== null ? (diffDays > 0 ? `D-${diffDays}` : diffDays === 0 ? "오늘" : `D+${Math.abs(diffDays)}`) : "";
+
+      // 통계 섹션 업데이트
+      const progressBar = document.getElementById("progressBar");
+      progressBar.classList.add("complete");
+      progressBar.innerHTML = `
+        <div class="progress-title complete">✅ 대회 준비 완료 ${daysText ? `— ${daysText}` : ""}</div>
+        <div class="progress-detail" style="line-height:1.8;">
+          ✓ 참가자 등록: ${event.participants.length}명<br>
+          ✓ 기록 소스: ${event.groupSource ? `${event.groupSource.source} (${event.groupSource.sourceId})` : "미설정"}<br>
+          ✓ 자동 스크랩: 대회 당일 15:00 KST 예정
+        </div>
+        <div style="background:var(--blue-light);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;color:var(--blue);">
+          📅 <strong>대회 당일 안내</strong><br>
+          대회 당일 15:00에 자동으로 기록을 수집합니다.<br>
+          수집 완료 후 이 페이지에서 기록 매칭 결과를 확인하세요.
+        </div>
+      `;
+
+      // 참가자 목록: 간단한 체크리스트 형태
+      const participants = event.participants || [];
+      const listHtml = participants.map((p, i) => {
+        const nick = escapeHtml(p.nickname || "");
+        const realName = escapeHtml(p.realName || "");
+        const dist = escapeHtml(p.distance || "—");
+        const bib = p.bib ? escapeHtml(String(p.bib)) : "";
+        const rowId = `participant-${i + 1}`;
+        
+        return `
+          <div class="result-row ok" id="${rowId}" data-bib="${bib}" style="border-left:3px solid var(--green);">
+            <div class="result-row-header">
+              <span>✅</span>
+              <span class="result-nick">${nick}</span>
+              <span class="result-realname">${realName}</span>
+              <span style="flex:1;"></span>
+              <span style="font-size:11px;color:var(--text-muted);">${dist}</span>
+              <span class="result-bib">${bib ? `배번 ${bib}` : "배번 미입력"}</span>
+              <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+            </div>
+            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bib}" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+            </div>
+          </div>`;
+      }).join("");
+
+      document.getElementById("participantList").innerHTML = listHtml;
+      document.getElementById("participantSectionTitle").textContent = `👥 참가자 목록 (${participants.length}명)`;
+
+      // 필터 칩 숨기기
+      document.getElementById("filterChips").style.display = "none";
+
+      // 통계 업데이트 (필터 칩 카운트)
+      const chipAll = document.querySelector('#filterChips [data-filter="all"]');
+      if (chipAll) chipAll.textContent = `전체 (${participants.length})`;
+
+      // Sticky Footer 업데이트
+      const footer = document.getElementById("stickyFooter");
+      const footerInfo = document.getElementById("footerInfo");
+      const bulkBtn = document.getElementById("bulkConfirmBtn");
+      
+      footerInfo.classList.add("complete");
+      footerInfo.classList.remove("incomplete");
+      footerInfo.textContent = `✅ 참가자 ${participants.length}명 등록 완료`;
+      
+      bulkBtn.style.display = "none";
     }
 
     loadEventDetail();
