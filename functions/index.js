@@ -3060,14 +3060,26 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           });
         }
         
-        // 4. 배번 업데이트
+        // 4. 배번 중복 검증
+        const duplicate = event.participants.find(
+          p => p.nickname !== nickname && p.bib === trimmedBib
+        );
+        
+        if (duplicate) {
+          return res.status(400).json({ 
+            ok: false, 
+            error: `이미 ${duplicate.nickname}님이 사용 중인 배번입니다` 
+          });
+        }
+        
+        // 5. 배번 업데이트
         event.participants[participantIndex].bib = trimmedBib;
         
         await db.collection("race_events").doc(eventId).update({
           participants: event.participants
         });
         
-        // 5. 성공 응답
+        // 6. 성공 응답
         return res.json({ 
           ok: true, 
           message: "배번이 저장되었습니다" 

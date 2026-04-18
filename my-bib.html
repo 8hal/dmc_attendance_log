@@ -126,27 +126,85 @@
       margin-bottom: 4px;
     }
     
-    .success-box {
-      background: var(--green-light);
-      border: 2px solid var(--green);
-      border-radius: 10px;
-      padding: 20px;
-      text-align: center;
+    .participant-list {
+      max-height: 450px;
+      overflow-y: auto;
     }
-    .success-icon {
-      font-size: 48px;
-      margin-bottom: 10px;
+    .participant-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
     }
-    .success-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--green);
-      margin: 0 0 8px;
+    .participant-item:hover {
+      border-color: var(--primary);
+      background: #F1F5F9;
     }
-    .success-message {
-      font-size: 14px;
+    .participant-info {
+      flex: 1;
+    }
+    .participant-nickname {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .participant-distance {
+      font-size: 13px;
       color: var(--text-sub);
-      margin: 0;
+    }
+    .participant-bib {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bib-status {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .bib-status.entered {
+      background: var(--green-light);
+      color: var(--green);
+    }
+    .bib-status.empty {
+      background: var(--red-light);
+      color: var(--red);
+    }
+    .bib-number {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown {
+      from {
+        transform: translateX(-50%) translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
     }
     
     .error-box {
@@ -194,27 +252,23 @@
       대회 정보를 불러오는 중...
     </div>
     
-    <div id="authScreen" class="hidden">
+    <div id="listScreen" class="hidden">
       <div class="card">
-        <h2 class="card-title">📝 본인 확인</h2>
-        <div id="authError" class="error-box hidden"></div>
-        <div class="form-group">
-          <label class="form-label" for="nicknameInput">닉네임 입력</label>
-          <input 
-            type="text" 
-            id="nicknameInput" 
-            class="form-input" 
-            placeholder="예: 라우펜더만"
-            autocomplete="off"
-          />
+        <h2 class="card-title">📋 참가자 목록</h2>
+        <div class="info-box" style="margin-top: 0; margin-bottom: 16px;">
+          <div class="info-title">💡 안내</div>
+          <ul class="info-list">
+            <li>동명이인 이슈 해결을 위해 필요합니다</li>
+            <li>입력하지 않으면 이름 기반으로 기록을 검색해서 저장하게 됩니다</li>
+          </ul>
         </div>
-        <button class="btn btn-primary" id="authBtn">다음</button>
+        <div class="participant-list" id="participantList"></div>
       </div>
     </div>
     
     <div id="inputScreen" class="hidden">
       <div class="card">
-        <h2 class="card-title">✅ <span id="confirmedNickname"></span>님 확인되었습니다</h2>
+        <h2 class="card-title">✅ <span id="confirmedNickname"></span>님</h2>
         <div id="inputError" class="error-box hidden"></div>
         <div class="form-group">
           <label class="form-label">종목</label>
@@ -235,15 +289,6 @@
           />
         </div>
         <button class="btn btn-primary" id="saveBtn">저장</button>
-        
-        <div class="info-box">
-          <div class="info-title">💡 안내</div>
-          <ul class="info-list">
-            <li>배번은 대회 당일 받는 번호판입니다</li>
-            <li>동명이인 이슈 해결을 위해 필요합니다</li>
-            <li>입력하지 않아도 기록은 저장됩니다</li>
-          </ul>
-        </div>
       </div>
     </div>
     
@@ -262,14 +307,16 @@
   </div>
   
   <script>
-    const API_BASE = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+    // 환경 자동 감지: localhost면 에뮬레이터, 아니면 프로덕션
+    const API_BASE = window.location.hostname === 'localhost'
+      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
+      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
 
     // 상태
     const STEP = {
       LOADING: 1,
-      AUTH: 2,
-      INPUT: 3,
-      SUCCESS: 4
+      LIST: 2,
+      INPUT: 3
     };
 
     let currentStep = STEP.LOADING;
@@ -278,14 +325,11 @@
 
     // DOM 요소
     const loadingScreen = document.getElementById('loadingScreen');
-    const authScreen = document.getElementById('authScreen');
+    const listScreen = document.getElementById('listScreen');
     const inputScreen = document.getElementById('inputScreen');
-    const successScreen = document.getElementById('successScreen');
     const eventInfo = document.getElementById('eventInfo');
-    const authError = document.getElementById('authError');
+    const participantList = document.getElementById('participantList');
     const inputError = document.getElementById('inputError');
-    const nicknameInput = document.getElementById('nicknameInput');
-    const authBtn = document.getElementById('authBtn');
     const confirmedNickname = document.getElementById('confirmedNickname');
     const distanceInfo = document.getElementById('distanceInfo');
     const currentBib = document.getElementById('currentBib');
@@ -296,18 +340,15 @@
       currentStep = step;
       
       loadingScreen.classList.add('hidden');
-      authScreen.classList.add('hidden');
+      listScreen.classList.add('hidden');
       inputScreen.classList.add('hidden');
-      successScreen.classList.add('hidden');
       
       if (step === STEP.LOADING) {
         loadingScreen.classList.remove('hidden');
-      } else if (step === STEP.AUTH) {
-        authScreen.classList.remove('hidden');
+      } else if (step === STEP.LIST) {
+        listScreen.classList.remove('hidden');
       } else if (step === STEP.INPUT) {
         inputScreen.classList.remove('hidden');
-      } else if (step === STEP.SUCCESS) {
-        successScreen.classList.remove('hidden');
       }
     }
 
@@ -331,6 +372,67 @@
       };
       return map[distance] || distance;
     }
+    
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+    
+    function renderParticipantList() {
+      participantList.innerHTML = '';
+      
+      currentEvent.participants.forEach(participant => {
+        const item = document.createElement('div');
+        item.className = 'participant-item';
+        
+        const hasBib = participant.bib && participant.bib.trim() !== '';
+        
+        item.innerHTML = `
+          <div class="participant-info">
+            <div class="participant-nickname">${participant.nickname}</div>
+            <div class="participant-distance">${formatDistance(participant.distance)}</div>
+          </div>
+          <div class="participant-bib">
+            ${hasBib 
+              ? `<span class="bib-number">#${participant.bib}</span><span class="bib-status entered">입력완료</span>` 
+              : `<span class="bib-status empty">미입력</span>`
+            }
+          </div>
+        `;
+        
+        item.addEventListener('click', () => {
+          selectParticipant(participant);
+        });
+        
+        participantList.appendChild(item);
+      });
+    }
+    
+    function selectParticipant(participant) {
+      currentParticipant = participant;
+      
+      confirmedNickname.textContent = participant.nickname;
+      distanceInfo.textContent = formatDistance(participant.distance);
+      currentBib.textContent = participant.bib || '미입력';
+      
+      if (participant.bib) {
+        bibInput.value = participant.bib;
+      } else {
+        bibInput.value = '';
+      }
+      
+      showScreen(STEP.INPUT);
+      hideError('inputError');
+      
+      // 입력 필드에 포커스
+      setTimeout(() => bibInput.focus(), 100);
+    }
 
     async function loadEvent() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -350,9 +452,11 @@
           return;
         }
         
-        currentEvent = data.event;  // event.id는 Firestore document ID
+        currentEvent = data.event;
         eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
-        showScreen(STEP.AUTH);
+        
+        renderParticipantList();
+        showScreen(STEP.LIST);
         
       } catch (error) {
         console.error('loadEvent error:', error);
@@ -399,6 +503,16 @@
         return;
       }
       
+      // 배번 중복 검증
+      const duplicate = currentEvent.participants.find(
+        p => p.nickname !== currentParticipant.nickname && p.bib === bib
+      );
+      
+      if (duplicate) {
+        showError('inputError', `이미 ${duplicate.nickname}님이 사용 중인 배번입니다`);
+        return;
+      }
+      
       hideError('inputError');
       saveBtn.disabled = true;
       saveBtn.textContent = '저장 중...';
@@ -421,7 +535,18 @@
           throw new Error(data.error || '저장 실패');
         }
         
-        showScreen(STEP.SUCCESS);
+        // 로컬 데이터 업데이트
+        currentParticipant.bib = bib;
+        
+        // 토스트 표시 후 목록으로 복귀
+        showToast('✅ 저장 완료');
+        
+        setTimeout(() => {
+          renderParticipantList();
+          showScreen(STEP.LIST);
+          saveBtn.disabled = false;
+          saveBtn.textContent = '저장';
+        }, 1500);
         
       } catch (error) {
         console.error('saveBib error:', error);
