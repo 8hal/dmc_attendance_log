@@ -166,6 +166,7 @@ function resetProfile() {
 ```json
 {
   "nickname": "게살볶음밥",
+  "memberId": "members_doc_id_123",
   "team": "T1",
   "meetingType": "SAT",
   "meetingDate": "2026/04/19",
@@ -174,6 +175,7 @@ function resetProfile() {
 ```
 
 **신규 필드**:
+- `memberId`: 정회원 Doc ID (`members` 컬렉션의 Firestore ID, 게스트는 `null`)
 - `isGuest`: 게스트 여부 (boolean, 기본값 `false`)
 
 **Response (성공) - 기존 유지**:
@@ -242,10 +244,13 @@ async function handlePost(req, res) {
     }
   }
   
-  // 🆕 isGuest 필드 추가
+  // 🆕 memberId, isGuest 필드 추가
+  const memberId = req.body.memberId || null;
+  
   await db.collection(COLLECTION).add({
     nickname: nicknameStored,
     nicknameKey: nicknameStored.toLowerCase(),
+    memberId,  // 🆕 추가 (정회원: Doc ID, 게스트: null)
     team: teamCode,
     teamLabel,
     meetingType: typeCode,
@@ -279,6 +284,23 @@ async function handlePost(req, res) {
     }
   ]
 }
+```
+
+**프론트엔드 사용**:
+```javascript
+// 사용자가 검색에서 회원 선택 시
+const selectedMember = members.find(m => m.nickname === "게살볶음밥");
+
+// 출석 API 호출 시 memberId 포함
+await fetch('/attendance', {
+  method: 'POST',
+  body: JSON.stringify({
+    nickname: selectedMember.nickname,
+    memberId: selectedMember.id,  // 🆕 members Doc ID
+    team: selectedMember.team,
+    // ...
+  })
+});
 ```
 
 #### 6.2.3 오늘 출석 현황 API (기존 활용)
