@@ -36,8 +36,8 @@
 
 ```
 my-bib.html             회원 배번 입력 페이지 (신규)
-functions/race.js       action=update-bib API (신규)
-Firestore               group_events.participants[].bib 업데이트
+functions/index.js      action=group-events, subAction=update-bib (신규)
+Firestore               race_events.participants[].bib 업데이트
 ```
 
 ### 2.2 데이터 흐름
@@ -47,7 +47,7 @@ graph TD
     A[회원] -->|링크 접속| B[my-bib.html]
     B -->|닉네임 입력| C[인증]
     C -->|GET detail| D[Cloud Functions]
-    D -->|group_events 조회| E[Firestore]
+    D -->|race_events 조회| E[Firestore]
     E -->|대회정보 + 참가자| D
     D -->|응답| B
     B -->|배번 입력| F[POST update-bib]
@@ -65,13 +65,16 @@ graph TD
 
 ## 3. 데이터 모델
 
-### 3.1 기존: group_events 컬렉션
+### 3.1 기존: race_events 컬렉션
+
+단체 대회는 `race_events` 컬렉션에서 `isGroupEvent: true`로 구분됩니다.
 
 ```javascript
 {
   id: "evt_2026-04-19_24",
   eventName: "제24회 경기마라톤대회",
   eventDate: "2026-04-19",
+  isGroupEvent: true,        // 단체 대회 플래그
   participants: [
     {
       memberId: "abc",
@@ -87,7 +90,10 @@ graph TD
       distance: "full",
       bib: null           // ← 미입력
     }
-  ]
+  ],
+  groupSource: { source: "smartchip", sourceId: "202650000123" },
+  groupScrapeJobId: "smartchip_202650000123",
+  groupScrapeStatus: "done"
 }
 ```
 
@@ -348,15 +354,18 @@ if (action === "group-events") {
   // ... 기존 코드 ...
   
   if (subAction === "update-bib") {
-    return handleUpdateBib(req, res);
+    // handleUpdateBib 인라인 구현 (Section 6.2 참조)
   }
 }
 ```
 
 ### 6.2 handleUpdateBib 구현
 
+**추가 위치:** `functions/index.js` 내 `action === "group-events"` 블록
+
 ```javascript
-async function handleUpdateBib(req, res) {
+// functions/index.js 내 추가
+if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "update-bib") {
   const { eventId, nickname, bib } = req.body;
   
   // 1. 필수 파라미터 검증
@@ -378,7 +387,7 @@ async function handleUpdateBib(req, res) {
   
   try {
     // 2. 대회 조회
-    const eventDoc = await db.collection("group_events").doc(eventId).get();
+    const eventDoc = await db.collection("race_events").doc(eventId).get();
     if (!eventDoc.exists) {
       return res.status(404).json({ ok: false, error: "event not found" });
     }
@@ -400,7 +409,7 @@ async function handleUpdateBib(req, res) {
     // 4. 배번 업데이트
     event.participants[participantIndex].bib = trimmedBib;
     
-    await db.collection("group_events").doc(eventId).update({
+    await db.collection("race_events").doc(eventId).update({
       participants: event.participants
     });
     
@@ -671,7 +680,7 @@ async function saveBib(bib) {
 3. 회원 "디모" 접속 → 닉네임 입력
 4. 배번 "99999" 입력 → 저장
 5. 성공 메시지 표시
-6. Firestore group_events.participants[1].bib = "99999" 확인
+6. Firestore race_events.participants[1].bib = "99999" 확인
 7. group-detail.html에서 배번 표시 확인 (매칭 개선은 Phase 2)
 ```
 
@@ -704,7 +713,7 @@ async function saveBib(bib) {
 ```bash
 # 1. 코드 작성
 my-bib.html
-functions/race.js (handleUpdateBib 추가)
+functions/index.js (update-bib subAction 추가)
 
 # 2. 로컬 테스트
 npm run serve  # Firebase Emulator

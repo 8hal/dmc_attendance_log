@@ -61,6 +61,7 @@
 #### 3.1.1 `attendance` 컬렉션
 
 **기존 필드**:
+
 ```javascript
 {
   // 식별 정보
@@ -84,6 +85,7 @@
 ```
 
 **신규 필드 (Phase 1)**:
+
 ```javascript
 {
   // ... 기존 필드 ...
@@ -101,6 +103,7 @@
 ```
 
 **전체 스키마 (Phase 1 이후)**:
+
 ```javascript
 {
   nickname: "게살볶음밥",
@@ -119,6 +122,7 @@
 ```
 
 **게스트 레코드 예시**:
+
 ```javascript
 {
   nickname: "친구1",
@@ -179,18 +183,22 @@ members (1) ────────────> (N) attendance
 #### 3.3.1 nicknameKey vs memberId
 
 **현재 상황**:
+
 - 기존 시스템: `nicknameKey` (lowercase) 기반 쿼리
 - Phase 1: `memberId` (FK) 추가
 
 **전략**:
 
-| Phase | nicknameKey | memberId | 용도 |
-|-------|-------------|----------|------|
-| Phase 1 (현재) | ✅ 유지 | ✅ 추가 | 둘 다 저장, 점진적 전환 |
-| Phase 2 (차기) | ✅ 유지 | ✅ 주 쿼리 | memberId 기반 쿼리, nicknameKey는 검색용 |
-| Phase 3 (장기) | ⚠️ 검색만 | ✅ 주 쿼리 | nicknameKey 인덱스 제거 고려 |
+
+| Phase        | nicknameKey | memberId | 용도                               |
+| ------------ | ----------- | -------- | -------------------------------- |
+| Phase 1 (현재) | ✅ 유지        | ✅ 추가     | 둘 다 저장, 점진적 전환                   |
+| Phase 2 (차기) | ✅ 유지        | ✅ 주 쿼리   | memberId 기반 쿼리, nicknameKey는 검색용 |
+| Phase 3 (장기) | ⚠️ 검색만      | ✅ 주 쿼리   | nicknameKey 인덱스 제거 고려            |
+
 
 **쿼리 전환 예시**:
+
 ```javascript
 // Phase 1: 둘 다 지원 (하위 호환)
 // 기존 쿼리
@@ -211,6 +219,7 @@ const records = await db.collection('attendance')
 ```
 
 **장점**:
+
 - 닉네임 변경 시에도 과거 기록 유지 (memberId 기반)
 - 기존 코드 호환성 유지 (nicknameKey 유지)
 - 점진적 마이그레이션 가능
@@ -222,9 +231,10 @@ const records = await db.collection('attendance')
 **전략**: 본인 수정 (localStorage) + 운영자 정리 (members 컬렉션)
 
 **데이터 소스**:
-1. **`members` 컬렉션**: Source of Truth (운영자 관리)
-2. **`localStorage`**: 사용자 프로필 (빠른 수정)
-3. **`attendance` 레코드**: 스냅샷 (당시 팀 정보)
+
+1. `**members` 컬렉션**: Source of Truth (운영자 관리)
+2. `**localStorage`**: 사용자 프로필 (빠른 수정)
+3. `**attendance` 레코드**: 스냅샷 (당시 팀 정보)
 
 **플로우**:
 
@@ -306,15 +316,18 @@ async function syncMemberTeams() {
 ```
 
 **장점**:
+
 - 사용자: 즉시 변경 가능, 다음 출석부터 반영
 - 운영자: 주기적 정리로 정합성 확보
 - 팀 재편성 시즌(6개월마다)에만 집중 관리
 
 **단점**:
+
 - `members` 컬렉션과 일시적 불일치 가능
 - 운영자가 주기적으로 동기화 실행 필요
 
 **완화**:
+
 - Phase 1.5에서 `syncMemberTeams()` 자동 실행 (월 1회 Cloud Scheduler)
 - 또는 사용자가 팀 변경 시 Firestore `team_change_requests` 컬렉션에 기록 → 운영자 승인
 
@@ -331,6 +344,7 @@ async function syncMemberTeams() {
 #### 3.4.2 신규 인덱스 (Phase 1 배포 전 생성 필요)
 
 **인덱스 1: 중복 체크용**
+
 ```
 컬렉션: attendance
 필드: nicknameKey (Ascending), meetingDateKey (Ascending)
@@ -339,6 +353,7 @@ async function syncMemberTeams() {
 ```
 
 **인덱스 2: 통계 조회용 (닉네임 기반)**
+
 ```
 컬렉션: attendance
 필드: isGuest (Ascending), nicknameKey (Ascending), monthKey (Ascending)
@@ -347,6 +362,7 @@ async function syncMemberTeams() {
 ```
 
 **인덱스 3: 통계 조회용 (memberId 기반, 권장)**
+
 ```
 컬렉션: attendance
 필드: isGuest (Ascending), memberId (Ascending), monthKey (Ascending)
@@ -355,6 +371,7 @@ async function syncMemberTeams() {
 ```
 
 **인덱스 생성 명령**:
+
 ```bash
 # Firebase Console에서 수동 생성 또는
 # firestore.indexes.json에 추가 후 deploy
@@ -377,6 +394,7 @@ const existing = await db.collection('attendance')
 ```
 
 **성능**:
+
 - 레코드 10,000개 기준
 - Before: ~500ms (collection scan)
 - After: ~50ms (index scan) → **10배 개선**
@@ -407,12 +425,14 @@ const records = await db.collection('attendance')
 
 ### 4.1 엔드포인트 목록
 
-| Method | Endpoint | Action | 설명 |
-|--------|----------|--------|------|
-| POST | `/attendance` | - | 출석 등록 (신규/확장) |
-| GET | `/attendance?action=members` | members | 정회원 목록 (기존) |
-| GET | `/attendance?action=status&meetingDate=YYYY/MM/DD` | status | 오늘 출석 현황 (기존) |
-| GET | `/attendance?action=stats&nickname=...&month=YYYY-MM` | stats | 개인 통계 (신규) |
+
+| Method | Endpoint                                              | Action  | 설명            |
+| ------ | ----------------------------------------------------- | ------- | ------------- |
+| POST   | `/attendance`                                         | -       | 출석 등록 (신규/확장) |
+| GET    | `/attendance?action=members`                          | members | 정회원 목록 (기존)   |
+| GET    | `/attendance?action=status&meetingDate=YYYY/MM/DD`    | status  | 오늘 출석 현황 (기존) |
+| GET    | `/attendance?action=stats&nickname=...&month=YYYY-MM` | stats   | 개인 통계 (신규)    |
+
 
 ### 4.2 출석 등록 API 상세 설계
 
@@ -489,15 +509,17 @@ if (!isGuest) {
 
 #### 4.2.3 에러 코드 정의
 
-| 코드 | HTTP Status | 의미 |
-|------|-------------|------|
-| `MISSING_FIELD` | 400 | 필수 필드 누락 |
-| `INVALID_DATE_FORMAT` | 400 | 날짜 형식 오류 |
-| `MISSING_MEMBER_ID` | 400 | 정회원인데 memberId 없음 |
-| `ALREADY_CHECKED_IN` | 400 | 오늘 이미 출석함 |
-| `INVALID_TEAM` | 400 | 유효하지 않은 팀 코드 |
-| `INVALID_MEETING_TYPE` | 400 | 유효하지 않은 정모 타입 |
-| `INTERNAL_ERROR` | 500 | 서버 내부 오류 |
+
+| 코드                     | HTTP Status | 의미                |
+| ---------------------- | ----------- | ----------------- |
+| `MISSING_FIELD`        | 400         | 필수 필드 누락          |
+| `INVALID_DATE_FORMAT`  | 400         | 날짜 형식 오류          |
+| `MISSING_MEMBER_ID`    | 400         | 정회원인데 memberId 없음 |
+| `ALREADY_CHECKED_IN`   | 400         | 오늘 이미 출석함         |
+| `INVALID_TEAM`         | 400         | 유효하지 않은 팀 코드      |
+| `INVALID_MEETING_TYPE` | 400         | 유효하지 않은 정모 타입     |
+| `INTERNAL_ERROR`       | 500         | 서버 내부 오류          |
+
 
 ### 4.3 통계 API 상세 설계
 
@@ -559,6 +581,7 @@ for (const dateKey of userDates) {
 ```
 
 **성능 최적화**:
+
 - 전체 출석 날짜를 한 번에 조회 (O(n))
 - 클라이언트에서 계산 (DB 부하 감소)
 - 캐싱 고려 (10분 TTL)
@@ -771,12 +794,14 @@ function saveProfile(profile) {
 ### 6.1 프론트엔드 최적화
 
 **1. 정회원 목록 캐싱**:
+
 ```javascript
 // 5분 TTL 캐싱
 const MEMBERS_CACHE_TTL = 5 * 60 * 1000;
 ```
 
 **2. 검색 자동완성 디바운싱**:
+
 ```javascript
 let searchTimeout;
 function onSearchInput(event) {
@@ -788,6 +813,7 @@ function onSearchInput(event) {
 ```
 
 **3. 번들 크기 최적화**:
+
 - Vanilla JS (No framework) → ~50KB
 - CSS Inline (No external CSS) → ~10KB
 - **총 예상 번들 크기: 60KB**
@@ -795,10 +821,12 @@ function onSearchInput(event) {
 ### 6.2 백엔드 최적화
 
 **1. 인덱스 활용**:
+
 - 중복 체크: `nicknameKey + meetingDateKey` 복합 인덱스
 - 통계 조회: `isGuest + memberId + monthKey` 복합 인덱스
 
 **2. Firestore 읽기 최적화**:
+
 ```javascript
 // Bad: 2번 조회
 const userRecords = await db.collection('attendance')
@@ -818,6 +846,7 @@ const userRecords = allRecords.docs.filter(
 ```
 
 **3. Cloud Function 응답 시간 목표**:
+
 - 출석 등록: < 500ms
 - 정회원 목록: < 300ms (캐싱)
 - 통계 조회: < 800ms
@@ -831,11 +860,13 @@ const userRecords = allRecords.docs.filter(
 **현재 상태**: 인증 없음 (Public API)
 
 **Phase 1**: 인증 없이 진행 (기존 시스템 유지)
+
 - 클럽 내부용 시스템
 - URL 비공개
 - 악의적 사용 가능성 낮음
 
 **Phase 2 고려사항**:
+
 - Firebase Auth 도입
 - 운영자 비밀번호 (`DMC_ADMIN_PW`)
 - Rate limiting
@@ -866,6 +897,7 @@ function validateInput(req) {
 **Phase 1**: 구현 안 함 (기존 시스템 유지)
 
 **Phase 2 고려**:
+
 ```javascript
 // Firebase Functions Rate Limiting
 // IP당 분당 10회 제한
@@ -945,13 +977,15 @@ async function apiCall(endpoint, options) {
 
 Firestore `feedback` 컬렉션 + Cloud Function 로그:
 
-| 지표 | 수집 방법 | 목표 |
-|------|----------|------|
-| 출석 성공률 | Cloud Function 로그 (`ok: true` 비율) | > 95% |
-| 평균 응답 시간 | Cloud Function `durationMs` | < 500ms |
-| 중복 시도 건수 | `ALREADY_CHECKED_IN` 에러 카운트 | < 10건/월 |
-| localStorage 실패 | 프론트엔드 로그 | < 5% |
-| 사용자 만족도 | `feedback` 컬렉션 `rating` 평균 | > 4.0/5.0 |
+
+| 지표              | 수집 방법                             | 목표        |
+| --------------- | --------------------------------- | --------- |
+| 출석 성공률          | Cloud Function 로그 (`ok: true` 비율) | > 95%     |
+| 평균 응답 시간        | Cloud Function `durationMs`       | < 500ms   |
+| 중복 시도 건수        | `ALREADY_CHECKED_IN` 에러 카운트       | < 10건/월   |
+| localStorage 실패 | 프론트엔드 로그                          | < 5%      |
+| 사용자 만족도         | `feedback` 컬렉션 `rating` 평균        | > 4.0/5.0 |
+
 
 ---
 
@@ -959,40 +993,42 @@ Firestore `feedback` 컬렉션 + Cloud Function 로그:
 
 ### 9.1 백엔드
 
-- [ ] Firestore 인덱스 3개 생성 확인
-- [ ] `handlePost` 중복 체크 로직 추가
-- [ ] `memberId`, `isGuest` 필드 처리
-- [ ] `action=stats` API 구현
-- [ ] 로컬 에뮬레이터 테스트 완료
-- [ ] 에러 핸들링 검증
+- Firestore 인덱스 3개 생성 확인
+- `handlePost` 중복 체크 로직 추가
+- `memberId`, `isGuest` 필드 처리
+- `action=stats` API 구현
+- 로컬 에뮬레이터 테스트 완료
+- 에러 핸들링 검증
 
 ### 9.2 프론트엔드
 
-- [ ] `attendance-v2.html` 생성
-- [ ] C안 (대시보드) 구현
-- [ ] B안 (검색) 구현
-- [ ] 게스트 모달 구현
-- [ ] 팀 변경 모달 구현
-- [ ] localStorage 처리
-- [ ] 모바일 반응형 테스트
-- [ ] 브라우저 호환성 테스트 (Chrome, Safari)
+- `attendance-v2.html` 생성
+- C안 (대시보드) 구현
+- B안 (검색) 구현
+- 게스트 모달 구현
+- 팀 변경 모달 구현
+- localStorage 처리
+- 모바일 반응형 테스트
+- 브라우저 호환성 테스트 (Chrome, Safari)
 
 ### 9.3 데이터
 
-- [ ] 기존 `attendance` 레코드에 `isGuest: false` 추가 (마이그레이션)
-- [ ] 기존 레코드에 `memberId` 역조회 후 추가 (선택, 권장)
+- 기존 `attendance` 레코드에 `isGuest: false` 추가 (마이그레이션)
+- 기존 레코드에 `memberId` 역조회 후 추가 (선택, 권장)
 
 ---
 
 ## 10. 리스크 및 완화 전략
 
-| 리스크 | 영향 | 확률 | 완화 전략 |
-|--------|------|------|-----------|
-| Firestore 인덱스 생성 실패 | 높음 | 낮음 | 배포 전 Firebase Console 확인 |
-| localStorage quota 초과 | 중간 | 낮음 | Warning 표시, 출석은 정상 진행 |
-| 중복 체크 로직 버그 | 높음 | 중간 | 철저한 로컬 테스트 + 베타 모니터링 |
-| memberId 누락 (정회원) | 중간 | 중간 | API 검증 + 프론트엔드 검증 |
-| 통계 API 성능 저하 | 낮음 | 중간 | 캐싱 + 쿼리 최적화 |
+
+| 리스크                   | 영향  | 확률  | 완화 전략                    |
+| --------------------- | --- | --- | ------------------------ |
+| Firestore 인덱스 생성 실패   | 높음  | 낮음  | 배포 전 Firebase Console 확인 |
+| localStorage quota 초과 | 중간  | 낮음  | Warning 표시, 출석은 정상 진행    |
+| 중복 체크 로직 버그           | 높음  | 중간  | 철저한 로컬 테스트 + 베타 모니터링     |
+| memberId 누락 (정회원)     | 중간  | 중간  | API 검증 + 프론트엔드 검증        |
+| 통계 API 성능 저하          | 낮음  | 중간  | 캐싱 + 쿼리 최적화              |
+
 
 ---
 
@@ -1001,17 +1037,15 @@ Firestore `feedback` 컬렉션 + Cloud Function 로그:
 Phase 1 성공 후 고려사항:
 
 1. **A안 (자봉 모드)**:
-   - 85명 카드 그리드
-   - 출석 취소/수정 API
-   - 팀별 필터
-
+  - 85명 카드 그리드
+  - 출석 취소/수정 API
+  - 팀별 필터
 2. **memberId 활용 확장**:
-   - 닉네임 변경 이력 (`members.previousNicknames: []`)
-   - 과거 기록 통합 조회
-
+  - 닉네임 변경 이력 (`members.previousNicknames: []`)
+  - 과거 기록 통합 조회
 3. **성능 개선**:
-   - Firebase Hosting CDN 최적화
-   - 이미지 압축 (프로필 사진 추가 시)
+  - Firebase Hosting CDN 최적화
+  - 이미지 압축 (프로필 사진 추가 시)
 
 ---
 
