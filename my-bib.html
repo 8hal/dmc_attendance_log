@@ -404,6 +404,8 @@
     }
 
     function formatDistance(distance) {
+      if (!distance) return '-';
+      
       const map = {
         'full': '풀 마라톤',
         'half': '하프 마라톤',
