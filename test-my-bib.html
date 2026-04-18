@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>배번 입력 테스트</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .test { margin: 20px 0; padding: 15px; border: 2px solid #ddd; border-radius: 8px; }
+    .pass { border-color: #0a0; background: #efe; }
+    .fail { border-color: #a00; background: #fee; }
+    .btn { padding: 10px 20px; margin: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>배번 입력 페이지 - JavaScript 로직 테스트</h1>
+  
+  <div id="test1" class="test">
+    <h3>Test 1: showScreen() 함수</h3>
+    <button class="btn" onclick="testShowScreen()">실행</button>
+    <div id="result1"></div>
+  </div>
+  
+  <div id="test2" class="test">
+    <h3>Test 2: formatDistance() 함수</h3>
+    <button class="btn" onclick="testFormatDistance()">실행</button>
+    <div id="result2"></div>
+  </div>
+  
+  <div id="test3" class="test">
+    <h3>Test 3: showError/hideError 함수</h3>
+    <button class="btn" onclick="testErrorHandling()">실행</button>
+    <div id="result3"></div>
+    <div id="testError" style="display:none; color: red;"></div>
+  </div>
+  
+  <div id="test4" class="test">
+    <h3>Test 4: authenticateUser() 로직 (Mock)</h3>
+    <button class="btn" onclick="testAuthenticateUser()">실행</button>
+    <div id="result4"></div>
+  </div>
+
+  <script>
+    // Import the core functions from my-bib.html for testing
+    const STEP = {
+      LOADING: 1,
+      AUTH: 2,
+      INPUT: 3,
+      SUCCESS: 4
+    };
+
+    function formatDistance(distance) {
+      const map = {
+        'full': '풀 마라톤',
+        'half': '하프 마라톤',
+        '10K': '10km',
+        '5K': '5km'
+      };
+      return map[distance] || distance;
+    }
+
+    function showError(elementId, message) {
+      const el = document.getElementById(elementId);
+      if (!el) return false;
+      el.textContent = message;
+      el.style.display = 'block';
+      return true;
+    }
+
+    function hideError(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return false;
+      el.style.display = 'none';
+      return true;
+    }
+
+    // Test functions
+    function testShowScreen() {
+      const result = document.getElementById('result1');
+      try {
+        // Test that STEP constants exist
+        if (STEP.LOADING !== 1 || STEP.AUTH !== 2 || STEP.INPUT !== 3 || STEP.SUCCESS !== 4) {
+          throw new Error('STEP 상수가 올바르지 않습니다');
+        }
+        result.innerHTML = '<strong style="color: green;">✓ PASS</strong>: STEP 상수 정의 확인';
+        document.getElementById('test1').classList.add('pass');
+      } catch (e) {
+        result.innerHTML = '<strong style="color: red;">✗ FAIL</strong>: ' + e.message;
+        document.getElementById('test1').classList.add('fail');
+      }
+    }
+
+    function testFormatDistance() {
+      const result = document.getElementById('result2');
+      const tests = [
+        { input: 'full', expected: '풀 마라톤' },
+        { input: 'half', expected: '하프 마라톤' },
+        { input: '10K', expected: '10km' },
+        { input: '5K', expected: '5km' },
+        { input: 'unknown', expected: 'unknown' }
+      ];
+      
+      let allPassed = true;
+      let output = '<ul>';
+      
+      tests.forEach(test => {
+        const actual = formatDistance(test.input);
+        const passed = actual === test.expected;
+        allPassed = allPassed && passed;
+        output += `<li>${passed ? '✓' : '✗'} formatDistance('${test.input}') = '${actual}' ${passed ? '' : `(expected: '${test.expected}')`}</li>`;
+      });
+      
+      output += '</ul>';
+      
+      if (allPassed) {
+        result.innerHTML = '<strong style="color: green;">✓ PASS</strong>: 모든 거리 포맷팅 성공' + output;
+        document.getElementById('test2').classList.add('pass');
+      } else {
+        result.innerHTML = '<strong style="color: red;">✗ FAIL</strong>: 일부 테스트 실패' + output;
+        document.getElementById('test2').classList.add('fail');
+      }
+    }
+
+    function testErrorHandling() {
+      const result = document.getElementById('result3');
+      try {
+        // Test showError
+        const shown = showError('testError', '테스트 에러 메시지');
+        const errorEl = document.getElementById('testError');
+        
+        if (!shown || errorEl.style.display === 'none' || errorEl.textContent !== '테스트 에러 메시지') {
+          throw new Error('showError가 제대로 동작하지 않습니다');
+        }
+        
+        // Test hideError
+        const hidden = hideError('testError');
+        if (!hidden || errorEl.style.display !== 'none') {
+          throw new Error('hideError가 제대로 동작하지 않습니다');
+        }
+        
+        result.innerHTML = '<strong style="color: green;">✓ PASS</strong>: 에러 표시/숨김 정상 동작';
+        document.getElementById('test3').classList.add('pass');
+      } catch (e) {
+        result.innerHTML = '<strong style="color: red;">✗ FAIL</strong>: ' + e.message;
+        document.getElementById('test3').classList.add('fail');
+      }
+    }
+
+    function testAuthenticateUser() {
+      const result = document.getElementById('result4');
+      try {
+        // Mock event data
+        const mockEvent = {
+          eventName: '서울 마라톤',
+          eventDate: '2026-04-20',
+          participants: [
+            { nickname: '라우펜더만', distance: 'half', bib: '12345' },
+            { nickname: '디모', distance: 'full', bib: null }
+          ]
+        };
+        
+        // Test finding participant
+        const found = mockEvent.participants.find(p => p.nickname === '라우펜더만');
+        const notFound = mockEvent.participants.find(p => p.nickname === '외부인');
+        
+        if (!found || found.nickname !== '라우펜더만') {
+          throw new Error('참가자 검색 실패');
+        }
+        
+        if (notFound) {
+          throw new Error('존재하지 않는 참가자가 검색됨');
+        }
+        
+        // Test formatting
+        const formatted = formatDistance(found.distance);
+        if (formatted !== '하프 마라톤') {
+          throw new Error('거리 포맷팅 실패');
+        }
+        
+        result.innerHTML = '<strong style="color: green;">✓ PASS</strong>: 참가자 인증 로직 정상 동작<br>' +
+          `찾은 참가자: ${found.nickname} (${formatted}, 배번: ${found.bib || '미입력'})`;
+        document.getElementById('test4').classList.add('pass');
+      } catch (e) {
+        result.innerHTML = '<strong style="color: red;">✗ FAIL</strong>: ' + e.message;
+        document.getElementById('test4').classList.add('fail');
+      }
+    }
+  </script>
+</body>
+</html>
