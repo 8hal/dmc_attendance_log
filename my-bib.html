@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>배번 입력 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+    .wrap { max-width: 500px; margin: 0 auto; }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .header-subtitle {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 0;
+    }
+    
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(15,23,42,0.07);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .info-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+    .info-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .info-list {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin: 0;
+      padding-left: 20px;
+    }
+    .info-list li {
+      margin-bottom: 4px;
+    }
+    
+    .success-box {
+      background: var(--green-light);
+      border: 2px solid var(--green);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .success-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--green);
+      margin: 0 0 8px;
+    }
+    .success-message {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 0;
+    }
+    
+    .error-box {
+      background: var(--red-light);
+      border: 2px solid var(--red);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: var(--red);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-sub);
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      .header-title {
+        font-size: 20px;
+      }
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="header-icon">🎽</div>
+      <h1 class="header-title">배번 입력</h1>
+      <p class="header-subtitle" id="eventInfo">로딩 중...</p>
+    </div>
+    
+    <div id="loadingScreen" class="loading">
+      대회 정보를 불러오는 중...
+    </div>
+    
+    <div id="authScreen" class="hidden">
+      <div class="card">
+        <h2 class="card-title">📝 본인 확인</h2>
+        <div id="authError" class="error-box hidden"></div>
+        <div class="form-group">
+          <label class="form-label" for="nicknameInput">닉네임 입력</label>
+          <input 
+            type="text" 
+            id="nicknameInput" 
+            class="form-input" 
+            placeholder="예: 라우펜더만"
+            autocomplete="off"
+          />
+        </div>
+        <button class="btn btn-primary" id="authBtn">다음</button>
+      </div>
+    </div>
+    
+    <div id="inputScreen" class="hidden">
+      <div class="card">
+        <h2 class="card-title">✅ <span id="confirmedNickname"></span>님 확인되었습니다</h2>
+        <div id="inputError" class="error-box hidden"></div>
+        <div class="form-group">
+          <label class="form-label">종목</label>
+          <div id="distanceInfo" style="font-size: 15px; font-weight: 600;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">현재 배번</label>
+          <div id="currentBib" style="font-size: 15px; font-weight: 600; color: var(--text-sub);"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="bibInput">배번 번호</label>
+          <input 
+            type="text" 
+            id="bibInput" 
+            class="form-input" 
+            placeholder="예: 12345"
+            autocomplete="off"
+          />
+        </div>
+        <button class="btn btn-primary" id="saveBtn">저장</button>
+        
+        <div class="info-box">
+          <div class="info-title">💡 안내</div>
+          <ul class="info-list">
+            <li>배번은 대회 당일 받는 번호판입니다</li>
+            <li>동명이인 이슈 해결을 위해 필요합니다</li>
+            <li>입력하지 않아도 기록은 저장됩니다</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div id="successScreen" class="hidden">
+      <div class="card">
+        <div class="success-box">
+          <div class="success-icon">✅</div>
+          <div class="success-title">저장 완료</div>
+          <p class="success-message">
+            배번이 저장되었습니다.<br>
+            대회 기록이 자동으로 매칭됩니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 다음 Task에서 구현
+  </script>
+</body>
+</html>
