@@ -3019,6 +3019,69 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, saved });
     }
 
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "update-bib") {
+      const { eventId, nickname, bib } = req.body;
+      
+      // 1. 필수 파라미터 검증
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!nickname) {
+        return res.status(400).json({ ok: false, error: "nickname required" });
+      }
+      if (!bib || typeof bib !== 'string') {
+        return res.status(400).json({ ok: false, error: "bib required" });
+      }
+      
+      // 배번 형식 검증
+      const trimmedBib = bib.trim();
+      if (trimmedBib === '') {
+        return res.status(400).json({ ok: false, error: "bib cannot be empty" });
+      }
+      
+      try {
+        // 2. 대회 조회
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        
+        const event = eventDoc.data();
+        
+        // 3. 참가자 찾기
+        const participantIndex = event.participants.findIndex(
+          p => p.nickname === nickname
+        );
+        
+        if (participantIndex === -1) {
+          return res.status(403).json({ 
+            ok: false, 
+            error: "not a participant" 
+          });
+        }
+        
+        // 4. 배번 업데이트
+        event.participants[participantIndex].bib = trimmedBib;
+        
+        await db.collection("race_events").doc(eventId).update({
+          participants: event.participants
+        });
+        
+        // 5. 성공 응답
+        return res.json({ 
+          ok: true, 
+          message: "배번이 저장되었습니다" 
+        });
+        
+      } catch (error) {
+        console.error("update-bib error:", error);
+        return res.status(500).json({ 
+          ok: false, 
+          error: "server error" 
+        });
+      }
+    }
+
     if (action === "fix-phantom-jobs" && req.method === "POST") {
       // Phantom Jobs 일괄 다운그레이드 (confirmed → complete)
       const { jobIds, secret } = req.body || {};
