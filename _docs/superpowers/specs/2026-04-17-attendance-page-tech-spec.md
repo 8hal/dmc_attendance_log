@@ -174,9 +174,153 @@ members (1) ────────────> (N) attendance
 게스트: attendance.memberId = null
 ```
 
-### 3.3 인덱스 전략
+### 3.3 필드 전략 및 마이그레이션 계획
 
-#### 3.3.1 기존 인덱스 (이미 존재)
+#### 3.3.1 nicknameKey vs memberId
+
+**현재 상황**:
+- 기존 시스템: `nicknameKey` (lowercase) 기반 쿼리
+- Phase 1: `memberId` (FK) 추가
+
+**전략**:
+
+| Phase | nicknameKey | memberId | 용도 |
+|-------|-------------|----------|------|
+| Phase 1 (현재) | ✅ 유지 | ✅ 추가 | 둘 다 저장, 점진적 전환 |
+| Phase 2 (차기) | ✅ 유지 | ✅ 주 쿼리 | memberId 기반 쿼리, nicknameKey는 검색용 |
+| Phase 3 (장기) | ⚠️ 검색만 | ✅ 주 쿼리 | nicknameKey 인덱스 제거 고려 |
+
+**쿼리 전환 예시**:
+```javascript
+// Phase 1: 둘 다 지원 (하위 호환)
+// 기존 쿼리
+const records = await db.collection('attendance')
+  .where('nicknameKey', '==', nickname.toLowerCase())
+  .get();
+
+// 신규 쿼리 (권장)
+const records = await db.collection('attendance')
+  .where('memberId', '==', memberId)
+  .get();
+
+// Phase 2+: memberId만 사용
+const records = await db.collection('attendance')
+  .where('memberId', '==', memberId)
+  .get();
+// nicknameKey는 자동완성 검색에만 활용
+```
+
+**장점**:
+- 닉네임 변경 시에도 과거 기록 유지 (memberId 기반)
+- 기존 코드 호환성 유지 (nicknameKey 유지)
+- 점진적 마이그레이션 가능
+
+#### 3.3.2 팀 정보 관리 전략 (하이브리드)
+
+**문제**: 팀 정보를 누가 어떻게 수정할 수 있는가?
+
+**전략**: 본인 수정 (localStorage) + 운영자 정리 (members 컬렉션)
+
+**데이터 소스**:
+1. **`members` 컬렉션**: Source of Truth (운영자 관리)
+2. **`localStorage`**: 사용자 프로필 (빠른 수정)
+3. **`attendance` 레코드**: 스냅샷 (당시 팀 정보)
+
+**플로우**:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 1. 사용자: 프로필 카드에서 팀 변경                        │
+│    → localStorage만 업데이트 (즉시 반영)                  │
+│    → 다음 출석부터 새 팀으로 기록                         │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ 2. 출석 등록 시                                          │
+│    → localStorage의 팀 정보를 attendance에 스냅샷 저장    │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ 3. 운영자: 월 1회 또는 팀 재편성 시즌                     │
+│    → ops.html에서 "팀 정보 동기화" 실행                   │
+│    → 최근 출석 기록 기준으로 members 컬렉션 업데이트       │
+└─────────────────────────────────────────────────────────┘
+```
+
+**구현**:
+
+```javascript
+// 1. 사용자 뷰 (attendance-v2.html)
+function changeTeam(newTeam) {
+  const profile = JSON.parse(localStorage.getItem('myProfile'));
+  profile.team = newTeam;
+  localStorage.setItem('myProfile', JSON.stringify(profile));
+  
+  // UI 즉시 갱신
+  renderDashboard(profile);
+  showSuccessMessage('팀이 변경되었습니다. 다음 출석부터 반영됩니다.');
+}
+
+// 2. 출석 등록 시 (localStorage 팀 정보 사용)
+async function checkIn() {
+  const profile = JSON.parse(localStorage.getItem('myProfile'));
+  
+  await fetch('/attendance', {
+    method: 'POST',
+    body: JSON.stringify({
+      memberId: profile.memberId,
+      nickname: profile.nickname,
+      team: profile.team,  // localStorage의 최신 팀 정보
+      // ...
+    }),
+  });
+}
+
+// 3. 운영자 도구 (ops.html, Phase 1.5 추가 고려)
+async function syncMemberTeams() {
+  // 최근 100개 출석 기록에서 최신 팀 정보 추출
+  const recentAttendance = await db.collection('attendance')
+    .where('isGuest', '==', false)
+    .orderBy('timestamp', 'desc')
+    .limit(100)
+    .get();
+  
+  const teamMap = {};  // memberId → team
+  recentAttendance.forEach(doc => {
+    const data = doc.data();
+    if (!teamMap[data.memberId]) {
+      teamMap[data.memberId] = data.team;  // 최신 팀 정보만
+    }
+  });
+  
+  // members 컬렉션 일괄 업데이트
+  const batch = db.batch();
+  for (const [memberId, team] of Object.entries(teamMap)) {
+    const memberRef = db.collection('members').doc(memberId);
+    batch.update(memberRef, { team });
+  }
+  await batch.commit();
+  
+  console.log(`✅ ${Object.keys(teamMap).length}명의 팀 정보 동기화 완료`);
+}
+```
+
+**장점**:
+- 사용자: 즉시 변경 가능, 다음 출석부터 반영
+- 운영자: 주기적 정리로 정합성 확보
+- 팀 재편성 시즌(6개월마다)에만 집중 관리
+
+**단점**:
+- `members` 컬렉션과 일시적 불일치 가능
+- 운영자가 주기적으로 동기화 실행 필요
+
+**완화**:
+- Phase 1.5에서 `syncMemberTeams()` 자동 실행 (월 1회 Cloud Scheduler)
+- 또는 사용자가 팀 변경 시 Firestore `team_change_requests` 컬렉션에 기록 → 운영자 승인
+
+### 3.4 인덱스 전략
+
+#### 3.4.1 기존 인덱스 (이미 존재)
 
 ```
 컬렉션: attendance
@@ -184,7 +328,7 @@ members (1) ────────────> (N) attendance
 용도: 개인별 월별 출석 기록 조회
 ```
 
-#### 3.3.2 신규 인덱스 (Phase 1 배포 전 생성 필요)
+#### 3.4.2 신규 인덱스 (Phase 1 배포 전 생성 필요)
 
 **인덱스 1: 중복 체크용**
 ```
@@ -216,9 +360,9 @@ members (1) ────────────> (N) attendance
 # firestore.indexes.json에 추가 후 deploy
 ```
 
-### 3.4 쿼리 패턴 분석
+### 3.5 쿼리 패턴 분석
 
-#### 3.4.1 중복 체크 (출석 등록 시)
+#### 3.5.1 중복 체크 (출석 등록 시)
 
 ```javascript
 // Before: O(n) - collection scan
@@ -237,7 +381,7 @@ const existing = await db.collection('attendance')
 - Before: ~500ms (collection scan)
 - After: ~50ms (index scan) → **10배 개선**
 
-#### 3.4.2 개인 통계 조회
+#### 3.5.2 개인 통계 조회
 
 ```javascript
 // Option A: nickname 기반 (닉네임 변경 시 문제)
