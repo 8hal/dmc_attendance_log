@@ -126,9 +126,33 @@
       margin-bottom: 4px;
     }
     
+    .search-box {
+      margin-bottom: 12px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
     .participant-list {
       max-height: 450px;
       overflow-y: auto;
+    }
+    
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+      margin-top: 12px;
+    }
+    .btn-secondary:hover {
+      background: #CBD5E1;
     }
     .participant-item {
       display: flex;
@@ -262,6 +286,15 @@
             <li>입력하지 않으면 이름 기반으로 기록을 검색해서 저장하게 됩니다</li>
           </ul>
         </div>
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="닉네임 검색..."
+            autocomplete="off"
+          />
+        </div>
         <div class="participant-list" id="participantList"></div>
       </div>
     </div>
@@ -289,6 +322,7 @@
           />
         </div>
         <button class="btn btn-primary" id="saveBtn">저장</button>
+        <button class="btn btn-secondary" id="backBtn">목록으로 가기</button>
       </div>
     </div>
     
@@ -328,6 +362,7 @@
     const listScreen = document.getElementById('listScreen');
     const inputScreen = document.getElementById('inputScreen');
     const eventInfo = document.getElementById('eventInfo');
+    const searchInput = document.getElementById('searchInput');
     const participantList = document.getElementById('participantList');
     const inputError = document.getElementById('inputError');
     const confirmedNickname = document.getElementById('confirmedNickname');
@@ -335,6 +370,10 @@
     const currentBib = document.getElementById('currentBib');
     const bibInput = document.getElementById('bibInput');
     const saveBtn = document.getElementById('saveBtn');
+    const backBtn = document.getElementById('backBtn');
+    
+    // 로컬 스토리지 키
+    const STORAGE_KEY = 'dmc_bib_nickname';
 
     function showScreen(step) {
       currentStep = step;
@@ -384,10 +423,19 @@
       }, 3000);
     }
     
-    function renderParticipantList() {
+    function renderParticipantList(filterText = '') {
       participantList.innerHTML = '';
       
-      currentEvent.participants.forEach(participant => {
+      const filtered = currentEvent.participants.filter(p => 
+        p.nickname.toLowerCase().includes(filterText.toLowerCase())
+      );
+      
+      if (filtered.length === 0) {
+        participantList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-sub);">검색 결과가 없습니다</div>';
+        return;
+      }
+      
+      filtered.forEach(participant => {
         const item = document.createElement('div');
         item.className = 'participant-item';
         
@@ -416,6 +464,9 @@
     
     function selectParticipant(participant) {
       currentParticipant = participant;
+      
+      // 로컬 스토리지에 저장
+      localStorage.setItem(STORAGE_KEY, participant.nickname);
       
       confirmedNickname.textContent = participant.nickname;
       distanceInfo.textContent = formatDistance(participant.distance);
@@ -454,6 +505,20 @@
         
         currentEvent = data.event;
         eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
+        
+        // 로컬 스토리지에서 저장된 닉네임 확인
+        const savedNickname = localStorage.getItem(STORAGE_KEY);
+        if (savedNickname) {
+          const participant = currentEvent.participants.find(
+            p => p.nickname === savedNickname
+          );
+          
+          if (participant) {
+            // 바로 입력 화면으로
+            selectParticipant(participant);
+            return;
+          }
+        }
         
         renderParticipantList();
         showScreen(STEP.LIST);
@@ -561,6 +626,14 @@
       if (e.key === 'Enter') {
         saveBib();
       }
+    });
+    
+    backBtn.addEventListener('click', () => {
+      showScreen(STEP.LIST);
+    });
+    
+    searchInput.addEventListener('input', (e) => {
+      renderParticipantList(e.target.value);
     });
 
     // 페이지 로드 시 대회 정보 불러오기
