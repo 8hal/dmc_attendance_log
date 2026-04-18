@@ -556,13 +556,6 @@
       }
     }
 
-    authBtn.addEventListener('click', authenticateUser);
-    nicknameInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        authenticateUser();
-      }
-    });
-
     saveBtn.addEventListener('click', saveBib);
     bibInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
