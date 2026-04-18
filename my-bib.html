@@ -374,7 +374,8 @@
     const backBtn = document.getElementById('backBtn');
     
     // 로컬 스토리지 키
-    const STORAGE_KEY = 'dmc_bib_nickname';
+    const STORAGE_KEY_MY_BIB = 'dmc_bib_nickname';
+    const STORAGE_KEY_ATTENDANCE = 'marathon_att_nickname'; // 출석 페이지와 공유
 
     function showScreen(step) {
       currentStep = step;
@@ -468,8 +469,9 @@
     function selectParticipant(participant) {
       currentParticipant = participant;
       
-      // 로컬 스토리지에 저장
-      localStorage.setItem(STORAGE_KEY, participant.nickname);
+      // 로컬 스토리지에 저장 (두 곳에)
+      localStorage.setItem(STORAGE_KEY_MY_BIB, participant.nickname);
+      localStorage.setItem(STORAGE_KEY_ATTENDANCE, participant.nickname);
       
       confirmedNickname.textContent = participant.nickname;
       distanceInfo.textContent = formatDistance(participant.distance);
@@ -509,8 +511,10 @@
         currentEvent = data.event;
         eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
         
-        // 로컬 스토리지에서 저장된 닉네임 확인
-        const savedNickname = localStorage.getItem(STORAGE_KEY);
+        // 로컬 스토리지에서 저장된 닉네임 확인 (출석 페이지 우선, 배번 페이지 차선)
+        const savedNickname = localStorage.getItem(STORAGE_KEY_ATTENDANCE) 
+                           || localStorage.getItem(STORAGE_KEY_MY_BIB);
+        
         if (savedNickname) {
           const participant = currentEvent.participants.find(
             p => p.nickname === savedNickname
