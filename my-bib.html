@@ -262,7 +262,191 @@
   </div>
   
   <script>
-    // 다음 Task에서 구현
+    const API_BASE = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+
+    // 상태
+    const STEP = {
+      LOADING: 1,
+      AUTH: 2,
+      INPUT: 3,
+      SUCCESS: 4
+    };
+
+    let currentStep = STEP.LOADING;
+    let currentEvent = null;
+    let currentParticipant = null;
+
+    // DOM 요소
+    const loadingScreen = document.getElementById('loadingScreen');
+    const authScreen = document.getElementById('authScreen');
+    const inputScreen = document.getElementById('inputScreen');
+    const successScreen = document.getElementById('successScreen');
+    const eventInfo = document.getElementById('eventInfo');
+    const authError = document.getElementById('authError');
+    const inputError = document.getElementById('inputError');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const authBtn = document.getElementById('authBtn');
+    const confirmedNickname = document.getElementById('confirmedNickname');
+    const distanceInfo = document.getElementById('distanceInfo');
+    const currentBib = document.getElementById('currentBib');
+    const bibInput = document.getElementById('bibInput');
+    const saveBtn = document.getElementById('saveBtn');
+
+    function showScreen(step) {
+      currentStep = step;
+      
+      loadingScreen.classList.add('hidden');
+      authScreen.classList.add('hidden');
+      inputScreen.classList.add('hidden');
+      successScreen.classList.add('hidden');
+      
+      if (step === STEP.LOADING) {
+        loadingScreen.classList.remove('hidden');
+      } else if (step === STEP.AUTH) {
+        authScreen.classList.remove('hidden');
+      } else if (step === STEP.INPUT) {
+        inputScreen.classList.remove('hidden');
+      } else if (step === STEP.SUCCESS) {
+        successScreen.classList.remove('hidden');
+      }
+    }
+
+    function showError(elementId, message) {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.classList.remove('hidden');
+    }
+
+    function hideError(elementId) {
+      const el = document.getElementById(elementId);
+      el.classList.add('hidden');
+    }
+
+    function formatDistance(distance) {
+      const map = {
+        'full': '풀 마라톤',
+        'half': '하프 마라톤',
+        '10K': '10km',
+        '5K': '5km'
+      };
+      return map[distance] || distance;
+    }
+
+    async function loadEvent() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('eventId');
+      
+      if (!eventId) {
+        alert('잘못된 접근입니다. 링크를 확인해주세요.');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events&subAction=detail&eventId=${eventId}`);
+        const data = await res.json();
+        
+        if (!data.ok) {
+          alert('대회 정보를 불러올 수 없습니다.');
+          return;
+        }
+        
+        currentEvent = data.event;  // event.id는 Firestore document ID
+        eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
+        showScreen(STEP.AUTH);
+        
+      } catch (error) {
+        console.error('loadEvent error:', error);
+        alert('네트워크 오류가 발생했습니다.');
+      }
+    }
+
+    function authenticateUser() {
+      const nickname = nicknameInput.value.trim();
+      
+      if (!nickname) {
+        showError('authError', '닉네임을 입력해주세요');
+        return;
+      }
+      
+      const participant = currentEvent.participants.find(
+        p => p.nickname === nickname
+      );
+      
+      if (!participant) {
+        showError('authError', '해당 대회에 참가하지 않는 회원입니다');
+        return;
+      }
+      
+      hideError('authError');
+      currentParticipant = participant;
+      
+      confirmedNickname.textContent = participant.nickname;
+      distanceInfo.textContent = formatDistance(participant.distance);
+      currentBib.textContent = participant.bib || '미입력';
+      
+      if (participant.bib) {
+        bibInput.value = participant.bib;
+      }
+      
+      showScreen(STEP.INPUT);
+    }
+
+    async function saveBib() {
+      const bib = bibInput.value.trim();
+      
+      if (!bib) {
+        showError('inputError', '배번을 입력해주세요');
+        return;
+      }
+      
+      hideError('inputError');
+      saveBtn.disabled = true;
+      saveBtn.textContent = '저장 중...';
+      
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subAction: 'update-bib',
+            eventId: currentEvent.id,
+            nickname: currentParticipant.nickname,
+            bib: bib
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (!data.ok) {
+          throw new Error(data.error || '저장 실패');
+        }
+        
+        showScreen(STEP.SUCCESS);
+        
+      } catch (error) {
+        console.error('saveBib error:', error);
+        showError('inputError', error.message || '네트워크 오류가 발생했습니다');
+        saveBtn.disabled = false;
+        saveBtn.textContent = '저장';
+      }
+    }
+
+    authBtn.addEventListener('click', authenticateUser);
+    nicknameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        authenticateUser();
+      }
+    });
+
+    saveBtn.addEventListener('click', saveBib);
+    bibInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        saveBib();
+      }
+    });
+
+    // 페이지 로드 시 대회 정보 불러오기
+    loadEvent();
   </script>
 </body>
 </html>
