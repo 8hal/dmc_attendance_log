@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>단체 대회 상세 - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
+  <script src="assets/distance-utils.js"></script>
   <style>
     :root {
       --primary: #2563EB; --primary-hover: #1D4ED8; --primary-light: #DBEAFE;
@@ -454,16 +455,6 @@
       }
     }
 
-    function distanceLabel(g) {
-      const d = (g && g.distance) ? String(g.distance) : "";
-      const u = d.toUpperCase();
-      if (!u) return "—";
-      if (u.includes("10") && (u.includes("K") || u === "10K")) return "10K";
-      if (u.includes("HALF") || u === "HALF") return "HALF";
-      if (u.includes("FULL") || u === "FULL" || u.includes("MARATHON")) return "FULL";
-      return d;
-    }
-
     function initialBibFromGap(g) {
       const fromP = (g && g.bib != null) ? String(g.bib).trim() : "";
       const fromR = g && g.result && g.result.bib != null ? String(g.result.bib).trim() : "";
@@ -475,7 +466,7 @@
       const rowId = `participant-${num}`;
       const nick = escapeHtml(g.nickname || "");
       const realName = escapeHtml(g.realName || "");
-      const dist = distanceLabel(g);
+      const dist = formatDistance(g.distance);
       const bibVal = escapeHtml(initialBibFromGap(g));
 
       if (g.gapStatus === "confirmed") {
@@ -688,7 +679,7 @@
           g.selectedCandidate = g.candidates[candIdx];
         }
         const selectedTime = selected?.closest(".candidate-option")?.querySelector(".candidate-time")?.textContent || "—";
-        const dist = row.dataset.distance || distanceLabel(g || {});
+        const dist = row.dataset.distance || formatDistance((g || {}).distance);
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         row.classList.add("processed");

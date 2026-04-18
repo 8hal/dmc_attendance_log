@@ -1241,8 +1241,29 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
       }).catch(() => {});
     }
 
-    const isAmbiguous = found.length > 1;
-    for (const r of found) {
+    // Distance 매칭 필터링: 참가자 종목과 검색 결과 종목이 일치하는 것만 선택
+    const participantDistance = normalizeRaceDistance(m.distance);
+    let filteredResults = found;
+    
+    if (participantDistance && participantDistance !== 'unknown') {
+      const matched = found.filter(r => {
+        const resultDistance = normalizeRaceDistance(r.distance);
+        return resultDistance === participantDistance;
+      });
+      
+      // Fallback: 매칭 실패 시 원본 유지
+      if (matched.length > 0) {
+        filteredResults = matched;
+      } else {
+        console.warn(
+          `[scrapeEvent] distance 매칭 실패, 원본 유지: ${m.realName} ` +
+          `(참가자: ${m.distance}, 검색: ${found.map(r => r.distance).join(', ')})`
+        );
+      }
+    }
+
+    const isAmbiguous = filteredResults.length > 1;
+    for (const r of filteredResults) {
       const pb = pbMap ? isPB(pbMap, m.realName, r.distance, r.netTime) : false;
       results.push({
         name: r.name,
@@ -1258,6 +1279,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         memberGender: m.gender || "",
         status: isAmbiguous ? "ambiguous" : "auto",
         candidateCount: found.length,
+        filteredCount: filteredResults.length,
         isPB: pb,
       });
     }

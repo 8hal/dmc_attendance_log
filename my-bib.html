@@ -264,6 +264,7 @@
       }
     }
   </style>
+  <script src="assets/distance-utils.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -404,18 +405,7 @@
       el.classList.add('hidden');
     }
 
-    function formatDistance(distance) {
-      if (!distance) return '-';
-      
-      const map = {
-        'full': '풀 마라톤',
-        'half': '하프 마라톤',
-        '10K': '10km',
-        '5K': '5km'
-      };
-      return map[distance] || distance;
-    }
-    
+    // Toast 표시 함수
     function showToast(message) {
       const toast = document.createElement('div');
       toast.className = 'toast';
