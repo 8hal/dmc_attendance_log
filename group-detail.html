@@ -139,7 +139,7 @@
     .modal-footer { padding: 12px 20px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
     
     /* 컨텍스트 메뉴 */
-    .context-menu { position: fixed; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 160px; display: none; }
+    .context-menu { position: fixed; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1100; min-width: 160px; display: none; }
     .context-menu.show { display: block; }
     .context-menu-item { padding: 10px 16px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-light); }
     .context-menu-item:last-child { border-bottom: none; }
@@ -1276,13 +1276,38 @@
       footerInfo.textContent = `✅ 참가자 ${participants.length}명 등록 완료`;
       
       bulkBtn.style.display = "none";
-    }
-    loadEventDetail();
+    }    loadEventDetail();
     
     // 컨텍스트 메뉴 초기화
     const contextMenu = document.getElementById('contextMenu');
     let longPressTimer = null;
     let longPressTarget = null;
+    
+    // 메뉴 위치 설정 (화면 밖 방지)
+    function positionContextMenu(x, y) {
+      contextMenu.classList.add('show');
+      
+      const menuRect = contextMenu.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      let left = x;
+      let top = y;
+      
+      if (left + menuRect.width > viewportWidth) {
+        left = viewportWidth - menuRect.width - 10;
+      }
+      
+      if (top + menuRect.height > viewportHeight) {
+        top = viewportHeight - menuRect.height - 10;
+      }
+      
+      left = Math.max(10, left);
+      top = Math.max(10, top);
+      
+      contextMenu.style.left = left + 'px';
+      contextMenu.style.top = top + 'px';
+    }
     
     // 데스크톱: 우클릭
     document.addEventListener('contextmenu', (e) => {
@@ -1294,34 +1319,37 @@
       
       e.preventDefault();
       contextMenuTarget = row;
-      
-      contextMenu.style.left = e.pageX + 'px';
-      contextMenu.style.top = e.pageY + 'px';
-      contextMenu.classList.add('show');
+      contextMenu.dataset.targetRowId = row.id;
+      positionContextMenu(e.pageX, e.pageY);
     });
     
-    // 모바일: 롱프레스 (500ms)
+    // 모바일: 롱프레스 (500ms) - 단일 통합 핸들러
     document.addEventListener('touchstart', (e) => {
-      const row = e.target.closest('.result-row.ok.processed');
-      if (!row) return;
+      // 메뉴 내부 터치는 무시
+      if (e.target.closest('#contextMenu')) {
+        return;
+      }
       
-      longPressTarget = row;
-      longPressTimer = setTimeout(() => {
-        if (!longPressTarget) return;
-        
-        contextMenuTarget = longPressTarget;
-        
-        // 터치 위치 가져오기
-        const touch = e.touches[0];
-        contextMenu.style.left = touch.pageX + 'px';
-        contextMenu.style.top = touch.pageY + 'px';
-        contextMenu.classList.add('show');
-        
-        // 진동 피드백 (지원되는 경우)
-        if (navigator.vibrate) {
-          navigator.vibrate(50);
-        }
-      }, 500);
+      const row = e.target.closest('.result-row.ok.processed');
+      if (row) {
+        longPressTarget = row;
+        longPressTimer = setTimeout(() => {
+          if (!longPressTarget) return;
+          
+          contextMenuTarget = longPressTarget;
+          contextMenu.dataset.targetRowId = longPressTarget.id;
+          
+          const touch = e.touches[0];
+          positionContextMenu(touch.pageX, touch.pageY);
+          
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
+          }
+        }, 500);
+      } else {
+        // 다른 곳 터치 시 메뉴 닫기
+        contextMenu.classList.remove('show');
+      }
     }, { passive: true });
     
     document.addEventListener('touchend', () => {
@@ -1340,24 +1368,23 @@
       longPressTarget = null;
     });
     
-    // 컨텍스트 메뉴 외부 클릭/터치 시 닫기
-    document.addEventListener('click', () => {
-      contextMenu.classList.remove('show');
-    });
-    
-    document.addEventListener('touchstart', (e) => {
+    // 컨텍스트 메뉴 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
       if (!e.target.closest('#contextMenu')) {
         contextMenu.classList.remove('show');
       }
-    }, { passive: true });
+    });
     
     // 컨텍스트 메뉴 항목 클릭
     contextMenu.addEventListener('click', async (e) => {
       const item = e.target.closest('.context-menu-item');
-      if (!item || !contextMenuTarget) return;
+      if (!item) return;
+      
+      const rowId = contextMenu.dataset.targetRowId;
+      const row = document.getElementById(rowId);
+      if (!row) return;
       
       const action = item.getAttribute('data-action');
-      const rowId = contextMenuTarget.id;
       const n = parseInt(rowId.replace('participant-', ''), 10);
       const idx = n - 1;
       const g = gapResults[idx];
@@ -1365,58 +1392,101 @@
       contextMenu.classList.remove('show');
       
       if (action === 'dns') {
-        // DNS 처리
-        if (g) g.dnStatus = "DNS";
-        contextMenuTarget.setAttribute("data-status", "processed");
-        contextMenuTarget.setAttribute("data-gap-status", "ok");
+        // DNS 처리 - 데이터 초기화
+        if (g) {
+          g.dnStatus = "DNS";
+          g.result = null;
+          g.selectedCandidate = null;
+          g.manualTime = null;
+        }
+        row.setAttribute("data-status", "processed");
+        row.setAttribute("data-gap-status", "ok");
         const dist = formatDistance((g || {}).distance);
-        contextMenuTarget.querySelector(".result-row-header").innerHTML = `
+        row.querySelector(".result-row-header").innerHTML = `
           <span>✅</span>
-          <span class="result-nick">${contextMenuTarget.querySelector(".result-nick").textContent}</span>
-          <span class="result-realname">${contextMenuTarget.querySelector(".result-realname").textContent}</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
           <span style="flex: 1;"></span>
           <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNS</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(contextMenuTarget)}
+          ${bibControlsHtml(row)}
         `;
         showToast("DNS 처리됨");
         updateProgressUI();
         
       } else if (action === 'dnf') {
-        // DNF 처리
-        if (g) g.dnStatus = "DNF";
-        contextMenuTarget.setAttribute("data-status", "processed");
-        contextMenuTarget.setAttribute("data-gap-status", "ok");
+        // DNF 처리 - 데이터 초기화
+        if (g) {
+          g.dnStatus = "DNF";
+          g.result = null;
+          g.selectedCandidate = null;
+          g.manualTime = null;
+        }
+        row.setAttribute("data-status", "processed");
+        row.setAttribute("data-gap-status", "ok");
         const dist = formatDistance((g || {}).distance);
-        contextMenuTarget.querySelector(".result-row-header").innerHTML = `
+        row.querySelector(".result-row-header").innerHTML = `
           <span>✅</span>
-          <span class="result-nick">${contextMenuTarget.querySelector(".result-nick").textContent}</span>
-          <span class="result-realname">${contextMenuTarget.querySelector(".result-realname").textContent}</span>
+          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
           <span style="flex: 1;"></span>
           <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNF</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(contextMenuTarget)}
+          ${bibControlsHtml(row)}
         `;
         showToast("DNF 처리됨");
         updateProgressUI();
         
       } else if (action === 'manual') {
-        // 직접 입력 폼 표시
+        // 직접 입력 - missing 상태로 변환
+        if (g) {
+          g.result = null;
+          g.selectedCandidate = null;
+          g.dnStatus = null;
+          g.gapStatus = "missing";
+        }
+        
         const dist = formatDistance((g || {}).distance);
-        const manualHtml = `
-          <div class="manual-input-row show">
-            <input type="text" placeholder="기록 (HH:MM:SS)" maxlength="10" style="width:110px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;" data-manual-time="${rowId}" />
+        const nick = escapeHtml(g.nickname || "");
+        const realNameEsc = escapeHtml(g.realName || "");
+        const bibVal = escapeHtml(initialBibFromGap(g) || "");
+        
+        row.className = "result-row err";
+        row.setAttribute("data-status", "unprocessed");
+        row.setAttribute("data-gap-status", "missing");
+        row.innerHTML = `
+          <div class="result-row-header">
+            <span>🔴</span>
+            <span class="result-nick">${nick}</span>
+            <span class="result-realname">${realNameEsc}</span>
+            <span style="flex: 1;"></span>
+            <span style="font-size: 12px; color: var(--red); font-weight: 600;">기록 없음</span>
+            <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+            <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
+            <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+            <button type="button" class="btn btn-sm btn-outline" data-dns="${n}">DNS</button>
+            <button type="button" class="btn btn-sm btn-danger" data-dnf="${n}">DNF</button>
+            <button type="button" class="btn btn-sm btn-ghost" data-manual-toggle="${n}">직접 입력</button>
+          </div>
+          <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+            <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
+            <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+            <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+          </div>
+          <div class="manual-input-row" id="manual-${n}">
+            <input type="text" placeholder="기록 (HH:MM:SS)" maxlength="10" data-manual-time="${rowId}" />
             <button type="button" class="btn btn-sm btn-primary" data-manual-confirm="${n}">확인</button>
-            <button type="button" class="btn btn-sm btn-ghost" data-manual-cancel="${rowId}">취소</button>
           </div>
         `;
         
-        // 기존 candidates 제거 후 manual 입력 추가
-        const existingManual = contextMenuTarget.querySelector('.manual-input-row');
-        if (existingManual) existingManual.remove();
+        // 직접 입력 클릭한 것처럼 표시
+        const manualRow = row.querySelector('.manual-input-row');
+        if (manualRow) {
+          manualRow.classList.add('show');
+          row.querySelector('[data-manual-time]').focus();
+        }
         
-        contextMenuTarget.insertAdjacentHTML('beforeend', manualHtml);
-        contextMenuTarget.querySelector('[data-manual-time]').focus();
+        updateProgressUI();
         
       } else if (action === 'reselect') {
         // 다른 기록 선택 - 실명으로 모든 검색 결과 표시
