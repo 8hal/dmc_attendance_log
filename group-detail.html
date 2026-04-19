@@ -1597,9 +1597,10 @@
     let transferSourceRowId = null;
     let transferSourceData = null;
     let selectedTransferTarget = null;
+    let allMembers = [];
     
     // 배번 양도 모달 열기
-    function openTransferModal(rowId, sourceData) {
+    async function openTransferModal(rowId, sourceData) {
       transferSourceRowId = rowId;
       transferSourceData = sourceData;
       selectedTransferTarget = null;
@@ -1609,45 +1610,69 @@
       const confirmBtn = document.getElementById('transferModalConfirm');
       
       confirmBtn.disabled = true;
-      
-      // 현재 참가자 제외한 목록 렌더링
-      renderTransferList();
+      list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">회원 목록 로딩중...</div>';
       
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
+      
+      // 전체 회원 목록 가져오기
+      try {
+        const res = await fetch(`${API_BASE}?action=members`);
+        const data = await res.json();
+        
+        if (!data.ok) {
+          throw new Error(data.error || "회원 목록을 불러올 수 없습니다");
+        }
+        
+        allMembers = data.members || [];
+        renderTransferList();
+      } catch (error) {
+        console.error("회원 목록 로드 실패:", error);
+        list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--red);">회원 목록을 불러올 수 없습니다</div>';
+      }
     }
     
-    // 배번 양도 목록 렌더링
+    // 배번 양도 목록 렌더링 (전체 회원)
     function renderTransferList(filter = '') {
       const list = document.getElementById('transferList');
       const filterLower = filter.toLowerCase();
       
-      const html = gapResults
-        .filter((g, idx) => {
-          const rowId = `participant-${idx + 1}`;
-          if (rowId === transferSourceRowId) return false; // 본인 제외
+      if (!allMembers || allMembers.length === 0) {
+        list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">회원이 없습니다</div>';
+        return;
+      }
+      
+      // 현재 참가자 memberId 목록
+      const participantMemberIds = new Set(gapResults.map(g => g.memberId).filter(Boolean));
+      
+      const html = allMembers
+        .filter(member => {
+          // 본인 제외
+          if (transferSourceData && member.memberId === transferSourceData.memberId) return false;
           
           if (filter) {
-            const nick = (g.nickname || '').toLowerCase();
-            const realName = (g.realName || '').toLowerCase();
+            const nick = (member.nickname || '').toLowerCase();
+            const realName = (member.realName || '').toLowerCase();
             return nick.includes(filterLower) || realName.includes(filterLower);
           }
           return true;
         })
-        .map((g, originalIdx) => {
-          // gapResults의 실제 인덱스 찾기
-          const actualIdx = gapResults.indexOf(g);
-          const rowId = `participant-${actualIdx + 1}`;
-          const nick = escapeHtml(g.nickname || '');
-          const realName = escapeHtml(g.realName || '');
-          const dist = formatDistance(g.distance);
+        .map(member => {
+          const nick = escapeHtml(member.nickname || '');
+          const realName = escapeHtml(member.realName || '');
+          const memberId = escapeHtml(member.memberId || '');
+          const isParticipant = participantMemberIds.has(member.memberId);
+          const badge = isParticipant 
+            ? '<span style="font-size: 11px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">참가중</span>'
+            : '<span style="font-size: 11px; background: var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">미참가</span>';
           
           return `
             <label class="member-item" style="cursor: pointer;">
-              <input type="radio" name="transfer-target" value="${rowId}" style="width: 18px; height: 18px;" />
+              <input type="radio" name="transfer-target" value="${memberId}" data-nickname="${nick}" data-realname="${realName}" style="width: 18px; height: 18px;" />
               <div style="flex: 1;">
-                <div style="font-weight: 600; font-size: 14px;">${nick} <span style="font-size: 12px; color: var(--text-muted);">${realName}</span></div>
-                <div style="font-size: 12px; color: var(--text-sub);">${dist}</div>
+                <div style="font-weight: 600; font-size: 14px; display: flex; align-items: center;">
+                  ${nick} <span style="font-size: 12px; color: var(--text-muted); margin-left: 4px;">${realName}</span>${badge}
+                </div>
               </div>
             </label>
           `;
@@ -1659,7 +1684,11 @@
       // 라디오 버튼 이벤트
       list.querySelectorAll('input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
-          selectedTransferTarget = e.target.value;
+          selectedTransferTarget = {
+            memberId: e.target.value,
+            nickname: e.target.dataset.nickname,
+            realName: e.target.dataset.realname
+          };
           document.getElementById('transferModalConfirm').disabled = false;
         });
       });
@@ -1691,56 +1720,87 @@
       if (!selectedTransferTarget || !transferSourceRowId) return;
       
       const sourceRow = document.getElementById(transferSourceRowId);
-      const targetRow = document.getElementById(selectedTransferTarget);
-      
-      if (!sourceRow || !targetRow) {
-        showToast("참가자를 찾을 수 없습니다", true);
+      if (!sourceRow) {
+        showToast("원본 참가자를 찾을 수 없습니다", true);
         return;
       }
       
       const sourceIdx = parseInt(transferSourceRowId.replace('participant-', ''), 10) - 1;
-      const targetIdx = parseInt(selectedTransferTarget.replace('participant-', ''), 10) - 1;
-      
       const sourceData = gapResults[sourceIdx];
-      const targetData = gapResults[targetIdx];
       
-      if (!sourceData || !targetData) {
-        showToast("데이터를 찾을 수 없습니다", true);
+      if (!sourceData) {
+        showToast("원본 데이터를 찾을 수 없습니다", true);
         return;
       }
       
-      // 기록 교환
-      const tempResult = sourceData.result;
-      const tempSelectedCandidate = sourceData.selectedCandidate;
-      const tempManualTime = sourceData.manualTime;
-      const tempDnStatus = sourceData.dnStatus;
-      const tempGapStatus = sourceData.gapStatus;
+      // 선택된 회원이 참가자인지 확인
+      const targetIdx = gapResults.findIndex(g => g.memberId === selectedTransferTarget.memberId);
       
-      sourceData.result = targetData.result;
-      sourceData.selectedCandidate = targetData.selectedCandidate;
-      sourceData.manualTime = targetData.manualTime;
-      sourceData.dnStatus = targetData.dnStatus;
-      sourceData.gapStatus = targetData.gapStatus;
-      
-      targetData.result = tempResult;
-      targetData.selectedCandidate = tempSelectedCandidate;
-      targetData.manualTime = tempManualTime;
-      targetData.dnStatus = tempDnStatus;
-      targetData.gapStatus = tempGapStatus;
-      
-      // UI 업데이트
-      const sourceNick = sourceRow.querySelector('.result-nick').textContent;
-      const sourceRealName = sourceRow.querySelector('.result-realname').textContent;
-      const targetNick = targetRow.querySelector('.result-nick').textContent;
-      const targetRealName = targetRow.querySelector('.result-realname').textContent;
-      
-      sourceRow.outerHTML = buildParticipantRowHtml(sourceData, sourceIdx);
-      targetRow.outerHTML = buildParticipantRowHtml(targetData, targetIdx);
-      
-      updateProgressUI();
-      closeTransferModal();
-      
-      showToast(`배번 양도: ${sourceNick}(${sourceRealName}) ↔ ${targetNick}(${targetRealName})`);
+      if (targetIdx >= 0) {
+        // 기존 참가자인 경우 - 기록 교환
+        const targetData = gapResults[targetIdx];
+        const targetRow = document.getElementById(`participant-${targetIdx + 1}`);
+        
+        // 기록 교환
+        const tempResult = sourceData.result;
+        const tempSelectedCandidate = sourceData.selectedCandidate;
+        const tempManualTime = sourceData.manualTime;
+        const tempDnStatus = sourceData.dnStatus;
+        const tempGapStatus = sourceData.gapStatus;
+        
+        sourceData.result = targetData.result;
+        sourceData.selectedCandidate = targetData.selectedCandidate;
+        sourceData.manualTime = targetData.manualTime;
+        sourceData.dnStatus = targetData.dnStatus;
+        sourceData.gapStatus = targetData.gapStatus;
+        
+        targetData.result = tempResult;
+        targetData.selectedCandidate = tempSelectedCandidate;
+        targetData.manualTime = tempManualTime;
+        targetData.dnStatus = tempDnStatus;
+        targetData.gapStatus = tempGapStatus;
+        
+        // UI 업데이트
+        sourceRow.outerHTML = buildParticipantRowHtml(sourceData, sourceIdx);
+        targetRow.outerHTML = buildParticipantRowHtml(targetData, targetIdx);
+        
+        updateProgressUI();
+        closeTransferModal();
+        
+        showToast(`배번 양도: ${sourceData.nickname} ↔ ${targetData.nickname}`);
+      } else {
+        // 비참가자인 경우 - 참가자로 추가하고 기록 이전
+        const newParticipant = {
+          memberId: selectedTransferTarget.memberId,
+          nickname: selectedTransferTarget.nickname,
+          realName: selectedTransferTarget.realName,
+          distance: sourceData.distance, // 동일한 코스
+          bib: null,
+          result: sourceData.result,
+          selectedCandidate: sourceData.selectedCandidate,
+          manualTime: sourceData.manualTime,
+          dnStatus: sourceData.dnStatus,
+          gapStatus: sourceData.gapStatus,
+          candidates: []
+        };
+        
+        // 원본은 기록 제거 (missing 상태로)
+        sourceData.result = null;
+        sourceData.selectedCandidate = null;
+        sourceData.manualTime = null;
+        sourceData.dnStatus = null;
+        sourceData.gapStatus = "missing";
+        
+        // gapResults에 새 참가자 추가
+        gapResults.push(newParticipant);
+        
+        // UI 전체 재렌더링
+        renderParticipantList(gapResults);
+        updateProgressUI();
+        closeTransferModal();
+        
+        showToast(`배번 양도: ${sourceData.nickname} → ${newParticipant.nickname} (참가자 추가됨)`);
+      }
     });
   </script>
 </body>
