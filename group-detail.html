@@ -68,12 +68,6 @@
     .progress-detail { font-size: 13px; color: var(--text-sub); line-height: 1.6; margin-bottom: 10px; }
     .progress-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .unprocessed-list { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
-    .unprocessed-list-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
-    .unprocessed-item { font-size: 13px; color: var(--text-sub); padding: 4px 0; cursor: pointer; transition: color 0.15s; }
-    .unprocessed-item:hover { color: var(--primary); text-decoration: underline; }
-    .unprocessed-item::before { content: "• "; color: var(--red); }
-
     .search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .search-input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
 
@@ -219,16 +213,6 @@
         
         <div class="progress-detail" id="progressDetail">
           자동 매칭 3명 · 동명이인 2명 · 기록 없음 3명 (데모 8명)
-        </div>
-
-        <!-- 미처리 목록 (클릭 가능) -->
-        <div class="unprocessed-list" id="unprocessedList">
-          <div class="unprocessed-list-title">미처리 목록 (5명) — 클릭하면 해당 참가자로 이동</div>
-          <div class="unprocessed-item" data-scroll-to="participant-2">디모 (동명이인 선택 필요)</div>
-          <div class="unprocessed-item" data-scroll-to="participant-10">초보러너 (동명이인 선택 필요)</div>
-          <div class="unprocessed-item" data-scroll-to="participant-3">SJ (DNS/DNF/직접입력 필요)</div>
-          <div class="unprocessed-item" data-scroll-to="participant-15">해피러너 (기록 없음)</div>
-          <div class="unprocessed-item" data-scroll-to="participant-20">햇살 (기록 없음)</div>
         </div>
 
         <div class="progress-actions">
@@ -885,7 +869,6 @@
       const progressBar = document.getElementById("progressBar");
       const progressTitle = document.getElementById("progressTitle");
       const progressFill = document.getElementById("progressFill");
-      const unprocessedList = document.getElementById("unprocessedList");
       const bulkBtn = document.getElementById("bulkConfirmBtn");
       const footerInfo = document.getElementById("footerInfo");
 
@@ -901,7 +884,6 @@
         progressTitle.textContent = "✅ 선택 완료 — 모든 참가자의 기록이 선택되었습니다";
         progressFill.classList.add("complete");
         progressFill.classList.remove("incomplete");
-        unprocessedList.style.display = "none";
         
         bulkBtn.disabled = stats.total === 0;
         bulkBtn.textContent = stats.total === 0 ? "일괄 저장" : `일괄 저장 (${stats.total}건)`;
@@ -918,26 +900,6 @@
         progressTitle.textContent = `⚠️ 미처리 ${stats.unprocessed}명 — 모든 참가자의 기록을 선택해야 일괄 저장할 수 있습니다`;
         progressFill.classList.remove("complete");
         progressFill.classList.add("incomplete");
-        
-        // 미처리 목록 렌더링 (클릭 가능)
-        unprocessedList.innerHTML = `
-          <div class="unprocessed-list-title">미처리 목록 (${stats.unprocessed}명) — 클릭하면 해당 참가자로 이동</div>
-          ${stats.unprocessedList.map(p => `<div class="unprocessed-item" data-scroll-to="${p.id}">${p.nick} (${p.reason})</div>`).join("")}
-        `;
-        unprocessedList.style.display = "block";
-        
-        // 미처리 목록 클릭 이벤트
-        unprocessedList.querySelectorAll(".unprocessed-item").forEach(item => {
-          item.addEventListener("click", () => {
-            const targetId = item.getAttribute("data-scroll-to");
-            const targetEl = document.getElementById(targetId);
-            if (targetEl) {
-              targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
-              targetEl.classList.add("highlighted");
-              setTimeout(() => targetEl.classList.remove("highlighted"), 1000);
-            }
-          });
-        });
         
         bulkBtn.disabled = true;
         bulkBtn.textContent = `일괄 저장 (미처리 ${stats.unprocessed}명)`;
