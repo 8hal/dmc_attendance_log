@@ -352,7 +352,7 @@
         <button type="button" class="modal-close" id="transferModalClose" aria-label="닫기">×</button>
       </div>
       <div class="modal-body">
-        <div style="background: var(--yellow-bg); border-left: 3px solid var(--yellow); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; line-height: 1.6;">
+        <div style="background: var(--yellow-light); border-left: 3px solid var(--yellow); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; line-height: 1.6;">
           <strong style="color: var(--yellow);">ℹ️ 배번 양도란?</strong><br>
           이 참가자의 배번을 다른 참가자에게 넘겨준 경우 사용합니다.<br>
           예: A가 배번을 B에게 넘겨서 B가 A의 배번으로 달린 경우
@@ -1749,24 +1749,27 @@
           const targetData = gapResults[targetIdx];
           const targetRow = document.getElementById(`participant-${targetIdx + 1}`);
           
-          // 기록 교환
+          // 기록 교환 (배번도 포함)
           const tempResult = sourceData.result;
           const tempSelectedCandidate = sourceData.selectedCandidate;
           const tempManualTime = sourceData.manualTime;
           const tempDnStatus = sourceData.dnStatus;
           const tempGapStatus = sourceData.gapStatus;
+          const tempBib = sourceData.bib;
           
           sourceData.result = targetData.result;
           sourceData.selectedCandidate = targetData.selectedCandidate;
           sourceData.manualTime = targetData.manualTime;
           sourceData.dnStatus = targetData.dnStatus;
           sourceData.gapStatus = targetData.gapStatus;
+          sourceData.bib = targetData.bib;
           
           targetData.result = tempResult;
           targetData.selectedCandidate = tempSelectedCandidate;
           targetData.manualTime = tempManualTime;
           targetData.dnStatus = tempDnStatus;
           targetData.gapStatus = tempGapStatus;
+          targetData.bib = tempBib;
           
           // UI 업데이트
           sourceRow.outerHTML = buildParticipantRowHtml(sourceData, sourceIdx);
@@ -1801,6 +1804,17 @@
           
           // gapResults에 새 참가자 추가
           gapResults.push(newParticipant);
+          
+          // currentEvent.participants에도 추가 (동기화)
+          if (currentEvent && currentEvent.participants) {
+            currentEvent.participants.push({
+              memberId: selectedTransferTarget.memberId,
+              nickname: selectedTransferTarget.nickname,
+              realName: selectedTransferTarget.realName,
+              distance: sourceData.distance,
+              bib: null
+            });
+          }
           
           // UI 전체 재렌더링
           renderParticipantList(gapResults);
