@@ -1277,15 +1277,15 @@
       
       bulkBtn.style.display = "none";
     }
-
     loadEventDetail();
     
     // 컨텍스트 메뉴 초기화
     const contextMenu = document.getElementById('contextMenu');
+    let longPressTimer = null;
+    let longPressTarget = null;
     
-    // participantList에 컨텍스트 메뉴 이벤트 추가 (이벤트 위임)
+    // 데스크톱: 우클릭
     document.addEventListener('contextmenu', (e) => {
-      // .result-row.ok.processed 요소에서만 컨텍스트 메뉴 표시
       const row = e.target.closest('.result-row.ok.processed');
       if (!row) {
         contextMenu.classList.remove('show');
@@ -1295,16 +1295,61 @@
       e.preventDefault();
       contextMenuTarget = row;
       
-      // 메뉴 위치 설정
       contextMenu.style.left = e.pageX + 'px';
       contextMenu.style.top = e.pageY + 'px';
       contextMenu.classList.add('show');
     });
     
-    // 컨텍스트 메뉴 외부 클릭 시 닫기
+    // 모바일: 롱프레스 (500ms)
+    document.addEventListener('touchstart', (e) => {
+      const row = e.target.closest('.result-row.ok.processed');
+      if (!row) return;
+      
+      longPressTarget = row;
+      longPressTimer = setTimeout(() => {
+        if (!longPressTarget) return;
+        
+        contextMenuTarget = longPressTarget;
+        
+        // 터치 위치 가져오기
+        const touch = e.touches[0];
+        contextMenu.style.left = touch.pageX + 'px';
+        contextMenu.style.top = touch.pageY + 'px';
+        contextMenu.classList.add('show');
+        
+        // 진동 피드백 (지원되는 경우)
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }, 500);
+    }, { passive: true });
+    
+    document.addEventListener('touchend', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      longPressTarget = null;
+    });
+    
+    document.addEventListener('touchmove', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      longPressTarget = null;
+    });
+    
+    // 컨텍스트 메뉴 외부 클릭/터치 시 닫기
     document.addEventListener('click', () => {
       contextMenu.classList.remove('show');
     });
+    
+    document.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('#contextMenu')) {
+        contextMenu.classList.remove('show');
+      }
+    }, { passive: true });
     
     // 컨텍스트 메뉴 항목 클릭
     contextMenu.addEventListener('click', async (e) => {
