@@ -1070,7 +1070,23 @@ async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRe
     if (missingNames.length > 0) {
       throw new Error(`등록·미숨김 회원에 없는 실명: ${missingNames.join(", ")}`);
     }
-    const members = want.map((n) => byName.get(n));
+    
+    // race_events.participants에서 distance 정보 가져오기
+    const participantsByName = new Map();
+    if (event && Array.isArray(event.participants)) {
+      event.participants.forEach(p => {
+        if (p.realName && p.distance) {
+          participantsByName.set(p.realName, p.distance);
+        }
+      });
+    }
+    
+    // members 배열 생성 시 participants의 distance 포함
+    const members = want.map((n) => {
+      const member = byName.get(n);
+      const distance = participantsByName.get(n);
+      return { ...member, distance };
+    });
 
     const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
     const confirmedResults = [];
