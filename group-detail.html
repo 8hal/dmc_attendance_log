@@ -1324,7 +1324,7 @@
         if (g) g.dnStatus = "DNS";
         contextMenuTarget.setAttribute("data-status", "processed");
         contextMenuTarget.setAttribute("data-gap-status", "ok");
-        const dist = contextMenuTarget.querySelector('.result-row-header').dataset.distance || formatDistance((g || {}).distance);
+        const dist = formatDistance((g || {}).distance);
         contextMenuTarget.querySelector(".result-row-header").innerHTML = `
           <span>✅</span>
           <span class="result-nick">${contextMenuTarget.querySelector(".result-nick").textContent}</span>
@@ -1342,7 +1342,7 @@
         if (g) g.dnStatus = "DNF";
         contextMenuTarget.setAttribute("data-status", "processed");
         contextMenuTarget.setAttribute("data-gap-status", "ok");
-        const dist = contextMenuTarget.querySelector('.result-row-header').dataset.distance || formatDistance((g || {}).distance);
+        const dist = formatDistance((g || {}).distance);
         contextMenuTarget.querySelector(".result-row-header").innerHTML = `
           <span>✅</span>
           <span class="result-nick">${contextMenuTarget.querySelector(".result-nick").textContent}</span>
@@ -1374,97 +1374,95 @@
         contextMenuTarget.querySelector('[data-manual-time]').focus();
         
       } else if (action === 'reselect') {
-        // 동명이인 목록 다시 표시
+        // 다른 기록 선택 - 실명으로 모든 검색 결과 표시
         if (!g) return;
         
-        // 실명으로 재검색
         const realName = g.realName;
-        showToast("재검색 중...");
         
-        try {
-          const eventDoc = await (await fetch(`${API_BASE}?action=group-events&subAction=detail&eventId=${currentEventId}`)).json();
-          if (!eventDoc.ok) throw new Error(eventDoc.error);
-          
-          const jobId = eventDoc.event.groupScrapeJobId;
-          if (!jobId) throw new Error("스크랩 데이터 없음");
-          
-          const jobDoc = await (await fetch(`${API_BASE}?action=group-events&subAction=detail&eventId=${currentEventId}`)).json();
-          if (!jobDoc.ok) throw new Error(jobDoc.error);
-          
-          // 해당 회원의 모든 검색 결과 찾기
-          const allResults = jobDoc.gap.filter(r => r.realName === realName);
-          if (!allResults || allResults.length === 0) {
-            showToast("검색 결과 없음", true);
-            return;
+        // 같은 실명을 가진 모든 gapResults 찾기
+        const sameNameResults = gapResults.filter(gr => gr.realName === realName);
+        
+        // 모든 candidates 수집
+        const allCandidates = [];
+        sameNameResults.forEach(gr => {
+          if (gr.candidates && Array.isArray(gr.candidates)) {
+            allCandidates.push(...gr.candidates);
+          } else if (gr.result) {
+            allCandidates.push(gr.result);
           }
-          
-          // candidates 재구성
-          const candidates = allResults.flatMap(r => r.candidates || [r.result]).filter(Boolean);
-          if (candidates.length === 0) {
-            showToast("선택 가능한 기록 없음", true);
-            return;
-          }
-          
-          // ambiguous UI로 변환
-          g.gapStatus = "ambiguous";
-          g.candidates = candidates;
-          
-          // HTML 재구성
-          const dist = formatDistance(g.distance);
-          const bibVal = escapeHtml(initialBibFromGap(g));
-          const nick = escapeHtml(g.nickname || "");
-          const realNameEsc = escapeHtml(g.realName || "");
-          
-          const cands = candidates.map((c, ci) => {
-            const ct = escapeHtml(c.netTime || c.finishTime || "—");
-            const cbib = c.bib != null ? escapeHtml(String(c.bib)) : "—";
-            const cage = c.age != null ? escapeHtml(String(c.age)) : "";
-            const crank = c.overallRank != null ? escapeHtml(String(c.overallRank)) : "";
-            const cdist = c.distance ? escapeHtml(String(c.distance)) : "";
-            return `
-              <label class="candidate-option">
-                <input type="radio" name="candidate-${n}" value="${ci}" ${ci === 0 ? 'checked' : ''} />
-                <div style="flex:1;">
-                  <div class="candidate-time">${ct}</div>
-                  <div class="candidate-detail">배번 ${cbib} · ${cdist} ${cage ? `· ${cage}세` : ""} ${crank ? `· ${crank}위` : ""}</div>
-                </div>
-              </label>`;
-          }).join("");
-          
-          contextMenuTarget.className = "result-row warn";
-          contextMenuTarget.setAttribute("data-status", "unprocessed");
-          contextMenuTarget.setAttribute("data-gap-status", "ambiguous");
-          contextMenuTarget.innerHTML = `
-            <div class="result-row-header" style="flex-direction: column; align-items: stretch;">
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span>⚠️</span>
-                <span class="result-nick">${nick}</span>
-                <span class="result-realname">${realNameEsc}</span>
-                <span style="flex: 1;"></span>
-                <span style="font-size: 12px; color: var(--yellow); font-weight: 600;">동명이인 ${candidates.length}명</span>
-                <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-                <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
-                <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
-              </div>
-            </div>
-            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
-              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
-              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
-              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
-            </div>
-            <div class="candidates">
-              ${cands}
-              <button type="button" class="btn btn-confirm btn-sm" style="align-self: flex-start; margin-top: 6px;" data-amb-confirm="${n}">선택 기록 사용</button>
-            </div>
-          `;
-          
-          updateProgressUI();
-          showToast("다시 선택하세요");
-          
-        } catch (err) {
-          console.error('reselect error:', err);
-          showToast(err.message || "재검색 실패", true);
+        });
+        
+        if (allCandidates.length === 0) {
+          showToast("선택 가능한 기록 없음", true);
+          return;
         }
+        
+        // candidates 중복 제거 (bib 기준)
+        const uniqueCandidates = [];
+        const seenBibs = new Set();
+        allCandidates.forEach(c => {
+          if (c.bib && !seenBibs.has(c.bib)) {
+            seenBibs.add(c.bib);
+            uniqueCandidates.push(c);
+          } else if (!c.bib) {
+            uniqueCandidates.push(c);
+          }
+        });
+        
+        // ambiguous UI로 변환
+        g.gapStatus = "ambiguous";
+        g.candidates = uniqueCandidates;
+        
+        const dist = formatDistance(g.distance);
+        const bibVal = escapeHtml(initialBibFromGap(g));
+        const nick = escapeHtml(g.nickname || "");
+        const realNameEsc = escapeHtml(g.realName || "");
+        
+        const cands = uniqueCandidates.map((c, ci) => {
+          const ct = escapeHtml(c.netTime || c.finishTime || "—");
+          const cbib = c.bib != null ? escapeHtml(String(c.bib)) : "—";
+          const cage = c.age != null ? escapeHtml(String(c.age)) : "";
+          const crank = c.overallRank != null ? escapeHtml(String(c.overallRank)) : "";
+          const cdist = c.distance ? escapeHtml(String(c.distance)) : "";
+          return `
+            <label class="candidate-option">
+              <input type="radio" name="candidate-${n}" value="${ci}" ${ci === 0 ? 'checked' : ''} />
+              <div style="flex:1;">
+                <div class="candidate-time">${ct}</div>
+                <div class="candidate-detail">배번 ${cbib} · ${cdist} ${cage ? `· ${cage}세` : ""} ${crank ? `· ${crank}위` : ""}</div>
+              </div>
+            </label>`;
+        }).join("");
+        
+        contextMenuTarget.className = "result-row warn";
+        contextMenuTarget.setAttribute("data-status", "unprocessed");
+        contextMenuTarget.setAttribute("data-gap-status", "ambiguous");
+        contextMenuTarget.innerHTML = `
+          <div class="result-row-header" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span>⚠️</span>
+              <span class="result-nick">${nick}</span>
+              <span class="result-realname">${realNameEsc}</span>
+              <span style="flex: 1;"></span>
+              <span style="font-size: 12px; color: var(--yellow); font-weight: 600;">동명이인 ${uniqueCandidates.length}명</span>
+              <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+              <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
+              <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+            </div>
+          </div>
+          <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
+            <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
+            <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
+            <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+          </div>
+          <div class="candidates">
+            ${cands}
+            <button type="button" class="btn btn-confirm btn-sm" style="align-self: flex-start; margin-top: 6px;" data-amb-confirm="${n}">선택 기록 사용</button>
+          </div>
+        `;
+        
+        updateProgressUI();
+        showToast("다시 선택하세요");
       }
       
       contextMenuTarget = null;
