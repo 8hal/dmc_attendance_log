@@ -2003,7 +2003,33 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             error: `등록·미숨김 회원에 없는 실명: ${missing.join(", ")}`,
           });
         }
-        members = want.map((n) => byName.get(n));
+        
+        // replaceJobId가 group 대회인 경우, race_events에서 distance 가져오기
+        const participantsByName = new Map();
+        if (replaceJobId) {
+          const eventsSnap = await db.collection("race_events")
+            .where("groupScrapeJobId", "==", replaceJobId)
+            .limit(1)
+            .get();
+          
+          if (!eventsSnap.empty) {
+            const eventData = eventsSnap.docs[0].data();
+            if (Array.isArray(eventData.participants)) {
+              eventData.participants.forEach(p => {
+                if (p.realName && p.distance) {
+                  participantsByName.set(p.realName, p.distance);
+                }
+              });
+            }
+          }
+        }
+        
+        // members 배열 생성 시 distance 포함
+        members = want.map((n) => {
+          const member = byName.get(n);
+          const distance = participantsByName.get(n);
+          return { ...member, distance };
+        });
       }
 
       const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();

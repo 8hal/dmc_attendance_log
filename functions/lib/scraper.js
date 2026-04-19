@@ -1297,6 +1297,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         memberRealName: m.realName,
         memberNickname: m.nickname,
         memberGender: m.gender || "",
+        memberDistance: m.distance || null, // 참가자 종목 정보 추가
         status: isAmbiguous ? "ambiguous" : "auto",
         candidateCount: found.length,
         filteredCount: filteredResults.length,
