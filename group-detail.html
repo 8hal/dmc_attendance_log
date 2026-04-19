@@ -524,14 +524,8 @@
               <span class="result-time">${time}</span>
               <span class="result-rank">${rank}</span>
               <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
-              <span class="result-bib">${rbib ? `배번 ${escapeHtml(rbib)}` : "배번 미입력"}</span>
-              <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
-              <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
-            </div>
-            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
-              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${rbibEsc}" autocomplete="off" />
-              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
-              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
+              <span class="result-bib">${rbib ? `배번 ${escapeHtml(rbib)}` : ""}</span>
+              <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
             </div>
           </div>`;
       }
@@ -561,14 +555,9 @@
                 <span style="flex: 1;"></span>
                 <span style="font-size: 12px; color: var(--yellow); font-weight: 600;">동명이인 ${g.candidates.length}명</span>
                 <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
-                <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
-                <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+                <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+                <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
               </div>
-            </div>
-            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
-              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
-              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
-              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
             </div>
             <div class="candidates">
               ${cands}
@@ -700,6 +689,7 @@
         const selectedTime = selected?.closest(".candidate-option")?.querySelector(".candidate-time")?.textContent || "—";
         const dist = row.dataset.distance || formatDistance((g || {}).distance);
         const rowId = row.id;
+        const bibVal = row.dataset.bib || "";
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         row.classList.add("processed");
@@ -712,8 +702,8 @@
           <span style="flex: 1;"></span>
           <span class="result-time">${selectedTime}</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(row)}
-          <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
+          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
         `;
         const candidates = row.querySelector(".candidates");
         if (candidates) candidates.remove();
@@ -732,6 +722,7 @@
         if (gapResults[idx]) gapResults[idx].dnStatus = "DNS";
         const dist = row.dataset.distance || "10K";
         const rowId = row.id;
+        const bibVal = row.dataset.bib || "";
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         row.classList.add("processed");
@@ -744,8 +735,8 @@
           <span style="flex: 1;"></span>
           <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNS</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(row)}
-          <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
+          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
         `;
         showToast("DNS 처리됨");
         updateProgressUI();
@@ -762,6 +753,7 @@
         if (gapResults[idx]) gapResults[idx].dnStatus = "DNF";
         const dist = row.dataset.distance || "10K";
         const rowId = row.id;
+        const bibVal = row.dataset.bib || "";
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         row.classList.add("processed");
@@ -774,8 +766,8 @@
           <span style="flex: 1;"></span>
           <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNF</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(row)}
-          <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
+          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
         `;
         showToast("DNF 처리됨");
         updateProgressUI();
@@ -813,6 +805,7 @@
         }
         const distManual = row.dataset.distance || "10K";
         const rowId = row.id;
+        const bibVal = row.dataset.bib || "";
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         row.classList.add("processed");
@@ -825,8 +818,8 @@
           <span style="flex: 1;"></span>
           <span class="result-time">${time}</span>
           <span style="font-size: 11px; color: var(--text-muted);">${distManual}</span>
-          ${bibControlsHtml(row)}
-          <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
+          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
         `;
         const manualRow = row.querySelector(".manual-input-row");
         if (manualRow) manualRow.remove();
@@ -1426,6 +1419,7 @@
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         const dist = formatDistance((g || {}).distance);
+        const bibVal = row.dataset.bib || "";
         row.querySelector(".result-row-header").innerHTML = `
           <span>✅</span>
           <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
@@ -1433,8 +1427,8 @@
           <span style="flex: 1;"></span>
           <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNS</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(row)}
-          <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
+          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
         `;
         showToast("DNS 처리됨");
         updateProgressUI();
@@ -1450,6 +1444,7 @@
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
         const dist = formatDistance((g || {}).distance);
+        const bibVal = row.dataset.bib || "";
         row.querySelector(".result-row-header").innerHTML = `
           <span>✅</span>
           <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
@@ -1457,8 +1452,8 @@
           <span style="flex: 1;"></span>
           <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNF</span>
           <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          ${bibControlsHtml(row)}
-          <button type="button" class="btn btn-sm btn-ghost" data-edit-result="${rowId}" title="기록 수정">수정</button>
+          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
         `;
         showToast("DNF 처리됨");
         updateProgressUI();
