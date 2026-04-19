@@ -155,15 +155,35 @@ async function searchSPCT(eventNo, memberName) {
 
   const $ = cheerioLoad(html);
   const links = [];
+  const linkTexts = new Map(); // href -> linkText (배번/종목 추출용)
+  
   $("a[href*='m2.php']").each((_, a) => {
     const href = $(a).attr("href");
-    if (href && !links.includes(href)) links.push(href);
+    const text = $(a).text().trim(); // "[ 15881 ] 10KM - 이수진"
+    if (href && !links.includes(href)) {
+      links.push(href);
+      linkTexts.set(href, text);
+    }
   });
 
   const results = [];
   for (const link of links) {
     const dHtml = await (await fetch(`https://time.spct.kr/${link}`, { headers: spctHeaders })).text();
     const parsed = await spctParseDetailPage(dHtml, memberName);
+    
+    // 목록 페이지 텍스트에서 distance 추출 시도 (fallback)
+    // 형식: "[ 15881 ] 10KM - 이수진" 또는 "[ 25186 ] HALF - 이수진"
+    if (!parsed.distance || parsed.distance === 'unknown') {
+      const linkText = linkTexts.get(link) || '';
+      const distMatch = linkText.match(/\]\s*([^-\s]+)\s*-/);
+      if (distMatch) {
+        const extractedDist = normDist(distMatch[1].trim());
+        if (extractedDist && extractedDist !== 'unknown') {
+          parsed.distance = extractedDist;
+        }
+      }
+    }
+    
     if (parsed.netTime) results.push(parsed);
     await sleep(randomDelay(200));
   }
