@@ -338,9 +338,35 @@
   <!-- 컨텍스트 메뉴 -->
   <div id="contextMenu" class="context-menu">
     <div class="context-menu-item" data-action="reselect">🔄 다른 기록 선택</div>
+    <div class="context-menu-item" data-action="transfer">🔁 배번 양도</div>
     <div class="context-menu-item danger" data-action="dns">❌ DNS 처리</div>
     <div class="context-menu-item danger" data-action="dnf">⚠️ DNF 처리</div>
     <div class="context-menu-item" data-action="manual">✏️ 직접 입력</div>
+  </div>
+
+  <!-- 배번 양도 모달 -->
+  <div id="transferModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog">
+      <div class="modal-header">
+        <h2>배번 양도 — 다른 참가자 선택</h2>
+        <button type="button" class="modal-close" id="transferModalClose" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: var(--yellow-bg); border-left: 3px solid var(--yellow); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; line-height: 1.6;">
+          <strong style="color: var(--yellow);">ℹ️ 배번 양도란?</strong><br>
+          이 참가자의 배번을 다른 참가자에게 넘겨준 경우 사용합니다.<br>
+          예: A가 배번을 B에게 넘겨서 B가 A의 배번으로 달린 경우
+        </div>
+        <input type="text" id="transferFilter" class="search-input" placeholder="🔍 닉네임·실명으로 검색…" style="margin-bottom: 12px;" />
+        <div id="transferList" style="max-height:50vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;">
+          <!-- 참가자 목록이 여기에 렌더링됩니다 -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="transferModalCancel">취소</button>
+        <button type="button" class="btn btn-primary" id="transferModalConfirm" disabled>선택한 참가자로 양도</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1559,9 +1585,162 @@
         
         updateProgressUI();
         showToast("다시 선택하세요");
+      } else if (action === 'transfer') {
+        // 배번 양도 - 모달 열기
+        openTransferModal(rowId, g);
       }
       
       contextMenuTarget = null;
+    });
+    
+    // 배번 양도 모달 관련 변수
+    let transferSourceRowId = null;
+    let transferSourceData = null;
+    let selectedTransferTarget = null;
+    
+    // 배번 양도 모달 열기
+    function openTransferModal(rowId, sourceData) {
+      transferSourceRowId = rowId;
+      transferSourceData = sourceData;
+      selectedTransferTarget = null;
+      
+      const modal = document.getElementById('transferModal');
+      const list = document.getElementById('transferList');
+      const confirmBtn = document.getElementById('transferModalConfirm');
+      
+      confirmBtn.disabled = true;
+      
+      // 현재 참가자 제외한 목록 렌더링
+      renderTransferList();
+      
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // 배번 양도 목록 렌더링
+    function renderTransferList(filter = '') {
+      const list = document.getElementById('transferList');
+      const filterLower = filter.toLowerCase();
+      
+      const html = gapResults
+        .filter((g, idx) => {
+          const rowId = `participant-${idx + 1}`;
+          if (rowId === transferSourceRowId) return false; // 본인 제외
+          
+          if (filter) {
+            const nick = (g.nickname || '').toLowerCase();
+            const realName = (g.realName || '').toLowerCase();
+            return nick.includes(filterLower) || realName.includes(filterLower);
+          }
+          return true;
+        })
+        .map((g, originalIdx) => {
+          // gapResults의 실제 인덱스 찾기
+          const actualIdx = gapResults.indexOf(g);
+          const rowId = `participant-${actualIdx + 1}`;
+          const nick = escapeHtml(g.nickname || '');
+          const realName = escapeHtml(g.realName || '');
+          const dist = formatDistance(g.distance);
+          
+          return `
+            <label class="member-item" style="cursor: pointer;">
+              <input type="radio" name="transfer-target" value="${rowId}" style="width: 18px; height: 18px;" />
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 14px;">${nick} <span style="font-size: 12px; color: var(--text-muted);">${realName}</span></div>
+                <div style="font-size: 12px; color: var(--text-sub);">${dist}</div>
+              </div>
+            </label>
+          `;
+        })
+        .join('');
+      
+      list.innerHTML = html || '<div style="padding: 20px; text-align: center; color: var(--text-muted);">검색 결과가 없습니다</div>';
+      
+      // 라디오 버튼 이벤트
+      list.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          selectedTransferTarget = e.target.value;
+          document.getElementById('transferModalConfirm').disabled = false;
+        });
+      });
+    }
+    
+    // 배번 양도 검색
+    document.getElementById('transferFilter').addEventListener('input', (e) => {
+      renderTransferList(e.target.value.trim());
+    });
+    
+    // 배번 양도 모달 닫기
+    function closeTransferModal() {
+      const modal = document.getElementById('transferModal');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      
+      transferSourceRowId = null;
+      transferSourceData = null;
+      selectedTransferTarget = null;
+      
+      document.getElementById('transferFilter').value = '';
+    }
+    
+    document.getElementById('transferModalClose').addEventListener('click', closeTransferModal);
+    document.getElementById('transferModalCancel').addEventListener('click', closeTransferModal);
+    
+    // 배번 양도 확인
+    document.getElementById('transferModalConfirm').addEventListener('click', () => {
+      if (!selectedTransferTarget || !transferSourceRowId) return;
+      
+      const sourceRow = document.getElementById(transferSourceRowId);
+      const targetRow = document.getElementById(selectedTransferTarget);
+      
+      if (!sourceRow || !targetRow) {
+        showToast("참가자를 찾을 수 없습니다", true);
+        return;
+      }
+      
+      const sourceIdx = parseInt(transferSourceRowId.replace('participant-', ''), 10) - 1;
+      const targetIdx = parseInt(selectedTransferTarget.replace('participant-', ''), 10) - 1;
+      
+      const sourceData = gapResults[sourceIdx];
+      const targetData = gapResults[targetIdx];
+      
+      if (!sourceData || !targetData) {
+        showToast("데이터를 찾을 수 없습니다", true);
+        return;
+      }
+      
+      // 기록 교환
+      const tempResult = sourceData.result;
+      const tempSelectedCandidate = sourceData.selectedCandidate;
+      const tempManualTime = sourceData.manualTime;
+      const tempDnStatus = sourceData.dnStatus;
+      const tempGapStatus = sourceData.gapStatus;
+      
+      sourceData.result = targetData.result;
+      sourceData.selectedCandidate = targetData.selectedCandidate;
+      sourceData.manualTime = targetData.manualTime;
+      sourceData.dnStatus = targetData.dnStatus;
+      sourceData.gapStatus = targetData.gapStatus;
+      
+      targetData.result = tempResult;
+      targetData.selectedCandidate = tempSelectedCandidate;
+      targetData.manualTime = tempManualTime;
+      targetData.dnStatus = tempDnStatus;
+      targetData.gapStatus = tempGapStatus;
+      
+      // UI 업데이트
+      const sourceNick = sourceRow.querySelector('.result-nick').textContent;
+      const sourceRealName = sourceRow.querySelector('.result-realname').textContent;
+      const targetNick = targetRow.querySelector('.result-nick').textContent;
+      const targetRealName = targetRow.querySelector('.result-realname').textContent;
+      
+      sourceRow.outerHTML = buildParticipantRowHtml(sourceData, sourceIdx);
+      targetRow.outerHTML = buildParticipantRowHtml(targetData, targetIdx);
+      
+      updateProgressUI();
+      closeTransferModal();
+      
+      showToast(`배번 양도: ${sourceNick}(${sourceRealName}) ↔ ${targetNick}(${targetRealName})`);
     });
   </script>
 </body>
