@@ -1415,20 +1415,24 @@
           g.result = null;
           g.selectedCandidate = null;
           g.manualTime = null;
+          g.gapStatus = "ok";
         }
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
+        row.className = "result-row ok processed";
         const dist = formatDistance((g || {}).distance);
         const bibVal = row.dataset.bib || "";
-        row.querySelector(".result-row-header").innerHTML = `
-          <span>✅</span>
-          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
-          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
-          <span style="flex: 1;"></span>
-          <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNS</span>
-          <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
-          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
+        row.innerHTML = `
+          <div class="result-row-header">
+            <span>✅</span>
+            <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+            <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+            <span style="flex: 1;"></span>
+            <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNS</span>
+            <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+            <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+            <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
+          </div>
         `;
         showToast("DNS 처리됨");
         updateProgressUI();
@@ -1440,20 +1444,24 @@
           g.result = null;
           g.selectedCandidate = null;
           g.manualTime = null;
+          g.gapStatus = "ok";
         }
         row.setAttribute("data-status", "processed");
         row.setAttribute("data-gap-status", "ok");
+        row.className = "result-row ok processed";
         const dist = formatDistance((g || {}).distance);
         const bibVal = row.dataset.bib || "";
-        row.querySelector(".result-row-header").innerHTML = `
-          <span>✅</span>
-          <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
-          <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
-          <span style="flex: 1;"></span>
-          <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNF</span>
-          <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
-          <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
-          <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
+        row.innerHTML = `
+          <div class="result-row-header">
+            <span>✅</span>
+            <span class="result-nick">${row.querySelector(".result-nick").textContent}</span>
+            <span class="result-realname">${row.querySelector(".result-realname").textContent}</span>
+            <span style="flex: 1;"></span>
+            <span style="font-size: 13px; font-weight: 600; color: var(--red);">DNF</span>
+            <span style="font-size: 11px; color: var(--text-muted);">${dist}</span>
+            <span class="result-bib">${bibVal ? `배번 ${bibVal}` : ""}</span>
+            <button type="button" class="btn-icon" data-edit-result="${rowId}" title="더보기">⋮</button>
+          </div>
         `;
         showToast("DNF 처리됨");
         updateProgressUI();
