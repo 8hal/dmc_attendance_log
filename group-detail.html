@@ -1702,6 +1702,8 @@
     // 배번 양도 모달 닫기
     function closeTransferModal() {
       const modal = document.getElementById('transferModal');
+      const confirmBtn = document.getElementById('transferModalConfirm');
+      
       modal.classList.remove('open');
       document.body.style.overflow = '';
       
@@ -1710,96 +1712,108 @@
       selectedTransferTarget = null;
       
       document.getElementById('transferFilter').value = '';
+      document.getElementById('transferList').innerHTML = '';
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '선택한 참가자로 양도';
     }
     
     document.getElementById('transferModalClose').addEventListener('click', closeTransferModal);
     document.getElementById('transferModalCancel').addEventListener('click', closeTransferModal);
     
     // 배번 양도 확인
-    document.getElementById('transferModalConfirm').addEventListener('click', () => {
+    document.getElementById('transferModalConfirm').addEventListener('click', async () => {
       if (!selectedTransferTarget || !transferSourceRowId) return;
       
-      const sourceRow = document.getElementById(transferSourceRowId);
-      if (!sourceRow) {
-        showToast("원본 참가자를 찾을 수 없습니다", true);
-        return;
-      }
+      const confirmBtn = document.getElementById('transferModalConfirm');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '처리 중...';
       
-      const sourceIdx = parseInt(transferSourceRowId.replace('participant-', ''), 10) - 1;
-      const sourceData = gapResults[sourceIdx];
-      
-      if (!sourceData) {
-        showToast("원본 데이터를 찾을 수 없습니다", true);
-        return;
-      }
-      
-      // 선택된 회원이 참가자인지 확인
-      const targetIdx = gapResults.findIndex(g => g.memberId === selectedTransferTarget.memberId);
-      
-      if (targetIdx >= 0) {
-        // 기존 참가자인 경우 - 기록 교환
-        const targetData = gapResults[targetIdx];
-        const targetRow = document.getElementById(`participant-${targetIdx + 1}`);
+      try {
+        const sourceRow = document.getElementById(transferSourceRowId);
+        if (!sourceRow) {
+          throw new Error("원본 참가자를 찾을 수 없습니다");
+        }
         
-        // 기록 교환
-        const tempResult = sourceData.result;
-        const tempSelectedCandidate = sourceData.selectedCandidate;
-        const tempManualTime = sourceData.manualTime;
-        const tempDnStatus = sourceData.dnStatus;
-        const tempGapStatus = sourceData.gapStatus;
+        const sourceIdx = parseInt(transferSourceRowId.replace('participant-', ''), 10) - 1;
+        const sourceData = gapResults[sourceIdx];
         
-        sourceData.result = targetData.result;
-        sourceData.selectedCandidate = targetData.selectedCandidate;
-        sourceData.manualTime = targetData.manualTime;
-        sourceData.dnStatus = targetData.dnStatus;
-        sourceData.gapStatus = targetData.gapStatus;
+        if (!sourceData) {
+          throw new Error("원본 데이터를 찾을 수 없습니다");
+        }
         
-        targetData.result = tempResult;
-        targetData.selectedCandidate = tempSelectedCandidate;
-        targetData.manualTime = tempManualTime;
-        targetData.dnStatus = tempDnStatus;
-        targetData.gapStatus = tempGapStatus;
+        // 선택된 회원이 참가자인지 확인
+        const targetIdx = gapResults.findIndex(g => g.memberId === selectedTransferTarget.memberId);
         
-        // UI 업데이트
-        sourceRow.outerHTML = buildParticipantRowHtml(sourceData, sourceIdx);
-        targetRow.outerHTML = buildParticipantRowHtml(targetData, targetIdx);
-        
-        updateProgressUI();
-        closeTransferModal();
-        
-        showToast(`배번 양도: ${sourceData.nickname} ↔ ${targetData.nickname}`);
-      } else {
-        // 비참가자인 경우 - 참가자로 추가하고 기록 이전
-        const newParticipant = {
-          memberId: selectedTransferTarget.memberId,
-          nickname: selectedTransferTarget.nickname,
-          realName: selectedTransferTarget.realName,
-          distance: sourceData.distance, // 동일한 코스
-          bib: null,
-          result: sourceData.result,
-          selectedCandidate: sourceData.selectedCandidate,
-          manualTime: sourceData.manualTime,
-          dnStatus: sourceData.dnStatus,
-          gapStatus: sourceData.gapStatus,
-          candidates: []
-        };
-        
-        // 원본은 기록 제거 (missing 상태로)
-        sourceData.result = null;
-        sourceData.selectedCandidate = null;
-        sourceData.manualTime = null;
-        sourceData.dnStatus = null;
-        sourceData.gapStatus = "missing";
-        
-        // gapResults에 새 참가자 추가
-        gapResults.push(newParticipant);
-        
-        // UI 전체 재렌더링
-        renderParticipantList(gapResults);
-        updateProgressUI();
-        closeTransferModal();
-        
-        showToast(`배번 양도: ${sourceData.nickname} → ${newParticipant.nickname} (참가자 추가됨)`);
+        if (targetIdx >= 0) {
+          // 기존 참가자인 경우 - 기록 교환
+          const targetData = gapResults[targetIdx];
+          const targetRow = document.getElementById(`participant-${targetIdx + 1}`);
+          
+          // 기록 교환
+          const tempResult = sourceData.result;
+          const tempSelectedCandidate = sourceData.selectedCandidate;
+          const tempManualTime = sourceData.manualTime;
+          const tempDnStatus = sourceData.dnStatus;
+          const tempGapStatus = sourceData.gapStatus;
+          
+          sourceData.result = targetData.result;
+          sourceData.selectedCandidate = targetData.selectedCandidate;
+          sourceData.manualTime = targetData.manualTime;
+          sourceData.dnStatus = targetData.dnStatus;
+          sourceData.gapStatus = targetData.gapStatus;
+          
+          targetData.result = tempResult;
+          targetData.selectedCandidate = tempSelectedCandidate;
+          targetData.manualTime = tempManualTime;
+          targetData.dnStatus = tempDnStatus;
+          targetData.gapStatus = tempGapStatus;
+          
+          // UI 업데이트
+          sourceRow.outerHTML = buildParticipantRowHtml(sourceData, sourceIdx);
+          targetRow.outerHTML = buildParticipantRowHtml(targetData, targetIdx);
+          
+          updateProgressUI();
+          closeTransferModal();
+          
+          showToast(`배번 양도: ${sourceData.nickname} ↔ ${targetData.nickname}`);
+        } else {
+          // 비참가자인 경우 - 참가자로 추가하고 기록 이전
+          const newParticipant = {
+            memberId: selectedTransferTarget.memberId,
+            nickname: selectedTransferTarget.nickname,
+            realName: selectedTransferTarget.realName,
+            distance: sourceData.distance, // 동일한 코스
+            bib: null,
+            result: sourceData.result,
+            selectedCandidate: sourceData.selectedCandidate,
+            manualTime: sourceData.manualTime,
+            dnStatus: sourceData.dnStatus,
+            gapStatus: sourceData.gapStatus,
+            candidates: []
+          };
+          
+          // 원본은 기록 제거 (missing 상태로)
+          sourceData.result = null;
+          sourceData.selectedCandidate = null;
+          sourceData.manualTime = null;
+          sourceData.dnStatus = null;
+          sourceData.gapStatus = "missing";
+          
+          // gapResults에 새 참가자 추가
+          gapResults.push(newParticipant);
+          
+          // UI 전체 재렌더링
+          renderParticipantList(gapResults);
+          updateProgressUI();
+          closeTransferModal();
+          
+          showToast(`배번 양도: ${sourceData.nickname} → ${newParticipant.nickname} (참가자 추가됨)`);
+        }
+      } catch (error) {
+        console.error('배번 양도 오류:', error);
+        showToast(error.message || '배번 양도 실패', true);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '선택한 참가자로 양도';
       }
     });
   </script>
