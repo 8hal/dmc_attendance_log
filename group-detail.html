@@ -263,7 +263,7 @@
   </div>
 
   <!-- 참가자 편집 모달 -->
-  <div id="participantModal" class="modal-backdrop" aria-hidden="true">
+  <div id="participantModal" class="modal-backdrop">
     <div class="modal" role="dialog">
       <div class="modal-header">
         <h2>참가자 선택</h2>
@@ -294,7 +294,7 @@
   </div>
 
   <!-- 성공 모달 -->
-  <div id="successModal" class="modal-backdrop" aria-hidden="true">
+  <div id="successModal" class="modal-backdrop">
     <div class="modal" role="dialog" style="max-width: 400px;">
       <div class="modal-body" style="padding: 24px;">
         <div class="modal-icon">✅</div>
@@ -312,7 +312,7 @@
   </div>
 
   <!-- 실패 모달 -->
-  <div id="errorModal" class="modal-backdrop" aria-hidden="true">
+  <div id="errorModal" class="modal-backdrop">
     <div class="modal" role="dialog" style="max-width: 440px;">
       <div class="modal-body" style="padding: 24px;">
         <div class="modal-icon">❌</div>
@@ -345,7 +345,7 @@
   </div>
 
   <!-- 배번 양도 모달 -->
-  <div id="transferModal" class="modal-backdrop" aria-hidden="true">
+  <div id="transferModal" class="modal-backdrop">
     <div class="modal" role="dialog">
       <div class="modal-header">
         <h2>배번 양도 — 다른 참가자 선택</h2>
@@ -1613,7 +1613,7 @@
       // 현재 참가자 제외한 목록 렌더링
       renderTransferList();
       
-      modal.setAttribute('aria-hidden', 'false');
+      modal.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
     
@@ -1673,7 +1673,7 @@
     // 배번 양도 모달 닫기
     function closeTransferModal() {
       const modal = document.getElementById('transferModal');
-      modal.setAttribute('aria-hidden', 'true');
+      modal.classList.remove('open');
       document.body.style.overflow = '';
       
       transferSourceRowId = null;
