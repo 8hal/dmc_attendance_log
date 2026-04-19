@@ -845,7 +845,8 @@
         contextMenu.dataset.targetRowId = rowId;
         
         const rect = editResultBtn.getBoundingClientRect();
-        positionContextMenu(rect.left, rect.bottom + window.scrollY);
+        // 버튼 오른쪽 정렬하여 메뉴 표시
+        positionContextMenu(rect.right - 160, rect.bottom + window.scrollY + 4);
       }
     });
 
