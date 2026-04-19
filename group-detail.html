@@ -65,7 +65,6 @@
     .progress-fill { height: 100%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; }
     .progress-fill.incomplete { background: linear-gradient(90deg, var(--yellow), #F59E0B); }
     .progress-fill.complete { background: linear-gradient(90deg, var(--green), #10B981); }
-    .progress-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .search-input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
@@ -208,10 +207,6 @@
         
         <div class="progress-track">
           <div class="progress-fill incomplete" id="progressFill" style="width: 94%;">80 / 85명 (94%)</div>
-        </div>
-
-        <div class="progress-actions">
-          <button class="btn btn-outline btn-sm" id="detectGapBtn">🔍 기록 매칭</button>
         </div>
       </div>
     </div>
