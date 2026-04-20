@@ -7,19 +7,21 @@
 
 ### `race_results`는 무엇인가?
 
-**정의**: 대회에서 실제로 완주한 사람의 기록
+**정의**: 대회 참가자의 모든 결과 (완주, DNS, DNF 포함)
 
 ### 생성 규칙
 
-| 상태 | `race_results` 생성 | 이유 |
-|------|-------------------|------|
-| **Finished** (완주) | ✅ 생성 | 기록(시간, 순위)이 존재 |
-| **DNS** (Did Not Start) | ❌ 생성 안 함 | 출전하지 않음 = 기록 없음 |
-| **DNF** (Did Not Finish) | ❌ 생성 안 함 | 완주하지 못함 = 기록 없음 |
+| 상태 | `race_results` 생성 | 저장 내용 |
+|------|-------------------|----------|
+| **Finished** (완주) | ✅ 생성 | `status: 'finished'`, `finishTime: required`, `overallRank: required` |
+| **DNS** (Did Not Start) | ✅ 생성 | `status: 'dns'`, `finishTime: null`, `overallRank: null` |
+| **DNF** (Did Not Finish) | ✅ 생성 | `status: 'dnf'`, `finishTime: null`, `overallRank: null` |
+
+**2026-04-20 정책 변경**: 초기에는 DNS/DNF를 생성하지 않는 것으로 결정했으나, UI 표시 일관성을 위해 DNS/DNF도 `race_results`에 저장하는 것으로 변경
 
 ## 데이터 구조
 
-### 완주자 (race_results 생성)
+### 완주자
 
 ```javascript
 // race_results 컬렉션
@@ -34,19 +36,19 @@
 }
 ```
 
-### DNS/DNF (race_results 생성 안 함)
+### DNS/DNF
 
 ```javascript
-// race_events.participants에만 존재
+// race_results 컬렉션 (2026-04-20 정책 변경: DNS/DNF도 저장)
 {
-  realName: "김재헌",
-  nickname: "잴킴",
+  memberRealName: "서윤석",
   distance: "half",
-  status: "dns",               // DNS 표시
-  memberId: "..."
+  status: "dns",               // 또는 "dnf"
+  finishTime: null,            // ❌ 시간 없음
+  overallRank: null,           // ❌ 순위 없음
+  confirmedBy: "operator",
+  canonicalEventId: "evt_2026-04-19_24"
 }
-
-// race_results에는 레코드 없음
 ```
 
 ## 데이터 흐름
@@ -57,9 +59,11 @@
 대회 참가 및 결과
     ↓
     ├─ 완주 → race_results 생성 (status: finished, finishTime: required)
-    ├─ DNS  → race_results 생성 안 함 (participants에만 존재)
-    └─ DNF  → race_results 생성 안 함 (participants에만 존재)
+    ├─ DNS  → race_results 생성 (status: dns, finishTime: null)
+    └─ DNF  → race_results 생성 (status: dnf, finishTime: null)
 ```
+
+**모든 참가자가 `race_results`에 1:1 매핑됩니다.**
 
 ## UI 표시
 
@@ -97,24 +101,24 @@ function renderParticipant(p) {
 
 ### 장점
 
-1. **의미적 명확성**: `race_results` = "완주 기록"
-2. **쿼리 성능**: 완주자만 조회 (불필요한 DNS/DNF 필터링 불필요)
-3. **PB 계산 단순**: 모든 `race_results`가 PB 대상
-4. **저장 용량**: DNS/DNF 미저장으로 용량 절약
+1. **데이터 일관성**: `participants` ↔ `race_results` 1:1 매핑
+2. **UI 표시 통일**: DNS/DNF도 동일한 렌더링 로직으로 처리
+3. **확정 여부 추적**: `confirmedBy`, `confirmedAt` 필드로 운영자 확정 추적
+4. **통계 계산 단순**: 완주율 = finished / (finished + dns + dnf)
 
 ### 단점 및 대응
 
 | 단점 | 영향 | 대응 방안 |
 |------|------|----------|
-| **Silver-Gold 불일치** | participants 85명 ≠ race_results 82건 | `participants` 기준으로 UI 렌더링 |
-| **DNS/DNF 확정 추적 불가** | 운영자가 DNS 확정해도 기록 없음 | 필요 시 `participants`에 `confirmedAt` 추가 고려 |
-| **통계 계산 복잡** | 완주율 = ? | `participants` 조회 필요 |
+| **저장 용량 증가** | DNS/DNF도 저장 | 미미함 (문서당 ~1KB) |
+| **완주 기록만 조회 시 필터 필요** | 쿼리에 `.where('status', '==', 'finished')` 추가 | 성능 영향 미미 |
+| **PB 계산 복잡도** | DNS/DNF 제외 필요 | `status === 'finished'` 필터로 해결 |
 
 ### 현재 대응
 
-- **UI**: `participants` 기준 렌더링, `race_results`는 매칭용으로만 사용
-- **확정 여부**: `participants.status` 필드로 DNS/DNF 구분
-- **통계**: `participants` 배열에서 직접 계산
+- **UI**: `race_results` 기준 렌더링, `status` 필드로 DNS/DNF/완주 구분
+- **확정 여부**: `confirmedBy`, `confirmedAt` 필드로 추적
+- **통계**: `race_results`에서 직접 계산 가능
 
 ## 예외 상황
 
@@ -158,4 +162,5 @@ function renderParticipant(p) {
 
 | 날짜 | 변경 내용 | 작성자 |
 |------|----------|--------|
-| 2026-04-20 | 초안 작성 - DNS/DNF는 race_results 생성 안 함 정책 확정 | AI Assistant |
+| 2026-04-20 | 초안 작성 - DNS/DNF는 race_results 생성 안 함 정책 | AI Assistant |
+| 2026-04-20 | **정책 변경** - DNS/DNF도 race_results에 저장 (UI 일관성) | AI Assistant |
