@@ -358,31 +358,31 @@
   <div id="toast" class="toast"></div>
   
   <!-- 액션 모달 -->
-  <div id="actionModal" class="modal-backdrop action-modal" onclick="closeActionModal(event)">
-    <div class="modal-sheet" onclick="event.stopPropagation()">
+  <div id="actionModal" class="modal-backdrop action-modal">
+    <div class="modal-sheet">
       <div class="modal-header">
-        <div class="modal-title" id="modalTitle">—</div>
-        <div class="modal-subtitle" id="modalSubtitle">—</div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSubtitle"></div>
       </div>
       <div class="modal-actions">
-        <button class="modal-action-btn" onclick="handleActionDNS()">
+        <button class="modal-action-btn" data-action="dns">
           🚫 DNS 처리
         </button>
-        <button class="modal-action-btn" onclick="handleActionDNF()">
+        <button class="modal-action-btn" data-action="dnf">
           ⚠️ DNF 처리
         </button>
-        <button class="modal-action-btn" onclick="handleActionChangeDistance()">
+        <button class="modal-action-btn" data-action="change-distance">
           🔄 코스 변경
         </button>
-        <button class="modal-action-btn" onclick="handleActionPB()">
+        <button class="modal-action-btn" data-action="pb">
           🏆 PB 확정
         </button>
-        <button class="modal-action-btn danger" onclick="handleActionDelete()">
+        <button class="modal-action-btn danger" data-action="delete">
           🗑️ 기록 삭제
         </button>
       </div>
       <div class="modal-cancel">
-        <button class="btn btn-ghost" style="width: 100%;" onclick="closeActionModal()">취소</button>
+        <button class="btn btn-ghost" data-action="cancel" style="width: 100%;">취소</button>
       </div>
     </div>
   </div>
@@ -576,7 +576,7 @@
               ${renderConfirmedRecord(g.confirmedResult, dist)}
               ${bibVal ? `<span class="result-bib">배번 ${bibVal}</span>` : ''}
               <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
-              <button type="button" class="btn-icon" data-row-id="${rowId}" onclick="openActionMenu('${rowId}')" title="수정">⋮</button>
+              <button type="button" class="btn-icon" data-action-menu="${rowId}" title="수정">⋮</button>
             </div>
             <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
               <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
@@ -708,8 +708,18 @@
       if (row && input) input.value = (row.dataset.bib || "").trim();
     }
 
-    // 참가자 행: 배번 / 동명이인 / DNS·DNF / 직접입력 (위임)
-    document.getElementById("participantList").addEventListener("click", (e) => {
+    // 참가자 행: 배번 / 동명이인 / DNS·DNF / 직접입력 / 케밥 메뉴 (위임)
+    const participantsTable = document.getElementById("participantList");
+    participantsTable.addEventListener("click", (e) => {
+      // 케밥 메뉴 열기
+      const actionBtn = e.target.closest && e.target.closest("[data-action-menu]");
+      if (actionBtn) {
+        e.stopPropagation();
+        const rowId = actionBtn.getAttribute("data-action-menu");
+        openActionMenu(rowId);
+        return;
+      }
+
       const editBtn = e.target.closest && e.target.closest("[data-edit-bib]");
       if (editBtn) {
         e.stopPropagation();
@@ -1351,6 +1361,103 @@
       bulkBtn.style.display = "none";
     }    loadEventDetail();
     
+    // --- 액션 모달 (스코프 내 함수) ---
+    let currentActionRowId = null;
+
+    function openActionMenu(rowId) {
+      currentActionRowId = rowId;
+      const num = parseInt(rowId.replace('participant-', ''), 10);
+      const idx = num - 1;
+      const gap = gapResults[idx];
+      if (!gap) return;
+      
+      document.getElementById('modalTitle').textContent = `${gap.nickname} ${gap.realName}`;
+      document.getElementById('modalSubtitle').textContent = formatDistance(gap.distance) || '';
+      document.getElementById('actionModal').classList.add('open');
+    }
+
+    function closeActionModal() {
+      document.getElementById('actionModal').classList.remove('open');
+      currentActionRowId = null;
+    }
+
+    // 액션 핸들러 (placeholder - Task 3-5에서 구현 예정)
+    function handleActionDNS() {
+      showToast('DNS 처리 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionDNF() {
+      showToast('DNF 처리 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionChangeDistance() {
+      showToast('코스 변경 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionPB() {
+      showToast('PB 확정 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionDelete() {
+      showToast('기록 삭제 (준비 중)');
+      closeActionModal();
+    }
+
+    // 액션 모달 클릭 이벤트 (backdrop + 버튼)
+    document.getElementById('actionModal').addEventListener('click', (e) => {
+      const modal = e.currentTarget;
+      const sheet = modal.querySelector('.modal-sheet');
+      
+      // Backdrop 클릭 (sheet 외부)
+      if (e.target === modal) {
+        closeActionModal();
+        return;
+      }
+      
+      // 버튼 클릭
+      const actionBtn = e.target.closest('[data-action]');
+      if (!actionBtn) return;
+      
+      const action = actionBtn.getAttribute('data-action');
+      
+      switch (action) {
+        case 'dns':
+          handleActionDNS();
+          break;
+        case 'dnf':
+          handleActionDNF();
+          break;
+        case 'change-distance':
+          handleActionChangeDistance();
+          break;
+        case 'pb':
+          handleActionPB();
+          break;
+        case 'delete':
+          handleActionDelete();
+          break;
+        case 'cancel':
+          closeActionModal();
+          break;
+      }
+    });
+
+    // ESC 키로 모달 닫기 (개선된 버전)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const actionModal = document.getElementById('actionModal');
+        if (actionModal && actionModal.classList.contains('open')) {
+          closeActionModal();
+          e.preventDefault(); // 다른 ESC 핸들러 방지
+          e.stopPropagation();
+        }
+      }
+    });
+    
     // 컨텍스트 메뉴 초기화
     const contextMenu = document.getElementById('contextMenu');
     let longPressTimer = null;
@@ -1910,62 +2017,6 @@
       }
     });
     
-    // 액션 모달 관련 변수 및 함수
-    let currentActionRowId = null;
-
-    function openActionMenu(rowId) {
-      currentActionRowId = rowId;
-      const num = parseInt(rowId.replace('participant-', ''), 10);
-      const idx = num - 1;
-      const gap = gapResults[idx];
-      if (!gap) return;
-      
-      document.getElementById('modalTitle').textContent = `${gap.nickname} ${gap.realName}`;
-      document.getElementById('modalSubtitle').textContent = formatDistance(gap.distance) || '';
-      document.getElementById('actionModal').classList.add('open');
-    }
-
-    function closeActionModal(event) {
-      if (event && event.target !== event.currentTarget) return;
-      document.getElementById('actionModal').classList.remove('open');
-      currentActionRowId = null;
-    }
-
-    // ESC 키로 닫기
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const actionModal = document.getElementById('actionModal');
-        if (actionModal && actionModal.classList.contains('open')) {
-          closeActionModal();
-        }
-      }
-    });
-
-    // 액션 핸들러 (placeholder - Task 3-5에서 구현 예정)
-    function handleActionDNS() {
-      showToast('DNS 처리 (준비 중)');
-      closeActionModal();
-    }
-
-    function handleActionDNF() {
-      showToast('DNF 처리 (준비 중)');
-      closeActionModal();
-    }
-
-    function handleActionChangeDistance() {
-      showToast('코스 변경 (준비 중)');
-      closeActionModal();
-    }
-
-    function handleActionPB() {
-      showToast('PB 확정 (준비 중)');
-      closeActionModal();
-    }
-
-    function handleActionDelete() {
-      showToast('기록 삭제 (준비 중)');
-      closeActionModal();
-    }
   </script>
 </body>
 </html>
