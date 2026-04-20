@@ -2714,6 +2714,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       await ref.set({
         eventName,
+        primaryName: eventName,
         eventDate,
         isGroupEvent: true,
         participants: [],
@@ -2952,12 +2953,23 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       // ✅ 재확정 시 중복 방지: 기존 결과 전체 삭제 후 재저장
       // 참고: action=confirm API와 동일 패턴 (라인 1814~1820)
+      // ⚠️ Critical: operator만 삭제, personal은 보존 (개인 확정 기록 보호)
       const oldResultsSnap = await db.collection("race_results")
         .where("canonicalEventId", "==", eventId)
+        .where("confirmSource", "==", "operator")
         .get();
+
+      console.log(`[bulk-confirm] 삭제 대상: ${oldResultsSnap.size}건 (operator만, personal 제외)`);
 
       const BATCH_SIZE = 500;
       const oldDocs = oldResultsSnap.docs;
+      
+      // 삭제 로그 (운영 모니터링용)
+      oldDocs.forEach((doc) => {
+        const data = doc.data();
+        console.log(`  삭제 예정: ${doc.id} (realName: ${data.memberRealName}, distance: ${data.distance})`);
+      });
+      
       for (let i = 0; i < oldDocs.length; i += BATCH_SIZE) {
         const deleteBatch = db.batch();
         oldDocs.slice(i, i + BATCH_SIZE).forEach((doc) => {
@@ -2965,6 +2977,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
         await deleteBatch.commit();
       }
+      
+      console.log(`[bulk-confirm] 기존 기록 삭제 완료: ${oldDocs.length}건`);
 
       for (let i = 0; i < results.length; i += BATCH_SIZE) {
         const batch = db.batch();
