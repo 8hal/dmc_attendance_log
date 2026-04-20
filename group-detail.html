@@ -476,7 +476,32 @@
     function initialBibFromGap(g) {
       const fromP = (g && g.bib != null) ? String(g.bib).trim() : "";
       const fromR = g && g.result && g.result.bib != null ? String(g.result.bib).trim() : "";
-      return fromP || fromR || "";
+      const fromC = g && g.confirmedResult && g.confirmedResult.bib != null ? String(g.confirmedResult.bib).trim() : "";
+      return fromP || fromC || fromR || "";
+    }
+
+    function renderConfirmedRecord(confirmedResult, distance) {
+      if (!confirmedResult) return '';
+      
+      const { netTime, gunTime, overallRank, status } = confirmedResult;
+      
+      // DNS/DNF 처리
+      if (status === 'dns') {
+        return `<span class="badge badge-red">🚫 DNS</span>`;
+      }
+      if (status === 'dnf') {
+        return `<span class="badge badge-yellow">⚠️ DNF</span>`;
+      }
+      
+      // 정상 완주
+      const timeStr = netTime || gunTime || '—';
+      const rankStr = overallRank ? `${overallRank}위` : '';
+      
+      return `
+        <span class="result-time">${escapeHtml(timeStr)}</span>
+        ${rankStr ? `<span class="result-rank">${rankStr}</span>` : ''}
+        <span class="badge badge-gray">${escapeHtml(distance)}</span>
+      `;
     }
 
     function buildParticipantRowHtml(g, i) {
@@ -495,9 +520,8 @@
               <span class="result-nick">${nick}</span>
               <span class="result-realname">${realName}</span>
               <span style="flex: 1;"></span>
-              <span class="result-time">이미 확정</span>
-              <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(dist)}</span>
-              <span class="result-bib">${bibVal ? `배번 ${bibVal}` : "배번 미입력"}</span>
+              ${renderConfirmedRecord(g.confirmedResult, dist)}
+              ${bibVal ? `<span class="result-bib">배번 ${bibVal}</span>` : ''}
               <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
             </div>
             <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">

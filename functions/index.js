@@ -2893,7 +2893,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const confirmedByName = {};
       confirmedSnap.forEach((doc) => {
         const d = doc.data();
-        confirmedByName[d.memberRealName] = true;
+        confirmedByName[d.memberRealName] = d;
       });
 
       let gap = [];
@@ -2911,7 +2911,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           const matches = resultsByName[p.realName] || [];
 
           if (confirmedByName[p.realName]) {
-            return { ...p, gapStatus: "confirmed" };
+            return { ...p, gapStatus: "confirmed", confirmedResult: confirmedByName[p.realName] };
           } else if (matches.length === 1) {
             return { ...p, gapStatus: "ok", result: matches[0] };
           } else if (matches.length > 1) {
@@ -2924,6 +2924,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           ...p,
           memberId: p.memberId || `temp-${idx}`,
           gapStatus: confirmedByName[p.realName] ? "confirmed" : "missing",
+          confirmedResult: confirmedByName[p.realName] || null,
           result: null,
           candidates: [],
           confirmed: false,
