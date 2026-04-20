@@ -1648,7 +1648,8 @@
       const html = allMembers
         .filter(member => {
           // 본인 제외
-          if (transferSourceData && member.memberId === transferSourceData.memberId) return false;
+          const memberId = member.id || member.memberId;
+          if (transferSourceData && memberId === transferSourceData.memberId) return false;
           
           if (filter) {
             const nick = (member.nickname || '').toLowerCase();
@@ -1660,8 +1661,8 @@
         .map(member => {
           const nick = escapeHtml(member.nickname || '');
           const realName = escapeHtml(member.realName || '');
-          const memberId = escapeHtml(member.memberId || '');
-          const isParticipant = participantMemberIds.has(member.memberId);
+          const memberId = member.id || member.memberId || '';
+          const isParticipant = participantMemberIds.has(memberId);
           const badge = isParticipant 
             ? '<span style="font-size: 11px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">참가중</span>'
             : '<span style="font-size: 11px; background: var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">미참가</span>';

@@ -1825,13 +1825,20 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         : jobId;
 
       // ✅ P0 수정 (2026-04-03): 재확정 시 기존 race_results 삭제
+      // ✅ Critical (2026-04-20): confirmSource 필터 추가 (개인 확정 기록 보호)
       // 기존: 새 results만 set() → 이전 기록이 남아 중복 발생
-      // 수정: canonicalJobId 기준 기존 문서 전체 삭제 후 새 results 저장
+      // 수정: canonicalJobId + confirmSource 기준 기존 문서 삭제 후 새 results 저장
+      // 핵심 원칙: 같은 confirmSource 내에서만 덮어쓰기, 다른 confirmSource는 보존
+      const sourceToDelete = confirmSource || "operator";
       const oldResultsSnap = await db.collection("race_results")
         .where("jobId", "==", canonicalJobId)
+        .where("confirmSource", "==", sourceToDelete)
         .get();
 
+      console.log(`[confirm] 삭제 대상: ${oldResultsSnap.size}건 (${sourceToDelete}만)`);
       oldResultsSnap.forEach(doc => {
+        const data = doc.data();
+        console.log(`  삭제: ${doc.id} (realName: ${data.memberRealName})`);
         batch.delete(doc.ref);
       });
 
