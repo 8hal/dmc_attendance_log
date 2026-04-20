@@ -102,6 +102,28 @@
     .bib-edit-row { display: none; padding: 8px 12px; background: var(--bg); gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border-light); }
     .bib-edit-row input { width: 130px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
 
+    /* 액션 모달 (Bottom Sheet) */
+    .modal-backdrop.action-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); align-items: flex-end; justify-content: center; z-index: 1000; animation: fadeIn 200ms ease-out; }
+    .modal-backdrop.action-modal.open { display: flex; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-sheet { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; animation: slideUp 250ms ease-out; }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-sheet .modal-header { padding: 20px; border-bottom: 1px solid var(--border); }
+    .modal-sheet .modal-title { font-size: 16px; font-weight: 700; margin: 0; }
+    .modal-sheet .modal-subtitle { font-size: 13px; color: var(--text-muted); margin: 4px 0 0; }
+    .modal-actions { padding: 8px; }
+    .modal-action-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 16px; border: none; background: none; font-size: 15px; font-weight: 600; cursor: pointer; border-radius: 10px; transition: background 0.15s; }
+    .modal-action-btn:hover { background: var(--border-light); }
+    .modal-action-btn.danger { color: var(--red); }
+    .modal-cancel { padding: 16px; border-top: 1px solid var(--border); }
+    .hidden { display: none; }
+
     .candidates { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg); }
     .candidate-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: #fff; transition: all 0.15s; }
     .candidate-option:hover { border-color: var(--primary); background: var(--primary-light); }
@@ -335,6 +357,36 @@
 
   <div id="toast" class="toast"></div>
   
+  <!-- 액션 모달 -->
+  <div id="actionModal" class="modal-backdrop action-modal" onclick="closeActionModal(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">—</div>
+        <div class="modal-subtitle" id="modalSubtitle">—</div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-action-btn" onclick="handleActionDNS()">
+          🚫 DNS 처리
+        </button>
+        <button class="modal-action-btn" onclick="handleActionDNF()">
+          ⚠️ DNF 처리
+        </button>
+        <button class="modal-action-btn" onclick="handleActionChangeDistance()">
+          🔄 코스 변경
+        </button>
+        <button class="modal-action-btn" onclick="handleActionPB()">
+          🏆 PB 확정
+        </button>
+        <button class="modal-action-btn danger" onclick="handleActionDelete()">
+          🗑️ 기록 삭제
+        </button>
+      </div>
+      <div class="modal-cancel">
+        <button class="btn btn-ghost" style="width: 100%;" onclick="closeActionModal()">취소</button>
+      </div>
+    </div>
+  </div>
+  
   <!-- 컨텍스트 메뉴 -->
   <div id="contextMenu" class="context-menu">
     <div class="context-menu-item" data-action="reselect">🔄 다른 기록 선택</div>
@@ -524,6 +576,7 @@
               ${renderConfirmedRecord(g.confirmedResult, dist)}
               ${bibVal ? `<span class="result-bib">배번 ${bibVal}</span>` : ''}
               <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
+              <button type="button" class="btn-icon" data-row-id="${rowId}" onclick="openActionMenu('${rowId}')" title="수정">⋮</button>
             </div>
             <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
               <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
@@ -1856,6 +1909,63 @@
         confirmBtn.textContent = '선택한 참가자로 양도';
       }
     });
+    
+    // 액션 모달 관련 변수 및 함수
+    let currentActionRowId = null;
+
+    function openActionMenu(rowId) {
+      currentActionRowId = rowId;
+      const num = parseInt(rowId.replace('participant-', ''), 10);
+      const idx = num - 1;
+      const gap = gapResults[idx];
+      if (!gap) return;
+      
+      document.getElementById('modalTitle').textContent = `${gap.nickname} ${gap.realName}`;
+      document.getElementById('modalSubtitle').textContent = formatDistance(gap.distance) || '';
+      document.getElementById('actionModal').classList.add('open');
+    }
+
+    function closeActionModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('actionModal').classList.remove('open');
+      currentActionRowId = null;
+    }
+
+    // ESC 키로 닫기
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const actionModal = document.getElementById('actionModal');
+        if (actionModal && actionModal.classList.contains('open')) {
+          closeActionModal();
+        }
+      }
+    });
+
+    // 액션 핸들러 (placeholder - Task 3-5에서 구현 예정)
+    function handleActionDNS() {
+      showToast('DNS 처리 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionDNF() {
+      showToast('DNF 처리 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionChangeDistance() {
+      showToast('코스 변경 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionPB() {
+      showToast('PB 확정 (준비 중)');
+      closeActionModal();
+    }
+
+    function handleActionDelete() {
+      showToast('기록 삭제 (준비 중)');
+      closeActionModal();
+    }
   </script>
 </body>
 </html>
