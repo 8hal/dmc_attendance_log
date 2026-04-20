@@ -689,6 +689,30 @@
       showToast._t = setTimeout(() => el.classList.remove("show"), 3800);
     }
 
+    function showLoading(message = '처리 중...') {
+      const existing = document.getElementById('loadingOverlay');
+      if (existing) existing.remove();
+      
+      const overlay = document.createElement('div');
+      overlay.id = 'loadingOverlay';
+      overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
+        z-index: 2000;
+      `;
+      overlay.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+          ${message}
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function hideLoading() {
+      const overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.remove();
+    }
+
     function bibLabelFromRow(row) {
       const bib = (row.dataset.bib || "").trim();
       return bib ? `배번 ${bib}` : "배번 미입력";
@@ -1381,15 +1405,93 @@
       currentActionRowId = null;
     }
 
-    // 액션 핸들러 (placeholder - Task 3-5에서 구현 예정)
-    function handleActionDNS() {
-      showToast('DNS 처리 (준비 중)');
-      closeActionModal();
+    // 액션 핸들러
+    async function handleActionDNS() {
+      const num = parseInt(currentActionRowId.replace('participant-', ''), 10);
+      const idx = num - 1;
+      const gap = gapResults[idx];
+      if (!gap) return;
+      
+      const confirmed = confirm(`${gap.nickname} 님을 DNS 처리하시겠습니까?\n\n기존 기록이 삭제되고 DNS로 변경됩니다.`);
+      if (!confirmed) return;
+      
+      try {
+        closeActionModal();
+        showLoading('DNS 처리 중...');
+        
+        const response = await fetch(`${API_BASE}?action=group-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subAction: 'confirm-one',
+            canonicalEventId: currentEvent.id,
+            confirmSource: 'operator',
+            participant: {
+              realName: gap.realName,
+              nickname: gap.nickname,
+              distance: gap.distance,
+              dnStatus: 'DNS'
+            }
+          })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.ok) {
+          showToast(`✅ ${gap.nickname} 님 DNS 처리 완료`);
+          await loadEventDetail(currentEventId);
+        } else {
+          showToast(`❌ 처리 실패: ${data.error || '알 수 없는 오류'}`, true);
+        }
+      } catch (error) {
+        hideLoading();
+        showToast(`❌ 네트워크 오류: ${error.message}`, true);
+      }
     }
 
-    function handleActionDNF() {
-      showToast('DNF 처리 (준비 중)');
-      closeActionModal();
+    async function handleActionDNF() {
+      const num = parseInt(currentActionRowId.replace('participant-', ''), 10);
+      const idx = num - 1;
+      const gap = gapResults[idx];
+      if (!gap) return;
+      
+      const confirmed = confirm(`${gap.nickname} 님을 DNF 처리하시겠습니까?\n\n기록이 DNF(완주 실패)로 변경됩니다.`);
+      if (!confirmed) return;
+      
+      try {
+        closeActionModal();
+        showLoading('DNF 처리 중...');
+        
+        const response = await fetch(`${API_BASE}?action=group-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subAction: 'confirm-one',
+            canonicalEventId: currentEvent.id,
+            confirmSource: 'operator',
+            participant: {
+              realName: gap.realName,
+              nickname: gap.nickname,
+              distance: gap.distance,
+              dnStatus: 'DNF'
+            }
+          })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.ok) {
+          showToast(`✅ ${gap.nickname} 님 DNF 처리 완료`);
+          await loadEventDetail(currentEventId);
+        } else {
+          showToast(`❌ 처리 실패: ${data.error}`, true);
+        }
+      } catch (error) {
+        hideLoading();
+        showToast(`❌ 네트워크 오류: ${error.message}`, true);
+      }
     }
 
     function handleActionChangeDistance() {
