@@ -2893,7 +2893,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const confirmedByName = {};
       confirmedSnap.forEach((doc) => {
         const d = doc.data();
-        const key = `${d.memberRealName}_${d.distance}`;
+        const normDist = normalizeRaceDistance(d.distance);
+        const key = `${d.memberRealName}_${normDist}`;
         confirmedByName[key] = d;
       });
 
@@ -2911,7 +2912,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         gap = (event.participants || []).map((p) => {
           const matches = resultsByName[p.realName] || [];
 
-          const key = `${p.realName}_${p.distance}`;
+          const normDist = normalizeRaceDistance(p.distance);
+          const key = `${p.realName}_${normDist}`;
           if (confirmedByName[key]) {
             return { ...p, gapStatus: "confirmed", confirmedResult: confirmedByName[key] };
           } else if (matches.length === 1) {
@@ -2923,7 +2925,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       } else {
         gap = (event.participants || []).map((p, idx) => {
-          const key = `${p.realName}_${p.distance}`;
+          const normDist = normalizeRaceDistance(p.distance);
+          const key = `${p.realName}_${normDist}`;
           return {
             ...p,
             memberId: p.memberId || `temp-${idx}`,
