@@ -12,25 +12,24 @@
 
 ### 핵심 원칙
 
-- **단순 덮어쓰기**: 같은 `confirmSource` 내에서 마지막 확정이 우선 (다른 confirmSource는 영향 없음)
-- **역할 분리**: 그룹 대회는 운영진(`confirmSource: "operator"`) 관리, 개인 대회는 개인(`confirmSource: "personal"`) 입력
-- **개인 확정 기록 보호**: 운영자 재확정 시 `confirmSource: "operator"`만 삭제, `confirmSource: "personal"` 보존
+- **SSOT (Single Source of Truth)**: `race_results`는 1명당 1개 기록만 존재
+- **단순 덮어쓰기**: 재확정 시 무조건 덮어쓰기 (Last Write Wins)
+- **운영자 최종 권한**: 개인이 수정한 기록도 운영자 재확정으로 덮어씀
 - **기존 UI 재사용**: 스크랩 → 매칭 → 확정 플로우 활용
-- **적용 범위**: `confirm` API (개인 스크랩)와 `bulk-confirm` API (그룹 대회) 모두 동일 원칙 적용
 
 ### 중요: 기존 구현 확인
 
 **2개 API 모두 재확정 로직 구현되어 있음:**
 
-1. **`confirm` API** (`functions/index.js` 라인 1827-1843)
+1. **`confirm` API** (`functions/index.js` 라인 1827-1836)
    - 개인 스크랩 재확정
-   - `jobId` + `confirmSource` 기준 기존 문서 삭제 후 재생성
-   - **2026-04-20 수정**: `confirmSource` 필터 추가로 같은 source 내에서만 덮어쓰기
+   - `jobId` 기준 기존 문서 삭제 후 재생성
+   - SSOT 원칙: 무조건 덮어쓰기
 
-2. **`bulk-confirm` API** (`functions/index.js` 라인 2954-2978)
+2. **`bulk-confirm` API** (`functions/index.js` 라인 2954-2968)
    - 그룹 대회 재확정
-   - `canonicalEventId` + `confirmSource` 기준 기존 문서 삭제 후 재생성
-   - **2026-04-20 수정**: `confirmSource` 필터 추가로 개인 확정 기록 보호
+   - `canonicalEventId` 기준 기존 문서 삭제 후 재생성
+   - SSOT 원칙: 무조건 덮어쓰기
 
 본 스팩은 **UI 개선** (재검토 모드, 코스 변경, PB 체크)에 집중
 

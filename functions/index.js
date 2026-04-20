@@ -1825,20 +1825,15 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         : jobId;
 
       // ✅ P0 수정 (2026-04-03): 재확정 시 기존 race_results 삭제
-      // ✅ Critical (2026-04-20): confirmSource 필터 추가 (개인 확정 기록 보호)
       // 기존: 새 results만 set() → 이전 기록이 남아 중복 발생
-      // 수정: canonicalJobId + confirmSource 기준 기존 문서 삭제 후 새 results 저장
-      // 핵심 원칙: 같은 confirmSource 내에서만 덮어쓰기, 다른 confirmSource는 보존
-      const sourceToDelete = confirmSource || "operator";
+      // 수정: canonicalJobId 기준 기존 문서 전체 삭제 후 새 results 저장
+      // 원칙: SSOT - 1명당 1개 기록만, 재확정 시 무조건 덮어쓰기
       const oldResultsSnap = await db.collection("race_results")
         .where("jobId", "==", canonicalJobId)
-        .where("confirmSource", "==", sourceToDelete)
         .get();
 
-      console.log(`[confirm] 삭제 대상: ${oldResultsSnap.size}건 (${sourceToDelete}만)`);
+      console.log(`[confirm] 삭제 대상: ${oldResultsSnap.size}건`);
       oldResultsSnap.forEach(doc => {
-        const data = doc.data();
-        console.log(`  삭제: ${doc.id} (realName: ${data.memberRealName})`);
         batch.delete(doc.ref);
       });
 
@@ -2959,24 +2954,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const errors = [];
 
       // ✅ 재확정 시 중복 방지: 기존 결과 전체 삭제 후 재저장
-      // 참고: action=confirm API와 동일 패턴 (라인 1814~1820)
-      // ⚠️ Critical: operator만 삭제, personal은 보존 (개인 확정 기록 보호)
+      // 참고: action=confirm API와 동일 패턴 (라인 1827~1836)
+      // 원칙: SSOT - 1명당 1개 기록만, 재확정 시 무조건 덮어쓰기
       const oldResultsSnap = await db.collection("race_results")
         .where("canonicalEventId", "==", eventId)
-        .where("confirmSource", "==", "operator")
         .get();
 
-      console.log(`[bulk-confirm] 삭제 대상: ${oldResultsSnap.size}건 (operator만, personal 제외)`);
+      console.log(`[bulk-confirm] 삭제 대상: ${oldResultsSnap.size}건`);
 
       const BATCH_SIZE = 500;
       const oldDocs = oldResultsSnap.docs;
-      
-      // 삭제 로그 (운영 모니터링용)
-      oldDocs.forEach((doc) => {
-        const data = doc.data();
-        console.log(`  삭제 예정: ${doc.id} (realName: ${data.memberRealName}, distance: ${data.distance})`);
-      });
-      
+
       for (let i = 0; i < oldDocs.length; i += BATCH_SIZE) {
         const deleteBatch = db.batch();
         oldDocs.slice(i, i + BATCH_SIZE).forEach((doc) => {
@@ -2984,7 +2972,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
         await deleteBatch.commit();
       }
-      
+
       console.log(`[bulk-confirm] 기존 기록 삭제 완료: ${oldDocs.length}건`);
 
       for (let i = 0; i < results.length; i += BATCH_SIZE) {
