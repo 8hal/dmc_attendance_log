@@ -16,6 +16,7 @@
 - **단순 덮어쓰기**: 재확정 시 무조건 덮어쓰기 (Last Write Wins)
 - **운영자 최종 권한**: 개인이 수정한 기록도 운영자 재확정으로 덮어씀
 - **기존 UI 재사용**: 스크랩 → 매칭 → 확정 플로우 활용
+- **DNS/DNF 정책**: DNS/DNF는 `race_results` 생성하지 않음 ([정책 문서](../policies/race-results-creation-policy.md))
 
 ### 중요: 기존 구현 확인
 
