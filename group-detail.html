@@ -485,17 +485,18 @@
       
       const { netTime, gunTime, overallRank, status } = confirmedResult;
       
-      // DNS/DNF 처리
-      if (status === 'dns') {
+      // DNS/DNF 처리 (case-insensitive)
+      const statusLower = (status || '').toLowerCase();
+      if (statusLower === 'dns') {
         return `<span class="badge badge-red">🚫 DNS</span>`;
       }
-      if (status === 'dnf') {
+      if (statusLower === 'dnf') {
         return `<span class="badge badge-yellow">⚠️ DNF</span>`;
       }
       
       // 정상 완주
-      const timeStr = netTime || gunTime || '—';
-      const rankStr = overallRank ? `${overallRank}위` : '';
+      const timeStr = netTime?.trim() || gunTime?.trim() || '—';
+      const rankStr = (overallRank != null && overallRank !== '') ? `${overallRank}위` : '';
       
       return `
         <span class="result-time">${escapeHtml(timeStr)}</span>

@@ -2893,7 +2893,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const confirmedByName = {};
       confirmedSnap.forEach((doc) => {
         const d = doc.data();
-        confirmedByName[d.memberRealName] = d;
+        const key = `${d.memberRealName}_${d.distance}`;
+        confirmedByName[key] = d;
       });
 
       let gap = [];
@@ -2910,8 +2911,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         gap = (event.participants || []).map((p) => {
           const matches = resultsByName[p.realName] || [];
 
-          if (confirmedByName[p.realName]) {
-            return { ...p, gapStatus: "confirmed", confirmedResult: confirmedByName[p.realName] };
+          const key = `${p.realName}_${p.distance}`;
+          if (confirmedByName[key]) {
+            return { ...p, gapStatus: "confirmed", confirmedResult: confirmedByName[key] };
           } else if (matches.length === 1) {
             return { ...p, gapStatus: "ok", result: matches[0] };
           } else if (matches.length > 1) {
@@ -2920,15 +2922,18 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           return { ...p, gapStatus: "missing" };
         });
       } else {
-        gap = (event.participants || []).map((p, idx) => ({
-          ...p,
-          memberId: p.memberId || `temp-${idx}`,
-          gapStatus: confirmedByName[p.realName] ? "confirmed" : "missing",
-          confirmedResult: confirmedByName[p.realName] || null,
-          result: null,
-          candidates: [],
-          confirmed: false,
-        }));
+        gap = (event.participants || []).map((p, idx) => {
+          const key = `${p.realName}_${p.distance}`;
+          return {
+            ...p,
+            memberId: p.memberId || `temp-${idx}`,
+            gapStatus: confirmedByName[key] ? "confirmed" : "missing",
+            confirmedResult: confirmedByName[key] || null,
+            result: null,
+            candidates: [],
+            confirmed: false,
+          };
+        });
       }
 
       const confirmedCount = gap.filter((g) => g.gapStatus === "confirmed").length;
