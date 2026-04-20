@@ -1606,7 +1606,8 @@
               overallRank: result.overallRank || null,
               gender: gap.gender || '',
               // Fix #2: Case-insensitive DNS/DNF handling
-              dnStatus: ['dns', 'dnf'].includes(result.status?.toLowerCase()) ? result.status.toUpperCase() : null
+              dnStatus: ['dns', 'dnf'].includes(result.status?.toLowerCase()) ? result.status.toUpperCase() : null,
+              pbConfirmed: result.pbConfirmed || false
             }
           })
         });
@@ -1633,7 +1634,7 @@
       if (!gap || !gap.confirmedResult) return;
       
       const result = gap.confirmedResult;
-      const currentPB = result.pbConfirmed || false;
+      const currentPB = Boolean(result.pbConfirmed);
       
       const action = currentPB ? 'PB 해제' : 'PB 확정';
       const confirmed = confirm(`${gap.nickname} 님 기록을 ${action}하시겠습니까?`);

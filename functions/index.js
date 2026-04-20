@@ -2846,7 +2846,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         bib: participant.bib || "",
         overallRank: participant.overallRank || null,
         gender: participant.gender || "",
-        pbConfirmed: false,
+        pbConfirmed: participant.pbConfirmed != null ? participant.pbConfirmed : false,
         isGuest: false,
         note: participant.note || "",
         status: participant.dnStatus ? participant.dnStatus.toLowerCase() : "confirmed",
