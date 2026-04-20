@@ -567,7 +567,7 @@
     function renderConfirmedRecord(confirmedResult, distance) {
       if (!confirmedResult) return '';
       
-      const { netTime, gunTime, overallRank, status } = confirmedResult;
+      const { netTime, gunTime, overallRank, status, pbConfirmed } = confirmedResult;
       
       // DNS/DNF 처리 (case-insensitive)
       const statusLower = (status || '').toLowerCase();
@@ -581,10 +581,12 @@
       // 정상 완주
       const timeStr = netTime?.trim() || gunTime?.trim() || '—';
       const rankStr = (overallRank != null && overallRank !== '') ? `${overallRank}위` : '';
+      const pbBadge = pbConfirmed ? `<span class="badge badge-yellow">🏆 PB</span>` : '';
       
       return `
         <span class="result-time">${escapeHtml(timeStr)}</span>
         ${rankStr ? `<span class="result-rank">${rankStr}</span>` : ''}
+        ${pbBadge}
         <span class="badge badge-gray">${escapeHtml(distance)}</span>
       `;
     }
@@ -1624,14 +1626,104 @@
       }
     }
 
-    function handleActionPB() {
-      showToast('PB 확정 (준비 중)');
-      closeActionModal();
+    async function handleActionPB() {
+      const num = parseInt(currentActionRowId.replace('participant-', ''), 10);
+      const idx = num - 1;
+      const gap = gapResults[idx];
+      if (!gap || !gap.confirmedResult) return;
+      
+      const result = gap.confirmedResult;
+      const currentPB = result.pbConfirmed || false;
+      
+      const action = currentPB ? 'PB 해제' : 'PB 확정';
+      const confirmed = confirm(`${gap.nickname} 님 기록을 ${action}하시겠습니까?`);
+      if (!confirmed) return;
+      
+      try {
+        closeActionModal();
+        showLoading(`${action} 중...`);
+        
+        const response = await fetch(`${API_BASE}?action=group-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subAction: 'confirm-one',
+            canonicalEventId: currentEvent.id,
+            confirmSource: 'operator',
+            participant: {
+              realName: gap.realName,
+              nickname: gap.nickname,
+              distance: gap.distance,
+              finishTime: result.netTime || '',
+              gunTime: result.gunTime || '',
+              bib: gap.bib || '',
+              overallRank: result.overallRank || null,
+              gender: gap.gender || '',
+              pbConfirmed: !currentPB
+            }
+          })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.ok) {
+          showToast(`✅ ${gap.nickname} 님 ${action} 완료`);
+          await loadEventDetail(currentEventId);
+        } else {
+          showToast(`❌ 처리 실패: ${data.error}`, true);
+        }
+      } catch (error) {
+        hideLoading();
+        showToast(`❌ 네트워크 오류: ${error.message}`, true);
+      }
     }
 
-    function handleActionDelete() {
-      showToast('기록 삭제 (준비 중)');
-      closeActionModal();
+    async function handleActionDelete() {
+      const num = parseInt(currentActionRowId.replace('participant-', ''), 10);
+      const idx = num - 1;
+      const gap = gapResults[idx];
+      if (!gap) return;
+      
+      const confirmed = confirm(`⚠️ ${gap.nickname} 님의 기록을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`);
+      if (!confirmed) return;
+      
+      const doubleConfirm = confirm(`정말로 삭제하시겠습니까?\n\n${gap.nickname} ${gap.realName}`);
+      if (!doubleConfirm) return;
+      
+      try {
+        closeActionModal();
+        showLoading('삭제 중...');
+        
+        const response = await fetch(`${API_BASE}?action=group-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subAction: 'confirm-one',
+            canonicalEventId: currentEvent.id,
+            confirmSource: 'operator',
+            participant: {
+              realName: gap.realName,
+              nickname: gap.nickname,
+              distance: gap.distance,
+              dnStatus: 'DNS'
+            }
+          })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.ok) {
+          showToast(`✅ ${gap.nickname} 님 기록 삭제 완료`);
+          await loadEventDetail(currentEventId);
+        } else {
+          showToast(`❌ 삭제 실패: ${data.error}`, true);
+        }
+      } catch (error) {
+        hideLoading();
+        showToast(`❌ 네트워크 오류: ${error.message}`, true);
+      }
     }
 
     // 액션 모달 클릭 이벤트 (backdrop + 버튼)
