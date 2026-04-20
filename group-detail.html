@@ -714,6 +714,11 @@
       if (title) title.textContent = `👥 참가자 목록 (${arr.length}명)`;
     }
 
+    function isAllConfirmed() {
+      if (!gapResults || gapResults.length === 0) return false;
+      return gapResults.every(g => g.gapStatus === 'ok' && g.confirmedResult);
+    }
+
     function showToast(msg, isErr) {
       const el = document.getElementById("toast");
       el.textContent = msg;
@@ -1047,9 +1052,14 @@
         progressFill.classList.add("complete");
         progressFill.classList.remove("incomplete");
         
-        bulkBtn.disabled = stats.total === 0;
-        bulkBtn.textContent = stats.total === 0 ? "일괄 저장" : `일괄 저장 (${stats.total}건)`;
-        bulkBtn.title = stats.total === 0 ? "참가자가 없습니다" : "";
+        if (isAllConfirmed()) {
+          bulkBtn.style.display = 'none';
+        } else {
+          bulkBtn.style.display = 'inline-flex';
+          bulkBtn.disabled = stats.total === 0;
+          bulkBtn.textContent = stats.total === 0 ? "일괄 저장" : `일괄 저장 (${stats.total}건)`;
+          bulkBtn.title = stats.total === 0 ? "참가자가 없습니다" : "";
+        }
         
         footerInfo.classList.add("complete");
         footerInfo.classList.remove("incomplete");
@@ -1063,6 +1073,7 @@
         progressFill.classList.remove("complete");
         progressFill.classList.add("incomplete");
         
+        bulkBtn.style.display = 'inline-flex';
         bulkBtn.disabled = true;
         bulkBtn.textContent = `일괄 저장 (미처리 ${stats.unprocessed}명)`;
         bulkBtn.title = "모든 참가자의 기록을 선택해야 저장할 수 있습니다";
