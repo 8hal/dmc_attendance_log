@@ -601,21 +601,14 @@
 
       if (g.gapStatus === "confirmed") {
         return `
-          <div class="result-row ok processed" data-status="processed" data-gap-status="ok" id="${rowId}" data-bib="${bibVal}">
+          <div class="result-row ok processed" data-status="processed" data-gap-status="confirmed" id="${rowId}" data-bib="${bibVal}">
             <div class="result-row-header">
               <span>✅</span>
               <span class="result-nick">${nick}</span>
               <span class="result-realname">${realName}</span>
               <span style="flex: 1;"></span>
               ${renderConfirmedRecord(g.confirmedResult, dist)}
-              ${bibVal ? `<span class="result-bib">배번 ${bibVal}</span>` : ''}
-              <button type="button" class="btn-icon" data-edit-bib="${rowId}" title="배번 편집">✏️</button>
               <button type="button" class="btn-icon" data-action-menu="${rowId}" title="수정">⋮</button>
-            </div>
-            <div class="bib-edit-row" id="bib-edit-${rowId}" style="display:none;">
-              <input type="text" placeholder="배번 (예: 12345)" maxlength="10" value="${bibVal}" autocomplete="off" />
-              <button type="button" class="btn btn-sm btn-primary" data-bib-save="${rowId}">저장</button>
-              <button type="button" class="btn btn-sm btn-ghost" data-bib-cancel="${rowId}">취소</button>
             </div>
           </div>`;
       }
@@ -716,7 +709,7 @@
 
     function isAllConfirmed() {
       if (!gapResults || gapResults.length === 0) return false;
-      return gapResults.every(g => g.gapStatus === 'ok' && g.confirmedResult);
+      return gapResults.every(g => g.gapStatus === 'confirmed');
     }
 
     function showToast(msg, isErr) {
