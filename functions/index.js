@@ -110,6 +110,7 @@ const TEAM_LABEL = {
   T4: "4팀",
   T5: "5팀",
   S: "S팀",
+  GUEST: "게스트",
 };
 
 const MEETING_TYPE_LABEL = {
@@ -240,6 +241,140 @@ function kstTodayKey() {
   return formatter.format(now).replace(/-/g, "/");
 }
 
+/** KST 기준 전날 dateKey (YYYY/MM/DD) */
+function prevCalendarDayKst(dateKey) {
+  if (!isValidDateKey(dateKey)) return "";
+  const [y, m, d] = dateKey.split("/").map((x) => parseInt(x, 10));
+  const inst = Date.UTC(y, m - 1, d, 3, 0, 0) - 86400000;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: DEFAULT_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date(inst))
+    .replace(/-/g, "/");
+}
+
+/** 화·목·토 정모일(KST 달력) 여부 */
+function isRegularClubMeetingDateKey(dateKey) {
+  if (!isValidDateKey(dateKey)) return false;
+  const [y, m, d] = dateKey.split("/").map((x) => parseInt(x, 10));
+  const inst = Date.UTC(y, m - 1, d, 3, 0, 0);
+  const wd = new Intl.DateTimeFormat("en-US", { timeZone: DEFAULT_TZ, weekday: "short" }).format(new Date(inst));
+  return wd === "Tue" || wd === "Thu" || wd === "Sat";
+}
+
+/** dateKey 이전의 가장 가까운 화/목/토 정모일 (없으면 null) */
+function prevRegularClubMeetingDateKey(dateKey) {
+  let cur = dateKey;
+  for (let i = 0; i < 14; i++) {
+    cur = prevCalendarDayKst(cur);
+    if (!cur) return null;
+    if (isRegularClubMeetingDateKey(cur)) return cur;
+  }
+  return null;
+}
+
+/**
+ * 화/목/토 출석 기록만으로 연속 정모 출석(역방향: 가장 최근 정모일부터).
+ */
+function computeClubStreakFromDateSet(attendedDateSet) {
+  const today = kstTodayKey();
+  const onOrBefore = [...attendedDateSet].filter((d) => d <= today).sort((a, b) => b.localeCompare(a));
+  if (!onOrBefore.length) return 0;
+  let cur = onOrBefore[0];
+  if (!attendedDateSet.has(cur)) return 0;
+  let streak = 0;
+  while (cur && attendedDateSet.has(cur)) {
+    streak++;
+    cur = prevRegularClubMeetingDateKey(cur);
+  }
+  return streak;
+}
+
+async function getMembersForAttendanceV2() {
+  const snap = await db.collection("members").get();
+  const members = [];
+  snap.forEach((doc) => {
+    const d = doc.data();
+    if (d.hidden === true) return;
+    members.push({
+      id: doc.id,
+      realName: d.realName,
+      nickname: d.nickname,
+      gender: d.gender || "",
+      team: d.team || "",
+    });
+  });
+  members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+  return members;
+}
+
+async function getAttendanceStatsV2({ memberId, nickname, monthKey }) {
+  if (!isValidMonthKey(monthKey)) {
+    return { error: `invalid month (YYYY-MM): ${monthKey}` };
+  }
+  const mid = str(memberId).trim();
+  const nick = str(nickname).trim();
+  if (!mid && !nick) {
+    return { error: "memberId or nickname is required" };
+  }
+
+  let monthSnap;
+  if (mid) {
+    monthSnap = await db.collection(COLLECTION).where("memberId", "==", mid).where("monthKey", "==", monthKey).get();
+  } else {
+    const nk = nick.toLowerCase();
+    monthSnap = await db.collection(COLLECTION).where("nicknameKey", "==", nk).where("monthKey", "==", monthKey).get();
+  }
+
+  let monthCount = 0;
+  monthSnap.forEach((doc) => {
+    const d = doc.data();
+    if (d.isGuest === true) return;
+    monthCount++;
+  });
+
+  const possible = countPossibleMeetingsForMonth(monthKey);
+  const rate = possible > 0 ? Math.min(100, Math.round((monthCount / possible) * 100)) : 0;
+
+  const attendedClubDates = new Set();
+  let streakSnap;
+  if (mid) {
+    streakSnap = await db
+      .collection(COLLECTION)
+      .where("memberId", "==", mid)
+      .orderBy("ts", "desc")
+      .limit(500)
+      .get();
+  } else {
+    streakSnap = await db
+      .collection(COLLECTION)
+      .where("nicknameKey", "==", nick.toLowerCase())
+      .orderBy("ts", "desc")
+      .limit(500)
+      .get();
+  }
+  streakSnap.forEach((doc) => {
+    const d = doc.data();
+    if (d.isGuest === true) return;
+    const mt = str(d.meetingType).toUpperCase();
+    if (mt !== "TUE" && mt !== "THU" && mt !== "SAT") return;
+    if (d.meetingDateKey) attendedClubDates.add(d.meetingDateKey);
+  });
+
+  const consecutiveClubSessions = computeClubStreakFromDateSet(attendedClubDates);
+
+  return {
+    month: monthKey,
+    thisMonthCount: monthCount,
+    totalPossible: possible,
+    attendanceRate: rate,
+    consecutiveClubSessions,
+  };
+}
+
 function makeTestNickname() {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -303,22 +438,31 @@ async function handlePost(req, res) {
     }
 
     const nicknameRaw = str(body.nickname).trim();
-    const teamCode = str(body.team).trim().toUpperCase();
+    let teamCode = str(body.team).trim().toUpperCase();
     const typeCode = str(body.meetingType).trim().toUpperCase();
     const meetingDateKey = str(body.meetingDate).trim();
+    const memberIdRaw = str(body.memberId).trim();
+    const memberId = memberIdRaw || null;
+    const isGuest = body.isGuest === true || body.isGuest === "true";
 
     // 유효성 검사
     if (!nicknameRaw) {
       return res.status(400).json({ ok: false, error: "nickname is required" });
     }
-    if (!teamCode) {
-      return res.status(400).json({ ok: false, error: "team is required" });
+    if (nicknameRaw.length > 50) {
+      return res.status(400).json({ ok: false, error: "nickname too long (max 50)" });
     }
     if (!typeCode) {
       return res.status(400).json({ ok: false, error: "meetingType is required" });
     }
     if (!meetingDateKey || !isValidDateKey(meetingDateKey)) {
       return res.status(400).json({ ok: false, error: `invalid meetingDate (YYYY/MM/DD): ${meetingDateKey}` });
+    }
+
+    if (isGuest) {
+      teamCode = "GUEST";
+    } else if (!teamCode) {
+      return res.status(400).json({ ok: false, error: "team is required" });
     }
 
     const teamLabel = TEAM_LABEL[teamCode];
@@ -339,16 +483,67 @@ async function handlePost(req, res) {
     const nicknameStored =
       nicknameRaw.toUpperCase() === "TEST" ? makeTestNickname() : nicknameRaw;
 
+    if (!isGuest && memberId) {
+      const mdoc = await db.collection("members").doc(memberId).get();
+      if (!mdoc.exists) {
+        return res.status(400).json({ ok: false, error: "MEMBER_NOT_FOUND", message: "회원 정보를 찾을 수 없습니다" });
+      }
+    }
+
+    const nicknameKey = nicknameStored.toLowerCase();
+    const skipDupCheck =
+      isGuest || nicknameKey.startsWith("test_");
+
+    if (!skipDupCheck) {
+      const dupTasks = [
+        db
+          .collection(COLLECTION)
+          .where("nicknameKey", "==", nicknameKey)
+          .where("meetingDateKey", "==", meetingDateKey)
+          .limit(1)
+          .get(),
+      ];
+      if (memberId) {
+        dupTasks.push(
+          db
+            .collection(COLLECTION)
+            .where("memberId", "==", memberId)
+            .where("meetingDateKey", "==", meetingDateKey)
+            .limit(1)
+            .get()
+        );
+      }
+      const dupSnaps = await Promise.all(dupTasks);
+      for (const snap of dupSnaps) {
+        if (!snap.empty) {
+          const existingData = snap.docs[0].data();
+          const dupDate = existingData.meetingDateKey || meetingDateKey;
+          return res.status(400).json({
+            ok: false,
+            error: "ALREADY_CHECKED_IN",
+            message: `이미 ${dupDate} 모임에 출석 기록이 있습니다`,
+            existingRecord: {
+              nickname: existingData.nickname,
+              meetingDate: existingData.meetingDateKey,
+              timeText: formatKstKoreanAmPm(new Date(existingData.ts)),
+            },
+          });
+        }
+      }
+    }
+
     // Firestore에 저장
     const docRef = await db.collection(COLLECTION).add({
       nickname: nicknameStored,
-      nicknameKey: nicknameStored.toLowerCase(),
+      nicknameKey,
+      memberId: isGuest ? null : memberId || null,
       team: teamCode,
       teamLabel,
       meetingType: typeCode,
       meetingTypeLabel,
       meetingDateKey,
       monthKey,
+      isGuest: !!isGuest,
       timestamp: FieldValue.serverTimestamp(),
       ts: now.getTime(),
     });
@@ -545,6 +740,30 @@ async function handleGet(req, res) {
       console.log(`[GET history] ${nickname} - ${monthKey} - ${history.count} items - ${durationMs}ms`);
 
       return res.json({ ok: true, ...history });
+    }
+
+    if (action === "members") {
+      const members = await getMembersForAttendanceV2();
+      const durationMs = Date.now() - startMs;
+      console.log(`[GET members] ${members.length} items - ${durationMs}ms`);
+      return res.json({ ok: true, members });
+    }
+
+    if (action === "stats") {
+      const monthKey = str(req.query.month).trim();
+      const memberIdQ = str(req.query.memberId).trim();
+      const nicknameQ = str(req.query.nickname).trim();
+      const statsResult = await getAttendanceStatsV2({
+        memberId: memberIdQ,
+        nickname: nicknameQ,
+        monthKey,
+      });
+      if (statsResult.error) {
+        return res.status(400).json({ ok: false, error: statsResult.error });
+      }
+      const durationMs = Date.now() - startMs;
+      console.log(`[GET stats] month=${monthKey} - ${durationMs}ms`);
+      return res.json({ ok: true, ...statsResult });
     }
 
     return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
