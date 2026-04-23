@@ -1035,6 +1035,19 @@
     )).join("");
   }
 
+  /** URL `?date=YYYY-MM-DD` 또는 `YYYY/MM/DD` 가 있으면 해당 모임일로 연다(v2 등에서 명단 링크용). */
+  function getBootstrapDateAndMeeting_() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const raw = (urlParams.get("date") || "").trim();
+    if (raw) {
+      const dateKey = inputValueToDateKey_(raw);
+      if (dateKey) {
+        return { dateKey, meetingType: inferMeetingTypeByDateKey_(dateKey) };
+      }
+    }
+    return getDefaultDateAndMeetingType();
+  }
+
   function bootstrap() {
     initAnalytics();
     populateTeamOptions();
@@ -1042,8 +1055,8 @@
     updateNicknameDatalist();  // 캐시된 닉네임 목록 즉시 로드
     fetchNicknames();  // 서버에서 최신 목록 병렬 호출 (백그라운드)
     
-    // 요일 기반 기본 날짜/정모 유형 설정
-    const defaults = getDefaultDateAndMeetingType();
+    // 요일 기반 기본 날짜·정모 유형 (또는 URL date=)
+    const defaults = getBootstrapDateAndMeeting_();
     setActiveDateKey_(defaults.dateKey);
     populateMeetingOptions();
     elMeeting.value = defaults.meetingType;

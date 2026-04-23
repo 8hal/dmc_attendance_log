@@ -47,6 +47,7 @@
   const elSuccessSessionLine = document.getElementById("successSessionLine");
   const elDashSessionRow = document.getElementById("dashSessionRow");
   const elDashSessionFigures = document.getElementById("dashSessionFigures");
+  const elDashSessionListLink = document.getElementById("dashSessionListLink");
   const elGuestModal = document.getElementById("guestModal");
   const elTeamModal = document.getElementById("teamModal");
 
@@ -250,6 +251,13 @@
     return dateKey.replace(/\//g, "-");
   }
 
+  /** 메인 출석 페이지(index.html)에서 해당 모임일 전체 명단(status)을 보도록 연결 */
+  function buildMainAttendanceListUrl(dateKeySlash) {
+    const dk = String(dateKeySlash || "").trim();
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(dk)) return "index.html";
+    return "index.html?date=" + encodeURIComponent(dateKeyToInputValue(dk));
+  }
+
   function inputValueToDateKey(v) {
     const s = String(v || "").trim();
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -386,6 +394,16 @@
     } else {
       elDashNicknameLine.textContent = "";
       elDashTeamRole.textContent = "";
+    }
+    if (elDashSessionListLink) {
+      const dk = inputValueToDateKey(elMeetingDate.value);
+      if (dk) {
+        elDashSessionListLink.href = buildMainAttendanceListUrl(dk);
+        elDashSessionListLink.classList.remove("hidden");
+      } else {
+        elDashSessionListLink.href = "index.html";
+        elDashSessionListLink.classList.add("hidden");
+      }
     }
     refreshSessionCountLine().catch(() => {});
   }
@@ -658,7 +676,19 @@
       elGuestModal.classList.add("hidden");
       await showSuccessAfterCheckin(nickname, null, true, dateKey, result.sessionCount);
     } catch (e) {
-      alert(e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : (e.message || "오류"));
+      const gDate = inputValueToDateKey(document.getElementById("guestMeetingDate").value);
+      if (e.code === "ALREADY_CHECKED_IN" && gDate) {
+        const u = buildMainAttendanceListUrl(gDate);
+        if (
+          confirm(
+            "이미 출석된 기록이 있습니다.\n선택한 모임일의 전체 명단을 메인 출석 페이지에서 확인할까요?"
+          )
+        ) {
+          window.open(u, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        alert(e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : e.message || "오류");
+      }
     } finally {
       btn.disabled = false;
     }
@@ -688,7 +718,16 @@
       await showSuccessAfterCheckin(myProfile.nickname, myProfile.memberId, false, dateKey, result.sessionCount);
     } catch (e) {
       if (e.code === "ALREADY_CHECKED_IN") {
-        elDashMsg.textContent = (e.payload && e.payload.message) || "오늘 이미 출석하셨습니다.";
+        const rawMsg =
+          (e.payload && e.payload.message) || "이미 해당 모임일에 출석 기록이 있습니다.";
+        const dupDate =
+          (e.payload && e.payload.existingRecord && e.payload.existingRecord.meetingDate) || dateKey;
+        const listUrl = buildMainAttendanceListUrl(dupDate);
+        elDashMsg.innerHTML =
+          escapeHtml(rawMsg) +
+          ' <a href="' +
+          listUrl +
+          '" target="_blank" rel="noopener noreferrer">출석 명단에서 확인</a>';
       } else if (e.code === "MEMBER_NOT_FOUND") {
         elDashMsg.textContent = "회원 정보가 유효하지 않습니다. 프로필을 다시 설정해 주세요.";
       } else {
