@@ -1,0 +1,1087 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>출석 v2 디자인 초안 (드래프트)</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --bg: #f3f4f8;
+      --bg-elevated: #ffffff;
+      --text: #1c1c1e;
+      --text-secondary: #636366;
+      --text-muted: #8e8e93;
+      --border: #e5e5ea;
+      --border-light: #f2f2f7;
+      --accent: #0a7ea4;
+      --accent-soft: #e6f4f9;
+      --accent-hover: #086888;
+      --success: #0d9f6d;
+      --success-soft: #ecfdf5;
+      --warning: #c27803;
+      --warning-soft: #fffbeb;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 24px rgba(0,0,0,0.06);
+      --shadow-float: 0 12px 40px rgba(10, 126, 164, 0.12);
+      --font: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+      --step-dot: 8px;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      min-height: 100dvh;
+    }
+
+    /* 상단: 브랜드 + 단계(Jibble식 시스템) */
+    .shell {
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      padding: 12px 16px 28px;
+      padding-bottom: max(28px, env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand img {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .brand-text h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .draft-pill {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--warning);
+      background: var(--warning-soft);
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(194, 120, 3, 0.2);
+    }
+
+    .step-nav {
+      display: flex;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-light);
+      margin-bottom: 18px;
+    }
+    .step-nav button {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      padding: 10px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, color 0.2s;
+    }
+    .step-nav button.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* 안내: 출결선생 느낌 — 부드러운 정보 카드 */
+    .info-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-md);
+    }
+    .info-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+    .info-card a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .info-card a:hover { text-decoration: underline; }
+
+    .screen { display: none; animation: fadeIn 0.25s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0 0 8px 4px;
+    }
+
+    .card {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-lg);
+      padding: 18px 16px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 14px;
+    }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 14px 14px 14px 44px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #fafafa;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    /* 리스트: 닉네임 + 팀만 (썸네일·실명 없음) */
+    .member-scroll {
+      max-height: min(52vh, 380px);
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      background: #fafafa;
+    }
+    .member-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .member-item:last-child { border-bottom: 0; }
+    .member-item:hover { background: #fff; }
+    .member-item:active { background: var(--accent-soft); }
+
+    .member-body { flex: 1; min-width: 0; }
+    .member-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .member-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .chevron {
+      color: var(--border);
+      font-size: 18px;
+      font-weight: 300;
+    }
+
+    .btn-row { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+
+    button.primary {
+      width: 100%;
+      padding: 16px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 0;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #0d8ab8 0%, var(--accent) 100%);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: var(--shadow-float);
+      transition: transform 0.1s, filter 0.15s;
+    }
+    button.primary:hover { filter: brightness(1.05); }
+    button.primary:active { transform: scale(0.985); }
+
+    button.secondary {
+      width: 100%;
+      padding: 13px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    button.secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    button.ghost {
+      width: 100%;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* 대시보드: Jibble식 그룹 — 라벨+필드 블록 */
+    .hero {
+      text-align: center;
+      padding: 8px 0 16px;
+    }
+    .hero .greeting {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .hero .name {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin: 0 0 10px;
+    }
+    .team-pills {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .pill.team { background: #e8f4fc; color: #0a5f82; border-color: #c5e6f3; }
+    .pill.role { background: var(--border-light); color: var(--text-secondary); }
+
+    .field-group { margin-top: 18px; }
+    .field-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin: 0 0 6px 2px;
+    }
+    .field-group + .field-group { margin-top: 14px; }
+
+    select.styled, input.styled {
+      width: 100%;
+      padding: 14px 14px;
+      font-size: 15px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #fafafa;
+      font-family: inherit;
+      color: var(--text);
+    }
+    select.styled:focus, input.styled:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ② 출석: 정보 블록 정돈 + CTA 구역 분리 */
+    .dash-card {
+      padding: 22px 18px 20px;
+    }
+    .dash-context-band {
+      text-align: center;
+      background: linear-gradient(180deg, #fafcfd 0%, #f3f5f7 100%);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 18px 16px 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+    .dash-mega-line1 {
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.28;
+      font-size: clamp(1.05rem, 4.6vw, 1.38rem);
+      color: var(--text-secondary);
+    }
+    .dash-mega-line2 {
+      margin: 6px 0 0;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.2;
+      font-size: clamp(1.22rem, 5.8vw, 1.78rem);
+      color: var(--text);
+    }
+    .dash-mega-hint {
+      margin: 10px auto 0;
+      max-width: 22em;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .dash-mega-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .dash-session-row {
+      margin: 14px 0 0;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(10, 126, 164, 0.2);
+      border-radius: 12px;
+    }
+    .dash-session-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+    .dash-session-figures {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .dash-session-figures .dash-session-num {
+      color: var(--accent);
+    }
+    .dash-session-figures .dash-session-g {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+    .dash-cta-stack {
+      margin: 26px 0 0;
+    }
+    button.primary.cta-main {
+      padding: clamp(16px, 4vw, 20px) 22px;
+      font-size: clamp(1.12rem, 5vw, 1.45rem);
+      min-height: clamp(56px, 14vw, 64px);
+      border-radius: 16px;
+      box-shadow: 0 16px 44px rgba(10, 126, 164, 0.28);
+      letter-spacing: -0.03em;
+      font-weight: 800;
+    }
+    .dash-extras {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+    .btn-quiet {
+      border: 0;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: transparent;
+      transition: color 0.15s, text-decoration-color 0.15s;
+    }
+    .btn-quiet:hover {
+      color: var(--accent);
+      text-decoration-color: rgba(10, 126, 164, 0.45);
+    }
+    .extras-sep {
+      color: var(--border);
+      user-select: none;
+      font-weight: 300;
+    }
+    .meeting-fine {
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .meeting-fine summary {
+      cursor: pointer;
+      list-style: none;
+      text-align: center;
+      padding: 8px 6px;
+      user-select: none;
+      font-size: 11px;
+      max-width: 22em;
+      margin: 0 auto;
+      line-height: 1.4;
+    }
+    .meeting-fine summary::-webkit-details-marker {
+      display: none;
+    }
+    .meeting-fine-body {
+      padding-top: 10px;
+    }
+
+    /* 성공: 미적 — 큰 체크 + 통계 타일 */
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      margin: 8px auto 16px;
+      border-radius: 50%;
+      background: var(--success-soft);
+      border: 2px solid rgba(13, 159, 109, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+    }
+    .success-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--success);
+      margin: 0 0 8px;
+    }
+    .success-desc {
+      text-align: center;
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin: 0 0 20px;
+      line-height: 1.5;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-tile {
+      background: linear-gradient(180deg, #fafbfc 0%, #f4f5f7 100%);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .stat-tile .num {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+    .stat-tile .lbl {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    /* ③ 완료: 캘린더 뷰 / 스탬프 뷰 */
+    .done-view-tabs {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin: 0 0 14px;
+    }
+    .done-view-tab {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fafafa;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .done-view-tab.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      border-style: solid;
+      color: var(--accent);
+      font-weight: 800;
+      box-shadow: 0 2px 10px rgba(10, 126, 164, 0.12);
+    }
+    .done-view-tab:not(.active) {
+      font-weight: 600;
+      opacity: 0.9;
+      background: transparent;
+      border-style: dashed;
+    }
+    .done-view-tab[data-done-view="stamp"]:not(.active) {
+      flex: 0.82;
+      font-size: 12px;
+    }
+    .done-cheer {
+      margin: 8px 0 0;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .done-cal-hint {
+      margin: 10px 0 12px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .done-streak-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #92400e;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+    }
+    @keyframes draft-cal-pop {
+      0% { transform: scale(0.9); }
+      55% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .today-checkin-animate {
+      animation: draft-cal-pop 0.48s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .today-checkin-animate { animation: none; }
+    }
+    .done-panel {
+      display: none;
+    }
+    .done-panel.active {
+      display: block;
+    }
+    .done-summary {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 14px;
+      line-height: 1.45;
+    }
+    .mini-cal {
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 12px 10px 14px;
+      background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+    }
+    .mini-cal-title {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0 0 10px;
+      letter-spacing: -0.02em;
+    }
+    .mini-cal-dows {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .mini-cal-dows span {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .mini-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .mini-cal-cell {
+      aspect-ratio: 1;
+      max-height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+    }
+    .mini-cal-cell.pad {
+      visibility: hidden;
+    }
+    .mini-cal-cell.att-past {
+      background: #e8f6ef;
+      color: #0d6b4a;
+      font-size: 11px;
+    }
+    .mini-cal-cell.today-checkin {
+      background: linear-gradient(145deg, #0d9f6d 0%, #0b8559 100%);
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(13, 159, 109, 0.35);
+    }
+    .mini-cal-cell .sub {
+      font-size: 8px;
+      font-weight: 700;
+      opacity: 0.85;
+      margin-top: 1px;
+    }
+    .mini-cal-legend {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+    .stamp-board {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 12px 18px;
+      background: #fffef8;
+    }
+    .stamp-board-title {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin: 0 0 14px;
+      letter-spacing: 0.02em;
+    }
+    .stamp-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 12px;
+    }
+    .stamp-slot {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      border: 2px solid transparent;
+    }
+    .stamp-slot.filled {
+      background: radial-gradient(circle at 30% 25%, #fff4 0%, transparent 45%),
+        linear-gradient(160deg, #c41e3a 0%, #8b1538 55%, #5c0f26 100%);
+      color: #fff;
+      border-color: rgba(0, 0, 0, 0.12);
+      box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.2), 0 3px 10px rgba(139, 21, 56, 0.25);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+    }
+    .stamp-slot.filled.last {
+      box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.2), 0 0 0 3px var(--success-soft), 0 4px 14px rgba(13, 159, 109, 0.45);
+    }
+    .stamp-slot.empty {
+      border: 2px dashed #dcd8cf;
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .stamp-caption {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 14px;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 24px;
+      line-height: 1.5;
+    }
+
+    /* 모달 초안 */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 28, 30, 0.45);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 12px;
+    }
+    .modal.show { display: flex; }
+    .sheet {
+      width: 100%;
+      max-width: 420px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 10px 18px 22px;
+      padding-bottom: max(22px, env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+      animation: sheetUp 0.28s ease;
+    }
+    @keyframes sheetUp {
+      from { transform: translateY(100%); opacity: 0.8; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 999px;
+      margin: 0 auto 14px;
+    }
+    .sheet h2 {
+      margin: 0 0 14px;
+      font-size: 17px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="assets/dmc_logo.png" alt="DMC" width="40" height="40" />
+        <div class="brand-text">
+          <h1>출석</h1>
+          <span>동탄 마라톤 클럽</span>
+        </div>
+      </div>
+      <span class="draft-pill">DESIGN DRAFT</span>
+    </header>
+
+    <nav class="step-nav" aria-label="화면 전환 (데모)">
+      <button type="button" class="active" data-screen="search">① 본인 찾기</button>
+      <button type="button" data-screen="dash">② 출석</button>
+      <button type="button" data-screen="done">③ 완료</button>
+    </nav>
+
+    <div class="info-card">
+      <p>
+        이 파일은 <strong>시각·정보 구조 초안</strong>입니다. 벤치마크:
+        <strong>출결선생</strong> 계열의 여백·타이포·카드,
+        <strong>Jibble</strong> 계열의 단계감.
+        <strong>② 출석</strong> 화면은 <strong>날짜·정모 유형·닉네임</strong>과 <strong>「출석 체크」</strong> 버튼이 <strong>각각 가장 크게</strong> 보이게 두고, 팀·수정 필드는 보조로 둡니다.
+        실제 API는 없습니다. 승인 후 <code>attendance-v2.html</code>에 이식합니다.
+        <strong>실제 배포 베타</strong>와 나란히 보려면
+        <a href="attendance-v2.html">attendance-v2.html (베타)</a>를 열어 두고 비교하면 됩니다.
+      </p>
+    </div>
+
+    <!-- ① 검색 -->
+    <section id="screen-search" class="screen active" aria-labelledby="lbl-search">
+      <p class="section-label" id="lbl-search">Step 1</p>
+      <div class="card">
+        <p style="margin:0 0 14px;font-size:14px;color:var(--text-secondary);font-weight:500;">
+          정회원 명단에서 닉네임을 검색해 선택하세요.
+        </p>
+        <div class="search-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input class="search-input" type="search" placeholder="닉네임 검색 (예: 게살)" value="게" readonly title="데모: 읽기 전용" />
+        </div>
+        <div class="member-scroll">
+          <div class="member-item">
+            <div class="member-body">
+              <div class="member-name">게살볶음밥</div>
+              <div class="member-sub">1팀</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="member-item">
+            <div class="member-body">
+              <div class="member-name">산책러너</div>
+              <div class="member-sub">S팀</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="member-item">
+            <div class="member-body">
+              <div class="member-name">바람개비</div>
+              <div class="member-sub">2팀</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="secondary" id="openGuestDemo">게스트로 출석</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 대시보드: 주요 정보 + 출석 체크 동급 크기 -->
+    <section id="screen-dash" class="screen" aria-labelledby="lbl-dash">
+      <p class="section-label" id="lbl-dash">Step 2</p>
+      <div class="card dash-card">
+        <div class="dash-context-band">
+          <p class="dash-mega-line1">4월 22일 (수) · 목요일 정모</p>
+          <p class="dash-mega-line2">게살볶음밥</p>
+          <p class="dash-mega-hint">KST 기준 자동 추천 (데모 문구)</p>
+          <div class="dash-mega-meta">
+            <span>1팀 · 정회원</span>
+            <button type="button" class="btn-quiet" style="text-decoration:underline;padding:4px 8px;">팀 변경</button>
+          </div>
+        </div>
+        <div class="dash-session-row">
+          <span class="dash-session-label">현재 참여 인원</span>
+          <span class="dash-session-figures"><span class="dash-session-num">12</span>명<span class="dash-session-g">·게 1</span></span>
+        </div>
+        <div class="dash-cta-stack">
+          <button type="button" class="primary cta-main">출석 체크</button>
+        </div>
+        <details class="meeting-fine">
+          <summary>날짜·유형이 다르면 여기서만 수정</summary>
+          <div class="meeting-fine-body">
+            <div class="field-group" style="margin-top:0;">
+              <label for="demo-date">모임 날짜</label>
+              <input class="styled" id="demo-date" type="date" value="2026-04-22" />
+            </div>
+            <div class="field-group">
+              <label for="demo-type">정모 유형</label>
+              <select class="styled" id="demo-type">
+                <option>화요일 정모</option>
+                <option selected>목요일 정모</option>
+                <option>토요일 정모</option>
+                <option>기타</option>
+              </select>
+            </div>
+          </div>
+        </details>
+        <div class="dash-extras">
+          <button type="button" class="btn-quiet">다른 사람으로 출석</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 완료: 캘린더 뷰 / 스탬프 뷰 -->
+    <section id="screen-done" class="screen" aria-labelledby="lbl-done">
+      <p class="section-label" id="lbl-done">Step 3</p>
+      <div class="card">
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <h2 class="success-title">출석 완료</h2>
+        <p class="success-desc">게살볶음밥님, 오늘 모임 출석이 등록되었습니다.</p>
+        <p class="done-cheer">클럽 기록에 반영됐어요. (데모 문구)</p>
+        <p class="done-cal-hint">먼저 <strong>캘린더</strong>에서 방금 체크한 모임일을 확인해 보세요. 이번 달 누적은 <strong>스탬프</strong> 탭에서 볼 수 있어요.</p>
+        <div class="done-view-tabs" role="tablist" aria-label="완료 화면 표시 방식">
+          <button type="button" class="done-view-tab active" data-done-view="cal" role="tab" aria-selected="true">캘린더</button>
+          <button type="button" class="done-view-tab" data-done-view="stamp" role="tab" aria-selected="false">스탬프</button>
+        </div>
+        <div id="donePanelCal" class="done-panel active" role="tabpanel">
+          <div class="mini-cal" id="doneCalMount" aria-label="이번 달 출석 데모 캘린더"></div>
+          <p class="mini-cal-legend">초록: 이번 달 다른 출석일(데모) · 진한 칩: 방금 출석한 날</p>
+        </div>
+        <div id="donePanelStamp" class="done-panel" role="tabpanel">
+          <div class="stamp-board" id="doneStampMount" aria-label="스탬프 카드 데모"></div>
+          <p class="stamp-caption">인주 스탬프 느낌 · 마지막 칩에 방금 출석 강조 (데모)</p>
+        </div>
+        <p class="done-summary">이번 달 출석 4회 · 출석률 67% · <span class="done-streak-tag">연속 2회</span> · 정모일 12일</p>
+        <div class="btn-row" style="margin-top:18px;">
+          <button type="button" class="primary">확인</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      데모: 상단 탭으로 화면을 바꿔 보세요. ③ 완료에서는 <strong>캘린더 / 스탬프</strong> 탭으로 두 가지 표현을 비교할 수 있습니다.<br />
+      파일: <code>attendance-v2-design-draft.html</code>
+    </p>
+  </div>
+
+  <!-- 게스트 모달 데모 -->
+  <div class="modal" id="guestModal" role="dialog" aria-modal="true" aria-labelledby="guestTitle">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="guestTitle">게스트 출석</h2>
+      <div class="field-group">
+        <label for="g-nick">표시 닉네임</label>
+        <input class="styled" id="g-nick" placeholder="닉네임" />
+      </div>
+      <div class="field-group">
+        <label for="g-type">정모 유형</label>
+        <select class="styled" id="g-type"><option>토요일 정모</option></select>
+      </div>
+      <div class="btn-row" style="margin-top:18px;">
+        <button type="button" class="primary" id="closeGuest">등록 (데모)</button>
+        <button type="button" class="secondary" id="cancelGuest">취소</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll(".step-nav button");
+  var screens = {
+    search: document.getElementById("screen-search"),
+    dash: document.getElementById("screen-dash"),
+    done: document.getElementById("screen-done")
+  };
+
+  function showScreen(name) {
+    Object.keys(screens).forEach(function (k) {
+      screens[k].classList.toggle("active", k === name);
+    });
+    tabs.forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-screen") === name);
+    });
+  }
+
+  tabs.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      showScreen(btn.getAttribute("data-screen"));
+    });
+  });
+
+  var modal = document.getElementById("guestModal");
+  document.getElementById("openGuestDemo").addEventListener("click", function () {
+    modal.classList.add("show");
+  });
+  function closeModal() { modal.classList.remove("show"); }
+  document.getElementById("closeGuest").addEventListener("click", closeModal);
+  document.getElementById("cancelGuest").addEventListener("click", closeModal);
+  modal.addEventListener("click", function (e) {
+    if (e.target === modal) closeModal();
+  });
+
+  /* ③ 완료: 캘린더·스탬프 데모 채우기 + 탭 */
+  (function doneStepDemo() {
+    var calMount = document.getElementById("doneCalMount");
+    if (calMount) {
+      var year = 2026;
+      var month = 4;
+      var first = new Date(year, month - 1, 1);
+      var pad = first.getDay();
+      var dim = new Date(year, month, 0).getDate();
+      var dows = ["일", "월", "화", "수", "목", "금", "토"];
+      var demoAtt = { 8: 1, 12: 1, 15: 1, 19: 1 };
+      var html = '<p class="mini-cal-title">' + year + "년 " + month + "월</p>";
+      html += '<div class="mini-cal-dows">';
+      for (var i = 0; i < 7; i++) html += "<span>" + dows[i] + "</span>";
+      html += "</div><div class=\"mini-cal-grid\">";
+      for (var p = 0; p < pad; p++) html += '<div class="mini-cal-cell pad">·</div>';
+      for (var d = 1; d <= dim; d++) {
+        var cls = "mini-cal-cell";
+        if (d === 22) cls += " today-checkin today-checkin-animate";
+        else if (demoAtt[d]) cls += " att-past";
+        var sub = d === 22 ? '<span class="sub">방금</span>' : demoAtt[d] ? '<span class="sub">출석</span>' : "";
+        html += '<div class="' + cls + '">' + d + sub + "</div>";
+      }
+      html += "</div>";
+      calMount.innerHTML = html;
+    }
+    var stampMount = document.getElementById("doneStampMount");
+    if (stampMount) {
+      var total = 12;
+      var filled = 4;
+      var row = '<p class="stamp-board-title">이번 달 정모 스탬프</p><div class="stamp-row">';
+      for (var s = 0; s < total; s++) {
+        if (s < filled - 1) row += '<div class="stamp-slot filled" aria-hidden="true">✓</div>';
+        else if (s === filled - 1) row += '<div class="stamp-slot filled last" aria-hidden="true">✓</div>';
+        else row += '<div class="stamp-slot empty">' + (s + 1) + "</div>";
+      }
+      row += "</div>";
+      stampMount.innerHTML = row;
+    }
+    var tabs = document.querySelectorAll(".done-view-tab");
+    var pCal = document.getElementById("donePanelCal");
+    var pStamp = document.getElementById("donePanelStamp");
+    tabs.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var v = btn.getAttribute("data-done-view");
+        tabs.forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        if (pCal) pCal.classList.toggle("active", v === "cal");
+        if (pStamp) pStamp.classList.toggle("active", v === "stamp");
+      });
+    });
+  })();
+})();
+</script>
+</body>
+</html>

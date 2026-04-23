@@ -156,6 +156,12 @@
     .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; }
     .msg { font-size: 13px; margin-top: 10px; min-height: 1.2em; }
     .msg.error { color: var(--color-error); }
+    .msg.error a {
+      color: var(--color-primary);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
     .msg.ok { color: var(--color-success); }
     .hidden { display: none !important; }
     .modal-backdrop {
@@ -414,6 +420,26 @@
       background: var(--color-bg);
       border-color: var(--color-border);
     }
+    .dash-session-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 0;
+    }
+    .dash-session-list-link {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-primary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .dash-session-list-link:hover {
+      color: var(--color-primary-hover);
+    }
+    .dash-session-list-link.hidden {
+      display: none !important;
+    }
     .dash-session-label {
       font-size: 12px;
       font-weight: 700;
@@ -482,6 +508,8 @@
     <div class="beta-note">
       운영진에게만 공개할 페이지입니다. 날짜별 전체 명단·월간 기록 등은
       <a href="index.html">메인 출석 페이지 (index.html)</a>에서 이용할 수 있어요.
+      디자인 초안(정적 데모)과 비교는
+      <a href="attendance-v2-design-draft.html">attendance-v2-design-draft.html</a>에서 할 수 있어요.
     </div>
 
     <div id="viewSearch" class="hidden">
@@ -510,7 +538,10 @@
           </p>
         </div>
         <div class="dash-session-row muted" id="dashSessionRow">
-          <span class="dash-session-label">현재 참여 인원</span>
+          <div class="dash-session-meta">
+            <span class="dash-session-label">현재 참여 인원</span>
+            <a class="dash-session-list-link hidden" id="dashSessionListLink" href="index.html" target="_blank" rel="noopener noreferrer">이 모임일 출석 명단 보기</a>
+          </div>
           <span class="dash-session-figures" id="dashSessionFigures" aria-live="polite">…</span>
         </div>
         <button type="button" class="primary dash-checkin" id="checkinBtn">출석 체크</button>

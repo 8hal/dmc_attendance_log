@@ -160,6 +160,10 @@ assert_contains "attendance-v2.html: 외부 스크립트" "attendance-v2.js" "$T
 assert_contains "attendance-v2.js: 완료 화면 보조" "showSuccessAfterCheckin" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: KST 달력 패딩" "firstOfMonthSundayPadKst" "$TMP_DIR/attendance-v2.js"
 
+curl -s "$HOST/attendance-v2-design-draft.html" > "$TMP_DIR/attendance-v2-design-draft.html"
+assert_contains "attendance-v2-design-draft.html: 드래프트 표시" "DESIGN DRAFT" "$TMP_DIR/attendance-v2-design-draft.html"
+assert_contains "attendance-v2-design-draft.html: 베타 링크" "attendance-v2.html" "$TMP_DIR/attendance-v2-design-draft.html"
+
 curl -s "$HOST/ops.html" > "$TMP_DIR/ops.html"
 assert_contains "ops.html: Ops Console" "Ops Console" "$TMP_DIR/ops.html"
 assert_contains "ops.html: ops-scrape-health 연동" "ops-scrape-health" "$TMP_DIR/ops.html"
