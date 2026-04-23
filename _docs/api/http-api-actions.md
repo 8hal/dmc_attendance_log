@@ -60,15 +60,18 @@
 
 ## `/attendance`
 
-이 함수의 **HTTP 연산은 아래 네 줄이 전부**다(추가 분기 없음).  
-경로 `/attendance`. CORS·OPTIONS 지원. **GET**은 `action`으로 분기(생략 시 `status`). **POST**는 본문만(별도 `action` 없음).
+경로 `/attendance`. CORS·OPTIONS 지원. **GET**은 `action`으로 분기(생략 시 `status`). **POST**는 본문만(별도 `action` 없음).  
+`sessionCount` GET은 **집계만** 반환(인증 없음). 운영 정책·남용 방지는 별도 합의. `meetingDateKey`+`meetingType` 복합 쿼리용 인덱스는 `firestore.indexes.json`에 정의되어 있으며 **배포 시 인덱스 반영**이 필요하다.
 
 | 구분 | 메서드 | 쿼리 | 본문 | 하는 일 | 돌려주는 것 |
 |------|--------|------|------|---------|-------------|
 | `nicknames` | GET | `action=nicknames`, `limit`(1~1000·기본 500) | — | 최근 출석에서 닉네임 추출·`TEST`로 시작하는 닉 제외·가나다순 | `ok`, `nicknames[]`, `count` |
 | `status` | GET | `action=status` 또는 생략, `date`(YYYY/MM/DD·생략 시 KST 당일) | — | 해당일 출석 문서 전부 조회 | `ok`, `date`, `count`, `items[]`(닉네임·팀·모임유형·시간 등) |
-| `history` | GET | **`action=history`**, **`nickname` 필수**, `month`(YYYY-MM·생략 시 KST 이번 달) | — | 닉네임+월별 출석·유형별 요약·가능 모임 수 대비 출석률 | `ok`, `nickname`, `month`, `count`, `items[]`, `summaryByType`, `totalPossible`, `attendanceRate` |
-| 출석 저장 | POST | — | **`nickname`**, **`team`**(T1~T5·S), **`meetingType`**(ETC·TUE·THU·SAT), **`meetingDate`**(YYYY/MM/DD). JSON 또는 폼 | Firestore 저장·시트 백그라운드·같은 날 `status` 재조회 | `ok`, `written`(저장 요약), `status`(그날 전체 현황) |
+| `history` | GET | **`action=history`**, **`nickname` 필수**, `month`(YYYY-MM·생략 시 KST 이번 달) | — | 닉네임+월별 출석·유형별 요약·가능 모임 수 대비 출석률 | `ok`, `nickname`, `month`, `count`(items 길이·게스트 행 포함), `items[]`(`meetingDate`, `isGuest` 등), `summaryByType`(정회원만 집계), `totalPossible`, `attendanceRate`(정회원만 반영) |
+| `members` | GET | `action=members` | — | 출석 v2용 숨김 제외 회원 목록 | `ok`, `members[]` |
+| `stats` | GET | **`action=stats`**, `month`(YYYY-MM·필수), **`memberId` 또는 `nickname`** | — | 해당 월 출석 통계(v2 완료 화면 등) | `ok`, 통계 필드(구현 SSOT: `getAttendanceStatsV2`) |
+| `sessionCount` | GET | **`action=sessionCount`**, **`meetingDate`**(YYYY-MM-DD 또는 YYYY/MM/DD), **`meetingType`**(TUE·THU·SAT·ETC) | — | 해당 모임일·유형의 출석 **건수**(정회원·게스트 구분) | `ok`, `memberCount`, `guestCount` |
+| 출석 저장 | POST | — | **`nickname`**, **`team`**(T1~T5·S·GUEST), **`meetingType`**(ETC·TUE·THU·SAT), **`meetingDate`**(YYYY/MM/DD). JSON 또는 폼·`isGuest`/`memberId` 선택 | Firestore 저장·시트 백그라운드·`status`·`sessionCount` 병렬 재조회 | `ok`, `written`, `status`, `sessionCount` |
 
 `team`·`meetingType` 코드는 [openapi.yaml](./openapi.yaml) `AttendancePostBody` 와 동일.
 

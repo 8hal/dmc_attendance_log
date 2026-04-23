@@ -557,8 +557,7 @@ async function handlePost(req, res) {
       meetingDate: formatDateKeyForSheets(meetingDateKey), // "2026. 1. 10" 형식
     }).catch(() => {}); // 에러 무시
 
-    // 해당 날짜 출석 현황 조회
-    const status = await getStatusForDate(meetingDateKey);
+    const { status, sessionCount } = await getStatusAndSessionCountForPost(meetingDateKey, typeCode);
 
     const durationMs = Date.now() - startMs;
     console.log(`[POST] ${nicknameStored} - ${meetingDateKey} - ${durationMs}ms`);
@@ -575,6 +574,7 @@ async function handlePost(req, res) {
         timeText,
       },
       status,
+      sessionCount,
     });
   } catch (err) {
     console.error("[POST Error]", err);
@@ -582,29 +582,33 @@ async function handlePost(req, res) {
   }
 }
 
-/**
- * 날짜별 출석 현황 조회
- */
-async function getStatusForDate(dateKey) {
-  const snapshot = await db
+function mapAttendanceDocToStatusItem(data) {
+  return {
+    nickname: data.nickname,
+    team: data.team || null,
+    teamLabel: data.teamLabel,
+    meetingType: data.meetingType || null,
+    meetingTypeLabel: data.meetingTypeLabel,
+    meetingDate: data.meetingDateKey,
+    timeText: data.ts ? formatKstKoreanAmPm(new Date(data.ts)) : "",
+  };
+}
+
+/** 해당 모임일 문서 전부 (ts 내림차순). status·sessionCount 계산에 공통 사용 */
+async function fetchAttendanceSnapshotForMeetingDateKey(dateKey) {
+  return db
     .collection(COLLECTION)
     .where("meetingDateKey", "==", dateKey)
     .orderBy("ts", "desc")
     .get();
+}
 
-  const items = snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      nickname: data.nickname,
-      team: data.team || null,
-      teamLabel: data.teamLabel,
-      meetingType: data.meetingType || null,
-      meetingTypeLabel: data.meetingTypeLabel,
-      meetingDate: data.meetingDateKey,
-      timeText: data.ts ? formatKstKoreanAmPm(new Date(data.ts)) : "",
-    };
-  });
-
+/**
+ * 날짜별 출석 현황 조회
+ */
+async function getStatusForDate(dateKey) {
+  const snapshot = await fetchAttendanceSnapshotForMeetingDateKey(dateKey);
+  const items = snapshot.docs.map((doc) => mapAttendanceDocToStatusItem(doc.data()));
   return {
     date: dateKey,
     count: items.length,
@@ -613,7 +617,67 @@ async function getStatusForDate(dateKey) {
 }
 
 /**
+ * 같은 모임일 + 정모 유형으로 출석한 인원 수 (게스트 구분)
+ * 모임일 단일 쿼리 후 유형 필터 — POST와 동일 스냅샷 패턴과 맞춤
+ */
+async function getMeetingSessionCounts(meetingDateKey, meetingTypeUpper) {
+  const mt = str(meetingTypeUpper).trim().toUpperCase();
+  if (!isValidDateKey(meetingDateKey)) {
+    return { error: `invalid meetingDate (YYYY/MM/DD): ${meetingDateKey}` };
+  }
+  if (!MEETING_TYPE_LABEL[mt]) {
+    return { error: `invalid meetingType: ${meetingTypeUpper}` };
+  }
+  const snapshot = await fetchAttendanceSnapshotForMeetingDateKey(meetingDateKey);
+  let memberCount = 0;
+  let guestCount = 0;
+  snapshot.docs.forEach((doc) => {
+    const d = doc.data();
+    if (str(d.meetingType || "").toUpperCase() !== mt) return;
+    if (d.isGuest === true) guestCount += 1;
+    else memberCount += 1;
+  });
+  return {
+    meetingDateKey,
+    meetingType: mt,
+    memberCount,
+    guestCount,
+    totalCount: memberCount + guestCount,
+  };
+}
+
+/** POST 응답용: 하루치 문서 1회 읽기로 status + sessionCount 생성 */
+async function getStatusAndSessionCountForPost(meetingDateKey, typeCodeUpper) {
+  const mt = str(typeCodeUpper).trim().toUpperCase();
+  const snapshot = await fetchAttendanceSnapshotForMeetingDateKey(meetingDateKey);
+  const items = snapshot.docs.map((doc) => mapAttendanceDocToStatusItem(doc.data()));
+  let memberCount = 0;
+  let guestCount = 0;
+  snapshot.docs.forEach((doc) => {
+    const d = doc.data();
+    if (str(d.meetingType || "").toUpperCase() !== mt) return;
+    if (d.isGuest === true) guestCount += 1;
+    else memberCount += 1;
+  });
+  return {
+    status: {
+      date: meetingDateKey,
+      count: items.length,
+      items,
+    },
+    sessionCount: {
+      meetingDateKey,
+      meetingType: mt,
+      memberCount,
+      guestCount,
+      totalCount: memberCount + guestCount,
+    },
+  };
+}
+
+/**
  * 닉네임별 월간 출석 기록 조회
+ * attendanceRate·summaryByType 은 정회원 문서만 반영한다. items·count 는 전체 행.
  */
 async function getHistoryForNicknameMonth(nickname, monthKey) {
   const nickKey = nickname.trim().toLowerCase();
@@ -627,10 +691,13 @@ async function getHistoryForNicknameMonth(nickname, monthKey) {
 
   const items = [];
   const summaryByType = {};
+  let memberAttendanceCount = 0;
 
   snapshot.docs.forEach((doc) => {
     const data = doc.data();
     const meetingTypeLabel = data.meetingTypeLabel || "";
+    const rowGuest = data.isGuest === true;
+    if (!rowGuest) memberAttendanceCount += 1;
 
     items.push({
       nickname: data.nickname,
@@ -640,14 +707,18 @@ async function getHistoryForNicknameMonth(nickname, monthKey) {
       meetingTypeLabel,
       meetingDate: data.meetingDateKey,
       timeText: data.ts ? formatKstKoreanAmPm(new Date(data.ts)) : "",
+      isGuest: rowGuest,
     });
 
-    const typeKey = meetingTypeLabel || "미지정";
-    summaryByType[typeKey] = (summaryByType[typeKey] || 0) + 1;
+    if (!rowGuest) {
+      const typeKey = meetingTypeLabel || "미지정";
+      summaryByType[typeKey] = (summaryByType[typeKey] || 0) + 1;
+    }
   });
 
   const possible = countPossibleMeetingsForMonth(monthKey);
-  const rate = possible > 0 ? Math.min(100, Math.round((items.length / possible) * 100)) : 0;
+  const rate =
+    possible > 0 ? Math.min(100, Math.round((memberAttendanceCount / possible) * 100)) : 0;
 
   return {
     nickname,
@@ -764,6 +835,21 @@ async function handleGet(req, res) {
       const durationMs = Date.now() - startMs;
       console.log(`[GET stats] month=${monthKey} - ${durationMs}ms`);
       return res.json({ ok: true, ...statsResult });
+    }
+
+    if (action === "sessionCount") {
+      let dateKey = str(req.query.meetingDate).trim();
+      const meetingTypeQ = str(req.query.meetingType).trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+        dateKey = dateKey.replace(/-/g, "/");
+      }
+      const sc = await getMeetingSessionCounts(dateKey, meetingTypeQ);
+      if (sc.error) {
+        return res.status(400).json({ ok: false, error: sc.error });
+      }
+      const durationMs = Date.now() - startMs;
+      console.log(`[GET sessionCount] ${dateKey} ${meetingTypeQ} m=${sc.memberCount} g=${sc.guestCount} - ${durationMs}ms`);
+      return res.json({ ok: true, ...sc });
     }
 
     return res.status(400).json({ ok: false, error: `unknown action: ${action}` });

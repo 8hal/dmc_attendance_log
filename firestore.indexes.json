@@ -5,6 +5,14 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "meetingDateKey", "order": "ASCENDING" },
+        { "fieldPath": "meetingType", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "meetingDateKey", "order": "ASCENDING" },
         { "fieldPath": "ts", "order": "DESCENDING" }
       ]
     },

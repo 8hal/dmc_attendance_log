@@ -182,7 +182,7 @@ paths:
               $ref: "#/components/schemas/AttendancePostBody"
       responses:
         "200":
-          description: 저장 후 해당일 status 포함
+          description: 저장 후 해당일 status·sessionCount 포함
           content:
             application/json:
               schema:
@@ -210,6 +210,10 @@ paths:
                         type: string
                   status:
                     type: object
+                    additionalProperties: true
+                  sessionCount:
+                    type: object
+                    description: 해당 모임일·유형 집계(무인증 GET sessionCount와 동형)
                     additionalProperties: true
         "400":
           content:
