@@ -71,13 +71,84 @@
     .member-row:hover { background: var(--color-bg); }
     .member-name { font-weight: 600; }
     .member-meta { font-size: 12px; color: var(--color-text-muted); }
-    .profile-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-    .big-checkin {
-      margin-top: 14px;
-      height: 56px;
-      font-size: 17px;
-      font-weight: 600;
+    .dash-card {
+      padding: 20px 16px 18px;
+    }
+    .dash-context-band {
+      text-align: center;
+      background: linear-gradient(180deg, #fafcfd 0%, #f1f5f9 100%);
+      border: 1px solid var(--color-border);
       border-radius: 14px;
+      padding: 16px 14px 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .dash-mega-line1 {
+      text-align: center;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.28;
+      font-size: clamp(1.02rem, 4.5vmin, 1.32rem);
+      color: var(--color-text-secondary);
+    }
+    .dash-mega-line2 {
+      text-align: center;
+      margin: 6px 0 0;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.2;
+      font-size: clamp(1.18rem, 5.5vmin, 1.68rem);
+      color: var(--color-text);
+    }
+    .dash-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(15, 23, 42, 0.07);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+    .btn-dash-link {
+      width: auto;
+      margin: 0;
+      padding: 4px 8px;
+      background: transparent;
+      border: 0;
+      color: var(--color-text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .btn-dash-link:hover { color: var(--color-primary); }
+    .meeting-adjust { margin-top: 20px; font-size: 12px; color: var(--color-text-muted); }
+    .meeting-adjust summary {
+      cursor: pointer;
+      list-style: none;
+      text-align: center;
+      padding: 8px 4px;
+      user-select: none;
+      font-size: 11px;
+      max-width: 22em;
+      margin: 0 auto;
+      line-height: 1.4;
+    }
+    .meeting-adjust summary::-webkit-details-marker { display: none; }
+    .meeting-adjust-body { padding: 6px 0 2px; }
+    .dash-checkin {
+      margin-top: 24px;
+      min-height: clamp(56px, 14vmin, 64px);
+      font-size: clamp(1.05rem, 5vmin, 1.35rem);
+      font-weight: 800;
+      border-radius: 14px;
+      letter-spacing: -0.03em;
     }
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .stat-box { background: var(--color-bg); border-radius: 12px; padding: 12px; text-align: center; }
@@ -100,13 +171,317 @@
       box-sizing: border-box;
     }
     .modal-sheet h2 { margin: 0 0 12px 0; font-size: 16px; }
+
+    /* 출석 완료: 캘린더 / 스탬프 */
+    .success-view-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0 10px;
+      align-items: stretch;
+    }
+    .success-tab {
+      flex: 1;
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      background: var(--color-bg);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      width: auto;
+      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s, opacity 0.2s;
+    }
+    .success-tab:not(.active) {
+      font-weight: 600;
+      opacity: 0.88;
+      background: transparent;
+      border-style: dashed;
+    }
+    #successTabStamp.success-tab:not(.active) {
+      flex: 0.82;
+      font-size: 12px;
+    }
+    .success-tab.active {
+      background: var(--color-primary-light);
+      border-color: var(--color-primary);
+      border-style: solid;
+      color: var(--color-primary);
+      font-weight: 800;
+      opacity: 1;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.12);
+    }
+    .success-cal-pref-hint {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.45;
+      text-align: center;
+    }
+    .success-cheer {
+      margin: 6px 0 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-align: center;
+      line-height: 1.4;
+    }
+    @keyframes success-cal-pop {
+      0% { transform: scale(0.9); }
+      55% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .mini-cal-checkin-animate {
+      animation: success-cal-pop 0.48s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mini-cal-checkin-animate { animation: none; }
+    }
+    .success-streak-tag {
+      display: inline-block;
+      margin: 0 1px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #b45309;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      vertical-align: middle;
+    }
+    .member-list-empty {
+      padding: 28px 16px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+    .mini-cal {
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 12px 10px 10px;
+      background: linear-gradient(180deg, #fff 0%, var(--color-bg) 100%);
+    }
+    .mini-cal-title {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      margin: 0 0 10px;
+      color: var(--color-text);
+      letter-spacing: -0.02em;
+    }
+    .mini-cal-dows {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .mini-cal-dows span {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+    }
+    .mini-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .mini-cal-cell {
+      aspect-ratio: 1;
+      max-height: 42px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+    .mini-cal-cell.mini-cal-pad { visibility: hidden; }
+    .mini-cal-cell.mini-cal-checkin {
+      background: linear-gradient(145deg, var(--color-success) 0%, #047857 100%);
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+    }
+    .mini-cal-cell.mini-cal-month-hit {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      font-weight: 700;
+      border: 1px solid rgba(37, 99, 235, 0.35);
+    }
+    .mini-cal-sub {
+      font-size: 8px;
+      font-weight: 700;
+      opacity: 0.9;
+      margin-top: 1px;
+    }
+    .mini-cal-legend {
+      margin: 10px 0 0;
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+    .stamp-board-wrap {
+      border: 1px dashed var(--color-border);
+      border-radius: 12px;
+      padding: 14px 10px 16px;
+      background: #fffef8;
+    }
+    .stamp-board-title {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      margin: 0 0 12px;
+    }
+    .stamp-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 11px;
+    }
+    .stamp-slot {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      border: 2px solid transparent;
+    }
+    .stamp-slot.filled {
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35) 0%, transparent 45%),
+        linear-gradient(160deg, #b91c1c 0%, #7f1d1d 100%);
+      color: #fff;
+      box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2), 0 3px 8px rgba(127, 29, 29, 0.25);
+    }
+    .stamp-slot.filled.last {
+      box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2), 0 0 0 3px rgba(5, 150, 105, 0.25), 0 4px 12px rgba(5, 150, 105, 0.35);
+    }
+    .stamp-slot.empty {
+      border: 2px dashed #d4d4d8;
+      background: rgba(255,255,255,0.85);
+      color: var(--color-text-muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .stamp-guest-big {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .stamp-guest-big .stamp-slot {
+      width: 72px;
+      height: 72px;
+      font-size: 28px;
+    }
+    .stamp-guest-cap {
+      margin: 0;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      text-align: center;
+    }
+    .success-stats-line {
+      margin: 14px 0 0;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-align: center;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+    .dash-session-row {
+      margin: 14px 0 0;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--color-primary-light);
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      border-radius: 12px;
+    }
+    .dash-session-row.muted {
+      background: var(--color-bg);
+      border-color: var(--color-border);
+    }
+    .dash-session-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+    }
+    .dash-session-row.muted .dash-session-label {
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+    .dash-session-figures {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--color-text);
+      text-align: right;
+      letter-spacing: -0.02em;
+    }
+    .dash-session-row.muted .dash-session-figures {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+    .dash-session-figures .dash-session-num {
+      color: var(--color-primary);
+    }
+    .dash-session-figures .dash-session-g {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      margin-left: 4px;
+    }
+    .success-session-line {
+      margin: 8px 0 0;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      background: var(--color-bg);
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+    }
+    .success-session-line .dash-session-figures {
+      display: inline-flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--color-text);
+    }
+    .success-session-line .dash-session-num {
+      font-weight: 800;
+      color: var(--color-primary);
+      font-size: 15px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <span class="beta-pill">BETA</span>
     <div class="beta-note">
-      소수 테스트용 새 출석 화면입니다. QR·메인(<a href="index.html">index.html</a>)은 그대로이며, 피드백은 운영진에 전달해 주세요.
+      운영진에게만 공개할 페이지입니다. 날짜별 전체 명단·월간 기록 등은
+      <a href="index.html">메인 출석 페이지 (index.html)</a>에서 이용할 수 있어요.
     </div>
 
     <div id="viewSearch" class="hidden">
@@ -125,24 +500,34 @@
     </div>
 
     <div id="viewDashboard" class="hidden">
-      <div class="card">
-        <div class="profile-head">
-          <div>
-            <h1 id="dashTitle">출석</h1>
-            <div id="dashSubtitle" style="font-size:13px;color:var(--color-text-secondary);"></div>
-          </div>
-          <button type="button" class="ghost" id="changeTeamBtn" style="width:auto;padding:8px 12px;font-size:12px;margin:0;">팀 변경</button>
+      <div class="card dash-card">
+        <div class="dash-context-band">
+          <p class="dash-mega-line1" id="dashDateTypeLine" aria-live="polite"></p>
+          <p class="dash-mega-line2" id="dashNicknameLine"></p>
+          <p class="dash-meta-bar">
+            <span id="dashTeamRole"></span>
+            <button type="button" class="btn-dash-link" id="changeTeamBtn">팀 변경</button>
+          </p>
         </div>
-        <label for="meetingDate">모임 날짜</label>
-        <input type="date" id="meetingDate" />
-        <label for="meetingType" style="margin-top:10px;">정모 유형</label>
-        <select id="meetingType">
-          <option value="TUE">화요일 정모</option>
-          <option value="THU">목요일 정모</option>
-          <option value="SAT">토요일 정모</option>
-          <option value="ETC">기타</option>
-        </select>
-        <button type="button" class="primary big-checkin" id="checkinBtn">출석 체크</button>
+        <div class="dash-session-row muted" id="dashSessionRow">
+          <span class="dash-session-label">현재 참여 인원</span>
+          <span class="dash-session-figures" id="dashSessionFigures" aria-live="polite">…</span>
+        </div>
+        <button type="button" class="primary dash-checkin" id="checkinBtn">출석 체크</button>
+        <details class="meeting-adjust" id="meetingAdjust">
+          <summary>날짜·유형이 다르면 여기서 수정</summary>
+          <div class="meeting-adjust-body">
+            <label for="meetingDate">모임 날짜</label>
+            <input type="date" id="meetingDate" />
+            <label for="meetingType" style="margin-top:10px;">정모 유형</label>
+            <select id="meetingType">
+              <option value="TUE">화요일 정모</option>
+              <option value="THU">목요일 정모</option>
+              <option value="SAT">토요일 정모</option>
+              <option value="ETC">기타</option>
+            </select>
+          </div>
+        </details>
         <div id="dashMsg" class="msg"></div>
         <button type="button" class="danger-ghost" id="resetProfileBtn">다른 사람으로 출석 (프로필 초기화)</button>
       </div>
@@ -150,26 +535,18 @@
 
     <div id="viewSuccess" class="hidden">
       <div class="card">
-        <h1 style="color:var(--color-success);">출석 완료</h1>
+        <h1 style="color:var(--color-success);font-size:1.2rem;">출석 완료</h1>
         <p id="successLine" style="margin:8px 0 0 0;font-size:15px;"></p>
-        <div class="stat-grid">
-          <div class="stat-box">
-            <div class="stat-num" id="statMonthCount">–</div>
-            <div class="stat-label">이번 달 출석(회)</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-num" id="statRate">–</div>
-            <div class="stat-label">이번 달 출석률</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-num" id="statStreak">–</div>
-            <div class="stat-label">연속 정모(화·목·토)</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-num" id="statPossible">–</div>
-            <div class="stat-label">이번 달 정모일 수</div>
-          </div>
+        <p id="successCheer" class="success-cheer" aria-live="polite"></p>
+        <div id="successSessionLine" class="success-session-line hidden" aria-live="polite"></div>
+        <p class="success-cal-pref-hint"><strong>캘린더</strong>는 방금 출석한 모임일 위치를, <strong>스탬프</strong>는 이번 달 출석 횟수를 보여 줍니다. 베타에서는 두 형태를 함께 두고 피드백을 받은 뒤 하나로 정할 예정이에요. 날짜별·월간 상세는 <a href="index.html">메인 출석 페이지</a>에서 확인할 수 있습니다.</p>
+        <div class="success-view-tabs" role="tablist" aria-label="완료 화면 표시">
+          <button type="button" class="success-tab active" id="successTabCal" data-sv="cal" role="tab" aria-selected="true" aria-controls="successPanelCal" tabindex="0">캘린더</button>
+          <button type="button" class="success-tab" id="successTabStamp" data-sv="stamp" role="tab" aria-selected="false" aria-controls="successPanelStamp" tabindex="-1">스탬프</button>
         </div>
+        <div id="successPanelCal" class="success-panel" role="tabpanel" aria-labelledby="successTabCal"></div>
+        <div id="successPanelStamp" class="success-panel hidden" role="tabpanel" aria-labelledby="successTabStamp"></div>
+        <p id="successStatsLine" class="success-stats-line"></p>
         <button type="button" class="primary" id="successDoneBtn" style="margin-top:16px;">닫기</button>
       </div>
     </div>
@@ -205,394 +582,6 @@
     </div>
   </div>
 
-<script>
-(function () {
-  const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.startsWith("192.168.") || location.hostname.startsWith("172.");
-  const IS_STAGING = location.hostname.includes("dmc-attendance-staging");
-  const PROD_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
-  const STAGING_URL = "https://asia-northeast3-dmc-attendance-staging.cloudfunctions.net/attendance";
-  const LOCAL_URL = "http://" + location.hostname + ":5001/dmc-attendance/asia-northeast3/attendance";
-  const BASE_URL = IS_LOCAL ? LOCAL_URL : (IS_STAGING ? STAGING_URL : PROD_URL);
-
-  const LS_PROFILE = "dmc_attendance_v2_profile";
-  const TEAM_OPTIONS = [
-    { value: "S", label: "S팀" },
-    { value: "T1", label: "1팀" },
-    { value: "T2", label: "2팀" },
-    { value: "T3", label: "3팀" },
-    { value: "T4", label: "4팀" },
-    { value: "T5", label: "5팀" }
-  ];
-
-  const elSearch = document.getElementById("viewSearch");
-  const elDash = document.getElementById("viewDashboard");
-  const elSuccess = document.getElementById("viewSuccess");
-  const elSearchInput = document.getElementById("searchInput");
-  const elMemberList = document.getElementById("memberList");
-  const elSearchMsg = document.getElementById("searchMsg");
-  const elDashTitle = document.getElementById("dashTitle");
-  const elDashSubtitle = document.getElementById("dashSubtitle");
-  const elMeetingDate = document.getElementById("meetingDate");
-  const elMeetingType = document.getElementById("meetingType");
-  const elCheckinBtn = document.getElementById("checkinBtn");
-  const elDashMsg = document.getElementById("dashMsg");
-  const elSuccessLine = document.getElementById("successLine");
-  const elStatMonthCount = document.getElementById("statMonthCount");
-  const elStatRate = document.getElementById("statRate");
-  const elStatStreak = document.getElementById("statStreak");
-  const elStatPossible = document.getElementById("statPossible");
-  const elGuestModal = document.getElementById("guestModal");
-  const elTeamModal = document.getElementById("teamModal");
-
-  let membersCache = [];
-  let myProfile = null;
-
-  function showView(name) {
-    elSearch.classList.toggle("hidden", name !== "search");
-    elDash.classList.toggle("hidden", name !== "dashboard");
-    elSuccess.classList.toggle("hidden", name !== "success");
-  }
-
-  function loadProfile() {
-    try {
-      const raw = localStorage.getItem(LS_PROFILE);
-      if (!raw) return null;
-      const p = JSON.parse(raw);
-      if (!p || !p.nickname || !p.memberId || !p.team) return null;
-      return p;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function saveProfile(p) {
-    localStorage.setItem(LS_PROFILE, JSON.stringify({ ...p, savedAt: new Date().toISOString() }));
-    myProfile = p;
-  }
-
-  function clearProfile() {
-    localStorage.removeItem(LS_PROFILE);
-    myProfile = null;
-  }
-
-  function dateKeyToInputValue(dateKey) {
-    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(dateKey)) return "";
-    return dateKey.replace(/\//g, "-");
-  }
-
-  function inputValueToDateKey(v) {
-    const s = String(v || "").trim();
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return "";
-    return m[1] + "/" + m[2] + "/" + m[3];
-  }
-
-  function getDefaultDateAndMeetingType() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const testDateParam = urlParams.get("testDate");
-    let now = new Date();
-    if ((IS_LOCAL || IS_STAGING) && testDateParam) {
-      const parsed = new Date(testDateParam + "T10:00:00+09:00");
-      if (!isNaN(parsed.getTime())) now = parsed;
-    }
-    const kstFormatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Seoul",
-      weekday: "short"
-    });
-    const dow = kstFormatter.format(now);
-    let dayOffset = 0;
-    let meetingType = "SAT";
-    switch (dow) {
-      case "Mon": dayOffset = -2; meetingType = "SAT"; break;
-      case "Tue": dayOffset = 0; meetingType = "TUE"; break;
-      case "Wed": dayOffset = -1; meetingType = "TUE"; break;
-      case "Thu": dayOffset = 0; meetingType = "THU"; break;
-      case "Fri": dayOffset = -1; meetingType = "THU"; break;
-      case "Sat": dayOffset = 0; meetingType = "SAT"; break;
-      case "Sun": dayOffset = -1; meetingType = "SAT"; break;
-    }
-    const kstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-    kstDate.setDate(kstDate.getDate() + dayOffset);
-    const year = kstDate.getFullYear();
-    const month = String(kstDate.getMonth() + 1).padStart(2, "0");
-    const day = String(kstDate.getDate()).padStart(2, "0");
-    const dateKey = year + "/" + month + "/" + day;
-    return { dateKey, meetingType };
-  }
-
-  function teamLabel(code) {
-    const f = TEAM_OPTIONS.find((t) => t.value === code);
-    return f ? f.label : code;
-  }
-
-  function currentMonthKey() {
-    const fmt = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Seoul",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    });
-    const s = fmt.format(new Date());
-    const y = s.slice(0, 4);
-    const mo = s.slice(5, 7);
-    return y + "-" + mo;
-  }
-
-  function applyDefaultMeetingFields() {
-    const { dateKey, meetingType } = getDefaultDateAndMeetingType();
-    elMeetingDate.value = dateKeyToInputValue(dateKey);
-    elMeetingType.value = meetingType;
-  }
-
-  function renderDashboard() {
-    if (!myProfile) return;
-    elDashTitle.textContent = myProfile.nickname + "님";
-    elDashSubtitle.textContent = teamLabel(myProfile.team) + " · 정회원";
-    applyDefaultMeetingFields();
-    elDashMsg.textContent = "";
-    elDashMsg.className = "msg";
-  }
-
-  async function fetchMembers() {
-    const res = await fetch(BASE_URL + "?action=members");
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || "members failed");
-    membersCache = json.members || [];
-    return membersCache;
-  }
-
-  function renderMemberList(filter) {
-    const q = (filter || "").trim().toLowerCase();
-    const list = !q
-      ? membersCache.slice(0, 80)
-      : membersCache.filter((m) => m.nickname.toLowerCase().includes(q)).slice(0, 120);
-    elMemberList.innerHTML = list
-      .map(
-        (m) =>
-          '<div class="member-row" data-id="' +
-          encodeURIComponent(m.id) +
-          '" data-nick="' +
-          escapeHtml(m.nickname) +
-          '" data-team="' +
-          escapeHtml(m.team || "") +
-          '"><span><span class="member-name">' +
-          escapeHtml(m.nickname) +
-          '</span><div class="member-meta">' +
-          escapeHtml(m.realName || "") +
-          " · " +
-          escapeHtml(teamLabel(m.team) || "팀 미정") +
-          "</div></span></div>"
-      )
-      .join("");
-    elMemberList.querySelectorAll(".member-row").forEach((row) => {
-      row.addEventListener("click", () => {
-        const id = decodeURIComponent(row.getAttribute("data-id"));
-        const nickname = row.getAttribute("data-nick");
-        const team = row.getAttribute("data-team") || "S";
-        saveProfile({ nickname, memberId: id, team });
-        showView("dashboard");
-        renderDashboard();
-      });
-    });
-  }
-
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  async function postCheckin(body) {
-    const params = new URLSearchParams();
-    Object.keys(body).forEach((k) => {
-      const v = body[k];
-      if (v === undefined || v === null) return;
-      if (typeof v === "boolean") {
-        params.append(k, v ? "true" : "false");
-      } else {
-        params.append(k, String(v));
-      }
-    });
-    const res = await fetch(BASE_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: params.toString()
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || !json.ok) {
-      const err = new Error(json.error || json.message || "request failed");
-      err.code = json.error;
-      err.payload = json;
-      throw err;
-    }
-    return json;
-  }
-
-  async function showSuccessAfterCheckin(nickname, memberId, isGuest) {
-    elSuccessLine.textContent = (isGuest ? "게스트 " : "") + nickname + "님, 출석이 등록되었습니다.";
-    elStatMonthCount.textContent = "–";
-    elStatRate.textContent = "–";
-    elStatStreak.textContent = "–";
-    elStatPossible.textContent = "–";
-    showView("success");
-
-    if (isGuest || !memberId) return;
-
-    try {
-      const month = currentMonthKey();
-      const res = await fetch(BASE_URL + "?action=stats&memberId=" + encodeURIComponent(memberId) + "&month=" + encodeURIComponent(month));
-      const json = await res.json();
-      if (!json.ok) return;
-      elStatMonthCount.textContent = String(json.thisMonthCount ?? 0);
-      elStatRate.textContent = (json.attendanceRate ?? 0) + "%";
-      elStatStreak.textContent = String(json.consecutiveClubSessions ?? 0);
-      elStatPossible.textContent = String(json.totalPossible ?? 0);
-    } catch (e) {
-      /* 통계는 부가 정보 */
-    }
-  }
-
-  elSearchInput.addEventListener("input", () => {
-    elSearchMsg.textContent = "";
-    renderMemberList(elSearchInput.value);
-  });
-
-  document.getElementById("openGuestBtn").addEventListener("click", () => {
-    const g = getDefaultDateAndMeetingType();
-    document.getElementById("guestNickname").value = "";
-    document.getElementById("guestMeetingType").value = g.meetingType;
-    document.getElementById("guestMeetingDate").value = dateKeyToInputValue(g.dateKey);
-    elGuestModal.classList.remove("hidden");
-  });
-
-  document.getElementById("guestCancelBtn").addEventListener("click", () => elGuestModal.classList.add("hidden"));
-  elGuestModal.addEventListener("click", (e) => {
-    if (e.target === elGuestModal) elGuestModal.classList.add("hidden");
-  });
-
-  document.getElementById("guestSubmitBtn").addEventListener("click", async () => {
-    const nickname = document.getElementById("guestNickname").value.trim();
-    const meetingType = document.getElementById("guestMeetingType").value;
-    const dateKey = inputValueToDateKey(document.getElementById("guestMeetingDate").value);
-    if (!nickname) {
-      alert("닉네임을 입력해 주세요.");
-      return;
-    }
-    if (!dateKey) {
-      alert("날짜를 선택해 주세요.");
-      return;
-    }
-    const btn = document.getElementById("guestSubmitBtn");
-    btn.disabled = true;
-    try {
-      await postCheckin({
-        nickname,
-        team: "GUEST",
-        meetingType,
-        meetingDate: dateKey,
-        isGuest: true,
-        memberId: null
-      });
-      elGuestModal.classList.add("hidden");
-      await showSuccessAfterCheckin(nickname, null, true);
-    } catch (e) {
-      alert(e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : (e.message || "오류"));
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  elCheckinBtn.addEventListener("click", async () => {
-    if (!myProfile) return;
-    const dateKey = inputValueToDateKey(elMeetingDate.value);
-    const meetingType = elMeetingType.value;
-    if (!dateKey) {
-      elDashMsg.textContent = "날짜를 선택해 주세요.";
-      elDashMsg.className = "msg error";
-      return;
-    }
-    elCheckinBtn.disabled = true;
-    elDashMsg.textContent = "";
-    try {
-      await postCheckin({
-        nickname: myProfile.nickname,
-        memberId: myProfile.memberId,
-        team: myProfile.team,
-        meetingType,
-        meetingDate: dateKey,
-        isGuest: false
-      });
-      await showSuccessAfterCheckin(myProfile.nickname, myProfile.memberId, false);
-    } catch (e) {
-      if (e.code === "ALREADY_CHECKED_IN") {
-        elDashMsg.textContent = (e.payload && e.payload.message) || "오늘 이미 출석하셨습니다.";
-      } else if (e.code === "MEMBER_NOT_FOUND") {
-        elDashMsg.textContent = "회원 정보가 유효하지 않습니다. 프로필을 다시 설정해 주세요.";
-      } else {
-        elDashMsg.textContent = e.message || "출석 처리에 실패했습니다.";
-      }
-      elDashMsg.className = "msg error";
-    } finally {
-      elCheckinBtn.disabled = false;
-    }
-  });
-
-  document.getElementById("resetProfileBtn").addEventListener("click", () => {
-    if (!confirm("이 기기에 저장된 출석 프로필을 지울까요?")) return;
-    clearProfile();
-    showView("search");
-    elSearchInput.value = "";
-    renderMemberList("");
-  });
-
-  document.getElementById("changeTeamBtn").addEventListener("click", () => {
-    const sel = document.getElementById("teamSelect");
-    sel.innerHTML = TEAM_OPTIONS.map((t) => '<option value="' + t.value + '">' + t.label + "</option>").join("");
-    sel.value = myProfile && myProfile.team ? myProfile.team : "S";
-    elTeamModal.classList.remove("hidden");
-  });
-
-  document.getElementById("teamCancelBtn").addEventListener("click", () => elTeamModal.classList.add("hidden"));
-  elTeamModal.addEventListener("click", (e) => {
-    if (e.target === elTeamModal) elTeamModal.classList.add("hidden");
-  });
-
-  document.getElementById("teamSaveBtn").addEventListener("click", () => {
-    if (!myProfile) return;
-    const v = document.getElementById("teamSelect").value;
-    saveProfile({ ...myProfile, team: v });
-    elTeamModal.classList.add("hidden");
-    renderDashboard();
-  });
-
-  document.getElementById("successDoneBtn").addEventListener("click", () => {
-    showView("dashboard");
-    renderDashboard();
-  });
-
-  async function init() {
-    myProfile = loadProfile();
-    if (myProfile) {
-      showView("dashboard");
-      renderDashboard();
-    } else {
-      showView("search");
-      elSearchMsg.textContent = "명단 불러오는 중…";
-      try {
-        await fetchMembers();
-        elSearchMsg.textContent = "";
-        renderMemberList("");
-      } catch (e) {
-        elSearchMsg.textContent = "명단을 불러오지 못했습니다. 네트워크를 확인해 주세요.";
-        elSearchMsg.className = "msg error";
-      }
-    }
-  }
-
-  init();
-})();
-</script>
+  <script src="attendance-v2.js" defer></script>
 </body>
 </html>
