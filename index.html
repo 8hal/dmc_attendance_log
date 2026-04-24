@@ -19,8 +19,52 @@
       --color-border-light: #F1F5F9;
       --color-success: #059669;
       --color-error: #DC2626;
+      --color-open-beta: #0F766E;
+      --color-open-beta-bg: #CCFBF1;
+      --color-open-beta-surface: #F0FDFA;
     }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background: var(--color-bg); color: var(--color-text); }
+    .open-beta-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(20, 184, 166, 0.35);
+      background: linear-gradient(135deg, var(--color-open-beta-surface) 0%, var(--color-card) 55%);
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.45;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+    }
+    .open-beta-strip-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--color-open-beta);
+      background: var(--color-open-beta-bg);
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 118, 110, 0.2);
+      flex-shrink: 0;
+    }
+    .open-beta-strip-text { flex: 1 1 200px; min-width: 0; }
+    a.open-beta-strip-link {
+      display: inline-block;
+      width: auto;
+      padding: 8px 14px;
+      margin: 0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      background: var(--color-open-beta);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(15, 118, 110, 0.25);
+    }
+    a.open-beta-strip-link:hover { filter: brightness(1.06); }
     /* 스테이징 워터마크 */
     body.staging-env::before {
       content: "";
@@ -244,6 +288,11 @@
     <div class="nav-bar">
       <a href="my.html">📊 내 기록</a>
       <a href="races.html">🏅 대회 기록</a>
+    </div>
+    <div class="open-beta-strip" role="region" aria-label="공개 베타 새 출석 안내">
+      <span class="open-beta-strip-badge">공개 베타</span>
+      <span class="open-beta-strip-text">명단에서 본인만 고르면 되는 새 출석 화면입니다. 기존 QR·닉네임 입력 방식은 그대로 이어집니다.</span>
+      <a class="open-beta-strip-link" href="attendance-v2.html">새 출석 열기</a>
     </div>
     <div class="card form-anchor" id="formCard">
       <div class="brand">

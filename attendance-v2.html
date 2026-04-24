@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>출석 체크 (베타) - 동탄 마라톤 클럽</title>
+  <title>출석 체크 (공개 베타) - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
   <style>
     :root {
@@ -18,32 +18,38 @@
       --color-border: #E2E8F0;
       --color-success: #059669;
       --color-error: #DC2626;
-      --color-beta: #7C3AED;
-      --color-beta-bg: #EDE9FE;
+      --color-open-beta: #0F766E;
+      --color-open-beta-accent: #14B8A6;
+      --color-open-beta-bg: #CCFBF1;
+      --color-open-beta-surface: #F0FDFA;
     }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background: var(--color-bg); color: var(--color-text); }
     .wrap { max-width: 520px; margin: 0 auto; padding: 16px; padding-bottom: 32px; }
-    .beta-pill {
+    .open-beta-pill {
       display: inline-block;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.04em;
-      color: var(--color-beta);
-      background: var(--color-beta-bg);
+      color: var(--color-open-beta);
+      background: var(--color-open-beta-bg);
       padding: 4px 10px;
       border-radius: 999px;
       margin-bottom: 8px;
+      border: 1px solid rgba(15, 118, 110, 0.2);
     }
-    .beta-note {
+    .open-beta-banner {
       font-size: 12px;
       color: var(--color-text-secondary);
-      line-height: 1.45;
+      line-height: 1.5;
       margin-bottom: 14px;
-      padding: 10px 12px;
-      background: var(--color-card);
-      border-radius: 10px;
-      border: 1px solid var(--color-border);
+      padding: 12px 12px 12px 14px;
+      background: linear-gradient(90deg, var(--color-open-beta-surface) 0%, var(--color-card) 42%);
+      border-radius: 12px;
+      border: 1px solid rgba(20, 184, 166, 0.35);
+      border-left: 4px solid var(--color-open-beta-accent);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
     }
+    .open-beta-banner strong { color: var(--color-open-beta); }
     .card { background: var(--color-card); border-radius: 14px; padding: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
     h1 { font-size: 18px; margin: 0 0 8px 0; }
     .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -504,12 +510,11 @@
 </head>
 <body>
   <div class="wrap">
-    <span class="beta-pill">BETA</span>
-    <div class="beta-note">
-      운영진에게만 공개할 페이지입니다. 날짜별 전체 명단·월간 기록 등은
-      <a href="index.html">메인 출석 페이지 (index.html)</a>에서 이용할 수 있어요.
-      디자인 초안(정적 데모)과 비교는
-      <a href="attendance-v2-design-draft.html">attendance-v2-design-draft.html</a>에서 할 수 있어요.
+    <span class="open-beta-pill">공개 베타</span>
+    <div class="open-beta-banner">
+      <strong>누구나</strong> 이 주소로 출석할 수 있습니다. 화면과 문구는 계속 다듬을 예정이니 불편한 점은 운영진에게 알려 주세요.
+      날짜별 전체 명단·월간 기록은 <a href="index.html">메인 출석 페이지</a>에서 확인할 수 있어요.
+      레이아웃만 먼저 살펴보시려면 <a href="attendance-v2-design-draft.html">디자인 초안(데모)</a>을 열어 보세요.
     </div>
 
     <div id="viewSearch" class="hidden">
@@ -570,7 +575,7 @@
         <p id="successLine" style="margin:8px 0 0 0;font-size:15px;"></p>
         <p id="successCheer" class="success-cheer" aria-live="polite"></p>
         <div id="successSessionLine" class="success-session-line hidden" aria-live="polite"></div>
-        <p class="success-cal-pref-hint"><strong>캘린더</strong>는 방금 출석한 모임일 위치를, <strong>스탬프</strong>는 이번 달 출석 횟수를 보여 줍니다. 베타에서는 두 형태를 함께 두고, <strong>운영진 의견(어느 쪽이 더 보기 좋고 안내하기 쉬운지)</strong>을 모은 뒤 하나로 정할 예정이에요. 날짜별·월간 상세는 <a href="index.html">메인 출석 페이지</a>에서 확인할 수 있습니다.</p>
+        <p class="success-cal-pref-hint"><strong>캘린더</strong>는 방금 출석한 모임일 위치를, <strong>스탬프</strong>는 이번 달 출석 횟수를 보여 줍니다. 공개 베타 기간에는 두 형태를 함께 두고 피드백을 받은 뒤, <strong>운영진·회원 의견</strong>을 반영해 하나로 정할 예정이에요. 날짜별·월간 상세는 <a href="index.html">메인 출석 페이지</a>에서 확인할 수 있습니다.</p>
         <div class="success-view-tabs" role="tablist" aria-label="완료 화면 표시">
           <button type="button" class="success-tab active" id="successTabCal" data-sv="cal" role="tab" aria-selected="true" aria-controls="successPanelCal" tabindex="0">캘린더</button>
           <button type="button" class="success-tab" id="successTabStamp" data-sv="stamp" role="tab" aria-selected="false" aria-controls="successPanelStamp" tabindex="-1">스탬프</button>
