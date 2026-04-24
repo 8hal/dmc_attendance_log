@@ -40,10 +40,7 @@
   const elSuccessLine = document.getElementById("successLine");
   const elSuccessCheer = document.getElementById("successCheer");
   const elSuccessPanelCal = document.getElementById("successPanelCal");
-  const elSuccessPanelStamp = document.getElementById("successPanelStamp");
   const elSuccessStatsLine = document.getElementById("successStatsLine");
-  const elSuccessTabCal = document.getElementById("successTabCal");
-  const elSuccessTabStamp = document.getElementById("successTabStamp");
   const elSuccessSessionLine = document.getElementById("successSessionLine");
   const elDashSessionRow = document.getElementById("dashSessionRow");
   const elDashSessionFigures = document.getElementById("dashSessionFigures");
@@ -99,21 +96,6 @@
     return map[wEn] !== undefined ? map[wEn] : 0;
   }
 
-  function activateSuccessTab(mode) {
-    const isCal = mode === "cal";
-    elSuccessTabCal.classList.toggle("active", isCal);
-    elSuccessTabStamp.classList.toggle("active", !isCal);
-    elSuccessPanelCal.classList.toggle("hidden", !isCal);
-    elSuccessPanelStamp.classList.toggle("hidden", isCal);
-    elSuccessTabCal.setAttribute("aria-selected", isCal ? "true" : "false");
-    elSuccessTabStamp.setAttribute("aria-selected", isCal ? "false" : "true");
-    elSuccessTabCal.tabIndex = isCal ? 0 : -1;
-    elSuccessTabStamp.tabIndex = isCal ? -1 : 0;
-  }
-
-  function successResetTabs() {
-    activateSuccessTab("cal");
-  }
 
   function paintSuccessSummary() {
     if (lastSuccessGuest) {
@@ -175,45 +157,12 @@
       html += "<div class=\"" + cls + "\">" + d + (isJust ? '<span class="mini-cal-sub">방금</span>' : "") + "</div>";
     }
     html += "</div>";
-    html +=
-      '<p class="mini-cal-legend">진한 칸은 방금 출석한 날, 옅은 칸은 같은 달에 이미 기록된 정회원 출석일입니다. 전체 명단·상세는 <a href="index.html">메인 출석 페이지</a>에서 확인할 수 있어요.</p></div>';
+    html += '</div>';
     elSuccessPanelCal.innerHTML = html;
-  }
-
-  function paintSuccessStamps() {
-    if (lastSuccessGuest) {
-      elSuccessPanelStamp.innerHTML =
-        '<div class="stamp-board-wrap stamp-guest-big"><p class="stamp-board-title">게스트 출석</p>' +
-        '<div class="stamp-row"><div class="stamp-slot filled last" aria-hidden="true">✓</div></div>' +
-        '<p class="stamp-guest-cap">등록이 완료되었습니다.</p></div>';
-      return;
-    }
-    const possRaw = Number(lastSuccessStats.totalPossible);
-    const possible = Math.min(Math.max(possRaw > 0 ? possRaw : 12, 1), 31);
-    let cnt = Math.min(Math.max(Number(lastSuccessStats.thisMonthCount) || 0, 0), possible);
-    if (!lastSuccessStatsLoaded) cnt = 0;
-    const stampMonthLabel =
-      lastSuccessStatsMonthKey && lastSuccessStatsMonthKey !== currentMonthKey() ? "해당 월" : "이번 달";
-    let html =
-      '<div class="stamp-board-wrap"><p class="stamp-board-title">' +
-      stampMonthLabel +
-      ' 정모 스탬프</p><div class="stamp-row">';
-    for (let s = 0; s < possible; s++) {
-      if (s < cnt - 1) {
-        html += '<div class="stamp-slot filled" aria-hidden="true">✓</div>';
-      } else if (s === cnt - 1 && cnt > 0) {
-        html += '<div class="stamp-slot filled last" aria-hidden="true">✓</div>';
-      } else {
-        html += "<div class=\"stamp-slot empty\"></div>";
-      }
-    }
-    html += "</div></div>";
-    elSuccessPanelStamp.innerHTML = html;
   }
 
   function paintSuccessViews() {
     paintSuccessCalendar();
-    paintSuccessStamps();
     paintSuccessSummary();
   }
 
@@ -551,7 +500,6 @@
     lastSuccessGuest = !!isGuest;
     lastSuccessStatsLoaded = false;
     lastSuccessStats = { thisMonthCount: 0, attendanceRate: 0, consecutiveClubSessions: 0, totalPossible: 0 };
-    successResetTabs();
     paintSuccessViews();
     showView("success");
 
@@ -600,34 +548,6 @@
     }
   }
 
-  elSuccessTabCal.addEventListener("click", function () {
-    activateSuccessTab("cal");
-  });
-  elSuccessTabStamp.addEventListener("click", function () {
-    activateSuccessTab("stamp");
-  });
-  elSuccessTabCal.parentElement.addEventListener("keydown", function (e) {
-    if (e.target !== elSuccessTabCal && e.target !== elSuccessTabStamp) return;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-      e.preventDefault();
-      if (elSuccessTabCal.classList.contains("active")) activateSuccessTab("stamp");
-      else activateSuccessTab("cal");
-      (elSuccessTabStamp.classList.contains("active") ? elSuccessTabStamp : elSuccessTabCal).focus();
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-      e.preventDefault();
-      if (elSuccessTabCal.classList.contains("active")) activateSuccessTab("stamp");
-      else activateSuccessTab("cal");
-      (elSuccessTabStamp.classList.contains("active") ? elSuccessTabStamp : elSuccessTabCal).focus();
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      activateSuccessTab("cal");
-      elSuccessTabCal.focus();
-    } else if (e.key === "End") {
-      e.preventDefault();
-      activateSuccessTab("stamp");
-      elSuccessTabStamp.focus();
-    }
-  });
 
   elMeetingDate.addEventListener("change", refreshDashPrimaryLines);
   elMeetingType.addEventListener("change", refreshDashPrimaryLines);
