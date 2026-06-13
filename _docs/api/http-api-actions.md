@@ -88,7 +88,7 @@
 | `members` | GET | `action=members` | — | 출석 v2용 숨김 제외 회원 목록 | `ok`, `members[]` |
 | `stats` | GET | **`action=stats`**, `month`(YYYY-MM·필수), **`memberId` 또는 `nickname`** | — | 해당 월 출석 통계(v2 완료 화면 등) | `ok`, 통계 필드(구현 SSOT: `getAttendanceStatsV2`) |
 | `sessionCount` | GET | **`action=sessionCount`**, **`meetingDate`**(YYYY-MM-DD 또는 YYYY/MM/DD), **`meetingType`**(TUE·THU·SAT·ETC) | — | 해당 모임일·유형의 출석 **건수**(정회원·게스트 구분) | `ok`, `memberCount`, `guestCount` |
-| 출석 저장 | POST | — | **`nickname`**, **`team`**(T1~T5·S·GUEST), **`meetingType`**(ETC·TUE·THU·SAT), **`meetingDate`**(YYYY/MM/DD). JSON 또는 폼·`isGuest`/`memberId` 선택 | Firestore 저장·시트 백그라운드·`status`·`sessionCount` 병렬 재조회 | `ok`, `written`, `status`, `sessionCount` |
+| 출석 저장 | POST | — | **`nickname`**, **`team`**(T1~T5·S·GUEST), **`meetingType`**(ETC·TUE·THU·SAT), **`meetingDate`**(YYYY/MM/DD). JSON 또는 폼·`isGuest`/`memberId` 선택 | Firestore 저장·시트 백그라운드·`status`·`sessionCount` 병렬 재조회. **`isGuest: true`(출석 명부 외) 시 `ADMIN_EMAIL` 알림 메일** (Gmail SMTP, 실패 시 응답은 성공 유지) | `ok`, `written`, `status`, `sessionCount` |
 
 `team`·`meetingType` 코드는 [openapi.yaml](./openapi.yaml) `AttendancePostBody` 와 동일.
 

@@ -117,7 +117,11 @@ postCheckin({
 
 ### 3.6 당일 출석 현황
 
-- 「현재 출석 명단 보기」— `status` 기반 (정회원·명부 외 출석 모두 포함)
+- 「당일 출석 현황 보기」— `status` 기반 (정회원·명부 외 출석 모두 포함)
+
+### 3.7 운영 이메일 알림 (서버)
+
+`isGuest: true` POST 성공 시 `ADMIN_EMAIL`로 자동 발송 (Gmail SMTP, 주말 체크와 동일 인프라). 출석 응답은 메일과 비동기. `event_logs`: `attendance_not_on_roster_email`.
 
 ---
 

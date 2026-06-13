@@ -47,6 +47,75 @@ async function sendEmail({ to, subject, html }) {
   });
 }
 
+/**
+ * 출석 명부에 없는 경우(isGuest) 출석 시 운영진 알림 — fire-and-forget
+ */
+function sendNotOnRosterAlertEmail({ nickname, meetingDateKey, meetingTypeLabel, timeText }) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail || !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn("[notOnRosterEmail] GMAIL/ADMIN_EMAIL 미설정 — 알림 생략");
+    return;
+  }
+
+  const subject = `[DMC 출석] 출석 명부에 없는 경우 — ${nickname}`;
+  const html = `
+<p><strong>출석 명부에 없는 경우</strong>로 출석이 기록되었습니다.</p>
+<ul>
+  <li><strong>닉네임:</strong> ${escapeHtmlForEmail(nickname)}</li>
+  <li><strong>모임일:</strong> ${escapeHtmlForEmail(meetingDateKey)}</li>
+  <li><strong>정모:</strong> ${escapeHtmlForEmail(meetingTypeLabel || "")}</li>
+  <li><strong>출석 시각:</strong> ${escapeHtmlForEmail(timeText || "")}</li>
+</ul>
+<p>출석 명부 반영·회원 구분(정회원/준회원/신규)은 운영 명부에서 처리해 주세요.</p>
+<p><a href="https://dmc-attendance.web.app/attendance-v2.html?mode=kiosk">키오스크 출석</a> ·
+<a href="https://dmc-attendance.web.app/index.html">기존 출석 페이지</a></p>
+<hr/>
+<p style="color:#999;font-size:12px;">DMC 출석 자동 알림</p>
+`;
+
+  sendEmail({ to: adminEmail, subject, html })
+    .then(() => {
+      db.collection("event_logs").add({
+        event: "attendance_not_on_roster_email",
+        data: {
+          logSource: "server",
+          page: "attendance-api",
+          emailSent: true,
+          emailRecipient: adminEmail,
+          nickname,
+          meetingDate: meetingDateKey,
+          meetingTypeLabel,
+        },
+        timestamp: new Date().toISOString(),
+        ua: "cloud-functions",
+      }).catch(() => {});
+    })
+    .catch((err) => {
+      console.error("[notOnRosterEmail] 발송 실패:", err.message);
+      db.collection("event_logs").add({
+        event: "attendance_not_on_roster_email",
+        data: {
+          logSource: "server",
+          page: "attendance-api",
+          emailSent: false,
+          emailError: String(err.message || err),
+          nickname,
+          meetingDate: meetingDateKey,
+        },
+        timestamp: new Date().toISOString(),
+        ua: "cloud-functions",
+      }).catch(() => {});
+    });
+}
+
+function escapeHtmlForEmail(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 /** confirm 시 race_results.netTime: net → finishTime → gun (DNF 플레이스홀더 제외) */
 function effectiveNetTimeForConfirm(r) {
   const net = String(r.netTime || "").trim();
@@ -581,6 +650,15 @@ async function handlePost(req, res) {
       meetingTypeLabel,
       meetingDate: formatDateKeyForSheets(meetingDateKey), // "2026. 1. 10" 형식
     }).catch(() => {}); // 에러 무시
+
+    if (isGuest) {
+      sendNotOnRosterAlertEmail({
+        nickname: nicknameStored,
+        meetingDateKey,
+        meetingTypeLabel,
+        timeText,
+      });
+    }
 
     const { status, sessionCount } = await getStatusAndSessionCountForPost(meetingDateKey, typeCode);
 
