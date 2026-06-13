@@ -45,7 +45,7 @@
 - [x] `kioskMemberNotOnRosterBtn` + `openKioskNotOnRosterModal` + `handleKioskNotOnRosterCheckin`
 - [x] 개인 v2 용어·`not_on_roster` 로깅·검색 0건 키오스크 권장
 - [x] `kioskPersonalLink` **삭제**
-- [ ] **홈에 `kioskNotOnRosterBtn` 잔존 여부 확인** — v5는 제거; 마지막 커밋에서 member 패널만 추가했을 수 있음 → 배포 전 HTML 스윕
+- [x] 홈 `kioskNotOnRosterBtn` **없음** (2026-06-13 확인) — 명부 외 CTA는 `kioskMemberNotOnRosterBtn`만 (`attendance-v2.html` member 패널 하단)
 
 ### Legacy
 
@@ -137,6 +137,7 @@
 ## 8. 커밋 히스토리 (main 이후)
 
 ```
+77e96627 docs: 키오스크 블로커2 세션 핸드오프
 c3dc787f chore: 출석 명부 외 알림 메일 테스트 스크립트
 4b3f3631 feat(api): 출석 명부 외(isGuest) 출석 시 ADMIN_EMAIL 알림
 af5d0484 feat(attendance): 키오스크 블로커2 — 명부 외 UX, roster 재로드, event_logs
@@ -144,6 +145,19 @@ af5d0484 feat(attendance): 키오스크 블로커2 — 명부 외 UX, roster 재
 cb9e8bfd chore(draft): design-tokens for kiosk blocker2 HTML preview
 998e67ac docs: 키오스크 블로커2 UX 점검 v5 + HTML 변경 초안
 ```
+
+### 핵심 코드 위치 (빠른 점프)
+
+| 역할 | 파일 | 앵커 |
+|------|------|------|
+| 클라이언트 로깅 | `attendance-v2.js` | `logAttendanceEvent`, `RACE_LOG_API` |
+| roster SSOT | `attendance-v2.js` | `reloadKioskRoster`, `fetchKioskRoster` |
+| 키오스크 정회원 출석 | `attendance-v2.js` | `handleKioskMemberCheckin` |
+| 명부 외 모달·출석 | `attendance-v2.js` | `openKioskNotOnRosterModal`, `handleKioskNotOnRosterCheckin` |
+| 명부 외 CTA HTML | `attendance-v2.html` | `#kioskMemberNotOnRosterBtn` |
+| 서버 이메일 | `functions/index.js` | `sendNotOnRosterAlertEmail` |
+| isGuest POST 분기 | `functions/index.js` | `handlePost` 내 `isGuest` |
+| pre-deploy assert | `scripts/pre-deploy-test-runner.sh` | attendance 중복·`kioskMemberNotOnRosterBtn` |
 
 ---
 
@@ -157,12 +171,38 @@ cb9e8bfd chore(draft): design-tokens for kiosk blocker2 HTML preview
 
 ---
 
-## 10. 새 세션 시작 프롬프트 (복붙용)
+## 10. 클라우드 에이전트 제약 (이 세션에서 확인)
+
+| 항목 | 상태 |
+|------|------|
+| `firebase` CLI | VM에 없음 → `pre-deploy-test.sh` 직접 실행 불가 |
+| `functions/.env` | 없음 → 실메일·SMTP 테스트 불가 |
+| prod API 호출 | 가능 — `2099/12/01` `메일알림테스트` `isGuest` 출석 **성공** (데이터만 생성) |
+| prod 이메일 | **미발송** — `sendNotOnRosterAlertEmail` 코드 **미배포** |
+| `firebase deploy` | **AI 금지** — 사용자 로컬만 |
+
+---
+
+## 11. 새 세션 시작 프롬프트 (복붙용)
 
 ```
-브랜치 cursor/attendance-kiosk-blocker2-e814 / PR #2 핸드오프 읽고:
-_docs/handoff/2026-06-13-attendance-kiosk-blocker2.md
+출석 키오스크 베타 블로커 2 핸드오프.
 
-다음: pre-deploy-test → functions 배포 → 메일 E2E 확인 → hosting 배포 → v0.14.0 태그
-홈 kioskNotOnRosterBtn 제거 여부 HTML 스윕 확인.
+브랜치: cursor/attendance-kiosk-blocker2-e814
+PR: https://github.com/8hal/dmc_attendance_log/pull/2 (draft)
+SSOT: _docs/handoff/2026-06-13-attendance-kiosk-blocker2.md
+
+구현은 브랜치에 완료. 프로덕션 미배포.
+
+다음 작업 (사용자 로컬):
+1. bash scripts/pre-deploy-test.sh
+2. functions/.env (GMAIL_USER, GMAIL_APP_PASSWORD, ADMIN_EMAIL)
+3. node scripts/test-not-on-roster-email.js
+4. firebase deploy --only functions → hosting
+5. 키오스크 명부 외 E2E → 메일 + event_logs attendance_not_on_roster_email
+6. 플랜 Task 6 체크리스트 7항 + Task 7 코드 리뷰
+7. git tag v0.14.0 (현재 v0.13.0)
+
+정리 대상: prod 2099/12/01 메일알림테스트 isGuest 출석 (배포 검증 후 삭제 검토)
+AI는 firebase deploy 실행하지 않음.
 ```
