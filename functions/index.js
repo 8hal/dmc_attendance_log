@@ -57,7 +57,7 @@ function sendNotOnRosterAlertEmail({ nickname, meetingDateKey, meetingTypeLabel,
     return;
   }
 
-  const subject = `[DMC 출석] 출석 명부에 없는 경우 — ${nickname}`;
+  const subject = `[DMC 출석] 출석 명부에 없는 경우 — ${String(nickname || "").replace(/[\r\n]/g, " ").trim()}`;
   const html = `
 <p><strong>출석 명부에 없는 경우</strong>로 출석이 기록되었습니다.</p>
 <ul>

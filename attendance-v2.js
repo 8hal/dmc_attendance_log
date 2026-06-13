@@ -661,7 +661,7 @@
 
   function logAttendanceEvent(event, data) {
     const mode = (data && data.mode) || getAttendanceLogMode();
-    const page = mode === "kiosk" ? "attendance-kiosk" : "attendance-v2";
+    const page = isKioskMode() ? "attendance-kiosk" : "attendance-v2";
     fetch(RACE_LOG_API + "?action=log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -818,6 +818,15 @@
       if (!item || item.isGuest === true) return false;
       if (item.memberId) return false;
       return String(item.nicknameKey || item.nickname || "").trim().toLowerCase() === memberKey;
+    });
+  }
+
+  function isKioskNicknameOnRoster(nickname) {
+    const nicknameKey = String(nickname || "").trim().toLowerCase();
+    if (!nicknameKey) return false;
+    return kioskState.rosterItems.some((item) => {
+      if (!item) return false;
+      return String(item.nicknameKey || item.nickname || "").trim().toLowerCase() === nicknameKey;
     });
   }
 
@@ -1224,6 +1233,7 @@
     isKioskProcessing = true;
     kioskState.pendingMemberId = member.id;
     renderKioskCurrentMemberScreen();
+    let postSucceeded = false;
     try {
       await postCheckin({
         nickname: member.nickname,
@@ -1233,8 +1243,7 @@
         meetingDate: kioskState.meetingDateKey,
         isGuest: false,
       });
-      await reloadKioskRoster("checkin_success");
-      showKioskDone(member, "출석 완료");
+      postSucceeded = true;
     } catch (e) {
       logAttendanceEvent("attendance_checkin_error", {
         mode: "kiosk",
@@ -1258,19 +1267,40 @@
       }
       if (isKioskMemberDone(member)) {
         showKioskDone(member, "이미 출석 완료");
+        kioskState.pendingMemberId = "";
+        isKioskProcessing = false;
         return;
       }
       renderKioskCurrentMemberScreen();
       setKioskMessage("출석 처리에 실패했습니다. IT 운영총무에게 알려주세요.", "error");
-    } finally {
       kioskState.pendingMemberId = "";
       isKioskProcessing = false;
+      return;
     }
+    if (postSucceeded) {
+      try {
+        await reloadKioskRoster("checkin_success");
+      } catch (reloadErr) {
+        logAttendanceEvent("attendance_roster_reload", {
+          mode: "kiosk",
+          reason: "checkin_success_reload_failed",
+          error: String(reloadErr.message || reloadErr),
+          meetingDate: kioskState.meetingDateKey,
+          meetingType: kioskState.meetingType,
+          entrySource: "kiosk",
+          reloadTriggered: false,
+        });
+      }
+      showKioskDone(member, "출석 완료");
+    }
+    kioskState.pendingMemberId = "";
+    isKioskProcessing = false;
   }
 
   async function handleKioskNotOnRosterCheckin(nickname) {
     if (isKioskProcessing) return;
     isKioskProcessing = true;
+    let postSucceeded = false;
     try {
       await postCheckin({
         nickname,
@@ -1279,9 +1309,7 @@
         meetingDate: kioskState.meetingDateKey,
         isGuest: true,
       });
-      elGuestModal.classList.add("hidden");
-      await reloadKioskRoster("not_on_roster_checkin");
-      showKioskDone({ nickname }, "출석 완료");
+      postSucceeded = true;
     } catch (e) {
       logAttendanceEvent("attendance_checkin_error", {
         mode: "not_on_roster",
@@ -1294,14 +1322,39 @@
       if (shouldReloadRosterOnError(e.code)) {
         try {
           await reloadKioskRoster(e.code);
+          if (e.code === "ALREADY_CHECKED_IN" && isKioskNicknameOnRoster(nickname)) {
+            elGuestModal.classList.add("hidden");
+            showKioskDone({ nickname }, "이미 출석 완료");
+            isKioskProcessing = false;
+            return;
+          }
         } catch (_) {
           /* ignore */
         }
       }
       alert(e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : e.message || "출석 처리에 실패했습니다.");
-    } finally {
       isKioskProcessing = false;
+      return;
     }
+    if (postSucceeded) {
+      elGuestModal.classList.add("hidden");
+      try {
+        await reloadKioskRoster("not_on_roster_checkin");
+      } catch (reloadErr) {
+        logAttendanceEvent("attendance_roster_reload", {
+          mode: "not_on_roster",
+          reason: "not_on_roster_checkin_reload_failed",
+          error: String(reloadErr.message || reloadErr),
+          nickname,
+          meetingDate: kioskState.meetingDateKey,
+          meetingType: kioskState.meetingType,
+          entrySource: "kiosk",
+          reloadTriggered: false,
+        });
+      }
+      showKioskDone({ nickname }, "출석 완료");
+    }
+    isKioskProcessing = false;
   }
 
   async function fetchKioskJsonFromReadUrls(query) {

@@ -167,7 +167,29 @@ cb9e8bfd chore(draft): design-tokens for kiosk blocker2 HTML preview
 - 운영 명부에서 정회원/준회원/신규 분류 UI
 - GitHub Pages QR → v2 URL (`8hal.github.io` 구버전)
 - 게살볶음밥 4/23·4/24 테스트 출석 삭제 (`scripts/delete-attendance-records.js`, 사용자 승인 대기)
-- 플랜 Task 7: 코드 리뷰 (default 모델) — **배포 전 권장**
+- 플랜 Task 7: 코드 리뷰 (default 모델) — **완료** (2026-06-13 클라우드 세션). Important 3건 수정 후 **배포 가능** 판정
+
+---
+
+## 12. 코드 리뷰 (Task 7) — 2026-06-13
+
+**판정:** 배포 가능 (Important 수정 반영)
+
+### 강점
+- roster SSOT `reloadKioskRoster` + `isKioskProcessing` 이중탭 방지
+- 서버 `logAttendanceServerEvent` + 클라이언트 `logAttendanceEvent` B안
+- `sendNotOnRosterAlertEmail` HTML 이스케이프·비동기(fire-and-forget)
+- pre-deploy 중복 POST + server `attendance_checkin_error` assert
+
+### Important (수정 완료)
+1. POST 성공 후 roster reload 실패를 check-in 실패로 오인 — `handleKioskMemberCheckin` / `handleKioskNotOnRosterCheckin` POST·reload 분리
+2. 명부 외 `ALREADY_CHECKED_IN` 후 `alert` → `showKioskDone` (`isKioskNicknameOnRoster`)
+3. `logAttendanceEvent` `page` — `isKioskMode()` 기준 (`not_on_roster` mode에서 attendance-v2로 잘못 기록되던 문제)
+
+### Minor (후속 가능)
+- status API에 `memberId`/`isGuest` 포함
+- pre-deploy에 `isGuest` POST + `attendance_not_on_roster_email` assert
+- 대시보드 중복 시 status 전체 refresh (현재 sessionCount만)
 
 ---
 
