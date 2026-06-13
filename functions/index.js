@@ -420,6 +420,17 @@ function formatDateKeyForSheets(dateKey) {
 
 // ==================== API 핸들러 ====================
 
+function logAttendanceServerEvent(event, data) {
+  db.collection("event_logs")
+    .add({
+      event,
+      data: { logSource: "server", page: "attendance-api", ...data },
+      timestamp: new Date().toISOString(),
+      ua: "cloud-functions",
+    })
+    .catch(() => {});
+}
+
 /**
  * 출석 등록 (POST)
  */
@@ -486,6 +497,13 @@ async function handlePost(req, res) {
     if (!isGuest && memberId) {
       const mdoc = await db.collection("members").doc(memberId).get();
       if (!mdoc.exists) {
+        logAttendanceServerEvent("attendance_checkin_error", {
+          error: "MEMBER_NOT_FOUND",
+          meetingDate: meetingDateKey,
+          meetingType: typeCode,
+          memberId: memberIdRaw || null,
+          nickname: nicknameRaw,
+        });
         return res.status(400).json({ ok: false, error: "MEMBER_NOT_FOUND", message: "회원 정보를 찾을 수 없습니다" });
       }
     }
@@ -518,6 +536,13 @@ async function handlePost(req, res) {
         if (!snap.empty) {
           const existingData = snap.docs[0].data();
           const dupDate = existingData.meetingDateKey || meetingDateKey;
+          logAttendanceServerEvent("attendance_checkin_error", {
+            error: "ALREADY_CHECKED_IN",
+            meetingDate: meetingDateKey,
+            meetingType: typeCode,
+            memberId: memberIdRaw || null,
+            nickname: nicknameRaw,
+          });
           return res.status(400).json({
             ok: false,
             error: "ALREADY_CHECKED_IN",
@@ -578,6 +603,10 @@ async function handlePost(req, res) {
     });
   } catch (err) {
     console.error("[POST Error]", err);
+    logAttendanceServerEvent("attendance_checkin_error", {
+      error: "server_exception",
+      message: String(err.message || err),
+    });
     return res.status(500).json({ ok: false, error: String(err.message || err) });
   }
 }

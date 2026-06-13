@@ -1160,10 +1160,6 @@
             </span>
           </button>
         </div>
-        <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button" id="kioskNotOnRosterBtn">
-          출석 명부에 없어요
-          <span class="kiosk-not-on-roster-hint">명부에 이름이 없을 때 여기서 출석</span>
-        </button>
         <button type="button" class="kiosk-secondary-button" id="kioskRosterBtn">당일 출석 현황 보기</button>
         <p id="kioskWakeLockStatus" class="kiosk-wake-lock-status hidden" aria-live="polite"></p>
       </div>
@@ -1190,6 +1186,9 @@
           <h2 id="kioskMemberTitle" class="kiosk-member-title">닉네임</h2>
         </div>
         <div id="kioskMemberGrid" class="kiosk-member-grid" aria-label="회원 선택"></div>
+        <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button" id="kioskMemberNotOnRosterBtn">
+          명단에 없어요 — 여기서 출석
+        </button>
       </div>
 
       <div id="kioskDonePanel" class="kiosk-panel hidden" aria-live="polite">
