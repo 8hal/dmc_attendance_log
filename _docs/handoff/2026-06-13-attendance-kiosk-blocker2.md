@@ -30,6 +30,7 @@
 - UX 점검: `_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-ux-review.md`
 - 설계: `_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-design.md`
 - 구현 플랜: `_docs/superpowers/plans/2026-06-13-attendance-kiosk-error-recovery.md`
+- **테스트 케이스:** `_docs/testing/2026-06-13-attendance-kiosk-blocker2-test-cases.md`
 - HTML 초안: `attendance-v2-kiosk-blocker2-draft.html`  
   - 미리보기: https://raw.githack.com/8hal/dmc_attendance_log/cursor/attendance-kiosk-blocker2-e814/attendance-v2-kiosk-blocker2-draft.html
 
@@ -111,6 +112,9 @@
 ---
 
 ## 6. 수동 검증 체크리스트 (플랜 Task 6)
+
+전체 TC(수동 7 + 자동 50 + 메일 2 + 배포 E2E):  
+`_docs/testing/2026-06-13-attendance-kiosk-blocker2-test-cases.md`
 
 | # | 시나리오 | 기대 |
 |---|----------|------|
