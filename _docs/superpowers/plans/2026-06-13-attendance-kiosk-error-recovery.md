@@ -318,7 +318,7 @@ git commit -am "fix(kiosk): roster 재로드 SSOT, isKioskProcessing, status API
 - [ ] **Step 2: HTML — 닉네임 목록 하단 CTA** (홈 CTA **없음**, v5 UX 점검)
 
 - `id="kioskMemberNotOnRosterBtn"`: 「명단에 없어요 — 여기서 출석」 (`kioskMemberPanel` 패널 하단 고정)
-- `kioskPersonalLink` 키오스크 모드 **완전 숨김**
+- `kioskPersonalLink` **삭제** (개인 출석은 URL 직접 입력 — 키오스크 UI 비지원)
 - UX SSOT: `_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-ux-review.md`
 
 - [ ] **Step 3: `openKioskNotOnRosterModal()`**

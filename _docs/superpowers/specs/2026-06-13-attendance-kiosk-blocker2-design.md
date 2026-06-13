@@ -33,7 +33,8 @@
 
 ### 1.3 채널
 
-- **현장:** 키오스크 FE만 권장 (`mode=kiosk`)
+- **현장 키오스크:** `mode=kiosk` — 명부 탐색·당일 현황·명부 외 출석만. **개인 출석 진입 UI 없음.**
+- **개인 v2:** `attendance-v2.html` ( `mode=kiosk` 없음) — URL 직접 입력·QR·북마크로 접속.
 - **백엔드:** 변경 없음
 
 ---
@@ -59,7 +60,7 @@
 **보조:**
 
 - 「당일 출석 현황 보기」— `status` 기반 목록
-- `kioskPersonalLink` («개인 출석 화면»): **키오스크 모드에서 완전 숨김** (자봉 링크 없음)
+- **개인 출석:** 키오스크에서 진입 UI 없음. `kioskPersonalLink` **삭제**. 개인 v2는 `attendance-v2.html`( `mode=kiosk` 없음) URL 직접 입력.
 
 **홈에는 명부 외 CTA 없음** (v5 — 탐색 맥락에서만 노출).
 
@@ -179,4 +180,4 @@ postCheckin({
 - [ ] UX 점검 문서 승인 (`2026-06-13-attendance-kiosk-blocker2-ux-review.md`)
 - [x] 명부 외 CTA → 닉네임 목록 하단 (홈 제거)
 - [x] 모달 게살볶음밥 문구
-- [x] `kioskPersonalLink` 완전 숨김
+- [x] 키오스크에서 개인 출석 링크 제거 (URL 직접 접속만)

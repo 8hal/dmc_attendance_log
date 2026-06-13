@@ -514,7 +514,6 @@
                   </button>
                 </div>
                 <button type="button" class="kiosk-secondary-button">당일 출석 현황 보기</button>
-                <a class="kiosk-personal-link hidden-demo" href="#">개인 출석 화면</a>
               </div>
             </div>
 
@@ -658,7 +657,7 @@
         <h2>이 화면에서 확인할 점</h2>
         <ul id="notesList">
           <li><span class="chg-remove">제거</span> 홈의 「출석 명부에 없어요」 버튼</li>
-          <li><span class="chg-remove">제거</span> 「개인 출석 화면」 링크 (완전 숨김)</li>
+          <li><span class="chg-remove">제거</span> 「개인 출석 화면」 링크 — 키오스크에서 개인 출석 비지원, URL 직접 입력</li>
           <li><span class="chg-add">유지</span> 당일 출석 현황 보기</li>
           <li>닉네임/팀 찾기 → 목록 화면에서만 명부 외 출석</li>
         </ul>
@@ -669,7 +668,7 @@
       <h2>attendance-v2.html 변경 요약 (초안)</h2>
       <pre id="htmlDiff"><span class="diff-note">/* kioskHomePanel — 제거 */</span>
 <span class="diff-remove">- &lt;button id="kioskNotOnRosterBtn"&gt;출석 명부에 없어요&lt;/button&gt;</span>
-<span class="diff-remove">- &lt;a id="kioskPersonalLink"&gt;개인 출석 화면&lt;/a&gt;  (키오스크에서 display:none)</span>
+<span class="diff-remove">- &lt;a id="kioskPersonalLink"&gt;…&lt;/a&gt;  (DOM 삭제 — 개인은 URL 직접)</span>
 
 <span class="diff-note">/* kioskMemberPanel — 추가 */</span>
 <span class="diff-add">+ &lt;button id="kioskMemberNotOnRosterBtn" class="kiosk-secondary-button"&gt;</span>
@@ -702,14 +701,14 @@
     const notes = {
       "home-v5": [
         "<span class=\"chg-remove\">제거</span> 홈의 「출석 명부에 없어요」 버튼",
-        "<span class=\"chg-remove\">제거</span> 「개인 출석 화면」 링크 (완전 숨김)",
+        "<span class=\"chg-remove\">제거</span> 「개인 출석 화면」 링크 — 개인은 URL 직접 (attendance-v2.html)",
         "<span class=\"chg-add\">유지</span> 당일 출석 현황 보기",
         "탐색은 닉네임/팀 2타일만"
       ],
       "home-v4": [
         "v4 초안에 있던 홈 CTA — <strong>v5에서 폐기</strong>",
         "「홈 v4 (제거)」 탭으로만 비교용 표시",
-        "개인 링크도 v5에서 완전 숨김"
+        "개인 링크도 제거 — 개인 출석은 키오스크 UI 비지원"
       ],
       "member-list": [
         "<span class=\"chg-add\">추가</span> 패널 하단 「명단에 없어요 — 여기서 출석」",
