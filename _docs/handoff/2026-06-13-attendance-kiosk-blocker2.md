@@ -43,7 +43,7 @@
 - [x] `logAttendanceEvent` + `RACE_LOG_API` (`race-nszximpvtq-du.a.run.app`)
 - [x] `reloadKioskRoster`, `fetchKioskRoster` (`meetingType` 쿼리 제거)
 - [x] `isKioskProcessing`, `handleKioskMemberCheckin` 에러 복구
-- [x] `kioskMemberNotOnRosterBtn` + `openKioskNotOnRosterModal` + `handleKioskNotOnRosterCheckin`
+- [x] `kioskMemberNotOnRosterBtn` + `openKioskNotOnRosterScreen` + `handleKioskNotOnRosterCheckin`
 - [x] 개인 v2 용어·`not_on_roster` 로깅·검색 0건 키오스크 권장
 - [x] `kioskPersonalLink` **삭제**
 - [x] 홈 `kioskNotOnRosterBtn` **없음** (2026-06-13 확인) — 명부 외 CTA는 `kioskMemberNotOnRosterBtn`만 (`attendance-v2.html` member 패널 하단)
