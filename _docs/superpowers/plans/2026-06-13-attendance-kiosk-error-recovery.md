@@ -2,12 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **리뷰:** 2026-06-13 API·디자인 v2 + 블로커 2 통합 UX v3.  
+> **리뷰:** v2 API·디자인 + v3 블로커 통합 + **v4 출석 명부 용어·명부 외 UX 1종**.  
 > **설계 SSOT:** `_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-design.md`
 
-**Goal:** 현장 **키오스크**를 출석 채널로 고정하고 (1) **명단 외 B·C 사용자**가 기존 **게스트 API**로 출석할 FE 경로를 추가하고, (2) POST 실패·구버전 중복 시 **roster 재로드**와 **event_logs**로 복구·추적한다. **백엔드 API 변경 없음.**
+**Goal:** 현장 **키오스크**를 출석 채널로 고정하고 (1) **「출석 명부에 없는 경우」단일 UX**로 기존 게스트 API(`isGuest`) 출석을 추가하고, (2) POST 실패·구버전 중복 시 roster 재로드·`event_logs`로 복구한다. **UI 용어: 출석 명부 ≠ 정회원 명단.** 백엔드 변경 없음.
 
-**Architecture:** (1) 키오스크 홈·빈 그리드에 「명단에 없어요」→ 기존 `guestModal` (`isGuest: true`) + `showKioskDone` + `reloadKioskRoster`. (2) 정회원 탭 실패 시 `reloadKioskRoster` + `isKioskMemberDone`. (3) 로깅 B안: server/client `attendance_checkin_error`, `attendance_roster_reload`. (4) prod 키오스크·`design-tokens.css` Git 동기화 선행.
+**Architecture:** (1) 키오스크 탐색 = 「출석 명부」(`members` 소스, 문구만 분리). (2) 명부 외 = 홈 CTA·빈 그리드 → `guestModal` (제목 「출석 명부에 없는 경우」) → `isGuest` POST → `showKioskDone` + `reloadKioskRoster`. (3) 정회원 탭 실패 = Task 2 재로드. (4) 로깅: `mode: not_on_roster` (명부 외), `logSource` B안.
 
 **Tech Stack:** Vanilla JS (`attendance-v2.js`), `assets/design-tokens.css`, 기존 `POST /attendance`, `race?action=log`, Functions `handlePost` event_logs.
 
@@ -98,8 +98,10 @@
 | `?mode=kiosk` | `kiosk` |
 | `#viewDashboard` 활성 | `dashboard` |
 | `#viewSearch` 활성 | `search` |
-| 게스트 모달 submit | `guest` |
+| 출석 명부에 없는 경우 (키오스크·개인) | `not_on_roster` |
 | `index.html` | `legacy` |
+
+**UI 문구 스윕 (Task 2b·3):** 화면에 「정회원 명단」「게스트로 출석」 사용 금지 → 「출석 명부」「출석 명부에 없는 경우」.
 
 ---
 
@@ -299,54 +301,54 @@ git commit -am "fix(kiosk): roster 재로드 SSOT, isKioskProcessing, status API
 
 ---
 
-## Task 2b: 키오스크 명단 외 출석 (게스트 API, FE만)
+## Task 2b: 출석 명부에 없는 경우 (단일 UX, 게스트 API, FE만)
 
 **설계:** `_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-design.md` §3
 
 **Files:**
 - Modify: `attendance-v2.html`, `attendance-v2.js`
 
-**대상:** B(신규·준회원), C(명단 누락) — 동일 UI·동일 `isGuest: true` POST.
+**원칙:** 사용자 유형(정회원·준회원·신규) **UI 분기 없음**. 운영 분류는 명부·백오피스.
 
-- [ ] **Step 1: HTML — 홈 CTA + 빈 그리드 힌트**
+- [ ] **Step 1: 용어 스윕 (키오스크)**
 
-- `kioskHomePanel`에 `id="kioskGuestBtn"` 버튼: 「명단에 없어요 — 여기서 출석」
-- 키오스크 모드에서 `kioskPersonalLink` **숨김** (`hidden` 또는 `display:none`)
+- 「정회원 명단」→ 「출석 명부」 (검색 도움말, 그리드 empty, 버튼 라벨)
+- `kioskRosterBtn` 등 「출석 명단」→ 「현재 출석 명단」 또는 「당일 출석 현황」 (설계 §1.1)
 
-- [ ] **Step 2: `openKioskGuestModal()`**
+- [ ] **Step 2: HTML — 닉네임 목록 하단 CTA** (홈 CTA **없음**, v5 UX 점검)
 
-- `guestMeetingDate` / `guestMeetingType` ← `kioskState` (입력 필드 `hidden` + 화면에 날짜·정모 텍스트만)
-- 모달 제목·안내 문구 키오스크용 (설계 §3.3)
-- `guestNickname` focus
+- `id="kioskMemberNotOnRosterBtn"`: 「명단에 없어요 — 여기서 출석」 (`kioskMemberPanel` 패널 하단 고정)
+- `kioskPersonalLink` **삭제** (개인 출석은 URL 직접 입력 — 키오스크 UI 비지원)
+- UX SSOT: `_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-ux-review.md`
 
-- [ ] **Step 3: `guestSubmitBtn` — 키오스크 분기**
+- [ ] **Step 3: `openKioskNotOnRosterModal()`**
 
-키오스크 visible 시:
+- `#guestModal` 재사용, 제목 「출석 명부에 없는 경우 출석」
+- 날짜·정모 `kioskState` 고정 (입력 hidden)
+- 안내: 설계 §3.3 단일 문구 (유형별 분기 없음)
+
+- [ ] **Step 4: submit — 키오스크 분기**
 
 ```javascript
 await postCheckin({ nickname, team: "GUEST", meetingType, meetingDate, isGuest: true });
-await reloadKioskRoster("guest_checkin");
-elGuestModal.classList.add("hidden");
-showKioskDone({ nickname }, "출석 완료"); // memberId 없음 → stats 생략
+await reloadKioskRoster("not_on_roster_checkin");
+showKioskDone({ nickname }, "출석 완료");
+logAttendanceEvent on error: mode "not_on_roster"
 ```
 
-에러 시 Task 2와 동일: log → reload → 메시지.
+- [ ] **Step 5: 그리드 empty** — empty 문구 + **동일 하단 CTA** (패널 고정)
 
-- [ ] **Step 4: 멤버 그리드 빈 상태**
-
-`elKioskMemberGrid` empty 템플릿에 `kioskGuestBtn`과 동일 동작 링크/버튼.
-
-- [ ] **Step 5: 수동 검증**
+- [ ] **Step 6: 수동 검증**
 
 | # | 시나리오 |
 |---|----------|
-| 5 | B: 명단에 없는 닉 → 게스트 출석 → `guestCount` +1, 완료 화면 |
-| 6 | C: 정회원인데 그리드에 없음 → 빈 그리드 CTA → 동일 성공 |
+| 5 | 출석 명부에 없는 닉 → 단일 플로우 → 완료, `guestCount` +1 |
+| 6 | 그리드 empty → CTA → 동일 성공 |
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git commit -am "feat(kiosk): 명단 외 B·C 게스트 출석 경로 (기존 API)"
+git commit -am "feat(kiosk): 출석 명부에 없는 경우 단일 UX (isGuest API)"
 ```
 
 ---
@@ -362,11 +364,13 @@ git commit -am "feat(kiosk): 명단 외 B·C 게스트 출석 경로 (기존 API
 - `refreshSessionCountLine()` + **해당 날짜 status로 roster 갱신** (대시보드 done 표시 일관성)
 - 기존 명단 링크 UX 유지
 
-- [ ] **Step 2: 게스트 catch** — `mode: "guest"`, `entrySource: "v2"`
+- [ ] **Step 2: 게스트 catch** — `mode: "not_on_roster"`, `entrySource: "v2"`
 
-- [ ] **Step 3: 검색 0건 메시지** — 「현장은 키오스크 출석을 이용해 주세요」 한 줄 (설계 §4)
+- [ ] **Step 3: 개인 모드 용어** — `openGuestBtn` 라벨 「출석 명부에 없는 경우」, 검색 도움말 「출석 명부」
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: 검색 0건** — 「현장은 키오스크 출석을 이용해 주세요」
+
+- [ ] **Step 5: Commit**
 
 ```bash
 git commit -am "feat(attendance-v2): 개인 모드 출석 에러 로깅·status 갱신"
@@ -489,8 +493,9 @@ resp=$(curl -s "$API?action=event-logs&limit=20")
 | 2 | 키오스크 연속 더블탭 | 중복 POST 없음 (`isKioskProcessing`) |
 | 3 | 중복 POST | `event_logs`: server `attendance_checkin_error` 1건 + client 1건 + `attendance_roster_reload` |
 | 4 | 개인 v2 대시보드 중복 | 메시지 + client log |
-| 5 | 키오스크 명단 외(B) 게스트 출석 | 완료 화면, `guestCount` 반영 |
-| 6 | 키오스크 그리드 빈(C) → CTA | 동일 성공 |
+| 5 | 출석 명부에 없는 경우 (단일 UX) | 완료, `guestCount` +1 |
+| 6 | 명부 그리드 empty → CTA | 동일 성공 |
+| 7 | UI 문구에 「정회원 명단」「게스트」 없음 | 수동 스윕 |
 
 - [ ] **Step 5: `_docs/log/2026-06-13.md` 검증 한 줄**
 
@@ -524,10 +529,11 @@ AI는 `firebase deploy` 실행하지 않음.
 
 ## 범위 밖
 
-- `members` 자동 등록·게스트 행 → 정회원 마이그레이션
+- 출석 명부 전용 데이터 컬렉션 (현재 `members` 소스 유지, FE 용어만 분리)
+- 운영 명부에서 정회원/준회원/신규 분류 UI
+- `members` 자동 생성·명부 외 행 마이그레이션
 - `status` API `meetingType` 필터
-- POST body `entrySource` 서버 저장
-- QR / GitHub Pages 기본 URL 변경 (키오스크 URL은 운영 안내)
+- QR / GitHub Pages 기본 URL 변경
 
 ---
 
@@ -535,10 +541,11 @@ AI는 `firebase deploy` 실행하지 않음.
 
 | 날짜 | 결과 |
 |------|------|
-| 2026-06-13 | API·디자인 리뷰 → v2 플랜 |
-| 2026-06-13 | 블로커 2 통합 UX (B·C, 게스트 API, 키오스크 권장) → **v3** + 설계 스펙 |
+| 2026-06-13 | API·디자인 → v2 플랜 |
+| 2026-06-13 | 블로커 2 통합 → v3 |
+| 2026-06-13 | **UX 점검 v5** — CTA 닉네임 목록 하단, 게살볶음밥, 홈 CTA 제거 |
 
-**v3 추가:** Task 2b 키오스크 게스트 FE, 설계 문서, 체크리스트 5·6, 개인 모드 키오스크 유도 문구.
+**v4:** B/C UI 분기 제거, `mode: not_on_roster`, 문구 스윕 Task, 용어 §1.1.
 
 ---
 

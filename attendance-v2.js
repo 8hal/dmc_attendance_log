@@ -5,6 +5,10 @@
   const STAGING_URL = "https://asia-northeast3-dmc-attendance-staging.cloudfunctions.net/attendance";
   const LOCAL_URL = "http://" + location.hostname + ":5001/dmc-attendance/asia-northeast3/attendance";
   const BASE_URL = IS_LOCAL ? LOCAL_URL : (IS_STAGING ? STAGING_URL : PROD_URL);
+  const KIOSK_READ_URLS = IS_LOCAL ? [LOCAL_URL, PROD_URL] : [BASE_URL];
+  const RACE_LOG_API = IS_LOCAL
+    ? "http://" + location.hostname + ":5001/dmc-attendance/asia-northeast3/race"
+    : "https://race-nszximpvtq-du.a.run.app";
 
   const LS_PROFILE = "dmc_attendance_v2_profile";
   const CHECKIN_BTN_LABEL = "출석 체크";
@@ -13,7 +17,9 @@
     "출석 등록이 완료되었습니다.",
     "클럽 출석에 참여해 주셔서 감사합니다."
   ];
-  const SUCCESS_CHEERS_GUEST = ["게스트로 함께해 주셔서 감사해요!"];
+  const SUCCESS_CHEERS_GUEST = ["함께해 주셔서 감사해요!", "출석이 기록되었습니다."];
+  const NOT_ON_ROSTER_HELP =
+    "출석 명부에 없는 경우입니다. 출석은 기록되며, 명부 반영은 운영진이 따로 합니다. 명부 수정이 필요하면 게살볶음밥에게 알려주세요.";
 
   const TEAM_OPTIONS = [
     { value: "S", label: "S팀" },
@@ -23,10 +29,32 @@
     { value: "T4", label: "4팀" },
     { value: "T5", label: "5팀" }
   ];
+  const KIOSK_INITIAL_BUCKETS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ", "A-Z", "0-9"];
+  const HANGUL_INITIALS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+  const HANGUL_DOUBLE_INITIAL_MAP = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" };
+  const DOW_SHORT_TO_FULL_KO = {
+    Sun: "일요일",
+    Mon: "월요일",
+    Tue: "화요일",
+    Wed: "수요일",
+    Thu: "목요일",
+    Fri: "금요일",
+    Sat: "토요일"
+  };
+  const DOW_SHORT_TO_COMPACT_KO = {
+    Sun: "일",
+    Mon: "월",
+    Tue: "화",
+    Wed: "수",
+    Thu: "목",
+    Fri: "금",
+    Sat: "토"
+  };
 
   const elSearch = document.getElementById("viewSearch");
   const elDash = document.getElementById("viewDashboard");
   const elSuccess = document.getElementById("viewSuccess");
+  const elKiosk = document.getElementById("viewKiosk");
   const elSearchInput = document.getElementById("searchInput");
   const elMemberList = document.getElementById("memberList");
   const elSearchMsg = document.getElementById("searchMsg");
@@ -44,9 +72,44 @@
   const elSuccessSessionLine = document.getElementById("successSessionLine");
   const elDashSessionRow = document.getElementById("dashSessionRow");
   const elDashSessionFigures = document.getElementById("dashSessionFigures");
-  const elDashSessionListLink = document.getElementById("dashSessionListLink");
+  const elOpenKioskFromSearchLink = document.getElementById("openKioskFromSearchLink");
+  const elOpenKioskModeLink = document.getElementById("openKioskModeLink");
   const elGuestModal = document.getElementById("guestModal");
+  const elGuestModalTitle = document.getElementById("guestModalTitle");
+  const elGuestModalHelp = document.getElementById("guestModalHelp");
+  const elGuestMeetingFields = document.getElementById("guestMeetingFields");
+  const elKioskMemberNotOnRosterBtn = document.getElementById("kioskMemberNotOnRosterBtn");
   const elTeamModal = document.getElementById("teamModal");
+  const elSessionRosterModal = document.getElementById("sessionRosterModal");
+  const elSessionRosterTitle = document.getElementById("sessionRosterTitle");
+  const elSessionRosterList = document.getElementById("sessionRosterList");
+  const elSessionRosterCloseBtn = document.getElementById("sessionRosterCloseBtn");
+  const elKioskMeetingTitleFull = document.getElementById("kioskMeetingTitleFull");
+  const elKioskMeetingTitleCompact = document.getElementById("kioskMeetingTitleCompact");
+  const elKioskHomePanel = document.getElementById("kioskHomePanel");
+  const elKioskInitialPanel = document.getElementById("kioskInitialPanel");
+  const elKioskTeamPanel = document.getElementById("kioskTeamPanel");
+  const elKioskMemberPanel = document.getElementById("kioskMemberPanel");
+  const elKioskNotOnRosterPanel = document.getElementById("kioskNotOnRosterPanel");
+  const elKioskRosterPanel = document.getElementById("kioskRosterPanel");
+  const elKioskDonePanel = document.getElementById("kioskDonePanel");
+  const elKioskGuestNickname = document.getElementById("kioskGuestNickname");
+  const elKioskNotOnRosterHelp = document.getElementById("kioskNotOnRosterHelp");
+  const elKioskNotOnRosterSubmitBtn = document.getElementById("kioskNotOnRosterSubmitBtn");
+  const elKioskRosterTitle = document.getElementById("kioskRosterTitle");
+  const elKioskRosterList = document.getElementById("kioskRosterList");
+  const elKioskInitialGrid = document.getElementById("kioskInitialGrid");
+  const elKioskTeamGrid = document.getElementById("kioskTeamGrid");
+  const elKioskMemberGrid = document.getElementById("kioskMemberGrid");
+  const elKioskMemberTitle = document.getElementById("kioskMemberTitle");
+  const elKioskMemberBackBtn = document.getElementById("kioskMemberBackBtn");
+  const elKioskDoneName = document.getElementById("kioskDoneName");
+  const elKioskDoneStatus = document.getElementById("kioskDoneStatus");
+  const elKioskDoneStats = document.getElementById("kioskDoneStats");
+  const elKioskDoneMonthCount = document.getElementById("kioskDoneMonthCount");
+  const elKioskDoneStreakCount = document.getElementById("kioskDoneStreakCount");
+  const elKioskMsg = document.getElementById("kioskMsg");
+  const elKioskWakeLockStatus = document.getElementById("kioskWakeLockStatus");
 
   let membersCache = [];
   let myProfile = null;
@@ -67,6 +130,25 @@
   let lastSuccessCalendarAttendedKeys = new Set();
   /** stats/history 조회에 쓴 YYYY-MM (통계 문구 "이번 달" vs "해당 월") */
   let lastSuccessStatsMonthKey = "";
+  let kioskState = {
+    meetingDateKey: "",
+    meetingType: "",
+    previousPicker: "home",
+    selectedInitial: "",
+    selectedTeam: "",
+    members: [],
+    rosterItems: [],
+    pendingMemberId: "",
+    loading: false,
+    error: "",
+    doneStatsReqId: 0,
+    returnTimer: null,
+    applyingHistory: false,
+    wakeLockSentinel: null,
+    wakeLockEnabled: false,
+    notOnRosterReturn: "home",
+  };
+  let isKioskProcessing = false;
 
   function parseSlashDateKey(key) {
     const m = String(key || "").match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
@@ -99,7 +181,7 @@
 
   function paintSuccessSummary() {
     if (lastSuccessGuest) {
-      elSuccessStatsLine.textContent = "게스트 출석은 정회원 월 통계와 별도로 관리됩니다.";
+      elSuccessStatsLine.textContent = "출석 명부에 없는 경우로 기록된 출석은 월 통계와 별도로 관리됩니다.";
       return;
     }
     if (!lastSuccessStatsLoaded) {
@@ -170,6 +252,23 @@
     elSearch.classList.toggle("hidden", name !== "search");
     elDash.classList.toggle("hidden", name !== "dashboard");
     elSuccess.classList.toggle("hidden", name !== "success");
+    elKiosk.classList.toggle("hidden", name !== "kiosk");
+    document.body.classList.toggle("kiosk-mode", name === "kiosk");
+    if (name !== "kiosk") releaseKioskWakeLock().catch(() => {});
+  }
+
+  function setKioskEntryLinks() {
+    const params = new URLSearchParams(window.location.search);
+    const defaults = getDefaultDateAndMeetingType();
+    const dateValue = elMeetingDate && elMeetingDate.value ? elMeetingDate.value : dateKeyToInputValue(defaults.dateKey);
+    const typeValue = elMeetingType && elMeetingType.value ? elMeetingType.value : defaults.meetingType;
+    params.set("mode", "kiosk");
+    if (dateValue) params.set("meetingDate", dateValue);
+    if (typeValue) params.set("meetingType", typeValue);
+    const href = "attendance-v2.html?" + params.toString();
+    [elOpenKioskFromSearchLink, elOpenKioskModeLink].forEach((link) => {
+      if (link) link.href = href;
+    });
   }
 
   function loadProfile() {
@@ -200,13 +299,6 @@
     return dateKey.replace(/\//g, "-");
   }
 
-  /** 메인 출석 페이지(index.html)에서 해당 모임일 전체 명단(status)을 보도록 연결 */
-  function buildMainAttendanceListUrl(dateKeySlash) {
-    const dk = String(dateKeySlash || "").trim();
-    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(dk)) return "index.html";
-    return "index.html?date=" + encodeURIComponent(dateKeyToInputValue(dk));
-  }
-
   function inputValueToDateKey(v) {
     const s = String(v || "").trim();
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -216,6 +308,20 @@
 
   function getDefaultDateAndMeetingType() {
     const urlParams = new URLSearchParams(window.location.search);
+    const queryMeetingDate = urlParams.get("meetingDate");
+    const queryMeetingType = urlParams.get("meetingType");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(queryMeetingDate || "")) {
+      return {
+        dateKey: inputValueToDateKey(queryMeetingDate),
+        meetingType: queryMeetingType || "SAT"
+      };
+    }
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(queryMeetingDate || "")) {
+      return {
+        dateKey: queryMeetingDate,
+        meetingType: queryMeetingType || "SAT"
+      };
+    }
     const testDateParam = urlParams.get("testDate");
     let now = new Date();
     if ((IS_LOCAL || IS_STAGING) && testDateParam) {
@@ -257,6 +363,32 @@
     return map[code] || String(code || "");
   }
 
+  function kstWeekdayShortForDate(year, month, day) {
+    const noonKst = new Date(
+      String(year) + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0") + "T12:00:00+09:00"
+    );
+    if (isNaN(noonKst.getTime())) return "";
+    return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "Asia/Seoul" }).format(noonKst);
+  }
+
+  function formatKioskMeetingTitle(dateKeySlash, meetingType, compact) {
+    const p = parseSlashDateKey(dateKeySlash);
+    if (!p) return meetingTypeLabel(meetingType);
+    const dowShort = kstWeekdayShortForDate(p.y, p.mo, p.d);
+    const suffix = String(meetingType || "").toUpperCase() === "ETC" ? "기타" : "정모";
+    if (compact) {
+      const weekday = DOW_SHORT_TO_COMPACT_KO[dowShort] || "";
+      return p.mo + "/" + p.d + " " + weekday + " " + suffix;
+    }
+    const weekday = DOW_SHORT_TO_FULL_KO[dowShort] || "";
+    return p.mo + "월 " + p.d + "일 " + weekday + " " + suffix;
+  }
+
+  function updateKioskMeetingTitle(dateKeySlash, meetingType) {
+    elKioskMeetingTitleFull.textContent = formatKioskMeetingTitle(dateKeySlash, meetingType, false);
+    elKioskMeetingTitleCompact.textContent = formatKioskMeetingTitle(dateKeySlash, meetingType, true);
+  }
+
   /** yyyy-mm-dd → "4월 22일 (수)" (해당 달력일의 요일을 KST 기준으로 표시) */
   function formatKoreanDateLine(iso) {
     const m = String(iso || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -276,7 +408,7 @@
     const m = Number(memberCount) || 0;
     const g = Number(guestCount) || 0;
     let h = '<span class="dash-session-num">' + m + "</span>명";
-    if (g > 0) h += '<span class="dash-session-g">·게 ' + g + "</span>";
+    if (g > 0) h += '<span class="dash-session-g">·명부 외 ' + g + "</span>";
     return h;
   }
 
@@ -316,6 +448,83 @@
     }
   }
 
+  function formatSessionRosterTitle(dateKeySlash, meetingTypeValue) {
+    const dateLine = formatKoreanDateLine(dateKeyToInputValue(dateKeySlash));
+    const typeLine = meetingTypeLabel(meetingTypeValue);
+    if (dateLine && typeLine) return dateLine + " · " + typeLine + " 출석 명단";
+    return "출석 명단";
+  }
+
+  function rosterEmptyStateHtml(text) {
+    const cls = isKioskMode() ? "kiosk-empty" : "member-list-empty";
+    return '<div class="' + cls + '" role="status">' + escapeHtml(text) + "</div>";
+  }
+
+  function renderSessionRosterItems(items) {
+    const rows = Array.isArray(items)
+      ? items
+          .slice()
+          .sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0))
+      : [];
+    if (rows.length === 0) {
+      elSessionRosterList.innerHTML = rosterEmptyStateHtml("아직 출석자가 없습니다.");
+      return;
+    }
+    elSessionRosterList.innerHTML = rows
+      .map((item) => {
+        const nickname = item && item.nickname ? item.nickname : "이름 없음";
+        const teamText = (item && (item.teamLabel || teamLabel(item.team))) || "팀 미정";
+        const timeText = item && item.timeText ? item.timeText : "";
+        const meta = timeText ? teamText + " · " + timeText : teamText;
+        return (
+          '<div class="session-roster-row"><span class="session-roster-name">' +
+          escapeHtml(nickname) +
+          '</span><span class="session-roster-meta">' +
+          escapeHtml(meta) +
+          "</span></div>"
+        );
+      })
+      .join("");
+  }
+
+  async function openSessionRosterModal(dateKeyOverride, meetingTypeOverride) {
+    if (isKioskMode()) {
+      await renderKioskRosterScreen({ history: "push" });
+      return;
+    }
+    if (!elSessionRosterModal || !elSessionRosterList || !elSessionRosterTitle) return;
+    const dateKey = dateKeyOverride || inputValueToDateKey(elMeetingDate.value);
+    const meetingType = meetingTypeOverride || elMeetingType.value;
+    if (!dateKey || !meetingType) {
+      elDashMsg.textContent = "날짜와 유형을 먼저 선택해 주세요.";
+      elDashMsg.className = "msg error";
+      return;
+    }
+    elSessionRosterTitle.textContent = formatSessionRosterTitle(dateKey, meetingType);
+    elSessionRosterList.innerHTML = rosterEmptyStateHtml("불러오는 중입니다.");
+    elSessionRosterModal.classList.remove("hidden");
+    try {
+      const q =
+        BASE_URL +
+        "?action=status&date=" +
+        encodeURIComponent(dateKey) +
+        "&meetingType=" +
+        encodeURIComponent(meetingType);
+      const res = await fetch(q);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "bad response");
+      renderSessionRosterItems(json.items || []);
+    } catch (e) {
+      elSessionRosterList.innerHTML = rosterEmptyStateHtml(
+        "출석 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+      );
+    }
+  }
+
+  function closeSessionRosterModal() {
+    if (elSessionRosterModal) elSessionRosterModal.classList.add("hidden");
+  }
+
   function setSuccessSessionLineFromPayload(sessionCount, isGuest) {
     if (!elSuccessSessionLine) return;
     elSuccessSessionLine.classList.add("hidden");
@@ -324,7 +533,7 @@
     elSuccessSessionLine.classList.remove("hidden");
     const m = Number(sessionCount.memberCount) || 0;
     const g = Number(sessionCount.guestCount) || 0;
-    const tail = isGuest ? "게스트 반영" : "방금 반영";
+    const tail = isGuest ? "명부 외 반영" : "방금 반영";
     elSuccessSessionLine.innerHTML =
       '<span class="dash-session-label">현재 참여 인원</span><span class="dash-session-figures">' +
       formatSessionFiguresHtml(m, g) +
@@ -344,16 +553,7 @@
       elDashNicknameLine.textContent = "";
       elDashTeamRole.textContent = "";
     }
-    if (elDashSessionListLink) {
-      const dk = inputValueToDateKey(elMeetingDate.value);
-      if (dk) {
-        elDashSessionListLink.href = buildMainAttendanceListUrl(dk);
-        elDashSessionListLink.classList.remove("hidden");
-      } else {
-        elDashSessionListLink.href = "index.html";
-        elDashSessionListLink.classList.add("hidden");
-      }
-    }
+    setKioskEntryLinks();
     refreshSessionCountLine().catch(() => {});
   }
 
@@ -421,7 +621,8 @@
         elMemberList.innerHTML =
           '<div class="member-list-empty" role="status">‘' +
           escapeHtml(q) +
-          "’에 맞는 닉네임이 없어요. 철자를 줄이거나 바꿔 검색해 보세요.</div>";
+          "’에 맞는 닉네임이 없어요. 철자를 줄이거나 바꿔 검색해 보세요.</div>" +
+          '<p class="search-help" style="margin-top:8px">현장은 키오스크 출석을 이용해 주세요.</p>';
       } else {
         elMemberList.innerHTML = "";
       }
@@ -463,6 +664,137 @@
       .replace(/"/g, "&quot;");
   }
 
+  function isKioskMode() {
+    return new URLSearchParams(location.search).get("mode") === "kiosk";
+  }
+
+  function getAttendanceLogMode() {
+    if (isKioskMode()) return "kiosk";
+    if (elDash && !elDash.classList.contains("hidden")) return "dashboard";
+    if (elSearch && !elSearch.classList.contains("hidden")) return "search";
+    return "search";
+  }
+
+  function logAttendanceEvent(event, data) {
+    const mode = (data && data.mode) || getAttendanceLogMode();
+    const page = isKioskMode() ? "attendance-kiosk" : "attendance-v2";
+    fetch(RACE_LOG_API + "?action=log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event,
+        data: {
+          logSource: "client",
+          page,
+          mode,
+          ...data,
+        },
+      }),
+    }).catch(() => {});
+  }
+
+  function shouldReloadRosterOnError(code) {
+    if (code === "ALREADY_CHECKED_IN" || code === "MEMBER_NOT_FOUND") return true;
+    return !code || code === "unknown";
+  }
+
+  function renderKioskRosterListItems(items) {
+    if (!elKioskRosterList) return;
+    const rows = Array.isArray(items)
+      ? items
+          .slice()
+          .sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0))
+      : [];
+    if (rows.length === 0) {
+      elKioskRosterList.innerHTML = rosterEmptyStateHtml("아직 출석자가 없습니다.");
+      return;
+    }
+    elKioskRosterList.innerHTML = rows
+      .map((item) => {
+        const nickname = item && item.nickname ? item.nickname : "이름 없음";
+        const teamText = (item && (item.teamLabel || teamLabel(item.team))) || "팀 미정";
+        const timeText = item && item.timeText ? item.timeText : "";
+        const meta = timeText ? teamText + " · " + timeText : teamText;
+        return (
+          '<div class="kiosk-member-card static done"><strong>' +
+          escapeHtml(nickname) +
+          "</strong><span>" +
+          escapeHtml(meta) +
+          "</span></div>"
+        );
+      })
+      .join("");
+  }
+
+  async function renderKioskRosterScreen(opts) {
+    if (!elKioskRosterPanel || !elKioskRosterList || !elKioskRosterTitle) return;
+    setKioskPanels("roster");
+    setKioskMessage("");
+    elKioskRosterTitle.textContent = formatSessionRosterTitle(
+      kioskState.meetingDateKey,
+      kioskState.meetingType
+    );
+    elKioskRosterList.innerHTML = rosterEmptyStateHtml("불러오는 중입니다.");
+    if (opts && opts.history) {
+      syncKioskHistory(kioskHistoryRoute("roster"), opts.history);
+    }
+    try {
+      await reloadKioskRoster("roster_panel_open");
+      renderKioskRosterListItems(kioskState.rosterItems);
+    } catch (e) {
+      elKioskRosterList.innerHTML = rosterEmptyStateHtml(
+        "출석 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+      );
+    }
+  }
+
+  function renderKioskNotOnRosterScreen(opts) {
+    if (!elKioskNotOnRosterPanel) return;
+    setKioskPanels("not_on_roster");
+    setKioskMessage("");
+    if (elKioskGuestNickname) elKioskGuestNickname.value = "";
+    if (elKioskNotOnRosterHelp) elKioskNotOnRosterHelp.textContent = NOT_ON_ROSTER_HELP;
+    if (opts && opts.history) {
+      syncKioskHistory(kioskHistoryRoute("not_on_roster"), opts.history);
+    }
+    if (elKioskGuestNickname) {
+      window.setTimeout(() => {
+        try {
+          elKioskGuestNickname.focus();
+        } catch (_) {
+          /* ignore */
+        }
+      }, 0);
+    }
+  }
+
+  function openKioskNotOnRosterScreen(fromMemberList) {
+    kioskState.notOnRosterReturn = fromMemberList ? "member" : "home";
+    renderKioskNotOnRosterScreen({ history: "push" });
+  }
+
+  function handleKioskNotOnRosterBack() {
+    if (kioskState.notOnRosterReturn === "member") {
+      renderKioskCurrentMemberScreen({ history: "replace" });
+      return;
+    }
+    renderKioskHomeScreen({ history: "replace" });
+  }
+
+  function openPersonalNotOnRosterModal() {
+    const g = getDefaultDateAndMeetingType();
+    document.getElementById("guestNickname").value = "";
+    if (elGuestModalTitle) elGuestModalTitle.textContent = "출석 명부에 없는 경우";
+    if (elGuestModalHelp) {
+      elGuestModalHelp.textContent = NOT_ON_ROSTER_HELP;
+      elGuestModalHelp.classList.remove("hidden");
+    }
+    if (elGuestMeetingFields) elGuestMeetingFields.classList.remove("hidden");
+    document.getElementById("guestMeetingType").value = g.meetingType;
+    document.getElementById("guestMeetingDate").value = dateKeyToInputValue(g.dateKey);
+    elGuestModal.classList.remove("hidden");
+  }
+
   async function postCheckin(body) {
     const params = new URLSearchParams();
     Object.keys(body).forEach((k) => {
@@ -492,7 +824,7 @@
   async function showSuccessAfterCheckin(nickname, memberId, isGuest, meetingDateKey, sessionCountFromPost) {
     lastSuccessCalendarAttendedKeys = new Set();
     lastSuccessStatsMonthKey = "";
-    elSuccessLine.textContent = (isGuest ? "게스트 " : "") + nickname + "님, 출석이 등록되었습니다.";
+    elSuccessLine.textContent = nickname + "님, 출석이 등록되었습니다.";
     const cheers = isGuest ? SUCCESS_CHEERS_GUEST : SUCCESS_CHEERS_MEMBER;
     elSuccessCheer.textContent = cheers[Math.floor(Math.random() * cheers.length)];
     setSuccessSessionLineFromPayload(sessionCountFromPost, isGuest);
@@ -548,6 +880,654 @@
     }
   }
 
+  function clearKioskReturnTimer() {
+    if (kioskState.returnTimer) {
+      clearTimeout(kioskState.returnTimer);
+      kioskState.returnTimer = null;
+    }
+  }
+
+  function kioskDoneMemberIds() {
+    const ids = new Set();
+    kioskState.rosterItems.forEach((item) => {
+      if (item && item.isGuest !== true && item.memberId) ids.add(item.memberId);
+    });
+    return ids;
+  }
+
+  function isKioskMemberDone(member) {
+    if (!member) return false;
+    const ids = kioskDoneMemberIds();
+    if (member.id && ids.has(member.id)) return true;
+    const memberKey = String(member.nickname || "").trim().toLowerCase();
+    return kioskState.rosterItems.some((item) => {
+      if (!item || item.isGuest === true) return false;
+      if (item.memberId) return false;
+      return String(item.nicknameKey || item.nickname || "").trim().toLowerCase() === memberKey;
+    });
+  }
+
+  function isKioskNicknameOnRoster(nickname) {
+    const nicknameKey = String(nickname || "").trim().toLowerCase();
+    if (!nicknameKey) return false;
+    return kioskState.rosterItems.some((item) => {
+      if (!item) return false;
+      return String(item.nicknameKey || item.nickname || "").trim().toLowerCase() === nicknameKey;
+    });
+  }
+
+  function kioskTeamAttendanceCount(team) {
+    return kioskState.rosterItems.filter((item) => {
+      if (!item || item.isGuest === true || item.team === "GUEST") return false;
+      return item.team === team;
+    }).length;
+  }
+
+  function kioskInitialBucket(nickname) {
+    const text = String(nickname || "").trim();
+    if (!text) return "기타";
+    const first = text.charAt(0);
+    const code = first.charCodeAt(0);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      const initial = HANGUL_INITIALS[Math.floor((code - 0xac00) / 588)] || "기타";
+      return HANGUL_DOUBLE_INITIAL_MAP[initial] || initial;
+    }
+    if (/^[A-Za-z]$/.test(first)) return "A-Z";
+    if (/^[0-9]$/.test(first)) return "0-9";
+    return "기타";
+  }
+
+  function kioskInitialLabel(bucket) {
+    if (bucket === "A-Z") return "영문";
+    if (bucket === "0-9") return "숫자";
+    if (bucket === "기타") return "기타";
+    return bucket || "첫 글자";
+  }
+
+  function kioskInitialCounts() {
+    const counts = {};
+    kioskState.members.forEach((member) => {
+      const bucket = kioskInitialBucket(member.nickname);
+      counts[bucket] = (counts[bucket] || 0) + 1;
+    });
+    return counts;
+  }
+
+  function kioskSortedMembers(members) {
+    return members.slice().sort((a, b) => {
+      const ad = isKioskMemberDone(a) ? 1 : 0;
+      const bd = isKioskMemberDone(b) ? 1 : 0;
+      if (ad !== bd) return ad - bd;
+      return String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko");
+    });
+  }
+
+  function kioskInitialMembers(bucket) {
+    return kioskSortedMembers(kioskState.members.filter((member) => kioskInitialBucket(member.nickname) === bucket));
+  }
+
+  function kioskTeamMembers(team) {
+    return kioskSortedMembers(kioskState.members.filter((member) => member.team === team));
+  }
+
+  function kioskHistoryRoute(screen, source, value) {
+    return {
+      view: "kiosk",
+      screen,
+      source: source || "",
+      value: value || ""
+    };
+  }
+
+  function syncKioskHistory(route, action) {
+    if (!action || kioskState.applyingHistory || !window.history) return;
+    const nextState = Object.assign({}, window.history.state || {}, { dmcAttendanceKiosk: route });
+    try {
+      if (action === "replace") window.history.replaceState(nextState, "", window.location.href);
+      if (action === "push") window.history.pushState(nextState, "", window.location.href);
+    } catch (e) {
+      // Embedded browser history writes can fail; the visible flow remains usable.
+    }
+  }
+
+  function setKioskPanels(name) {
+    elKioskHomePanel.classList.toggle("hidden", name !== "home");
+    elKioskInitialPanel.classList.toggle("hidden", name !== "initial");
+    elKioskTeamPanel.classList.toggle("hidden", name !== "team");
+    elKioskMemberPanel.classList.toggle("hidden", name !== "member");
+    if (elKioskNotOnRosterPanel) elKioskNotOnRosterPanel.classList.toggle("hidden", name !== "not_on_roster");
+    if (elKioskRosterPanel) elKioskRosterPanel.classList.toggle("hidden", name !== "roster");
+    elKioskDonePanel.classList.toggle("hidden", name !== "done");
+  }
+
+  function setKioskMessage(text, type) {
+    elKioskMsg.textContent = text || "";
+    elKioskMsg.className = "msg";
+    if (type) elKioskMsg.classList.add(type);
+    if (!text) elKioskMsg.classList.add("hidden");
+    else elKioskMsg.classList.remove("hidden");
+  }
+
+  function isKioskVisible() {
+    return !elKiosk.classList.contains("hidden") && document.visibilityState === "visible";
+  }
+
+  function setKioskWakeLockStatus(text, type) {
+    if (!elKioskWakeLockStatus) return;
+    elKioskWakeLockStatus.textContent = text || "";
+    elKioskWakeLockStatus.className = "kiosk-wake-lock-status";
+    if (type) elKioskWakeLockStatus.classList.add(type);
+    if (!text) elKioskWakeLockStatus.classList.add("hidden");
+    else elKioskWakeLockStatus.classList.remove("hidden");
+  }
+
+  async function releaseKioskWakeLock() {
+    const wakeLock = kioskState.wakeLockSentinel;
+    kioskState.wakeLockSentinel = null;
+    kioskState.wakeLockEnabled = false;
+    if (!wakeLock) return;
+    try {
+      await wakeLock.release();
+    } catch (e) {
+      // The lock may already have been released by the browser or OS.
+    }
+  }
+
+  async function requestKioskWakeLock() {
+    if (!("wakeLock" in navigator)) {
+      setKioskWakeLockStatus("이 브라우저에서는 화면 켜짐 유지를 요청할 수 없습니다", "warn");
+      return;
+    }
+    if (!isKioskVisible()) return;
+    if (kioskState.wakeLockSentinel) {
+      kioskState.wakeLockEnabled = true;
+      setKioskWakeLockStatus("화면 켜짐 유지 중", "active");
+      return;
+    }
+    try {
+      const wakeLock = await navigator.wakeLock.request("screen");
+      kioskState.wakeLockSentinel = wakeLock;
+      kioskState.wakeLockEnabled = true;
+      setKioskWakeLockStatus("화면 켜짐 유지 중", "active");
+      wakeLock.addEventListener("release", () => {
+        if (kioskState.wakeLockSentinel === wakeLock) kioskState.wakeLockSentinel = null;
+        kioskState.wakeLockEnabled = false;
+        if (isKioskVisible()) {
+          setKioskWakeLockStatus("화면 켜짐 유지가 해제되었습니다. 다시 요청합니다.", "warn");
+          requestKioskWakeLock().catch(() => {});
+        } else {
+          setKioskWakeLockStatus("");
+        }
+      });
+    } catch (err) {
+      kioskState.wakeLockSentinel = null;
+      kioskState.wakeLockEnabled = false;
+      setKioskWakeLockStatus("배터리 또는 브라우저 설정 때문에 화면 켜짐 유지 요청이 거절되었습니다", "warn");
+    }
+  }
+
+  function renderKioskHomeScreen(options = {}) {
+    clearKioskReturnTimer();
+    kioskState.previousPicker = "home";
+    kioskState.selectedInitial = "";
+    kioskState.selectedTeam = "";
+    setKioskPanels("home");
+    syncKioskHistory(kioskHistoryRoute("home"), options.history);
+    if (kioskState.loading) {
+      setKioskMessage("출석 명부를 불러오는 중입니다.");
+    } else if (kioskState.error) {
+      setKioskMessage("출석 명부 연결 대기 중입니다.");
+    } else {
+      setKioskMessage("");
+    }
+    if (isKioskVisible()) requestKioskWakeLock().catch(() => {});
+  }
+
+  function renderKioskInitialScreen(options = {}) {
+    clearKioskReturnTimer();
+    kioskState.previousPicker = "initial";
+    kioskState.selectedInitial = "";
+    kioskState.selectedTeam = "";
+    setKioskPanels("initial");
+    syncKioskHistory(kioskHistoryRoute("initial"), options.history);
+    if (kioskState.loading) {
+      elKioskInitialGrid.innerHTML = '<div class="kiosk-empty" role="status">출석 명부를 불러오는 중입니다.</div>';
+      setKioskMessage("");
+      return;
+    }
+    if (kioskState.error) {
+      elKioskInitialGrid.innerHTML = '<div class="kiosk-empty" role="status">' + escapeHtml(kioskState.error) + "</div>";
+      setKioskMessage("");
+      return;
+    }
+    const counts = kioskInitialCounts();
+    const buckets = KIOSK_INITIAL_BUCKETS.filter((bucket) => counts[bucket] || bucket === "A-Z" || bucket === "0-9");
+    elKioskInitialGrid.innerHTML = buckets
+      .map((bucket) => {
+        const count = counts[bucket] || 0;
+        const disabled = count === 0 ? " disabled" : "";
+        return (
+          '<button type="button" class="kiosk-initial-button" data-initial="' +
+          encodeURIComponent(bucket) +
+          '"' +
+          disabled +
+          "><strong>" +
+          escapeHtml(kioskInitialLabel(bucket)) +
+          "</strong><span>" +
+          count +
+          "명</span></button>"
+        );
+      })
+      .join("");
+    elKioskInitialGrid.querySelectorAll(".kiosk-initial-button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.disabled) return;
+        renderKioskMemberScreen("initial", decodeURIComponent(btn.getAttribute("data-initial") || ""), { history: "push" });
+      });
+    });
+    setKioskMessage("");
+  }
+
+  function renderKioskTeamScreen(options = {}) {
+    clearKioskReturnTimer();
+    kioskState.previousPicker = "team";
+    kioskState.selectedInitial = "";
+    kioskState.selectedTeam = "";
+    setKioskPanels("team");
+    syncKioskHistory(kioskHistoryRoute("team"), options.history);
+    if (kioskState.loading) {
+      elKioskTeamGrid.innerHTML = '<div class="kiosk-empty" role="status">출석 명부를 불러오는 중입니다.</div>';
+      setKioskMessage("");
+      return;
+    }
+    if (kioskState.error) {
+      elKioskTeamGrid.innerHTML = '<div class="kiosk-empty" role="status">' + escapeHtml(kioskState.error) + "</div>";
+      setKioskMessage("");
+      return;
+    }
+    elKioskTeamGrid.innerHTML = TEAM_OPTIONS.map((team) => {
+      const count = kioskTeamAttendanceCount(team.value);
+      return (
+        '<button type="button" class="kiosk-team-button" data-team="' +
+        escapeHtml(team.value) +
+        '"><strong>' +
+        escapeHtml(team.label) +
+        "</strong><span>현재 출석 " +
+        count +
+        "명</span></button>"
+      );
+    }).join("");
+    elKioskTeamGrid.querySelectorAll(".kiosk-team-button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        renderKioskMemberScreen("team", btn.getAttribute("data-team") || "", { history: "push" });
+      });
+    });
+    setKioskMessage("");
+  }
+
+  function renderKioskMemberScreen(source, value, options = {}) {
+    clearKioskReturnTimer();
+    const fromTeam = source === "team";
+    let members = [];
+    kioskState.previousPicker = source === "team" ? "team" : "initial";
+    if (fromTeam) {
+      kioskState.selectedInitial = "";
+      kioskState.selectedTeam = value;
+      members = kioskTeamMembers(value);
+      const teamInfo = TEAM_OPTIONS.find((team) => team.value === value);
+      elKioskMemberTitle.textContent = teamInfo ? teamInfo.label : "팀";
+      elKioskMemberBackBtn.setAttribute("aria-label", "팀 선택으로 돌아가기");
+    } else {
+      kioskState.selectedInitial = value;
+      kioskState.selectedTeam = "";
+      members = kioskInitialMembers(value);
+      elKioskMemberTitle.textContent = kioskInitialLabel(value);
+      elKioskMemberBackBtn.setAttribute("aria-label", "첫 글자 선택으로 돌아가기");
+    }
+    setKioskPanels("member");
+    syncKioskHistory(kioskHistoryRoute("member", fromTeam ? "team" : "initial", value), options.history);
+    if (members.length === 0) {
+      elKioskMemberGrid.innerHTML =
+        '<div class="kiosk-empty" role="status">출석 명부에 해당 닉네임이 없습니다</div>';
+    } else {
+      elKioskMemberGrid.innerHTML = members.map((member) => {
+        const done = isKioskMemberDone(member);
+        const pending = kioskState.pendingMemberId === member.id;
+        if (done) {
+          return (
+            '<div class="kiosk-member-card done" aria-disabled="true" data-member-id="' +
+            encodeURIComponent(member.id) +
+            '"><strong>' +
+            escapeHtml(member.nickname) +
+            "</strong><span>완료</span></div>"
+          );
+        }
+        return (
+          '<button type="button" class="kiosk-member-card" data-member-id="' +
+          encodeURIComponent(member.id) +
+          '"' +
+          (pending ? " disabled" : "") +
+          "><strong>" +
+          escapeHtml(member.nickname) +
+          "</strong><span>" +
+          (pending ? "처리 중" : "출석") +
+          "</span></button>"
+        );
+      }).join("");
+      elKioskMemberGrid.querySelectorAll("button.kiosk-member-card").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.disabled) return;
+          const id = decodeURIComponent(btn.getAttribute("data-member-id") || "");
+          const member = kioskState.members.find((item) => item.id === id);
+          if (member) handleKioskMemberCheckin(member).catch(() => {});
+        });
+      });
+    }
+    setKioskMessage("");
+  }
+
+  function handleKioskMemberBack() {
+    if (kioskState.previousPicker === "initial") {
+      renderKioskInitialScreen({ history: "replace" });
+      return;
+    }
+    if (kioskState.previousPicker === "team") {
+      renderKioskTeamScreen({ history: "replace" });
+      return;
+    }
+    renderKioskHomeScreen({ history: "replace" });
+  }
+
+  function renderKioskCurrentMemberScreen(options = {}) {
+    if (kioskState.selectedInitial) {
+      renderKioskMemberScreen("initial", kioskState.selectedInitial, options);
+      return;
+    }
+    if (kioskState.selectedTeam) {
+      renderKioskMemberScreen("team", kioskState.selectedTeam, options);
+    }
+  }
+
+  function resetKioskDoneStats(member) {
+    kioskState.doneStatsReqId += 1;
+    if (!member || !member.id) {
+      elKioskDoneStats.classList.add("hidden");
+      elKioskDoneMonthCount.textContent = "-";
+      elKioskDoneStreakCount.textContent = "-";
+      return null;
+    }
+    elKioskDoneStats.classList.remove("hidden");
+    elKioskDoneMonthCount.textContent = "...";
+    elKioskDoneStreakCount.textContent = "...";
+    return kioskState.doneStatsReqId;
+  }
+
+  async function loadKioskMemberStats(member, reqId) {
+    try {
+      const monthKey = monthKeyFromMeetingDateKeySlash(kioskState.meetingDateKey);
+      const statsUrl =
+        BASE_URL +
+        "?action=stats&memberId=" +
+        encodeURIComponent(member.id) +
+        "&nickname=" +
+        encodeURIComponent(member.nickname) +
+        "&month=" +
+        encodeURIComponent(monthKey);
+      const statsJson = await fetch(statsUrl).then((r) => r.json());
+      if (reqId !== kioskState.doneStatsReqId) return;
+      if (!statsJson.ok) throw new Error(statsJson.error || "stats failed");
+      elKioskDoneMonthCount.textContent = String(Number(statsJson.thisMonthCount) || 0) + "회";
+      elKioskDoneStreakCount.textContent = String(Number(statsJson.consecutiveClubSessions) || 0) + "회";
+    } catch (e) {
+      if (reqId !== kioskState.doneStatsReqId) return;
+      elKioskDoneMonthCount.textContent = "-";
+      elKioskDoneStreakCount.textContent = "-";
+    }
+  }
+
+  function showKioskDone(member, statusText) {
+    setKioskPanels("done");
+    elKioskDoneName.textContent = (member && member.nickname ? member.nickname : "출석자") + "님";
+    elKioskDoneStatus.textContent = statusText || "출석 완료";
+    setKioskMessage("");
+    const reqId = resetKioskDoneStats(member);
+    if (reqId) loadKioskMemberStats(member, reqId).catch(() => {});
+    clearKioskReturnTimer();
+    kioskState.returnTimer = setTimeout(() => {
+      renderKioskHomeScreen({ history: "replace" });
+    }, 3000);
+  }
+
+  async function reloadKioskRoster(reason) {
+    const status = await fetchKioskRoster(kioskState.meetingDateKey);
+    kioskState.rosterItems = Array.isArray(status.items) ? status.items : [];
+    logAttendanceEvent("attendance_roster_reload", {
+      mode: "kiosk",
+      reason: reason || "manual",
+      meetingDate: kioskState.meetingDateKey,
+      meetingType: kioskState.meetingType,
+      reloadTriggered: true,
+      rosterCountAfter: kioskState.rosterItems.length,
+      entrySource: "kiosk",
+    });
+    return kioskState.rosterItems;
+  }
+
+  async function handleKioskMemberCheckin(member) {
+    if (isKioskProcessing || isKioskMemberDone(member)) {
+      if (isKioskMemberDone(member)) showKioskDone(member, "이미 출석 완료");
+      return;
+    }
+    isKioskProcessing = true;
+    kioskState.pendingMemberId = member.id;
+    renderKioskCurrentMemberScreen();
+    let postSucceeded = false;
+    try {
+      await postCheckin({
+        nickname: member.nickname,
+        memberId: member.id,
+        team: member.team,
+        meetingType: kioskState.meetingType,
+        meetingDate: kioskState.meetingDateKey,
+        isGuest: false,
+      });
+      postSucceeded = true;
+    } catch (e) {
+      logAttendanceEvent("attendance_checkin_error", {
+        mode: "kiosk",
+        error: e.code || "unknown",
+        memberId: member.id,
+        nickname: member.nickname,
+        meetingDate: kioskState.meetingDateKey,
+        meetingType: kioskState.meetingType,
+        entrySource: "kiosk",
+      });
+      if (shouldReloadRosterOnError(e.code)) {
+        try {
+          await reloadKioskRoster(e.code);
+          if (e.code === "MEMBER_NOT_FOUND") {
+            const refreshed = await fetchKioskMembers();
+            kioskState.members = refreshed.filter((m) => m && m.id && m.nickname);
+          }
+        } catch (_) {
+          /* reload 실패는 아래 UX로 */
+        }
+      }
+      if (isKioskMemberDone(member)) {
+        showKioskDone(member, "이미 출석 완료");
+        kioskState.pendingMemberId = "";
+        isKioskProcessing = false;
+        return;
+      }
+      renderKioskCurrentMemberScreen();
+      setKioskMessage("출석 처리에 실패했습니다. IT 운영총무에게 알려주세요.", "error");
+      kioskState.pendingMemberId = "";
+      isKioskProcessing = false;
+      return;
+    }
+    if (postSucceeded) {
+      try {
+        await reloadKioskRoster("checkin_success");
+      } catch (reloadErr) {
+        logAttendanceEvent("attendance_roster_reload", {
+          mode: "kiosk",
+          reason: "checkin_success_reload_failed",
+          error: String(reloadErr.message || reloadErr),
+          meetingDate: kioskState.meetingDateKey,
+          meetingType: kioskState.meetingType,
+          entrySource: "kiosk",
+          reloadTriggered: false,
+        });
+      }
+      showKioskDone(member, "출석 완료");
+    }
+    kioskState.pendingMemberId = "";
+    isKioskProcessing = false;
+  }
+
+  async function handleKioskNotOnRosterCheckin(nickname) {
+    if (isKioskProcessing) return;
+    isKioskProcessing = true;
+    let postSucceeded = false;
+    try {
+      await postCheckin({
+        nickname,
+        team: "GUEST",
+        meetingType: kioskState.meetingType,
+        meetingDate: kioskState.meetingDateKey,
+        isGuest: true,
+      });
+      postSucceeded = true;
+    } catch (e) {
+      logAttendanceEvent("attendance_checkin_error", {
+        mode: "not_on_roster",
+        error: e.code || "unknown",
+        nickname,
+        meetingDate: kioskState.meetingDateKey,
+        meetingType: kioskState.meetingType,
+        entrySource: "kiosk",
+      });
+      if (shouldReloadRosterOnError(e.code)) {
+        try {
+          await reloadKioskRoster(e.code);
+          if (e.code === "ALREADY_CHECKED_IN" && isKioskNicknameOnRoster(nickname)) {
+            showKioskDone({ nickname }, "이미 출석 완료");
+            isKioskProcessing = false;
+            return;
+          }
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      setKioskMessage(
+        e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : e.message || "출석 처리에 실패했습니다.",
+        "error"
+      );
+      isKioskProcessing = false;
+      return;
+    }
+    if (postSucceeded) {
+      try {
+        await reloadKioskRoster("not_on_roster_checkin");
+      } catch (reloadErr) {
+        logAttendanceEvent("attendance_roster_reload", {
+          mode: "not_on_roster",
+          reason: "not_on_roster_checkin_reload_failed",
+          error: String(reloadErr.message || reloadErr),
+          nickname,
+          meetingDate: kioskState.meetingDateKey,
+          meetingType: kioskState.meetingType,
+          entrySource: "kiosk",
+          reloadTriggered: false,
+        });
+      }
+      showKioskDone({ nickname }, "출석 완료");
+    }
+    isKioskProcessing = false;
+  }
+
+  async function fetchKioskJsonFromReadUrls(query) {
+    let lastError = null;
+    for (const baseUrl of KIOSK_READ_URLS) {
+      try {
+        const res = await fetch(baseUrl + query);
+        const json = await res.json();
+        if (!res.ok || !json.ok) throw new Error(json.error || "kiosk read failed");
+        return json;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError || new Error("kiosk read failed");
+  }
+
+  async function fetchKioskMembers() {
+    const json = await fetchKioskJsonFromReadUrls("?action=members");
+    membersCache = json.members || [];
+    return membersCache;
+  }
+
+  async function fetchKioskRoster(meetingDateKey) {
+    return fetchKioskJsonFromReadUrls(
+      "?action=status&date=" + encodeURIComponent(meetingDateKey)
+    );
+  }
+
+  function renderKioskRouteFromHistory(route) {
+    if (!route || route.view !== "kiosk") return false;
+    kioskState.applyingHistory = true;
+    try {
+      if (route.screen === "initial") renderKioskInitialScreen();
+      else if (route.screen === "team") renderKioskTeamScreen();
+      else if (route.screen === "member") renderKioskMemberScreen(route.source || "initial", route.value || "");
+      else if (route.screen === "not_on_roster") renderKioskNotOnRosterScreen();
+      else if (route.screen === "roster") renderKioskRosterScreen();
+      else renderKioskHomeScreen();
+    } finally {
+      kioskState.applyingHistory = false;
+    }
+    return true;
+  }
+
+  async function openKioskView() {
+    clearKioskReturnTimer();
+    const defaults = getDefaultDateAndMeetingType();
+    kioskState.meetingDateKey = defaults.dateKey;
+    kioskState.meetingType = defaults.meetingType;
+    kioskState.previousPicker = "home";
+    kioskState.selectedInitial = "";
+    kioskState.selectedTeam = "";
+    kioskState.members = [];
+    kioskState.rosterItems = [];
+    kioskState.pendingMemberId = "";
+    kioskState.loading = true;
+    kioskState.error = "";
+    updateKioskMeetingTitle(defaults.dateKey, defaults.meetingType);
+    showView("kiosk");
+    renderKioskHomeScreen({ history: "replace" });
+    await requestKioskWakeLock();
+    try {
+      const [members, status] = await Promise.all([
+        fetchKioskMembers(),
+        fetchKioskRoster(defaults.dateKey)
+      ]);
+      kioskState.members = members.filter((member) => member && member.id && member.nickname);
+      kioskState.rosterItems = Array.isArray(status.items) ? status.items : [];
+      kioskState.loading = false;
+      kioskState.error = "";
+      renderKioskHomeScreen({ history: "replace" });
+    } catch (e) {
+      kioskState.loading = false;
+      kioskState.error = "출석 명부를 불러오지 못했습니다. 네트워크를 확인해 주세요.";
+      renderKioskHomeScreen({ history: "replace" });
+    }
+  }
+
+  function registerTabletInstallShell() {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
 
   elMeetingDate.addEventListener("change", refreshDashPrimaryLines);
   elMeetingType.addEventListener("change", refreshDashPrimaryLines);
@@ -558,11 +1538,7 @@
   });
 
   document.getElementById("openGuestBtn").addEventListener("click", () => {
-    const g = getDefaultDateAndMeetingType();
-    document.getElementById("guestNickname").value = "";
-    document.getElementById("guestMeetingType").value = g.meetingType;
-    document.getElementById("guestMeetingDate").value = dateKeyToInputValue(g.dateKey);
-    elGuestModal.classList.remove("hidden");
+    openPersonalNotOnRosterModal();
   });
 
   document.getElementById("guestCancelBtn").addEventListener("click", () => elGuestModal.classList.add("hidden"));
@@ -596,15 +1572,23 @@
       elGuestModal.classList.add("hidden");
       await showSuccessAfterCheckin(nickname, null, true, dateKey, result.sessionCount);
     } catch (e) {
+      logAttendanceEvent("attendance_checkin_error", {
+        mode: "not_on_roster",
+        error: e.code || "unknown",
+        nickname,
+        meetingDate: dateKey,
+        meetingType,
+        entrySource: "v2",
+      });
       const gDate = inputValueToDateKey(document.getElementById("guestMeetingDate").value);
+      const gType = document.getElementById("guestMeetingType").value;
       if (e.code === "ALREADY_CHECKED_IN" && gDate) {
-        const u = buildMainAttendanceListUrl(gDate);
         if (
           confirm(
-            "이미 출석된 기록이 있습니다.\n선택한 모임일의 전체 명단을 메인 출석 페이지에서 확인할까요?"
+            "이미 출석된 기록이 있습니다.\n선택한 모임일의 출석 명단을 여기서 확인할까요?"
           )
         ) {
-          window.open(u, "_blank", "noopener,noreferrer");
+          await openSessionRosterModal(gDate, gType);
         }
       } else {
         alert(e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : e.message || "오류");
@@ -638,16 +1622,29 @@
       await showSuccessAfterCheckin(myProfile.nickname, myProfile.memberId, false, dateKey, result.sessionCount);
     } catch (e) {
       if (e.code === "ALREADY_CHECKED_IN") {
+        logAttendanceEvent("attendance_checkin_error", {
+          mode: "dashboard",
+          error: "ALREADY_CHECKED_IN",
+          memberId: myProfile.memberId,
+          nickname: myProfile.nickname,
+          meetingDate: dateKey,
+          meetingType,
+          entrySource: "v2",
+        });
+        refreshSessionCountLine().catch(() => {});
         const rawMsg =
           (e.payload && e.payload.message) || "이미 해당 모임일에 출석 기록이 있습니다.";
         const dupDate =
           (e.payload && e.payload.existingRecord && e.payload.existingRecord.meetingDate) || dateKey;
-        const listUrl = buildMainAttendanceListUrl(dupDate);
         elDashMsg.innerHTML =
           escapeHtml(rawMsg) +
-          ' <a href="' +
-          listUrl +
-          '" target="_blank" rel="noopener noreferrer">출석 명단에서 확인</a>';
+          ' <button type="button" class="inline-text-button" id="openDuplicateRosterBtn">출석 명단에서 확인</button>';
+        const dupBtn = document.getElementById("openDuplicateRosterBtn");
+        if (dupBtn) {
+          dupBtn.addEventListener("click", () => {
+            openSessionRosterModal(dupDate, meetingType).catch(() => {});
+          });
+        }
       } else if (e.code === "MEMBER_NOT_FOUND") {
         elDashMsg.textContent = "회원 정보가 유효하지 않습니다. 프로필을 다시 설정해 주세요.";
       } else {
@@ -680,6 +1677,14 @@
     if (e.target === elTeamModal) elTeamModal.classList.add("hidden");
   });
 
+  elDashSessionRow.addEventListener("click", () => {
+    openSessionRosterModal().catch(() => {});
+  });
+  elSessionRosterCloseBtn.addEventListener("click", closeSessionRosterModal);
+  elSessionRosterModal.addEventListener("click", (e) => {
+    if (e.target === elSessionRosterModal) closeSessionRosterModal();
+  });
+
   document.getElementById("teamSaveBtn").addEventListener("click", () => {
     if (!myProfile) return;
     const v = document.getElementById("teamSelect").value;
@@ -693,7 +1698,84 @@
     renderDashboard();
   });
 
+  document.getElementById("kioskChooseNicknameBtn").addEventListener("click", () => {
+    renderKioskInitialScreen({ history: "push" });
+  });
+
+  document.getElementById("kioskChooseTeamBtn").addEventListener("click", () => {
+    renderKioskTeamScreen({ history: "push" });
+  });
+
+  document.getElementById("kioskInitialHomeBtn").addEventListener("click", () => {
+    renderKioskHomeScreen({ history: "replace" });
+  });
+
+  document.getElementById("kioskTeamHomeBtn").addEventListener("click", () => {
+    renderKioskHomeScreen({ history: "replace" });
+  });
+
+  if (elKioskMemberNotOnRosterBtn) {
+    elKioskMemberNotOnRosterBtn.addEventListener("click", () => {
+      openKioskNotOnRosterScreen(true);
+    });
+  }
+
+  if (elKioskNotOnRosterSubmitBtn) {
+    elKioskNotOnRosterSubmitBtn.addEventListener("click", async () => {
+      const nickname = (elKioskGuestNickname && elKioskGuestNickname.value.trim()) || "";
+      if (!nickname) {
+        setKioskMessage("닉네임을 입력해 주세요.", "error");
+        if (elKioskGuestNickname) elKioskGuestNickname.focus();
+        return;
+      }
+      elKioskNotOnRosterSubmitBtn.disabled = true;
+      try {
+        await handleKioskNotOnRosterCheckin(nickname);
+      } finally {
+        elKioskNotOnRosterSubmitBtn.disabled = false;
+      }
+    });
+  }
+
+  const elKioskNotOnRosterBackBtn = document.getElementById("kioskNotOnRosterBackBtn");
+  if (elKioskNotOnRosterBackBtn) {
+    elKioskNotOnRosterBackBtn.addEventListener("click", handleKioskNotOnRosterBack);
+  }
+
+  const elKioskRosterBackBtn = document.getElementById("kioskRosterBackBtn");
+  if (elKioskRosterBackBtn) {
+    elKioskRosterBackBtn.addEventListener("click", () => {
+      renderKioskHomeScreen({ history: "replace" });
+    });
+  }
+
+  document.getElementById("kioskRosterBtn").addEventListener("click", () => {
+    renderKioskRosterScreen({ history: "push" }).catch(() => {});
+  });
+
+  elKioskMemberBackBtn.addEventListener("click", handleKioskMemberBack);
+
+  window.addEventListener("popstate", (event) => {
+    const route = event.state && event.state.dmcAttendanceKiosk;
+    if (route) renderKioskRouteFromHistory(route);
+  });
+
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible") {
+      if (!kioskState.wakeLockEnabled) await requestKioskWakeLock();
+      return;
+    }
+    await releaseKioskWakeLock();
+  });
+
   async function init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    registerTabletInstallShell();
+    setKioskEntryLinks();
+    if (urlParams.get("mode") === "kiosk") {
+      await openKioskView();
+      return;
+    }
     myProfile = loadProfile();
     if (myProfile) {
       showView("dashboard");

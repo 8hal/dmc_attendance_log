@@ -102,6 +102,45 @@ resp=$(curl -s "$API?action=event-logs&limit=5")
 ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
 assert "event-logs: ok=true" "True" "$ok"
 
+ATTENDANCE="http://127.0.0.1:5001/dmc-attendance/asia-northeast3/attendance"
+DUP_DATE="2099/06/15"
+DUP_NICK="pre_deploy_dup_nick"
+members_resp=$(curl -s "$API?action=members")
+member_id=$(echo "$members_resp" | python3 -c "import json,sys; m=json.load(sys.stdin).get('members',[]); print(m[0]['id'] if m else '')" 2>/dev/null)
+if [ -n "$member_id" ]; then
+  curl -s -X POST "$ATTENDANCE" \
+    --data-urlencode "nickname=$DUP_NICK" \
+    --data-urlencode "team=S" \
+    --data-urlencode "meetingType=SAT" \
+    --data-urlencode "meetingDate=$DUP_DATE" \
+    --data-urlencode "memberId=$member_id" \
+    --data-urlencode "isGuest=false" > /dev/null
+  dup_resp=$(curl -s -X POST "$ATTENDANCE" \
+    --data-urlencode "nickname=$DUP_NICK" \
+    --data-urlencode "team=S" \
+    --data-urlencode "meetingType=SAT" \
+    --data-urlencode "meetingDate=$DUP_DATE" \
+    --data-urlencode "memberId=$member_id" \
+    --data-urlencode "isGuest=false")
+  dup_err=$(echo "$dup_resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('error',''))" 2>/dev/null)
+  assert "attendance POST 중복 → ALREADY_CHECKED_IN" "ALREADY_CHECKED_IN" "$dup_err"
+  logs_resp=$(curl -s "$API?action=event-logs&limit=30")
+  has_server_err=$(echo "$logs_resp" | python3 -c "
+import json,sys
+logs=json.load(sys.stdin).get('logs',[])
+print(any(
+  l.get('event')=='attendance_checkin_error'
+  and (l.get('data') or {}).get('logSource')=='server'
+  and (l.get('data') or {}).get('error')=='ALREADY_CHECKED_IN'
+  for l in logs
+))
+" 2>/dev/null)
+  assert "event-logs: attendance_checkin_error server" "True" "$has_server_err"
+else
+  FAIL=$((FAIL+1))
+  RESULTS+=("${RED}✗${NC} attendance POST 중복 (members id 없음)")
+fi
+
 resp=$(curl -s "$API?action=data-integrity")
 ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
 assert "data-integrity: ok=true" "True" "$ok"
@@ -158,7 +197,8 @@ curl -s "$HOST/attendance-v2.html" > "$TMP_DIR/attendance-v2.html"
 curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.html: 외부 스크립트" "attendance-v2.js" "$TMP_DIR/attendance-v2.html"
 assert_contains "attendance-v2.js: 완료 화면 보조" "showSuccessAfterCheckin" "$TMP_DIR/attendance-v2.js"
-assert_contains "attendance-v2.js: KST 달력 패딩" "firstOfMonthSundayPadKst" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: roster 재로드" "reloadKioskRoster" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: 명부 외 CTA" "kioskMemberNotOnRosterBtn" "$TMP_DIR/attendance-v2.js"
 
 curl -s "$HOST/attendance-v2-design-draft.html" > "$TMP_DIR/attendance-v2-design-draft.html"
 assert_contains "attendance-v2-design-draft.html: 드래프트 표시" "DESIGN DRAFT" "$TMP_DIR/attendance-v2-design-draft.html"

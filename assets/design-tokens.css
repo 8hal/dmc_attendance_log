@@ -1,0 +1,304 @@
+:root {
+  /*
+   * Canonical DMC design tokens.
+   * Source: production Hosting snapshot, 2026-05-11.
+   * Benchmark references: Radix Colors use-case aliases, Open Props token primitives, and Toss Design System Mobile component roles.
+   * Keep values local. Do not load package or CDN token CSS at runtime.
+   */
+  --dmc-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* DMC accent scale. Step names follow the Radix 1-12 scale convention. */
+  --dmc-blue-1: #fbfdff;
+  --dmc-blue-2: #f8fbff;
+  --dmc-blue-3: #eff6ff;
+  --dmc-blue-4: #dbeafe;
+  --dmc-blue-5: #bfdbfe;
+  --dmc-blue-6: #93c5fd;
+  --dmc-blue-7: #60a5fa;
+  --dmc-blue-8: #3b82f6;
+  --dmc-blue-9: #2563eb;
+  --dmc-blue-10: #1d4ed8;
+  --dmc-blue-11: #1e40af;
+  --dmc-blue-12: #172554;
+
+  --dmc-slate-1: #ffffff;
+  --dmc-slate-2: #f8fafc;
+  --dmc-slate-3: #f1f5f9;
+  --dmc-slate-4: #e2e8f0;
+  --dmc-slate-5: #cbd5e1;
+  --dmc-slate-6: #94a3b8;
+  --dmc-slate-7: #64748b;
+  --dmc-slate-8: #475569;
+  --dmc-slate-9: #334155;
+  --dmc-slate-10: #1e293b;
+  --dmc-slate-11: #0f172a;
+  --dmc-slate-12: #020617;
+
+  --dmc-teal-2: #f0fdfa;
+  --dmc-teal-4: #ccfbf1;
+  --dmc-teal-5: #99f6e4;
+  --dmc-teal-8: #14b8a6;
+  --dmc-teal-10: #0f766e;
+  --dmc-teal-11: #115e59;
+
+  --dmc-green-2: #ecfdf5;
+  --dmc-green-4: #d1fae5;
+  --dmc-green-5: #a7f3d0;
+  --dmc-green-9: #059669;
+  --dmc-green-10: #047857;
+  --dmc-green-11: #065f46;
+
+  --dmc-amber-2: #fffbeb;
+  --dmc-amber-4: #fef3c7;
+  --dmc-amber-5: #fcd34d;
+  --dmc-amber-9: #d97706;
+  --dmc-amber-10: #b45309;
+  --dmc-amber-11: #92400e;
+
+  --dmc-red-2: #fef2f2;
+  --dmc-red-4: #fee2e2;
+  --dmc-red-5: #fecaca;
+  --dmc-red-9: #dc2626;
+  --dmc-red-10: #b91c1c;
+  --dmc-red-11: #991b1b;
+
+  /* Radix-style use-case aliases. */
+  --dmc-accent-base: var(--dmc-blue-1);
+  --dmc-accent-bg-subtle: var(--dmc-blue-2);
+  --dmc-accent-bg: var(--dmc-blue-3);
+  --dmc-accent-bg-hover: var(--dmc-blue-4);
+  --dmc-accent-bg-active: var(--dmc-blue-4);
+  --dmc-accent-line: var(--dmc-blue-5);
+  --dmc-accent-border: var(--dmc-blue-5);
+  --dmc-accent-border-hover: var(--dmc-blue-6);
+  --dmc-accent-solid: var(--dmc-blue-9);
+  --dmc-accent-solid-hover: var(--dmc-blue-10);
+  --dmc-accent-text: var(--dmc-blue-10);
+  --dmc-accent-text-contrast: var(--dmc-blue-12);
+  --dmc-accent-contrast: #ffffff;
+
+  --dmc-surface-base: var(--dmc-slate-1);
+  --dmc-surface-subtle: var(--dmc-slate-2);
+  --dmc-surface-muted: var(--dmc-slate-3);
+  --dmc-line-subtle: var(--dmc-slate-3);
+  --dmc-line-default: var(--dmc-slate-4);
+  --dmc-line-strong: var(--dmc-slate-5);
+  --dmc-text-primary: var(--dmc-slate-11);
+  --dmc-text-secondary: var(--dmc-slate-7);
+  --dmc-text-muted: var(--dmc-slate-6);
+
+  --dmc-success-bg: var(--dmc-green-2);
+  --dmc-success-bg-strong: var(--dmc-green-4);
+  --dmc-success-border: var(--dmc-green-5);
+  --dmc-success-solid: var(--dmc-green-9);
+  --dmc-success-solid-hover: var(--dmc-green-10);
+  --dmc-success-text: var(--dmc-green-11);
+
+  --dmc-warning-bg: var(--dmc-amber-2);
+  --dmc-warning-bg-strong: var(--dmc-amber-4);
+  --dmc-warning-border: var(--dmc-amber-5);
+  --dmc-warning-solid: var(--dmc-amber-9);
+  --dmc-warning-solid-hover: var(--dmc-amber-10);
+  --dmc-warning-text: var(--dmc-amber-11);
+
+  --dmc-danger-bg: var(--dmc-red-2);
+  --dmc-danger-bg-strong: var(--dmc-red-4);
+  --dmc-danger-border: var(--dmc-red-5);
+  --dmc-danger-solid: var(--dmc-red-9);
+  --dmc-danger-solid-hover: var(--dmc-red-10);
+  --dmc-danger-text: var(--dmc-red-11);
+
+  --dmc-teal-bg: var(--dmc-teal-2);
+  --dmc-teal-bg-strong: var(--dmc-teal-4);
+  --dmc-teal-border: var(--dmc-teal-5);
+  --dmc-teal-solid: var(--dmc-teal-8);
+  --dmc-teal-text: var(--dmc-teal-10);
+  --dmc-teal-text-contrast: var(--dmc-teal-11);
+
+  /* Canonical color roles. */
+  --dmc-color-primary: var(--dmc-accent-solid);
+  --dmc-color-primary-hover: var(--dmc-accent-solid-hover);
+  --dmc-color-primary-soft: var(--dmc-accent-bg-active);
+  --dmc-color-primary-surface: var(--dmc-accent-bg);
+  --dmc-color-primary-border: var(--dmc-accent-border);
+  --dmc-color-primary-border-strong: var(--dmc-accent-border-hover);
+  --dmc-color-on-primary: var(--dmc-accent-contrast);
+
+  --dmc-color-bg: var(--dmc-surface-subtle);
+  --dmc-color-surface: var(--dmc-surface-base);
+  --dmc-color-surface-soft: var(--dmc-surface-muted);
+  --dmc-color-text: var(--dmc-text-primary);
+  --dmc-color-text-secondary: var(--dmc-text-secondary);
+  --dmc-color-text-muted: var(--dmc-text-muted);
+  --dmc-color-border: var(--dmc-line-default);
+  --dmc-color-border-light: var(--dmc-line-subtle);
+
+  --dmc-color-success: var(--dmc-success-solid);
+  --dmc-color-success-hover: var(--dmc-success-solid-hover);
+  --dmc-color-success-soft: var(--dmc-success-bg-strong);
+  --dmc-color-success-surface: var(--dmc-success-bg);
+  --dmc-color-success-border: var(--dmc-success-border);
+
+  --dmc-color-warning: var(--dmc-warning-solid);
+  --dmc-color-warning-hover: var(--dmc-warning-solid-hover);
+  --dmc-color-warning-soft: var(--dmc-warning-bg-strong);
+  --dmc-color-warning-surface: var(--dmc-warning-bg);
+  --dmc-color-warning-border: var(--dmc-warning-border);
+  --dmc-color-warning-text: var(--dmc-warning-text);
+
+  --dmc-color-danger: var(--dmc-danger-solid);
+  --dmc-color-danger-hover: var(--dmc-danger-solid-hover);
+  --dmc-color-danger-soft: var(--dmc-danger-bg-strong);
+  --dmc-color-danger-surface: var(--dmc-danger-bg);
+  --dmc-color-danger-border: var(--dmc-danger-border);
+
+  --dmc-color-open-beta: var(--dmc-teal-text);
+  --dmc-color-open-beta-accent: var(--dmc-teal-solid);
+  --dmc-color-open-beta-bg: var(--dmc-teal-bg-strong);
+  --dmc-color-open-beta-surface: var(--dmc-teal-bg);
+  --dmc-color-open-beta-border: var(--dmc-teal-border);
+
+  /* Open Props style primitive scales. */
+  --dmc-space-0: 0;
+  --dmc-space-1: 4px;
+  --dmc-space-2: 8px;
+  --dmc-space-3: 12px;
+  --dmc-space-4: 16px;
+  --dmc-space-5: 20px;
+  --dmc-space-6: 24px;
+  --dmc-space-7: 28px;
+  --dmc-space-8: 32px;
+  --dmc-space-10: 40px;
+  --dmc-space-12: 48px;
+
+  --dmc-radius-1: 4px;
+  --dmc-radius-2: 6px;
+  --dmc-radius-3: 8px;
+  --dmc-radius-4: 10px;
+  --dmc-radius-5: 12px;
+  --dmc-radius-6: 14px;
+  --dmc-radius-7: 16px;
+  --dmc-radius-pill: 999px;
+
+  --dmc-radius-xs: var(--dmc-radius-1);
+  --dmc-radius-sm: var(--dmc-radius-2);
+  --dmc-radius-md: var(--dmc-radius-3);
+  --dmc-radius-lg: var(--dmc-radius-4);
+  --dmc-radius-xl: var(--dmc-radius-5);
+  --dmc-radius-card: var(--dmc-radius-6);
+
+  --dmc-size-touch-sm: 44px;
+  --dmc-size-touch-md: 52px;
+  --dmc-size-touch-lg: 64px;
+  --dmc-size-touch-kiosk: 86px;
+
+  --dmc-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --dmc-shadow-2: 0 2px 12px rgba(15, 23, 42, 0.08);
+  --dmc-shadow-3: 0 16px 40px rgba(15, 23, 42, 0.11);
+  --dmc-shadow-accent: 0 10px 22px rgba(37, 99, 235, 0.22);
+  --dmc-shadow-focus: 0 0 0 3px var(--dmc-accent-bg-active);
+  --dmc-shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --dmc-shadow-card: var(--dmc-shadow-2);
+  --dmc-shadow-shell: var(--dmc-shadow-3);
+  --dmc-shadow-primary: var(--dmc-shadow-accent);
+
+  --dmc-duration-fast: 120ms;
+  --dmc-duration-normal: 160ms;
+  --dmc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /*
+   * Toss Mobile inspired component role tokens.
+   * DMC keeps local values and maps Toss-like fill/weak/full/ListRow roles
+   * onto the existing DMC palette instead of importing Toss packages.
+   */
+  --dmc-button-size-sm: 44px;
+  --dmc-button-size-md: 52px;
+  --dmc-button-size-lg: 60px;
+  --dmc-button-size-xl: 64px;
+  --dmc-button-width-full: 100%;
+  --dmc-button-radius: var(--dmc-radius-pill);
+  --dmc-button-fill-bg: var(--dmc-color-primary);
+  --dmc-button-fill-bg-hover: var(--dmc-color-primary-hover);
+  --dmc-button-fill-text: var(--dmc-color-on-primary);
+  --dmc-button-fill-shadow: var(--dmc-shadow-primary);
+  --dmc-button-weak-bg: rgba(37, 99, 235, 0.08);
+  --dmc-button-weak-bg-hover: rgba(37, 99, 235, 0.12);
+  --dmc-button-weak-border: rgba(37, 99, 235, 0.2);
+  --dmc-button-weak-text: var(--dmc-color-primary-hover);
+  --dmc-button-disabled-opacity: 0.48;
+  --dmc-button-pressed-opacity: 0.08;
+
+  --dmc-list-row-bg: var(--dmc-color-surface);
+  --dmc-list-row-border: var(--dmc-color-border);
+  --dmc-list-row-border-strong: var(--dmc-color-primary-border);
+  --dmc-list-row-padding-x-sm: 20px;
+  --dmc-list-row-padding-x-md: 24px;
+  --dmc-list-row-padding-y-sm: 8px;
+  --dmc-list-row-padding-y-md: 12px;
+  --dmc-list-row-padding-y-lg: 16px;
+  --dmc-list-row-padding-y-xl: 24px;
+  --dmc-list-row-radius: var(--dmc-radius-card);
+  --dmc-list-row-min-height: 72px;
+  --dmc-list-row-disabled-bg: var(--dmc-color-surface-soft);
+  --dmc-list-row-disabled-opacity: 0.58;
+  --dmc-list-row-touch-bg: var(--dmc-color-primary-surface);
+
+  --dmc-kiosk-bg: #f7faff;
+  --dmc-kiosk-hero-bg: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+  --dmc-kiosk-surface-bg: var(--dmc-color-surface);
+  --dmc-kiosk-surface-border: rgba(37, 99, 235, 0.18);
+  --dmc-kiosk-surface-border-strong: rgba(37, 99, 235, 0.28);
+  --dmc-kiosk-surface-shadow: 0 8px 22px rgba(15, 23, 42, 0.1);
+  --dmc-kiosk-card-radius: 26px;
+  --dmc-kiosk-control-radius: 24px;
+  --dmc-kiosk-icon-radius: 20px;
+  --dmc-kiosk-title-size: clamp(37px, 10vw, 48px);
+  --dmc-kiosk-page-title-size: clamp(36px, 9.4vw, 46px);
+  --dmc-kiosk-member-title-size: clamp(30px, 8vw, 38px);
+  --dmc-kiosk-action-title-size: clamp(40px, 10.8vw, 52px);
+  --dmc-kiosk-action-primary-bg: var(--dmc-button-fill-bg);
+  --dmc-kiosk-action-primary-text: var(--dmc-button-fill-text);
+  --dmc-kiosk-action-primary-shadow: var(--dmc-button-fill-shadow);
+  --dmc-kiosk-action-secondary-bg: var(--dmc-kiosk-surface-bg);
+  --dmc-kiosk-action-secondary-text: var(--dmc-color-text);
+  --dmc-kiosk-action-secondary-border: var(--dmc-kiosk-surface-border-strong);
+  --dmc-kiosk-action-secondary-shadow: var(--dmc-kiosk-surface-shadow);
+
+  /* Legacy index.html aliases. */
+  --color-primary: var(--dmc-color-primary);
+  --color-primary-hover: var(--dmc-color-primary-hover);
+  --color-primary-light: var(--dmc-color-primary-soft);
+  --color-bg: var(--dmc-color-bg);
+  --color-card: var(--dmc-color-surface);
+  --color-text: var(--dmc-color-text);
+  --color-text-secondary: var(--dmc-color-text-secondary);
+  --color-text-muted: var(--dmc-color-text-muted);
+  --color-border: var(--dmc-color-border);
+  --color-border-light: var(--dmc-color-border-light);
+  --color-success: var(--dmc-color-success);
+  --color-error: var(--dmc-color-danger);
+  --color-error-light: var(--dmc-color-danger-soft);
+  --color-open-beta: var(--dmc-color-open-beta);
+  --color-open-beta-accent: var(--dmc-color-open-beta-accent);
+  --color-open-beta-bg: var(--dmc-color-open-beta-bg);
+  --color-open-beta-surface: var(--dmc-color-open-beta-surface);
+  --color-open-beta-border: var(--dmc-color-open-beta-border);
+
+  /* attendance-v2.html aliases. */
+  --bg: var(--dmc-color-bg);
+  --surface: var(--dmc-color-surface);
+  --surface-soft: var(--dmc-color-surface-soft);
+  --text: var(--dmc-color-text);
+  --muted: var(--dmc-color-text-secondary);
+  --line: var(--dmc-color-border);
+  --primary: var(--dmc-color-primary);
+  --primary-strong: var(--dmc-color-primary-hover);
+  --primary-soft: var(--dmc-color-primary-soft);
+  --blue-soft: var(--dmc-color-primary-surface);
+  --success: var(--dmc-color-success);
+  --success-soft: var(--dmc-color-success-soft);
+  --amber-soft: var(--dmc-color-warning-soft);
+  --danger: var(--dmc-color-danger);
+  --shadow: var(--dmc-shadow-shell);
+}
