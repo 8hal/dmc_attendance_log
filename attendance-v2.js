@@ -90,7 +90,14 @@
   const elKioskInitialPanel = document.getElementById("kioskInitialPanel");
   const elKioskTeamPanel = document.getElementById("kioskTeamPanel");
   const elKioskMemberPanel = document.getElementById("kioskMemberPanel");
+  const elKioskNotOnRosterPanel = document.getElementById("kioskNotOnRosterPanel");
+  const elKioskRosterPanel = document.getElementById("kioskRosterPanel");
   const elKioskDonePanel = document.getElementById("kioskDonePanel");
+  const elKioskGuestNickname = document.getElementById("kioskGuestNickname");
+  const elKioskNotOnRosterHelp = document.getElementById("kioskNotOnRosterHelp");
+  const elKioskNotOnRosterSubmitBtn = document.getElementById("kioskNotOnRosterSubmitBtn");
+  const elKioskRosterTitle = document.getElementById("kioskRosterTitle");
+  const elKioskRosterList = document.getElementById("kioskRosterList");
   const elKioskInitialGrid = document.getElementById("kioskInitialGrid");
   const elKioskTeamGrid = document.getElementById("kioskTeamGrid");
   const elKioskMemberGrid = document.getElementById("kioskMemberGrid");
@@ -138,7 +145,8 @@
     returnTimer: null,
     applyingHistory: false,
     wakeLockSentinel: null,
-    wakeLockEnabled: false
+    wakeLockEnabled: false,
+    notOnRosterReturn: "home",
   };
   let isKioskProcessing = false;
 
@@ -480,6 +488,10 @@
   }
 
   async function openSessionRosterModal(dateKeyOverride, meetingTypeOverride) {
+    if (isKioskMode()) {
+      await renderKioskRosterScreen({ history: "push" });
+      return;
+    }
     if (!elSessionRosterModal || !elSessionRosterList || !elSessionRosterTitle) return;
     const dateKey = dateKeyOverride || inputValueToDateKey(elMeetingDate.value);
     const meetingType = meetingTypeOverride || elMeetingType.value;
@@ -686,17 +698,87 @@
     return !code || code === "unknown";
   }
 
-  function openKioskNotOnRosterModal() {
-    document.getElementById("guestNickname").value = "";
-    if (elGuestModalTitle) elGuestModalTitle.textContent = "출석 명부에 없는 경우 출석";
-    if (elGuestModalHelp) {
-      elGuestModalHelp.textContent = NOT_ON_ROSTER_HELP;
-      elGuestModalHelp.classList.remove("hidden");
+  function renderKioskRosterListItems(items) {
+    if (!elKioskRosterList) return;
+    const rows = Array.isArray(items)
+      ? items
+          .slice()
+          .sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0))
+      : [];
+    if (rows.length === 0) {
+      elKioskRosterList.innerHTML = rosterEmptyStateHtml("아직 출석자가 없습니다.");
+      return;
     }
-    if (elGuestMeetingFields) elGuestMeetingFields.classList.add("hidden");
-    document.getElementById("guestMeetingType").value = kioskState.meetingType;
-    document.getElementById("guestMeetingDate").value = dateKeyToInputValue(kioskState.meetingDateKey);
-    elGuestModal.classList.remove("hidden");
+    elKioskRosterList.innerHTML = rows
+      .map((item) => {
+        const nickname = item && item.nickname ? item.nickname : "이름 없음";
+        const teamText = (item && (item.teamLabel || teamLabel(item.team))) || "팀 미정";
+        const timeText = item && item.timeText ? item.timeText : "";
+        const meta = timeText ? teamText + " · " + timeText : teamText;
+        return (
+          '<div class="kiosk-member-card static done"><strong>' +
+          escapeHtml(nickname) +
+          "</strong><span>" +
+          escapeHtml(meta) +
+          "</span></div>"
+        );
+      })
+      .join("");
+  }
+
+  async function renderKioskRosterScreen(opts) {
+    if (!elKioskRosterPanel || !elKioskRosterList || !elKioskRosterTitle) return;
+    setKioskPanels("roster");
+    setKioskMessage("");
+    elKioskRosterTitle.textContent = formatSessionRosterTitle(
+      kioskState.meetingDateKey,
+      kioskState.meetingType
+    );
+    elKioskRosterList.innerHTML = rosterEmptyStateHtml("불러오는 중입니다.");
+    if (opts && opts.history) {
+      syncKioskHistory(kioskHistoryRoute("roster"), opts.history);
+    }
+    try {
+      await reloadKioskRoster("roster_panel_open");
+      renderKioskRosterListItems(kioskState.rosterItems);
+    } catch (e) {
+      elKioskRosterList.innerHTML = rosterEmptyStateHtml(
+        "출석 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+      );
+    }
+  }
+
+  function renderKioskNotOnRosterScreen(opts) {
+    if (!elKioskNotOnRosterPanel) return;
+    setKioskPanels("not_on_roster");
+    setKioskMessage("");
+    if (elKioskGuestNickname) elKioskGuestNickname.value = "";
+    if (elKioskNotOnRosterHelp) elKioskNotOnRosterHelp.textContent = NOT_ON_ROSTER_HELP;
+    if (opts && opts.history) {
+      syncKioskHistory(kioskHistoryRoute("not_on_roster"), opts.history);
+    }
+    if (elKioskGuestNickname) {
+      window.setTimeout(() => {
+        try {
+          elKioskGuestNickname.focus();
+        } catch (_) {
+          /* ignore */
+        }
+      }, 0);
+    }
+  }
+
+  function openKioskNotOnRosterScreen(fromMemberList) {
+    kioskState.notOnRosterReturn = fromMemberList ? "member" : "home";
+    renderKioskNotOnRosterScreen({ history: "push" });
+  }
+
+  function handleKioskNotOnRosterBack() {
+    if (kioskState.notOnRosterReturn === "member") {
+      renderKioskCurrentMemberScreen({ history: "replace" });
+      return;
+    }
+    renderKioskHomeScreen({ history: "replace" });
   }
 
   function openPersonalNotOnRosterModal() {
@@ -913,6 +995,8 @@
     elKioskInitialPanel.classList.toggle("hidden", name !== "initial");
     elKioskTeamPanel.classList.toggle("hidden", name !== "team");
     elKioskMemberPanel.classList.toggle("hidden", name !== "member");
+    if (elKioskNotOnRosterPanel) elKioskNotOnRosterPanel.classList.toggle("hidden", name !== "not_on_roster");
+    if (elKioskRosterPanel) elKioskRosterPanel.classList.toggle("hidden", name !== "roster");
     elKioskDonePanel.classList.toggle("hidden", name !== "done");
   }
 
@@ -1154,13 +1238,13 @@
     renderKioskHomeScreen({ history: "replace" });
   }
 
-  function renderKioskCurrentMemberScreen() {
+  function renderKioskCurrentMemberScreen(options = {}) {
     if (kioskState.selectedInitial) {
-      renderKioskMemberScreen("initial", kioskState.selectedInitial);
+      renderKioskMemberScreen("initial", kioskState.selectedInitial, options);
       return;
     }
     if (kioskState.selectedTeam) {
-      renderKioskMemberScreen("team", kioskState.selectedTeam);
+      renderKioskMemberScreen("team", kioskState.selectedTeam, options);
     }
   }
 
@@ -1327,7 +1411,6 @@
         try {
           await reloadKioskRoster(e.code);
           if (e.code === "ALREADY_CHECKED_IN" && isKioskNicknameOnRoster(nickname)) {
-            elGuestModal.classList.add("hidden");
             showKioskDone({ nickname }, "이미 출석 완료");
             isKioskProcessing = false;
             return;
@@ -1336,12 +1419,14 @@
           /* ignore */
         }
       }
-      alert(e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : e.message || "출석 처리에 실패했습니다.");
+      setKioskMessage(
+        e.code === "ALREADY_CHECKED_IN" ? "이미 출석된 기록이 있습니다." : e.message || "출석 처리에 실패했습니다.",
+        "error"
+      );
       isKioskProcessing = false;
       return;
     }
     if (postSucceeded) {
-      elGuestModal.classList.add("hidden");
       try {
         await reloadKioskRoster("not_on_roster_checkin");
       } catch (reloadErr) {
@@ -1395,6 +1480,8 @@
       if (route.screen === "initial") renderKioskInitialScreen();
       else if (route.screen === "team") renderKioskTeamScreen();
       else if (route.screen === "member") renderKioskMemberScreen(route.source || "initial", route.value || "");
+      else if (route.screen === "not_on_roster") renderKioskNotOnRosterScreen();
+      else if (route.screen === "roster") renderKioskRosterScreen();
       else renderKioskHomeScreen();
     } finally {
       kioskState.applyingHistory = false;
@@ -1473,14 +1560,6 @@
     }
     const btn = document.getElementById("guestSubmitBtn");
     btn.disabled = true;
-    if (isKioskMode()) {
-      try {
-        await handleKioskNotOnRosterCheckin(nickname);
-      } finally {
-        btn.disabled = false;
-      }
-      return;
-    }
     try {
       const result = await postCheckin({
         nickname,
@@ -1637,12 +1716,41 @@
 
   if (elKioskMemberNotOnRosterBtn) {
     elKioskMemberNotOnRosterBtn.addEventListener("click", () => {
-      openKioskNotOnRosterModal();
+      openKioskNotOnRosterScreen(true);
+    });
+  }
+
+  if (elKioskNotOnRosterSubmitBtn) {
+    elKioskNotOnRosterSubmitBtn.addEventListener("click", async () => {
+      const nickname = (elKioskGuestNickname && elKioskGuestNickname.value.trim()) || "";
+      if (!nickname) {
+        setKioskMessage("닉네임을 입력해 주세요.", "error");
+        if (elKioskGuestNickname) elKioskGuestNickname.focus();
+        return;
+      }
+      elKioskNotOnRosterSubmitBtn.disabled = true;
+      try {
+        await handleKioskNotOnRosterCheckin(nickname);
+      } finally {
+        elKioskNotOnRosterSubmitBtn.disabled = false;
+      }
+    });
+  }
+
+  const elKioskNotOnRosterBackBtn = document.getElementById("kioskNotOnRosterBackBtn");
+  if (elKioskNotOnRosterBackBtn) {
+    elKioskNotOnRosterBackBtn.addEventListener("click", handleKioskNotOnRosterBack);
+  }
+
+  const elKioskRosterBackBtn = document.getElementById("kioskRosterBackBtn");
+  if (elKioskRosterBackBtn) {
+    elKioskRosterBackBtn.addEventListener("click", () => {
+      renderKioskHomeScreen({ history: "replace" });
     });
   }
 
   document.getElementById("kioskRosterBtn").addEventListener("click", () => {
-    openSessionRosterModal(kioskState.meetingDateKey, kioskState.meetingType).catch(() => {});
+    renderKioskRosterScreen({ history: "push" }).catch(() => {});
   });
 
   elKioskMemberBackBtn.addEventListener("click", handleKioskMemberBack);

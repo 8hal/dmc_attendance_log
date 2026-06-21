@@ -836,7 +836,7 @@
       display: none;
     }
 
-    /* 키오스크 모드: 개인 v2 모달·메시지를 키오스크 타이포·터치 스펙에 맞춤 */
+    /* 키오스크 모드: 패널 내 메시지·입력 필드 */
     body.kiosk-mode #kioskMsg.msg {
       margin: 0;
       padding: 14px 18px;
@@ -850,52 +850,48 @@
       color: var(--dmc-color-danger);
       background: var(--dmc-color-danger-surface);
     }
-    body.kiosk-mode #guestModal .modal-sheet,
-    body.kiosk-mode #sessionRosterModal .modal-sheet {
-      max-width: 460px;
-      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-6);
-      background: var(--dmc-kiosk-bg);
-      border-color: var(--dmc-kiosk-surface-border);
-    }
-    body.kiosk-mode #guestModal .modal-sheet h2,
-    body.kiosk-mode #sessionRosterModal .session-roster-head h2 {
-      margin: 0 0 14px 0;
-      font-size: var(--dmc-kiosk-page-title-size);
-      line-height: 1.05;
-      font-weight: 1000;
-      letter-spacing: 0;
-      word-break: keep-all;
-      color: var(--dmc-color-text);
-    }
-    body.kiosk-mode #guestModal .modal-help {
-      margin-bottom: 16px;
+    .kiosk-panel-help {
+      flex: 0 0 auto;
+      margin: 0 0 16px 0;
       font-size: 16px;
       font-weight: 850;
       line-height: 1.5;
       color: var(--dmc-color-text-secondary);
     }
-    body.kiosk-mode #guestModal label {
+    .kiosk-field-label {
+      display: block;
+      flex: 0 0 auto;
       font-size: 16px;
       font-weight: 900;
       margin-bottom: 8px;
       color: var(--dmc-color-text-secondary);
     }
-    body.kiosk-mode #guestModal #guestNickname {
+    .kiosk-field-input {
+      flex: 0 0 auto;
+      width: 100%;
       min-height: var(--dmc-size-touch-md);
       padding: 16px 18px;
       font-size: 22px;
       font-weight: 900;
       line-height: 1.2;
+      border: 1px solid var(--dmc-kiosk-surface-border-strong);
       border-radius: var(--dmc-kiosk-control-radius);
-      border-color: var(--dmc-kiosk-surface-border-strong);
       background: var(--dmc-list-row-bg);
+      color: var(--dmc-color-text);
       box-shadow: var(--dmc-kiosk-surface-shadow);
+      box-sizing: border-box;
     }
-    body.kiosk-mode #guestModal #guestNickname::placeholder {
+    .kiosk-field-input::placeholder {
       color: var(--dmc-color-text-muted);
       font-weight: 700;
     }
-    body.kiosk-mode #guestModal button.primary {
+    .kiosk-field-input:focus {
+      outline: none;
+      border-color: var(--dmc-color-primary);
+      box-shadow: var(--dmc-shadow-focus);
+    }
+    .kiosk-field-submit {
+      flex: 0 0 auto;
       margin-top: 18px;
       min-height: var(--dmc-button-size-xl);
       font-size: clamp(1.05rem, 5vmin, 1.35rem);
@@ -903,68 +899,9 @@
       border-radius: var(--dmc-radius-7);
       letter-spacing: 0;
     }
-    body.kiosk-mode #guestModal button.ghost {
-      margin-top: 10px;
-      min-height: 58px;
-      border: 1px solid var(--dmc-button-weak-border);
-      border-radius: var(--dmc-button-radius);
-      background: var(--dmc-button-weak-bg);
-      color: var(--dmc-button-weak-text);
-      font-size: 19px;
-      font-weight: 950;
-      box-shadow: var(--dmc-kiosk-surface-shadow);
-    }
-    body.kiosk-mode #sessionRosterModal .session-roster-head {
-      margin-bottom: 14px;
-      align-items: flex-start;
-    }
-    body.kiosk-mode #sessionRosterModal .modal-close-button {
-      min-height: 52px;
-      padding: 0 18px;
-      border: 1px solid var(--dmc-button-weak-border);
-      border-radius: var(--dmc-button-radius);
-      background: var(--dmc-button-weak-bg);
-      color: var(--dmc-button-weak-text);
-      font-size: 17px;
-      font-weight: 900;
-      box-shadow: var(--dmc-kiosk-surface-shadow);
-    }
-    body.kiosk-mode #sessionRosterModal .session-roster-list {
-      max-height: min(58vh, 480px);
-      border: 1px solid var(--dmc-kiosk-surface-border);
-      border-radius: var(--dmc-kiosk-card-radius);
-      background: var(--dmc-kiosk-bg);
-      box-shadow: var(--dmc-kiosk-surface-shadow);
-    }
-    body.kiosk-mode #sessionRosterModal .session-roster-row {
-      min-height: var(--dmc-size-touch-kiosk);
-      padding: var(--dmc-list-row-padding-y-lg) var(--dmc-list-row-padding-x-sm);
-      border-bottom-color: var(--dmc-kiosk-surface-border);
-      background: var(--dmc-list-row-bg);
-      box-sizing: border-box;
-    }
-    body.kiosk-mode #sessionRosterModal .session-roster-name {
-      font-size: var(--dmc-kiosk-member-title-size);
-      line-height: 1.05;
-      font-weight: 1000;
-      letter-spacing: 0;
-      word-break: keep-all;
-    }
-    body.kiosk-mode #sessionRosterModal .session-roster-meta {
-      font-size: 17px;
-      font-weight: 900;
-      color: var(--dmc-button-weak-text);
-    }
-    body.kiosk-mode #sessionRosterModal .member-list-empty,
-    body.kiosk-mode #sessionRosterModal .kiosk-empty {
-      padding: 22px 14px;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      font-size: 16px;
-      font-weight: 850;
-      line-height: 1.45;
-      color: var(--dmc-color-text-secondary);
+    .kiosk-member-card.static {
+      cursor: default;
+      pointer-events: none;
     }
     body.kiosk-mode .kiosk-member-head {
       flex: 0 0 auto;
@@ -1320,6 +1257,32 @@
         <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button" id="kioskMemberNotOnRosterBtn">
           명단에 없어요 — 여기서 출석
         </button>
+      </div>
+
+      <div id="kioskNotOnRosterPanel" class="kiosk-panel hidden">
+        <div class="kiosk-member-head">
+          <button type="button" class="kiosk-member-back" id="kioskNotOnRosterBackBtn" aria-label="이전 화면으로">←</button>
+          <h2 class="kiosk-member-title">출석 명부에 없는 경우</h2>
+        </div>
+        <p id="kioskNotOnRosterHelp" class="kiosk-panel-help"></p>
+        <label for="kioskGuestNickname" class="kiosk-field-label">닉네임</label>
+        <input
+          id="kioskGuestNickname"
+          class="kiosk-field-input"
+          type="text"
+          maxlength="50"
+          placeholder="닉네임 입력"
+          autocomplete="off"
+        />
+        <button type="button" class="primary kiosk-field-submit" id="kioskNotOnRosterSubmitBtn">출석 등록</button>
+      </div>
+
+      <div id="kioskRosterPanel" class="kiosk-panel hidden">
+        <div class="kiosk-member-head">
+          <button type="button" class="kiosk-member-back" id="kioskRosterBackBtn" aria-label="이전 화면으로">←</button>
+          <h2 id="kioskRosterTitle" class="kiosk-member-title">출석 명단</h2>
+        </div>
+        <div id="kioskRosterList" class="kiosk-member-grid" role="status" aria-label="당일 출석 명단"></div>
       </div>
 
       <div id="kioskDonePanel" class="kiosk-panel hidden" aria-live="polite">
