@@ -447,6 +447,11 @@
     return "출석 명단";
   }
 
+  function rosterEmptyStateHtml(text) {
+    const cls = isKioskMode() ? "kiosk-empty" : "member-list-empty";
+    return '<div class="' + cls + '" role="status">' + escapeHtml(text) + "</div>";
+  }
+
   function renderSessionRosterItems(items) {
     const rows = Array.isArray(items)
       ? items
@@ -454,8 +459,7 @@
           .sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0))
       : [];
     if (rows.length === 0) {
-      elSessionRosterList.innerHTML =
-        '<div class="member-list-empty" role="status">아직 출석자가 없습니다.</div>';
+      elSessionRosterList.innerHTML = rosterEmptyStateHtml("아직 출석자가 없습니다.");
       return;
     }
     elSessionRosterList.innerHTML = rows
@@ -485,8 +489,7 @@
       return;
     }
     elSessionRosterTitle.textContent = formatSessionRosterTitle(dateKey, meetingType);
-    elSessionRosterList.innerHTML =
-      '<div class="member-list-empty" role="status">불러오는 중입니다.</div>';
+    elSessionRosterList.innerHTML = rosterEmptyStateHtml("불러오는 중입니다.");
     elSessionRosterModal.classList.remove("hidden");
     try {
       const q =
@@ -500,8 +503,9 @@
       if (!json.ok) throw new Error(json.error || "bad response");
       renderSessionRosterItems(json.items || []);
     } catch (e) {
-      elSessionRosterList.innerHTML =
-        '<div class="member-list-empty" role="status">출석 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>';
+      elSessionRosterList.innerHTML = rosterEmptyStateHtml(
+        "출석 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+      );
     }
   }
 
