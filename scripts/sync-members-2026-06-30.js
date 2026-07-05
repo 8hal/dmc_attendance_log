@@ -16,9 +16,11 @@
  *   --expelled=path.json
  *   --left-at=YYYY-MM-DD
  *   --offline-baseline=path.json  Firestore 대신 JSON으로 비교 (인증 불필요)
+ *   --credentials=path.json       서비스 계정 키 (GOOGLE_APPLICATION_CREDENTIALS 대체)
  *
- * 프로덕션: cd functions && npm ci 후
- *   functions/service-account.json 또는 gcloud ADC
+ * 프로덕션 인증 (Node 스크립트 — Firebase MCP와 별개):
+ *   functions/service-account.json  또는  --credentials=경로
+ *   또는  export GOOGLE_APPLICATION_CREDENTIALS=경로/to/key.json
  */
 
 const fs = require("fs");
@@ -44,6 +46,43 @@ const expelledPath = path.resolve(
 );
 const offlineBaselinePath = getArg("offline-baseline", "");
 const defaultLeftAt = getArg("left-at", "2026-06-30");
+
+function resolveServiceAccountPath() {
+  const explicit = getArg("credentials", "");
+  if (explicit) {
+    const p = path.resolve(explicit);
+    if (!fs.existsSync(p)) {
+      console.error(`--credentials 파일 없음: ${p}`);
+      process.exit(1);
+    }
+    return p;
+  }
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const p = path.resolve(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+    if (fs.existsSync(p)) return p;
+  }
+  const candidates = [
+    path.join(functionsDir, "service-account.json"),
+    path.join(__dirname, "service-account.json"),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+function printAuthHelp() {
+  console.error("\n❌ Firestore 인증 키가 없습니다.");
+  console.error("\nFirebase MCP(초록)는 Cursor AI용이고, 이 Node 스크립트는 별도 키가 필요합니다.");
+  console.error("\n【가장 쉬운 방법】");
+  console.error("  1) Firebase Console → dmc-attendance → ⚙️ 프로젝트 설정 → 서비스 계정");
+  console.error("  2) 「새 비공개 키 생성」→ JSON 다운로드");
+  console.error("  3) 아래 중 하나:");
+  console.error("     cp ~/Downloads/키파일.json functions/service-account.json");
+  console.error("     node scripts/sync-members-2026-06-30.js --dry-run --credentials=~/Downloads/키파일.json");
+  console.error("\n【인증 없이 diff만】");
+  console.error("  node scripts/sync-members-2026-06-30.js --dry-run --offline-baseline=scripts/data/members-2026-03-31-cleaned.json");
+}
 
 function loadJson(filePath, label) {
   if (!fs.existsSync(filePath)) {
@@ -214,18 +253,21 @@ async function initFirestoreDb() {
     console.error("functions/node_modules 가 없습니다. cd functions && npm ci");
     process.exit(1);
   }
+
+  const serviceAccountPath = resolveServiceAccountPath();
+  if (!serviceAccountPath) {
+    printAuthHelp();
+    process.exit(1);
+  }
+
   const { createRequire } = require("module");
   const reqFn = createRequire(path.join(functionsDir, "package.json"));
   const { initializeApp, cert } = reqFn("firebase-admin/app");
   const { getFirestore } = reqFn("firebase-admin/firestore");
 
-  const serviceAccountPath = path.join(functionsDir, "service-account.json");
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-    initializeApp({ credential: cert(serviceAccount), projectId: "dmc-attendance" });
-  } else {
-    initializeApp({ projectId: "dmc-attendance" });
-  }
+  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+  initializeApp({ credential: cert(serviceAccount), projectId: "dmc-attendance" });
+  console.log(`인증: ${serviceAccountPath}`);
   return getFirestore();
 }
 
@@ -359,10 +401,8 @@ async function syncMembers() {
 
 syncMembers().catch((err) => {
   console.error("❌ 오류:", err.message || err);
-  if (String(err.message || "").includes("default credentials")) {
-    console.error("\n인증 방법 (택1):");
-    console.error("  1) Firebase Console → 서비스 계정 → JSON → functions/service-account.json");
-    console.error("  2) node scripts/sync-members-2026-06-30.js --dry-run --offline-baseline=scripts/data/members-2026-03-31-cleaned.json");
+  if (String(err.message || "").includes("default credentials") || String(err.message || "").includes("Could not load")) {
+    printAuthHelp();
   }
   process.exit(1);
 });
