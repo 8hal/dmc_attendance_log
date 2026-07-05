@@ -23,9 +23,15 @@ Firestore (dmc-attendance)
 | `realName` | string | 실명 (스크래핑 매칭에 사용) |
 | `gender` | string | `"남"` / `"여"` / `""` |
 | `team` | string | 팀 코드 |
-| `hidden` | boolean | 숨김 (탈퇴/비활성) |
+| `hidden` | boolean | 숨김 (탈퇴·제명 — 동일 처리) |
+| `leaveReason` | string | 선택. `"withdrawn"` \| `"expelled"` (감사용, 동작 동일) |
+| `leftAt` | string | 선택. 퇴회일 `YYYY-MM-DD` |
+| `_archivedNickname` | string | 퇴회 전 닉네임 (운영·감사, 공개 API 미노출) |
+| `_archivedRealName` | string | 퇴회 전 실명 (운영·감사, 공개 API 미노출) |
+| `anonymizedAt` | string | 익명화 시각 ISO 8601 |
 
 - **Doc ID**: 자동 생성 (랜덤)
+- **탈퇴·제명**: 문서 삭제 없음. `hidden: true` + 닉·실명 익명화. 상세: `_docs/superpowers/policies/member-leave-anonymization-policy.md`
 - **유니크 제약**: `nickname` (add-member 시 중복 체크)
 - **참조**: `race_results.memberRealName` → `members.realName`으로 연결
 - **동기화**: `gender` 변경 시 해당 회원의 `race_results.gender`도 일괄 업데이트
