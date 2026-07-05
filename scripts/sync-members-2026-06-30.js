@@ -1,5 +1,8 @@
 /**
- * 2026-06-30 정회원 명단(176명) Firestore 동기화
+ * 2026-06-30 정회원 명단(176명) Firestore 동기화 — **레거시 (Admin SDK 직접 쓰기)**
+ *
+ * 프로덕션 적용은 `scripts/apply-members-sync-via-api.js` 사용 (add/update/hide-member API 반복).
+ * 이 스크립트는 에뮬 통합 테스트·오프라인 diff용으로만 유지.
  *
  * - 신규 추가 / 닉네임 변경 / 복귀(unhide)
  * - 명단 제외 회원: 퇴회 처리(익명화) — _docs/superpowers/policies/member-leave-anonymization-policy.md

@@ -90,8 +90,9 @@ if (planOut) {
   console.log(`   operations ${mcpPlan.operations.length}건`);
 }
 
-console.log(`\n다음: Cursor에서 Firebase MCP로 sync-plan operations 적용`);
-console.log(`      스킬: .cursor/skills/members-sync-via-mcp/SKILL.md`);
+console.log(`\n다음 (권장): API 반복 적용`);
+console.log(`  node scripts/apply-members-sync-via-api.js --plan=${planOut || "<plan-out 경로>"} --dry-run`);
+console.log(`  스킬: .cursor/skills/members-sync-via-api/SKILL.md`);
 
 if (plan.toLeave.length) {
   console.log(`\n퇴회 익명화 미리보기:`);

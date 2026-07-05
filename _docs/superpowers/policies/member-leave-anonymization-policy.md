@@ -120,10 +120,12 @@ nicknameKey:  익명 닉네임 소문자 (attendance 갱신 시)
 
 ## 6. API
 
-| API | 현재 | 정책 |
+| API | 역할 | 비고 |
 |-----|------|------|
-| `hide-member` | `hidden: true` 만 | **향후** 퇴회 처리(익명화)로 확장 권장 |
-| `update-member` `hidden: false` | 복원 | **익명화된 회원은 복원 불가** (원본은 `_archived*` 참고 후 수동 재등록) |
+| `hide-member` | 퇴회·제명 (익명화 + `attendance`/`race_results` 연동) | `leaveReason`, `leftAt` 선택 |
+| `add-member` | 신규 등록 | 명단 sync 시 신규 행 |
+| `update-member` | 닉·실명·복귀(`hidden: false`) | 익명화된 회원 `hidden: false` **불가** |
+| **명단 일괄 sync** | 별도 bulk API 없음 | `apply-members-sync-via-api.js`가 위 API를 ~20회 순차 호출 (6/30 규모) |
 
 ---
 
