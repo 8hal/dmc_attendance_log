@@ -16,14 +16,28 @@
  *   --roster=path.json   명단 JSON (기본: members-2026-06-30-cleaned.json)
  *   --expelled=path.json 제명 목록 (기본: members-2026-06-30-expelled.json)
  *   --left-at=YYYY-MM-DD 퇴회일 (기본: 2026-06-30)
+ *
+ * firebase-admin: functions/node_modules (루트에서 실행 시)
+ *   cd functions && npm ci
+ * 인증: functions/service-account.json 또는 gcloud ADC
  */
 
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
+const { createRequire } = require("module");
 
-const { applyMemberLeave, isAlreadyAnonymized } = require("../functions/lib/member-leave");
+const functionsDir = path.join(__dirname, "..", "functions");
+const functionsNodeModules = path.join(functionsDir, "node_modules");
+if (!fs.existsSync(functionsNodeModules)) {
+  console.error("functions/node_modules 가 없습니다. cd functions && npm ci");
+  process.exit(1);
+}
+
+const reqFn = createRequire(path.join(functionsDir, "package.json"));
+const { initializeApp, cert } = reqFn("firebase-admin/app");
+const { getFirestore } = reqFn("firebase-admin/firestore");
+
+const { applyMemberLeave, isAlreadyAnonymized } = require(path.join(functionsDir, "lib", "member-leave"));
 
 const dryRun = process.argv.includes("--dry-run");
 const args = process.argv.slice(2);
@@ -40,7 +54,13 @@ const expelledPath = path.resolve(
 );
 const defaultLeftAt = getArg("left-at", "2026-06-30");
 
-initializeApp({ projectId: "dmc-attendance" });
+const serviceAccountPath = path.join(functionsDir, "service-account.json");
+if (fs.existsSync(serviceAccountPath)) {
+  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+  initializeApp({ credential: cert(serviceAccount), projectId: "dmc-attendance" });
+} else {
+  initializeApp({ projectId: "dmc-attendance" });
+}
 const db = getFirestore();
 
 function loadJson(filePath, label) {
