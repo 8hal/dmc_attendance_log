@@ -80,8 +80,14 @@ function printAuthHelp() {
   console.error("  3) 아래 중 하나:");
   console.error("     cp ~/Downloads/키파일.json functions/service-account.json");
   console.error("     node scripts/sync-members-2026-06-30.js --dry-run --credentials=~/Downloads/키파일.json");
-  console.error("\n【인증 없이 diff만】");
-  console.error("  node scripts/sync-members-2026-06-30.js --dry-run --offline-baseline=scripts/data/members-2026-03-31-cleaned.json");
+  console.error("\n【인증 없이】");
+  console.error("  단위 테스트: npm run test:members-sync");
+  console.error("  plan 생성:   node scripts/plan-members-sync.js");
+  console.error("  에뮬 통합:   bash scripts/test-members-sync-emulator.sh");
+  console.error("  offline diff: node scripts/sync-members-2026-06-30.js --dry-run --offline-baseline=scripts/data/members-2026-03-31-cleaned.json");
+  console.error("\n【프로덕션】");
+  console.error("  MCP: .cursor/skills/members-sync-via-mcp/SKILL.md");
+  console.error("  또는 functions/service-account.json / --credentials=");
 }
 
 function loadJson(filePath, label) {
@@ -254,16 +260,22 @@ async function initFirestoreDb() {
     process.exit(1);
   }
 
+  const { createRequire } = require("module");
+  const reqFn = createRequire(path.join(functionsDir, "package.json"));
+  const { initializeApp, cert } = reqFn("firebase-admin/app");
+  const { getFirestore } = reqFn("firebase-admin/firestore");
+
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    initializeApp({ projectId: "dmc-attendance" });
+    console.log(`인증: Firestore 에뮬레이터 (${process.env.FIRESTORE_EMULATOR_HOST})`);
+    return getFirestore();
+  }
+
   const serviceAccountPath = resolveServiceAccountPath();
   if (!serviceAccountPath) {
     printAuthHelp();
     process.exit(1);
   }
-
-  const { createRequire } = require("module");
-  const reqFn = createRequire(path.join(functionsDir, "package.json"));
-  const { initializeApp, cert } = reqFn("firebase-admin/app");
-  const { getFirestore } = reqFn("firebase-admin/firestore");
 
   const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
   initializeApp({ credential: cert(serviceAccount), projectId: "dmc-attendance" });

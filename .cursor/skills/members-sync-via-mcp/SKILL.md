@@ -16,7 +16,8 @@ description: Use when syncing member roster to Firestore without service-account
 ### 1단계: 단위 테스트 (인증 불필요)
 
 ```bash
-node --test scripts/test/member-leave.test.js scripts/test/member-sync-plan.test.js
+npm run test:members-sync
+npm run test:members-sync:emulator   # Firestore 에뮬: 시드→적용→검증 (프로덕션 미접속)
 ```
 
 전체 통과 후 다음 단계.
