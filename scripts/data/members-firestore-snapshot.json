@@ -1,0 +1,1546 @@
+{
+  "projectId": "dmc-attendance",
+  "exportedAt": "2026-07-05T06:55:57.914Z",
+  "source": "all-members API",
+  "members": [
+    {
+      "id": "AnUfp9qLRAxT58zTh9hG",
+      "realName": "임근호",
+      "nickname": "123",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "i3QaeZLziaN6WRNEHiup",
+      "realName": "김재연",
+      "nickname": "501",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "Zfnv2GQbOY9XI2dK1Sq3",
+      "realName": "이유창",
+      "nickname": "6스타",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "UimIeL1zdmlM2hcvXslM",
+      "realName": "유준수",
+      "nickname": "88준",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "DweNOlnZ36HX4fzDQYxv",
+      "realName": "임창수",
+      "nickname": "가람",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "Mw3IWXCMa6Wox4YNIzeQ",
+      "realName": "최석규",
+      "nickname": "강남스타",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "3bpbfd2xvP2CvSQ1ZLpS",
+      "realName": "박세진",
+      "nickname": "개마고원",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "PROQku9i1m89m5ij0Ok4",
+      "realName": "김민경",
+      "nickname": "건강이",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "wjwN15DBGn92tkBJ0T87",
+      "realName": "문광명",
+      "nickname": "게살볶음밥",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "j8gwWmqNjckG8TPhcYMW",
+      "realName": "하정숙",
+      "nickname": "고구마",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "2WtNJXF0Ga8GE11ZGyUA",
+      "realName": "이주하",
+      "nickname": "극복",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "Y0CsE9iGE2x4R0sIWe5i",
+      "realName": "김상진",
+      "nickname": "기찬도리",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "e5BmedBCKQghPwC0aSDt",
+      "realName": "최종한",
+      "nickname": "깜보",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "MmR7m0LglvP6bGPObgPT",
+      "realName": "이동현",
+      "nickname": "나이스",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "ubbveyX8h4c6AduippnO",
+      "realName": "김덕환",
+      "nickname": "난닝구",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "10V9SmKhpV5BzslmVMCH",
+      "realName": "이기수",
+      "nickname": "날러",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "05ZxLNuD0abOzcGmxNcq",
+      "realName": "김욥",
+      "nickname": "네오",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "ImfSPbeUehwFugtLm2h7",
+      "realName": "박진오",
+      "nickname": "눼드붸드",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "L6zawjUWHBQV16JY4YdC",
+      "realName": "이순실",
+      "nickname": "다니엘",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "oggAw5UwwcGyTCJKqjQx",
+      "realName": "심다혜",
+      "nickname": "다빈",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "JCZS45vRMZ1d1O8FYtmq",
+      "realName": "원종승",
+      "nickname": "다햇",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "NtLMMaHepA6YTjHHLQ0i",
+      "realName": "서호성",
+      "nickname": "달다",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "FUzVfpFjN5mP23LWu9HJ",
+      "realName": "홍승연",
+      "nickname": "대감",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "yZ7eWqVuXCLzSc4ajHlK",
+      "realName": "박성현",
+      "nickname": "대끼리",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "cShyuk4E7pljG4AJsdcy",
+      "realName": "이영철",
+      "nickname": "데이",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "9mJkCqooy1GRwXQChD4P",
+      "realName": "신동택",
+      "nickname": "동동",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "pux9eDPq9Es4gGAfLvnE",
+      "realName": "동은철",
+      "nickname": "동초딩",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "HWaFJdM7eqZr0otCh5Io",
+      "realName": "황순길",
+      "nickname": "된다",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "q0uM7IWvXb8bTdq0ZoQ0",
+      "realName": "손두현",
+      "nickname": "두두",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "ooLRaBHZuKALoJlyUZ4r",
+      "realName": "박현우",
+      "nickname": "드림",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "MwBIbathhDm49MTTHdt9",
+      "realName": "김성한",
+      "nickname": "디모",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "AEnaaFFFN55w3hzg7mgn",
+      "realName": "오현진",
+      "nickname": "뛰는자",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "hVd2uEwbfrrim41xUE2x",
+      "realName": "이원기",
+      "nickname": "라우펜더만",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "8DmQG1LVlPIqXcOT8ZxZ",
+      "realName": "한명석",
+      "nickname": "랜디스",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "33AqCXptlo1P6VCQo6cJ",
+      "realName": "박경원",
+      "nickname": "러너원",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "5T6sQw7W9pguVnkxIIuN",
+      "realName": "임지은",
+      "nickname": "러너토깽",
+      "hidden": false,
+      "gender": "F",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "ZpiEmG2452LouIlqJy2F",
+      "realName": "하지웅",
+      "nickname": "런생아",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "JdWlCYiYf9nMnMlxOEe1",
+      "realName": "정선옥",
+      "nickname": "레이스",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "AMztVOHyrugNHe46w7CB",
+      "realName": "장병권",
+      "nickname": "로마노",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "OQwcWlOGUSL9chgKivGW",
+      "realName": "설민태",
+      "nickname": "롸져",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "OnHvA2MtndTWftkAjWda",
+      "realName": "김종훈",
+      "nickname": "루이",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "CrauxzUIVh9cXbgBDTsf",
+      "realName": "박소영",
+      "nickname": "리치아이",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "VgRZTdZUPFtimk4gbZrt",
+      "realName": "장대섭",
+      "nickname": "마그마그",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "AsXEDPM0b0yKG4Gjpxvl",
+      "realName": "홍석의",
+      "nickname": "마디마디홍",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "AQH8650iCiFdpYSoX0vJ",
+      "realName": "홍순기",
+      "nickname": "마운틴",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "7qRodmQtcfID8TcdlTFS",
+      "realName": "조학구",
+      "nickname": "말아톤",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "a4K7jBCBId4L5YV0HKMu",
+      "realName": "김정숙",
+      "nickname": "매드캣",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "l0SVxz9DXQDWgFQxHAgh",
+      "realName": "양명아",
+      "nickname": "모니카",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "SVKPwx1TwmOWpkXirW88",
+      "realName": "류해준",
+      "nickname": "목우인",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "7dikjmUgGxvZfxdqca4W",
+      "realName": "이완희",
+      "nickname": "무천",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "M2JHJiNFAwyXdxbMbwBC",
+      "realName": "이상교",
+      "nickname": "물음표",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "OnuoCWcLrKTsMvEBNdLv",
+      "realName": "김종현",
+      "nickname": "민주아빠",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "8RZSBjXJ7kHuKoEqKGOO",
+      "realName": "서갑종",
+      "nickname": "밀가루",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "GkFc5ndUV5Q8uCq8XwX0",
+      "realName": "김홍준",
+      "nickname": "바람",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "qwg7NcRh6JZKgNx6Oa42",
+      "realName": "김유정",
+      "nickname": "바람요정",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "umT8IE2viw6d8Dw6B3yH",
+      "realName": "신동원",
+      "nickname": "바비",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "bwbmczyQSVP4pszUVynj",
+      "realName": "서동욱",
+      "nickname": "바우돌리노",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "ouynqGp9UBruVmE5GZU9",
+      "realName": "박경영",
+      "nickname": "바켱",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "OKEOU7ENYlXFS8yFg5sB",
+      "realName": "이세우",
+      "nickname": "반달",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "evhU7BR4Zd7Yt7OLqxdo",
+      "realName": "이경자",
+      "nickname": "별빛",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "ahIELIUhht6tHdvXwhog",
+      "realName": "한남규",
+      "nickname": "보라미",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "Wz2gAWfTqlTYCTYhxtUn",
+      "realName": "황선령",
+      "nickname": "보보스",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "MtkSS9Pbqbjajj8bu42I",
+      "realName": "방현규",
+      "nickname": "보스턴",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "uOwb6j670xShAlkV90aW",
+      "realName": "장경숙",
+      "nickname": "보하",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "6jxiTO9riQZEd0cX4lDz",
+      "realName": "김보겸",
+      "nickname": "복겸",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "N4OMo5cSpvD5YPVTdu1N",
+      "realName": "배대식",
+      "nickname": "본능",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "gfOXdCuOCT42SX9TFDPl",
+      "realName": "김성운",
+      "nickname": "불꽃십자인대",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "cyI32PXmEOfW1CgB4dvJ",
+      "realName": "정다은",
+      "nickname": "브리따",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "zpu8IG5WGiaY5PJqKQkD",
+      "realName": "전남석",
+      "nickname": "블랙소닉",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "SXp7zo0ZHKcYQDb2Yux5",
+      "realName": "이상렬",
+      "nickname": "블랙스왈로",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "j2wfnZHSFkfdWTyvrbd3",
+      "realName": "조영진",
+      "nickname": "블루",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "HXa6BHafuZPYweEnfOu6",
+      "realName": "배진호",
+      "nickname": "비상",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "PAjaDljjNWEEC6nuBJwq",
+      "realName": "이생수",
+      "nickname": "비타88",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "dJvqI0Gyt9WbWNJD8t1v",
+      "realName": "김달수",
+      "nickname": "빙초",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "C37DPJkJ2fXdTKFEdzNi",
+      "realName": "김진현",
+      "nickname": "뿡똘",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "st9sSRvHxF6h2CuWBN7c",
+      "realName": "고영일",
+      "nickname": "산들",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "twYPz6Jw7ACsRIY4x35c",
+      "realName": "진형권",
+      "nickname": "삼둥",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "da2zqAsrhniLiczyxA7R",
+      "realName": "김삼룡",
+      "nickname": "삼드",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "IckSJifTTojBdKGczBZ5",
+      "realName": "홍윤재",
+      "nickname": "삼지",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "nlDwEdOGeMJsvFDWkiPN",
+      "realName": "김경섭",
+      "nickname": "서비",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "4P3tYLnzzVjExxtLla14",
+      "realName": "심상대",
+      "nickname": "소맥",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "HzLqqaJbVEEVOWtwNqjf",
+      "realName": "이소연",
+      "nickname": "소이",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "gOMSSRDCu0ZVDjqw2CLo",
+      "realName": "이재용",
+      "nickname": "송버드",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "YGPeCYjpXYDcqNwz5qAl",
+      "realName": "송진수",
+      "nickname": "송송",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "859jGdOZHthpch0XBEVE",
+      "realName": "김용신",
+      "nickname": "수리",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "wiVcIThi6BNpgwP5bTMP",
+      "realName": "반영미",
+      "nickname": "스마일",
+      "hidden": false,
+      "gender": "F",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "OdBcxt8jDMAXlY8E1X4h",
+      "realName": "윤상기",
+      "nickname": "스카이",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "XZw2l2KbKDRLSje6kLeb",
+      "realName": "최수길",
+      "nickname": "시나브로",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "wOS7WFfWKNn28EipWx9Q",
+      "realName": "이은주",
+      "nickname": "시카고",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "APW2RtYY3ADgQYbK2vih",
+      "realName": "김덕진",
+      "nickname": "신리",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "tIpdVZOVaKuRKbYJyKIK",
+      "realName": "신귀용",
+      "nickname": "신뽀리",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "G3JBciwzfMN5C3rEmfZ4",
+      "realName": "심재용",
+      "nickname": "심온",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "BgavOFQUJhPsJic96RCr",
+      "realName": "김선홍",
+      "nickname": "쌍둥아빠",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "bWLaaIMOXYG8NkAtfJhW",
+      "realName": "이계환",
+      "nickname": "쌤마",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "ZWfYMQGWFPlZa7CTnPBG",
+      "realName": "서윤석",
+      "nickname": "쌩메",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "hJRZJNkR16lxtpR6e9Ag",
+      "realName": "이의선",
+      "nickname": "써니형",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "ksBdLVpLkTSfrMtMsCiI",
+      "realName": "박유진",
+      "nickname": "안드로메다",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "T9U0Rw0PYf1T50SCSJ16",
+      "realName": "송주식",
+      "nickname": "알렉스",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "5MAUvSbWXJnTkAulvE24",
+      "realName": "정균범",
+      "nickname": "아Q",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "jEkY1UROq0jvOQQw3mpQ",
+      "realName": "엄인용",
+      "nickname": "언스파",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "N6xHYPvzh6qUnbT16qy0",
+      "realName": "이민주",
+      "nickname": "엠제이",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "8CUXo5VksQQQGUVNMinE",
+      "realName": "박경민",
+      "nickname": "열정",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "JVE4boek9Hfkh6fddWBY",
+      "realName": "서병수",
+      "nickname": "예예",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "YB905YSgdS0rK7uQ0zXC",
+      "realName": "김경란",
+      "nickname": "오구오구",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "ZWO4nVC5eHQwg9T1PGxB",
+      "realName": "이기원",
+      "nickname": "오칠팔이",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "necsRsvJiWBbSztd0Ukx",
+      "realName": "김동옥",
+      "nickname": "옥",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "mpB9dVRVq7qxJkE4H8Yk",
+      "realName": "박은정",
+      "nickname": "완주",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "yb5pAeavML9TeKHrXmCr",
+      "realName": "김형진",
+      "nickname": "우상향",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "HZusPb53Mb6Lg5uvzMrQ",
+      "realName": "허환",
+      "nickname": "율라훤",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "EoIz3WQ7Df8e4XJolIZF",
+      "realName": "유희선",
+      "nickname": "율리",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "QozdvEmJdSNywVNK0pBl",
+      "realName": "이우영",
+      "nickname": "이우",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "nBMuy6uzh3PqgTi0vGC8",
+      "realName": "홍종호",
+      "nickname": "자덕",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "TuTLxYCouFrz23pShmn5",
+      "realName": "고의수",
+      "nickname": "자향",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "bwEZAz8J0Bv6VhQWVNKR",
+      "realName": "김재헌",
+      "nickname": "잴킴",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "plOvw8W5PumIPVMFjTOU",
+      "realName": "최정민",
+      "nickname": "정쩡민",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "yGTa1OVhnla2HzYMz906",
+      "realName": "제병직",
+      "nickname": "제씨",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "laPUBVD6StT7S2GHTSEt",
+      "realName": "고자경",
+      "nickname": "제이케이",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "ljOx7wRT1y5Ipz28esE3",
+      "realName": "조은희",
+      "nickname": "조으니",
+      "hidden": false,
+      "gender": "F",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "lzIJ1yD9ywUOlQAQrkzp",
+      "realName": "조수정",
+      "nickname": "조크리",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "XG5VLvIouqEc1PqJJVjh",
+      "realName": "박명숙",
+      "nickname": "죽부인",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "pCzNMgU8BvWgYAXnTLWo",
+      "realName": "박조련",
+      "nickname": "즐런",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "vPrztnl0UCtLaLZffYMv",
+      "realName": "장봉근",
+      "nickname": "지디",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "v3aUoe77r6IInhOzWj0i",
+      "realName": "송재광",
+      "nickname": "지미송",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "kz02LESyPV9Rhc4rtHlA",
+      "realName": "김진규",
+      "nickname": "진달",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "uIz1Afsngz2nD9k7Z9FB",
+      "realName": "임기빈",
+      "nickname": "짱구는목말러",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "mfpxQf6wR19jxSmZaHQh",
+      "realName": "배영아",
+      "nickname": "째쑈맘",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "9MfPqTIUiQH5IGL6BqMU",
+      "realName": "어승인",
+      "nickname": "째쯔",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "WKt72jrFdZ8XHvdsbsj7",
+      "realName": "이정아",
+      "nickname": "쫑쫑",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "6VkDhIknB8qEPq09VPO6",
+      "realName": "김정주",
+      "nickname": "쭈야",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "8PkMe6DqEGqLL9KXU2XN",
+      "realName": "김용훈",
+      "nickname": "쭌스파파",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "vnLU14GWUu7Q53TgNDv1",
+      "realName": "허헤원",
+      "nickname": "체리",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "ZNbYHcVJ2c4XdEFJb4qT",
+      "realName": "손기현",
+      "nickname": "초보러너",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "EWkcVn1YhuySxEMOoPKO",
+      "realName": "이경주",
+      "nickname": "초이스",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "r0Ppwg3dOGoh5Huxl95T",
+      "realName": "이현옥",
+      "nickname": "초초긍정",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "TUj9V1QhLAv4NqhPmnmG",
+      "realName": "임주환",
+      "nickname": "치달",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "GVN74bAlivec7ma070JJ",
+      "realName": "강창기",
+      "nickname": "치동런",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "vqFBxxiDQEy3x04fQyRL",
+      "realName": "김상배",
+      "nickname": "카멜",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "p0ZBT4LqEYpFfnu9zhNo",
+      "realName": "석밀",
+      "nickname": "캔달잭슨",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "Ktzst6dm5nmtWkM4eTad",
+      "realName": "김은영",
+      "nickname": "케이",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "OrRnhH3wEv2F48Cu14dY",
+      "realName": "김정국",
+      "nickname": "크로버",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "g6RuzcnguJhPkZlgYg1Q",
+      "realName": "조성호",
+      "nickname": "탁사마",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "4ipheFJBiPIaLBkmN8gN",
+      "realName": "노승균",
+      "nickname": "태태",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "Tk7QecVl8MwlwLOBCL3g",
+      "realName": "김태영",
+      "nickname": "탱님",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "Wo1dYuXA1gIMBBBQ3Zve",
+      "realName": "오종환",
+      "nickname": "포레스트",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "u9bd50uezC02nh2D2IbT",
+      "realName": "정임식",
+      "nickname": "푸른하늘",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "18q90TRRRukh0p8tvY41",
+      "realName": "이강원",
+      "nickname": "피온",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "BB0zSeJmbvSsezego4V4",
+      "realName": "서정모",
+      "nickname": "필봉",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "TH0X4yy5Y3hqJVrX3tBV",
+      "realName": "오현미",
+      "nickname": "하니",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "9q05YorG1wIG2CKHXhGj",
+      "realName": "한인수",
+      "nickname": "한쓰",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "TYmvtD3l45T5F4L1rdlj",
+      "realName": "김용철",
+      "nickname": "해피러너",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "iND3IoohoJJu6yZnWCRr",
+      "realName": "강동원",
+      "nickname": "해피하우스",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "a4f0P6zbkii2YFrAIU8J",
+      "realName": "임예니",
+      "nickname": "햇살",
+      "hidden": false,
+      "gender": "F",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "iUcMIbOHR4zr8J6EWi0q",
+      "realName": "이숙영",
+      "nickname": "헤더",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "B2iHWi03jRTFp9qPdBm3",
+      "realName": "손동휘",
+      "nickname": "헥사",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "55vZhO1EwAcAI27GAt4G",
+      "realName": "이지헤",
+      "nickname": "혜이",
+      "hidden": false,
+      "gender": "F",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "CQkalq2QbOubrmt5aFOv",
+      "realName": "서복덕",
+      "nickname": "호밀",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "bEQvSjoUHnnVzfE2sDuW",
+      "realName": "김재호",
+      "nickname": "호야킹",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "PReNVNRbBwYc0gmSE4Cw",
+      "realName": "이순호",
+      "nickname": "호프로",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "H6RdETtfMu6uUokvAKRk",
+      "realName": "김진석",
+      "nickname": "환희",
+      "hidden": false,
+      "gender": "M",
+      "team": "S",
+      "leaveReason": ""
+    },
+    {
+      "id": "V9PeLlapwyVvuOdgkRju",
+      "realName": "설희우",
+      "nickname": "희우",
+      "hidden": false,
+      "gender": "M",
+      "team": "T5",
+      "leaveReason": ""
+    },
+    {
+      "id": "pD9WYqGx3swVDYLTErIJ",
+      "realName": "신주수",
+      "nickname": "희형제",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "zJOdcEHVG7b64LeE7BJd",
+      "realName": "안현주",
+      "nickname": "힘모아",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "D31ooPi59bVLwU56mbBC",
+      "realName": "남기철",
+      "nickname": "Beat",
+      "hidden": false,
+      "gender": "M",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "aWZdokx4j9voiB076Bdq",
+      "realName": "김정찬",
+      "nickname": "BigC",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "8sLCNtM6CKtAHuagjsJO",
+      "realName": "양승희",
+      "nickname": "bluet",
+      "hidden": false,
+      "gender": "F",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "yVGvQJeCeFWuaCWpxYZn",
+      "realName": "최진",
+      "nickname": "CJ",
+      "hidden": false,
+      "gender": "M",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "1bgLC92UQS8F9sPwPIxz",
+      "realName": "김형석",
+      "nickname": "James",
+      "hidden": false,
+      "gender": "M",
+      "team": "T1",
+      "leaveReason": ""
+    },
+    {
+      "id": "1W9DlQzKvXr0jTrsMhdL",
+      "realName": "조상현",
+      "nickname": "Josh",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    },
+    {
+      "id": "dERaHht1kvrYrL5kCHLz",
+      "realName": "이수진",
+      "nickname": "SJ",
+      "hidden": false,
+      "gender": "F",
+      "team": "T4",
+      "leaveReason": ""
+    },
+    {
+      "id": "XkMNTwn64pBPvtT7kXq0",
+      "realName": "김태영",
+      "nickname": "Tommy",
+      "hidden": false,
+      "gender": "M",
+      "team": "T3",
+      "leaveReason": ""
+    },
+    {
+      "id": "AP9rv7xJRFS1JHb1ogo9",
+      "realName": "장성남",
+      "nickname": "zepi",
+      "hidden": false,
+      "gender": "M",
+      "team": "T2",
+      "leaveReason": ""
+    }
+  ]
+}

@@ -251,14 +251,20 @@ function renderMembers() {
     const genderBadge = m.gender === "M" ? '<span class="gender-badge gender-m">남</span>'
       : m.gender === "F" ? '<span class="gender-badge gender-f">여</span>' : "";
     const hiddenBadge = m.hidden ? ' <span class="hidden-badge">숨김</span>' : "";
+    const archivedHint =
+      m.hidden && (m._archivedNickname || m._archivedRealName)
+        ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">원본: ${esc(m._archivedNickname || "?")} (${esc(m._archivedRealName || "?")})${m.leaveReason === "expelled" ? " · 제명" : ""}</div>`
+        : "";
     return `<tr class="${m.hidden ? "hidden-row" : ""}" onclick="startEdit('${m.id}')">
-      <td>${esc(m.nickname)}${hiddenBadge}</td>
+      <td>${esc(m.nickname)}${hiddenBadge}${archivedHint}</td>
       <td>${esc(m.realName)}</td>
       <td>${genderBadge}</td>
       <td>
         ${m.hidden
-          ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); restoreMember('${m.id}')">복원</button>`
-          : `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); hideMember('${m.id}', '${esc(m.nickname)}')">숨김</button>`
+          ? (m._archivedRealName
+            ? `<span style="font-size:12px;color:var(--color-text-muted)">익명화됨</span>`
+            : `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); restoreMember('${m.id}')">복원</button>`)
+          : `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); hideMember('${m.id}', '${esc(m.nickname)}')">퇴회</button>`
         }
       </td>
     </tr>`;
@@ -327,7 +333,7 @@ async function addMember() {
 }
 
 async function hideMember(id, nickname) {
-  if (!confirm(`'${nickname}'을(를) 숨김 처리할까요?`)) return;
+  if (!confirm(`'${nickname}'을(를) 퇴회 처리할까요?\n(숨김 + 닉·실명 익명화, 출석·기록 연동 갱신)`)) return;
   try {
     const res = await fetch(`${API_BASE}?action=hide-member`, {
       method: "POST",
@@ -335,8 +341,8 @@ async function hideMember(id, nickname) {
       body: JSON.stringify({ id }),
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.error);
-    showToast(`${nickname} 숨김 처리됨`);
+    if (!data.ok) throw new Error(data.error || data.message);
+    showToast(data.skipped ? `${nickname} 이미 익명화됨` : `${nickname} 퇴회·익명화 완료`);
     await loadMembers();
   } catch (e) {
     showToast("숨김 실패: " + e.message, 4000);

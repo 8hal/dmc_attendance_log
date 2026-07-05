@@ -19,6 +19,7 @@ const {
   normalizeEventDateForId,
 } = require("./lib/canonicalEventId");
 const { normalizeRaceDistance } = require("./lib/raceDistance");
+const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
 const { google } = require("googleapis");
 
 // 초기화
@@ -1854,6 +1855,13 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       if (realName !== undefined) updates.realName = realName;
       if (gender !== undefined) updates.gender = gender;
       if (hidden !== undefined) updates.hidden = !!hidden;
+      if (hidden === false && isAlreadyAnonymized(doc.data())) {
+        return res.status(400).json({
+          ok: false,
+          error: "ANONYMIZED_MEMBER",
+          message: "익명화된 회원은 복원할 수 없습니다. _archived* 확인 후 신규 등록하세요.",
+        });
+      }
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ ok: false, error: "nothing to update" });
       }
@@ -1877,13 +1885,23 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "hide-member" && req.method === "POST") {
-      const { id } = req.body || {};
+      const { id, leaveReason, leftAt } = req.body || {};
       if (!id) return res.status(400).json({ ok: false, error: "id required" });
       const ref = db.collection("members").doc(id);
       const doc = await ref.get();
       if (!doc.exists) return res.status(404).json({ ok: false, error: "member not found" });
-      await ref.update({ hidden: true });
-      return res.json({ ok: true, id });
+      const reason = leaveReason === "expelled" ? "expelled" : "withdrawn";
+      const result = await applyMemberLeave(db, {
+        memberId: id,
+        memberData: doc.data(),
+        leaveReason: reason,
+        leftAt: leftAt || new Date().toISOString().slice(0, 10),
+        dryRun: false,
+      });
+      if (result.skipped) {
+        return res.json({ ok: true, id, skipped: true, reason: result.reason });
+      }
+      return res.json({ ok: true, id, preview: result.preview });
     }
 
     if (action === "all-members") {
@@ -1891,7 +1909,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const members = [];
       snap.forEach((doc) => {
         const d = doc.data();
-        members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "", team: d.team || "", hidden: d.hidden || false });
+        members.push({ id: doc.id, realName: d.realName, nickname: d.nickname, gender: d.gender || "", team: d.team || "", hidden: d.hidden || false, leaveReason: d.leaveReason || "", _archivedNickname: d._archivedNickname || "", _archivedRealName: d._archivedRealName || "" });
       });
       members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
       return res.json({ ok: true, members });

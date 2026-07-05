@@ -1,0 +1,299 @@
+{
+  "projectId": "dmc-attendance",
+  "generatedAt": "2026-07-05T06:46:47.323Z",
+  "summary": {
+    "add": 17,
+    "updateNickname": 2,
+    "unhide": 0,
+    "leave": 1,
+    "warnings": 0
+  },
+  "warnings": [],
+  "operations": [
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "송주식",
+        "nickname": "알렉스",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "김덕진",
+        "nickname": "신리",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이현옥",
+        "nickname": "초초긍정",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "심상대",
+        "nickname": "소맥",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "유희선",
+        "nickname": "율리",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "양명아",
+        "nickname": "모니카",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "김욥",
+        "nickname": "네오",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이주하",
+        "nickname": "극복",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이숙영",
+        "nickname": "헤더",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "양승희",
+        "nickname": "bluet",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "안현주",
+        "nickname": "힘모아",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "김철응",
+        "nickname": "빵야",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이봉건",
+        "nickname": "Clint",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "구본진",
+        "nickname": "덕구아빠",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이정화",
+        "nickname": "차차",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "김원겸",
+        "nickname": "지구인",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "김태우",
+        "nickname": "까치식당",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-07-05T06:46:47.323Z"
+      }
+    },
+    {
+      "type": "update_member",
+      "collection": "members",
+      "docId": "baseline_138",
+      "match": {
+        "realName": "김재연"
+      },
+      "data": {
+        "nickname": "501",
+        "updatedAt": "2026-07-05T06:46:47.323Z"
+      },
+      "note": "아편 → 501"
+    },
+    {
+      "type": "update_member",
+      "collection": "members",
+      "docId": "baseline_128",
+      "match": {
+        "realName": "강동원"
+      },
+      "data": {
+        "nickname": "하우스",
+        "updatedAt": "2026-07-05T06:46:47.323Z"
+      },
+      "note": "해피하우스 → 하우스"
+    },
+    {
+      "type": "member_leave",
+      "collection": "members",
+      "docId": "baseline_114",
+      "leaveReason": "expelled",
+      "leftAt": "2026-06-30",
+      "before": {
+        "nickname": "초이스",
+        "realName": "이경주"
+      },
+      "memberUpdate": {
+        "hidden": true,
+        "nickname": "탈퇴_baseline",
+        "realName": "탈퇴회원_baseline",
+        "_archivedNickname": "초이스",
+        "_archivedRealName": "이경주",
+        "leaveReason": "expelled",
+        "leftAt": "2026-06-30",
+        "anonymizedAt": "2026-07-05T06:46:47.323Z",
+        "updatedAt": "2026-07-05T06:46:47.323Z"
+      },
+      "relatedUpdates": [
+        {
+          "collection": "attendance",
+          "query": {
+            "memberId": "baseline_114"
+          },
+          "fields": {
+            "nickname": "탈퇴_baseline",
+            "nicknameKey": "탈퇴_baseline"
+          }
+        },
+        {
+          "collection": "attendance",
+          "query": {
+            "nicknameKey": "초이스"
+          },
+          "fields": {
+            "nickname": "탈퇴_baseline",
+            "nicknameKey": "탈퇴_baseline"
+          }
+        },
+        {
+          "collection": "race_results",
+          "query": {
+            "memberRealName": "이경주"
+          },
+          "fields": {
+            "memberRealName": "탈퇴회원_baseline",
+            "memberNickName": "탈퇴_baseline"
+          }
+        }
+      ],
+      "note": "2026-06-30 운영진 제명"
+    }
+  ]
+}

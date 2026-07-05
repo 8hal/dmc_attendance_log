@@ -36,7 +36,7 @@
 | `members` | GET | `action=members` | — | 숨김 아닌 회원만 | `ok`, `members[]` |
 | `add-member` | POST | `action=add-member` | **`nickname`**, **`realName`** 필수; `gender` 선택 | `members` 추가. 닉 중복이면 409 | `ok`, `id`, `nickname`, `realName` |
 | `update-member` | POST | `action=update-member` | **`id`** 필수; `nickname`/`realName`/`gender`/`hidden` 선택 | 회원 수정. `gender` 변경 시 같은 실명 `race_results` 동기화 | `ok`, `id`, 반영 필드 |
-| `hide-member` | POST | `action=hide-member` | **`id`** 필수 | `hidden: true` | `ok`, `id` |
+| `hide-member` | POST | `action=hide-member` | **`id`** 필수; `leaveReason`(`withdrawn`\|`expelled`), `leftAt`(YYYY-MM-DD) 선택 | 퇴회·익명화 + `attendance`/`race_results` 연동 갱신 | `ok`, `id`, `preview`(적용 시) 또는 `skipped` |
 | `all-members` | GET | `action=all-members` | — | 숨김 포함 전원 | `ok`, `members[]` |
 | `discover-all` | GET | `action=discover-all`, `year`(선택·기본 올해) | — | 해당 연도 전체 발견·시스템 job 매핑 | `ok`, `events[]`, `total` |
 | `suggestions` | GET | **`action=suggestions`**, **`member` 필수**(실명) | — | 검색 캐시·확정·PB 기반 제안·dimout | `ok`, `suggestions[]`, `memberGender`, `hasPB` |

@@ -72,6 +72,7 @@ node_modules/
 
 # Migration scripts - sensitive files
 scripts/service-account.json
+functions/service-account.json
 scripts/data.csv
 # 실서버 source/sourceId 가 들어가는 백필 설정 (예시만 커밋: *.example.json)
 scripts/data/race-events-mapping.json
