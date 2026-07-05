@@ -4,40 +4,30 @@
  * - 신규 추가 / 닉네임 변경 / 복귀(unhide)
  * - 명단 제외 회원: 퇴회 처리(익명화) — _docs/superpowers/policies/member-leave-anonymization-policy.md
  *
- * 전제:
- *   scripts/data/members-2026-06-30-cleaned.json  (preprocess-members-excel.py)
- *   scripts/data/members-2026-06-30-expelled.json (제명 leaveReason, 선택)
- *
  * 사용법:
  *   node scripts/sync-members-2026-06-30.js --dry-run
  *   node scripts/sync-members-2026-06-30.js
  *
- * 옵션:
- *   --roster=path.json   명단 JSON (기본: members-2026-06-30-cleaned.json)
- *   --expelled=path.json 제명 목록 (기본: members-2026-06-30-expelled.json)
- *   --left-at=YYYY-MM-DD 퇴회일 (기본: 2026-06-30)
+ * Firestore 없이 diff만 (3/31 명단을 DB 대용):
+ *   node scripts/sync-members-2026-06-30.js --dry-run --offline-baseline=scripts/data/members-2026-03-31-cleaned.json
  *
- * firebase-admin: functions/node_modules (루트에서 실행 시)
- *   cd functions && npm ci
- * 인증: functions/service-account.json 또는 gcloud ADC
+ * 옵션:
+ *   --roster=path.json
+ *   --expelled=path.json
+ *   --left-at=YYYY-MM-DD
+ *   --offline-baseline=path.json  Firestore 대신 JSON으로 비교 (인증 불필요)
+ *
+ * 프로덕션: cd functions && npm ci 후
+ *   functions/service-account.json 또는 gcloud ADC
  */
 
 const fs = require("fs");
 const path = require("path");
-const { createRequire } = require("module");
 
 const functionsDir = path.join(__dirname, "..", "functions");
-const functionsNodeModules = path.join(functionsDir, "node_modules");
-if (!fs.existsSync(functionsNodeModules)) {
-  console.error("functions/node_modules 가 없습니다. cd functions && npm ci");
-  process.exit(1);
-}
-
-const reqFn = createRequire(path.join(functionsDir, "package.json"));
-const { initializeApp, cert } = reqFn("firebase-admin/app");
-const { getFirestore } = reqFn("firebase-admin/firestore");
-
-const { applyMemberLeave, isAlreadyAnonymized } = require(path.join(functionsDir, "lib", "member-leave"));
+const { applyMemberLeave, isAlreadyAnonymized, anonymizedLabels } = require(
+  path.join(functionsDir, "lib", "member-leave")
+);
 
 const dryRun = process.argv.includes("--dry-run");
 const args = process.argv.slice(2);
@@ -52,16 +42,8 @@ const rosterPath = path.resolve(
 const expelledPath = path.resolve(
   getArg("expelled", path.join(__dirname, "data", "members-2026-06-30-expelled.json"))
 );
+const offlineBaselinePath = getArg("offline-baseline", "");
 const defaultLeftAt = getArg("left-at", "2026-06-30");
-
-const serviceAccountPath = path.join(functionsDir, "service-account.json");
-if (fs.existsSync(serviceAccountPath)) {
-  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-  initializeApp({ credential: cert(serviceAccount), projectId: "dmc-attendance" });
-} else {
-  initializeApp({ projectId: "dmc-attendance" });
-}
-const db = getFirestore();
 
 function loadJson(filePath, label) {
   if (!fs.existsSync(filePath)) {
@@ -105,31 +87,22 @@ function findHiddenRestorable(firestoreList, nickname, realName) {
   );
 }
 
-async function syncMembers() {
-  const roster = loadJson(rosterPath, "명단 JSON");
-  const expelledList = fs.existsSync(expelledPath) ? loadJson(expelledPath, "제명 JSON") : [];
-  const expelledMap = buildExpelledMap(expelledList);
-
-  console.log(`\n[${dryRun ? "DRY RUN" : "실행"}] 2026-06-30 정회원 명단 동기화`);
-  console.log(`명단: ${roster.length}명 ← ${rosterPath}`);
-  if (expelledMap.size) console.log(`제명 목록: ${expelledMap.size}명 ← ${expelledPath}`);
-  console.log(`퇴회일 기본값: ${defaultLeftAt}\n`);
-
-  const membersSnap = await db.collection("members").get();
-  const firestoreList = [];
-  membersSnap.forEach((doc) => {
-    const data = doc.data();
-    firestoreList.push({
-      id: doc.id,
-      realName: data.realName,
-      nickname: data.nickname,
-      hidden: data.hidden || false,
-      _raw: data,
-    });
+function firestoreListFromBaseline(baseline) {
+  return baseline.map((m, i) => {
+    const id = m.id || `baseline_${String(i + 1).padStart(3, "0")}`;
+    const nickname = m.nickname;
+    const realName = m.realName;
+    return {
+      id,
+      realName,
+      nickname,
+      hidden: m.hidden || false,
+      _raw: { nickname, realName, hidden: m.hidden || false },
+    };
   });
+}
 
-  console.log(`Firestore members: ${firestoreList.length}건 (hidden 포함)\n`);
-
+function computeSyncPlan(roster, firestoreList, expelledMap, defaultLeftAtValue) {
   const matched = new Set();
   const toAdd = [];
   const toUnhide = [];
@@ -185,10 +158,20 @@ async function syncMembers() {
       nickname: fm.nickname,
       realName: fm.realName,
       leaveReason: expelled?.leaveReason || "withdrawn",
-      leftAt: expelled?.leftAt || defaultLeftAt,
+      leftAt: expelled?.leftAt || defaultLeftAtValue,
       note: expelled?.note || "",
     });
   }
+
+  return { matched, toAdd, toUnhide, toUpdateNickname, toLeave, warnings };
+}
+
+function printPlan(plan, modeLabel) {
+  const { matched, toAdd, toUnhide, toUpdateNickname, toLeave, warnings } = plan;
+
+  console.log(`\n[${modeLabel}] 2026-06-30 정회원 명단 동기화`);
+  console.log(`명단: (로드됨)`);
+  console.log(`퇴회일 기본값: ${defaultLeftAt}\n`);
 
   console.log("=== 변경 사항 ===\n");
   console.log(`✅ 신규: ${toAdd.length}명`);
@@ -223,10 +206,92 @@ async function syncMembers() {
     console.log("\n=== ⚠️ 경고 ===");
     warnings.forEach((w) => console.log(`  - ${w}`));
   }
+}
+
+async function initFirestoreDb() {
+  const functionsNodeModules = path.join(functionsDir, "node_modules");
+  if (!fs.existsSync(functionsNodeModules)) {
+    console.error("functions/node_modules 가 없습니다. cd functions && npm ci");
+    process.exit(1);
+  }
+  const { createRequire } = require("module");
+  const reqFn = createRequire(path.join(functionsDir, "package.json"));
+  const { initializeApp, cert } = reqFn("firebase-admin/app");
+  const { getFirestore } = reqFn("firebase-admin/firestore");
+
+  const serviceAccountPath = path.join(functionsDir, "service-account.json");
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+    initializeApp({ credential: cert(serviceAccount), projectId: "dmc-attendance" });
+  } else {
+    initializeApp({ projectId: "dmc-attendance" });
+  }
+  return getFirestore();
+}
+
+async function loadFirestoreMembers(db) {
+  const membersSnap = await db.collection("members").get();
+  const firestoreList = [];
+  membersSnap.forEach((doc) => {
+    const data = doc.data();
+    firestoreList.push({
+      id: doc.id,
+      realName: data.realName,
+      nickname: data.nickname,
+      hidden: data.hidden || false,
+      _raw: data,
+    });
+  });
+  return firestoreList;
+}
+
+async function syncMembers() {
+  const roster = loadJson(rosterPath, "명단 JSON");
+  const expelledList = fs.existsSync(expelledPath) ? loadJson(expelledPath, "제명 JSON") : [];
+  const expelledMap = buildExpelledMap(expelledList);
+
+  if (offlineBaselinePath) {
+    const baseline = loadJson(path.resolve(offlineBaselinePath), "offline baseline");
+    const firestoreList = firestoreListFromBaseline(baseline);
+    const plan = computeSyncPlan(roster, firestoreList, expelledMap, defaultLeftAt);
+
+    console.log(`\n[OFFLINE] baseline ${firestoreList.length}명 ← ${path.resolve(offlineBaselinePath)}`);
+    console.log(`명단: ${roster.length}명 ← ${rosterPath}`);
+    if (expelledMap.size) console.log(`제명 목록: ${expelledMap.size}명 ← ${expelledPath}`);
+
+    printPlan(plan, dryRun ? "DRY RUN · OFFLINE" : "OFFLINE");
+
+    if (dryRun && plan.toLeave.length) {
+      console.log("\n--- 퇴회 익명화 미리보기 (offline — attendance/race_results 건수 미조회) ---");
+      plan.toLeave.forEach((m) => {
+        const labels = anonymizedLabels(m.id);
+        console.log(`  ${m.realName} → 닉 ${labels.nickname}, 실명 ${labels.realName}`);
+      });
+    }
+
+    console.log(
+      "\n※ offline은 baseline JSON 대비 diff입니다. 프로덕션 건수는 service-account.json 준비 후 --dry-run 으로 확인하세요."
+    );
+    if (dryRun) {
+      console.log("\n프로덕션 dry-run: node scripts/sync-members-2026-06-30.js --dry-run");
+    }
+    return;
+  }
+
+  const db = await initFirestoreDb();
+  const firestoreList = await loadFirestoreMembers(db);
+  const plan = computeSyncPlan(roster, firestoreList, expelledMap, defaultLeftAt);
+
+  console.log(`\n[${dryRun ? "DRY RUN" : "실행"}] 2026-06-30 정회원 명단 동기화`);
+  console.log(`명단: ${roster.length}명 ← ${rosterPath}`);
+  if (expelledMap.size) console.log(`제명 목록: ${expelledMap.size}명 ← ${expelledPath}`);
+  console.log(`Firestore members: ${firestoreList.length}건 (hidden 포함)\n`);
+
+  printPlan(plan, dryRun ? "DRY RUN" : "실행");
 
   if (dryRun) {
     console.log("\n--- 퇴회 상세(dry-run) ---");
-    for (const m of toLeave) {
+    for (const m of plan.toLeave) {
       const fm = firestoreList.find((f) => f.id === m.id);
       const result = await applyMemberLeave(db, {
         memberId: m.id,
@@ -247,7 +312,7 @@ async function syncMembers() {
 
   console.log("\n=== 실행 ===\n");
 
-  for (const m of toAdd) {
+  for (const m of plan.toAdd) {
     const ref = db.collection("members").doc();
     await ref.set({
       realName: m.realName,
@@ -260,7 +325,7 @@ async function syncMembers() {
     console.log(`✅ 신규: ${m.nickname} (${m.realName})`);
   }
 
-  for (const m of toUpdateNickname) {
+  for (const m of plan.toUpdateNickname) {
     await db.collection("members").doc(m.id).update({
       nickname: m.newNickname,
       updatedAt: new Date().toISOString(),
@@ -268,7 +333,7 @@ async function syncMembers() {
     console.log(`✏️  닉 변경: ${m.realName} "${m.oldNickname}" → "${m.newNickname}"`);
   }
 
-  for (const m of toUnhide) {
+  for (const m of plan.toUnhide) {
     await db.collection("members").doc(m.id).update({
       hidden: false,
       updatedAt: new Date().toISOString(),
@@ -276,7 +341,7 @@ async function syncMembers() {
     console.log(`🔄 복귀: ${m.nickname} (${m.realName})`);
   }
 
-  for (const m of toLeave) {
+  for (const m of plan.toLeave) {
     const result = await applyMemberLeave(db, {
       memberId: m.id,
       leaveReason: m.leaveReason,
@@ -293,6 +358,11 @@ async function syncMembers() {
 }
 
 syncMembers().catch((err) => {
-  console.error("❌ 오류:", err);
+  console.error("❌ 오류:", err.message || err);
+  if (String(err.message || "").includes("default credentials")) {
+    console.error("\n인증 방법 (택1):");
+    console.error("  1) Firebase Console → 서비스 계정 → JSON → functions/service-account.json");
+    console.error("  2) node scripts/sync-members-2026-06-30.js --dry-run --offline-baseline=scripts/data/members-2026-03-31-cleaned.json");
+  }
   process.exit(1);
 });
