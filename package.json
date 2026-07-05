@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "xlsx": "^0.18.5"
+  },
+  "scripts": {
+    "test:members-sync": "node --test scripts/test/member-leave.test.js scripts/test/member-sync-plan.test.js"
   }
 }
