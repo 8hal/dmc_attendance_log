@@ -45,6 +45,11 @@ const SEED_ID = "pre_deploy_seed_member";
       { merge: true }
     );
   console.log("[seed-emulator-pre-deploy] members/" + SEED_ID + " OK");
+  const { execSync } = require("child_process");
+  execSync("node scripts/seed-emulator-chunbaek.js", {
+    stdio: "inherit",
+    cwd: path.join(__dirname, ".."),
+  });
   process.exit(0);
 })().catch((e) => {
   console.error(e);

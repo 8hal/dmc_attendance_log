@@ -1,0 +1,8 @@
+dayIndex,date,week,trainingLabel,isProgramOff
+1,2026-04-01,1,5km 이지런,false
+2,2026-04-02,1,인터벌,false
+3,2026-04-03,1,휴무,true
+4,2026-04-04,1,장거리,false
+5,2026-04-05,1,이지런,false
+6,2026-04-06,1,동마클 토요일,false
+7,2026-04-07,2,인터벌,false

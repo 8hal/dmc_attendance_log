@@ -154,13 +154,13 @@ const API_BASE = IS_LOCAL
 | Milestone | 항목 | 상태 |
 |-----------|------|------|
 | M1 | firebase rewrite, `exports.chunbaek`, rules, ping | ✅ Task 1 |
-| M1 | session token (C1) | 🔄 Task 2 |
-| M1 | 온보딩 API | 🔄 Task 3 |
-| M2 | 집계·출석 API | ❌ Task 4~5 |
+| M1 | session token (C1) | ✅ Task 2 |
+| M1 | 온보딩 API | ✅ Task 3 |
+| M2 | 집계·출석 API | ✅ Task 4~5 |
 | M3 | admin API | ❌ Task 6 |
 | M4 | FE 스켈레톤 (목업) | ✅ |
 | M4 | FE ↔ 실 API 연동 | ❌ Task 8~10 |
-| M5 | pre-deploy smoke | ❌ Task 12 |
+| M5 | 에뮬 시드 | ✅ Task 7 |
 
 ---
 
