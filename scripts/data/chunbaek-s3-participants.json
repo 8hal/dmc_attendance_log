@@ -1,10 +1,11 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-12T05:52:56.778Z",
+  "preparedAt": "2026-07-12T05:54:16.531Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "wjwN15DBGn92tkBJ0T87",
     "MmR7m0LglvP6bGPObgPT",
+    "10V9SmKhpV5BzslmVMCH",
     "ImfSPbeUehwFugtLm2h7",
     "HWaFJdM7eqZr0otCh5Io",
     "MwBIbathhDm49MTTHdt9",
@@ -58,6 +59,11 @@
       "memberId": "MmR7m0LglvP6bGPObgPT",
       "nickname": "나이스",
       "realName": "이동현"
+    },
+    {
+      "memberId": "10V9SmKhpV5BzslmVMCH",
+      "nickname": "날러",
+      "realName": "이기수"
     },
     {
       "memberId": "ImfSPbeUehwFugtLm2h7",
