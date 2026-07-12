@@ -4,13 +4,13 @@
  *
  * 사용법:
  *   node scripts/generate-chunbaek-slot-skeleton.js
- *   node scripts/generate-chunbaek-slot-skeleton.js --start=2026-07-17 --out=scripts/data/chunbaek-s3-slots-100days.csv
+ *   node scripts/generate-chunbaek-slot-skeleton.js --start=2026-07-20 --out=scripts/data/chunbaek-s3-slots-100days.csv
  */
 const fs = require("fs");
 const path = require("path");
 
 const MS_PER_DAY = 86400000;
-const DEFAULT_START = "2026-07-17";
+const DEFAULT_START = "2026-07-20";
 const DEFAULT_OUT = path.join(__dirname, "data", "chunbaek-s3-slots-100days.csv");
 const SLOT_COUNT = 100;
 
@@ -66,6 +66,6 @@ fs.writeFileSync(outPath, toCsv(rows), "utf8");
 
 const endDate = rows[rows.length - 1].date;
 console.log(`[generate-chunbaek-slot-skeleton] ${rows.length}슬롯`);
-console.log(`  시작: ${startDate} (1일차, D-100)`);
+  console.log(`  시작: ${startDate} (1일차)`);
 console.log(`  종료: ${endDate} (100일차)`);
 console.log(`  출력: ${outPath}`);

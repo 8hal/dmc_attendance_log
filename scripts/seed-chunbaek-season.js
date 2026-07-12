@@ -8,7 +8,7 @@
  *
  * 옵션:
  *   --csv=path          슬롯 CSV (기본: scripts/data/chunbaek-s3-slots-100days.csv)
- *   --start=YYYY-MM-DD  season_config.startDate (기본: 2026-07-17)
+ *   --start=YYYY-MM-DD  season_config.startDate (기본: 2026-07-20)
  *   --end=YYYY-MM-DD    season_config.endDate (기본: CSV 마지막 날)
  *   --emulator          Firestore 에뮬레이터 대상
  *
@@ -37,7 +37,7 @@ function getArg(name, fallback) {
 }
 
 const csvPath = path.resolve(getArg("csv", path.join(__dirname, "data", "chunbaek-s3-slots-100days.csv")));
-const startDate = getArg("start", "2026-07-17");
+const startDate = getArg("start", "2026-07-20");
 
 if (useEmulator) {
   if (!process.env.FIRESTORE_EMULATOR_HOST) {
@@ -100,7 +100,7 @@ const db = getFirestore();
   const configData = {
     seasonId: "chunbaek-s3",
     title: "춘백 시즌3",
-    raceName: "춘천마라톤",
+    raceName: "춘천/JTBC 마라톤",
     raceDate: "2026-10-25",
     departureCeremonyDate: "2026-07-16",
     startDate,

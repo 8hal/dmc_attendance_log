@@ -110,4 +110,4 @@ bash scripts/deploy-chunbaek-gallery.sh
 |------|------|
 | 2026-07-12 | kickoff 최초 작성, Task 6 착수 |
 | 2026-07-12 | Task 6·11b 코드 완료 (`chunbaek-admin.js`, admin.js API 연동) |
-| 2026-07-16 | 운영 준비: D-100=7/17, 출정식=7/16 — [ops-prep.md](./2026-07-16-chunbaek-season3-ops-prep.md) |
+| 2026-07-16 | 운영 준비: 출정식=7/16, **시작=7/20** — [ops-prep.md](./2026-07-16-chunbaek-season3-ops-prep.md) |
