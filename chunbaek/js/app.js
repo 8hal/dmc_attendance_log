@@ -185,6 +185,20 @@
     }
   }
 
+  function updateSaturdayNotice(slotDate) {
+    const el = document.getElementById("saturday-notice");
+    if (!el || !slotDate) return;
+    const d = new Date(slotDate + "T12:00:00");
+    el.hidden = d.getDay() !== 6;
+  }
+
+  function setTodayProgramOff(isOff) {
+    const offMsg = document.getElementById("program-off-msg");
+    const active = document.getElementById("today-active");
+    if (offMsg) offMsg.hidden = !isOff;
+    if (active) active.hidden = isOff;
+  }
+
   async function loadToday() {
     try {
       const [prof, slot] = await Promise.all([
@@ -202,16 +216,17 @@
 
       const sl = state.todaySlot;
       if (sl.isProgramOff) {
-        document.getElementById("today-body").innerHTML =
-          '<p class="section-sub" style="text-align:center;padding:32px">오늘은 프로그램 휴무일입니다</p>';
+        setTodayProgramOff(true);
         return;
       }
+      setTodayProgramOff(false);
 
       const d = new Date(sl.date + "T12:00:00");
       const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
       document.getElementById("today-day").textContent =
         `${sl.dayIndex}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
       document.getElementById("today-training").textContent = "📋 " + (sl.trainingLabel || "");
+      updateSaturdayNotice(sl.date);
 
       const btn = document.getElementById("btn-attend");
       if (sl.attended) {
@@ -238,12 +253,14 @@
   function renderTodayPreview() {
     const p = MOCK.profile;
     const s = MOCK.profile.stats;
+    setTodayProgramOff(false);
     document.getElementById("hdr-nickname").textContent = `${p.nickname}님`;
     document.getElementById("hdr-day").textContent = `${s.seasonDayIndex}일차 / 100일`;
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount}회 · 출석률 ${s.seasonAttendRate}%`;
-    document.getElementById("today-day").textContent = "42일차 · 4월 15일 (화)";
-    document.getElementById("today-training").textContent = "📋 5km 인터벌 + 코어 20분";
+    document.getElementById("today-day").textContent = "42일차 · 4월 11일 (토)";
+    document.getElementById("today-training").textContent = "📋 동마클 토요일 훈련";
+    updateSaturdayNotice(MOCK.todaySlot.date);
     const weekEl = document.getElementById("week-bar");
     document.getElementById("week-bar-count").textContent = `${s.weekAttendCount} / ${s.weekTarget}회`;
     weekEl.classList.toggle("met", s.weekAttendCount >= s.weekTarget);

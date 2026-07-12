@@ -118,9 +118,16 @@
           <div class="stats-attend" id="hdr-attend">출석 28회 · 출석률 68%</div>
         </div>
         <div id="today-body">
+          <p class="program-off-msg" id="program-off-msg" hidden>오늘은 프로그램 휴무일입니다</p>
+          <div id="today-active">
           <div class="today-slot-card">
             <div class="today-day" id="today-day">42일차 · 4월 15일 (화)</div>
             <div class="today-training" id="today-training">📋 5km 인터벌 + 코어 20분</div>
+          </div>
+          <div class="saturday-notice" id="saturday-notice" hidden>
+            <span class="saturday-notice-icon">🏃</span>
+            <span>오늘은 <strong>토요일 동마클 정모</strong>입니다. <strong>동마클 출석</strong>과 <strong>춘백 출석</strong>을 각각 해 주세요.</span>
+            <a class="saturday-notice-link" href="/attendance-v2.html">동마클 출석 →</a>
           </div>
           <div class="attend-cta">
             <button type="button" class="btn btn-primary" id="btn-attend">✓  출석하기</button>
@@ -136,6 +143,7 @@
           <div class="week-summary" id="week-bar" aria-label="이번 주 출석 현황">
             <span class="week-summary-label">이번 주 출석</span>
             <span class="week-summary-count" id="week-bar-count">2 / 3회</span>
+          </div>
           </div>
         </div>
         <button type="button" class="btn btn-ghost" id="btn-switch-user" style="margin-top:24px">다른 사람으로</button>

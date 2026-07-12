@@ -41,9 +41,9 @@ const MOCK = {
   },
   todaySlot: {
     dayIndex: 42,
-    date: "2026-04-15",
+    date: "2026-04-11",
     week: 7,
-    trainingLabel: "5km 인터벌 + 코어 20분",
+    trainingLabel: "동마클 토요일 훈련",
     isProgramOff: false,
     attended: false,
   },

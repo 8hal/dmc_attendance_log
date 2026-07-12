@@ -423,6 +423,35 @@ body {
   color: var(--green);
 }
 
+.saturday-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--accent-light);
+  border: 1px solid var(--chun-cyan);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.saturday-notice-icon { font-size: 18px; }
+.saturday-notice-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--chun-orange);
+  text-decoration: none;
+}
+.saturday-notice-link:hover { text-decoration: underline; }
+
+.program-off-msg {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
 .optional-row {
   display: flex;
   align-items: center;
