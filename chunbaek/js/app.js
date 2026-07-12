@@ -23,6 +23,14 @@
 
   const TAB_VIEWS = ["today", "timeline", "team", "me"];
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   function showToast(msg, isError) {
     const el = document.getElementById("toast");
     el.textContent = msg;
@@ -162,10 +170,12 @@
       existingPbNetTime = pbH * 3600 + pm * 60 + ps;
     }
     try {
+      const resolutionText = (document.getElementById("resolution-text").value || "").trim();
       const data = await apiPost("create-profile", {
         memberId: state.selectedMemberId,
         goalMarathonNetTime,
         existingPbNetTime,
+        resolutionText: resolutionText || null,
       });
       setToken(data.token);
       showView("guide");
@@ -306,6 +316,7 @@
       <dt>닉네임</dt><dd>${p.nickname || "김러너"}</dd>
       <dt>풀 목표</dt><dd>${formatNetTime(p.goalMarathonNetTime)}</dd>
       <dt>기존 PB</dt><dd>${formatNetTime(p.existingPbNetTime)}</dd>
+      <dt>각오</dt><dd class="profile-intro">${p.resolutionText ? escapeHtml(p.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${s.seasonAttendCount || 0}회 (출석률 ${s.seasonAttendRate || 0}%)</dd>
       <dt>이번 주</dt><dd>${s.weekAttendCount || 0}/${s.weekTarget || 3}회</dd>
     `;

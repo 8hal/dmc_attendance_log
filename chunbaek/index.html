@@ -76,10 +76,14 @@
           <p class="section-sub">춘천마라톤(또는 시즌 대회) 목표 완주 시간</p>
           <div class="field-label">기존 풀 PB (선택)</div>
           <div class="time-row">
-            <input type="number" id="pb-h" min="2" max="8" placeholder="4" /> 시간
-            <input type="number" id="pb-m" min="0" max="59" placeholder="52" /> 분
+            <input type="number" id="pb-h" min="2" max="8" placeholder="4" aria-label="PB 시간" /> 시간
+            <input type="number" id="pb-m" min="0" max="59" placeholder="52" aria-label="PB 분" /> 분
+            <input type="number" id="pb-s" min="0" max="59" placeholder="30" aria-label="PB 초" /> 초
           </div>
           <p class="section-sub">없으면 비워두세요</p>
+          <div class="field-label">각오 · 자기소개 (선택)</div>
+          <textarea class="input textarea-intro" id="resolution-text" rows="3" maxlength="200"
+            placeholder="출정식에서 나눈 각오, 이번 시즌 다짐 등 (200자)"></textarea>
         </div>
         <button type="button" class="btn btn-primary" id="btn-create-profile">프로필 만들기</button>
       </section>

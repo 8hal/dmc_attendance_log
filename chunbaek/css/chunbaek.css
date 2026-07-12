@@ -241,6 +241,19 @@ body {
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
+.textarea-intro {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.45;
+  margin-bottom: 0;
+}
+
+.profile-intro {
+  font-weight: 500 !important;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);

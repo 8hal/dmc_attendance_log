@@ -29,6 +29,7 @@ const MOCK = {
     nickname: "김러너",
     goalMarathonNetTime: 16200,
     existingPbNetTime: 17520,
+    resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
     profileComplete: true,
     stats: {
       seasonDayIndex: 42,
@@ -137,6 +138,9 @@ function mockPost(action, body) {
   if (action === "create-profile" || action === "link-device") {
     setToken("preview-token");
     const member = MOCK.roster.find((m) => m.memberId === body.memberId);
+    if (action === "create-profile" && body.resolutionText) {
+      MOCK.profile.resolutionText = body.resolutionText;
+    }
     return Promise.resolve({
       ok: true,
       token: "preview-token",
