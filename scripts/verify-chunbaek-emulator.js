@@ -37,6 +37,7 @@ async function apiPost(action, body, token) {
   const created = await apiPost("create-profile", {
     memberId: "chunbaek_seed_b",
     goalMarathonNetTime: 16200,
+    goalRace: "chuncheon",
     resolutionText: "에뮬 테스트",
   });
   assert.equal(created.status, 200);

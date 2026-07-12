@@ -42,11 +42,10 @@
 
 **앱·데이터 (MVP):**
 
-- 개인별 「어느 대회가 목표인지」 **별도 필드는 없음** (Phase 2 검토).
-- 온보딩 **`goalMarathonNetTime`**(완주 목표 기록) + **`resolutionText`**(각오)로 개인 목표를 표현.
-- 팀 화면에는 **목표 기록(시간)** 만 공개 — 춘천/JTBC 구분은 UI에 표시하지 않음.
-- `season_config.raceName` / `raceDate`는 **시스템 기본값**(JTBC 서울) — 개인 목표와 1:1 대응 아님.
-- 운영진은 발대식·단톡에서 「춘천 목표 / 서울 목표」 안내, admin `resolutionText`·메모로 구분 가능.
+- 온보딩 **`goalRace`** 필수: `chuncheon` | `jtbc` | `other` (UI: 춘천 / JTBC / 기타)
+- `other` 선택 시 **`goalRaceNote`**(최대 80자)로 대회명 입력 가능
+- **`goalMarathonNetTime`**(완주 목표 기록) + **`resolutionText`**(각오)는 기존과 동일
+- `my-profile`·팀 화면에 **`goalRaceLabel`** 표시 (예: `JTBC 서울마라톤`)
 
 > **운영 시사점:** 98일차(10/25) 슬롯 라벨은 「춘천 마라톤」으로, 99~100일차는 서울 대회 준비자에게 회복·가벼운 런 등으로 운영진이 주차별 조정.
 

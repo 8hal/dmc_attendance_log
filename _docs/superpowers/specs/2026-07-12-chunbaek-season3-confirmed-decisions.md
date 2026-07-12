@@ -166,7 +166,7 @@ API: `my-timeline` 슬롯에 `title`, `content` 포함 (백엔드 `chunbaek-stat
 - 어떤 이는 **JTBC 서울마라톤(11/1)** 을 목표로 하며,
 - 둘 다 출전하는 경우도 있다.
 
-MVP 앱에는 「목표 대회」 선택 필드 **없음**. `goalMarathonNetTime`·`resolutionText`로 개인 목표 표현. 상세: [ops-prep §1](./2026-07-16-chunbaek-season3-ops-prep.md).
+MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtbc` / `other`). `goalMarathonNetTime`·`resolutionText`와 함께 `create-profile`에 저장. 상세: [ops-prep §1](./2026-07-16-chunbaek-season3-ops-prep.md).
 
 ---
 
@@ -179,7 +179,7 @@ MVP 앱에는 「목표 대회」 선택 필드 **없음**. `goalMarathonNetTime
 | 가이드 출석 위치 | **[춘백 홈]** |
 | 가이드에서 제거 | 사진 필수·프로그램 휴무일 항목 |
 | 예외 안내 | 「부상·출장·경조사는 단톡방에서 미리… 운영진이 예외 처리」 |
-| 프로필 | `goalMarathonNetTime` 필수, `existingPbNetTime`·**`resolutionText`** 선택 |
+| 프로필 | `goalMarathonNetTime` 필수, `goalRace` 필수(`chuncheon`/`jtbc`/`other`), `existingPbNetTime`·**`resolutionText`** 선택 |
 | 프로필 안내 | 「가을 시즌 목표와 간단한 각오·자기소개」 |
 | 홈 인사 | **닉네임** (`김러너님`) |
 | 하단 탭 | **흰 배경**, 활성 탭 오렌지 |

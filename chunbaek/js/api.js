@@ -30,6 +30,8 @@ const MOCK = {
     nickname: "김러너",
     goalMarathonNetTime: 16200,
     existingPbNetTime: 17520,
+    goalRace: "jtbc",
+    goalRaceLabel: "JTBC 서울마라톤",
     resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
     profileComplete: true,
     stats: {
@@ -77,9 +79,9 @@ const MOCK = {
     weekMetCount: 12,
     participantCount: 38,
     members: [
-      { nickname: "김○○", goal: "4:30", bar: "███", week: "3/3", met: true },
-      { nickname: "이○○", goal: "4:00", bar: "██░", week: "2/3", met: false },
-      { nickname: "박○○", goal: "5:00", bar: "█░░", week: "1/3", met: false },
+      { nickname: "김○○", goal: "4:30", goalRaceLabel: "춘천 마라톤", bar: "███", week: "3/3", met: true },
+      { nickname: "이○○", goal: "4:00", goalRaceLabel: "JTBC 서울마라톤", bar: "██░", week: "2/3", met: false },
+      { nickname: "박○○", goal: "5:00", goalRaceLabel: "기타", bar: "█░░", week: "1/3", met: false },
     ],
   },
 };

@@ -154,7 +154,23 @@
     }
   }
 
+  function selectedGoalRace() {
+    const el = document.querySelector('input[name="goal-race"]:checked');
+    return el ? el.value : "";
+  }
+
+  function syncGoalRaceNote() {
+    const noteEl = document.getElementById("goal-race-note");
+    if (!noteEl) return;
+    noteEl.hidden = selectedGoalRace() !== "other";
+  }
+
   async function onCreateProfile() {
+    const goalRace = selectedGoalRace();
+    if (!goalRace) {
+      showToast("목표 대회를 선택해 주세요", true);
+      return;
+    }
     const h = parseInt(document.getElementById("goal-h").value, 10) || 0;
     const m = parseInt(document.getElementById("goal-m").value, 10) || 0;
     const s = parseInt(document.getElementById("goal-s").value, 10) || 0;
@@ -174,8 +190,11 @@
     }
     try {
       const resolutionText = (document.getElementById("resolution-text").value || "").trim();
+      const goalRaceNote = (document.getElementById("goal-race-note").value || "").trim();
       const data = await apiPost("create-profile", {
         memberId: state.selectedMemberId,
+        goalRace,
+        goalRaceNote: goalRace === "other" ? (goalRaceNote || null) : null,
         goalMarathonNetTime,
         existingPbNetTime,
         resolutionText: resolutionText || null,
@@ -423,7 +442,7 @@
       <div class="team-row">
         <div>
           <strong>${m.nickname}</strong>
-          <div class="team-goal">목표 ${m.goal}</div>
+          <div class="team-goal">목표 ${m.goal}${m.goalRaceLabel ? ` · ${escapeHtml(m.goalRaceLabel)}` : ""}</div>
         </div>
         <div style="text-align:right">
           <div class="team-bar">${m.bar}</div>
@@ -438,6 +457,7 @@
     const s = p.stats || MOCK.profile.stats;
     document.getElementById("me-dl").innerHTML = `
       <dt>닉네임</dt><dd>${p.nickname || "김러너"}</dd>
+      <dt>목표 대회</dt><dd>${p.goalRaceLabel || "—"}</dd>
       <dt>풀 목표</dt><dd>${formatNetTime(p.goalMarathonNetTime)}</dd>
       <dt>기존 PB</dt><dd>${formatNetTime(p.existingPbNetTime)}</dd>
       <dt>각오</dt><dd class="profile-intro">${p.resolutionText ? escapeHtml(p.resolutionText) : "—"}</dd>
@@ -468,6 +488,10 @@
     document.getElementById("btn-start").addEventListener("click", () => showView("pick"));
     document.getElementById("btn-pick-next").addEventListener("click", onPickNext);
     document.getElementById("btn-create-profile").addEventListener("click", onCreateProfile);
+    document.querySelectorAll('input[name="goal-race"]').forEach((el) => {
+      el.addEventListener("change", syncGoalRaceNote);
+    });
+    syncGoalRaceNote();
     document.getElementById("btn-guide-done").addEventListener("click", () => showView("today"));
     document.getElementById("btn-attend").addEventListener("click", onAttend);
     document.getElementById("btn-switch-user").addEventListener("click", () => {

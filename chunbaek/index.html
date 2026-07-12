@@ -74,13 +74,20 @@
         <div class="card">
           <div class="field-label">닉네임</div>
           <div style="font-weight:700;margin-bottom:16px" id="profile-nick-display">—</div>
+          <div class="field-label">목표 대회 *</div>
+          <div class="goal-race-group" id="goal-race-group">
+            <label class="goal-race-option"><input type="radio" name="goal-race" value="chuncheon" checked /> 춘천 마라톤</label>
+            <label class="goal-race-option"><input type="radio" name="goal-race" value="jtbc" /> JTBC 서울마라톤</label>
+            <label class="goal-race-option"><input type="radio" name="goal-race" value="other" /> 기타</label>
+          </div>
+          <input type="text" class="input" id="goal-race-note" maxlength="80" placeholder="기타 대회명 (80자)" hidden />
           <div class="field-label">풀 코스 목표 기록 *</div>
           <div class="time-row">
             <input type="number" id="goal-h" min="2" max="7" value="4" aria-label="목표 시간" /> 시간
             <input type="number" id="goal-m" min="0" max="59" value="30" aria-label="목표 분" /> 분
             <input type="number" id="goal-s" min="0" max="59" value="0" aria-label="목표 초" /> 초
           </div>
-          <p class="section-sub">춘천마라톤(또는 시즌 대회) 목표 완주 시간</p>
+          <p class="section-sub">선택한 대회의 목표 완주 시간</p>
           <div class="field-label">기존 풀 PB (선택)</div>
           <div class="time-row">
             <input type="number" id="pb-h" min="2" max="8" placeholder="4" aria-label="PB 시간" /> 시간

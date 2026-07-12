@@ -20,6 +20,25 @@ const {
 
 const GOAL_MIN_SEC = 7200;
 const GOAL_MAX_SEC = 25200;
+const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
+const GOAL_RACE_NOTE_MAX = 80;
+
+function parseGoalRace(body) {
+  const goalRace = String(body.goalRace || "").trim();
+  if (!GOAL_RACES.has(goalRace)) {
+    return { error: "goalRace must be chuncheon, jtbc, or other" };
+  }
+  const noteRaw = String(body.goalRaceNote || "").trim().slice(0, GOAL_RACE_NOTE_MAX);
+  const goalRaceNote = goalRace === "other" ? (noteRaw || null) : null;
+  return { goalRace, goalRaceNote };
+}
+
+function formatGoalRaceLabel(goalRace, goalRaceNote) {
+  if (goalRace === "chuncheon") return "춘천 마라톤";
+  if (goalRace === "jtbc") return "JTBC 서울마라톤";
+  if (goalRace === "other") return goalRaceNote ? `기타: ${goalRaceNote}` : "기타";
+  return null;
+}
 
 function emptyStats() {
   return {
@@ -93,6 +112,9 @@ function memberProfilePayload(memberId, data, s3, stats) {
     goalMarathonNetTime: s3.goalMarathonNetTime ?? null,
     existingPbNetTime: s3.existingPbNetTime ?? null,
     resolutionText: s3.resolutionText ?? null,
+    goalRace: s3.goalRace ?? null,
+    goalRaceNote: s3.goalRaceNote ?? null,
+    goalRaceLabel: formatGoalRaceLabel(s3.goalRace, s3.goalRaceNote),
     profileComplete: !!s3.profileComplete,
     stats: stats || emptyStats(),
   };
@@ -133,6 +155,11 @@ async function handleCreateProfile(req, res, db) {
   const goalMarathonNetTime = Number(body.goalMarathonNetTime);
   const existingPbNetTime = parseOptionalSeconds(body.existingPbNetTime);
   const resolutionText = String(body.resolutionText || "").trim().slice(0, 200) || null;
+  const goalRaceParsed = parseGoalRace(body);
+  if (goalRaceParsed.error) {
+    return res.status(400).json({ ok: false, error: goalRaceParsed.error });
+  }
+  const { goalRace, goalRaceNote } = goalRaceParsed;
 
   if (!memberId) {
     return res.status(400).json({ ok: false, error: "memberId required" });
@@ -158,9 +185,13 @@ async function handleCreateProfile(req, res, db) {
 
   const update = {
     "chunbaekS3.goalMarathonNetTime": goalMarathonNetTime,
+    "chunbaekS3.goalRace": goalRace,
     "chunbaekS3.profileComplete": true,
     "chunbaekS3.resolutionText": resolutionText,
   };
+  if (goalRaceNote) {
+    update["chunbaekS3.goalRaceNote"] = goalRaceNote;
+  }
   if (existingPbNetTime !== null) {
     update["chunbaekS3.existingPbNetTime"] = existingPbNetTime;
   }
@@ -347,6 +378,8 @@ async function handleTeamSummary(req, res, db) {
       nickname: p.data.nickname || "",
       goal: formatGoalTime(p.s3.goalMarathonNetTime),
       goalMarathonNetTime: p.s3.goalMarathonNetTime ?? null,
+      goalRace: p.s3.goalRace ?? null,
+      goalRaceLabel: formatGoalRaceLabel(p.s3.goalRace, p.s3.goalRaceNote),
       bar: rateBar(stats.seasonAttendRate),
       week: `${stats.weekAttendCount}/${stats.weekTarget}`,
       met: stats.weekTargetMet,
@@ -403,4 +436,4 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
 }
 
-module.exports = { handleChunbaekRequest };
+module.exports = { handleChunbaekRequest, formatGoalRaceLabel, parseGoalRace, GOAL_RACES };

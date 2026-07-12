@@ -331,6 +331,28 @@ body {
   margin-bottom: 6px;
   color: var(--text-muted);
 }
+.goal-race-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.goal-race-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.goal-race-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--chun-orange);
+}
+#goal-race-note {
+  margin-bottom: 16px;
+}
 
 /* ── 가이드 ── */
 .guide-item {
