@@ -220,6 +220,7 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
             content: slot.isProgramOff ? "" : slotTrainingContent(slot),
             status,
             photo: !!(att?.photoUrl),
+            note: att?.note || "",
           };
         }),
       };

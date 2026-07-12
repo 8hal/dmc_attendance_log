@@ -435,6 +435,18 @@
     document.getElementById("timeline-modal-meta").textContent = `${slot.dayIndex}일차`;
     const contentEl = document.getElementById("timeline-modal-content");
     contentEl.textContent = slot.content || "";
+    contentEl.style.display = slot.content ? "block" : "none";
+    const noteEl = document.getElementById("timeline-modal-note");
+    const note = (slot.note || "").trim();
+    if (noteEl) {
+      if (note) {
+        noteEl.textContent = `메모: ${note}`;
+        noteEl.hidden = false;
+      } else {
+        noteEl.textContent = "";
+        noteEl.hidden = true;
+      }
+    }
     document.getElementById("timeline-modal-status").textContent =
       slotStatusLabel(slot.status, slot.photo);
     const modal = document.getElementById("timeline-modal");
@@ -491,6 +503,7 @@
           ${slots.map((s, i) => {
             const title = s.title || s.label || "—";
             const content = s.content || "";
+            const note = (s.note || "").trim();
             const off = s.status === "off";
             return `
             <div class="slot-row ${s.status === "today" ? "today" : ""}${off ? " off-day" : ""}"
@@ -499,6 +512,7 @@
               <div class="slot-training">
                 <div class="slot-training-title">${escapeHtml(title)}</div>
                 <div class="slot-training-content">${escapeHtml(content)}</div>
+                ${note ? `<div class="slot-training-note">${escapeHtml(note)}</div>` : ""}
               </div>
               <span class="slot-status">${slotStatusIcon(s.status, s.photo)}</span>
             </div>`;

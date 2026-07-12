@@ -58,7 +58,7 @@ const MOCK = {
       attendSummary: "2/3회",
       dots: "●●○○○",
       slots: [
-        { dayIndex: 36, title: "5km 인터벌", content: "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km", status: "attend", photo: true },
+        { dayIndex: 36, title: "5km 인터벌", content: "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km", status: "attend", photo: true, note: "페이스 잘 나왔다" },
         { dayIndex: 37, title: "(휴무)", content: "", status: "off" },
         { dayIndex: 38, title: "장거리", content: "15km 이지, 페이스 6:00~6:15/km", status: "attend" },
         { dayIndex: 39, title: "인터벌", content: "6×800m", status: "miss" },
