@@ -855,6 +855,19 @@
       showView(v);
     });
 
+    const scenarioSelect = document.getElementById("demo-scenario");
+    if (scenarioSelect) {
+      const params = new URLSearchParams(location.search);
+      const currentScenario = params.get("scenario") || "beta-mon";
+      scenarioSelect.value = currentScenario;
+      scenarioSelect.addEventListener("change", async (e) => {
+        const next = new URLSearchParams(location.search);
+        next.set("preview", "1");
+        next.set("scenario", e.target.value);
+        location.search = next.toString();
+      });
+    }
+
     if (PREVIEW_MODE) {
       document.getElementById("preview-banner").style.display = "block";
       document.getElementById("demo-nav").style.display = "block";
@@ -865,8 +878,15 @@
     window.addEventListener("hashchange", () => { navigateFromHash(); });
 
     if (PREVIEW_MODE && !location.hash) {
-      /* 온보딩 플로우 확인용 — 첫 진입은 환영 화면 */
-      showView("welcome");
+      if (!getToken()) setToken("preview-token");
+      const params = new URLSearchParams(location.search);
+      if (params.get("scenario")) {
+        showView("today");
+        await loadToday();
+      } else {
+        /* 온보딩 플로우 확인용 — 첫 진입은 환영 화면 */
+        showView("welcome");
+      }
     } else {
       await navigateFromHash();
     }
