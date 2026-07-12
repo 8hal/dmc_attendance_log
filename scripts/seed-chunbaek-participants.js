@@ -133,7 +133,7 @@ const db = getFirestore();
       if (!m.wasParticipant && !m.profileComplete) {
         update["chunbaekS3.profileComplete"] = false;
       }
-      batch.set(db.collection("members").doc(m.memberId), update, { merge: true });
+      batch.update(db.collection("members").doc(m.memberId), update);
     });
     await batch.commit();
   }
