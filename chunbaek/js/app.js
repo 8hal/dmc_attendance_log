@@ -238,8 +238,7 @@
     const weekEl = document.getElementById("week-bar");
     const weekCount = s.weekAttendCount || 0;
     const weekTarget = s.weekTarget || 3;
-    const weekPrefix = s.inBetaWeek ? "베타 " : "";
-    document.getElementById("week-bar-count").textContent = `${weekPrefix}${weekCount} / ${weekTarget}회`;
+    document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
     weekEl.classList.toggle("met", weekTarget > 0 && weekCount >= weekTarget);
   }
 
@@ -331,8 +330,7 @@
       }
 
       setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
-      document.getElementById("before-season-eyebrow").textContent =
-        slotRes.betaWeek ? "베타 체험" : "100일 준비";
+      document.getElementById("before-season-eyebrow").textContent = "100일 준비";
 
       if (sl.isProgramOff) {
         setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: true });
@@ -341,9 +339,8 @@
 
       const d = new Date(sl.date + "T12:00:00");
       const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-      const dayLabel = sl.isBeta || sl.week === 0
-        ? `베타 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`
-        : `${sl.dayIndex}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
+      const dayNum = sl.displayDayIndex ?? sl.dayIndex;
+      const dayLabel = `${dayNum}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
       document.getElementById("today-day").textContent = dayLabel;
       document.getElementById("today-training").textContent =
         "📋 " + (sl.trainingTitle || sl.trainingLabel || "훈련 내용 준비 중");
@@ -398,9 +395,8 @@
         attended: true,
         note: document.getElementById("note-input").value || "",
       }, true);
-      showToast(sl.isBeta || sl.week === 0
-        ? "베타 출석 완료 (본시즌 집계 제외)"
-        : `${state.todaySlot.dayIndex}일차 출석 완료`);
+      const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
+      showToast(`${dayNum}일차 출석 완료`);
       await loadToday();
     } catch (e) {
       showToast(e.message, true);
@@ -439,9 +435,7 @@
     const title = slot.title || slot.label || "—";
     document.getElementById("timeline-modal-title").textContent = title;
     document.getElementById("timeline-modal-meta").textContent =
-      slot.isBeta || slot.week === 0
-        ? `베타 · ${(slot.date || "").slice(5).replace("-", "월 ")}일`
-        : `${slot.dayIndex}일차`;
+      `${slot.displayDayIndex ?? slot.dayIndex}일차 · ${(slot.date || "").slice(5).replace("-", "월 ")}일`;
     const contentEl = document.getElementById("timeline-modal-content");
     contentEl.textContent = slot.content || "";
     contentEl.style.display = slot.content ? "block" : "none";
@@ -517,7 +511,7 @@
             return `
             <div class="slot-row ${s.status === "today" ? "today" : ""}${off ? " off-day" : ""}"
                  data-week="${w.week}" data-slot-index="${i}" role="button" tabindex="0">
-              <span class="slot-day">${s.dayIndex}일</span>
+              <span class="slot-day">${s.displayDayIndex ?? s.dayIndex}일</span>
               <div class="slot-training">
                 <div class="slot-training-title">${escapeHtml(title)}</div>
                 <div class="slot-training-content">${escapeHtml(content)}</div>

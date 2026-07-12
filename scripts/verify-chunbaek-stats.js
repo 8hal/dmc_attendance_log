@@ -59,11 +59,24 @@ const betaStats = computeMemberStats({
   config,
   today: "2026-07-15",
 });
-assert.equal(betaStats.seasonAttendCount, 0);
-assert.equal(betaStats.seasonDayIndex, 0);
+assert.equal(betaStats.seasonAttendCount, 1);
+assert.equal(betaStats.seasonDayIndex, 3);
 assert.equal(betaStats.weekAttendCount, 1);
 assert.equal(betaStats.inBetaWeek, true);
 assert.equal(betaStats.weekTargetMet, false);
+assert.equal(betaStats.seasonAttendRate, 33);
+
+const betaStatsMet = computeMemberStats({
+  slots,
+  attendanceMap: {
+    901: { slotId: 901, attended: true },
+    902: { slotId: 902, attended: true },
+    903: { slotId: 903, attended: true },
+  },
+  config,
+  today: "2026-07-15",
+});
+assert.equal(betaStatsMet.weekTargetMet, true);
 
 const seasonStats = computeMemberStats({
   slots,
@@ -77,7 +90,8 @@ assert.equal(seasonStats.inBetaWeek, false);
 const timelineBeta = buildTimelineWeeks(slots, attendanceMap, config, "2026-07-15");
 assert.equal(timelineBeta.length, 1);
 assert.equal(timelineBeta[0].week, 0);
-assert.equal(timelineBeta[0].weekLabel, "0주차 (베타)");
+assert.equal(timelineBeta[0].weekLabel, "0주차");
+assert.equal(timelineBeta[0].attendSummary, "1/3회");
 
 const timelineSeason = buildTimelineWeeks(slots, attendanceMap, config, "2026-07-21");
 assert.ok(timelineSeason.every((w) => w.week > 0));

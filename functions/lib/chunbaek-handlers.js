@@ -20,8 +20,6 @@ const {
   isDateInBetaWeek,
   seasonSlotsOnly,
   seasonBounds,
-  findWeekForDate,
-  BETA_WEEK,
 } = require("./chunbaek-stats");
 
 const GOAL_MIN_SEC = 7200;
@@ -391,7 +389,7 @@ async function handleTeamSummary(req, res, db) {
       ? computeMemberStats({ slots, attendanceMap, config, today })
       : emptyStats();
     rateSum += stats.seasonAttendRate;
-    if (stats.weekTargetMet && findWeekForDate(slots, today) !== BETA_WEEK) weekMetCount += 1;
+    if (stats.weekTargetMet) weekMetCount += 1;
     members.push({
       memberId: p.memberId,
       nickname: p.data.nickname || "",

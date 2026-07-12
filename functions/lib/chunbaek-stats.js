@@ -29,6 +29,20 @@ function seasonSlotsOnly(slots) {
   return slots.filter(isSeasonSlot);
 }
 
+function displayDayIndex(slot) {
+  if (isBetaSlot(slot)) return slot.dayIndex - BETA_DAY_INDEX_BASE + 1;
+  return slot.dayIndex;
+}
+
+/** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
+function statsSlotsForToday(slots, today) {
+  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  if (seasonStart && today < seasonStart) {
+    return slots.filter(isBetaSlot);
+  }
+  return seasonSlotsOnly(slots);
+}
+
 function betaWeekBoundsFromConfig(config = {}) {
   if (config.betaWeekStartDate && config.betaWeekEndDate) {
     return {
@@ -170,20 +184,21 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
 function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
-  const seasonOnly = seasonSlotsOnly(slots);
+  const statsSlots = statsSlotsForToday(slots, todayDate);
   const currentWeek = findWeekForDate(slots, todayDate);
   const inBetaWeek = currentWeek === BETA_WEEK && isDateInBetaWeek(config, slots, todayDate);
 
   let seasonDayIndex = 0;
-  for (const slot of seasonOnly) {
-    if (slot.date <= todayDate && slot.dayIndex > seasonDayIndex) {
-      seasonDayIndex = slot.dayIndex;
+  for (const slot of statsSlots) {
+    if (slot.date <= todayDate) {
+      const di = displayDayIndex(slot);
+      if (di > seasonDayIndex) seasonDayIndex = di;
     }
   }
 
   let seasonAttendCount = 0;
   let seasonDenom = 0;
-  for (const slot of seasonOnly) {
+  for (const slot of statsSlots) {
     if (slot.date > todayDate) continue;
     if (slot.isProgramOff) continue;
     const att = getAttendance(attendanceMap, slot);
@@ -210,7 +225,7 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonAttendRate,
     weekAttendCount: weekStats.weekAttendCount,
     weekTarget: weekStats.weekTarget,
-    weekTargetMet: inBetaWeek ? false : weekStats.weekTargetMet,
+    weekTargetMet: weekStats.weekTargetMet,
     inBetaWeek,
     currentWeek,
   };
@@ -262,7 +277,7 @@ function weekDots(slots, attendanceMap, week, today) {
 }
 
 function weekLabel(week) {
-  return week === BETA_WEEK ? "0주차 (베타)" : `${week}주차`;
+  return week === BETA_WEEK ? "0주차" : `${week}주차`;
 }
 
 function buildTimelineWeeks(slots, attendanceMap, config, today) {
@@ -297,9 +312,7 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
         week,
         weekLabel: weekLabel(week),
         range: formatIsoRange(dates[0], dates[dates.length - 1]),
-        attendSummary: week === BETA_WEEK
-          ? `${attendCount}회 (베타·집계 제외)`
-          : `${attendCount}/${target}회`,
+        attendSummary: `${attendCount}/${target}회`,
         dots: weekDots(slots, attendanceMap, week, today),
         collapsed: week < currentWeek,
         slots: weekSlots.map((slot) => {
@@ -308,6 +321,7 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
           return {
             slotId: slot.dayIndex ?? Number(slot.id),
             dayIndex: slot.dayIndex,
+            displayDayIndex: displayDayIndex(slot),
             date: slot.date,
             title: slot.isProgramOff ? "(휴무)" : (slotTrainingTitle(slot) || "—"),
             content: slot.isProgramOff ? "" : slotTrainingContent(slot),
@@ -357,6 +371,7 @@ function slotPayloadFromSlot(slot, attendanceMap) {
   return {
     slotId: slot.dayIndex ?? Number(slot.id),
     dayIndex: slot.dayIndex,
+    displayDayIndex: displayDayIndex(slot),
     date: slot.date,
     week: slot.week,
     trainingTitle: slotTrainingTitle(slot),
@@ -422,6 +437,8 @@ module.exports = {
   isBetaSlot,
   isSeasonSlot,
   seasonSlotsOnly,
+  displayDayIndex,
+  statsSlotsForToday,
   betaWeekBounds,
   betaWeekBoundsFromConfig,
   isDateInBetaWeek,

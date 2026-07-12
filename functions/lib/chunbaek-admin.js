@@ -613,7 +613,7 @@ async function handleAdminSaveWeekSlots(req, res, db) {
   const trainingDayCount = weekTrainingDayCount(weekSlots);
   const warnings = week === BETA_WEEK || trainingDayCount < 3
     ? (week === BETA_WEEK
-      ? ["0주차(베타) — 시즌 집계에 포함되지 않습니다"]
+      ? ["0주차(베타) — 본시즌 시작 전 체험 주차 (1주차 전 DB 초기화 예정)"]
       : [`훈련일 ${trainingDayCount}일 — 주 3회 목표 불가 (자동 cap=min(3,${trainingDayCount}))`])
     : [];
 
