@@ -178,6 +178,7 @@
         resolutionText: resolutionText || null,
       });
       setToken(data.token);
+      state.profile = { ...state.profile, resolutionText: resolutionText || null };
       showView("guide");
     } catch (e) {
       showToast(e.message, true);
