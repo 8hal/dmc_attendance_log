@@ -224,8 +224,11 @@
         btn.disabled = false;
       }
 
-      document.getElementById("week-bar").textContent =
-        `이번 주  ${s.weekAttendCount || 0} / ${s.weekTarget || 3}회 출석`;
+      const weekEl = document.getElementById("week-bar");
+      const weekCount = s.weekAttendCount || 0;
+      const weekTarget = s.weekTarget || 3;
+      document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
+      weekEl.classList.toggle("met", weekCount >= weekTarget);
     } catch (e) {
       if (PREVIEW_MODE) renderTodayPreview();
       else showToast(e.message, true);
@@ -233,13 +236,17 @@
   }
 
   function renderTodayPreview() {
+    const p = MOCK.profile;
     const s = MOCK.profile.stats;
+    document.getElementById("hdr-nickname").textContent = `${p.nickname}님`;
     document.getElementById("hdr-day").textContent = `${s.seasonDayIndex}일차 / 100일`;
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount}회 · 출석률 ${s.seasonAttendRate}%`;
     document.getElementById("today-day").textContent = "42일차 · 4월 15일 (화)";
     document.getElementById("today-training").textContent = "📋 5km 인터벌 + 코어 20분";
-    document.getElementById("week-bar").textContent = `이번 주  ${s.weekAttendCount} / ${s.weekTarget}회 출석`;
+    const weekEl = document.getElementById("week-bar");
+    document.getElementById("week-bar-count").textContent = `${s.weekAttendCount} / ${s.weekTarget}회`;
+    weekEl.classList.toggle("met", s.weekAttendCount >= s.weekTarget);
   }
 
   async function onAttend() {

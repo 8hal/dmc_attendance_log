@@ -126,7 +126,10 @@
             <span>메모 (선택)</span>
           </div>
           <input type="text" class="input" id="note-input" placeholder="오늘 한 줄 메모" />
-          <div class="week-bar" id="week-bar">이번 주  2 / 3회 출석</div>
+          <div class="week-summary" id="week-bar" aria-label="이번 주 출석 현황">
+            <span class="week-summary-label">이번 주 출석</span>
+            <span class="week-summary-count" id="week-bar-count">2 / 3회</span>
+          </div>
         </div>
         <button type="button" class="btn btn-ghost" id="btn-switch-user" style="margin-top:24px">다른 사람으로</button>
       </section>

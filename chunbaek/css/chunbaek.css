@@ -399,14 +399,28 @@ body {
   border: 2px solid #6ee7b7 !important;
 }
 
-.week-bar {
-  background: var(--chun-black);
-  color: var(--chun-cyan);
+.week-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--border-light);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px;
-  text-align: center;
+  padding: 12px 14px;
   font-size: 14px;
-  font-weight: 700;
+  margin-top: 4px;
+}
+.week-summary-label {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.week-summary-count {
+  font-weight: 800;
+  color: var(--chun-orange);
+}
+.week-summary.met .week-summary-count {
+  color: var(--green);
 }
 
 .optional-row {
@@ -419,7 +433,7 @@ body {
   color: var(--text-muted);
 }
 
-/* ── 하단 탭 ── */
+/* ── 하단 탭 (흰 배경 — 검정 바는 본문·베젤과 구분이 어려움) ── */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -428,8 +442,9 @@ body {
   width: 100%;
   max-width: 480px;
   display: none;
-  background: var(--chun-black);
+  background: var(--chun-white);
   border-top: 2px solid var(--chun-orange);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   z-index: 100;
 }
@@ -445,12 +460,12 @@ body {
   border: none;
   background: none;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   cursor: pointer;
   font-family: var(--font-body);
 }
 .tab-btn.active {
-  color: var(--chun-cyan);
+  color: var(--chun-orange);
   font-weight: 700;
 }
 .tab-icon { font-size: 20px; }
