@@ -57,6 +57,12 @@ body {
   background: var(--chun-black);
   color: var(--chun-white);
   flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.brand-bar:focus-visible {
+  outline: 2px solid var(--chun-cyan);
+  outline-offset: -2px;
 }
 .brand-bar-mark { font-size: 18px; }
 .brand-bar-title {

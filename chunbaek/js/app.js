@@ -286,7 +286,23 @@
     `;
   }
 
+  function goHome() {
+    if (getToken()) {
+      showView("today");
+    } else {
+      showView("welcome");
+    }
+  }
+
   function init() {
+    document.getElementById("brand-bar").addEventListener("click", goHome);
+    document.getElementById("brand-bar").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        goHome();
+      }
+    });
+
     document.getElementById("roster-search").addEventListener("input", (e) => {
       const q = e.target.value.trim().toLowerCase();
       document.querySelectorAll(".roster-item").forEach((item) => {
