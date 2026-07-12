@@ -575,25 +575,41 @@ body {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.error { border-left-color: var(--chun-orange); background: var(--chun-orange-dark); }
 
-/* ── 데모 네비 (스켈레톤용) ── */
+.welcome-hero .preview-hint {
+  margin-top: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 280px;
+}
+.welcome-hero .preview-hint strong {
+  color: var(--chun-cyan);
+}
+
+/* ── 데모 네비 (목업 공유용) ── */
 .demo-nav {
   position: fixed;
   top: 0;
   right: 0;
   z-index: 300;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.92);
   color: var(--chun-cyan);
-  font-size: 11px;
-  padding: 8px;
-  border-radius: 0 0 0 8px;
-  max-width: 140px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: 0 0 0 10px;
+  width: min(148px, 38vw);
   border-bottom: 2px solid var(--chun-orange);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 .demo-nav select {
   width: 100%;
-  font-size: 11px;
-  margin-top: 4px;
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 6px 4px;
   background: var(--chun-black);
   color: var(--chun-white);
   border: 1px solid var(--chun-cyan);
+  border-radius: 6px;
 }

@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ff3214" />
+  <meta name="description" content="춘백 시즌3 100일 출석 — 동마클 춘천마라톤 준비방" />
+  <meta property="og:title" content="춘백 S3 — 100일 출석 (목업)" />
+  <meta property="og:description" content="100일 출석 앱 화면 미리보기입니다. 가상 데이터로 동작합니다." />
+  <meta property="og:type" content="website" />
   <title>춘백 S3 — 100일 출석</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,8 +16,8 @@
 </head>
 <body>
   <div class="demo-nav" id="demo-nav" style="display:none">
-    <div>🛠 스켈레톤 데모</div>
-    <select id="demo-screen">
+    <div>화면 전환</div>
+    <select id="demo-screen" aria-label="미리보기 화면 선택">
       <option value="welcome">① 환영</option>
       <option value="pick">② 명단</option>
       <option value="profile">③ 프로필</option>
@@ -33,7 +37,7 @@
     </header>
 
     <div class="preview-banner" id="preview-banner" style="display:none">
-      미리보기·로컬 — 목업 명단 (API 없어도 동작)
+      목업 미리보기 · 가상 데이터 (실제 출석 기록 아님)
     </div>
 
     <main class="main">
@@ -48,6 +52,9 @@
           매일 출석으로 100일을 채워 나가요.
         </p>
         <button type="button" class="btn btn-primary" id="btn-start" style="max-width:280px">시작하기</button>
+        <p class="preview-hint" id="preview-hint" hidden>
+          우측 상단 <strong>화면 전환</strong>에서 온보딩·홈·팀 등 8개 화면을 바로 볼 수 있어요.
+        </p>
       </section>
 
       <!-- ② 명단 (DMC members API — chunbaekS3.participant) -->

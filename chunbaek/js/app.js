@@ -272,7 +272,14 @@
 
   function renderTimeline() {
     const container = document.getElementById("timeline-weeks");
-    const weeks = MOCK.timeline;
+    container.innerHTML = '<p class="section-sub">불러오는 중…</p>';
+    apiGet("my-timeline", {}, true)
+      .then((data) => paintTimeline(data.weeks || MOCK.timeline))
+      .catch(() => paintTimeline(MOCK.timeline));
+  }
+
+  function paintTimeline(weeks) {
+    const container = document.getElementById("timeline-weeks");
     container.innerHTML = weeks.map((w) => `
       <div class="week-block">
         <div class="week-header" data-week="${w.week}">
@@ -299,12 +306,21 @@
   }
 
   function renderTeam() {
-    const t = MOCK.team;
+    const summaryEl = document.getElementById("team-summary");
+    const listEl = document.getElementById("team-list");
+    summaryEl.innerHTML = '<p class="section-sub">불러오는 중…</p>';
+    listEl.innerHTML = "";
+    apiGet("team-summary", {}, true)
+      .then((data) => paintTeam(data))
+      .catch(() => paintTeam(MOCK.team));
+  }
+
+  function paintTeam(t) {
     document.getElementById("team-summary").innerHTML = `
       <div>시즌 출석률 <strong>${t.seasonRate}%</strong> (팀 평균)</div>
       <div>이번 주 3회 달성 <strong>${t.weekMetCount}/${t.participantCount}명</strong></div>
     `;
-    document.getElementById("team-list").innerHTML = t.members.map((m) => `
+    document.getElementById("team-list").innerHTML = (t.members || []).map((m) => `
       <div class="team-row">
         <div>
           <strong>${m.nickname}</strong>
@@ -376,6 +392,8 @@
     if (PREVIEW_MODE) {
       document.getElementById("preview-banner").style.display = "block";
       document.getElementById("demo-nav").style.display = "block";
+      const hint = document.getElementById("preview-hint");
+      if (hint) hint.hidden = false;
     }
 
     window.addEventListener("hashchange", navigateFromHash);
