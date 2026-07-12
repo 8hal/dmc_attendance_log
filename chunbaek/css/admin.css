@@ -464,21 +464,129 @@ body.admin-body {
 }
 
 @media (max-width: 768px) {
+  .admin-topbar {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+  }
+  .admin-topbar-title { font-size: 16px; }
+  .admin-topbar-meta {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  .admin-mobile-hint {
+    display: block;
+    background: var(--yellow-light);
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #fcd34d;
+  }
+  .admin-mobile-hint strong { color: var(--chun-orange); }
+
+  .admin-main {
+    padding: 12px 12px 24px;
+  }
+
+  .admin-toolbar {
+    gap: 8px;
+  }
+  .admin-toolbar h2 { font-size: 17px; }
+  .admin-toolbar-spacer { display: none; }
+  .admin-chip { font-size: 11px; padding: 5px 10px; }
+
   .admin-layout { flex-direction: column; }
   .admin-sidebar {
     width: 100%;
     flex-direction: row;
     overflow-x: auto;
     padding: 8px;
+    -webkit-overflow-scrolling: touch;
   }
+  .admin-sidebar-foot { display: none; }
   .admin-nav-btn {
     border-left: none;
     border-bottom: 3px solid transparent;
     white-space: nowrap;
     padding: 10px 14px;
+    font-size: 13px;
   }
   .admin-nav-btn.active { border-bottom-color: var(--chun-orange); }
+
+  .grid-wrap {
+    margin: 0 -4px;
+    border-radius: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-grid {
+    font-size: 11px;
+  }
+  .admin-grid th,
+  .admin-grid td {
+    padding: 10px 8px;
+    min-width: 48px;
+    min-height: 44px;
+  }
+  .admin-grid td.member-cell {
+    min-width: 72px;
+    font-size: 11px;
+  }
+  .admin-grid th.slot-head {
+    min-width: 44px;
+    font-size: 10px;
+  }
+
   .training-card {
     grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+  .training-off-toggle { padding-top: 0; }
+  .training-fields input,
+  .training-fields textarea {
+    font-size: 16px; /* iOS 줌 방지 */
+  }
+
+  .admin-demo-nav {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
+    border-top: 2px solid var(--chun-orange);
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .modal-backdrop.show {
+    align-items: flex-end;
+  }
+  .modal-card {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .modal-actions button {
+    min-height: 48px;
+  }
+
+  .auth-card {
+    margin: 16px;
+  }
+}
+
+.admin-mobile-hint {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .admin-demo-nav {
+    top: 0;
+    bottom: auto;
   }
 }

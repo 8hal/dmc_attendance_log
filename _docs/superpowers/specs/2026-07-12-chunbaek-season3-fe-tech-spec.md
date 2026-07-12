@@ -39,6 +39,8 @@ chunbaek/admin.html (Task 11 — 목업)
 
 **운영진 목업:** `/chunbaek/admin.html?preview=1` — API 없이 가상 그리드·훈련 입력
 
+**레이아웃:** PC가 주 사용 환경. 모바일(≤768px)은 가로 스크롤 그리드·간이 보기(출석 셀 터치·하단 모달). 훈련 대량 입력은 PC 권장.
+
 **라우팅:** hash — `#/welcome`, `#/pick`, `#/profile`, `#/guide`, `#/today`, `#/timeline`, `#/team`, `#/me`
 
 **인증 저장:** `localStorage.chunbaekSessionToken` (opaque token, C1)

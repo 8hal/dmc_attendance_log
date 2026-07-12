@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 FB="npx --yes firebase-tools@13.29.1"
 PROJECT="dmc-attendance"
 
-echo "=== 춘백 목업 갤러리 배포 ==="
+echo "=== 춘백 목업 Hosting 배포 (갤러리 + admin) ==="
 echo "경로: $(pwd)"
 echo ""
 
@@ -15,7 +15,7 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-for f in firebase.json chunbaek/gallery.html chunbaek/screenshots/01-welcome.png; do
+for f in firebase.json chunbaek/gallery.html chunbaek/admin.html chunbaek/screenshots/01-welcome.png; do
   if [[ ! -f "$f" ]]; then
     echo "❌ 필수 파일 없음: $f"
     exit 1
@@ -41,5 +41,6 @@ echo ""
 echo "✅ 배포 완료"
 echo ""
 echo "확인 링크:"
-echo "  갤러리: https://dmc-attendance.web.app/chunbaek/gallery.html"
-echo "  목업:   https://dmc-attendance.web.app/chunbaek/?preview=1"
+echo "  갤러리:  https://dmc-attendance.web.app/chunbaek/gallery.html"
+echo "  회원:    https://dmc-attendance.web.app/chunbaek/?preview=1"
+echo "  운영진:  https://dmc-attendance.web.app/chunbaek/admin.html?preview=1"
