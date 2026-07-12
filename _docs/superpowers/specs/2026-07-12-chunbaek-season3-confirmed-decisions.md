@@ -210,7 +210,7 @@ chunbaekS3: {
 | 구성 | 프로덕션 |
 |------|----------|
 | Hosting (`chunbaek/`) | ✅ 배포됨 |
-| Hosting (`chunbaek/admin.html` 목업) | △ 커밋 후 배포 가능 |
+| Hosting (`chunbaek/admin.html` 목업) | ✅ 배포됨 (2026-07-12) |
 | Functions (`chunbaek`) | ❌ **미배포** |
 | Firestore 시드 (40명·슬롯) | ❌ 미적용 |
 
