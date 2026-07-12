@@ -146,16 +146,20 @@
   async function onCreateProfile() {
     const h = parseInt(document.getElementById("goal-h").value, 10) || 0;
     const m = parseInt(document.getElementById("goal-m").value, 10) || 0;
+    const s = parseInt(document.getElementById("goal-s").value, 10) || 0;
     const pbH = parseInt(document.getElementById("pb-h").value, 10);
     const pbM = parseInt(document.getElementById("pb-m").value, 10);
-    if (h < 2 || h > 7 || m < 0 || m > 59) {
-      showToast("목표 기록을 2~7시간 범위로 입력해 주세요", true);
+    const pbS = parseInt(document.getElementById("pb-s").value, 10);
+    if (h < 2 || h > 7 || m < 0 || m > 59 || s < 0 || s > 59) {
+      showToast("목표 기록을 2:00:00 ~ 7:00:00 범위로 입력해 주세요", true);
       return;
     }
-    const goalMarathonNetTime = h * 3600 + m * 60;
+    const goalMarathonNetTime = h * 3600 + m * 60 + s;
     let existingPbNetTime = null;
     if (!Number.isNaN(pbH) && pbH > 0) {
-      existingPbNetTime = pbH * 3600 + (pbM || 0) * 60;
+      const pm = Number.isNaN(pbM) ? 0 : pbM;
+      const ps = Number.isNaN(pbS) ? 0 : pbS;
+      existingPbNetTime = pbH * 3600 + pm * 60 + ps;
     }
     try {
       const data = await apiPost("create-profile", {

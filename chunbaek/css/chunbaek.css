@@ -300,12 +300,13 @@ body {
 .time-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   margin-bottom: 16px;
 }
 .time-row input {
-  width: 64px;
-  padding: 10px;
+  width: 52px;
+  padding: 10px 6px;
   text-align: center;
   border: 1.5px solid var(--border);
   border-radius: 8px;
