@@ -103,8 +103,8 @@ const db = getFirestore();
     raceName: "2026 JTBC 서울마라톤",
     raceDate: "2026-11-01",
     races: [
-      { name: "춘천 마라톤", date: "2026-10-25", dayIndex: 98, role: "mid-season" },
-      { name: "2026 JTBC 서울마라톤", date: "2026-11-01", dayIndex: null, role: "goal" },
+      { name: "춘천 마라톤", date: "2026-10-25", dayIndex: 98, role: "mid-season", note: "참가자 일부 개인 목표" },
+      { name: "2026 JTBC 서울마라톤", date: "2026-11-01", dayIndex: null, role: "goal", note: "참가자 일부 개인 목표" },
     ],
     departureCeremonyDate: "2026-07-16",
     startDate,
