@@ -195,6 +195,7 @@
       state.todaySlot = slot.slot || slot;
 
       const s = prof.stats || {};
+      document.getElementById("hdr-nickname").textContent = `${prof.nickname || "—"}님`;
       document.getElementById("hdr-day").textContent = `${s.seasonDayIndex || 42}일차 / 100일`;
       document.getElementById("hdr-attend").textContent =
         `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%`;
