@@ -68,6 +68,15 @@ async function apiPost(action, body, token) {
   assert.equal(noAdminPw.status, 401);
   assert.equal(noAdminPw.data.error, "adminPw required");
 
+  const week0 = await apiGet("admin-week-slots", { week: 0, adminPw: ADMIN_PW });
+  assert.equal(week0.status, 200);
+  assert.equal(week0.data.ok, true);
+  assert.ok(week0.data.slots.length >= 1);
+
+  const grid0 = await apiGet("admin-grid", { week: 0, adminPw: ADMIN_PW });
+  assert.equal(grid0.status, 200);
+  assert.equal(grid0.data.ok, true);
+
   const grid = await apiGet("admin-grid", { week: 1, adminPw: ADMIN_PW });
   assert.equal(grid.status, 200);
   assert.equal(grid.data.ok, true);

@@ -62,17 +62,24 @@ const SLOTS = [
   await db.collection("chunbaek_season_config").doc("chunbaek-s3").set({
     seasonId: "chunbaek-s3",
     title: "춘백 시즌3",
-    startDate: "2026-04-01",
-    endDate: "2026-07-09",
+    startDate: "2026-07-20",
+    endDate: "2026-10-27",
+    betaWeekStartDate: "2026-07-13",
+    betaWeekEndDate: "2026-07-19",
     weeklyTarget: 3,
     photoRequired: false,
   }, { merge: true });
 
-  for (const slot of SLOTS) {
+  const BETA = [
+    { dayIndex: 901, date: "2026-07-13", week: 0, trainingTitle: "베타 D1", trainingContent: "", isProgramOff: false },
+    { dayIndex: 902, date: "2026-07-14", week: 0, trainingTitle: "베타 D2", trainingContent: "", isProgramOff: false },
+  ];
+
+  for (const slot of [...SLOTS, ...BETA]) {
     await db.collection("chunbaek_slots").doc(String(slot.dayIndex)).set(slot, { merge: true });
   }
 
-  console.log("[seed-emulator-chunbaek] members 2, slots 7, season_config OK");
+  console.log("[seed-emulator-chunbaek] members 2, slots 9 (incl. 0주차 2), season_config OK");
   process.exit(0);
 })().catch((e) => {
   console.error(e);

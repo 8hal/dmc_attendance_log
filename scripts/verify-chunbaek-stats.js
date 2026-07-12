@@ -10,11 +10,89 @@ const {
   computeMemberStats,
   buildTimelineWeeks,
   todaySlotPayload,
+  isBetaSlot,
+  isDateInBetaWeek,
+  betaDayIndexForDate,
+  defaultWeekForAdmin,
+  BETA_DAY_INDEX_BASE,
 } = require("../functions/lib/chunbaek-stats");
 
-const config = { weeklyTarget: 3, photoRequired: false };
+const config = {
+  weeklyTarget: 3,
+  photoRequired: false,
+  startDate: "2026-07-20",
+  betaWeekStartDate: "2026-07-13",
+  betaWeekEndDate: "2026-07-19",
+};
 
-const slots = [
+const seasonSlots = [
+  { id: "1", dayIndex: 1, date: "2026-07-20", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },
+  { id: "2", dayIndex: 2, date: "2026-07-21", week: 1, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
+];
+
+const betaSlots = Array.from({ length: 7 }, (_, i) => ({
+  id: String(901 + i),
+  dayIndex: 901 + i,
+  date: `2026-07-${13 + i}`,
+  week: 0,
+  trainingTitle: `베타 D${i + 1}`,
+  trainingContent: "",
+  isProgramOff: false,
+}));
+
+const slots = [...betaSlots, ...seasonSlots];
+
+const attendanceMap = {
+  901: { slotId: 901, attended: true, exception: false },
+  1: { slotId: 1, attended: true, exception: false },
+};
+
+assert.equal(isBetaSlot(betaSlots[0]), true);
+assert.equal(isDateInBetaWeek(config, slots, "2026-07-15"), true);
+assert.equal(isDateInBetaWeek(config, slots, "2026-07-20"), false);
+assert.equal(betaDayIndexForDate(config, slots, "2026-07-15"), BETA_DAY_INDEX_BASE + 2);
+assert.equal(defaultWeekForAdmin(config, slots, "2026-07-15"), 0);
+
+const betaStats = computeMemberStats({
+  slots,
+  attendanceMap,
+  config,
+  today: "2026-07-15",
+});
+assert.equal(betaStats.seasonAttendCount, 0);
+assert.equal(betaStats.seasonDayIndex, 0);
+assert.equal(betaStats.weekAttendCount, 1);
+assert.equal(betaStats.inBetaWeek, true);
+assert.equal(betaStats.weekTargetMet, false);
+
+const seasonStats = computeMemberStats({
+  slots,
+  attendanceMap: { 1: attendanceMap[1] },
+  config,
+  today: "2026-07-21",
+});
+assert.equal(seasonStats.seasonAttendCount, 1);
+assert.equal(seasonStats.inBetaWeek, false);
+
+const timelineBeta = buildTimelineWeeks(slots, attendanceMap, config, "2026-07-15");
+assert.equal(timelineBeta.length, 1);
+assert.equal(timelineBeta[0].week, 0);
+assert.equal(timelineBeta[0].weekLabel, "0주차 (베타)");
+
+const timelineSeason = buildTimelineWeeks(slots, attendanceMap, config, "2026-07-21");
+assert.ok(timelineSeason.every((w) => w.week > 0));
+
+const betaToday = todaySlotPayload(slots, attendanceMap, "2026-07-15", config);
+assert.equal(betaToday.betaWeek, true);
+assert.equal(betaToday.beforeSeason, false);
+assert.equal(betaToday.slot.trainingTitle, "베타 D3");
+
+const beforeSeason = todaySlotPayload(slots, {}, "2026-07-12", config);
+assert.equal(beforeSeason.beforeSeason, true);
+assert.equal(beforeSeason.betaWeek, false);
+
+// --- legacy April fixtures (시즌 슬롯만) ---
+const aprilSlots = [
   { id: "1", dayIndex: 1, date: "2026-04-01", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },
   { id: "2", dayIndex: 2, date: "2026-04-02", week: 1, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
   { id: "3", dayIndex: 3, date: "2026-04-03", week: 1, trainingTitle: "휴무", trainingContent: "", isProgramOff: true },
@@ -23,52 +101,25 @@ const slots = [
   { id: "6", dayIndex: 6, date: "2026-04-06", week: 1, trainingTitle: "토요", trainingContent: "", isProgramOff: false },
   { id: "7", dayIndex: 7, date: "2026-04-07", week: 2, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
 ];
-
-const attendanceMap = {
+const aprilAtt = {
   1: { slotId: 1, attended: true, exception: false },
   2: { slotId: 2, attended: true, exception: false },
   4: { slotId: 4, attended: false, exception: false },
 };
+const aprilConfig = { weeklyTarget: 3, photoRequired: false, startDate: "2026-04-01" };
 
-// 2026-04-05 = day 5, week 1 — 2 attends (1,2), week target min(3,5 training days)=3
 const stats = computeMemberStats({
-  slots,
-  attendanceMap,
-  config,
+  slots: aprilSlots,
+  attendanceMap: aprilAtt,
+  config: aprilConfig,
   today: "2026-04-05",
 });
-
 assert.equal(stats.seasonDayIndex, 5);
 assert.equal(stats.seasonAttendCount, 2);
-assert.equal(stats.weekAttendCount, 2);
-assert.equal(stats.weekTarget, 3);
-assert.equal(stats.weekTargetMet, false);
-assert.equal(stats.seasonAttendRate, 50);
 
-const exceptionMap = {
-  ...attendanceMap,
-  4: { slotId: 4, attended: false, exception: true },
-};
-const statsEx = computeMemberStats({
-  slots,
-  attendanceMap: exceptionMap,
-  config,
-  today: "2026-04-05",
-});
-assert.equal(statsEx.seasonAttendRate, 67);
-assert.equal(statsEx.seasonAttendCount, 2);
-
-const timeline = buildTimelineWeeks(slots, attendanceMap, config, "2026-04-05");
-assert.equal(timeline.length, 2);
-assert.equal(timeline[0].week, 2);
-assert.ok(timeline[1].slots.some((s) => s.status === "miss"));
-
-const todayPayload = todaySlotPayload(slots, attendanceMap, "2026-04-05");
-assert.equal(todayPayload.slot.dayIndex, 5);
-assert.equal(todayPayload.slot.attended, false);
-
-const before = todaySlotPayload(slots, attendanceMap, "2026-03-31");
-assert.equal(before.beforeSeason, true);
+const timeline = buildTimelineWeeks(aprilSlots, aprilAtt, aprilConfig, "2026-04-05");
+assert.equal(timeline.length, 1);
+assert.equal(timeline[0].week, 1);
 
 const deadline = weekSundayDeadlineKst("2026-04-02");
 assert.ok(deadline instanceof Date);

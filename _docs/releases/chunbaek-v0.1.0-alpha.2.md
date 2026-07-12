@@ -43,8 +43,15 @@ alpha.1 FE가 Mac에 아직 안 올라갔다면, 이번 배포로 **알파 1 전
 ### 운영진 admin (`chunbaek/js/admin.js`)
 
 - 로그인 후 **오늘(KST) 날짜 기준 주차**가 출석 그리드·훈련 입력에 자동 선택
-- 시즌 시작 전(7/20 이전)에는 **1주차** 기본
-- 백엔드 `findWeekForDate`와 연동 (`week` 파라미터 생략 시 서버 기본값)
+- 시즌 시작 전(7/20 이전)에는 **0주차 (베타)** 기본
+- 백엔드 `defaultWeekForAdmin` · `findWeekForDate` 연동
+
+### 0주차 베타 (`week: 0`, dayIndex 901~907)
+
+- 기간 **7/13~7/19** — 본시즌 1주차와 **데이터·집계 분리**
+- 베타 기간 **출석 UX** 가능, **시즌 출석률·팀 weekMet 제외**
+- 시드: `node scripts/seed-chunbaek-week0.js` (dry-run → 승인 → 실행)
+- 스펙: `_docs/superpowers/specs/2026-07-12-chunbaek-week0-beta-design.md`
 
 ### 버전
 

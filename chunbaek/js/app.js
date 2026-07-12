@@ -238,7 +238,8 @@
     const weekEl = document.getElementById("week-bar");
     const weekCount = s.weekAttendCount || 0;
     const weekTarget = s.weekTarget || 3;
-    document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
+    const weekPrefix = s.inBetaWeek ? "베타 " : "";
+    document.getElementById("week-bar-count").textContent = `${weekPrefix}${weekCount} / ${weekTarget}회`;
     weekEl.classList.toggle("met", weekTarget > 0 && weekCount >= weekTarget);
   }
 
@@ -330,7 +331,8 @@
       }
 
       setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
-      document.getElementById("before-season-eyebrow").textContent = "100일 준비";
+      document.getElementById("before-season-eyebrow").textContent =
+        slotRes.betaWeek ? "베타 체험" : "100일 준비";
 
       if (sl.isProgramOff) {
         setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: true });
@@ -339,8 +341,10 @@
 
       const d = new Date(sl.date + "T12:00:00");
       const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-      document.getElementById("today-day").textContent =
-        `${sl.dayIndex}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
+      const dayLabel = sl.isBeta || sl.week === 0
+        ? `베타 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`
+        : `${sl.dayIndex}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
+      document.getElementById("today-day").textContent = dayLabel;
       document.getElementById("today-training").textContent =
         "📋 " + (sl.trainingTitle || sl.trainingLabel || "훈련 내용 준비 중");
       const detailEl = document.getElementById("today-training-detail");
@@ -394,7 +398,9 @@
         attended: true,
         note: document.getElementById("note-input").value || "",
       }, true);
-      showToast(`${state.todaySlot.dayIndex}일차 출석 완료`);
+      showToast(sl.isBeta || sl.week === 0
+        ? "베타 출석 완료 (본시즌 집계 제외)"
+        : `${state.todaySlot.dayIndex}일차 출석 완료`);
       await loadToday();
     } catch (e) {
       showToast(e.message, true);
@@ -432,7 +438,10 @@
   function openTrainingModal(slot) {
     const title = slot.title || slot.label || "—";
     document.getElementById("timeline-modal-title").textContent = title;
-    document.getElementById("timeline-modal-meta").textContent = `${slot.dayIndex}일차`;
+    document.getElementById("timeline-modal-meta").textContent =
+      slot.isBeta || slot.week === 0
+        ? `베타 · ${(slot.date || "").slice(5).replace("-", "월 ")}일`
+        : `${slot.dayIndex}일차`;
     const contentEl = document.getElementById("timeline-modal-content");
     contentEl.textContent = slot.content || "";
     contentEl.style.display = slot.content ? "block" : "none";
@@ -494,7 +503,7 @@
       <div class="week-block${collapsed ? " collapsed" : ""}" data-week="${w.week}">
         <div class="week-header">
           <span class="week-arrow">${collapsed ? "▶" : "▼"}</span>
-          <span>${w.week}주차</span>
+          <span>${w.weekLabel || `${w.week}주차`}</span>
           <span class="week-range">${w.range || ""}</span>
           <span class="week-dots">${w.dots || ""}</span>
           <span class="week-summary">${w.attendSummary || ""}</span>

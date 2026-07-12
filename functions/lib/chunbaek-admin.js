@@ -8,7 +8,7 @@ const {
   loadMemberAttendance,
   computeWeekStats,
   todayKstDate,
-  findWeekForDate,
+  defaultWeekForAdmin,
   formatIsoRange,
   getSlotKey,
   getAttendance,
@@ -16,6 +16,10 @@ const {
   slotTrainingTitle,
   slotTrainingContent,
   seasonBounds,
+  seasonSlotsOnly,
+  betaWeekBounds,
+  betaDayIndexForDate,
+  BETA_WEEK,
 } = require("./chunbaek-stats");
 
 const MS_PER_DAY = 86400000;
@@ -53,7 +57,7 @@ function parseWeekParam(value, defaultWeek) {
     return defaultWeek;
   }
   const week = Number(value);
-  if (!Number.isFinite(week) || week < 1) return null;
+  if (!Number.isFinite(week) || week < 0) return null;
   return Math.floor(week);
 }
 
@@ -126,7 +130,22 @@ function weekFilledCount(weekSlots) {
   }).length;
 }
 
-function buildEmptyWeekRows(config, week) {
+function buildEmptyWeekRows(config, week, slots = []) {
+  if (week === BETA_WEEK) {
+    const bounds = betaWeekBounds(config, slots);
+    if (!bounds) return [];
+    const dates = weekDatesFromStart(bounds.startDate, 1);
+    return dates.map((date, idx) => ({
+      slotId: null,
+      dayIndex: 901 + idx,
+      date,
+      week: BETA_WEEK,
+      trainingTitle: "",
+      trainingContent: "",
+      isProgramOff: false,
+      hasAttendance: false,
+    }));
+  }
   const startDate = config?.startDate;
   if (!startDate) return [];
   const dates = weekDatesFromStart(startDate, week);
@@ -174,7 +193,7 @@ function validateImportRow(row, seenDayIndex) {
   seenDayIndex.add(dayIndex);
   if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return "invalid date";
   const week = Number(row.week);
-  if (!Number.isFinite(week) || week < 1) return "invalid week";
+  if (!Number.isFinite(week) || week < 0) return "invalid week";
   if (typeof row.isProgramOff !== "boolean") return "isProgramOff required";
   const title = String(row.trainingTitle || "").slice(0, TITLE_MAX);
   const content = String(row.trainingContent || "").slice(0, CONTENT_MAX);
@@ -230,25 +249,32 @@ async function handleAdminGrid(req, res, db) {
     loadAllParticipants(db),
   ]);
   const today = todayKstDate();
-  const defaultWeek = findWeekForDate(slots, today);
+  const defaultWeek = defaultWeekForAdmin(config, slots, today);
   const week = parseWeekParam(req.query.week, defaultWeek);
   if (week === null) {
     return res.status(400).json({ ok: false, error: "invalid week" });
   }
 
   let weekSlotList = weekSlotsFromData(slots, week);
-  if (!weekSlotList.length && config.startDate) {
-    const dates = weekDatesFromStart(config.startDate, week);
-    weekSlotList = dates.map((date, idx) => ({
-      id: null,
-      dayIndex: null,
-      date,
-      week,
-      trainingTitle: "",
-      isProgramOff: false,
-      _placeholder: true,
-      _idx: idx,
-    }));
+  if (!weekSlotList.length && (config.startDate || week === BETA_WEEK)) {
+    if (week === BETA_WEEK) {
+      weekSlotList = buildEmptyWeekRows(config, week, slots).map((row) => ({
+        ...row,
+        _placeholder: true,
+      }));
+    } else {
+      const dates = weekDatesFromStart(config.startDate, week);
+      weekSlotList = dates.map((date, idx) => ({
+        id: null,
+        dayIndex: null,
+        date,
+        week,
+        trainingTitle: "",
+        isProgramOff: false,
+        _placeholder: true,
+        _idx: idx,
+      }));
+    }
   }
 
   const dates = weekSlotList.map((s) => s.date);
@@ -265,7 +291,7 @@ async function handleAdminGrid(req, res, db) {
   }));
 
   let seasonDayIndex = 0;
-  for (const slot of slots) {
+  for (const slot of seasonSlotsOnly(slots)) {
     if (slot.date <= today && (slot.dayIndex ?? 0) > seasonDayIndex) {
       seasonDayIndex = slot.dayIndex ?? 0;
     }
@@ -429,7 +455,7 @@ async function handleAdminWeekSlots(req, res, db) {
     loadAllSlots(db),
   ]);
   const today = todayKstDate();
-  const defaultWeek = findWeekForDate(slots, today);
+  const defaultWeek = defaultWeekForAdmin(config, slots, today);
   const week = parseWeekParam(req.query.week, defaultWeek);
   if (week === null) {
     return res.status(400).json({ ok: false, error: "invalid week" });
@@ -439,7 +465,7 @@ async function handleAdminWeekSlots(req, res, db) {
   let weekSlotList = weekSlotsFromData(slots, week);
 
   if (!weekSlotList.length) {
-    const emptyRows = buildEmptyWeekRows(config, week);
+    const emptyRows = buildEmptyWeekRows(config, week, slots);
     const trainingDayCount = emptyRows.filter((r) => !r.isProgramOff).length;
     const dates = emptyRows.map((r) => r.date);
     return res.json({
@@ -544,12 +570,17 @@ async function handleAdminSaveWeekSlots(req, res, db) {
     }
 
     let dayIndex = row.dayIndex;
-    if (dayIndex === undefined || dayIndex === null || dayIndex === "") {
+    if (week === BETA_WEEK) {
+      dayIndex = betaDayIndexForDate(config, slots, date);
+      if (!dayIndex) {
+        return res.status(400).json({ ok: false, error: "invalid date for week 0" });
+      }
+    } else if (dayIndex === undefined || dayIndex === null || dayIndex === "") {
       maxDayIndex += 1;
       dayIndex = maxDayIndex;
     } else {
       dayIndex = Number(dayIndex);
-      if (!Number.isFinite(dayIndex) || dayIndex < 1) {
+      if (!Number.isFinite(dayIndex) || dayIndex < 1 || dayIndex > 100) {
         return res.status(400).json({ ok: false, error: "invalid dayIndex" });
       }
     }
@@ -580,8 +611,10 @@ async function handleAdminSaveWeekSlots(req, res, db) {
   const updatedSlots = await loadAllSlots(db);
   const weekSlots = weekSlotsFromData(updatedSlots, week);
   const trainingDayCount = weekTrainingDayCount(weekSlots);
-  const warnings = trainingDayCount < 3
-    ? [`훈련일 ${trainingDayCount}일 — 주 3회 목표 불가 (자동 cap=min(3,${trainingDayCount}))`]
+  const warnings = week === BETA_WEEK || trainingDayCount < 3
+    ? (week === BETA_WEEK
+      ? ["0주차(베타) — 시즌 집계에 포함되지 않습니다"]
+      : [`훈련일 ${trainingDayCount}일 — 주 3회 목표 불가 (자동 cap=min(3,${trainingDayCount}))`])
     : [];
 
   return res.json({

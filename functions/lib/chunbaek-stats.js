@@ -3,8 +3,73 @@
  */
 const MS_PER_DAY = 86400000;
 
+const BETA_WEEK = 0;
+const BETA_DAY_INDEX_BASE = 901;
+const BETA_DAY_COUNT = 7;
+
 function todayKstDate(now = Date.now()) {
   return new Date(now + 9 * 3600000).toISOString().slice(0, 10);
+}
+
+function addDaysIso(isoDate, offset) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const ms = Date.UTC(y, m - 1, d) + offset * MS_PER_DAY;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function isBetaSlot(slot) {
+  return slot?.week === BETA_WEEK;
+}
+
+function isSeasonSlot(slot) {
+  return !isBetaSlot(slot);
+}
+
+function seasonSlotsOnly(slots) {
+  return slots.filter(isSeasonSlot);
+}
+
+function betaWeekBoundsFromConfig(config = {}) {
+  if (config.betaWeekStartDate && config.betaWeekEndDate) {
+    return {
+      startDate: config.betaWeekStartDate,
+      endDate: config.betaWeekEndDate,
+    };
+  }
+  if (config.startDate) {
+    return {
+      startDate: addDaysIso(config.startDate, -7),
+      endDate: addDaysIso(config.startDate, -1),
+    };
+  }
+  return null;
+}
+
+function betaWeekBounds(config, slots) {
+  const betaSlots = slots.filter(isBetaSlot);
+  if (betaSlots.length) {
+    const dates = betaSlots.map((s) => s.date).sort();
+    return { startDate: dates[0], endDate: dates[dates.length - 1] };
+  }
+  return betaWeekBoundsFromConfig(config);
+}
+
+function isDateInBetaWeek(config, slots, today) {
+  const bounds = betaWeekBounds(config, slots);
+  if (!bounds) return false;
+  return today >= bounds.startDate && today <= bounds.endDate;
+}
+
+function betaDayIndexForDate(config, slots, date) {
+  const bounds = betaWeekBounds(config, slots);
+  if (!bounds || date < bounds.startDate || date > bounds.endDate) return null;
+  const [sy, sm, sd] = bounds.startDate.split("-").map(Number);
+  const [dy, dm, dd] = date.split("-").map(Number);
+  const offset = Math.round(
+    (Date.UTC(dy, dm - 1, dd) - Date.UTC(sy, sm - 1, sd)) / MS_PER_DAY,
+  );
+  if (offset < 0 || offset >= BETA_DAY_COUNT) return null;
+  return BETA_DAY_INDEX_BASE + offset;
 }
 
 function weekSundayDeadlineKst(isoDate) {
@@ -74,6 +139,16 @@ function findWeekForDate(slots, today) {
   return week;
 }
 
+function defaultWeekForAdmin(config, slots, today) {
+  if (isDateInBetaWeek(config, slots, today)) return BETA_WEEK;
+  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  if (seasonStart && today < seasonStart) {
+    const bounds = betaWeekBounds(config, slots);
+    if (bounds) return BETA_WEEK;
+  }
+  return findWeekForDate(slots, today);
+}
+
 function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig) {
   let weekAttendCount = 0;
   let countableSlotsInWeek = 0;
@@ -95,9 +170,12 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
 function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
+  const seasonOnly = seasonSlotsOnly(slots);
+  const currentWeek = findWeekForDate(slots, todayDate);
+  const inBetaWeek = currentWeek === BETA_WEEK && isDateInBetaWeek(config, slots, todayDate);
 
   let seasonDayIndex = 0;
-  for (const slot of slots) {
+  for (const slot of seasonOnly) {
     if (slot.date <= todayDate && slot.dayIndex > seasonDayIndex) {
       seasonDayIndex = slot.dayIndex;
     }
@@ -105,7 +183,7 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
 
   let seasonAttendCount = 0;
   let seasonDenom = 0;
-  for (const slot of slots) {
+  for (const slot of seasonOnly) {
     if (slot.date > todayDate) continue;
     if (slot.isProgramOff) continue;
     const att = getAttendance(attendanceMap, slot);
@@ -118,7 +196,6 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     ? Math.round((seasonAttendCount / seasonDenom) * 100)
     : 0;
 
-  const currentWeek = findWeekForDate(slots, todayDate);
   const weekStats = computeWeekStats(
     slots,
     attendanceMap,
@@ -133,7 +210,9 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonAttendRate,
     weekAttendCount: weekStats.weekAttendCount,
     weekTarget: weekStats.weekTarget,
-    weekTargetMet: weekStats.weekTargetMet,
+    weekTargetMet: inBetaWeek ? false : weekStats.weekTargetMet,
+    inBetaWeek,
+    currentWeek,
   };
 }
 
@@ -182,6 +261,10 @@ function weekDots(slots, attendanceMap, week, today) {
   }).join("");
 }
 
+function weekLabel(week) {
+  return week === BETA_WEEK ? "0주차 (베타)" : `${week}주차`;
+}
+
 function buildTimelineWeeks(slots, attendanceMap, config, today) {
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
   const weekMap = new Map();
@@ -190,9 +273,16 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
     weekMap.get(slot.week).push(slot);
   }
 
+  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const showBetaInTimeline = !!(seasonStart && today < seasonStart);
   const currentWeek = findWeekForDate(slots, today);
+
   const weeks = [...weekMap.entries()]
-    .filter(([week]) => week <= currentWeek)
+    .filter(([week]) => {
+      if (week === BETA_WEEK) return showBetaInTimeline;
+      if (showBetaInTimeline) return false;
+      return week > 0 && week <= currentWeek;
+    })
     .sort((a, b) => b[0] - a[0])
     .map(([week, weekSlots]) => {
       weekSlots.sort((a, b) => a.dayIndex - b.dayIndex);
@@ -205,8 +295,11 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
       );
       return {
         week,
+        weekLabel: weekLabel(week),
         range: formatIsoRange(dates[0], dates[dates.length - 1]),
-        attendSummary: `${attendCount}/${target}회`,
+        attendSummary: week === BETA_WEEK
+          ? `${attendCount}회 (베타·집계 제외)`
+          : `${attendCount}/${target}회`,
         dots: weekDots(slots, attendanceMap, week, today),
         collapsed: week < currentWeek,
         slots: weekSlots.map((slot) => {
@@ -221,6 +314,7 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
             status,
             photo: !!(att?.photoUrl),
             note: att?.note || "",
+            isBeta: isBetaSlot(slot),
           };
         }),
       };
@@ -242,8 +336,9 @@ function rateBar(rate) {
 }
 
 function seasonBounds(slots) {
-  if (!slots.length) return { startDate: null, endDate: null };
-  const sorted = [...slots].sort((a, b) => a.dayIndex - b.dayIndex);
+  const season = seasonSlotsOnly(slots);
+  if (!season.length) return { startDate: null, endDate: null };
+  const sorted = [...season].sort((a, b) => a.dayIndex - b.dayIndex);
   return {
     startDate: sorted[0].date,
     endDate: sorted[sorted.length - 1].date,
@@ -257,46 +352,81 @@ function seasonMeta(bounds) {
   };
 }
 
-function todaySlotPayload(slots, attendanceMap, today) {
-  const bounds = seasonBounds(slots);
-  const { startDate, endDate } = bounds;
-  const meta = seasonMeta(bounds);
-  if (!startDate) {
-    return { slot: null, beforeSeason: false, afterSeason: false, noSlots: true, ...meta };
-  }
-  if (today < startDate) {
-    return { slot: null, beforeSeason: true, afterSeason: false, ...meta };
-  }
-  if (today > endDate) {
-    return { slot: null, beforeSeason: false, afterSeason: true, ...meta };
-  }
-
-  const slot = findTodaySlot(slots, today);
-  if (!slot) {
-    return { slot: null, beforeSeason: false, afterSeason: false, ...meta };
-  }
-
+function slotPayloadFromSlot(slot, attendanceMap) {
   const att = getAttendance(attendanceMap, slot);
   return {
-    slot: {
-      slotId: slot.dayIndex ?? Number(slot.id),
-      dayIndex: slot.dayIndex,
-      date: slot.date,
-      week: slot.week,
-      trainingTitle: slotTrainingTitle(slot),
-      trainingContent: slotTrainingContent(slot),
-      isProgramOff: !!slot.isProgramOff,
-      attended: !!(att?.attended),
-      exception: !!(att?.exception),
-    },
+    slotId: slot.dayIndex ?? Number(slot.id),
+    dayIndex: slot.dayIndex,
+    date: slot.date,
+    week: slot.week,
+    trainingTitle: slotTrainingTitle(slot),
+    trainingContent: slotTrainingContent(slot),
+    isProgramOff: !!slot.isProgramOff,
+    attended: !!(att?.attended),
+    exception: !!(att?.exception),
+    isBeta: isBetaSlot(slot),
+  };
+}
+
+function todaySlotPayload(slots, attendanceMap, today, config = {}) {
+  const seasonOnly = seasonSlotsOnly(slots);
+  const bounds = seasonBounds(seasonOnly.length ? seasonOnly : slots);
+  const { startDate, endDate } = bounds;
+  const betaBounds = betaWeekBounds(config, slots);
+  const meta = {
+    ...seasonMeta(bounds),
+    betaWeekStartDate: betaBounds?.startDate || null,
+    betaWeekEndDate: betaBounds?.endDate || null,
+  };
+
+  const todaySlot = findTodaySlot(slots, today);
+  if (todaySlot && isBetaSlot(todaySlot)) {
+    return {
+      slot: slotPayloadFromSlot(todaySlot, attendanceMap),
+      beforeSeason: false,
+      afterSeason: false,
+      betaWeek: true,
+      ...meta,
+    };
+  }
+
+  if (!startDate) {
+    return { slot: null, beforeSeason: false, afterSeason: false, noSlots: true, betaWeek: false, ...meta };
+  }
+  if (today < startDate) {
+    return { slot: null, beforeSeason: true, afterSeason: false, betaWeek: false, ...meta };
+  }
+  if (today > endDate) {
+    return { slot: null, beforeSeason: false, afterSeason: true, betaWeek: false, ...meta };
+  }
+
+  if (!todaySlot) {
+    return { slot: null, beforeSeason: false, afterSeason: false, betaWeek: false, ...meta };
+  }
+
+  return {
+    slot: slotPayloadFromSlot(todaySlot, attendanceMap),
     beforeSeason: false,
     afterSeason: false,
+    betaWeek: false,
     ...meta,
   };
 }
 
 module.exports = {
+  BETA_WEEK,
+  BETA_DAY_INDEX_BASE,
+  BETA_DAY_COUNT,
   todayKstDate,
+  addDaysIso,
+  isBetaSlot,
+  isSeasonSlot,
+  seasonSlotsOnly,
+  betaWeekBounds,
+  betaWeekBoundsFromConfig,
+  isDateInBetaWeek,
+  betaDayIndexForDate,
+  defaultWeekForAdmin,
   weekSundayDeadlineKst,
   isMemberEditLocked,
   loadSeasonConfig,
@@ -316,4 +446,5 @@ module.exports = {
   slotTrainingContent,
   findWeekForDate,
   formatIsoRange,
+  weekLabel,
 };

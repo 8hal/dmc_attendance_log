@@ -239,7 +239,7 @@ function renderGrid() {
     tbody.appendChild(tr);
   });
 
-  document.getElementById("grid-week-title").textContent = `${currentWeek}주차`;
+  document.getElementById("grid-week-title").textContent = weekOptionLabel(currentWeek);
   document.getElementById("grid-range").textContent = data.range;
   document.getElementById("grid-miss-chip").textContent = `미출석 셀 ${missCount}개`;
   document.getElementById("grid-under-chip").textContent = `주 3회 미달 ${data.underTargetCount}명`;
@@ -295,7 +295,7 @@ function renderTraining() {
   });
 
   const trainDays = trainingDayCount(data.slots);
-  document.getElementById("training-week-title").textContent = `${currentWeek}주차`;
+  document.getElementById("training-week-title").textContent = weekOptionLabel(currentWeek);
   document.getElementById("training-range").textContent = data.range;
   document.getElementById("training-summary").textContent =
     `입력 ${filled}/${data.slots.length}일 · 훈련일 ${trainDays}일`;
@@ -405,9 +405,13 @@ async function refreshTraining() {
   renderTraining();
 }
 
+function weekOptionLabel(w) {
+  return w === 0 ? "0주차 (베타)" : `${w}주차`;
+}
+
 function populateWeekSelects() {
   const maxWeek = PREVIEW ? 8 : 15;
-  const minWeek = PREVIEW ? 6 : 1;
+  const minWeek = PREVIEW ? 6 : 0;
   ["week-select", "week-select-training"].forEach((id) => {
     const sel = document.getElementById(id);
     const prev = sel.value;
@@ -415,7 +419,7 @@ function populateWeekSelects() {
     for (let w = minWeek; w <= maxWeek; w += 1) {
       const opt = document.createElement("option");
       opt.value = String(w);
-      opt.textContent = `${w}주차`;
+      opt.textContent = weekOptionLabel(w);
       sel.appendChild(opt);
     }
     sel.value = prev || String(currentWeek);

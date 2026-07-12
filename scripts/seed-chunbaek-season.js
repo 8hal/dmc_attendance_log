@@ -107,6 +107,8 @@ const db = getFirestore();
       { name: "2026 JTBC 서울마라톤", date: "2026-11-01", dayIndex: null, role: "goal", note: "참가자 일부 개인 목표" },
     ],
     departureCeremonyDate: "2026-07-16",
+    betaWeekStartDate: "2026-07-13",
+    betaWeekEndDate: "2026-07-19",
     startDate,
     endDate,
     weeklyTarget: 3,

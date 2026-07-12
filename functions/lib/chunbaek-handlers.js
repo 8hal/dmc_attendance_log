@@ -16,6 +16,12 @@ const {
   formatGoalTime,
   rateBar,
   getSlotKey,
+  isBetaSlot,
+  isDateInBetaWeek,
+  seasonSlotsOnly,
+  seasonBounds,
+  findWeekForDate,
+  BETA_WEEK,
 } = require("./chunbaek-stats");
 
 const GOAL_MIN_SEC = 7200;
@@ -266,12 +272,13 @@ async function handleTodaySlot(req, res, db) {
   const auth = await requireMember(req, res, db);
   if (!auth) return undefined;
 
-  const [slots, attendanceMap] = await Promise.all([
+  const [slots, attendanceMap, config] = await Promise.all([
     loadAllSlots(db),
     loadMemberAttendance(db, auth.memberId),
+    loadSeasonConfig(db),
   ]);
   const today = todayKstDate();
-  const payload = todaySlotPayload(slots, attendanceMap, today);
+  const payload = todaySlotPayload(slots, attendanceMap, today, config);
   return res.json({ ok: true, ...payload });
 }
 
@@ -299,6 +306,17 @@ async function handleSaveAttendance(req, res, db) {
   const slot = findSlotById(slots, slotId);
   if (!slot) {
     return res.status(404).json({ ok: false, error: "slot not found" });
+  }
+  const today = todayKstDate();
+  if (isBetaSlot(slot)) {
+    if (!isDateInBetaWeek(config, slots, today)) {
+      return res.status(403).json({ ok: false, error: "beta week ended" });
+    }
+  } else {
+    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    if (seasonStart && today < seasonStart) {
+      return res.status(403).json({ ok: false, error: "season not started" });
+    }
   }
   if (slot.isProgramOff) {
     return res.status(400).json({ ok: false, error: "program off day" });
@@ -373,7 +391,7 @@ async function handleTeamSummary(req, res, db) {
       ? computeMemberStats({ slots, attendanceMap, config, today })
       : emptyStats();
     rateSum += stats.seasonAttendRate;
-    if (stats.weekTargetMet) weekMetCount += 1;
+    if (stats.weekTargetMet && findWeekForDate(slots, today) !== BETA_WEEK) weekMetCount += 1;
     members.push({
       memberId: p.memberId,
       nickname: p.data.nickname || "",
