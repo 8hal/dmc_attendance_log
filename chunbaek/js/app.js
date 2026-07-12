@@ -58,7 +58,10 @@
 
     if (name === "pick") loadRoster();
     if (name === "today") loadToday();
-    if (name === "timeline") renderTimeline();
+    if (name === "timeline") {
+      closeTrainingModal();
+      renderTimeline();
+    }
     if (name === "team") renderTeam();
     if (name === "me") renderMe();
 
@@ -302,31 +305,103 @@
       .catch(() => paintTimeline(MOCK.timeline));
   }
 
+  function slotStatusLabel(status, photo) {
+    if (status === "attend") return `출석 완료${photo ? " · 사진 있음" : ""}`;
+    if (status === "exception") return "예외 처리됨";
+    if (status === "off") return "프로그램 휴무";
+    if (status === "today") return "오늘";
+    if (status === "future") return "예정";
+    return "미출석";
+  }
+
+  function slotStatusIcon(status, photo) {
+    if (status === "attend") return `✓${photo ? " 📷" : ""}`;
+    if (status === "exception") return "예외";
+    if (status === "off") return "—";
+    if (status === "today") return "오늘";
+    return "○";
+  }
+
+  function openTrainingModal(slot) {
+    const title = slot.title || slot.label || "—";
+    document.getElementById("timeline-modal-title").textContent = title;
+    document.getElementById("timeline-modal-meta").textContent = `${slot.dayIndex}일차`;
+    const contentEl = document.getElementById("timeline-modal-content");
+    contentEl.textContent = slot.content || "";
+    document.getElementById("timeline-modal-status").textContent =
+      slotStatusLabel(slot.status, slot.photo);
+    const modal = document.getElementById("timeline-modal");
+    modal.hidden = false;
+  }
+
+  function closeTrainingModal() {
+    document.getElementById("timeline-modal").hidden = true;
+  }
+
+  function bindTimelineEvents() {
+    const container = document.getElementById("timeline-weeks");
+    container.querySelectorAll(".week-header").forEach((hdr) => {
+      hdr.addEventListener("click", () => {
+        const block = hdr.closest(".week-block");
+        if (block) block.classList.toggle("collapsed");
+        const arrow = hdr.querySelector(".week-arrow");
+        if (arrow) {
+          arrow.textContent = block?.classList.contains("collapsed") ? "▶" : "▼";
+        }
+      });
+    });
+    container.querySelectorAll(".slot-row").forEach((row) => {
+      row.addEventListener("click", () => {
+        const idx = row.dataset.slotIndex;
+        const week = row.dataset.week;
+        if (!idx || !week) return;
+        const weekBlock = container.querySelector(`.week-block[data-week="${week}"]`);
+        const slot = (weekBlock?._slots || [])[Number(idx)];
+        if (slot) openTrainingModal(slot);
+      });
+    });
+  }
+
   function paintTimeline(weeks) {
     const container = document.getElementById("timeline-weeks");
-    container.innerHTML = weeks.map((w) => `
-      <div class="week-block">
-        <div class="week-header" data-week="${w.week}">
-          <span>${w.collapsed ? "▶" : "▼"}</span>
+    container.innerHTML = weeks.map((w) => {
+      const collapsed = !!w.collapsed;
+      const slots = w.slots || [];
+      return `
+      <div class="week-block${collapsed ? " collapsed" : ""}" data-week="${w.week}">
+        <div class="week-header">
+          <span class="week-arrow">${collapsed ? "▶" : "▼"}</span>
           <span>${w.week}주차</span>
-          <span class="week-dots">${w.dots}</span>
-          <span class="week-summary">${w.attendSummary}</span>
+          <span class="week-range">${w.range || ""}</span>
+          <span class="week-dots">${w.dots || ""}</span>
+          <span class="week-summary">${w.attendSummary || ""}</span>
         </div>
-        ${w.collapsed ? "" : `<div class="week-slots">
-          ${w.slots.map((s) => `
-            <div class="slot-row ${s.status === "today" ? "today" : ""}">
-              <span>${s.dayIndex}일</span>
-              <span>${s.title || s.label || ""}</span>
-              <span class="slot-status">${
-                s.status === "attend" ? "✓" + (s.photo ? " 📷" : "") :
-                s.status === "off" ? "—" :
-                s.status === "today" ? "오늘" : "○"
-              }</span>
-            </div>
-          `).join("")}
-        </div>`}
-      </div>
-    `).join("");
+        <div class="week-slots">
+          ${slots.map((s, i) => {
+            const title = s.title || s.label || "—";
+            const content = s.content || "";
+            const off = s.status === "off";
+            return `
+            <div class="slot-row ${s.status === "today" ? "today" : ""}${off ? " off-day" : ""}"
+                 data-week="${w.week}" data-slot-index="${i}" role="button" tabindex="0">
+              <span class="slot-day">${s.dayIndex}일</span>
+              <div class="slot-training">
+                <div class="slot-training-title">${escapeHtml(title)}</div>
+                <div class="slot-training-content">${escapeHtml(content)}</div>
+              </div>
+              <span class="slot-status">${slotStatusIcon(s.status, s.photo)}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+    }).join("");
+
+    weeks.forEach((w) => {
+      const block = container.querySelector(`.week-block[data-week="${w.week}"]`);
+      if (block) block._slots = w.slots || [];
+    });
+
+    bindTimelineEvents();
   }
 
   function renderTeam() {
@@ -399,6 +474,11 @@
       setToken(null);
       state.profile = null;
       showView("welcome");
+    });
+
+    document.getElementById("timeline-modal-close").addEventListener("click", closeTrainingModal);
+    document.getElementById("timeline-modal").addEventListener("click", (e) => {
+      if (e.target.id === "timeline-modal") closeTrainingModal();
     });
 
     document.querySelectorAll(".tab-btn").forEach((btn) => {
