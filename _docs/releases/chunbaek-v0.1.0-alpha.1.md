@@ -61,11 +61,17 @@
 
 ## 배포 절차 (사용자 실행)
 
+**전제:** Node **18·20·22** (Node 24는 firebase-tools 미지원). Mac: `nvm use 22`
+
 ```bash
 cd ~/git/dmc_attendance_log
 git fetch origin
 git checkout cursor/cloud-agent-1783816981460-v32r8
 git pull origin cursor/cloud-agent-1783816981460-v32r8
+
+# Firebase 로그인 (최초 1회)
+./node_modules/.bin/firebase login --no-localhost
+# (스크립트가 firebase-tools를 루트 node_modules에 자동 설치)
 
 # 1. 백업 (이미 했으면 생략 가능, 권장)
 cd functions && node ../scripts/backup-firestore.js && cd ..

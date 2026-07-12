@@ -2,12 +2,15 @@
 # 춘백 API Functions 배포 (chunbaek 단일 함수)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+REPO_ROOT="$(pwd)"
 
-FB="npx --yes firebase-tools@13.29.1"
-PROJECT="dmc-attendance"
+source scripts/lib/firebase-cli.sh
+
+PROJECT="$FB_PROJECT"
 
 echo "=== 춘백 Functions 배포 (chunbaek) ==="
-echo "경로: $(pwd)"
+echo "경로: $REPO_ROOT"
+echo "Node: $(node -v) · firebase: $($FB --version 2>/dev/null | head -1 || echo firebase-tools)"
 echo ""
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then

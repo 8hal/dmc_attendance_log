@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# 춘백 목업 갤러리 Hosting 배포 (functions 불필요)
+# 춘백 Hosting 배포 (회원·admin·갤러리)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+REPO_ROOT="$(pwd)"
 
-FB="npx --yes firebase-tools@13.29.1"
-PROJECT="dmc-attendance"
+source scripts/lib/firebase-cli.sh
 
-echo "=== 춘백 목업 Hosting 배포 (갤러리 + admin) ==="
-echo "경로: $(pwd)"
+PROJECT="$FB_PROJECT"
+
+echo "=== 춘백 Hosting 배포 ==="
+echo "경로: $REPO_ROOT"
+echo "Node: $(node -v)"
 echo ""
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -27,7 +30,6 @@ echo ""
 
 if ! $FB login:list 2>&1 | grep -q "@"; then
   echo "Firebase 로그인이 필요합니다."
-  echo "아래 명령을 실행하고, 나오는 URL을 브라우저에서 열어 인증하세요:"
   echo ""
   echo "  $FB login --no-localhost"
   echo ""
@@ -41,6 +43,6 @@ echo ""
 echo "✅ 배포 완료"
 echo ""
 echo "확인 링크:"
+echo "  회원:    https://dmc-attendance.web.app/chunbaek/"
+echo "  운영진:  https://dmc-attendance.web.app/chunbaek/admin.html"
 echo "  갤러리:  https://dmc-attendance.web.app/chunbaek/gallery.html"
-echo "  회원:    https://dmc-attendance.web.app/chunbaek/?preview=1"
-echo "  운영진:  https://dmc-attendance.web.app/chunbaek/admin.html?preview=1"
