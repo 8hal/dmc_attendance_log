@@ -55,6 +55,7 @@
 | 4 | 시드 | 프로덕션 participant 40명 + 슬롯 |
 | 5 | Task 8~10 | 회원 앱 `preview` 없이 실 API E2E |
 | 6 | Task 12 | `pre-deploy-test.sh` + chunbaek smoke |
+| 7 | **테스트** | [출정식 전 테스트 계획](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) — **7/16 전 Go** |
 
 ---
 
