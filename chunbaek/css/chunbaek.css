@@ -384,7 +384,8 @@ body {
   text-align: center;
 }
 .today-day { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-.today-training { font-size: 14px; color: var(--text-muted); }
+.today-training { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.today-training-detail { font-size: 13px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 
 .attend-cta { margin: 24px 0; }
 .attend-cta .btn {

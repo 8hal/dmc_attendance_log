@@ -113,6 +113,16 @@ chunbaekS3: {
 
 **예외 흐름:** 단톡 사전 알림 → 운영진 admin에서 예외 처리.
 
+### 5.1 슬롯·훈련 필드
+
+| 필드 | 설명 |
+|------|------|
+| `trainingTitle` | 훈련 **제목** (80자) |
+| `trainingContent` | 훈련 **내용** (500자, 선택) |
+| `isProgramOff` | 프로그램 휴무일 |
+
+운영진은 주차별 `admin-save-week-slots`로 제목·내용 입력.
+
 ### 5.2 주 3회
 
 - 대상: 해당 주 **훈련일** 슬롯 (`!isProgramOff`, `!exception`)

@@ -23,6 +23,14 @@ function isMemberEditLocked(slotDate, now = Date.now()) {
   return now > weekSundayDeadlineKst(slotDate).getTime();
 }
 
+function slotTrainingTitle(slot) {
+  return slot.trainingTitle || slot.trainingLabel || "";
+}
+
+function slotTrainingContent(slot) {
+  return slot.trainingContent || "";
+}
+
 function getSlotKey(slot) {
   return String(slot.dayIndex ?? slot.id);
 }
@@ -207,7 +215,8 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
             slotId: slot.dayIndex ?? Number(slot.id),
             dayIndex: slot.dayIndex,
             date: slot.date,
-            label: slot.isProgramOff ? "(휴무)" : (slot.trainingLabel || "—"),
+            title: slot.isProgramOff ? "(휴무)" : (slotTrainingTitle(slot) || "—"),
+            content: slot.isProgramOff ? "" : slotTrainingContent(slot),
             status,
             photo: !!(att?.photoUrl),
           };
@@ -263,7 +272,8 @@ function todaySlotPayload(slots, attendanceMap, today) {
       dayIndex: slot.dayIndex,
       date: slot.date,
       week: slot.week,
-      trainingLabel: slot.trainingLabel || "",
+      trainingTitle: slotTrainingTitle(slot),
+      trainingContent: slotTrainingContent(slot),
       isProgramOff: !!slot.isProgramOff,
       attended: !!(att?.attended),
       exception: !!(att?.exception),

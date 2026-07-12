@@ -260,7 +260,8 @@
 │  출석 68회 · 출석률 68%      │  ← 훈련일 출석 횟수·률
 ├─────────────────────────────┤
 │  42일차 · 4월 15일 (화)      │
-│  📋 5km 인터벌 + 코어 20분   │  ← chunbaek_slots.trainingLabel
+│  📋 5km 인터벌              │  ← chunbaek_slots.trainingTitle
+│  워밍업 10분 → 5×1km…       │  ← trainingContent (있을 때만)
 ├─────────────────────────────┤
 │                             │
 │     [  ✓  출석하기  ]       │  ← 메인 CTA
@@ -456,8 +457,8 @@ chunbaek_slots/{slotId} {   // slotId = 1..100 (문서 ID 권장)
   dayIndex: 42,              // 1..100
   date: "2026-04-15",        // ISO date
   week: 7,                   // 주차
-  trainingLabel: "5km 인터벌 + 코어 20분",
-  trainingType: "interval",  // optional: interval | long | dawn | dongmak_sat | off
+  trainingTitle: "5km 인터벌",           // 제목 (한 줄)
+  trainingContent: "워밍업 10분 → 5×1km…",  // 내용 (상세, 선택)
   isProgramOff: false        // true = 프로그램 휴무일 (전원 훈련 없음, 출석 집계 제외)
 }
 ```

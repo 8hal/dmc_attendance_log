@@ -146,6 +146,39 @@ function requireAdmin(req) {
 
 `adminPw` 누락 → `401` + `adminPw required`.
 
+### 2.4 훈련 슬롯 필드 (확정)
+
+일별 훈련 정보는 **제목 + 내용** 두 필드만 쓴다. `trainingType` 등 분류 필드는 MVP에 **없음**.
+
+| 필드 | 필수 | 최대 | 설명 |
+|------|------|------|------|
+| `trainingTitle` | 훈련일 ○ | 80자 | 한 줄 제목 (예: `5km 인터벌`) |
+| `trainingContent` | × | 500자 | 상세 내용 (예: `워밍업 10분 → 5×1km…`) |
+| `isProgramOff` | ○ | — | `true` = 프로그램 휴무일 (제목·내용 비워도 됨) |
+
+**Firestore (`chunbaek_slots`):**
+
+```javascript
+{
+  dayIndex: 36,
+  date: "2026-04-07",
+  week: 7,
+  trainingTitle: "5km 인터벌",
+  trainingContent: "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km",
+  isProgramOff: false
+}
+```
+
+**회원 API 노출:**
+
+| action | 필드 |
+|--------|------|
+| `today-slot` | `trainingTitle`, `trainingContent` |
+| `my-timeline` | 슬롯별 `title`(=`trainingTitle`), `content`(=`trainingContent`) |
+| `admin-grid` | 슬롯 헤더에 `trainingTitle`만 (그리드 폭 절약) |
+
+> 구현 시 기존 `trainingLabel` 문서는 `trainingTitle`로 **읽기 호환** 가능 (마이그레이션 전).
+
 ---
 
 ## 3. API 상세
@@ -182,14 +215,14 @@ GET ?action=admin-grid&week=7&adminPw=...
       "slotId": 36,
       "dayIndex": 36,
       "date": "2026-04-07",
-      "trainingLabel": "5km 인터벌",
+      "trainingTitle": "5km 인터벌",
       "isProgramOff": false
     },
     {
       "slotId": 37,
       "dayIndex": 37,
       "date": "2026-04-08",
-      "trainingLabel": "휴무",
+      "trainingTitle": "휴무",
       "isProgramOff": true
     }
   ],
@@ -345,8 +378,8 @@ GET ?action=admin-week-slots&week=7&adminPw=...
       "dayIndex": 36,
       "date": "2026-04-07",
       "week": 7,
-      "trainingLabel": "5km 인터벌 + 코어 20분",
-      "trainingType": "interval",
+      "trainingTitle": "5km 인터벌",
+      "trainingContent": "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km",
       "isProgramOff": false,
       "hasAttendance": true
     },
@@ -355,8 +388,8 @@ GET ?action=admin-week-slots&week=7&adminPw=...
       "dayIndex": 37,
       "date": "2026-04-08",
       "week": 7,
-      "trainingLabel": "",
-      "trainingType": null,
+      "trainingTitle": "",
+      "trainingContent": "",
       "isProgramOff": false,
       "hasAttendance": false
     },
@@ -365,8 +398,8 @@ GET ?action=admin-week-slots&week=7&adminPw=...
       "dayIndex": 38,
       "date": "2026-04-09",
       "week": 7,
-      "trainingLabel": "휴무",
-      "trainingType": "off",
+      "trainingTitle": "휴무",
+      "trainingContent": "",
       "isProgramOff": true,
       "hasAttendance": false
     }
@@ -378,7 +411,7 @@ GET ?action=admin-week-slots&week=7&adminPw=...
 
 | 필드 | 설명 |
 |------|------|
-| `filledCount` | `trainingLabel`이 비어 있지 않거나 `isProgramOff: true`인 슬롯 수 (입력 완료로 간주) |
+| `filledCount` | `trainingTitle`이 비어 있지 않거나 `isProgramOff: true`인 슬롯 수 |
 | `trainingDayCount` | `!isProgramOff` 슬롯 수 (I1 주간 목표 cap 계산용) |
 | `warning` | `trainingDayCount < 3` 이면 문자열, 아니면 `null` |
 | `hasAttendance` | 해당 슬롯에 `chunbaek_attendance` 1건이라도 있으면 `true` — 라벨 수정 시 UI 경고용 |
@@ -387,7 +420,7 @@ GET ?action=admin-week-slots&week=7&adminPw=...
 
 `chunbaek_slots`에 해당 `week` 문서가 없으면:
 
-- `chunbaek_season_config`의 `startDate`·기존 슬롯 날짜 범위로 **그 주의 달력 7일**을 계산해 **빈 행**을 반환한다 (`dayIndex`·`slotId` 없음, `trainingLabel: ""`).
+- `chunbaek_season_config`의 `startDate`·기존 슬롯 날짜 범위로 **그 주의 달력 7일**을 계산해 **빈 행**을 반환한다 (`dayIndex`·`slotId` 없음, `trainingTitle`/`trainingContent` 빈 문자열).
 - 프론트는 빈 행에 `dayIndex`·날짜를 표시하고, `admin-save-week-slots` 저장 시 **신규 슬롯 생성(upsert)**.
 
 > 시즌 골격을 미리 import해 두면 `dayIndex`·`slotId`가 채워진 상태로 반환된다 (권장).
@@ -407,16 +440,16 @@ Body: {
     {
       "dayIndex": 36,
       "date": "2026-04-07",
-      "trainingLabel": "5km 인터벌 + 코어 20분",
-      "isProgramOff": false,
-      "trainingType": "interval"
+      "trainingTitle": "5km 인터벌",
+      "trainingContent": "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km",
+      "isProgramOff": false
     },
     {
       "dayIndex": 37,
       "date": "2026-04-08",
-      "trainingLabel": "휴무",
-      "isProgramOff": true,
-      "trainingType": "off"
+      "trainingTitle": "휴무",
+      "trainingContent": "",
+      "isProgramOff": true
     }
   ]
 }
@@ -428,17 +461,18 @@ Body: {
 | `rows` | ○ | 1~7건 (해당 주 일수). 빈 배열 불가 |
 | `rows[].dayIndex` | △ | 있으면 문서 ID `String(dayIndex)` 사용. 없으면 서버가 시즌 내 다음 번호 할당 |
 | `rows[].date` | ○ | `YYYY-MM-DD` |
-| `rows[].trainingLabel` | △ | `isProgramOff: true`이면 `"휴무"` 등 짧은 라벨 권장. 훈련일이면 1~200자 **필수** |
+| `rows[].trainingTitle` | △ | 훈련일 **필수** 1~80자. `isProgramOff: true`이면 `"휴무"` 등 짧게 |
+| `rows[].trainingContent` | × | 0~500자. 상세 없으면 `""` |
 | `rows[].isProgramOff` | ○ | boolean |
-| `rows[].trainingType` | × | `interval` \| `long` \| `dawn` \| `dongmak_sat` \| `off` \| `easy` |
 
 #### 3.4.1 저장 규칙
 
 - `dayIndex`별 **upsert** (`chunbaek_slots/{dayIndex}`).
 - `week`·`date`는 요청 값으로 덮어씀 (주차 재배치는 운영진 책임).
-- `isProgramOff: true`이면 `trainingType` 기본 `"off"`.
+- `isProgramOff: true`이면 `trainingTitle`·`trainingContent` 비워도 됨 (UI는 「휴무」 표시).
 - 이미 `chunbaek_attendance`가 있는 슬롯의 `isProgramOff`를 `true`로 바꾸려 하면 → `409` + `attendance exists` (출석 데이터와 충돌).
-- `trainingLabel`만 변경하는 것은 **항상 허용** (`hasAttendance` 있어도 OK).
+- `trainingTitle`·`trainingContent` 변경은 **항상 허용** (`hasAttendance` 있어도 OK).
+- 훈련일인데 `trainingTitle` 빈 문자열 → `400` + `trainingTitle required`.
 
 #### 3.4.2 I1 경고
 
@@ -460,7 +494,7 @@ Body: {
 
 ### 3.5 `admin-import-slots` — 100슬롯 일괄 import (부트스트랩)
 
-**용도:** 시즌 **시작 전** 100일 날짜·주차 골격을 한 번에 등록. 훈련 라벨은 비워 두거나 임시 값으로 넣고, **시즌 중에는 §3.3~3.4 주차별 입력**으로 갱신한다.
+**용도:** 시즌 **시작 전** 100일 날짜·주차 골격을 한 번에 등록. 제목·내용은 비워 두거나 임시 값으로 넣고, **시즌 중에는 §3.3~3.4 주차별 입력**으로 갱신한다.
 
 ```
 POST ?action=admin-import-slots
@@ -472,9 +506,9 @@ Body: {
       "dayIndex": 1,
       "date": "2026-04-01",
       "week": 1,
-      "trainingLabel": "5km 이지런",
-      "isProgramOff": false,
-      "trainingType": "easy"
+      "trainingTitle": "5km 이지런",
+      "trainingContent": "",
+      "isProgramOff": false
     }
   ]
 }
@@ -486,7 +520,7 @@ Body: {
 {
   "adminPw": "...",
   "mode": "replace",
-  "csv": "dayIndex,date,week,trainingLabel,isProgramOff\n1,2026-04-01,1,5km 이지런,false\n"
+  "csv": "dayIndex,date,week,trainingTitle,trainingContent,isProgramOff\n1,2026-04-01,1,5km 이지런,,false\n"
 }
 ```
 
@@ -499,9 +533,9 @@ Body: {
 | `dayIndex` | ○ | 1~100 정수, import 내 유일 |
 | `date` | ○ | `YYYY-MM-DD`, KST 달력일 |
 | `week` | ○ | 정수 ≥1 |
-| `trainingLabel` | ○ | 1~200자 |
+| `trainingTitle` | △ | 0~80자. 훈련일이면 필수 |
+| `trainingContent` | × | 0~500자 |
 | `isProgramOff` | ○ | boolean (`"true"`/`"false"` CSV 파싱) |
-| `trainingType` | × | `interval` \| `long` \| `dawn` \| `dongmak_sat` \| `off` \| `easy` |
 
 Firestore 문서 ID: `String(dayIndex)` (예: `chunbaek_slots/42`).
 
@@ -722,13 +756,12 @@ async function adminPost(action, body = {}) {
 ┌─────────────────────────────────────┐
 │  7주차  4/7 ~ 4/13    [저장]        │
 │  입력 5/7일 · 훈련일 4일 (목표 3회)  │
-├────────┬──────────────────┬────────┤
-│ 36일차 │ 4/7 (월)         │ [휴무] │
-│        │ 5km 인터벌+코어  │        │
-├────────┼──────────────────┼────────┤
-│ 37일차 │ 4/8 (화)         │ [휴무] │
-│        │ (비어 있음)      │        │
-└────────┴──────────────────┴────────┘
+├────────┬──────────────┬──────────────────────────┬────────┤
+│ 36일차 │ 4/7 (월)     │ 제목 [5km 인터벌      ]  │ [휴무] │
+│        │              │ 내용 [워밍업 10분…    ]  │        │
+├────────┼──────────────┼──────────────────────────┼────────┤
+│ 37일차 │ 4/8 (화)     │ (미입력)                 │ [휴무] │
+└────────┴──────────────┴──────────────────────────┴────────┘
 ```
 
 ### 5.4 UI ↔ API 매핑
@@ -748,10 +781,10 @@ async function adminPost(action, body = {}) {
 
 ### 5.5 운영 시나리오 — 주차별 훈련 공개
 
-1. **시즌 시작 전 (선택):** `admin-import-slots`로 100일 **날짜·주차 골격**만 import (`trainingLabel` 빈 값 가능).
+1. **시즌 시작 전 (선택):** `admin-import-slots`로 100일 **날짜·주차 골격**만 import (제목·내용 빈 값 가능).
 2. **매주:** 운영진이 **훈련 입력** 탭 → 다음 주(또는 이번 주) 선택.
-3. 일별 `trainingLabel`·휴무 체크 후 **[저장]** → `admin-save-week-slots`.
-4. 회원 앱 **홈·내 100일**에 해당 주 훈련 내용 즉시 반영 (`today-slot`, `my-timeline`).
+3. 일별 **제목·내용**·휴무 체크 후 **[저장]** → `admin-save-week-slots`.
+4. 회원 앱 **홈·내 100일**에 `trainingTitle`·`trainingContent` 즉시 반영.
 
 ---
 
@@ -786,7 +819,7 @@ async function adminPost(action, body = {}) {
 ### 7.3 주차별 훈련 입력
 
 1. `admin-week-slots?week=1` → 해당 주 slots 배열  
-2. `admin-save-week-slots` 7행 저장 → `saved: 7`, 회원 `today-slot`에 `trainingLabel` 반영  
+2. `admin-save-week-slots` 7행 저장 → `saved: 7`, 회원 `today-slot`에 `trainingTitle`·`trainingContent` 반영  
 3. `trainingDayCount: 2` 주 저장 시 `warnings` 포함  
 4. 출석 있는 슬롯 `isProgramOff: true` 변경 시도 → 409  
 
@@ -832,3 +865,4 @@ async function adminPost(action, body = {}) {
 |------|------|
 | 2026-07-12 | 초안 작성 — Task 6 구현 전 SSOT |
 | 2026-07-12 | 주차별 훈련 API 추가 (`admin-week-slots`, `admin-save-week-slots`) |
+| 2026-07-12 | 훈련 필드 `trainingTitle` + `trainingContent` 확정 (`trainingType` 제거) |

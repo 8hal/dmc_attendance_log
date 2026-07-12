@@ -15,13 +15,13 @@ const {
 const config = { weeklyTarget: 3, photoRequired: false };
 
 const slots = [
-  { id: "1", dayIndex: 1, date: "2026-04-01", week: 1, trainingLabel: "이지런", isProgramOff: false },
-  { id: "2", dayIndex: 2, date: "2026-04-02", week: 1, trainingLabel: "인터벌", isProgramOff: false },
-  { id: "3", dayIndex: 3, date: "2026-04-03", week: 1, trainingLabel: "휴무", isProgramOff: true },
-  { id: "4", dayIndex: 4, date: "2026-04-04", week: 1, trainingLabel: "장거리", isProgramOff: false },
-  { id: "5", dayIndex: 5, date: "2026-04-05", week: 1, trainingLabel: "이지런", isProgramOff: false },
-  { id: "6", dayIndex: 6, date: "2026-04-06", week: 1, trainingLabel: "토요", isProgramOff: false },
-  { id: "7", dayIndex: 7, date: "2026-04-07", week: 2, trainingLabel: "인터벌", isProgramOff: false },
+  { id: "1", dayIndex: 1, date: "2026-04-01", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },
+  { id: "2", dayIndex: 2, date: "2026-04-02", week: 1, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
+  { id: "3", dayIndex: 3, date: "2026-04-03", week: 1, trainingTitle: "휴무", trainingContent: "", isProgramOff: true },
+  { id: "4", dayIndex: 4, date: "2026-04-04", week: 1, trainingTitle: "장거리", trainingContent: "", isProgramOff: false },
+  { id: "5", dayIndex: 5, date: "2026-04-05", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },
+  { id: "6", dayIndex: 6, date: "2026-04-06", week: 1, trainingTitle: "토요", trainingContent: "", isProgramOff: false },
+  { id: "7", dayIndex: 7, date: "2026-04-07", week: 2, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
 ];
 
 const attendanceMap = {

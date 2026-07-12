@@ -26,13 +26,13 @@ initializeApp({ projectId: "dmc-attendance" });
 const db = getFirestore();
 
 const SLOTS = [
-  { dayIndex: 1, date: "2026-04-01", week: 1, trainingLabel: "5km 이지런", isProgramOff: false },
-  { dayIndex: 2, date: "2026-04-02", week: 1, trainingLabel: "인터벌", isProgramOff: false },
-  { dayIndex: 3, date: "2026-04-03", week: 1, trainingLabel: "휴무", isProgramOff: true },
-  { dayIndex: 4, date: "2026-04-04", week: 1, trainingLabel: "장거리", isProgramOff: false },
-  { dayIndex: 5, date: "2026-04-05", week: 1, trainingLabel: "이지런", isProgramOff: false },
-  { dayIndex: 6, date: "2026-04-06", week: 1, trainingLabel: "동마클 토요일", isProgramOff: false },
-  { dayIndex: 7, date: "2026-04-07", week: 2, trainingLabel: "인터벌", isProgramOff: false },
+  { dayIndex: 1, date: "2026-04-01", week: 1, trainingTitle: "5km 이지런", trainingContent: "", isProgramOff: false },
+  { dayIndex: 2, date: "2026-04-02", week: 1, trainingTitle: "인터벌", trainingContent: "5×1km", isProgramOff: false },
+  { dayIndex: 3, date: "2026-04-03", week: 1, trainingTitle: "휴무", trainingContent: "", isProgramOff: true },
+  { dayIndex: 4, date: "2026-04-04", week: 1, trainingTitle: "장거리", trainingContent: "", isProgramOff: false },
+  { dayIndex: 5, date: "2026-04-05", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },
+  { dayIndex: 6, date: "2026-04-06", week: 1, trainingTitle: "동마클 토요일", trainingContent: "", isProgramOff: false },
+  { dayIndex: 7, date: "2026-04-07", week: 2, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
 ];
 
 (async () => {

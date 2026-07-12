@@ -225,7 +225,14 @@
       const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
       document.getElementById("today-day").textContent =
         `${sl.dayIndex}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
-      document.getElementById("today-training").textContent = "📋 " + (sl.trainingLabel || "");
+      document.getElementById("today-training").textContent =
+        "📋 " + (sl.trainingTitle || sl.trainingLabel || "");
+      const detailEl = document.getElementById("today-training-detail");
+      const content = sl.trainingContent || "";
+      if (detailEl) {
+        detailEl.textContent = content;
+        detailEl.style.display = content ? "block" : "none";
+      }
       updateSaturdayNotice(sl.date);
 
       const btn = document.getElementById("btn-attend");
@@ -309,7 +316,7 @@
           ${w.slots.map((s) => `
             <div class="slot-row ${s.status === "today" ? "today" : ""}">
               <span>${s.dayIndex}일</span>
-              <span>${s.label}</span>
+              <span>${s.title || s.label || ""}</span>
               <span class="slot-status">${
                 s.status === "attend" ? "✓" + (s.photo ? " 📷" : "") :
                 s.status === "off" ? "—" :
