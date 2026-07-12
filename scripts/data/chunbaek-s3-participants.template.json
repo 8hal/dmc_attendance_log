@@ -1,0 +1,6 @@
+{
+  "season": "chunbaek-s3",
+  "note": "운영진이 참가자 memberId 목록을 채운 뒤 seed-chunbaek-participants.js --dry-run 실행",
+  "memberIds": [],
+  "members": []
+}
