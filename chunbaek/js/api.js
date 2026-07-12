@@ -151,40 +151,47 @@ async function apiGet(action, params = {}, needToken = false) {
   if (useMock()) return mockGet(action, params);
   const qs = new URLSearchParams({ action, ...params });
   if (needToken && getToken()) qs.set("token", getToken());
-  try {
-    const res = await fetch(`${API_BASE}?${qs}`);
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "오류");
-    return data;
-  } catch (e) {
-    console.warn("[chunbaek] API 실패 → 목업 데이터 사용:", action, e.message);
-    return mockGet(action, params);
+  const res = await fetch(`${API_BASE}?${qs}`);
+  const data = await res.json();
+  if (!data.ok) {
+    const err = new Error(data.error || "오류");
+    err.status = res.status;
+    throw err;
   }
+  return data;
 }
 
 async function apiPost(action, body, needToken = false) {
   if (useMock()) return mockPost(action, body);
   const headers = { "Content-Type": "application/json" };
   if (needToken && getToken()) headers.Authorization = `Bearer ${getToken()}`;
-  try {
-    const res = await fetch(`${API_BASE}?action=${action}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "오류");
-    return data;
-  } catch (e) {
-    console.warn("[chunbaek] API 실패 → 목업:", action, e.message);
-    return mockPost(action, body);
+  const res = await fetch(`${API_BASE}?action=${action}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    const err = new Error(data.error || "오류");
+    err.status = res.status;
+    throw err;
   }
+  return data;
 }
 
 function mockGet(action) {
   if (action === "members-roster") return Promise.resolve({ ok: true, members: MOCK.roster });
   if (action === "my-profile") return Promise.resolve({ ok: true, ...MOCK.profile });
-  if (action === "today-slot") return Promise.resolve({ ok: true, slot: MOCK.todaySlot });
+  if (action === "today-slot") {
+    return Promise.resolve({
+      ok: true,
+      slot: MOCK.todaySlot,
+      beforeSeason: false,
+      afterSeason: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+    });
+  }
   if (action === "my-timeline") return Promise.resolve({ ok: true, weeks: MOCK.timeline });
   if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
   return Promise.reject(new Error(`preview: unknown action ${action}`));

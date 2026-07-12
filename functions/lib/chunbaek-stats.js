@@ -248,21 +248,30 @@ function seasonBounds(slots) {
   };
 }
 
+function seasonMeta(bounds) {
+  return {
+    startDate: bounds.startDate,
+    endDate: bounds.endDate,
+  };
+}
+
 function todaySlotPayload(slots, attendanceMap, today) {
-  const { startDate, endDate } = seasonBounds(slots);
+  const bounds = seasonBounds(slots);
+  const { startDate, endDate } = bounds;
+  const meta = seasonMeta(bounds);
   if (!startDate) {
-    return { slot: null, beforeSeason: false, afterSeason: false, noSlots: true };
+    return { slot: null, beforeSeason: false, afterSeason: false, noSlots: true, ...meta };
   }
   if (today < startDate) {
-    return { slot: null, beforeSeason: true, afterSeason: false };
+    return { slot: null, beforeSeason: true, afterSeason: false, ...meta };
   }
   if (today > endDate) {
-    return { slot: null, beforeSeason: false, afterSeason: true };
+    return { slot: null, beforeSeason: false, afterSeason: true, ...meta };
   }
 
   const slot = findTodaySlot(slots, today);
   if (!slot) {
-    return { slot: null, beforeSeason: false, afterSeason: false };
+    return { slot: null, beforeSeason: false, afterSeason: false, ...meta };
   }
 
   const att = getAttendance(attendanceMap, slot);
@@ -280,6 +289,7 @@ function todaySlotPayload(slots, attendanceMap, today) {
     },
     beforeSeason: false,
     afterSeason: false,
+    ...meta,
   };
 }
 

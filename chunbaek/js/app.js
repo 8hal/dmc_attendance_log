@@ -207,6 +207,84 @@
     }
   }
 
+  function formatIsoDateKo(iso) {
+    if (!iso) return "—";
+    const [y, m, d] = iso.split("-").map(Number);
+    const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(y, m - 1, d).getDay()];
+    return `${m}/${d}(${dow})`;
+  }
+
+  function daysUntilKst(isoDate) {
+    if (!isoDate) return null;
+    const today = new Date();
+    const kstToday = new Date(today.getTime() + 9 * 3600000);
+    const todayIso = kstToday.toISOString().slice(0, 10);
+    const [ty, tm, td] = todayIso.split("-").map(Number);
+    const [sy, sm, sd] = isoDate.split("-").map(Number);
+    const a = Date.UTC(ty, tm - 1, td);
+    const b = Date.UTC(sy, sm - 1, sd);
+    return Math.round((b - a) / 86400000);
+  }
+
+  function paintStatsHeader(prof) {
+    const s = prof.stats || {};
+    document.getElementById("hdr-nickname").textContent = `${prof.nickname || "—"}님`;
+    const dayIdx = s.seasonDayIndex || 0;
+    document.getElementById("hdr-day").textContent = dayIdx > 0
+      ? `${dayIdx}일차 / 100일`
+      : "시작 전";
+    document.getElementById("hdr-attend").textContent =
+      `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%`;
+    const weekEl = document.getElementById("week-bar");
+    const weekCount = s.weekAttendCount || 0;
+    const weekTarget = s.weekTarget || 3;
+    document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
+    weekEl.classList.toggle("met", weekTarget > 0 && weekCount >= weekTarget);
+  }
+
+  function setTodayPanels({ beforeSeason = false, afterSeason = false, active = true, programOff = false }) {
+    document.getElementById("before-season-card").hidden = !beforeSeason;
+    document.getElementById("after-season-card").hidden = !afterSeason;
+    document.getElementById("today-active").hidden = !active;
+    document.getElementById("program-off-msg").hidden = !programOff;
+    if (!beforeSeason) {
+      document.getElementById("before-season-dday").textContent = "";
+    }
+    const sat = document.getElementById("saturday-notice");
+    if (sat) sat.hidden = true;
+  }
+
+  function paintBeforeSeason(prof, slotRes) {
+    paintStatsHeader(prof);
+    setTodayPanels({ beforeSeason: true, afterSeason: false, active: false, programOff: false });
+    const start = slotRes.startDate || "2026-07-20";
+    document.getElementById("before-season-title").textContent =
+      `${formatIsoDateKo(start)} 시작`;
+    const days = daysUntilKst(start);
+    const ddayEl = document.getElementById("before-season-dday");
+    if (days === null) {
+      ddayEl.textContent = "";
+    } else if (days > 0) {
+      ddayEl.textContent = `D-${days}`;
+    } else if (days === 0) {
+      ddayEl.textContent = "오늘 시작일";
+    } else {
+      ddayEl.textContent = "";
+    }
+    state.todaySlot = null;
+  }
+
+  function paintAfterSeason(prof, slotRes) {
+    paintStatsHeader(prof);
+    setTodayPanels({ beforeSeason: false, afterSeason: true, active: false, programOff: false });
+    const end = slotRes.endDate || "";
+    if (end) {
+      document.getElementById("after-season-desc").textContent =
+        `${formatIsoDateKo(end)}까지 100일 프로그램이 진행되었습니다. 출석 기록은 내 100일·나 탭에서 확인할 수 있습니다.`;
+    }
+    state.todaySlot = null;
+  }
+
   function updateSaturdayNotice(slotDate) {
     const el = document.getElementById("saturday-notice");
     if (!el || !slotDate) return;
@@ -223,32 +301,48 @@
 
   async function loadToday() {
     try {
-      const [prof, slot] = await Promise.all([
+      const [prof, slotRes] = await Promise.all([
         apiGet("my-profile", {}, true),
         apiGet("today-slot", {}, true),
       ]);
       state.profile = prof;
-      state.todaySlot = slot.slot || slot;
 
-      const s = prof.stats || {};
-      document.getElementById("hdr-nickname").textContent = `${prof.nickname || "—"}님`;
-      document.getElementById("hdr-day").textContent = `${s.seasonDayIndex || 42}일차 / 100일`;
-      document.getElementById("hdr-attend").textContent =
-        `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%`;
-
-      const sl = state.todaySlot;
-      if (sl.isProgramOff) {
-        setTodayProgramOff(true);
+      if (slotRes.beforeSeason) {
+        paintBeforeSeason(prof, slotRes);
         return;
       }
-      setTodayProgramOff(false);
+      if (slotRes.afterSeason) {
+        paintAfterSeason(prof, slotRes);
+        return;
+      }
+
+      state.todaySlot = slotRes.slot || null;
+      paintStatsHeader(prof);
+
+      const sl = state.todaySlot;
+      if (!sl) {
+        setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: false });
+        document.getElementById("before-season-title").textContent = "오늘 훈련 슬롯이 없습니다";
+        document.getElementById("before-season-desc").textContent = "운영진에게 문의해 주세요.";
+        document.getElementById("before-season-card").hidden = false;
+        document.getElementById("before-season-eyebrow").textContent = "안내";
+        return;
+      }
+
+      setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
+      document.getElementById("before-season-eyebrow").textContent = "100일 준비";
+
+      if (sl.isProgramOff) {
+        setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: true });
+        return;
+      }
 
       const d = new Date(sl.date + "T12:00:00");
       const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
       document.getElementById("today-day").textContent =
         `${sl.dayIndex}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
       document.getElementById("today-training").textContent =
-        "📋 " + (sl.trainingTitle || sl.trainingLabel || "");
+        "📋 " + (sl.trainingTitle || sl.trainingLabel || "훈련 내용 준비 중");
       const detailEl = document.getElementById("today-training-detail");
       const content = sl.trainingContent || "";
       if (detailEl) {
@@ -267,12 +361,6 @@
         btn.classList.remove("attend-done");
         btn.disabled = false;
       }
-
-      const weekEl = document.getElementById("week-bar");
-      const weekCount = s.weekAttendCount || 0;
-      const weekTarget = s.weekTarget || 3;
-      document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
-      weekEl.classList.toggle("met", weekCount >= weekTarget);
     } catch (e) {
       if (PREVIEW_MODE) renderTodayPreview();
       else showToast(e.message, true);
@@ -302,11 +390,11 @@
     btn.disabled = true;
     try {
       await apiPost("save-attendance", {
-        slotId: state.todaySlot.dayIndex || 42,
+        slotId: state.todaySlot.dayIndex,
         attended: true,
         note: document.getElementById("note-input").value || "",
       }, true);
-      showToast(`${state.todaySlot.dayIndex || 42}일차 출석 완료 · 이번 주 3/3`);
+      showToast(`${state.todaySlot.dayIndex}일차 출석 완료`);
       await loadToday();
     } catch (e) {
       showToast(e.message, true);
