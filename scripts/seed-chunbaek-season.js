@@ -100,8 +100,8 @@ const db = getFirestore();
   const configData = {
     seasonId: "chunbaek-s3",
     title: "춘백 시즌3",
-    raceName: "춘천/JTBC 마라톤",
-    raceDate: "2026-10-25",
+    raceName: "2026 JTBC 서울마라톤",
+    raceDate: "2026-11-01",
     departureCeremonyDate: "2026-07-16",
     startDate,
     endDate,
