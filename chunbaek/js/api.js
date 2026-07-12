@@ -90,8 +90,14 @@ function getToken() {
 }
 
 function setToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+    return true;
+  } catch (err) {
+    console.warn("[chunbaek] token storage failed", err);
+    return false;
+  }
 }
 
 function getAdminPw() {

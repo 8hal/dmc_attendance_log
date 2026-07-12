@@ -72,21 +72,36 @@
     location.hash = name === "welcome" ? "#/welcome" : `#/${name}`;
   }
 
-  function navigateFromHash() {
-    const raw = (location.hash || "#/welcome").replace(/^#\/?/, "");
-    const hash = raw || "welcome";
-    if (TAB_VIEWS.includes(hash) && getToken()) {
-      showView(hash);
-      return;
+  async function ensureSession() {
+    if (!getToken() || state.profile?.profileComplete) return;
+    try {
+      state.profile = await apiGet("my-profile", {}, true);
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) {
+        setToken(null);
+        state.profile = null;
+      }
     }
+  }
+
+  async function navigateFromHash() {
+    const raw = (location.hash || "").replace(/^#\/?/, "");
+    const hash = raw || "";
+
     if (hash === "pick" || hash === "profile" || hash === "guide") {
       showView(hash);
       return;
     }
-    if (getToken() && state.profile?.profileComplete) {
-      showView("today");
+
+    await ensureSession();
+
+    const loggedIn = getToken() && state.profile?.profileComplete;
+    if (loggedIn) {
+      const dest = TAB_VIEWS.includes(hash) ? hash : "today";
+      showView(dest);
       return;
     }
+
     showView("welcome");
   }
 
@@ -144,7 +159,9 @@
     try {
       if (complete) {
         const data = await apiPost("link-device", { memberId: state.selectedMemberId });
-        setToken(data.token);
+        if (!setToken(data.token)) {
+          showToast("로그인 정보를 저장하지 못했습니다. 새로고침 시 다시 선택해야 할 수 있습니다", true);
+        }
         showToast("다시 오신 걸 환영해요");
         state.profile = { profileComplete: true, nickname: data.nickname };
         showView("today");
@@ -295,8 +312,14 @@
         memberId: state.selectedMemberId,
         ...form,
       });
-      setToken(data.token);
-      state.profile = { ...state.profile, resolutionText: form.resolutionText };
+      if (!setToken(data.token)) {
+        showToast("로그인 정보를 저장하지 못했습니다. 새로고침 시 다시 선택해야 할 수 있습니다", true);
+      }
+      state.profile = {
+        profileComplete: true,
+        nickname: data.nickname,
+        resolutionText: form.resolutionText,
+      };
       showView("guide");
     } catch (e) {
       showToast(e.message, true);
@@ -761,7 +784,7 @@
     }
   }
 
-  function init() {
+  async function init() {
     document.getElementById("brand-bar").addEventListener("click", goHome);
     document.getElementById("brand-bar").addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -813,13 +836,13 @@
       if (hint) hint.hidden = false;
     }
 
-    window.addEventListener("hashchange", navigateFromHash);
+    window.addEventListener("hashchange", () => { navigateFromHash(); });
 
     if (PREVIEW_MODE && !location.hash) {
       /* 온보딩 플로우 확인용 — 첫 진입은 환영 화면 */
       showView("welcome");
     } else {
-      navigateFromHash();
+      await navigateFromHash();
     }
   }
 
