@@ -66,6 +66,9 @@
     if (name === "team") renderTeam();
     if (name === "me") renderMe();
 
+    const main = document.querySelector(".main");
+    if (main) main.scrollTop = 0;
+
     location.hash = name === "welcome" ? "#/welcome" : `#/${name}`;
   }
 
@@ -255,8 +258,13 @@
   }
 
   async function openProfileEdit() {
-    if (state.isProcessing) return;
+    if (state.isProcessing) {
+      showToast("처리 중입니다. 잠시 후 다시 시도해 주세요", true);
+      return;
+    }
     state.profileFormMode = "edit";
+    setProfileFormUi();
+    showView("profile");
     try {
       let p = state.profile;
       if (!p?.profileComplete || p.goalMarathonNetTime == null) {
@@ -265,13 +273,14 @@
       }
       if (!p.profileComplete) {
         showToast("프로필을 먼저 만든 뒤 수정할 수 있습니다", true);
+        showView("me");
         return;
       }
       fillProfileForm(p);
       setProfileFormUi();
-      showView("profile");
     } catch (e) {
       showToast(e.message, true);
+      showView("me");
     }
   }
 
@@ -729,7 +738,9 @@
     const s = p.stats || MOCK.profile.stats;
     const editBtn = document.getElementById("btn-edit-profile");
     if (editBtn) {
-      editBtn.disabled = !p.profileComplete;
+      const canEdit = !!p.profileComplete;
+      editBtn.disabled = !canEdit;
+      editBtn.title = canEdit ? "" : "프로필 등록 후 수정할 수 있습니다";
     }
     document.getElementById("me-dl").innerHTML = `
       <dt>닉네임</dt><dd>${p.nickname || "김러너"}</dd>
