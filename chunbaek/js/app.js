@@ -58,7 +58,8 @@
   }
 
   function navigateFromHash() {
-    const hash = (location.hash || "#/welcome").replace("#/", "") || "welcome";
+    const raw = (location.hash || "#/welcome").replace(/^#\/?/, "");
+    const hash = raw || "welcome";
     if (TAB_VIEWS.includes(hash) && getToken()) {
       showView(hash);
       return;
@@ -325,8 +326,8 @@
     window.addEventListener("hashchange", navigateFromHash);
 
     if (PREVIEW_MODE && !location.hash) {
-      showView("today");
-      setToken("preview-token");
+      /* 온보딩 플로우 확인용 — 첫 진입은 환영 화면 */
+      showView("welcome");
     } else {
       navigateFromHash();
     }

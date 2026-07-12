@@ -23,7 +23,7 @@
   --yellow: #d97706;
   --yellow-light: #fef3c7;
   --red: #dc2626;
-  --shadow: 0 4px 20px rgba(240, 78, 48, 0.12);
+  --shadow: 0 4px 20px rgba(255, 50, 20, 0.15);
   --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
   --font-body: "Noto Sans KR", system-ui, -apple-system, sans-serif;
 }
@@ -95,6 +95,12 @@ body {
 
 .view { display: none; }
 .view.active { display: block; }
+.view.active.onboarding-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ── 온보딩 · 환영 히어로 (포스터 오렌지 배경) ── */
 .welcome-hero {
@@ -133,10 +139,6 @@ body {
 }
 
 .onboarding-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   min-height: 70dvh;
   text-align: center;
   padding: 24px;
