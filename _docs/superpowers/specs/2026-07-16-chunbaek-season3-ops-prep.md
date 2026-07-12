@@ -95,9 +95,10 @@
 | Functions `chunbaek` | ✅ 배포됨 |
 | Hosting (`chunbaek/`) | ✅ 배포됨 |
 | Admin API 6개 | ✅ 구현·배포 |
-| `chunbaek_season_config` | ❌ 프로덕션 미적용 |
-| `chunbaek_slots` 100건 | ❌ 프로덕션 미적용 |
-| `members.chunbaekS3.participant` | ❌ ~40명 미적용 |
+| **앱 버전** | **v0.1.0-alpha.1** (`chunbaek/VERSION`) |
+| `chunbaek_season_config` | ✅ 프로덕션 적용 |
+| `chunbaek_slots` 100건 | ✅ 프로덕션 적용 |
+| `members.chunbaekS3.participant` | ✅ 41명 적용 |
 
 ---
 
