@@ -9,7 +9,12 @@ const API_BASE = IS_LOCAL
 const TOKEN_KEY = "chunbaekSessionToken";
 
 const PREVIEW_MODE = new URLSearchParams(location.search).has("preview")
-  || location.protocol === "file:";
+  || location.protocol === "file:"
+  || IS_LOCAL;
+
+function useMock() {
+  return PREVIEW_MODE;
+}
 
 const MOCK = {
   roster: [
@@ -86,27 +91,37 @@ function setToken(token) {
 }
 
 async function apiGet(action, params = {}, needToken = false) {
-  if (PREVIEW_MODE) return mockGet(action, params);
+  if (useMock()) return mockGet(action, params);
   const qs = new URLSearchParams({ action, ...params });
   if (needToken && getToken()) qs.set("token", getToken());
-  const res = await fetch(`${API_BASE}?${qs}`);
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || "오류");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE}?${qs}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "오류");
+    return data;
+  } catch (e) {
+    console.warn("[chunbaek] API 실패 → 목업 데이터 사용:", action, e.message);
+    return mockGet(action, params);
+  }
 }
 
 async function apiPost(action, body, needToken = false) {
-  if (PREVIEW_MODE) return mockPost(action, body);
+  if (useMock()) return mockPost(action, body);
   const headers = { "Content-Type": "application/json" };
   if (needToken && getToken()) headers.Authorization = `Bearer ${getToken()}`;
-  const res = await fetch(`${API_BASE}?action=${action}`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || "오류");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE}?action=${action}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "오류");
+    return data;
+  } catch (e) {
+    console.warn("[chunbaek] API 실패 → 목업:", action, e.message);
+    return mockPost(action, body);
+  }
 }
 
 function mockGet(action) {
@@ -121,11 +136,12 @@ function mockGet(action) {
 function mockPost(action, body) {
   if (action === "create-profile" || action === "link-device") {
     setToken("preview-token");
+    const member = MOCK.roster.find((m) => m.memberId === body.memberId);
     return Promise.resolve({
       ok: true,
       token: "preview-token",
       memberId: body.memberId || "m2",
-      nickname: "김러너",
+      nickname: member?.nickname || "김러너",
       profileComplete: true,
     });
   }

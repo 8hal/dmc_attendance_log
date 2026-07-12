@@ -288,6 +288,14 @@ body {
   font-weight: 600;
 }
 
+.roster-empty {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 20px 12px;
+  margin: 0;
+}
+
 /* ── 프로필 폼 ── */
 .time-row {
   display: flex;

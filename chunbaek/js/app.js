@@ -79,6 +79,10 @@
     try {
       const data = await apiGet("members-roster");
       const list = document.getElementById("roster-list");
+      if (!data.members?.length) {
+        list.innerHTML = '<li class="roster-empty">명단을 불러오지 못했습니다</li>';
+        return;
+      }
       list.innerHTML = data.members.map((m) => `
         <li class="roster-item" data-id="${m.memberId}" data-nick="${m.nickname}" data-complete="${m.profileComplete}">
           <input type="radio" name="member" class="roster-radio" />
@@ -96,8 +100,25 @@
           document.getElementById("btn-pick-next").disabled = false;
         });
       });
+      filterRoster();
     } catch (e) {
       showToast(e.message, true);
+    }
+  }
+
+  function filterRoster() {
+    const input = document.getElementById("roster-search");
+    const q = (input?.value || "").trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll(".roster-item").forEach((item) => {
+      const nick = (item.dataset.nick || "").toLowerCase();
+      const show = !q || nick.includes(q);
+      item.style.display = show ? "" : "none";
+      if (show) visible += 1;
+    });
+    const emptyEl = document.getElementById("roster-empty");
+    if (emptyEl) {
+      emptyEl.hidden = !(q && visible === 0);
     }
   }
 
@@ -303,13 +324,7 @@
       }
     });
 
-    document.getElementById("roster-search").addEventListener("input", (e) => {
-      const q = e.target.value.trim().toLowerCase();
-      document.querySelectorAll(".roster-item").forEach((item) => {
-        const nick = (item.dataset.nick || "").toLowerCase();
-        item.style.display = !q || nick.includes(q) ? "" : "none";
-      });
-    });
+    document.getElementById("roster-search").addEventListener("input", filterRoster);
 
     document.getElementById("btn-start").addEventListener("click", () => showView("pick"));
     document.getElementById("btn-pick-next").addEventListener("click", onPickNext);

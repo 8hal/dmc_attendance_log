@@ -28,19 +28,19 @@
   <div class="app">
     <header class="brand-bar" id="brand-bar" role="button" tabindex="0" title="홈으로">
       <span class="brand-bar-mark">🍁</span>
-      <span class="brand-bar-title">CHUN<em>100</em></span>
+      <span class="brand-bar-title">춘백 <em>S3</em></span>
       <span class="brand-bar-sub">100일 출석</span>
     </header>
 
     <div class="preview-banner" id="preview-banner" style="display:none">
-      미리보기 모드 — API 없이 목업 데이터 표시 (?preview=1)
+      미리보기·로컬 — 목업 명단 (API 없어도 동작)
     </div>
 
     <main class="main">
       <!-- ① 환영 -->
       <section id="view-welcome" class="view onboarding-center welcome-hero">
         <p class="welcome-year">2026</p>
-        <h1 class="brand-title">CHUN100</h1>
+        <h1 class="brand-title">춘백 S3</h1>
         <p class="brand-display">100 DAYS<br />CHUNCHEON</p>
         <p class="brand-sub">
           100일, 함께 달립니다.<br />
@@ -56,6 +56,7 @@
         <p class="section-sub">동마클 정회원 명단에서 본인을 선택하세요</p>
         <input type="search" class="input" placeholder="🔍 닉네임 검색" id="roster-search" />
         <ul class="roster-list card" id="roster-list" style="padding:0"></ul>
+        <p class="roster-empty" id="roster-empty" hidden>일치하는 닉네임이 없습니다</p>
         <button type="button" class="btn btn-primary" id="btn-pick-next" disabled style="margin-top:16px">다음</button>
       </section>
 
@@ -99,7 +100,7 @@
       <section id="view-today" class="view">
         <div class="stats-header">
           <div>
-            <div class="stats-season">CHUN100</div>
+            <div class="stats-season">춘백 S3</div>
             <div class="stats-day" id="hdr-day">42일차 / 100일</div>
           </div>
           <div class="stats-attend" id="hdr-attend">출석 28회 · 출석률 68%</div>
