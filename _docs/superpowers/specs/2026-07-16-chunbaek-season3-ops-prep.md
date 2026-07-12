@@ -88,33 +88,42 @@
 
 ---
 
-## 2. 기술 현황 (2026-07-16)
+## 2. 기술 현황 (2026-07-12 · v0.1.0-alpha.1)
 
 | 구성 | 상태 |
 |------|------|
-| Functions `chunbaek` | ✅ 배포됨 |
-| Hosting (`chunbaek/`) | ✅ 배포됨 |
-| Admin API 6개 | ✅ 구현·배포 |
-| **앱 버전** | **v0.1.0-alpha.1** (`chunbaek/VERSION`) |
-| `chunbaek_season_config` | ✅ 프로덕션 적용 |
-| `chunbaek_slots` 100건 | ✅ 프로덕션 적용 |
-| `members.chunbaekS3.participant` | ✅ 41명 적용 |
+| **앱 버전** | `0.1.0-alpha.1` (`chunbaek/VERSION`, 태그 `chunbaek-v0.1.0-alpha.1`) |
+| Functions `chunbaek` | ✅ 배포됨 — **알파 1 코드 재배포 권장** |
+| Hosting (`chunbaek/`) | ✅ 배포됨 — **알파 1 코드 재배포 권장** |
+| Admin API 6개 | ✅ |
+| `chunbaek_season_config` | ✅ |
+| `chunbaek_slots` 100건 | ✅ |
+| `members.chunbaekS3.participant` | ✅ **41명** |
+| 1주차 훈련표 admin | ❌ 미입력 |
+| 알파 E2E (수동) | ⏳ 출정식 전 |
+
+### 배포 (Mac)
+
+- **Node 22** 필수 (`nvm use 22`). Node 24 + `npx` → firebase-tools 실패.
+- 일괄: `bash scripts/deploy-chunbaek.sh` (`scripts/lib/firebase-cli.sh` → 로컬 firebase-tools)
+- Firestore 시드: `gcloud auth application-default login` (Firebase CLI와 별개)
+- 검증 조회: Cursor Desktop **Firebase MCP** (선택)
 
 ---
 
 ## 3. 운영 준비 체크리스트
 
-### Phase A — 시즌 골격 (발대식 전, ~7/16 · 시드는 7/20 전까지)
+### Phase A — 시즌 골격 (발대식 전)
 
-| # | 작업 | 담당 | 스크립트/도구 |
-|---|------|------|----------------|
-| A1 | 100일 슬롯 골격 CSV 생성 | AI/운영 | `node scripts/generate-chunbaek-slot-skeleton.js` |
-| A2 | season_config + slots 시드 **dry-run** | 운영진 확인 | `node scripts/seed-chunbaek-season.js --dry-run` |
-| A3 | season_config + slots 시드 **실행** | 운영진 승인 후 | `node scripts/seed-chunbaek-season.js` |
-| A4 | 참가자 ~40명 명단 확정 | 운영진 | 단톡·출정식 명단 |
-| A5 | participant 시드 **dry-run** | 운영진 확인 | `node scripts/seed-chunbaek-participants.js --input=... --dry-run` |
-| A6 | participant 시드 **실행** | 운영진 승인 후 | `node scripts/seed-chunbaek-participants.js --input=...` |
-| A7 | Firestore 백업 | 운영진 | `cd functions && node ../scripts/backup-firestore.js` |
+| # | 작업 | 상태 | 담당 |
+|---|------|------|------|
+| A1 | 100일 슬롯 골격 CSV | ✅ | `generate-chunbaek-slot-skeleton.js` |
+| A2 | season dry-run | ✅ | |
+| A3 | season 실행 | ✅ | |
+| A4 | 참가자 명단 (41명) | ✅ | `chunbaek-s3-names.txt` |
+| A5 | participant dry-run | ✅ | |
+| A6 | participant 실행 | ✅ | `batch.update` 수정 후 재실행 포함 |
+| A7 | Firestore 백업 | ✅ | 2026-07-12 |
 
 ### Phase B — 발대식·출정식 (7/16 목 저녁)
 
@@ -129,7 +138,7 @@
 
 | # | 작업 | 확인 |
 |---|------|------|
-| C1 | 회원 `members-roster`에 ~40명 노출 | API 또는 앱 ② 명단 |
+| C1 | 회원 `members-roster`에 **41명** 노출 | API 또는 앱 ② 명단 |
 | C2 | `today-slot` 1일차 반환 | date=2026-07-20 |
 | C3 | 테스트 계정 온보딩 E2E | create-profile → 출석 |
 | C4 | admin-grid 1주차 | 출석 그리드 로드 |
@@ -178,23 +187,22 @@ node scripts/seed-chunbaek-participants.js \
 
 ---
 
-## 5. 참가자 명단 — 필요한 입력
+## 5. 참가자 명단 (확정 41명)
 
-운영진이 아래 중 하나를 제공해야 합니다.
+- 파일: `scripts/data/chunbaek-s3-names.txt`
+- 매칭: `scripts/data/chunbaek-s3-participants.json`
+- baseline: `members-firestore-snapshot-mcp-post.json` (김원겸·이기수 포함)
 
-1. **실명 목록** (출정식 명단) → `scripts/data/chunbaek-s3-names.txt` 한 줄에 한 명
-2. **members doc id 목록** → `chunbaek-s3-participants.json`에 직접 기입
-
-명단 매칭 보조:
+재매칭:
 
 ```bash
 node scripts/plan-chunbaek-participants.js \
-  --baseline=scripts/data/members-firestore-snapshot.json \
-  --names=김재연,이유창 \
+  --baseline=scripts/data/members-firestore-snapshot-mcp-post.json \
+  --file=scripts/data/chunbaek-s3-names.txt \
   --out=scripts/data/chunbaek-s3-participants.json
 ```
 
-baseline 스냅샷이 오래됐으면 MCP/API로 최신 `members` export 후 `--baseline` 갱신.
+baseline 갱신: Cursor Desktop **Firebase MCP** export → `members-firestore-snapshot.json` (읽기 전용).
 
 ---
 
@@ -237,21 +245,24 @@ baseline 스냅샷이 오래됐으면 MCP/API로 최신 `members` export 후 `--
 
 | 파일 | 용도 |
 |------|------|
-| `scripts/data/chunbaek-s3-slots-100days.csv` | 100일 날짜·주차 골격 |
-| `scripts/data/chunbaek-s3-participants.template.json` | 참가자 JSON 템플릿 |
-| `scripts/generate-chunbaek-slot-skeleton.js` | 골격 재생성 |
-| `scripts/seed-chunbaek-season.js` | season_config + slots |
-| `scripts/seed-chunbaek-participants.js` | participant 플래그 |
-| `scripts/plan-chunbaek-participants.js` | 실명→doc id 매칭 |
+| `chunbaek/VERSION` | 앱 버전 SSOT |
+| `_docs/releases/chunbaek-v0.1.0-alpha.1.md` | 알파 릴리스 노트 |
+| `scripts/deploy-chunbaek.sh` | 일괄 배포 |
+| `scripts/lib/firebase-cli.sh` | Node 22 검사·로컬 firebase-tools |
+| `scripts/data/chunbaek-s3-names.txt` | 참가자 41명 |
+| `scripts/data/chunbaek-s3-participants.json` | doc id 매칭 |
+| `scripts/data/chunbaek-s3-slots-100days.csv` | 100일 골격 |
+| `scripts/seed-chunbaek-season.js` | season + slots |
+| `scripts/seed-chunbaek-participants.js` | participant |
 
 ---
 
 ## 9. 다음 액션 (지금)
 
-1. **운영진:** 참가자 실명 ~40명 목록 제공 (`chunbaek-s3-names.txt`)
-2. **AI/운영:** `seed-chunbaek-season.js --dry-run` 결과 공유 → 승인 후 실행
-3. **운영진:** 1주차 훈련표 초안 준비 (출정식 전 admin에 입력 가능)
-4. **전원:** [출정식 전 테스트 계획](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) — **7/16 전** Go 체크리스트 완료
+1. **Mac:** `nvm use 22` → `bash scripts/deploy-chunbaek.sh` (알파 1 코드 반영)
+2. **운영진:** admin **1주차 훈련표** 입력 (§6)
+3. **전원:** [출정식 전 테스트](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) — 7/16 전 Go
+4. **선택:** Firebase MCP로 시드·roster 사후 확인 (Cursor Desktop)
 
 ---
 
@@ -263,3 +274,4 @@ baseline 스냅샷이 오래됐으면 MCP/API로 최신 `members` export 후 `--
 | 2026-07-16 | 100슬롯 골격 CSV·시드 스크립트 추가 |
 | 2026-07-16 | 참가자별 목표 대회(춘천/JTBC) 참고 정보 추가 |
 | 2026-07-12 | 출정식 전 테스트 계획 문서 연동 |
+| 2026-07-12 | v0.1.0-alpha.1 — Phase A 완료, 배포·MCP·41명 명단 반영 |

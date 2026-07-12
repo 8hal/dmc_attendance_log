@@ -1,7 +1,8 @@
 # 테스트 계획: 춘백 S3 — 출정식(7/16) 전 완료
 
 > **작성:** 2026-07-12  
-> **마감:** **2026-07-16(목) 출정식·발대식 이전** — 테스트·시드·1주차 훈련표까지 완료  
+> **갱신:** 2026-07-12 (v0.1.0-alpha.1)  
+> **마감:** **2026-07-16(목) 출정식·발대식 이전**  
 > **공식 개시:** 2026-07-20(월) 1일차  
 > **근거 문서:** [ops-prep](../superpowers/specs/2026-07-16-chunbaek-season3-ops-prep.md), [confirmed-decisions](../superpowers/specs/2026-07-12-chunbaek-season3-confirmed-decisions.md), [admin-api §7](../superpowers/specs/2026-07-12-chunbaek-season3-admin-api.md)
 
@@ -32,7 +33,7 @@
 | 일자 | 담당 | 할 일 |
 |------|------|--------|
 | **7/12~13** | AI/개발 | 에뮬 `verify-chunbaek-emulator` 통과 확인, `pre-deploy-test` chunbaek smoke 여부 점검 |
-| **7/12~13** | 운영진 | 참가자 실명 ~40명 → `chunbaek-s3-names.txt` |
+| **7/12~13** | 운영진 | 참가자 실명 **41명** → `chunbaek-s3-names.txt` ✅ |
 | **7/14** | 운영진 승인 | season·participant 시드 **dry-run** 검토 → **실행** |
 | **7/14~15** | 운영진+개발 | 수동 TC(C·D·E) 전항, 1주차 훈련표 admin 입력 |
 | **7/15** | 운영진 | 파일럿 2~3명 실기기 온보딩 |
@@ -46,14 +47,14 @@
 
 | # | 항목 | 확인 방법 | 상태 |
 |---|------|-----------|------|
-| P1 | Functions `chunbaek` 배포 | `curl -s 'https://dmc-attendance.web.app/api/chunbaek?action=ping'` → `{"ok":true,"service":"chunbaek"}` | [ ] |
-| P2 | Hosting 배포 | https://dmc-attendance.web.app/chunbaek/ HTTP 200 | [ ] |
-| P3 | Firestore 백업 | `cd functions && node ../scripts/backup-firestore.js` | [ ] |
-| P4 | `chunbaek_season_config` 시드 | `seed-chunbaek-season.js` 실행 후 startDate=2026-07-20 | [ ] |
-| P5 | `chunbaek_slots` 100건 | dayIndex 1=7/20, 100=10/27 | [ ] |
-| P6 | participant ~40명 | `members-roster` API ≥ 40 또는 운영 목표 인원 | [ ] |
-| P7 | 1주차 훈련표 | admin 훈련 입력 week=1 저장 (7/20~7/26) | [ ] |
-| P8 | 테스트 기기 | iOS Safari + Android Chrome 각 1대 (또는 운영진 폰 2대) | [ ] |
+| P1 | Functions `chunbaek` | ping API | [x] |
+| P2 | Hosting | HTTP 200 | [x] |
+| P3 | Firestore 백업 | `backup/2026-07-12` | [x] |
+| P4 | season_config + slots | 시드 실행 | [x] |
+| P5 | participant 41명 | roster API = 41 | [x] |
+| P6 | **알파 1 코드 배포** | `deploy-chunbaek.sh` (Node 22) | [ ] |
+| P7 | 1주차 훈련표 | admin week=1 | [ ] |
+| P8 | 테스트 기기 | iOS/Android | [ ] |
 
 **시드 순서:** [ops-prep §4](../superpowers/specs/2026-07-16-chunbaek-season3-ops-prep.md) — 반드시 `--dry-run` → 승인 → 실행.
 
@@ -105,8 +106,8 @@ bash scripts/pre-deploy-test.sh
 
 | # | 검증 | 명령/URL | 기대 | 통과 |
 |---|------|----------|------|------|
-| B01 | API 헬스 | `curl -s '.../api/chunbaek?action=ping'` | `ok:true` | [ ] |
-| B02 | 명단 규모 | `curl -s '.../api/chunbaek?action=members-roster'` | `members.length` ≈ 40, 가나다순 | [ ] |
+| B01 | API 헬스 | `curl -s '.../api/chunbaek?action=ping'` | `ok:true` | [x] |
+| B02 | 명단 규모 | `curl -s '.../api/chunbaek?action=members-roster'` | `members.length` = **41**, 가나다순 | [x] |
 | B03 | 비참가자 제외 | roster에 `participant:false` 인원 없음 | — | [ ] |
 | B04 | 시즌 시작일 | Firestore `chunbaek_season_config` | `startDate: 2026-07-20` | [ ] |
 | B05 | 1일차 슬롯 | `today-slot`은 **7/20 이전**에 404 또는 「시즌 전」 UX | 앱에서 「아직 시작 전」 등 | [ ] |
@@ -232,8 +233,10 @@ bash scripts/pre-deploy-test.sh
 | `scripts/verify-chunbaek-emulator.js` | Phase 0 자동 |
 | `scripts/seed-chunbaek-season.js` | Phase 1 시즌·슬롯 |
 | `scripts/seed-chunbaek-participants.js` | Phase 1 명단 |
-| `scripts/deploy-chunbaek-functions.sh` | Functions 배포 |
-| `scripts/deploy-chunbaek-gallery.sh` | Hosting 배포 |
+| `scripts/deploy-chunbaek.sh` | **일괄 배포** (Functions → Hosting, Node 22) |
+| `scripts/deploy-chunbaek-functions.sh` | Functions만 |
+| `scripts/deploy-chunbaek-gallery.sh` | Hosting만 |
+| `scripts/lib/firebase-cli.sh` | Node 22 검사·로컬 firebase-tools |
 
 ---
 
@@ -242,3 +245,4 @@ bash scripts/pre-deploy-test.sh
 | 일자 | 내용 |
 |------|------|
 | 2026-07-12 | 출정식(7/16) 전 테스트 계획 초안 — ops-prep 연동 |
+| 2026-07-12 | v0.1.0-alpha.1 — P1~P5·B01~B02 완료, 41명·deploy 스크립트 반영 |

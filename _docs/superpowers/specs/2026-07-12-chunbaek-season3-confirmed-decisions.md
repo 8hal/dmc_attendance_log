@@ -51,7 +51,7 @@
 | 항목 | 확정 |
 |------|------|
 | 방식 | **운영진 사전 지정** — `members.chunbaekS3.participant: true` |
-| 규모 | 약 40명 (DMC `members` 부분집합) |
+| 규모 | **41명** (DMC `members` 부분집합, `chunbaek-s3-names.txt`) |
 | 시즌 중 추가 | **가능** — 운영진이 `participant: true` 추가 → 다음 roster API부터 노출 |
 | 자가 등록 | **하지 않음** — 동마클 전체 명단 표시 후 자동 participant 방식 **채택 안 함** |
 | 비참가자 | `participant` 없음/false → 명단·API 접근 불가 |
@@ -197,48 +197,66 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 
 ---
 
-## 7. API 구현 현황 (2026-07-12)
-
-### 7.1 구현 완료 (코드)
+### 7.1 회원 API (구현·배포)
 
 | action | 용도 |
 |--------|------|
 | `ping` | 헬스체크 |
 | `members-roster` | ② 명단 |
-| `create-profile` | ③ 신규 가입 |
+| `create-profile` | ③ 신규 가입 (`goalRace` 포함) |
 | `link-device` | 재로그인 |
 | `my-profile` | 프로필·통계 |
-| `today-slot` | ⑤ 홈 오늘 슬롯 |
-| `save-attendance` | 출석 저장 |
-| `my-timeline` | 내 100일 |
-| `team-summary` | 팀 탭 |
+| `today-slot` | ⑤ 홈 (`beforeSeason`·`startDate` 포함) |
+| `save-attendance` | 출석 저장 (`note`·`photoUrl` 필드) |
+| `my-timeline` | 내 100일 (`note` 포함) |
+| `team-summary` | 팀 탭 (`profileComplete`만) |
 
-### 7.2 미구현
+### 7.2 운영진 API (구현·배포)
 
-상세 스펙: [Admin API 스펙](./2026-07-12-chunbaek-season3-admin-api.md)
+| action | 용도 |
+|--------|------|
+| `verify-admin` | 운영진 인증 |
+| `admin-grid` | 출석 그리드 |
+| `admin-set-attendance` | 예외·대리 출석 |
+| `admin-week-slots` | 주차별 훈련 조회 |
+| `admin-save-week-slots` | 주차별 훈련 저장 |
+| `admin-import-slots` | 100슬롯 일괄 import |
 
-| action | 용도 | MVP |
-|--------|------|-----|
-| `verify-admin` | 운영진 인증 | 필수 |
-| `admin-grid` | 출석 그리드 | 필수 |
-| `admin-set-attendance` | 예외·대리 출석 | 필수 |
-| `admin-week-slots` | 주차별 훈련 조회 | 필수 |
-| `admin-save-week-slots` | 주차별 훈련 저장 | 필수 |
-| `admin-import-slots` | 100슬롯 일괄 import (골격) | 필수(부트스트랩) |
-| `admin-set-participant` | 참가자 추가·제외 | 확장 (권장) |
-| `admin-reset-profile` | 프로필 초기화·세션 revoke | 확장 (권장) |
-| `admin-update-profile` | 목표·PB·각오 수정 | 확장 (권장) |
+### 7.3 미구현 (확장·Phase 2)
 
-### 7.3 배포 현황
+| action | 용도 |
+|--------|------|
+| `admin-set-participant` | 참가자 추가·제외 |
+| `admin-reset-profile` | 프로필 초기화 |
+| `admin-update-profile` | 목표·PB·각오 수정 |
 
-| 구성 | 프로덕션 |
-|------|----------|
-| Hosting (`chunbaek/`) | ✅ 배포됨 |
-| Hosting (`chunbaek/admin.html` 목업) | ✅ 배포됨 (2026-07-12) |
-| Functions (`chunbaek`) | ❌ **미배포** |
-| Firestore 시드 (40명·슬롯) | ❌ 미적용 |
+### 7.4 배포·데이터 현황 (2026-07-12, **v0.1.0-alpha.1**)
 
-**실서비스 전 필수:** Functions 배포 + participant·슬롯 시드.
+| 구성 | 상태 |
+|------|------|
+| Git 태그 | `chunbaek-v0.1.0-alpha.1` |
+| 앱 버전 SSOT | `chunbaek/VERSION` → `0.1.0-alpha.1` |
+| Functions `chunbaek` | ✅ 배포됨 (이전 빌드; **알파 번들 재배포 권장**) |
+| Hosting `/chunbaek/` | ✅ 배포됨 (**알파 번들 재배포 권장**) |
+| `participant` | ✅ **41명** (`chunbaek-s3-participants.json`) |
+| `chunbaek_season_config` + slots 100 | ✅ 프로덕션 적용 |
+| `members-roster` API | ✅ 41명 확인됨 |
+
+**배포 명령:** `bash scripts/deploy-chunbaek.sh` (Node **22** 필수).  
+**릴리스 노트:** [_docs/releases/chunbaek-v0.1.0-alpha.1.md](../../releases/chunbaek-v0.1.0-alpha.1.md)
+
+### 7.5 회원 FE (알파 1 반영)
+
+| 기능 | 상태 |
+|------|------|
+| 온보딩 + goalRace | ✅ |
+| 시즌 시작 전 홈 (D-day) | ✅ |
+| 프로덕션 API 실패 → 목업 폴백 | ❌ 제거됨 |
+| 내 100일 주간만·현재 주차 이하 | ✅ |
+| 출석 메모 → 내 100일 | ✅ |
+| 팀 profileComplete만 | ✅ |
+| 사진 업로드 UI | ❌ disabled |
+| 월간/시즌 타임라인 | ❌ Phase 2 |
 
 ---
 
@@ -259,18 +277,18 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | Milestone | 상태 |
 |-----------|------|
 | M1 인프라·auth·온보딩 API | ✅ |
-| M2 출석·집계 API | ✅ (코드) |
-| M3 admin API | ❌ |
-| M4 회원 SPA | △ 스켈레톤·API 호출 코드 있음, 실데이터 미연동 |
-| M5 admin.html + pre-deploy | ❌ |
+| M2 출석·집계 API | ✅ |
+| M3 admin API 6개 | ✅ |
+| M4 회원 SPA 실 API | ✅ (알파 1) |
+| M5 admin.html + 배포 | △ 알파 번들 재배포 대기 |
+| M6 시드·운영 준비 | ✅ 41명·100슬롯 |
 
-**다음 구현 우선순위 (합의):**
+**다음 (출정식 7/16 전):**
 
-1. Functions `chunbaek` 배포  
-2. 참가 40명 `participant` + 100슬롯 시드  
-3. preview 없이 E2E (온보딩 → 출석 → 팀)  
-4. admin API·화면  
-5. pre-deploy smoke  
+1. Mac **Node 22** + `bash scripts/deploy-chunbaek.sh` (알파 1 코드 반영)
+2. admin **1주차 훈련표** 입력
+3. [출정식 전 테스트](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) Go 체크리스트
+4. (선택) `pre-deploy-test.sh` chunbaek smoke 통합
 
 ---
 
@@ -294,16 +312,16 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | 2026-07-12 | 토요: 자동 연동 없음, 홈 안내 문구 확정 |
 | 2026-07-12 | FE 스켈레톤·갤러리·Hosting 배포 |
 | 2026-07-16 | 시즌 대회 2개·참가자별 목표(춘천/JTBC) 참고 — [ops-prep](./2026-07-16-chunbaek-season3-ops-prep.md) |
+| 2026-07-12 | **v0.1.0-alpha.1** — 41명 시드, 알파 FE·배포 스크립트, 버저닝 시작 |
 
 ---
 
 ## 12. 한 페이지 요약
 
 ```
-춘백 S3 = dmc-attendance 위 /chunbaek/
-명단 = 운영진이 participant:true (40명, 중간 추가 가능)
-로그인 = 명단 선택 + session token (재로그인 = link-device)
-출석 = chunbaek_attendance (토요 = 동마클 출석도 별도)
-MVP = 회원 앱 E2E 먼저, admin 나중
-지금 = Hosting OK, Functions·시드 필요
+춘백 S3 = dmc-attendance 위 /chunbaek/ · v0.1.0-alpha.1
+명단 = participant:true 41명 (시드 완료)
+로그인 = 명단 선택 + session token
+출석 = chunbaek_attendance (토요 = 동마클 별도)
+지금 = 시드 OK · 알파 번들 Mac 재배포(Node 22) · 1주차 훈련표·E2E
 ```

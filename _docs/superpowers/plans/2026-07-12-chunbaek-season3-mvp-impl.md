@@ -2,7 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** `dmc-attendance` 프로젝트에 `/chunbaek/` 웹앱과 `/api/chunbaek` API를 추가해, 40명 참가자가 100슬롯 출석·온보딩·팀 집계·운영진 PC 그리드를 사용할 수 있게 한다.
+**Goal:** `dmc-attendance` 프로젝트에 `/chunbaek/` 웹앱과 `/api/chunbaek` API를 추가해, 41명 참가자가 100슬롯 출석·온보딩·팀 집계·운영진 PC 그리드를 사용할 수 있게 한다.
+
+> **상태 (2026-07-12):** **v0.1.0-alpha.1** — Task 1~12 구현·프로덕션 시드(41명·100슬롯) 완료. Mac `deploy-chunbaek.sh` 재배포·수동 E2E 대기.  
+> 진행 요약: [confirmed-decisions §9](../specs/2026-07-12-chunbaek-season3-confirmed-decisions.md) · [릴리스 노트](../../releases/chunbaek-v0.1.0-alpha.1.md)
 
 **Architecture:** DMC `race` API와 동일하게 Hosting rewrite + `exports.chunbaek` 단일 HTTP 함수. 비즈니스 로직은 `functions/lib/chunbaek-*.js`로 분리해 `index.js` 비대화를 막는다. 회원 신원은 `chunbaek_sessions` opaque token, 데이터는 기존 `members` + `chunbaekS3` 중첩 필드와 `chunbaek_*` 컬렉션. 프론트는 Vanilla JS SPA (`chunbaek/index.html` + 공유 `js/`·`css/`).
 
@@ -784,14 +787,14 @@ canvas long edge 1200px → base64 POST
 
 `.cursor/skills/firebase-deploy/SKILL.md` 참조. 사용자 실행:
 
-1. `bash scripts/pre-deploy-test.sh` 통과
-2. `cd functions && node ../scripts/backup-firestore.js`
-3. `git status` 깨끗한지 확인
-4. `firebase deploy --only functions` (chunbaek 함수 포함)
-5. `firebase deploy --only hosting`
+1. `nvm use 22` (Node 24 → firebase-tools 실패)
+2. `bash scripts/pre-deploy-test.sh` 통과 (선택·권장)
+3. `cd functions && node ../scripts/backup-firestore.js`
+4. `git status` 깨끗한지 확인
+5. **`bash scripts/deploy-chunbaek.sh`** (Functions → Hosting 일괄)
 6. `https://dmc-attendance.web.app/chunbaek/` 시크릿 모드 검증
-7. 참가 40명 `seed-chunbaek-participants.js` 적용 (API 스킬 권장)
-8. `git tag` (MINOR: 신기능)
+7. 참가 41명 `seed-chunbaek-participants.js` — ✅ 2026-07-12 적용 완료
+8. 태그 `chunbaek-v0.1.0-alpha.1` — ✅ 생성됨. 재배포만 하면 재생성 불필요
 
 ---
 

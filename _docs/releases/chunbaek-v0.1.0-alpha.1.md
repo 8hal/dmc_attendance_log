@@ -82,11 +82,33 @@ bash scripts/deploy-chunbaek.sh
 # 3. 검증
 curl -s 'https://dmc-attendance.web.app/api/chunbaek?action=ping'
 curl -s 'https://dmc-attendance.web.app/api/chunbaek?action=members-roster' | python3 -c "import sys,json; print('roster', len(json.load(sys.stdin).get('members',[])))"
-
-# 4. 태그 (배포 성공 후)
-git tag -a chunbaek-v0.1.0-alpha.1 -m "춘백 S3 알파 1 — MVP 실서비스 (41명·시즌전 홈·타임라인·팀)"
-git push origin chunbaek-v0.1.0-alpha.1
 ```
+
+**태그:** 이미 생성됨 `chunbaek-v0.1.0-alpha.1`. 재배포만 하면 태그 재생성 불필요.
+
+> `deploy-chunbaek.sh`는 `scripts/lib/firebase-cli.sh`로 Node 22 검사·로컬 `firebase-tools` 설치를 처리한다.  
+> Firestore 시드는 Firebase CLI와 별개 — `gcloud auth application-default login` 필요.
+
+---
+
+## 배포 상태 (2026-07-12)
+
+| 항목 | 상태 |
+|------|------|
+| Git 태그 `chunbaek-v0.1.0-alpha.1` | ✅ 푸시됨 |
+| Firestore 시드 (41·100슬롯) | ✅ |
+| API ping·roster 41 | ✅ |
+| **알파 1 FE+Functions 번들 Mac 배포** | ⏳ Node 22 + `firebase login` 후 `deploy-chunbaek.sh` |
+
+---
+
+## 도구 참고
+
+| 작업 | 도구 |
+|------|------|
+| 배포 | Mac CLI `scripts/deploy-chunbaek.sh` (Node 22) |
+| 시드 | `gcloud auth application-default login` + Node 스크립트 |
+| 사후 조회 | Cursor Desktop Firebase MCP (선택) |
 
 ## 버저닝 (알파)
 
