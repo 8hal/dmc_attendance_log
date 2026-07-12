@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0d9488" />
+  <meta name="theme-color" content="#F04E30" />
   <title>춘백 시즌3 — 100일 출석</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/chunbaek.css" />
 </head>
 <body>
@@ -23,14 +26,22 @@
   </div>
 
   <div class="app">
+    <header class="brand-bar">
+      <span class="brand-bar-mark">🍁</span>
+      <span class="brand-bar-title">CHUNBAEK <em>S3</em></span>
+      <span class="brand-bar-sub">100일 출석</span>
+    </header>
+
     <div class="preview-banner" id="preview-banner" style="display:none">
       미리보기 모드 — API 없이 목업 데이터 표시 (?preview=1)
     </div>
 
     <main class="main">
       <!-- ① 환영 -->
-      <section id="view-welcome" class="view onboarding-center">
+      <section id="view-welcome" class="view onboarding-center welcome-hero">
+        <p class="welcome-year">2026</p>
         <h1 class="brand-title">춘백 시즌3</h1>
+        <p class="brand-display">CHUNCHEON<br />100 DAYS</p>
         <p class="brand-sub">
           100일, 함께 달립니다.<br />
           출정식에서 정한 목표를 프로필로 남기고,<br />
