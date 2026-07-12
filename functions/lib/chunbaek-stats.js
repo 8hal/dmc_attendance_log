@@ -299,4 +299,9 @@ module.exports = {
   todaySlotPayload,
   getSlotKey,
   getAttendance,
+  slotStatus,
+  slotTrainingTitle,
+  slotTrainingContent,
+  findWeekForDate,
+  formatIsoRange,
 };

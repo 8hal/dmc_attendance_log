@@ -1,9 +1,7 @@
 /**
- * 춘백 S3 운영진 — 목업 (preview=1, API 없음)
+ * 춘백 S3 운영진 — preview=1 목업 / 실 API 연동
  */
-const PREVIEW = new URLSearchParams(location.search).has("preview")
-  || location.hostname === "localhost"
-  || location.hostname === "127.0.0.1";
+const PREVIEW = new URLSearchParams(location.search).has("preview");
 
 const AUTH_KEY = "chunbaekAdminPreviewAuth";
 
@@ -48,11 +46,107 @@ let currentWeek = 7;
 let currentPanel = "grid";
 let filterUnderTarget = false;
 let modalContext = null;
+let isProcessing = false;
+let gridApiData = null;
+let trainingApiData = null;
 
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
+function dowLabel(dateStr) {
+  const d = new Date(`${dateStr}T12:00:00`);
+  return DOW[d.getDay()];
+}
+
 function weekData(week) {
   return WEEKS[week] || WEEKS[7];
+}
+
+function apiCellStatus(cell) {
+  if (cell.status === "attend" && cell.photoUrl) return "attend-photo";
+  return cell.status;
+}
+
+function normalizeGridFromApi(data) {
+  const slots = (data.slots || []).map((s) => ({
+    slotId: s.slotId ?? s.dayIndex,
+    dayIndex: s.dayIndex,
+    date: s.date,
+    title: s.trainingTitle || "",
+    isProgramOff: !!s.isProgramOff,
+  }));
+
+  const members = (data.members || []).map((m) => {
+    const cells = {};
+    (m.cells || []).forEach((c) => {
+      if (c.slotId != null) cells[c.slotId] = apiCellStatus(c);
+    });
+    return {
+      id: m.memberId,
+      nickname: m.nickname,
+      weekCount: m.weekAttendCount,
+      weekTarget: m.weekTarget,
+      profileComplete: m.profileComplete,
+      cells,
+    };
+  });
+
+  return {
+    range: data.range || "",
+    slots,
+    members,
+    weekSummary: data.weekSummary || {},
+    seasonDayIndex: data.seasonDayIndex,
+    participantCount: data.participantCount,
+  };
+}
+
+function normalizeTrainingFromApi(data) {
+  return {
+    range: data.range || "",
+    summary: data.summary || {},
+    slots: (data.slots || []).map((s) => ({
+      slotId: s.slotId ?? s.dayIndex,
+      dayIndex: s.dayIndex,
+      date: s.date,
+      dow: dowLabel(s.date),
+      title: s.trainingTitle || "",
+      content: s.trainingContent || "",
+      isProgramOff: !!s.isProgramOff,
+      hasAttendance: !!s.hasAttendance,
+    })),
+  };
+}
+
+function viewGrid() {
+  if (PREVIEW) {
+    const data = weekData(currentWeek);
+    return {
+      range: data.range,
+      slots: data.slots,
+      members: MEMBERS.map((m) => ({
+        id: m.id,
+        nickname: m.nickname,
+        weekCount: data.weekCounts[m.id] || 0,
+        weekTarget: 3,
+        cells: data.cells[m.id] || {},
+      })),
+      underTargetCount: MEMBERS.filter((m) => (data.weekCounts[m.id] || 0) < 3).length,
+    };
+  }
+  if (!gridApiData) {
+    return { range: "", slots: [], members: [], underTargetCount: 0 };
+  }
+  const norm = normalizeGridFromApi(gridApiData);
+  return {
+    ...norm,
+    underTargetCount: norm.weekSummary.underTargetCount || 0,
+  };
+}
+
+function viewTraining() {
+  if (PREVIEW) return weekData(currentWeek);
+  if (!trainingApiData) return { range: "", slots: [], summary: {} };
+  return normalizeTrainingFromApi(trainingApiData);
 }
 
 function trainingDayCount(slots) {
@@ -62,7 +156,7 @@ function trainingDayCount(slots) {
 function cellClass(status) {
   if (status === "attend" || status === "attend-photo") return "cell-attend";
   if (status === "exception") return "cell-exception";
-  if (status === "miss") return "cell-miss";
+  if (status === "miss" || status === "today" || status === "future") return "cell-miss";
   return "cell-miss";
 }
 
@@ -70,22 +164,21 @@ function cellLabel(status, isOff) {
   if (isOff) return "—";
   if (status === "attend" || status === "attend-photo") return "✓";
   if (status === "exception") return "예외";
+  if (status === "future") return "·";
   return "—";
 }
 
 function renderGrid() {
-  const data = weekData(currentWeek);
-  const slots = data.slots.filter((s) => !s.isProgramOff);
-  const offSlots = data.slots.filter((s) => s.isProgramOff);
+  const data = viewGrid();
   const allSlots = data.slots;
-
   let missCount = 0;
   const tbody = document.getElementById("grid-body");
   tbody.innerHTML = "";
 
-  MEMBERS.forEach((m) => {
-    const count = data.weekCounts[m.id] || 0;
-    const under = count < 3;
+  data.members.forEach((m) => {
+    const count = m.weekCount ?? 0;
+    const target = m.weekTarget ?? 3;
+    const under = count < target;
     if (filterUnderTarget && !under) return;
 
     const tr = document.createElement("tr");
@@ -94,13 +187,13 @@ function renderGrid() {
     let rowMiss = 0;
     allSlots.forEach((slot) => {
       if (!slot.isProgramOff) {
-        const st = (data.cells[m.id] || {})[slot.slotId];
-        if (!st || st === "miss") rowMiss += 1;
+        const st = m.cells[slot.slotId];
+        if (!st || st === "miss" || st === "today") rowMiss += 1;
       }
     });
     missCount += rowMiss;
 
-    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${count}/3</small></td>`;
+    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${count}/${target}</small></td>`;
     allSlots.forEach((slot) => {
       const td = document.createElement("td");
       td.className = "cell";
@@ -108,14 +201,14 @@ function renderGrid() {
         td.classList.add("cell-off");
         td.textContent = "—";
       } else {
-        const st = (data.cells[m.id] || {})[slot.slotId] || "miss";
+        const st = m.cells[slot.slotId] || "miss";
         td.className += ` ${cellClass(st)}`;
         if (st === "attend-photo") td.classList.add("cell-photo");
         td.textContent = cellLabel(st, false);
         td.dataset.memberId = m.id;
         td.dataset.slotId = String(slot.slotId);
         td.dataset.memberName = m.nickname;
-        td.dataset.slotLabel = `${slot.dayIndex}일 ${slot.date.slice(5).replace("-", "/")}`;
+        td.dataset.slotLabel = `${slot.dayIndex ?? "—"}일 ${slot.date.slice(5).replace("-", "/")}`;
         td.addEventListener("click", openCellModal);
       }
       tr.appendChild(td);
@@ -126,21 +219,27 @@ function renderGrid() {
   document.getElementById("grid-week-title").textContent = `${currentWeek}주차`;
   document.getElementById("grid-range").textContent = data.range;
   document.getElementById("grid-miss-chip").textContent = `미출석 셀 ${missCount}개`;
-  document.getElementById("grid-under-chip").textContent =
-    `주 3회 미달 ${MEMBERS.filter((m) => (data.weekCounts[m.id] || 0) < 3).length}명`;
+  document.getElementById("grid-under-chip").textContent = `주 3회 미달 ${data.underTargetCount}명`;
 
   const head = document.getElementById("grid-head-row");
   head.innerHTML = "<th>회원</th>";
   allSlots.forEach((slot) => {
     const th = document.createElement("th");
     th.className = "slot-head";
-    th.innerHTML = `${slot.dayIndex}<small>${slot.date.slice(5).replace("-", "/")}</small>`;
+    th.innerHTML = `${slot.dayIndex ?? "—"}<small>${slot.date.slice(5).replace("-", "/")}</small>`;
     head.appendChild(th);
   });
+
+  if (!PREVIEW && gridApiData) {
+    const meta = document.querySelector(".admin-topbar-meta");
+    if (meta) {
+      meta.textContent = `${gridApiData.seasonDayIndex || "—"}일차 · 참가 ${gridApiData.participantCount || 0}명`;
+    }
+  }
 }
 
 function renderTraining() {
-  const data = weekData(currentWeek);
+  const data = viewTraining();
   const list = document.getElementById("training-list");
   list.innerHTML = "";
 
@@ -148,21 +247,24 @@ function renderTraining() {
   data.slots.forEach((slot) => {
     if (slot.isProgramOff || (slot.title && slot.title.trim())) filled += 1;
     const card = document.createElement("div");
-    card.className = "training-card" + (slot.isProgramOff ? " off-day" : "") + (!slot.title && !slot.isProgramOff ? " empty" : "");
+    card.className = "training-card"
+      + (slot.isProgramOff ? " off-day" : "")
+      + (!slot.title && !slot.isProgramOff ? " empty" : "");
 
     card.innerHTML = `
       <div class="training-day-meta">
-        ${slot.dayIndex}일차
-        <span>${slot.date.slice(5).replace("-", "월 ")}일 (${slot.dow})</span>
+        ${slot.dayIndex ?? "—"}일차
+        <span>${slot.date.slice(5).replace("-", "월 ")}일 (${slot.dow || dowLabel(slot.date)})</span>
+        ${slot.hasAttendance ? '<small style="color:var(--warn)">출석 있음</small>' : ""}
       </div>
       <div class="training-fields">
         <label>제목</label>
-        <input type="text" value="${escapeAttr(slot.title)}" placeholder="예: 5km 인터벌" data-field="title" data-slot="${slot.slotId}" ${slot.isProgramOff ? "disabled" : ""} />
+        <input type="text" value="${escapeAttr(slot.title)}" placeholder="예: 5km 인터벌" data-field="title" data-slot="${slot.slotId ?? ""}" data-day="${slot.dayIndex ?? ""}" data-date="${slot.date}" ${slot.isProgramOff ? "disabled" : ""} />
         <label>내용</label>
-        <textarea placeholder="예: 워밍업 10분 → 5×1km…" data-field="content" data-slot="${slot.slotId}" ${slot.isProgramOff ? "disabled" : ""}>${escapeHtml(slot.content)}</textarea>
+        <textarea placeholder="예: 워밍업 10분 → 5×1km…" data-field="content" data-slot="${slot.slotId ?? ""}" ${slot.isProgramOff ? "disabled" : ""}>${escapeHtml(slot.content)}</textarea>
       </div>
       <label class="training-off-toggle">
-        <input type="checkbox" data-field="off" data-slot="${slot.slotId}" ${slot.isProgramOff ? "checked" : ""} />
+        <input type="checkbox" data-field="off" data-slot="${slot.slotId ?? ""}" data-day="${slot.dayIndex ?? ""}" data-date="${slot.date}" ${slot.isProgramOff ? "checked" : ""} />
         휴무
       </label>
     `;
@@ -175,9 +277,10 @@ function renderTraining() {
   document.getElementById("training-summary").textContent =
     `입력 ${filled}/${data.slots.length}일 · 훈련일 ${trainDays}일`;
   const warn = document.getElementById("training-warning");
-  if (trainDays < 3) {
+  const warnMsg = data.summary?.warning;
+  if (trainDays < 3 || warnMsg) {
     warn.style.display = "inline-flex";
-    warn.textContent = `훈련일 ${trainDays}일 — 주 3회 목표 불가 (자동 cap)`;
+    warn.textContent = warnMsg || `훈련일 ${trainDays}일 — 주 3회 목표 불가 (자동 cap)`;
   } else {
     warn.style.display = "none";
   }
@@ -213,30 +316,88 @@ function closeCellModal() {
   modalContext = null;
 }
 
-function setCellStatus(status) {
-  if (!modalContext) return;
-  const data = weekData(currentWeek);
-  if (!data.cells[modalContext.memberId]) data.cells[modalContext.memberId] = {};
-  data.cells[modalContext.memberId][modalContext.slotId] = status;
+async function setCellStatus(status) {
+  if (!modalContext || isProcessing) return;
 
-  const td = modalContext.td;
-  td.className = `cell ${cellClass(status)}`;
-  td.textContent = cellLabel(status, false);
-  if (status === "attend-photo") td.classList.add("cell-photo");
+  if (PREVIEW) {
+    const data = weekData(currentWeek);
+    if (!data.cells[modalContext.memberId]) data.cells[modalContext.memberId] = {};
+    data.cells[modalContext.memberId][modalContext.slotId] = status;
+    const td = modalContext.td;
+    td.className = `cell ${cellClass(status)}`;
+    td.textContent = cellLabel(status, false);
+    if (status === "attend-photo") td.classList.add("cell-photo");
+    closeCellModal();
+    showToast(status === "exception" ? "예외 처리됨" : status === "attend" ? "출석 처리됨" : "미출석 처리됨");
+    renderGrid();
+    return;
+  }
 
-  closeCellModal();
-  showToast(status === "exception" ? "예외 처리됨" : status === "attend" ? "출석 처리됨" : "미출석 처리됨");
-  renderGrid();
+  isProcessing = true;
+  try {
+    await adminPost("admin-set-attendance", {
+      memberId: modalContext.memberId,
+      slotId: modalContext.slotId,
+      attended: status === "attend",
+      exception: status === "exception",
+    });
+    closeCellModal();
+    showToast(status === "exception" ? "예외 처리됨" : status === "attend" ? "출석 처리됨" : "미출석 처리됨");
+    await refreshGrid();
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "저장 실패", true);
+  } finally {
+    isProcessing = false;
+  }
 }
 
-function showToast(msg) {
+function showToast(msg, isError) {
   const el = document.getElementById("toast");
   el.textContent = msg;
+  el.classList.toggle("error", !!isError);
   el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), 2200);
 }
 
-function switchPanel(panel) {
+async function refreshGrid() {
+  if (PREVIEW) {
+    renderGrid();
+    return;
+  }
+  gridApiData = await adminGet("admin-grid", { week: currentWeek });
+  if (gridApiData.week) currentWeek = gridApiData.week;
+  renderGrid();
+}
+
+async function refreshTraining() {
+  if (PREVIEW) {
+    renderTraining();
+    return;
+  }
+  trainingApiData = await adminGet("admin-week-slots", { week: currentWeek });
+  if (trainingApiData.week) currentWeek = trainingApiData.week;
+  renderTraining();
+}
+
+function populateWeekSelects() {
+  const maxWeek = PREVIEW ? 8 : 15;
+  const minWeek = PREVIEW ? 6 : 1;
+  ["week-select", "week-select-training"].forEach((id) => {
+    const sel = document.getElementById(id);
+    const prev = sel.value;
+    sel.innerHTML = "";
+    for (let w = minWeek; w <= maxWeek; w += 1) {
+      const opt = document.createElement("option");
+      opt.value = String(w);
+      opt.textContent = `${w}주차`;
+      sel.appendChild(opt);
+    }
+    sel.value = prev || String(currentWeek);
+  });
+}
+
+async function switchPanel(panel) {
   currentPanel = panel;
   document.querySelectorAll(".admin-nav-btn").forEach((b) => {
     b.classList.toggle("active", b.dataset.panel === panel);
@@ -244,32 +405,110 @@ function switchPanel(panel) {
   document.querySelectorAll(".admin-panel").forEach((p) => {
     p.classList.toggle("active", p.id === `panel-${panel}`);
   });
-  if (panel === "grid") renderGrid();
-  if (panel === "training") renderTraining();
+  if (panel === "grid") await refreshGrid();
+  if (panel === "training") await refreshTraining();
 }
 
-function tryAuth() {
+async function tryAuth() {
   const pw = document.getElementById("auth-pw").value;
-  if (PREVIEW || pw.length > 0) {
-    sessionStorage.setItem(AUTH_KEY, "1");
-    document.getElementById("auth-overlay").classList.add("hidden");
-    document.getElementById("admin-shell").style.display = "";
-    init();
+  document.getElementById("auth-error").style.display = "none";
+
+  if (PREVIEW) {
+    if (pw.length > 0) {
+      sessionStorage.setItem(AUTH_KEY, "1");
+      document.getElementById("auth-overlay").classList.add("hidden");
+      document.getElementById("admin-shell").style.display = "";
+      await init();
+    } else {
+      document.getElementById("auth-error").style.display = "block";
+    }
     return;
   }
-  document.getElementById("auth-error").style.display = "block";
+
+  try {
+    await verifyAdmin(pw);
+    document.getElementById("auth-overlay").classList.add("hidden");
+    document.getElementById("admin-shell").style.display = "";
+    await init();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("auth-error").style.display = "block";
+  }
 }
 
-function init() {
+async function init() {
+  populateWeekSelects();
   document.getElementById("week-select").value = String(currentWeek);
   document.getElementById("week-select-training").value = String(currentWeek);
 
   if (PREVIEW) {
     document.getElementById("preview-banner").style.display = "block";
     document.getElementById("admin-demo-nav").style.display = "block";
+  } else {
+    document.getElementById("preview-banner").style.display = "none";
   }
 
-  switchPanel(currentPanel);
+  await switchPanel(currentPanel);
+}
+
+async function saveTraining() {
+  if (PREVIEW) {
+    showToast(`${currentWeek}주차 훈련 저장됨 (목업)`);
+    return;
+  }
+  if (isProcessing) return;
+  isProcessing = true;
+  try {
+    const cards = document.querySelectorAll("#training-list .training-card");
+    const rows = [];
+    cards.forEach((card) => {
+      const titleEl = card.querySelector('[data-field="title"]');
+      const contentEl = card.querySelector('[data-field="content"]');
+      const offEl = card.querySelector('[data-field="off"]');
+      const isProgramOff = offEl.checked;
+      const dayIndex = titleEl.dataset.day ? Number(titleEl.dataset.day) : undefined;
+      rows.push({
+        dayIndex: Number.isFinite(dayIndex) ? dayIndex : undefined,
+        date: titleEl.dataset.date,
+        trainingTitle: isProgramOff ? "휴무" : titleEl.value.trim(),
+        trainingContent: isProgramOff ? "" : contentEl.value.trim(),
+        isProgramOff,
+      });
+    });
+    const result = await adminPost("admin-save-week-slots", { week: currentWeek, rows });
+    showToast(`${currentWeek}주차 훈련 ${result.saved}건 저장됨`);
+    if (result.warnings?.length) showToast(result.warnings[0], true);
+    await refreshTraining();
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "저장 실패", true);
+  } finally {
+    isProcessing = false;
+  }
+}
+
+async function runImport() {
+  if (PREVIEW) {
+    showToast("CSV import 완료 (목업)");
+    return;
+  }
+  if (isProcessing) return;
+  isProcessing = true;
+  try {
+    const csv = document.getElementById("import-csv").value;
+    const result = await adminPost("admin-import-slots", { mode: "replace", csv });
+    showToast(`${result.imported}건 import 완료`);
+    if (result.warnings?.length) {
+      const w = result.warnings[0];
+      const msg = typeof w === "string" ? w : (w.message || JSON.stringify(w));
+      showToast(msg, true);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "import 실패", true);
+  } finally {
+    isProcessing = false;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -282,15 +521,15 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => switchPanel(btn.dataset.panel));
   });
 
-  document.getElementById("week-select").addEventListener("change", (e) => {
+  document.getElementById("week-select").addEventListener("change", async (e) => {
     currentWeek = Number(e.target.value);
     document.getElementById("week-select-training").value = e.target.value;
-    renderGrid();
+    await refreshGrid();
   });
-  document.getElementById("week-select-training").addEventListener("change", (e) => {
+  document.getElementById("week-select-training").addEventListener("change", async (e) => {
     currentWeek = Number(e.target.value);
     document.getElementById("week-select").value = e.target.value;
-    renderTraining();
+    await refreshTraining();
   });
 
   document.getElementById("filter-under").addEventListener("change", (e) => {
@@ -298,13 +537,8 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGrid();
   });
 
-  document.getElementById("btn-save-training").addEventListener("click", () => {
-    showToast("7주차 훈련 저장됨 (목업)");
-  });
-
-  document.getElementById("btn-import").addEventListener("click", () => {
-    showToast("CSV import 완료 (목업)");
-  });
+  document.getElementById("btn-save-training").addEventListener("click", saveTraining);
+  document.getElementById("btn-import").addEventListener("click", runImport);
 
   document.querySelectorAll("[data-modal-action]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -334,5 +568,9 @@ document.addEventListener("DOMContentLoaded", () => {
     init();
   } else if (PREVIEW) {
     document.getElementById("auth-pw").placeholder = "목업: 아무 값이나 입력";
+  } else if (getAdminPw()) {
+    document.getElementById("auth-overlay").classList.add("hidden");
+    document.getElementById("admin-shell").style.display = "";
+    init();
   }
 });

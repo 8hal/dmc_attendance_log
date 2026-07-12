@@ -7,6 +7,7 @@ const API_BASE = IS_LOCAL
   : "/api/chunbaek";
 
 const TOKEN_KEY = "chunbaekSessionToken";
+const ADMIN_PW_KEY = "chunbaekAdminPw";
 
 const PREVIEW_MODE = new URLSearchParams(location.search).has("preview")
   || location.protocol === "file:"
@@ -90,6 +91,58 @@ function getToken() {
 function setToken(token) {
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else localStorage.removeItem(TOKEN_KEY);
+}
+
+function getAdminPw() {
+  return sessionStorage.getItem(ADMIN_PW_KEY) || "";
+}
+
+function setAdminPw(pw) {
+  if (pw) sessionStorage.setItem(ADMIN_PW_KEY, pw);
+  else sessionStorage.removeItem(ADMIN_PW_KEY);
+}
+
+async function adminGet(action, params = {}) {
+  const qs = new URLSearchParams({ action, adminPw: getAdminPw(), ...params });
+  const res = await fetch(`${API_BASE}?${qs}`);
+  const data = await res.json();
+  if (!data.ok) {
+    const err = new Error(data.error || "오류");
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+async function adminPost(action, body = {}) {
+  const res = await fetch(`${API_BASE}?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ adminPw: getAdminPw(), ...body }),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    const err = new Error(data.error || "오류");
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+async function verifyAdmin(pw) {
+  const res = await fetch(`${API_BASE}?action=verify-admin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pw }),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    const err = new Error(data.error || "invalid password");
+    err.status = res.status;
+    throw err;
+  }
+  setAdminPw(pw);
+  return data;
 }
 
 async function apiGet(action, params = {}, needToken = false) {

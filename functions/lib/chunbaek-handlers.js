@@ -3,6 +3,7 @@
  */
 const { FieldValue } = require("firebase-admin/firestore");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
+const { handleAdminRequest } = require("./chunbaek-admin");
 const {
   loadSeasonConfig,
   loadAllSlots,
@@ -369,6 +370,9 @@ async function handleTeamSummary(req, res, db) {
 }
 
 async function handleChunbaekRequest(req, res, { db, action }) {
+  const adminHandled = await handleAdminRequest(req, res, db, action);
+  if (adminHandled) return undefined;
+
   if (action === "ping") {
     return res.json({ ok: true, service: "chunbaek" });
   }
