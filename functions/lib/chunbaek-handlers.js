@@ -367,6 +367,7 @@ async function handleTeamSummary(req, res, db) {
   let weekMetCount = 0;
 
   for (const p of participants) {
+    if (!p.s3.profileComplete) continue;
     const attendanceMap = await loadMemberAttendance(db, p.memberId);
     const stats = slots.length
       ? computeMemberStats({ slots, attendanceMap, config, today })
@@ -376,6 +377,7 @@ async function handleTeamSummary(req, res, db) {
     members.push({
       memberId: p.memberId,
       nickname: p.data.nickname || "",
+      profileComplete: true,
       goal: formatGoalTime(p.s3.goalMarathonNetTime),
       goalMarathonNetTime: p.s3.goalMarathonNetTime ?? null,
       goalRace: p.s3.goalRace ?? null,

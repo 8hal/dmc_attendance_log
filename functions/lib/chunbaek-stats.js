@@ -192,6 +192,7 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
 
   const currentWeek = findWeekForDate(slots, today);
   const weeks = [...weekMap.entries()]
+    .filter(([week]) => week <= currentWeek)
     .sort((a, b) => b[0] - a[0])
     .map(([week, weekSlots]) => {
       weekSlots.sort((a, b) => a.dayIndex - b.dayIndex);

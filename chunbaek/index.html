@@ -172,10 +172,8 @@
       <!-- 내 100일 -->
       <section id="view-timeline" class="view">
         <h2 class="section-title">내 100일</h2>
-        <div class="sub-tabs">
-          <button type="button" class="sub-tab active">주간</button>
-          <button type="button" class="sub-tab">월간</button>
-          <button type="button" class="sub-tab">시즌</button>
+        <div class="sub-tabs" role="tablist" aria-label="내 100일 보기">
+          <button type="button" class="sub-tab active" role="tab" aria-selected="true">주간</button>
         </div>
         <div id="timeline-weeks"></div>
       </section>

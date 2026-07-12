@@ -471,6 +471,10 @@
 
   function paintTimeline(weeks) {
     const container = document.getElementById("timeline-weeks");
+    if (!weeks.length) {
+      container.innerHTML = '<p class="section-sub">아직 표시할 주차가 없습니다.</p>';
+      return;
+    }
     container.innerHTML = weeks.map((w) => {
       const collapsed = !!w.collapsed;
       const slots = w.slots || [];
@@ -522,11 +526,22 @@
   }
 
   function paintTeam(t) {
+    const members = (t.members || []).filter((m) => m.profileComplete !== false);
+    const count = members.length;
+    const weekMet = members.filter((m) => m.met).length;
+    const seasonRate = count > 0
+      ? Math.round(members.reduce((sum, m) => sum + (m.seasonAttendRate || 0), 0) / count)
+      : (t.seasonRate || 0);
     document.getElementById("team-summary").innerHTML = `
-      <div>시즌 출석률 <strong>${t.seasonRate}%</strong> (팀 평균)</div>
-      <div>이번 주 3회 달성 <strong>${t.weekMetCount}/${t.participantCount}명</strong></div>
+      <div>시즌 출석률 <strong>${seasonRate}%</strong> (팀 평균)</div>
+      <div>이번 주 3회 달성 <strong>${weekMet}/${count}명</strong></div>
     `;
-    document.getElementById("team-list").innerHTML = (t.members || []).map((m) => `
+    if (!count) {
+      document.getElementById("team-list").innerHTML =
+        '<p class="section-sub">아직 프로필을 만든 멤버가 없습니다.</p>';
+      return;
+    }
+    document.getElementById("team-list").innerHTML = members.map((m) => `
       <div class="team-row">
         <div>
           <strong>${m.nickname}</strong>
