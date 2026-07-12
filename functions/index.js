@@ -20,6 +20,7 @@ const {
 } = require("./lib/canonicalEventId");
 const { normalizeRaceDistance } = require("./lib/raceDistance");
 const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
+const { handleChunbaekRequest } = require("./lib/chunbaek-handlers");
 const { google } = require("googleapis");
 
 // 초기화
@@ -3689,6 +3690,28 @@ exports.scrapeProxy = onRequest(
       return res.json({ ok: true, results: results || [] });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+);
+
+/**
+ * Chunbaek API — 춘백 시즌3 100일 출석
+ */
+exports.chunbaek = onRequest(
+  { cors: true, timeoutSeconds: 120, memory: "256MiB", region: "asia-northeast3" },
+  async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      return res.status(204).send("");
+    }
+    try {
+      const action = req.query.action || "";
+      return await handleChunbaekRequest(req, res, { db, action });
+    } catch (e) {
+      console.error("[chunbaek]", e);
+      return res.status(500).json({ ok: false, error: e.message || "server error" });
     }
   }
 );
