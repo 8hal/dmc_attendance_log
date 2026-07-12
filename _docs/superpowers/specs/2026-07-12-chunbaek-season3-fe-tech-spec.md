@@ -1,6 +1,7 @@
 # Tech Spec: 춘백 시즌3 FE (디자인·구현 기록)
 
 > 작성일: 2026-07-12  
+> **확정 사항 요약:** [`2026-07-12-chunbaek-season3-confirmed-decisions.md`](./2026-07-12-chunbaek-season3-confirmed-decisions.md)  
 > PRD: [`2026-07-12-chunbaek-season3-attendance-design.md`](./2026-07-12-chunbaek-season3-attendance-design.md)  
 > 구현 계획: [`2026-07-12-chunbaek-season3-mvp-impl.md`](../plans/2026-07-12-chunbaek-season3-mvp-impl.md)  
 > 상태: **스켈레톤 확정 → API 연동 진행 중**

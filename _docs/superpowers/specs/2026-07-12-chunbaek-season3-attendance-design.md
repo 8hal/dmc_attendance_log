@@ -1,7 +1,8 @@
 # PRD: 춘백 시즌3 — 100일 출석 관리 (MVP)
 
 > 작성일: 2026-07-12  
-> 상태: 기획 확정 — Critical 4건·인프라 반영 완료 (구현 계획 단계)  
+> 상태: 기획 확정 — Critical 4건·인프라 반영 완료 (구현 진행 중)  
+> **확정 사항 요약:** [`2026-07-12-chunbaek-season3-confirmed-decisions.md`](./2026-07-12-chunbaek-season3-confirmed-decisions.md)  
 > 리뷰: [`2026-07-12-chunbaek-season3-spec-review.md`](../reviews/2026-07-12-chunbaek-season3-spec-review.md)  
 > 대상: 동마클 「춘천 마라톤 100일 준비방」 춘백 시즌3  
 > 관련: **동일 repo·Firebase 프로젝트** (`dmc-attendance`)에 `/chunbaek/` 경로로 추가 (§10)

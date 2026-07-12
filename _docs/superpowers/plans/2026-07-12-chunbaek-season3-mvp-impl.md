@@ -9,6 +9,7 @@
 **Tech Stack:** Vanilla HTML/CSS/JS, Firebase Hosting, Cloud Functions v2 (Node.js), Firestore Admin SDK, `firebase emulators:exec` 통합 검증
 
 **References:**
+- **확정 사항 요약:** `_docs/superpowers/specs/2026-07-12-chunbaek-season3-confirmed-decisions.md`
 - PRD: `_docs/superpowers/specs/2026-07-12-chunbaek-season3-attendance-design.md`
 - 리뷰: `_docs/superpowers/reviews/2026-07-12-chunbaek-season3-spec-review.md`
 - API 패턴: `_docs/development/api-patterns.md`
