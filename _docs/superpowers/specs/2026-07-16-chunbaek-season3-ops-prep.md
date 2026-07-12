@@ -88,13 +88,14 @@
 
 ---
 
-## 2. 기술 현황 (2026-07-12 · v0.1.0-alpha.1)
+## 2. 기술 현황 (2026-07-12)
 
 | 구성 | 상태 |
 |------|------|
-| **앱 버전** | `0.1.0-alpha.1` (`chunbaek/VERSION`, 태그 `chunbaek-v0.1.0-alpha.1`) |
+| **코드 버전** | `0.1.0-alpha.2` (`chunbaek/VERSION`, **미배포**) |
+| **프로덕션 태그** | `chunbaek-v0.1.0-alpha.1` |
 | Functions `chunbaek` | ✅ 배포됨 — **알파 1 코드 재배포 권장** |
-| Hosting (`chunbaek/`) | ✅ 배포됨 — **알파 1 코드 재배포 권장** |
+| Hosting (`chunbaek/`) | ✅ — **OG 목업 잔존, alpha.2 배포 시 해소** |
 | Admin API 6개 | ✅ |
 | `chunbaek_season_config` | ✅ |
 | `chunbaek_slots` 100건 | ✅ |
@@ -246,7 +247,8 @@ baseline 갱신: Cursor Desktop **Firebase MCP** export → `members-firestore-s
 | 파일 | 용도 |
 |------|------|
 | `chunbaek/VERSION` | 앱 버전 SSOT |
-| `_docs/releases/chunbaek-v0.1.0-alpha.1.md` | 알파 릴리스 노트 |
+| `_docs/releases/chunbaek-v0.1.0-alpha.1.md` | 알파 1 릴리스 노트 |
+| `_docs/releases/chunbaek-v0.1.0-alpha.2.md` | **다음** 알파 릴리스 (OG) |
 | `scripts/deploy-chunbaek.sh` | 일괄 배포 |
 | `scripts/lib/firebase-cli.sh` | Node 22 검사·로컬 firebase-tools |
 | `scripts/data/chunbaek-s3-names.txt` | 참가자 41명 |
@@ -259,7 +261,7 @@ baseline 갱신: Cursor Desktop **Firebase MCP** export → `members-firestore-s
 
 ## 9. 다음 액션 (지금)
 
-1. **Mac:** `nvm use 22` → `bash scripts/deploy-chunbaek.sh` (알파 1 코드 반영)
+1. **Mac:** `nvm use 22` → `bash scripts/deploy-chunbaek.sh` (**alpha.2** — alpha.1 FE + OG)
 2. **운영진:** admin **1주차 훈련표** 입력 (§6)
 3. **전원:** [출정식 전 테스트](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) — 7/16 전 Go
 4. **선택:** Firebase MCP로 시드·roster 사후 확인 (Cursor Desktop)

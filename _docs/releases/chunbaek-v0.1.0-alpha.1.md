@@ -99,6 +99,7 @@ curl -s 'https://dmc-attendance.web.app/api/chunbaek?action=members-roster' | py
 | Firestore 시드 (41·100슬롯) | ✅ |
 | API ping·roster 41 | ✅ |
 | **알파 1 FE+Functions 번들 Mac 배포** | ⏳ Node 22 + `firebase login` 후 `deploy-chunbaek.sh` |
+| **alpha.2 OG (카톡 링크 미리보기)** | ⏳ [alpha.2 릴리스](./chunbaek-v0.1.0-alpha.2.md) — alpha.1과 동시 배포 권장 |
 
 ---
 

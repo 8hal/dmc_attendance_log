@@ -230,20 +230,20 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | `admin-reset-profile` | 프로필 초기화 |
 | `admin-update-profile` | 목표·PB·각오 수정 |
 
-### 7.4 배포·데이터 현황 (2026-07-12, **v0.1.0-alpha.1**)
+### 7.4 배포·데이터 현황 (2026-07-12)
 
 | 구성 | 상태 |
 |------|------|
-| Git 태그 | `chunbaek-v0.1.0-alpha.1` |
-| 앱 버전 SSOT | `chunbaek/VERSION` → `0.1.0-alpha.1` |
-| Functions `chunbaek` | ✅ 배포됨 (이전 빌드; **알파 번들 재배포 권장**) |
-| Hosting `/chunbaek/` | ✅ 배포됨 (**알파 번들 재배포 권장**) |
+| Git 태그 (프로덕션 기준) | `chunbaek-v0.1.0-alpha.1` |
+| **코드 버전 SSOT** | `chunbaek/VERSION` → **`0.1.0-alpha.2`** (미배포) |
+| Functions `chunbaek` | ✅ 배포됨 — **alpha.1~2 FE 번들 재배포 권장** |
+| Hosting `/chunbaek/` | ✅ 배포됨 — **OG 목업 잔존 → alpha.2 배포 시 해소** |
 | `participant` | ✅ **41명** (`chunbaek-s3-participants.json`) |
 | `chunbaek_season_config` + slots 100 | ✅ 프로덕션 적용 |
 | `members-roster` API | ✅ 41명 확인됨 |
 
 **배포 명령:** `bash scripts/deploy-chunbaek.sh` (Node **22** 필수).  
-**릴리스 노트:** [_docs/releases/chunbaek-v0.1.0-alpha.1.md](../../releases/chunbaek-v0.1.0-alpha.1.md)
+**릴리스 노트:** [alpha.1](../../releases/chunbaek-v0.1.0-alpha.1.md) · **[alpha.2 (다음)](../../releases/chunbaek-v0.1.0-alpha.2.md)**
 
 ### 7.5 회원 FE (알파 1 반영)
 
@@ -280,12 +280,12 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | M2 출석·집계 API | ✅ |
 | M3 admin API 6개 | ✅ |
 | M4 회원 SPA 실 API | ✅ (알파 1) |
-| M5 admin.html + 배포 | △ 알파 번들 재배포 대기 |
+| M5 admin.html + 배포 | △ **alpha.2** 배포 대기 (alpha.1 FE + OG) |
 | M6 시드·운영 준비 | ✅ 41명·100슬롯 |
 
 **다음 (출정식 7/16 전):**
 
-1. Mac **Node 22** + `bash scripts/deploy-chunbaek.sh` (알파 1 코드 반영)
+1. Mac **Node 22** + `bash scripts/deploy-chunbaek.sh` (**alpha.2** = alpha.1 FE + OG)
 2. admin **1주차 훈련표** 입력
 3. [출정식 전 테스트](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) Go 체크리스트
 4. (선택) `pre-deploy-test.sh` chunbaek smoke 통합
@@ -312,7 +312,7 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | 2026-07-12 | 토요: 자동 연동 없음, 홈 안내 문구 확정 |
 | 2026-07-12 | FE 스켈레톤·갤러리·Hosting 배포 |
 | 2026-07-16 | 시즌 대회 2개·참가자별 목표(춘천/JTBC) 참고 — [ops-prep](./2026-07-16-chunbaek-season3-ops-prep.md) |
-| 2026-07-12 | **v0.1.0-alpha.1** — 41명 시드, 알파 FE·배포 스크립트, 버저닝 시작 |
+| 2026-07-12 | **v0.1.0-alpha.2 준비** — OG 실서비스, VERSION bump (미배포) |
 
 ---
 
@@ -323,5 +323,5 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 명단 = participant:true 41명 (시드 완료)
 로그인 = 명단 선택 + session token
 출석 = chunbaek_attendance (토요 = 동마클 별도)
-지금 = 시드 OK · 알파 번들 Mac 재배포(Node 22) · 1주차 훈련표·E2E
+지금 = 시드 OK · **alpha.2** Mac 배포(Node 22) · 1주차 훈련표·E2E
 ```

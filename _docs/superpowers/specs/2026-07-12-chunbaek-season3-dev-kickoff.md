@@ -1,10 +1,10 @@
 # 춘백 시즌3 — 개발 착수 (Kickoff)
 
 > **작성일:** 2026-07-12  
-> **갱신:** 2026-07-12 (v0.1.0-alpha.1)  
+> **갱신:** 2026-07-12 (v0.1.0-alpha.2 준비)  
 > **상태:** **알파** — 출정식(7/16) 전 검증  
 > **브랜치:** `cursor/cloud-agent-1783816981460-v32r8`  
-> **태그:** `chunbaek-v0.1.0-alpha.1`
+> **코드 버전:** `0.1.0-alpha.2` (미배포) · **프로덕션 태그:** `chunbaek-v0.1.0-alpha.1`
 
 ---
 
@@ -14,7 +14,7 @@
 |------|------|
 | 정책·명단·토요 정모? | [confirmed-decisions.md](./2026-07-12-chunbaek-season3-confirmed-decisions.md) |
 | 운영·시드·일정? | [ops-prep.md](./2026-07-16-chunbaek-season3-ops-prep.md) |
-| **알파 릴리스·배포?** | [chunbaek-v0.1.0-alpha.1.md](../../releases/chunbaek-v0.1.0-alpha.1.md) |
+| **알파 릴리스·배포?** | [alpha.1](../../releases/chunbaek-v0.1.0-alpha.1.md) · **[alpha.2 (다음)](../../releases/chunbaek-v0.1.0-alpha.2.md)** |
 | 출정식 전 테스트? | [pre-departure-test-plan.md](../../testing/2026-07-12-chunbaek-season3-pre-departure-test-plan.md) |
 | 제품·데이터 모델? | [PRD](./2026-07-12-chunbaek-season3-attendance-design.md) |
 | 운영진 API? | [admin-api.md](./2026-07-12-chunbaek-season3-admin-api.md) |
@@ -50,7 +50,7 @@
 
 | # | 작업 | 담당 |
 |---|------|------|
-| 1 | **알파 1 재배포** — `bash scripts/deploy-chunbaek.sh` (Mac **Node 22**) | 운영진 |
+| 1 | **alpha.2 배포** — `bash scripts/deploy-chunbaek.sh` (alpha.1 FE+OG 일괄, Mac **Node 22**) | 운영진 |
 | 2 | admin **1주차 훈련표** (7/20~7/26) | 운영진 |
 | 3 | 수동 E2E·파일럿 2~3명 | 운영진 |
 | 4 | (선택) `pre-deploy-test.sh` chunbaek smoke | 개발 |
@@ -91,8 +91,8 @@ bash scripts/deploy-chunbaek.sh
 
 | 단계 | 태그 예 |
 |------|---------|
-| 알파 | `chunbaek-v0.1.0-alpha.1` ← **현재** |
-| 알파 핫픽스 | `chunbaek-v0.1.0-alpha.2` |
+| 알파 | `chunbaek-v0.1.0-alpha.1` (시드·태그) |
+| **다음 배포** | `chunbaek-v0.1.0-alpha.2` ← **코드 준비됨** (OG + alpha.1 FE) |
 | 7/20 개시 | `chunbaek-v0.1.0` (alpha 접미사 제거 검토) |
 
 SSOT: `chunbaek/VERSION`
@@ -106,4 +106,4 @@ SSOT: `chunbaek/VERSION`
 | 2026-07-12 | kickoff 최초 작성 |
 | 2026-07-12 | Task 6·11b 완료 |
 | 2026-07-16 | ops-prep — 출정식 7/16, 시작 7/20 |
-| 2026-07-12 | **v0.1.0-alpha.1** — 시드·알파 FE·도구·배포 스크립트 정리 |
+| 2026-07-12 | **v0.1.0-alpha.2 준비** — OG 실서비스 문구, VERSION bump |
