@@ -1,7 +1,7 @@
-/* 춘천 마라톤 공식 톤 — 오렌지 #F04E30 · 시안 #70D1F4 · 블랙 · 화이트 */
+/* 춘천 마라톤 공식 톤 — 배경 오렌지 #ff3214 · 시안 #70D1F4 · 블랙 · 화이트 */
 :root {
-  --chun-orange: #f04e30;
-  --chun-orange-dark: #d94328;
+  --chun-orange: #ff3214;
+  --chun-orange-dark: #e02a10;
   --chun-cyan: #70d1f4;
   --chun-cyan-dark: #4db8e0;
   --chun-black: #000000;
