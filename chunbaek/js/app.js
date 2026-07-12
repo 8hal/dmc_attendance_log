@@ -258,16 +258,51 @@
     paintStatsHeader(prof);
     setTodayPanels({ beforeSeason: true, afterSeason: false, active: false, programOff: false });
     const start = slotRes.startDate || "2026-07-20";
+    const betaStart = slotRes.betaWeekStartDate || null;
+    const betaEnd = slotRes.betaWeekEndDate || null;
+    const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+
     document.getElementById("before-season-title").textContent =
       `${formatIsoDateKo(start)} 시작`;
+
+    const showBeta = betaStart && betaEnd && today < start;
+    const betaEl = document.getElementById("before-season-beta");
+    if (showBeta) {
+      betaEl.hidden = false;
+      document.getElementById("before-season-beta-range").textContent =
+        `${formatIsoDateKo(betaStart)} ~ ${formatIsoDateKo(betaEnd)}`;
+      const daysToBeta = daysUntilKst(betaStart);
+      const betaDescEl = document.getElementById("before-season-beta-desc");
+      if (daysToBeta !== null && daysToBeta > 0) {
+        betaDescEl.textContent =
+          `프로필은 지금 미리 완료해 주세요. 출석 체험은 ${formatIsoDateKo(betaStart)}부터 (D-${daysToBeta})`;
+        document.getElementById("before-season-desc").textContent =
+          "아래 베타 기간에 출석을 연습해 보시고, 불편한 점은 단톡이나 운영진에게 알려 주세요.";
+      } else if (daysToBeta === 0) {
+        betaDescEl.textContent =
+          "오늘부터 홈에서 출석 체험이 가능합니다. 연습용이니 부담 없이 써 보세요.";
+        document.getElementById("before-season-desc").textContent =
+          `${formatIsoDateKo(start)} 본시즌 시작 전까지 베타로 앱을 미리 익혀 주세요.`;
+      } else {
+        betaDescEl.textContent =
+          "베타 출석 체험 중입니다. 연습용이니 부담 없이 써 보세요.";
+        document.getElementById("before-season-desc").textContent =
+          `${formatIsoDateKo(start)} 본시즌 시작 전까지 피드백 부탁드립니다.`;
+      }
+    } else {
+      betaEl.hidden = true;
+      document.getElementById("before-season-desc").textContent =
+        "출정식 전에는 온보딩만 미리 해 두시면 됩니다. 7/20부터 매일 홈에서 출석해 주세요.";
+    }
+
     const days = daysUntilKst(start);
     const ddayEl = document.getElementById("before-season-dday");
     if (days === null) {
       ddayEl.textContent = "";
     } else if (days > 0) {
-      ddayEl.textContent = `D-${days}`;
+      ddayEl.textContent = `본시즌 D-${days}`;
     } else if (days === 0) {
-      ddayEl.textContent = "오늘 시작일";
+      ddayEl.textContent = "오늘 본시즌 시작일";
     } else {
       ddayEl.textContent = "";
     }
