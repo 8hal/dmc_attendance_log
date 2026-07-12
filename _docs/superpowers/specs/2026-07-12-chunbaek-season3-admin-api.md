@@ -24,9 +24,13 @@
 | action | 메서드 | 용도 |
 |--------|--------|------|
 | `verify-admin` | POST | 운영진 비밀번호 검증 (화면 게이트) |
-| `admin-grid` | GET | 주차별 출석 그리드 |
+| `admin-grid` | GET | 주차별 **출석** 그리드 |
 | `admin-set-attendance` | POST | 출석·미출석·예외·대리 입력 |
-| `admin-import-slots` | POST | 100슬롯 CSV/JSON import |
+| `admin-week-slots` | GET | 주차별 **훈련** 슬롯 조회 (훈련 입력 화면) |
+| `admin-save-week-slots` | POST | 주차별 **훈련** 내용 저장 |
+| `admin-import-slots` | POST | 100슬롯 일괄 import (시즌 골격·초기 데이터용, 선택) |
+
+> **실운영 메인:** 훈련표는 보통 **주차별로 공개**된다. 운영진은 `admin-week-slots` → 편집 → `admin-save-week-slots` 흐름이 기본이다. `admin-import-slots`는 시즌 시작 전 100일 골격을 한 번에 넣을 때만 쓴다.
 
 ### 1.2 MVP 확장 (권장 — PRD §16.6 운영 시나리오)
 
@@ -308,9 +312,155 @@ Body: {
 
 ---
 
-### 3.3 `admin-import-slots` — 100슬롯 import
+### 3.3 `admin-week-slots` — 주차별 훈련 슬롯 조회
 
-**용도:** PRD §8.5 시즌 시작 전 훈련표 등록.
+**용도:** PRD §7.5 **슬롯 편집** 탭. 해당 주의 일별 훈련 계획을 보고·입력 폼에 채운다. (출석 그리드와 **별도** — 훈련 라벨 편집 전용)
+
+```
+GET ?action=admin-week-slots&week=7&adminPw=...
+```
+
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| `week` | △ | 주차 번호. 생략 시 오늘 KST 기준 **현재 주** |
+| `adminPw` | ○ | 운영진 비밀번호 |
+
+**응답 200:**
+
+```json
+{
+  "ok": true,
+  "week": 7,
+  "range": "4/7 ~ 4/13",
+  "summary": {
+    "slotCount": 7,
+    "filledCount": 5,
+    "trainingDayCount": 4,
+    "weeklyTarget": 3,
+    "warning": null
+  },
+  "slots": [
+    {
+      "slotId": 36,
+      "dayIndex": 36,
+      "date": "2026-04-07",
+      "week": 7,
+      "trainingLabel": "5km 인터벌 + 코어 20분",
+      "trainingType": "interval",
+      "isProgramOff": false,
+      "hasAttendance": true
+    },
+    {
+      "slotId": 37,
+      "dayIndex": 37,
+      "date": "2026-04-08",
+      "week": 7,
+      "trainingLabel": "",
+      "trainingType": null,
+      "isProgramOff": false,
+      "hasAttendance": false
+    },
+    {
+      "slotId": 38,
+      "dayIndex": 38,
+      "date": "2026-04-09",
+      "week": 7,
+      "trainingLabel": "휴무",
+      "trainingType": "off",
+      "isProgramOff": true,
+      "hasAttendance": false
+    }
+  ]
+}
+```
+
+#### 3.3.1 필드 설명
+
+| 필드 | 설명 |
+|------|------|
+| `filledCount` | `trainingLabel`이 비어 있지 않거나 `isProgramOff: true`인 슬롯 수 (입력 완료로 간주) |
+| `trainingDayCount` | `!isProgramOff` 슬롯 수 (I1 주간 목표 cap 계산용) |
+| `warning` | `trainingDayCount < 3` 이면 문자열, 아니면 `null` |
+| `hasAttendance` | 해당 슬롯에 `chunbaek_attendance` 1건이라도 있으면 `true` — 라벨 수정 시 UI 경고용 |
+
+#### 3.3.2 해당 주 슬롯이 아직 없을 때
+
+`chunbaek_slots`에 해당 `week` 문서가 없으면:
+
+- `chunbaek_season_config`의 `startDate`·기존 슬롯 날짜 범위로 **그 주의 달력 7일**을 계산해 **빈 행**을 반환한다 (`dayIndex`·`slotId` 없음, `trainingLabel: ""`).
+- 프론트는 빈 행에 `dayIndex`·날짜를 표시하고, `admin-save-week-slots` 저장 시 **신규 슬롯 생성(upsert)**.
+
+> 시즌 골격을 미리 import해 두면 `dayIndex`·`slotId`가 채워진 상태로 반환된다 (권장).
+
+---
+
+### 3.4 `admin-save-week-slots` — 주차별 훈련 저장
+
+**용도:** 매주(또는 해당 주 시작 전) 훈련 내용 입력·수정. **실운영에서 가장 자주 쓰는 API.**
+
+```
+POST ?action=admin-save-week-slots
+Body: {
+  "adminPw": "...",
+  "week": 7,
+  "rows": [
+    {
+      "dayIndex": 36,
+      "date": "2026-04-07",
+      "trainingLabel": "5km 인터벌 + 코어 20분",
+      "isProgramOff": false,
+      "trainingType": "interval"
+    },
+    {
+      "dayIndex": 37,
+      "date": "2026-04-08",
+      "trainingLabel": "휴무",
+      "isProgramOff": true,
+      "trainingType": "off"
+    }
+  ]
+}
+```
+
+| 필드 | 필수 | 설명 |
+|------|------|------|
+| `week` | ○ | 저장 대상 주차 (본문 `rows[].week`와 불일치 시 400) |
+| `rows` | ○ | 1~7건 (해당 주 일수). 빈 배열 불가 |
+| `rows[].dayIndex` | △ | 있으면 문서 ID `String(dayIndex)` 사용. 없으면 서버가 시즌 내 다음 번호 할당 |
+| `rows[].date` | ○ | `YYYY-MM-DD` |
+| `rows[].trainingLabel` | △ | `isProgramOff: true`이면 `"휴무"` 등 짧은 라벨 권장. 훈련일이면 1~200자 **필수** |
+| `rows[].isProgramOff` | ○ | boolean |
+| `rows[].trainingType` | × | `interval` \| `long` \| `dawn` \| `dongmak_sat` \| `off` \| `easy` |
+
+#### 3.4.1 저장 규칙
+
+- `dayIndex`별 **upsert** (`chunbaek_slots/{dayIndex}`).
+- `week`·`date`는 요청 값으로 덮어씀 (주차 재배치는 운영진 책임).
+- `isProgramOff: true`이면 `trainingType` 기본 `"off"`.
+- 이미 `chunbaek_attendance`가 있는 슬롯의 `isProgramOff`를 `true`로 바꾸려 하면 → `409` + `attendance exists` (출석 데이터와 충돌).
+- `trainingLabel`만 변경하는 것은 **항상 허용** (`hasAttendance` 있어도 OK).
+
+#### 3.4.2 I1 경고
+
+저장 후 해당 주 `trainingDayCount` 재계산. `< 3`이면 `warnings` 배열에 포함.
+
+**응답 200:**
+
+```json
+{
+  "ok": true,
+  "week": 7,
+  "saved": 7,
+  "trainingDayCount": 5,
+  "warnings": []
+}
+```
+
+---
+
+### 3.5 `admin-import-slots` — 100슬롯 일괄 import (부트스트랩)
+
+**용도:** 시즌 **시작 전** 100일 날짜·주차 골격을 한 번에 등록. 훈련 라벨은 비워 두거나 임시 값으로 넣고, **시즌 중에는 §3.3~3.4 주차별 입력**으로 갱신한다.
 
 ```
 POST ?action=admin-import-slots
@@ -342,7 +492,7 @@ Body: {
 
 `rows`와 `csv` 동시 제공 시 **`rows` 우선**.
 
-#### 3.3.1 Row 스키마
+#### 3.5.1 Row 스키마
 
 | 필드 | 필수 | 검증 |
 |------|------|------|
@@ -355,7 +505,7 @@ Body: {
 
 Firestore 문서 ID: `String(dayIndex)` (예: `chunbaek_slots/42`).
 
-#### 3.3.2 `mode`
+#### 3.5.2 `mode`
 
 | mode | 동작 |
 |------|------|
@@ -367,7 +517,7 @@ Firestore 문서 ID: `String(dayIndex)` (예: `chunbaek_slots/42`).
 - **경고만 반환** (`warnings`에 `attendanceExists: true`) — 삭제는 하지 않음 (출석 데이터 보호).
 - 운영진이 의도적 재시작이면 별도 스크립트로 attendance 정리 후 import.
 
-#### 3.3.3 I1 — 주차별 훈련일 경고
+#### 3.5.3 I1 — 주차별 훈련일 경고
 
 import 후 주차별 `trainingDayCount`(=`!isProgramOff` 슬롯 수) 계산:
 
@@ -397,7 +547,7 @@ import 후 주차별 `trainingDayCount`(=`!isProgramOff` 슬롯 수) 계산:
 
 ---
 
-### 3.4 `admin-set-participant` — 참가자 추가·제외 (MVP 확장)
+### 3.6 `admin-set-participant` — 참가자 추가·제외 (MVP 확장)
 
 **용도:** [확정 §3.1](./2026-07-12-chunbaek-season3-confirmed-decisions.md) 시즌 중 합류·제외.
 
@@ -432,7 +582,7 @@ Body: {
 
 ---
 
-### 3.5 `admin-reset-profile` — 프로필 초기화 (MVP 확장)
+### 3.7 `admin-reset-profile` — 프로필 초기화 (MVP 확장)
 
 **용도:** PRD §16.6 — 잘못된 닉네임 선택·재가입 유도.
 
@@ -466,7 +616,7 @@ Body: {
 
 ---
 
-### 3.6 `admin-update-profile` — 프로필 필드 수정 (MVP 확장)
+### 3.8 `admin-update-profile` — 프로필 필드 수정 (MVP 확장)
 
 **용도:** PRD §16.6 — 목표·PB 수정 (회원 앱 MVP는 수정 비활성).
 
@@ -557,18 +707,51 @@ async function adminPost(action, body = {}) {
 }
 ```
 
-### 5.3 UI ↔ API 매핑
+### 5.3 admin.html 탭 구조 (PRD §7.5)
+
+| 좌측 메뉴 | 화면 | API |
+|-----------|------|-----|
+| **출석 그리드** | 참가자 × 슬롯 매트릭스 | `admin-grid` |
+| **훈련 입력** | 주차별 일일 훈련 라벨 편집 | `admin-week-slots` → `admin-save-week-slots` |
+| **일괄 import** | 100일 CSV 업로드 (시즌 초기 1회) | `admin-import-slots` |
+| 시즌 설정 | (MVP) Firestore·스크립트 | — |
+
+**훈련 입력 화면 (와이어):**
+
+```
+┌─────────────────────────────────────┐
+│  7주차  4/7 ~ 4/13    [저장]        │
+│  입력 5/7일 · 훈련일 4일 (목표 3회)  │
+├────────┬──────────────────┬────────┤
+│ 36일차 │ 4/7 (월)         │ [휴무] │
+│        │ 5km 인터벌+코어  │        │
+├────────┼──────────────────┼────────┤
+│ 37일차 │ 4/8 (화)         │ [휴무] │
+│        │ (비어 있음)      │        │
+└────────┴──────────────────┴────────┘
+```
+
+### 5.4 UI ↔ API 매핑
 
 | UI 동작 | API |
 |---------|-----|
-| 주차 선택 | `admin-grid?week=N` |
+| 출석 탭 — 주차 선택 | `admin-grid?week=N` |
 | 셀 → 출석 | `admin-set-attendance { attended: true, exception: false }` |
 | 셀 → 미출석 | `admin-set-attendance { attended: false, exception: false }` |
 | 셀 → 예외 | `admin-set-attendance { exception: true, exceptionNote }` |
-| CSV import | `admin-import-slots { rows \| csv }` |
+| 훈련 탭 — 주차 로드 | `admin-week-slots?week=N` |
+| 훈련 탭 — [저장] | `admin-save-week-slots { week, rows }` |
+| 일괄 import | `admin-import-slots { rows \| csv }` |
 | 참가자 추가 | `admin-set-participant { participant: true }` |
 | 프로필 초기화 | `admin-reset-profile` |
 | 목표 수정 | `admin-update-profile` |
+
+### 5.5 운영 시나리오 — 주차별 훈련 공개
+
+1. **시즌 시작 전 (선택):** `admin-import-slots`로 100일 **날짜·주차 골격**만 import (`trainingLabel` 빈 값 가능).
+2. **매주:** 운영진이 **훈련 입력** 탭 → 다음 주(또는 이번 주) 선택.
+3. 일별 `trainingLabel`·휴무 체크 후 **[저장]** → `admin-save-week-slots`.
+4. 회원 앱 **홈·내 100일**에 해당 주 훈련 내용 즉시 반영 (`today-slot`, `my-timeline`).
 
 ---
 
@@ -600,12 +783,19 @@ async function adminPost(action, body = {}) {
 3. `admin-set-attendance` 예외 → `weekAttendCount`에서 제외  
 4. 회원 주차 마감 후 `save-attendance` → 403, `admin-set-attendance` → 200  
 
-### 7.3 Import
+### 7.3 주차별 훈련 입력
+
+1. `admin-week-slots?week=1` → 해당 주 slots 배열  
+2. `admin-save-week-slots` 7행 저장 → `saved: 7`, 회원 `today-slot`에 `trainingLabel` 반영  
+3. `trainingDayCount: 2` 주 저장 시 `warnings` 포함  
+4. 출석 있는 슬롯 `isProgramOff: true` 변경 시도 → 409  
+
+### 7.4 일괄 import (부트스트랩)
 
 1. 7행 샘플 CSV `replace` → `imported: 7`  
 2. `trainingDayCount: 2` 주차 포함 시 `warnings` 배열  
 
-### 7.4 확장 API (포함 시)
+### 7.5 확장 API (포함 시)
 
 1. `admin-set-participant` → roster에 반영  
 2. `admin-reset-profile` → `profileComplete: false`, token 무효  
@@ -628,11 +818,11 @@ async function adminPost(action, body = {}) {
 
 ## 9. 확정 체크리스트 (사용자 확인용)
 
-- [ ] **MVP 필수 4개** (`verify-admin`, `admin-grid`, `admin-set-attendance`, `admin-import-slots`) — 구현 범위 OK?
-- [ ] **MVP 확장 3개** (`admin-set-participant`, `admin-reset-profile`, `admin-update-profile`) — 포함할까요, Phase 2로 미룰까요?
-- [ ] **인증:** 매 요청 `adminPw` (ops.html 패턴) — OK? (report.html처럼 session flag만 쓰는 방식은 API 보안상 비권장)
-- [ ] **import `replace`:** 기존 attendance 있을 때 경고만 — OK?
-- [ ] **미래 슬롯 대리 출석:** 허용 (스펙상 `admin-set-attendance` 제한 없음) — OK?
+- [ ] **MVP 필수 6개** — `verify-admin`, `admin-grid`, `admin-set-attendance`, **`admin-week-slots`**, **`admin-save-week-slots`**, `admin-import-slots`(부트스트랩) OK?
+- [ ] **훈련 입력 = 주차별**이 메인, 일괄 import는 시즌 골격용 — OK?
+- [ ] **MVP 확장 3개** (`admin-set-participant`, `admin-reset-profile`, `admin-update-profile`) — 포함할까요?
+- [ ] **인증:** 매 요청 `adminPw` — OK?
+- [ ] **미래 슬롯 대리 출석** 허용 — OK?
 
 ---
 
@@ -641,3 +831,4 @@ async function adminPost(action, body = {}) {
 | 일자 | 변경 |
 |------|------|
 | 2026-07-12 | 초안 작성 — Task 6 구현 전 SSOT |
+| 2026-07-12 | 주차별 훈련 API 추가 (`admin-week-slots`, `admin-save-week-slots`) |

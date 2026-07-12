@@ -188,7 +188,9 @@ chunbaekS3: {
 | `verify-admin` | 운영진 인증 | 필수 |
 | `admin-grid` | 출석 그리드 | 필수 |
 | `admin-set-attendance` | 예외·대리 출석 | 필수 |
-| `admin-import-slots` | 100슬롯 CSV | 필수 |
+| `admin-week-slots` | 주차별 훈련 조회 | 필수 |
+| `admin-save-week-slots` | 주차별 훈련 저장 | 필수 |
+| `admin-import-slots` | 100슬롯 일괄 import (골격) | 필수(부트스트랩) |
 | `admin-set-participant` | 참가자 추가·제외 | 확장 (권장) |
 | `admin-reset-profile` | 프로필 초기화·세션 revoke | 확장 (권장) |
 | `admin-update-profile` | 목표·PB·각오 수정 | 확장 (권장) |
