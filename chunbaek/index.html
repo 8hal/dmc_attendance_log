@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d9488" />
+  <title>춘백 시즌3 — 100일 출석</title>
+  <link rel="stylesheet" href="css/chunbaek.css" />
+</head>
+<body>
+  <div class="demo-nav" id="demo-nav" style="display:none">
+    <div>🛠 스켈레톤 데모</div>
+    <select id="demo-screen">
+      <option value="welcome">① 환영</option>
+      <option value="pick">② 명단</option>
+      <option value="profile">③ 프로필</option>
+      <option value="guide">④ 가이드</option>
+      <option value="today" selected>⑤ 오늘</option>
+      <option value="timeline">내 100일</option>
+      <option value="team">팀</option>
+      <option value="me">나</option>
+    </select>
+  </div>
+
+  <div class="app">
+    <div class="preview-banner" id="preview-banner" style="display:none">
+      미리보기 모드 — API 없이 목업 데이터 표시 (?preview=1)
+    </div>
+
+    <main class="main">
+      <!-- ① 환영 -->
+      <section id="view-welcome" class="view onboarding-center">
+        <h1 class="brand-title">춘백 시즌3</h1>
+        <p class="brand-sub">
+          100일, 함께 달립니다.<br />
+          출정식에서 정한 목표를 프로필로 남기고,<br />
+          매일 출석으로 100일을 채워 나가요.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-start" style="max-width:280px">시작하기</button>
+      </section>
+
+      <!-- ② 명단 -->
+      <section id="view-pick" class="view">
+        <h2 class="section-title">당신은 누구신가요?</h2>
+        <p class="section-sub">시즌 참가자 명단에서 본인을 선택하세요</p>
+        <input type="search" class="input" placeholder="🔍 이름 검색" id="roster-search" />
+        <ul class="roster-list card" id="roster-list" style="padding:0"></ul>
+        <button type="button" class="btn btn-primary" id="btn-pick-next" disabled style="margin-top:16px">다음</button>
+      </section>
+
+      <!-- ③ 프로필 -->
+      <section id="view-profile" class="view">
+        <h2 class="section-title"><span id="profile-nickname">김러너</span>님의 프로필</h2>
+        <p class="section-sub">출정식 목표를 남겨 주세요</p>
+        <div class="card">
+          <div class="field-label">닉네임</div>
+          <div style="font-weight:700;margin-bottom:16px" id="profile-nick-display">—</div>
+          <div class="field-label">풀 코스 목표 기록 *</div>
+          <div class="time-row">
+            <input type="number" id="goal-h" min="2" max="7" value="4" /> 시간
+            <input type="number" id="goal-m" min="0" max="59" value="30" /> 분
+          </div>
+          <p class="section-sub">춘천마라톤(또는 시즌 대회) 목표 완주 시간</p>
+          <div class="field-label">기존 풀 PB (선택)</div>
+          <div class="time-row">
+            <input type="number" id="pb-h" min="2" max="8" placeholder="4" /> 시간
+            <input type="number" id="pb-m" min="0" max="59" placeholder="52" /> 분
+          </div>
+          <p class="section-sub">없으면 비워두세요</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-create-profile">프로필 만들기</button>
+      </section>
+
+      <!-- ④ 가이드 -->
+      <section id="view-guide" class="view">
+        <h2 class="section-title">100일, 이렇게 출석해요</h2>
+        <div class="card">
+          <div class="guide-item"><span class="guide-icon">📍</span><span>매일 <strong>[오늘]</strong>에서 <strong>[출석하기]</strong> 한 번</span></div>
+          <div class="guide-item"><span class="guide-icon">📅</span><span>주 3회 이상 출석 목표 (프로그램 휴무일 제외)</span></div>
+          <div class="guide-item"><span class="guide-icon">📷</span><span>사진은 선택 (단톡에 올려도 OK)</span></div>
+          <div class="guide-item"><span class="guide-icon">⚠️</span><span>불참은 단톡에 미리 알림 → 운영진이 예외 처리</span></div>
+          <div class="guide-item"><span class="guide-icon">☕</span><span>주 3회 미달 시 패널티 (커피·간식)</span></div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-guide-done">100일 시작하기</button>
+      </section>
+
+      <!-- ⑤ 오늘 -->
+      <section id="view-today" class="view">
+        <div class="stats-header">
+          <div>
+            <div class="stats-season">춘백 시즌3</div>
+            <div class="stats-day" id="hdr-day">42일차 / 100일</div>
+          </div>
+          <div class="stats-attend" id="hdr-attend">출석 28회 · 출석률 68%</div>
+        </div>
+        <div id="today-body">
+          <div class="today-slot-card">
+            <div class="today-day" id="today-day">42일차 · 4월 15일 (화)</div>
+            <div class="today-training" id="today-training">📋 5km 인터벌 + 코어 20분</div>
+          </div>
+          <div class="attend-cta">
+            <button type="button" class="btn btn-primary" id="btn-attend">✓  출석하기</button>
+          </div>
+          <div class="optional-row">
+            <span>사진 (선택)</span>
+            <button type="button" class="btn btn-ghost" style="width:auto" disabled>+ 추가</button>
+          </div>
+          <div class="optional-row">
+            <span>메모 (선택)</span>
+          </div>
+          <input type="text" class="input" id="note-input" placeholder="오늘 한 줄 메모" />
+          <div class="week-bar" id="week-bar">이번 주  2 / 3회 출석</div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-switch-user" style="margin-top:24px">다른 사람으로</button>
+      </section>
+
+      <!-- 내 100일 -->
+      <section id="view-timeline" class="view">
+        <h2 class="section-title">내 100일</h2>
+        <div class="sub-tabs">
+          <button type="button" class="sub-tab active">주간</button>
+          <button type="button" class="sub-tab">월간</button>
+          <button type="button" class="sub-tab">시즌</button>
+        </div>
+        <div id="timeline-weeks"></div>
+      </section>
+
+      <!-- 팀 -->
+      <section id="view-team" class="view">
+        <h2 class="section-title">팀</h2>
+        <div class="team-summary" id="team-summary"></div>
+        <div id="team-list"></div>
+      </section>
+
+      <!-- 나 -->
+      <section id="view-me" class="view">
+        <h2 class="section-title">나</h2>
+        <dl class="profile-dl" id="me-dl"></dl>
+        <button type="button" class="btn btn-outline" disabled title="MVP: 운영진 문의">프로필 수정</button>
+      </section>
+    </main>
+
+    <nav class="tab-bar" id="tab-bar">
+      <button type="button" class="tab-btn active" data-tab="today">
+        <span class="tab-icon">📍</span>오늘
+      </button>
+      <button type="button" class="tab-btn" data-tab="timeline">
+        <span class="tab-icon">📅</span>내 100일
+      </button>
+      <button type="button" class="tab-btn" data-tab="team">
+        <span class="tab-icon">👥</span>팀
+      </button>
+      <button type="button" class="tab-btn" data-tab="me">
+        <span class="tab-icon">🙋</span>나
+      </button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
