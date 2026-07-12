@@ -2,71 +2,141 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
   <title>출석 체크 (공개 베타) - 동탄 마라톤 클럽</title>
-  <link rel="icon" href="assets/dmc_logo.png" />
+  <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
+  <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
+  <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
+  <link rel="stylesheet" href="assets/design-tokens.css?v=20260512-toss-tokens" />
   <style>
-    :root {
-      --color-primary: #2563EB;
-      --color-primary-hover: #1D4ED8;
-      --color-primary-light: #DBEAFE;
-      --color-bg: #F8FAFC;
-      --color-card: #FFFFFF;
-      --color-text: #0F172A;
-      --color-text-secondary: #64748B;
-      --color-text-muted: #94A3B8;
-      --color-border: #E2E8F0;
-      --color-success: #059669;
-      --color-error: #DC2626;
-      --color-open-beta: #0F766E;
-      --color-open-beta-accent: #14B8A6;
-      --color-open-beta-bg: #CCFBF1;
-      --color-open-beta-surface: #F0FDFA;
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg);
+      color: var(--dmc-color-text);
+      font-family: var(--dmc-font-family);
+      letter-spacing: 0;
     }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background: var(--color-bg); color: var(--color-text); }
-    .wrap { max-width: 520px; margin: 0 auto; padding: 16px; padding-bottom: 32px; }
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: var(--dmc-space-5);
+      padding-bottom: var(--dmc-space-10);
+    }
     .open-beta-pill {
       display: inline-block;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.04em;
-      color: var(--color-open-beta);
-      background: var(--color-open-beta-bg);
-      padding: 4px 10px;
-      border-radius: 999px;
-      margin-bottom: 8px;
-      border: 1px solid rgba(15, 118, 110, 0.2);
+      color: var(--dmc-color-open-beta);
+      background: var(--dmc-color-open-beta-bg);
+      padding: var(--dmc-space-1) 10px;
+      border-radius: var(--dmc-radius-pill);
+      margin-bottom: var(--dmc-space-2);
+      border: 1px solid var(--dmc-color-open-beta-border);
     }
     .open-beta-banner {
       font-size: 12px;
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
       line-height: 1.5;
-      margin-bottom: 14px;
-      padding: 12px 12px 12px 14px;
-      background: linear-gradient(90deg, var(--color-open-beta-surface) 0%, var(--color-card) 42%);
-      border-radius: 12px;
-      border: 1px solid rgba(20, 184, 166, 0.35);
-      border-left: 4px solid var(--color-open-beta-accent);
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+      margin-bottom: var(--dmc-space-4);
+      padding: var(--dmc-space-3) var(--dmc-space-3) var(--dmc-space-3) var(--dmc-space-4);
+      background: linear-gradient(90deg, var(--dmc-color-open-beta-surface) 0%, var(--dmc-color-surface) 42%);
+      border-radius: var(--dmc-radius-xl);
+      border: 1px solid var(--dmc-color-open-beta-border);
+      border-left: 4px solid var(--dmc-color-open-beta-accent);
+      box-shadow: var(--dmc-shadow-inset-top);
     }
-    .open-beta-banner strong { color: var(--color-open-beta); }
-    .card { background: var(--color-card); border-radius: 14px; padding: 14px; box-shadow: 0 2px 12px rgba(15,23,42,0.08); margin-bottom: 12px; }
+    .open-beta-banner strong { color: var(--dmc-color-open-beta); }
+    .card {
+      background: var(--dmc-color-surface);
+      border-radius: var(--dmc-kiosk-card-radius);
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      padding: var(--dmc-space-5);
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+      margin-bottom: var(--dmc-space-4);
+    }
     h1 { font-size: 18px; margin: 0 0 8px 0; }
     .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .brand img { width: 32px; height: 32px; border-radius: 8px; }
-    label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; font-weight: 500; }
-    input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--color-border); font-size: 14px; background: var(--color-card); box-sizing: border-box; }
-    input:focus, select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
-    button { width: 100%; padding: 12px; border: 0; border-radius: 10px; font-size: 15px; cursor: pointer; }
-    button.primary { background: var(--color-primary); color: #fff; }
-    button.primary:hover:not(:disabled) { background: var(--color-primary-hover); }
-    button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
-    button.ghost { background: transparent; color: var(--color-primary); border: 1px solid var(--color-border); margin-top: 8px; }
-    button.danger-ghost { background: transparent; color: var(--color-error); border: 1px solid var(--color-border); margin-top: 8px; font-size: 13px; }
-    .member-list { max-height: 52vh; overflow-y: auto; margin-top: 8px; border: 1px solid var(--color-border); border-radius: 10px; }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--dmc-color-text-secondary);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .form-label-spaced { margin-top: 10px; }
+    .search-help,
+    .modal-help {
+      margin: 0 0 12px 0;
+      color: var(--dmc-color-text-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .modal-help {
+      margin-bottom: 10px;
+    }
+    input,
+    select {
+      width: 100%;
+      padding: var(--dmc-space-3);
+      border-radius: var(--dmc-radius-lg);
+      border: 1px solid var(--dmc-color-border);
+      font-size: 14px;
+      background: var(--dmc-color-surface);
+      box-sizing: border-box;
+    }
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--dmc-color-primary);
+      box-shadow: var(--dmc-shadow-focus);
+    }
+    button {
+      width: var(--dmc-button-width-full);
+      min-height: var(--dmc-button-size-md);
+      padding: 0 var(--dmc-space-4);
+      border: 0;
+      border-radius: var(--dmc-button-radius);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0;
+    }
+    button.primary {
+      background: var(--dmc-button-fill-bg);
+      color: var(--dmc-button-fill-text);
+      box-shadow: var(--dmc-button-fill-shadow);
+    }
+    button.primary:hover:not(:disabled) { background: var(--dmc-button-fill-bg-hover); }
+    button.primary:disabled { opacity: var(--dmc-button-disabled-opacity); cursor: not-allowed; }
+    button.ghost {
+      background: var(--dmc-button-weak-bg);
+      border: 1px solid var(--dmc-button-weak-border);
+      color: var(--dmc-button-weak-text);
+      margin-top: 8px;
+    }
+    button.danger-ghost {
+      background: var(--dmc-color-surface);
+      color: var(--dmc-color-danger);
+      border: 1px solid var(--dmc-color-border);
+      margin-top: 8px;
+      font-size: 13px;
+      box-shadow: none;
+    }
+    .member-list {
+      max-height: 52vh;
+      overflow-y: auto;
+      margin-top: 8px;
+      border: 1px solid var(--dmc-list-row-border);
+      border-radius: var(--dmc-list-row-radius);
+      background: var(--dmc-list-row-bg);
+    }
     .member-row {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--color-border);
+      padding: var(--dmc-list-row-padding-y-md) var(--dmc-list-row-padding-x-sm);
+      border-bottom: 1px solid var(--dmc-list-row-border);
+      background: var(--dmc-list-row-bg);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -74,37 +144,37 @@
       gap: 8px;
     }
     .member-row:last-child { border-bottom: 0; }
-    .member-row:hover { background: var(--color-bg); }
+    .member-row:hover { background: var(--dmc-list-row-touch-bg); }
     .member-name { font-weight: 600; }
-    .member-meta { font-size: 12px; color: var(--color-text-muted); }
+    .member-meta { font-size: 12px; color: var(--dmc-color-text-muted); }
     .dash-card {
-      padding: 20px 16px 18px;
+      padding: var(--dmc-space-5);
     }
     .dash-context-band {
       text-align: center;
-      background: linear-gradient(180deg, #fafcfd 0%, #f1f5f9 100%);
-      border: 1px solid var(--color-border);
-      border-radius: 14px;
-      padding: 16px 14px 12px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      background: var(--dmc-kiosk-hero-bg);
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-card-radius);
+      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-4);
+      box-shadow: var(--dmc-shadow-inset-top);
     }
     .dash-mega-line1 {
       text-align: center;
       margin: 0;
       font-weight: 700;
-      letter-spacing: -0.03em;
+      letter-spacing: 0;
       line-height: 1.28;
       font-size: clamp(1.02rem, 4.5vmin, 1.32rem);
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
     }
     .dash-mega-line2 {
       text-align: center;
       margin: 6px 0 0;
-      font-weight: 800;
-      letter-spacing: -0.04em;
+      font-weight: 900;
+      letter-spacing: 0;
       line-height: 1.2;
       font-size: clamp(1.18rem, 5.5vmin, 1.68rem);
-      color: var(--color-text);
+      color: var(--dmc-color-text);
     }
     .dash-meta-bar {
       display: flex;
@@ -114,10 +184,10 @@
       gap: 6px 12px;
       margin-top: 12px;
       padding-top: 12px;
-      border-top: 1px solid rgba(15, 23, 42, 0.07);
+      border-top: 1px solid var(--dmc-line-subtle);
       font-size: 13px;
       font-weight: 600;
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
     }
     .btn-dash-link {
       width: auto;
@@ -125,7 +195,7 @@
       padding: 4px 8px;
       background: transparent;
       border: 0;
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
       font-size: 13px;
       font-weight: 600;
       font-family: inherit;
@@ -133,8 +203,8 @@
       text-decoration: underline;
       text-underline-offset: 2px;
     }
-    .btn-dash-link:hover { color: var(--color-primary); }
-    .meeting-adjust { margin-top: 20px; font-size: 12px; color: var(--color-text-muted); }
+    .btn-dash-link:hover { color: var(--dmc-color-primary); }
+    .meeting-adjust { margin-top: 20px; font-size: 12px; color: var(--dmc-color-text-muted); }
     .meeting-adjust summary {
       cursor: pointer;
       list-style: none;
@@ -149,47 +219,158 @@
     .meeting-adjust summary::-webkit-details-marker { display: none; }
     .meeting-adjust-body { padding: 6px 0 2px; }
     .dash-checkin {
-      margin-top: 24px;
-      min-height: clamp(56px, 14vmin, 64px);
+      margin-top: var(--dmc-space-8);
+      min-height: var(--dmc-button-size-xl);
       font-size: clamp(1.05rem, 5vmin, 1.35rem);
-      font-weight: 800;
-      border-radius: 14px;
-      letter-spacing: -0.03em;
+      font-weight: 900;
+      border-radius: var(--dmc-radius-7);
+      letter-spacing: 0;
+    }
+    .form-action-primary {
+      margin-top: 14px;
+    }
+    .field-mode-entry {
+      margin-top: 12px;
+      padding: 0;
+      text-align: center;
+    }
+    .field-mode-entry span {
+      display: none;
+    }
+    .field-mode-entry a {
+      width: auto;
+      padding: 8px 4px;
+      background: transparent;
+      color: var(--dmc-color-text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      line-height: 1.4;
+    }
+    .field-mode-entry a:hover {
+      color: var(--dmc-color-primary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-    .stat-box { background: var(--color-bg); border-radius: 12px; padding: 12px; text-align: center; }
-    .stat-num { font-size: 22px; font-weight: 800; color: var(--color-primary); }
-    .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; }
+    .stat-box { background: var(--dmc-color-bg); border-radius: 12px; padding: 12px; text-align: center; }
+    .stat-num { font-size: 22px; font-weight: 800; color: var(--dmc-color-primary); }
+    .stat-label { font-size: 11px; color: var(--dmc-color-text-secondary); margin-top: 4px; }
     .msg { font-size: 13px; margin-top: 10px; min-height: 1.2em; }
-    .msg.error { color: var(--color-error); }
+    .msg.error { color: var(--dmc-color-danger); }
     .msg.error a {
-      color: var(--color-primary);
+      color: var(--dmc-color-primary);
       font-weight: 600;
       text-decoration: underline;
       text-underline-offset: 2px;
     }
-    .msg.ok { color: var(--color-success); }
+    .inline-text-button {
+      width: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--dmc-color-primary);
+      font: inherit;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      vertical-align: baseline;
+    }
+    .msg.ok { color: var(--dmc-color-success); }
+    .kiosk-wake-lock-status {
+      margin: 10px 0 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dmc-color-text-secondary);
+    }
+    .kiosk-wake-lock-status.active { color: var(--dmc-color-primary); }
+    .kiosk-wake-lock-status.warn { color: var(--dmc-color-danger); }
     .hidden { display: none !important; }
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(15,23,42,0.45);
-      display: flex; align-items: flex-end; justify-content: center; z-index: 50;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
     }
     .modal-sheet {
-      background: var(--color-card);
+      background: var(--dmc-color-surface);
       width: 100%;
       max-width: 520px;
-      border-radius: 16px 16px 0 0;
-      padding: 18px 16px 24px;
+      border-radius: var(--dmc-kiosk-card-radius) var(--dmc-kiosk-card-radius) 0 0;
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-bottom: 0;
+      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-6);
       box-sizing: border-box;
+      box-shadow: var(--dmc-kiosk-surface-shadow);
     }
     .modal-sheet h2 { margin: 0 0 12px 0; font-size: 16px; }
+    .session-roster-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .session-roster-head h2 {
+      margin: 0;
+    }
+    .modal-close-button {
+      width: auto;
+      padding: 6px 8px;
+      border: 0;
+      background: transparent;
+      color: var(--dmc-color-text-muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .session-roster-list {
+      max-height: min(54vh, 420px);
+      overflow: auto;
+      border: 1px solid var(--dmc-list-row-border);
+      border-radius: var(--dmc-list-row-radius);
+      background: var(--dmc-color-bg);
+    }
+    .session-roster-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: var(--dmc-list-row-padding-y-md) var(--dmc-list-row-padding-x-sm);
+      border-bottom: 1px solid var(--dmc-list-row-border);
+      background: var(--dmc-list-row-bg);
+    }
+    .session-roster-row:last-child {
+      border-bottom: 0;
+    }
+    .session-roster-name {
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--dmc-color-text);
+    }
+    .session-roster-meta {
+      flex: 0 0 auto;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dmc-color-text-secondary);
+      text-align: right;
+      white-space: nowrap;
+    }
 
     /* 출석 완료 */
     .success-cheer {
       margin: 6px 0 0;
       font-size: 14px;
       font-weight: 600;
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
       text-align: center;
       line-height: 1.4;
     }
@@ -208,34 +389,42 @@
       display: inline-block;
       margin: 0 1px;
       padding: 2px 8px;
-      border-radius: 999px;
+      border-radius: var(--dmc-radius-pill);
       font-size: 11px;
       font-weight: 800;
-      color: #b45309;
-      background: #fffbeb;
-      border: 1px solid #fcd34d;
+      color: var(--dmc-color-warning-text);
+      background: var(--dmc-color-warning-surface);
+      border: 1px solid var(--dmc-color-warning-border);
       vertical-align: middle;
     }
     .member-list-empty {
       padding: 28px 16px;
       text-align: center;
       font-size: 13px;
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
       line-height: 1.5;
     }
+    .success-title {
+      color: var(--dmc-color-success);
+      font-size: 1.2rem;
+    }
+    .success-line {
+      margin: 8px 0 0 0;
+      font-size: 15px;
+    }
     .mini-cal {
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--dmc-color-border);
       border-radius: 12px;
       padding: 12px 10px 10px;
-      background: linear-gradient(180deg, #fff 0%, var(--color-bg) 100%);
+      background: linear-gradient(180deg, var(--dmc-surface-base) 0%, var(--dmc-color-bg) 100%);
     }
     .mini-cal-title {
       text-align: center;
       font-size: 15px;
       font-weight: 800;
       margin: 0 0 10px;
-      color: var(--color-text);
-      letter-spacing: -0.02em;
+      color: var(--dmc-color-text);
+      letter-spacing: 0;
     }
     .mini-cal-dows {
       display: grid;
@@ -247,7 +436,7 @@
       text-align: center;
       font-size: 10px;
       font-weight: 700;
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
     }
     .mini-cal-grid {
       display: grid;
@@ -264,20 +453,20 @@
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
     }
     .mini-cal-cell.mini-cal-pad { visibility: hidden; }
     .mini-cal-cell.mini-cal-checkin {
-      background: var(--color-primary);
-      color: #fff;
+      background: var(--dmc-button-fill-bg);
+      color: var(--dmc-button-fill-text);
       font-weight: 800;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+      box-shadow: var(--dmc-shadow-accent);
     }
     .mini-cal-cell.mini-cal-month-hit {
-      background: var(--color-primary-light);
-      color: var(--color-primary);
+      background: var(--dmc-color-primary-soft);
+      color: var(--dmc-color-primary);
       font-weight: 700;
-      border: 1px solid rgba(37, 99, 235, 0.35);
+      border: 1px solid var(--dmc-color-primary-border-strong);
     }
     .mini-cal-sub {
       font-size: 8px;
@@ -288,32 +477,45 @@
     .mini-cal-legend {
       margin: 10px 0 0;
       font-size: 11px;
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
       text-align: center;
       line-height: 1.4;
     }
     .success-stats-line {
       margin: 14px 0 0;
       font-size: 12px;
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
       text-align: center;
       line-height: 1.45;
       font-weight: 600;
     }
     .dash-session-row {
+      width: 100%;
       margin: 14px 0 0;
-      padding: 10px 14px;
+      background: var(--dmc-list-row-bg);
+      padding: var(--dmc-list-row-padding-y-lg) var(--dmc-list-row-padding-x-md);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      background: var(--color-primary-light);
-      border: 1px solid rgba(37, 99, 235, 0.18);
-      border-radius: 12px;
+      border: 1px solid var(--dmc-list-row-border-strong);
+      border-radius: var(--dmc-list-row-radius);
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: var(--dmc-shadow-1);
+    }
+    .dash-session-row:hover {
+      border-color: var(--dmc-color-primary-border-strong);
+      background: var(--dmc-accent-bg-hover);
     }
     .dash-session-row.muted {
-      background: var(--color-bg);
-      border-color: var(--color-border);
+      background: var(--dmc-list-row-bg);
+      border-color: var(--dmc-kiosk-surface-border);
+    }
+    .dash-session-row.muted:hover {
+      border-color: var(--dmc-color-primary-border);
+      background: var(--dmc-accent-bg-subtle);
     }
     .dash-session-meta {
       display: flex;
@@ -322,48 +524,35 @@
       gap: 4px;
       min-width: 0;
     }
-    .dash-session-list-link {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-primary);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-    .dash-session-list-link:hover {
-      color: var(--color-primary-hover);
-    }
-    .dash-session-list-link.hidden {
-      display: none !important;
-    }
     .dash-session-label {
       font-size: 12px;
       font-weight: 700;
-      color: var(--color-text-secondary);
+      color: var(--dmc-color-text-secondary);
       flex-shrink: 0;
     }
     .dash-session-row.muted .dash-session-label {
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
       font-weight: 600;
     }
     .dash-session-figures {
       font-size: 15px;
       font-weight: 800;
-      color: var(--color-text);
+      color: var(--dmc-color-text);
       text-align: right;
-      letter-spacing: -0.02em;
+      letter-spacing: 0;
     }
     .dash-session-row.muted .dash-session-figures {
       font-size: 13px;
       font-weight: 600;
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
     }
     .dash-session-figures .dash-session-num {
-      color: var(--color-primary);
+      color: var(--dmc-color-primary);
     }
     .dash-session-figures .dash-session-g {
       font-size: 12px;
       font-weight: 600;
-      color: var(--color-text-muted);
+      color: var(--dmc-color-text-muted);
       margin-left: 4px;
     }
     .success-session-line {
@@ -375,10 +564,10 @@
       gap: 10px;
       font-size: 13px;
       font-weight: 600;
-      color: var(--color-text-secondary);
-      background: var(--color-bg);
+      color: var(--dmc-color-text-secondary);
+      background: var(--dmc-color-bg);
       border-radius: 12px;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--dmc-color-border);
     }
     .success-session-line .dash-session-figures {
       display: inline-flex;
@@ -388,12 +577,667 @@
       gap: 0;
       font-size: 15px;
       font-weight: 800;
-      color: var(--color-text);
+      color: var(--dmc-color-text);
     }
     .success-session-line .dash-session-num {
       font-weight: 800;
-      color: var(--color-primary);
+      color: var(--dmc-color-primary);
       font-size: 15px;
+    }
+    body.kiosk-mode {
+      background: var(--dmc-kiosk-bg);
+      --kiosk-shell-max: 720px;
+      --kiosk-pad-x: clamp(16px, 3.2vw, 24px);
+      --kiosk-pad-y: clamp(14px, 2.8vw, 20px);
+      --kiosk-safe-top: env(safe-area-inset-top, 0px);
+      --kiosk-safe-right: env(safe-area-inset-right, 0px);
+      --kiosk-safe-bottom: env(safe-area-inset-bottom, 0px);
+      --kiosk-safe-left: env(safe-area-inset-left, 0px);
+    }
+    body.kiosk-mode .wrap {
+      width: 100%;
+      max-width: min(100%, var(--kiosk-shell-max));
+      min-height: 100dvh;
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: 0;
+      background: var(--dmc-kiosk-bg);
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+    }
+    body.kiosk-mode .open-beta-pill,
+    body.kiosk-mode .open-beta-banner {
+      display: none;
+    }
+    .kiosk-view {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--dmc-kiosk-bg);
+    }
+    .kiosk-top-bar {
+      flex: 0 0 auto;
+      padding:
+        max(var(--kiosk-pad-y), var(--kiosk-safe-top))
+        max(var(--kiosk-pad-x), var(--kiosk-safe-right))
+        var(--kiosk-pad-y)
+        max(var(--kiosk-pad-x), var(--kiosk-safe-left));
+      border-bottom: 1px solid var(--dmc-kiosk-surface-border);
+      background: var(--dmc-kiosk-hero-bg);
+      color: var(--dmc-color-text);
+    }
+    .kiosk-meeting-title {
+      display: block;
+      font-size: var(--dmc-kiosk-title-size);
+      font-weight: 1000;
+      line-height: 1.04;
+      letter-spacing: 0;
+      word-break: keep-all;
+    }
+    .kiosk-meeting-title.compact {
+      display: none;
+    }
+    .kiosk-panel {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding:
+        var(--kiosk-pad-y)
+        max(var(--kiosk-pad-x), var(--kiosk-safe-right))
+        max(var(--kiosk-pad-y), var(--kiosk-safe-bottom))
+        max(var(--kiosk-pad-x), var(--kiosk-safe-left));
+      background: var(--dmc-kiosk-bg);
+    }
+    .kiosk-choice-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: var(--dmc-space-3);
+    }
+    .kiosk-choice-button {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-card-radius);
+      padding: var(--dmc-space-5);
+      background: var(--dmc-kiosk-action-secondary-bg);
+      color: var(--dmc-kiosk-action-secondary-text);
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      box-shadow: var(--dmc-kiosk-action-secondary-shadow);
+    }
+    .kiosk-choice-button::before {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--dmc-kiosk-icon-radius);
+      background: var(--dmc-button-weak-bg);
+      color: var(--dmc-button-weak-text);
+      font-size: 28px;
+      font-weight: 1000;
+      line-height: 1;
+    }
+    .kiosk-choice-button::after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: -42px;
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      background: var(--dmc-color-primary-surface);
+      pointer-events: none;
+    }
+    .kiosk-choice-button.kiosk-choice-nickname {
+      background: var(--dmc-kiosk-action-primary-bg);
+      color: var(--dmc-kiosk-action-primary-text);
+      border-color: transparent;
+      box-shadow: var(--dmc-kiosk-action-primary-shadow);
+    }
+    .kiosk-choice-button.kiosk-choice-nickname::before {
+      content: "ㄱ";
+      background: rgba(255, 255, 255, 0.18);
+      color: inherit;
+    }
+    .kiosk-choice-button.kiosk-choice-team {
+      background: var(--dmc-kiosk-action-secondary-bg);
+      border-color: var(--dmc-kiosk-action-secondary-border);
+      color: var(--dmc-kiosk-action-secondary-text);
+      box-shadow: var(--dmc-kiosk-action-secondary-shadow);
+    }
+    .kiosk-choice-button.kiosk-choice-team::before {
+      content: "팀";
+      background: var(--dmc-button-weak-bg);
+      color: var(--dmc-button-weak-text);
+    }
+    .kiosk-choice-button strong {
+      display: block;
+      font-size: var(--dmc-kiosk-action-title-size);
+      line-height: 1.02;
+      font-weight: 1000;
+      letter-spacing: 0;
+      word-break: keep-all;
+      z-index: 1;
+    }
+    .kiosk-choice-button span {
+      display: block;
+      color: inherit;
+      opacity: 0.82;
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 900;
+      letter-spacing: 0;
+      z-index: 1;
+    }
+    .kiosk-screen-head {
+      flex: 0 0 auto;
+      display: grid;
+      gap: var(--dmc-space-2);
+      margin-bottom: 16px;
+    }
+    .kiosk-screen-title {
+      margin: 0;
+      color: var(--dmc-color-text);
+      font-size: var(--dmc-kiosk-page-title-size);
+      line-height: 1.05;
+      font-weight: 1000;
+      letter-spacing: 0;
+      word-break: keep-all;
+    }
+    .kiosk-initial-grid {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-auto-rows: minmax(92px, 1fr);
+      gap: var(--dmc-space-2);
+      align-content: start;
+    }
+    .kiosk-initial-button,
+    .kiosk-team-button {
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-control-radius);
+      background: var(--dmc-kiosk-surface-bg);
+      color: var(--dmc-color-text);
+      text-align: left;
+      cursor: pointer;
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+    }
+    .kiosk-initial-button {
+      padding: 14px 12px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+    }
+    .kiosk-initial-button strong {
+      display: block;
+      font-size: clamp(28px, 7.5vmin, 38px);
+      line-height: 1;
+      font-weight: 1000;
+      letter-spacing: 0;
+    }
+    .kiosk-initial-button span {
+      display: block;
+      margin-top: 6px;
+      color: var(--dmc-button-weak-text);
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .kiosk-team-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: minmax(124px, 1fr);
+      gap: var(--dmc-space-2);
+    }
+    .kiosk-team-button {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--dmc-kiosk-hero-bg);
+      border-color: var(--dmc-kiosk-surface-border-strong);
+    }
+    .kiosk-team-button strong {
+      display: block;
+      font-size: clamp(32px, 9vmin, 46px);
+      line-height: 0.98;
+      font-weight: 1000;
+      letter-spacing: 0;
+    }
+    .kiosk-team-button span {
+      display: block;
+      color: var(--dmc-button-weak-text);
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 950;
+    }
+    .kiosk-secondary-button,
+    .kiosk-member-back {
+      min-height: 58px;
+      border: 1px solid var(--dmc-button-weak-border);
+      border-radius: var(--dmc-button-radius);
+      background: var(--dmc-button-weak-bg);
+      color: var(--dmc-button-weak-text);
+      font-size: 19px;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+    }
+    .kiosk-secondary-button {
+      flex: 0 0 auto;
+      margin-top: 12px;
+    }
+    .kiosk-not-on-roster-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 14px 16px;
+    }
+    .kiosk-not-on-roster-hint {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--dmc-button-weak-text);
+    }
+    body.kiosk-mode .kiosk-personal-link {
+      display: none;
+    }
+
+    /* 키오스크 모드: 패널 내 메시지·입력 필드 */
+    body.kiosk-mode #kioskMsg.msg {
+      margin: 0;
+      padding:
+        14px 18px
+        max(14px, var(--kiosk-safe-bottom));
+      font-size: clamp(15px, 3.8vmin, 17px);
+      font-weight: 850;
+      line-height: 1.45;
+      text-align: center;
+      background: var(--dmc-kiosk-bg);
+      flex: 0 0 auto;
+    }
+    body.kiosk-mode #kioskMsg.msg.error {
+      color: var(--dmc-color-danger);
+      background: var(--dmc-color-danger-surface);
+    }
+    .kiosk-panel-help {
+      flex: 0 0 auto;
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.5;
+      color: var(--dmc-color-text-secondary);
+    }
+    .kiosk-field-label {
+      display: block;
+      flex: 0 0 auto;
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: var(--dmc-color-text-secondary);
+    }
+    .kiosk-field-input {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: var(--dmc-size-touch-md);
+      padding: 16px 18px;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.2;
+      border: 1px solid var(--dmc-kiosk-surface-border-strong);
+      border-radius: var(--dmc-kiosk-control-radius);
+      background: var(--dmc-list-row-bg);
+      color: var(--dmc-color-text);
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+      box-sizing: border-box;
+    }
+    .kiosk-field-input::placeholder {
+      color: var(--dmc-color-text-muted);
+      font-weight: 700;
+    }
+    .kiosk-field-input:focus {
+      outline: none;
+      border-color: var(--dmc-color-primary);
+      box-shadow: var(--dmc-shadow-focus);
+    }
+    .kiosk-field-submit {
+      flex: 0 0 auto;
+      margin-top: 18px;
+      min-height: var(--dmc-button-size-xl);
+      font-size: clamp(1.05rem, 5vmin, 1.35rem);
+      font-weight: 950;
+      border-radius: var(--dmc-radius-7);
+      letter-spacing: 0;
+    }
+    .kiosk-member-card.static {
+      cursor: default;
+      pointer-events: none;
+    }
+    body.kiosk-mode .kiosk-member-head {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: var(--dmc-space-3);
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .kiosk-member-back {
+      min-width: 78px;
+      padding: 0;
+      font-size: 30px;
+      line-height: 1;
+    }
+    .kiosk-member-title {
+      margin: 0;
+      color: var(--dmc-color-text);
+      font-size: var(--dmc-kiosk-page-title-size);
+      line-height: 1.04;
+      font-weight: 1000;
+      letter-spacing: 0;
+      word-break: keep-all;
+    }
+    .kiosk-member-grid {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      align-content: start;
+      gap: var(--dmc-space-2);
+      padding-right: 2px;
+    }
+    .kiosk-member-card {
+      min-height: var(--dmc-size-touch-kiosk);
+      border: 1px solid var(--dmc-kiosk-surface-border-strong);
+      border-radius: var(--dmc-kiosk-card-radius);
+      background: var(--dmc-list-row-bg);
+      color: var(--dmc-color-text);
+      text-align: left;
+      padding: var(--dmc-list-row-padding-y-lg) var(--dmc-list-row-padding-x-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--dmc-space-3);
+      cursor: pointer;
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+    }
+    .kiosk-member-card strong {
+      min-width: 0;
+      font-size: var(--dmc-kiosk-member-title-size);
+      line-height: 1.05;
+      font-weight: 1000;
+      letter-spacing: 0;
+      word-break: keep-all;
+    }
+    .kiosk-member-card span {
+      flex: 0 0 auto;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--dmc-space-3);
+      border-radius: var(--dmc-radius-pill);
+      background: var(--dmc-button-weak-bg);
+      color: var(--dmc-button-weak-text);
+      font-size: 17px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+    .kiosk-member-card.done {
+      border-color: var(--dmc-list-row-border);
+      background: var(--dmc-list-row-disabled-bg);
+      color: var(--dmc-color-text-secondary);
+      cursor: default;
+      opacity: var(--dmc-list-row-disabled-opacity);
+    }
+    .kiosk-member-card.done span {
+      color: var(--dmc-color-text-secondary);
+    }
+    .kiosk-empty {
+      padding: 22px 14px;
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-card-radius);
+      background: var(--dmc-list-row-disabled-bg);
+      color: var(--dmc-color-text-secondary);
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.45;
+      text-align: center;
+    }
+    .kiosk-done-wrap {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 0;
+    }
+    .kiosk-done-main {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: var(--dmc-space-4);
+    }
+    .kiosk-check {
+      width: 122px;
+      height: 122px;
+      border-radius: 42px;
+      display: grid;
+      place-items: center;
+      background: var(--dmc-button-fill-bg);
+      color: var(--dmc-button-fill-text);
+      font-size: 76px;
+      font-weight: 1000;
+      line-height: 1;
+      box-shadow: var(--dmc-button-fill-shadow);
+    }
+    .kiosk-done-name {
+      margin: 0;
+      color: var(--dmc-color-text);
+      font-size: clamp(46px, 13vw, 58px);
+      line-height: 1;
+      font-weight: 1000;
+      letter-spacing: 0;
+      word-break: keep-all;
+    }
+    .kiosk-done-status {
+      margin: 8px 0 0;
+      color: var(--dmc-button-weak-text);
+      font-size: clamp(34px, 10.5vw, 44px);
+      line-height: 1;
+      font-weight: 1000;
+      letter-spacing: 0;
+    }
+    .kiosk-done-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .kiosk-stat {
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-icon-radius);
+      background: var(--dmc-list-row-bg);
+      padding: 9px 10px;
+      text-align: center;
+    }
+    .kiosk-stat strong {
+      display: block;
+      color: var(--dmc-color-text);
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 1000;
+    }
+    .kiosk-stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--dmc-color-text-secondary);
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .kiosk-return-note {
+      margin-top: 12px;
+      min-height: 58px;
+      border-radius: var(--dmc-kiosk-icon-radius);
+      background: var(--dmc-button-fill-bg);
+      color: var(--dmc-button-fill-text);
+      box-shadow: var(--dmc-shadow-primary);
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      font-weight: 950;
+    }
+    .kiosk-choice-button .kiosk-wide-text {
+      display: inline;
+    }
+    .kiosk-choice-button .kiosk-compact-text {
+      display: none;
+    }
+
+    /* 키오스크 반응형 — 휴대폰·태블릿·가로/세로 */
+    @media (min-width: 600px) {
+      body.kiosk-mode {
+        --kiosk-shell-max: 840px;
+      }
+      body.kiosk-mode .wrap {
+        box-shadow: var(--dmc-shadow-shell);
+        border-left: 1px solid var(--dmc-kiosk-surface-border);
+        border-right: 1px solid var(--dmc-kiosk-surface-border);
+      }
+      .kiosk-initial-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-rows: minmax(88px, 1fr);
+      }
+      .kiosk-team-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-auto-rows: minmax(112px, 1fr);
+      }
+      .kiosk-choice-grid {
+        grid-template-rows: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-height: min(62vh, 520px);
+      }
+    }
+
+    @media (min-width: 900px) {
+      body.kiosk-mode {
+        --kiosk-shell-max: 960px;
+      }
+      .kiosk-initial-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      .kiosk-team-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (orientation: landscape) and (max-height: 520px) {
+      .kiosk-choice-grid {
+        grid-template-rows: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-height: none;
+      }
+      .kiosk-top-bar {
+        padding-top: max(12px, var(--kiosk-safe-top));
+        padding-bottom: 12px;
+      }
+      .kiosk-meeting-title {
+        font-size: clamp(28px, 6.5vw, 40px);
+      }
+      .kiosk-screen-title,
+      .kiosk-member-title {
+        font-size: clamp(28px, 6vw, 38px);
+      }
+      .kiosk-done-main {
+        gap: var(--dmc-space-3);
+      }
+      .kiosk-check {
+        width: clamp(80px, 18vmin, 110px);
+        height: clamp(80px, 18vmin, 110px);
+        font-size: clamp(52px, 12vmin, 68px);
+        border-radius: clamp(28px, 6vmin, 38px);
+      }
+      .kiosk-done-name {
+        font-size: clamp(34px, 9vw, 48px);
+      }
+      .kiosk-done-status {
+        font-size: clamp(26px, 7vw, 36px);
+      }
+      .kiosk-member-card {
+        min-height: clamp(64px, 14vmin, 86px);
+      }
+      .kiosk-member-card strong {
+        font-size: clamp(24px, 5.5vmin, 32px);
+      }
+      .kiosk-initial-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-auto-rows: minmax(72px, 1fr);
+      }
+      .kiosk-team-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-auto-rows: minmax(96px, 1fr);
+      }
+    }
+
+    @media (max-width: 380px) {
+      .kiosk-meeting-title.full,
+      .kiosk-choice-button .kiosk-wide-text {
+        display: none;
+      }
+      .kiosk-meeting-title.compact,
+      .kiosk-choice-button .kiosk-compact-text {
+        display: inline;
+      }
+      .kiosk-choice-button strong {
+        font-size: clamp(34px, 10vw, 40px);
+      }
+      .kiosk-team-button strong {
+        font-size: clamp(34px, 10vw, 40px);
+      }
+      .kiosk-member-card strong {
+        font-size: clamp(26px, 7.5vw, 32px);
+      }
+      .kiosk-secondary-button,
+      .kiosk-member-back {
+        min-height: 52px;
+        font-size: 17px;
+      }
+    }
+
+    @media (max-width: 350px) {
+      .kiosk-panel {
+        padding-left: max(14px, var(--kiosk-safe-left));
+        padding-right: max(14px, var(--kiosk-safe-right));
+      }
+    }
+    .kiosk-personal-link {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      margin-top: 14px;
+      border: 1px solid var(--dmc-button-weak-border);
+      border-radius: var(--dmc-button-radius);
+      background: var(--dmc-button-weak-bg);
+      color: var(--dmc-button-weak-text);
+      font-size: 17px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .kiosk-personal-link:hover {
+      color: var(--dmc-button-weak-text);
+      border-color: var(--dmc-button-weak-border);
+      background: var(--dmc-button-weak-bg-hover);
     }
   </style>
 </head>
@@ -411,11 +1255,15 @@
           <img src="assets/dmc_logo.png" alt="" width="32" height="32" />
           <h1>본인 찾기</h1>
         </div>
-        <p style="margin:0 0 12px 0;font-size:13px;color:var(--color-text-secondary);">정회원 명단에서 닉네임을 검색해 선택하세요.</p>
+        <p class="search-help">출석 명부에서 닉네임을 검색해 선택하세요.</p>
         <label for="searchInput">검색</label>
         <input id="searchInput" type="search" autocomplete="off" placeholder="닉네임 일부 입력" />
         <div id="memberList" class="member-list"></div>
-        <button type="button" class="ghost" id="openGuestBtn">게스트로 출석</button>
+        <button type="button" class="ghost" id="openGuestBtn">출석 명부에 없는 경우</button>
+        <div class="field-mode-entry">
+          <span>현장 기기에서 여러 명이 순서대로 출석할 때</span>
+          <a id="openKioskFromSearchLink" href="attendance-v2.html?mode=kiosk">현장 출석 모드</a>
+        </div>
         <div id="searchMsg" class="msg"></div>
       </div>
     </div>
@@ -430,20 +1278,19 @@
             <button type="button" class="btn-dash-link" id="changeTeamBtn">팀 변경</button>
           </p>
         </div>
-        <div class="dash-session-row muted" id="dashSessionRow">
+        <button type="button" class="dash-session-row muted" id="dashSessionRow" aria-label="현재 참여 인원 출석 명단 보기">
           <div class="dash-session-meta">
             <span class="dash-session-label">현재 참여 인원</span>
-            <a class="dash-session-list-link hidden" id="dashSessionListLink" href="index.html" target="_blank" rel="noopener noreferrer">이 모임일 출석 명단 보기</a>
           </div>
           <span class="dash-session-figures" id="dashSessionFigures" aria-live="polite">…</span>
-        </div>
+        </button>
         <button type="button" class="primary dash-checkin" id="checkinBtn">출석 체크</button>
         <details class="meeting-adjust" id="meetingAdjust">
           <summary>날짜·유형이 다르면 여기서 수정</summary>
           <div class="meeting-adjust-body">
             <label for="meetingDate">모임 날짜</label>
             <input type="date" id="meetingDate" />
-            <label for="meetingType" style="margin-top:10px;">정모 유형</label>
+            <label for="meetingType" class="form-label-spaced">정모 유형</label>
             <select id="meetingType">
               <option value="TUE">화요일 정모</option>
               <option value="THU">목요일 정모</option>
@@ -452,6 +1299,10 @@
             </select>
           </div>
         </details>
+        <div class="field-mode-entry">
+          <span>현장 기기에서 여러 명이 순서대로 출석할 때</span>
+          <a id="openKioskModeLink" href="attendance-v2.html?mode=kiosk">현장 출석 모드</a>
+        </div>
         <div id="dashMsg" class="msg"></div>
         <button type="button" class="danger-ghost" id="resetProfileBtn">다른 사람으로 출석 (프로필 초기화)</button>
       </div>
@@ -459,32 +1310,144 @@
 
     <div id="viewSuccess" class="hidden">
       <div class="card">
-        <h1 style="color:var(--color-success);font-size:1.2rem;">출석 완료</h1>
-        <p id="successLine" style="margin:8px 0 0 0;font-size:15px;"></p>
+        <h1 class="success-title">출석 완료</h1>
+        <p id="successLine" class="success-line"></p>
         <p id="successCheer" class="success-cheer" aria-live="polite"></p>
         <div id="successSessionLine" class="success-session-line hidden" aria-live="polite"></div>
         <div id="successPanelCal" class="success-panel"></div>
         <p id="successStatsLine" class="success-stats-line"></p>
-        <button type="button" class="primary" id="successDoneBtn" style="margin-top:16px;">닫기</button>
+        <button type="button" class="primary form-action-primary" id="successDoneBtn">닫기</button>
       </div>
+    </div>
+
+    <section id="viewKiosk" class="kiosk-view hidden" aria-label="현장 출석부">
+      <header class="kiosk-top-bar">
+        <strong id="kioskMeetingTitleFull" class="kiosk-meeting-title full">정모</strong>
+        <strong id="kioskMeetingTitleCompact" class="kiosk-meeting-title compact">정모</strong>
+      </header>
+
+      <div id="kioskHomePanel" class="kiosk-panel">
+        <div class="kiosk-choice-grid">
+          <button type="button" class="kiosk-choice-button kiosk-choice-nickname" id="kioskChooseNicknameBtn">
+            <strong>닉네임으로<br />찾기</strong>
+            <span>내 이름 첫 글자</span>
+          </button>
+          <button type="button" class="kiosk-choice-button kiosk-choice-team" id="kioskChooseTeamBtn">
+            <strong>팀으로<br />찾기</strong>
+            <span>
+              <span class="kiosk-wide-text">S팀 · 1팀 · 2팀 · 3팀 · 4팀 · 5팀</span>
+              <span class="kiosk-compact-text">S · 1 · 2 · 3 · 4 · 5팀</span>
+            </span>
+          </button>
+        </div>
+        <button type="button" class="kiosk-secondary-button" id="kioskRosterBtn">당일 출석 현황 보기</button>
+        <p id="kioskWakeLockStatus" class="kiosk-wake-lock-status hidden" aria-live="polite"></p>
+      </div>
+
+      <div id="kioskInitialPanel" class="kiosk-panel hidden">
+        <div class="kiosk-screen-head">
+          <h2 class="kiosk-screen-title">첫 글자 선택</h2>
+        </div>
+        <div id="kioskInitialGrid" class="kiosk-initial-grid" aria-label="첫 글자 선택"></div>
+        <button type="button" class="kiosk-secondary-button" id="kioskInitialHomeBtn">처음 화면으로</button>
+      </div>
+
+      <div id="kioskTeamPanel" class="kiosk-panel hidden">
+        <div class="kiosk-screen-head">
+          <h2 class="kiosk-screen-title">팀 선택</h2>
+        </div>
+        <div id="kioskTeamGrid" class="kiosk-team-grid" aria-label="팀 선택"></div>
+        <button type="button" class="kiosk-secondary-button" id="kioskTeamHomeBtn">처음 화면으로</button>
+      </div>
+
+      <div id="kioskMemberPanel" class="kiosk-panel hidden">
+        <div class="kiosk-member-head">
+          <button type="button" class="kiosk-member-back" id="kioskMemberBackBtn" aria-label="이전 화면으로">←</button>
+          <h2 id="kioskMemberTitle" class="kiosk-member-title">닉네임</h2>
+        </div>
+        <div id="kioskMemberGrid" class="kiosk-member-grid" aria-label="회원 선택"></div>
+        <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button" id="kioskMemberNotOnRosterBtn">
+          명단에 없어요 — 여기서 출석
+        </button>
+      </div>
+
+      <div id="kioskNotOnRosterPanel" class="kiosk-panel hidden">
+        <div class="kiosk-member-head">
+          <button type="button" class="kiosk-member-back" id="kioskNotOnRosterBackBtn" aria-label="이전 화면으로">←</button>
+          <h2 class="kiosk-member-title">출석 명부에 없는 경우</h2>
+        </div>
+        <p id="kioskNotOnRosterHelp" class="kiosk-panel-help"></p>
+        <label for="kioskGuestNickname" class="kiosk-field-label">닉네임</label>
+        <input
+          id="kioskGuestNickname"
+          class="kiosk-field-input"
+          type="text"
+          maxlength="50"
+          placeholder="닉네임 입력"
+          autocomplete="off"
+        />
+        <button type="button" class="primary kiosk-field-submit" id="kioskNotOnRosterSubmitBtn">출석 등록</button>
+      </div>
+
+      <div id="kioskRosterPanel" class="kiosk-panel hidden">
+        <div class="kiosk-member-head">
+          <button type="button" class="kiosk-member-back" id="kioskRosterBackBtn" aria-label="이전 화면으로">←</button>
+          <h2 id="kioskRosterTitle" class="kiosk-member-title">출석 명단</h2>
+        </div>
+        <div id="kioskRosterList" class="kiosk-member-grid" role="status" aria-label="당일 출석 명단"></div>
+      </div>
+
+      <div id="kioskDonePanel" class="kiosk-panel hidden" aria-live="polite">
+        <div class="kiosk-done-wrap">
+          <div class="kiosk-done-main">
+            <div class="kiosk-check" aria-hidden="true">✓</div>
+            <div>
+              <h2 id="kioskDoneName" class="kiosk-done-name">출석자님</h2>
+              <p id="kioskDoneStatus" class="kiosk-done-status">출석 완료</p>
+            </div>
+          </div>
+          <div>
+            <div id="kioskDoneStats" class="kiosk-done-stats" aria-label="내 출석 현황">
+              <div class="kiosk-stat"><strong id="kioskDoneMonthCount">...</strong><span>이번 달 출석</span></div>
+              <div class="kiosk-stat"><strong id="kioskDoneStreakCount">...</strong><span>연속 정모</span></div>
+            </div>
+            <div class="kiosk-return-note">3초 후 처음 화면으로</div>
+          </div>
+        </div>
+      </div>
+
+      <p id="kioskMsg" class="msg"></p>
+    </section>
+  </div>
+
+  <div id="sessionRosterModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="sessionRosterTitle">
+    <div class="modal-sheet">
+      <div class="session-roster-head">
+        <h2 id="sessionRosterTitle">출석 명단</h2>
+        <button type="button" class="modal-close-button" id="sessionRosterCloseBtn">닫기</button>
+      </div>
+      <div id="sessionRosterList" class="session-roster-list" role="status">불러오는 중입니다.</div>
     </div>
   </div>
 
-  <div id="guestModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+  <div id="guestModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="guestModalTitle">
     <div class="modal-sheet">
-      <h2>게스트 출석</h2>
+      <h2 id="guestModalTitle">출석 명부에 없는 경우</h2>
+      <p id="guestModalHelp" class="modal-help hidden"></p>
       <label for="guestNickname">닉네임 (표시용)</label>
       <input id="guestNickname" maxlength="50" placeholder="닉네임" />
-      <label for="guestMeetingType" style="margin-top:10px;">정모 유형</label>
-      <select id="guestMeetingType">
-        <option value="TUE">화요일 정모</option>
-        <option value="THU">목요일 정모</option>
-        <option value="SAT">토요일 정모</option>
-        <option value="ETC">기타</option>
-      </select>
-      <label for="guestMeetingDate" style="margin-top:10px;">모임 날짜</label>
-      <input type="date" id="guestMeetingDate" />
-      <button type="button" class="primary" id="guestSubmitBtn" style="margin-top:14px;">게스트 출석 등록</button>
+      <div id="guestMeetingFields">
+        <label for="guestMeetingType" class="form-label-spaced">정모 유형</label>
+        <select id="guestMeetingType">
+          <option value="TUE">화요일 정모</option>
+          <option value="THU">목요일 정모</option>
+          <option value="SAT">토요일 정모</option>
+          <option value="ETC">기타</option>
+        </select>
+        <label for="guestMeetingDate" class="form-label-spaced">모임 날짜</label>
+        <input type="date" id="guestMeetingDate" />
+      </div>
+      <button type="button" class="primary form-action-primary" id="guestSubmitBtn">출석 등록</button>
       <button type="button" class="ghost" id="guestCancelBtn">취소</button>
     </div>
   </div>
@@ -492,10 +1455,10 @@
   <div id="teamModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
     <div class="modal-sheet">
       <h2>팀 변경</h2>
-      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 10px 0;">다음 출석부터 이 기기에 저장된 팀으로 반영됩니다.</p>
+      <p class="modal-help">다음 출석부터 이 기기에 저장된 팀으로 반영됩니다.</p>
       <label for="teamSelect">팀</label>
       <select id="teamSelect"></select>
-      <button type="button" class="primary" id="teamSaveBtn" style="margin-top:14px;">저장</button>
+      <button type="button" class="primary form-action-primary" id="teamSaveBtn">저장</button>
       <button type="button" class="ghost" id="teamCancelBtn">취소</button>
     </div>
   </div>

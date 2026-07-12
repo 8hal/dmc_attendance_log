@@ -360,6 +360,9 @@
   const STAGING_URL = "https://asia-northeast3-dmc-attendance-staging.cloudfunctions.net/attendance";
   const LOCAL_URL = `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/attendance`;
   const BASE_URL = IS_LOCAL ? LOCAL_URL : (IS_STAGING ? STAGING_URL : PROD_URL);
+  const RACE_LOG_API = IS_LOCAL
+    ? `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/race`
+    : "https://race-nszximpvtq-du.a.run.app";
   
   // 스테이징 환경 표시
   if (IS_STAGING) {
@@ -1017,7 +1020,36 @@
       });
       const networkMs = Math.round(performance.now() - networkStart);
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error || "submit failed");
+      if (!json.ok) {
+        if (json.error === "ALREADY_CHECKED_IN") {
+          await refreshTodayList();
+          setMsg("이미 출석된 기록이 있습니다.", "error");
+          trackEvent("attendance_submit_error", {
+            error_type: "already_checked_in_server",
+            date_key: date,
+          });
+          fetch(RACE_LOG_API + "?action=log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: "attendance_checkin_error",
+              data: {
+                logSource: "client",
+                page: "attendance-legacy",
+                mode: "legacy",
+                error: "ALREADY_CHECKED_IN",
+                meetingDate: date,
+                meetingType,
+                nickname,
+                entrySource: "legacy",
+              },
+            }),
+          }).catch(() => {});
+          setSubmitLoading(false);
+          return;
+        }
+        throw new Error(json.error || "submit failed");
+      }
       const nowMs = performance.now();
       const durationMs = submitStartMs !== null ? Math.round(nowMs - submitStartMs) : null;
       const pageToSubmitMs = Math.round(nowMs - pageEnterMs);

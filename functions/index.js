@@ -20,6 +20,7 @@ const {
 } = require("./lib/canonicalEventId");
 const { normalizeRaceDistance } = require("./lib/raceDistance");
 const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
+const { handleChunbaekRequest } = require("./lib/chunbaek-handlers");
 const { google } = require("googleapis");
 
 // 초기화
@@ -46,6 +47,75 @@ async function sendEmail({ to, subject, html }) {
     subject,
     html,
   });
+}
+
+/**
+ * 출석 명부에 없는 경우(isGuest) 출석 시 운영진 알림 — fire-and-forget
+ */
+function sendNotOnRosterAlertEmail({ nickname, meetingDateKey, meetingTypeLabel, timeText }) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail || !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn("[notOnRosterEmail] GMAIL/ADMIN_EMAIL 미설정 — 알림 생략");
+    return;
+  }
+
+  const subject = `[DMC 출석] 출석 명부에 없는 경우 — ${String(nickname || "").replace(/[\r\n]/g, " ").trim()}`;
+  const html = `
+<p><strong>출석 명부에 없는 경우</strong>로 출석이 기록되었습니다.</p>
+<ul>
+  <li><strong>닉네임:</strong> ${escapeHtmlForEmail(nickname)}</li>
+  <li><strong>모임일:</strong> ${escapeHtmlForEmail(meetingDateKey)}</li>
+  <li><strong>정모:</strong> ${escapeHtmlForEmail(meetingTypeLabel || "")}</li>
+  <li><strong>출석 시각:</strong> ${escapeHtmlForEmail(timeText || "")}</li>
+</ul>
+<p>출석 명부 반영·회원 구분(정회원/준회원/신규)은 운영 명부에서 처리해 주세요.</p>
+<p><a href="https://dmc-attendance.web.app/attendance-v2.html?mode=kiosk">키오스크 출석</a> ·
+<a href="https://dmc-attendance.web.app/index.html">기존 출석 페이지</a></p>
+<hr/>
+<p style="color:#999;font-size:12px;">DMC 출석 자동 알림</p>
+`;
+
+  sendEmail({ to: adminEmail, subject, html })
+    .then(() => {
+      db.collection("event_logs").add({
+        event: "attendance_not_on_roster_email",
+        data: {
+          logSource: "server",
+          page: "attendance-api",
+          emailSent: true,
+          emailRecipient: adminEmail,
+          nickname,
+          meetingDate: meetingDateKey,
+          meetingTypeLabel,
+        },
+        timestamp: new Date().toISOString(),
+        ua: "cloud-functions",
+      }).catch(() => {});
+    })
+    .catch((err) => {
+      console.error("[notOnRosterEmail] 발송 실패:", err.message);
+      db.collection("event_logs").add({
+        event: "attendance_not_on_roster_email",
+        data: {
+          logSource: "server",
+          page: "attendance-api",
+          emailSent: false,
+          emailError: String(err.message || err),
+          nickname,
+          meetingDate: meetingDateKey,
+        },
+        timestamp: new Date().toISOString(),
+        ua: "cloud-functions",
+      }).catch(() => {});
+    });
+}
+
+function escapeHtmlForEmail(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 /** confirm 시 race_results.netTime: net → finishTime → gun (DNF 플레이스홀더 제외) */
@@ -421,6 +491,17 @@ function formatDateKeyForSheets(dateKey) {
 
 // ==================== API 핸들러 ====================
 
+function logAttendanceServerEvent(event, data) {
+  db.collection("event_logs")
+    .add({
+      event,
+      data: { logSource: "server", page: "attendance-api", ...data },
+      timestamp: new Date().toISOString(),
+      ua: "cloud-functions",
+    })
+    .catch(() => {});
+}
+
 /**
  * 출석 등록 (POST)
  */
@@ -487,6 +568,13 @@ async function handlePost(req, res) {
     if (!isGuest && memberId) {
       const mdoc = await db.collection("members").doc(memberId).get();
       if (!mdoc.exists) {
+        logAttendanceServerEvent("attendance_checkin_error", {
+          error: "MEMBER_NOT_FOUND",
+          meetingDate: meetingDateKey,
+          meetingType: typeCode,
+          memberId: memberIdRaw || null,
+          nickname: nicknameRaw,
+        });
         return res.status(400).json({ ok: false, error: "MEMBER_NOT_FOUND", message: "회원 정보를 찾을 수 없습니다" });
       }
     }
@@ -519,6 +607,13 @@ async function handlePost(req, res) {
         if (!snap.empty) {
           const existingData = snap.docs[0].data();
           const dupDate = existingData.meetingDateKey || meetingDateKey;
+          logAttendanceServerEvent("attendance_checkin_error", {
+            error: "ALREADY_CHECKED_IN",
+            meetingDate: meetingDateKey,
+            meetingType: typeCode,
+            memberId: memberIdRaw || null,
+            nickname: nicknameRaw,
+          });
           return res.status(400).json({
             ok: false,
             error: "ALREADY_CHECKED_IN",
@@ -558,6 +653,15 @@ async function handlePost(req, res) {
       meetingDate: formatDateKeyForSheets(meetingDateKey), // "2026. 1. 10" 형식
     }).catch(() => {}); // 에러 무시
 
+    if (isGuest) {
+      sendNotOnRosterAlertEmail({
+        nickname: nicknameStored,
+        meetingDateKey,
+        meetingTypeLabel,
+        timeText,
+      });
+    }
+
     const { status, sessionCount } = await getStatusAndSessionCountForPost(meetingDateKey, typeCode);
 
     const durationMs = Date.now() - startMs;
@@ -579,6 +683,10 @@ async function handlePost(req, res) {
     });
   } catch (err) {
     console.error("[POST Error]", err);
+    logAttendanceServerEvent("attendance_checkin_error", {
+      error: "server_exception",
+      message: String(err.message || err),
+    });
     return res.status(500).json({ ok: false, error: String(err.message || err) });
   }
 }
@@ -3582,6 +3690,28 @@ exports.scrapeProxy = onRequest(
       return res.json({ ok: true, results: results || [] });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+);
+
+/**
+ * Chunbaek API — 춘백 시즌3 100일 출석
+ */
+exports.chunbaek = onRequest(
+  { cors: true, timeoutSeconds: 120, memory: "256MiB", region: "asia-northeast3" },
+  async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      return res.status(204).send("");
+    }
+    try {
+      const action = req.query.action || "";
+      return await handleChunbaekRequest(req, res, { db, action });
+    } catch (e) {
+      console.error("[chunbaek]", e);
+      return res.status(500).json({ ok: false, error: e.message || "server error" });
     }
   }
 );

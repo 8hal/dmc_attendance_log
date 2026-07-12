@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff3214" />
+  <meta name="description" content="춘백 시즌3 100일 출석 — 동마클 춘천마라톤 준비방. 7/20(월) 시작, 지금 온보딩 가능." />
+  <meta name="app-version" content="0.1.0-alpha.2" />
+  <meta property="og:title" content="춘백 S3 — 100일 출석" />
+  <meta property="og:description" content="동마클 춘백 시즌3 100일 출석 앱. 7/20(월) 시작 — 지금 명단 선택·프로필 등록해 두세요." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://dmc-attendance.web.app/chunbaek/" />
+  <meta property="og:image" content="https://dmc-attendance.web.app/assets/dmc_logo.png" />
+  <meta property="og:site_name" content="동마클 출석" />
+  <title>춘백 S3 — 100일 출석</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/chunbaek.css" />
+</head>
+<body>
+  <div class="demo-nav" id="demo-nav" style="display:none">
+    <div>화면 전환</div>
+    <select id="demo-screen" aria-label="미리보기 화면 선택">
+      <option value="welcome">① 환영</option>
+      <option value="pick">② 명단</option>
+      <option value="profile">③ 프로필</option>
+      <option value="guide">④ 가이드</option>
+      <option value="today" selected>⑤ 홈</option>
+      <option value="timeline">내 100일</option>
+      <option value="team">팀</option>
+      <option value="me">나</option>
+    </select>
+  </div>
+
+  <div class="app">
+    <header class="brand-bar" id="brand-bar" role="button" tabindex="0" title="홈으로">
+      <span class="brand-bar-mark">🍁</span>
+      <span class="brand-bar-title">춘백 <em>S3</em></span>
+      <span class="brand-bar-sub">100일 출석</span>
+    </header>
+
+    <div class="preview-banner" id="preview-banner" style="display:none">
+      목업 미리보기 · 가상 데이터 (실제 출석 기록 아님)
+    </div>
+
+    <main class="main">
+      <!-- ① 환영 -->
+      <section id="view-welcome" class="view onboarding-center welcome-hero">
+        <p class="welcome-year">2026</p>
+        <h1 class="brand-title">춘백 S3</h1>
+        <p class="brand-display">100 DAYS<br />CHUNCHEON</p>
+        <p class="brand-sub">
+          100일, 함께 달립니다.<br />
+          출정식에서 정한 목표를 프로필로 남기고,<br />
+          매일 출석으로 100일을 채워 나가요.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-start" style="max-width:280px">시작하기</button>
+        <p class="preview-hint" id="preview-hint" hidden>
+          우측 상단 <strong>화면 전환</strong>에서 온보딩·홈·팀 등 8개 화면을 바로 볼 수 있어요.
+        </p>
+      </section>
+
+      <!-- ② 명단 (DMC members API — chunbaekS3.participant) -->
+      <section id="view-pick" class="view">
+        <h2 class="section-title">당신은 누구신가요?</h2>
+        <p class="section-sub">동마클 정회원 명단에서 본인을 선택하세요</p>
+        <input type="search" class="input" placeholder="🔍 닉네임 검색" id="roster-search" />
+        <ul class="roster-list card" id="roster-list" style="padding:0"></ul>
+        <p class="roster-empty" id="roster-empty" hidden>일치하는 닉네임이 없습니다</p>
+        <button type="button" class="btn btn-primary" id="btn-pick-next" disabled style="margin-top:16px">다음</button>
+      </section>
+
+      <!-- ③ 프로필 -->
+      <section id="view-profile" class="view">
+        <h2 class="section-title" id="profile-section-title"><span id="profile-nickname">김러너</span>님의 프로필</h2>
+        <p class="section-sub" id="profile-section-sub">자신의 가을 시즌 목표와 간단한 각오·자기소개를 남겨 주세요</p>
+        <div class="card">
+          <div class="field-label">닉네임</div>
+          <div style="font-weight:700;margin-bottom:16px" id="profile-nick-display">—</div>
+          <div class="field-label">목표 대회 *</div>
+          <div class="goal-race-group" id="goal-race-group">
+            <label class="goal-race-option"><input type="radio" name="goal-race" value="chuncheon" checked /> 춘천 마라톤</label>
+            <label class="goal-race-option"><input type="radio" name="goal-race" value="jtbc" /> JTBC 서울마라톤</label>
+            <label class="goal-race-option"><input type="radio" name="goal-race" value="other" /> 기타</label>
+          </div>
+          <input type="text" class="input" id="goal-race-note" maxlength="80" placeholder="기타 대회명 (80자)" hidden />
+          <div class="field-label">풀 코스 목표 기록 *</div>
+          <div class="time-row">
+            <input type="number" id="goal-h" min="2" max="7" value="4" aria-label="목표 시간" /> 시간
+            <input type="number" id="goal-m" min="0" max="59" value="30" aria-label="목표 분" /> 분
+            <input type="number" id="goal-s" min="0" max="59" value="0" aria-label="목표 초" /> 초
+          </div>
+          <p class="section-sub">선택한 대회의 목표 완주 시간</p>
+          <div class="field-label">기존 풀 PB (선택)</div>
+          <div class="time-row">
+            <input type="number" id="pb-h" min="2" max="8" placeholder="4" aria-label="PB 시간" /> 시간
+            <input type="number" id="pb-m" min="0" max="59" placeholder="52" aria-label="PB 분" /> 분
+            <input type="number" id="pb-s" min="0" max="59" placeholder="30" aria-label="PB 초" /> 초
+          </div>
+          <p class="section-sub">없으면 비워두세요</p>
+          <div class="field-label">각오 · 자기소개 (선택)</div>
+          <textarea class="input textarea-intro" id="resolution-text" rows="3" maxlength="200"
+            placeholder="출정식에서 나눈 각오, 이번 시즌 다짐 등 (200자)"></textarea>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-create-profile">프로필 만들기</button>
+        <button type="button" class="btn btn-ghost" id="btn-profile-cancel" hidden style="margin-top:12px">취소</button>
+      </section>
+
+      <!-- ④ 가이드 -->
+      <section id="view-guide" class="view">
+        <h2 class="section-title">100일, 이렇게 출석해요</h2>
+        <div class="card">
+          <div class="guide-item"><span class="guide-icon">📍</span><span>매일 <strong>[춘백 홈]</strong>에서 <strong>[출석하기]</strong> 한 번</span></div>
+          <div class="guide-item"><span class="guide-icon">📅</span><span>주 3회 이상 출석 목표</span></div>
+          <div class="guide-item"><span class="guide-icon">⚠️</span><span>부상·출장·경조사는 단톡방에서 미리 알려 주세요. 운영진이 확인 후 예외 처리해드립니다.</span></div>
+          <div class="guide-item"><span class="guide-icon">☕</span><span>주 3회 미달 시 패널티 (커피·간식)</span></div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-guide-done">100일 시작하기</button>
+      </section>
+
+      <!-- ⑤ 홈 (출석) -->
+      <section id="view-today" class="view">
+        <div class="stats-header">
+          <div>
+            <div class="stats-season">춘백 S3</div>
+            <div class="stats-nickname" id="hdr-nickname">—님</div>
+            <div class="stats-day" id="hdr-day">—</div>
+          </div>
+          <div class="stats-attend" id="hdr-attend">출석 — · 출석률 —</div>
+        </div>
+        <div id="today-body">
+          <div class="before-season-card" id="before-season-card" hidden>
+            <div class="before-season-eyebrow">100일 준비</div>
+            <div class="before-season-title" id="before-season-title">7/20(월) 시작</div>
+            <p class="before-season-desc" id="before-season-desc">
+              출정식 전에는 온보딩만 미리 해 두시면 됩니다. 7/20부터 매일 홈에서 출석해 주세요.
+            </p>
+            <div class="before-season-beta" id="before-season-beta" hidden>
+              <div class="before-season-beta-label">0주차 베타 체험</div>
+              <div class="before-season-beta-range" id="before-season-beta-range"></div>
+              <p class="before-season-beta-desc" id="before-season-beta-desc"></p>
+            </div>
+            <p class="before-season-dday" id="before-season-dday"></p>
+          </div>
+          <div class="after-season-card" id="after-season-card" hidden>
+            <div class="before-season-title">100일 프로그램이 종료되었습니다</div>
+            <p class="before-season-desc" id="after-season-desc">수고하셨습니다. 시즌 출석 기록은 내 100일·나 탭에서 확인할 수 있습니다.</p>
+          </div>
+          <p class="program-off-msg" id="program-off-msg" hidden>오늘은 프로그램 휴무일입니다</p>
+          <div id="today-active">
+          <div class="today-slot-card">
+            <div class="today-day" id="today-day">—</div>
+            <div class="today-training" id="today-training"></div>
+            <div class="today-training-detail" id="today-training-detail"></div>
+          </div>
+          <div class="saturday-notice" id="saturday-notice" hidden>
+            <span class="saturday-notice-icon">🏃</span>
+            <span>오늘은 <strong>토요일 동마클 정모</strong>입니다. <strong>동마클 출석</strong>과 <strong>춘백 출석</strong>을 각각 해 주세요.</span>
+            <a class="saturday-notice-link" href="/attendance-v2.html">동마클 출석 →</a>
+          </div>
+          <div class="attend-cta">
+            <button type="button" class="btn btn-primary" id="btn-attend">✓  출석하기</button>
+          </div>
+          <div class="optional-row">
+            <span>사진 (선택)</span>
+            <button type="button" class="btn btn-ghost" style="width:auto" disabled>+ 추가</button>
+          </div>
+          <div class="optional-row">
+            <span>메모 (선택)</span>
+          </div>
+          <input type="text" class="input" id="note-input" placeholder="오늘 한 줄 메모" />
+          <div class="week-summary" id="week-bar" aria-label="이번 주 출석 현황">
+            <span class="week-summary-label">이번 주 출석</span>
+            <span class="week-summary-count" id="week-bar-count">2 / 3회</span>
+          </div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-switch-user" style="margin-top:24px">다른 사람으로</button>
+      </section>
+
+      <!-- 내 100일 -->
+      <section id="view-timeline" class="view">
+        <h2 class="section-title">내 100일</h2>
+        <div class="sub-tabs" role="tablist" aria-label="내 100일 보기">
+          <button type="button" class="sub-tab active" role="tab" aria-selected="true">주간</button>
+        </div>
+        <div id="timeline-weeks"></div>
+      </section>
+
+      <!-- 타임라인 훈련 상세 (탭) -->
+      <div class="timeline-modal-backdrop" id="timeline-modal" role="dialog" aria-modal="true" hidden>
+        <div class="timeline-modal-card">
+          <h3 class="timeline-modal-title" id="timeline-modal-title">5km 인터벌</h3>
+          <p class="timeline-modal-meta" id="timeline-modal-meta">36일차 · 4/7</p>
+          <p class="timeline-modal-content" id="timeline-modal-content"></p>
+          <p class="timeline-modal-note" id="timeline-modal-note" hidden></p>
+          <p class="timeline-modal-status" id="timeline-modal-status"></p>
+          <button type="button" class="btn btn-primary" id="timeline-modal-close" style="margin-top:16px">닫기</button>
+        </div>
+      </div>
+
+      <!-- 팀 -->
+      <section id="view-team" class="view">
+        <h2 class="section-title">팀</h2>
+        <div class="team-summary" id="team-summary"></div>
+        <div id="team-list"></div>
+      </section>
+
+      <!-- 나 -->
+      <section id="view-me" class="view">
+        <h2 class="section-title">나</h2>
+        <dl class="profile-dl" id="me-dl"></dl>
+        <button type="button" class="btn btn-outline" id="btn-edit-profile">프로필 수정</button>
+      </section>
+    </main>
+
+    <nav class="tab-bar" id="tab-bar">
+      <button type="button" class="tab-btn active" data-tab="today">
+        <span class="tab-icon">📍</span>홈
+      </button>
+      <button type="button" class="tab-btn" data-tab="timeline">
+        <span class="tab-icon">📅</span>내 100일
+      </button>
+      <button type="button" class="tab-btn" data-tab="team">
+        <span class="tab-icon">👥</span>팀
+      </button>
+      <button type="button" class="tab-btn" data-tab="me">
+        <span class="tab-icon">🙋</span>나
+      </button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

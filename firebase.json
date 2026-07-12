@@ -25,6 +25,10 @@
       {
         "source": "/api/race",
         "function": { "functionId": "race", "region": "asia-northeast3" }
+      },
+      {
+        "source": "/api/chunbaek",
+        "function": { "functionId": "chunbaek", "region": "asia-northeast3" }
       }
     ],
     "ignore": [

@@ -1,0 +1,24 @@
+{
+  "name": "동마클 현장 출석",
+  "short_name": "현장 출석",
+  "description": "동탄 마라톤 클럽 현장 출석 전용 태블릿 모드",
+  "start_url": "/attendance-v2.html?mode=kiosk",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/assets/dmc_logo_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/dmc_logo_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

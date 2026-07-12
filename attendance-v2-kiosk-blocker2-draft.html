@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>출석 키오스크 블로커2 UX 변경 초안 (v5)</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css?v=20260512-toss-tokens" />
+  <style>
+    * { box-sizing: border-box; }
+    html { -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: var(--dmc-font-family);
+      background: #e8eaef;
+      color: var(--dmc-color-text);
+      line-height: 1.45;
+    }
+    .draft-shell {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 16px 40px;
+    }
+    .draft-banner {
+      background: #1e3a5f;
+      color: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .draft-banner h1 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .draft-banner p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.92;
+      line-height: 1.5;
+    }
+    .draft-banner a { color: #93c5fd; }
+    .draft-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      background: #f59e0b;
+      color: #111;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .draft-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .draft-nav button {
+      border: 1px solid #c5cad3;
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #334155;
+    }
+    .draft-nav button.active {
+      background: var(--dmc-color-primary);
+      border-color: var(--dmc-color-primary);
+      color: #fff;
+    }
+    .draft-nav button.removed {
+      border-color: #fca5a5;
+      color: #b91c1c;
+    }
+    .draft-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 900px) {
+      .draft-layout { grid-template-columns: 380px 1fr; }
+    }
+    .phone-frame {
+      background: #111;
+      border-radius: 28px;
+      padding: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .phone-screen {
+      background: var(--dmc-kiosk-bg);
+      border-radius: 20px;
+      overflow: hidden;
+      min-height: 640px;
+      max-height: 720px;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-label {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      margin: 10px 0 0;
+    }
+    .draft-notes {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 16px 18px;
+    }
+    .draft-notes h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+    .draft-notes ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #475569;
+    }
+    .draft-notes li { margin-bottom: 6px; }
+    .chg-add {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+    .chg-remove {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+    .draft-screen { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    .draft-screen.active { display: flex; }
+
+    /* —— 키오스크 (attendance-v2.html와 동일 토큰) —— */
+    .kiosk-top-bar {
+      flex: 0 0 auto;
+      padding: var(--dmc-space-5);
+      border-bottom: 1px solid var(--dmc-kiosk-surface-border);
+      background: var(--dmc-kiosk-hero-bg);
+    }
+    .kiosk-meeting-title {
+      font-size: var(--dmc-kiosk-title-size);
+      font-weight: 1000;
+      line-height: 1.04;
+    }
+    .kiosk-panel {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: var(--dmc-space-4);
+      background: var(--dmc-kiosk-bg);
+    }
+    .kiosk-choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--dmc-space-2);
+      flex: 1;
+    }
+    .kiosk-choice-button {
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-card-radius);
+      padding: 18px 14px;
+      min-height: 140px;
+      text-align: left;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .kiosk-choice-nickname {
+      background: var(--dmc-kiosk-action-primary-bg);
+      color: var(--dmc-kiosk-action-primary-text);
+      box-shadow: var(--dmc-kiosk-action-primary-shadow);
+      border: none;
+    }
+    .kiosk-choice-team {
+      background: var(--dmc-kiosk-action-secondary-bg);
+      border-color: var(--dmc-kiosk-action-secondary-border);
+      color: var(--dmc-kiosk-action-secondary-text);
+    }
+    .kiosk-choice-button strong {
+      font-size: var(--dmc-kiosk-action-title-size);
+      font-weight: 1000;
+      line-height: 1.1;
+    }
+    .kiosk-choice-button span {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.85;
+      margin-top: 8px;
+    }
+    .kiosk-secondary-button {
+      flex: 0 0 auto;
+      margin-top: 12px;
+      min-height: 58px;
+      border: 1px solid var(--dmc-button-weak-border);
+      border-radius: var(--dmc-button-radius);
+      background: var(--dmc-button-weak-bg);
+      color: var(--dmc-button-weak-text);
+      font-size: 19px;
+      font-weight: 950;
+      cursor: default;
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+      width: 100%;
+    }
+    .kiosk-not-on-roster-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 14px 16px;
+      font-size: 17px;
+    }
+    .kiosk-member-head {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: var(--dmc-space-3);
+      align-items: center;
+      margin-bottom: 14px;
+      flex: 0 0 auto;
+    }
+    .kiosk-member-back {
+      min-width: 78px;
+      min-height: 58px;
+      border: 1px solid var(--dmc-button-weak-border);
+      border-radius: var(--dmc-button-radius);
+      background: var(--dmc-button-weak-bg);
+      font-size: 30px;
+      cursor: default;
+    }
+    .kiosk-member-title {
+      margin: 0;
+      font-size: var(--dmc-kiosk-page-title-size);
+      font-weight: 1000;
+    }
+    .kiosk-member-grid {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      gap: var(--dmc-space-2);
+      align-content: start;
+    }
+    .kiosk-member-card {
+      min-height: var(--dmc-size-touch-kiosk);
+      border: 1px solid var(--dmc-kiosk-surface-border-strong);
+      border-radius: var(--dmc-kiosk-card-radius);
+      background: var(--dmc-list-row-bg);
+      padding: var(--dmc-list-row-padding-y-lg) var(--dmc-list-row-padding-x-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 800;
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+    }
+    .kiosk-member-card.done {
+      opacity: 0.55;
+      background: var(--dmc-list-row-bg-muted);
+    }
+    .kiosk-member-card span {
+      font-size: 14px;
+      color: var(--dmc-button-weak-text);
+      font-weight: 900;
+    }
+    .kiosk-empty {
+      padding: 20px 16px;
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-card-radius);
+      text-align: center;
+      color: var(--dmc-color-text-secondary);
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .kiosk-personal-link {
+      display: block;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--dmc-color-primary);
+    }
+    .kiosk-personal-link.hidden-demo {
+      display: none;
+    }
+    .v4-removed {
+      opacity: 0.45;
+      position: relative;
+    }
+    .v4-removed::after {
+      content: "v5에서 제거";
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      background: #fecaca;
+      color: #991b1b;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* 개인 모드 카드 */
+    .personal-card {
+      background: var(--dmc-color-surface);
+      border-radius: var(--dmc-kiosk-card-radius);
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      padding: var(--dmc-space-5);
+      margin: 12px;
+    }
+    .personal-card h2 { margin: 0 0 8px; font-size: 18px; }
+    .search-help { font-size: 13px; color: var(--dmc-color-text-secondary); margin: 0 0 12px; }
+    .personal-card input[type="search"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--dmc-input-border);
+      border-radius: var(--dmc-input-radius);
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .member-list-empty {
+      padding: 14px;
+      font-size: 13px;
+      color: var(--dmc-color-text-secondary);
+      background: var(--dmc-color-surface-muted);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .ghost-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--dmc-color-primary);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: default;
+    }
+
+    /* 모달 */
+    .modal-demo {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.45);
+    }
+    .modal-sheet {
+      background: var(--dmc-color-surface);
+      border-radius: var(--dmc-radius-xl);
+      padding: var(--dmc-space-5);
+      width: 100%;
+      max-width: 320px;
+      box-shadow: var(--dmc-shadow-float);
+    }
+    .modal-sheet h2 { margin: 0 0 10px; font-size: 18px; }
+    .modal-help {
+      font-size: 13px;
+      color: var(--dmc-color-text-secondary);
+      line-height: 1.5;
+      margin: 0 0 14px;
+    }
+    .modal-sheet label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .modal-sheet input,
+    .modal-sheet select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid var(--dmc-input-border);
+      border-radius: var(--dmc-input-radius);
+      font-size: 16px;
+    }
+    .primary-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--dmc-button-radius);
+      background: var(--dmc-color-primary);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .ghost-modal-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--dmc-color-text-secondary);
+      font-size: 15px;
+    }
+    .hidden-fields-note {
+      font-size: 12px;
+      color: var(--dmc-color-text-muted);
+      margin: -6px 0 12px;
+    }
+
+    /* 완료 */
+    .kiosk-done-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .kiosk-check {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: var(--dmc-color-success-soft);
+      color: var(--dmc-color-success);
+      font-size: 36px;
+      line-height: 64px;
+      font-weight: 900;
+    }
+    .kiosk-done-name { font-size: 28px; font-weight: 1000; margin: 0; }
+    .kiosk-done-status { font-size: 18px; color: var(--dmc-color-text-secondary); margin: 8px 0 0; }
+
+    .diff-block {
+      margin-top: 20px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .diff-block h2 {
+      margin: 0;
+      padding: 12px 16px;
+      font-size: 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    pre {
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 11px;
+      line-height: 1.45;
+      overflow-x: auto;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .diff-add { color: #6ee7b7; }
+    .diff-remove { color: #fca5a5; }
+    .diff-note { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="draft-shell">
+    <div class="draft-banner">
+      <span class="draft-tag">UX 변경 초안 · 개발 전</span>
+      <h1>출석 키오스크 블로커 2 (v5)</h1>
+      <p>
+        <code>attendance-v2.html</code> 반영 전 미리보기입니다.
+        근거: <code>_docs/superpowers/specs/2026-06-13-attendance-kiosk-blocker2-ux-review.md</code>
+        · 실제 출석 API는 연결하지 않았습니다.
+      </p>
+    </div>
+
+    <div class="draft-nav" id="draftNav">
+      <button type="button" data-screen="home-v5" class="active">키오스크 홈 (v5)</button>
+      <button type="button" data-screen="home-v4" class="removed">홈 v4 (제거)</button>
+      <button type="button" data-screen="member-list">닉네임 목록 + CTA</button>
+      <button type="button" data-screen="member-empty">목록 비었을 때</button>
+      <button type="button" data-screen="modal-kiosk">모달 (키오스크)</button>
+      <button type="button" data-screen="modal-personal">모달 (개인)</button>
+      <button type="button" data-screen="personal-search">개인 검색</button>
+      <button type="button" data-screen="done">완료 (명부 외)</button>
+    </div>
+
+    <div class="draft-layout">
+      <div>
+        <div class="phone-frame">
+          <div class="phone-screen" id="phoneScreen">
+
+            <!-- v5 홈: 명부 외 CTA 없음 -->
+            <div class="draft-screen active" id="screen-home-v5">
+              <header class="kiosk-top-bar">
+                <strong class="kiosk-meeting-title">6월 13일 토요일 정모</strong>
+              </header>
+              <div class="kiosk-panel">
+                <div class="kiosk-choice-grid">
+                  <button type="button" class="kiosk-choice-button kiosk-choice-nickname">
+                    <strong>닉네임으로<br />찾기</strong>
+                    <span>내 이름 첫 글자</span>
+                  </button>
+                  <button type="button" class="kiosk-choice-button kiosk-choice-team">
+                    <strong>팀으로<br />찾기</strong>
+                    <span>S팀 · 1팀 · … · 5팀</span>
+                  </button>
+                </div>
+                <button type="button" class="kiosk-secondary-button">당일 출석 현황 보기</button>
+              </div>
+            </div>
+
+            <!-- v4 홈 (비교용 — 제거 예정) -->
+            <div class="draft-screen" id="screen-home-v4">
+              <header class="kiosk-top-bar">
+                <strong class="kiosk-meeting-title">6월 13일 토요일 정모</strong>
+              </header>
+              <div class="kiosk-panel">
+                <div class="kiosk-choice-grid">
+                  <button type="button" class="kiosk-choice-button kiosk-choice-nickname">
+                    <strong>닉네임으로<br />찾기</strong>
+                    <span>내 이름 첫 글자</span>
+                  </button>
+                  <button type="button" class="kiosk-choice-button kiosk-choice-team">
+                    <strong>팀으로<br />찾기</strong>
+                    <span>S팀 · 1팀 · … · 5팀</span>
+                  </button>
+                </div>
+                <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button v4-removed">
+                  출석 명부에 없어요
+                </button>
+                <button type="button" class="kiosk-secondary-button">당일 출석 현황 보기</button>
+                <a class="kiosk-personal-link v4-removed" href="#">개인 출석 화면</a>
+              </div>
+            </div>
+
+            <!-- 닉네임 목록 + 하단 CTA -->
+            <div class="draft-screen" id="screen-member-list">
+              <header class="kiosk-top-bar">
+                <strong class="kiosk-meeting-title">6월 13일 토요일 정모</strong>
+              </header>
+              <div class="kiosk-panel">
+                <div class="kiosk-member-head">
+                  <button type="button" class="kiosk-member-back" aria-label="뒤로">←</button>
+                  <h2 class="kiosk-member-title">1팀</h2>
+                </div>
+                <div class="kiosk-member-grid">
+                  <div class="kiosk-member-card"><strong>라우펜더</strong><span>출석</span></div>
+                  <div class="kiosk-member-card done"><strong>햇살러너</strong><span>완료</span></div>
+                  <div class="kiosk-member-card"><strong>디모</strong><span>출석</span></div>
+                  <div class="kiosk-member-card"><strong>마라토끼</strong><span>출석</span></div>
+                </div>
+                <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button" id="kioskMemberNotOnRosterBtn">
+                  명단에 없어요 — 여기서 출석
+                </button>
+              </div>
+            </div>
+
+            <!-- empty 목록 -->
+            <div class="draft-screen" id="screen-member-empty">
+              <header class="kiosk-top-bar">
+                <strong class="kiosk-meeting-title">6월 13일 토요일 정모</strong>
+              </header>
+              <div class="kiosk-panel">
+                <div class="kiosk-member-head">
+                  <button type="button" class="kiosk-member-back">←</button>
+                  <h2 class="kiosk-member-title">영문</h2>
+                </div>
+                <div class="kiosk-member-grid">
+                  <div class="kiosk-empty">출석 명부에 해당 닉네임이 없습니다</div>
+                </div>
+                <button type="button" class="kiosk-secondary-button kiosk-not-on-roster-button">
+                  명단에 없어요 — 여기서 출석
+                </button>
+              </div>
+            </div>
+
+            <!-- 키오스크 모달 -->
+            <div class="draft-screen" id="screen-modal-kiosk">
+              <header class="kiosk-top-bar">
+                <strong class="kiosk-meeting-title">6월 13일 토요일 정모</strong>
+              </header>
+              <div class="modal-demo">
+                <div class="modal-sheet">
+                  <h2>출석 명부에 없는 경우 출석</h2>
+                  <p class="modal-help">
+                    출석 명부에 없는 경우입니다. 출석은 기록되며, 명부 반영은 운영진이 따로 합니다.<br />
+                    명부 수정이 필요하면 <strong>게살볶음밥</strong>에게 알려주세요.
+                  </p>
+                  <label for="demoNick">닉네임 (표시용)</label>
+                  <input id="demoNick" placeholder="닉네임" value="" />
+                  <p class="hidden-fields-note">정모·날짜는 키오스크 URL에 고정 (입력 필드 숨김)</p>
+                  <button type="button" class="primary-btn">출석 등록</button>
+                  <button type="button" class="ghost-modal-btn">취소</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 개인 모달 -->
+            <div class="draft-screen" id="screen-modal-personal">
+              <div class="modal-demo" style="min-height:640px;">
+                <div class="modal-sheet">
+                  <h2>출석 명부에 없는 경우</h2>
+                  <p class="modal-help">
+                    출석 명부에 없는 경우입니다. 출석은 기록되며, 명부 반영은 운영진이 따로 합니다.<br />
+                    명부 수정이 필요하면 <strong>게살볶음밥</strong>에게 알려주세요.
+                  </p>
+                  <label>닉네임 (표시용)</label>
+                  <input placeholder="닉네임" />
+                  <label>정모 유형</label>
+                  <select><option>토요일 정모</option></select>
+                  <label>모임 날짜</label>
+                  <input type="date" value="2026-06-13" />
+                  <button type="button" class="primary-btn">출석 등록</button>
+                  <button type="button" class="ghost-modal-btn">취소</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 개인 검색 -->
+            <div class="draft-screen" id="screen-personal-search">
+              <div class="personal-card">
+                <h2>본인 찾기</h2>
+                <p class="search-help">출석 명부에서 닉네임을 검색해 선택하세요.</p>
+                <input type="search" placeholder="닉네임 일부 입력" value="게살" />
+                <div class="kiosk-member-card" style="margin-bottom:8px;"><strong>게살볶음밥</strong><span>1팀</span></div>
+                <button type="button" class="ghost-btn">출석 명부에 없는 경우</button>
+              </div>
+            </div>
+
+            <!-- 완료 (명부 외) -->
+            <div class="draft-screen" id="screen-done">
+              <header class="kiosk-top-bar">
+                <strong class="kiosk-meeting-title">6월 13일 토요일 정모</strong>
+              </header>
+              <div class="kiosk-done-wrap">
+                <div class="kiosk-check">✓</div>
+                <h2 class="kiosk-done-name">새런너님</h2>
+                <p class="kiosk-done-status">출석 완료</p>
+                <p style="font-size:13px;color:var(--dmc-color-text-muted);margin-top:16px;">월 통계 카드 없음 · 3초 후 홈</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <p class="phone-label" id="phoneLabel">키오스크 홈 (v5) — 명부 외 CTA 없음</p>
+      </div>
+
+      <div class="draft-notes" id="draftNotes">
+        <h2>이 화면에서 확인할 점</h2>
+        <ul id="notesList">
+          <li><span class="chg-remove">제거</span> 홈의 「출석 명부에 없어요」 버튼</li>
+          <li><span class="chg-remove">제거</span> 「개인 출석 화면」 링크 — 키오스크에서 개인 출석 비지원, URL 직접 입력</li>
+          <li><span class="chg-add">유지</span> 당일 출석 현황 보기</li>
+          <li>닉네임/팀 찾기 → 목록 화면에서만 명부 외 출석</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="diff-block">
+      <h2>attendance-v2.html 변경 요약 (초안)</h2>
+      <pre id="htmlDiff"><span class="diff-note">/* kioskHomePanel — 제거 */</span>
+<span class="diff-remove">- &lt;button id="kioskNotOnRosterBtn"&gt;출석 명부에 없어요&lt;/button&gt;</span>
+<span class="diff-remove">- &lt;a id="kioskPersonalLink"&gt;…&lt;/a&gt;  (DOM 삭제 — 개인은 URL 직접)</span>
+
+<span class="diff-note">/* kioskMemberPanel — 추가 */</span>
+<span class="diff-add">+ &lt;button id="kioskMemberNotOnRosterBtn" class="kiosk-secondary-button"&gt;</span>
+<span class="diff-add">+   명단에 없어요 — 여기서 출석</span>
+<span class="diff-add">+ &lt;/button&gt;</span>
+
+<span class="diff-note">/* guestModal — 문구 */</span>
+<span class="diff-add">+ 제목: 출석 명부에 없는 경우 출석 (키오스크)</span>
+<span class="diff-add">+ 안내: 게살볶음밥에게 알려주세요</span>
+<span class="diff-remove">- 게스트 출석 / 게스트 출석 등록</span>
+
+<span class="diff-note">/* viewSearch — 용어 */</span>
+<span class="diff-add">+ 출석 명부에서 닉네임을 검색…</span>
+<span class="diff-add">+ 버튼: 출석 명부에 없는 경우</span>
+<span class="diff-remove">- 정회원 명단 / 게스트로 출석</span></pre>
+    </div>
+  </div>
+
+  <script>
+    const labels = {
+      "home-v5": "키오스크 홈 (v5) — 명부 외 CTA 없음",
+      "home-v4": "키오스크 홈 (v4 비교) — 제거 예정 요소 표시",
+      "member-list": "닉네임 목록 — 하단 고정 CTA",
+      "member-empty": "목록 비었을 때 — empty 문구 + 동일 CTA",
+      "modal-kiosk": "모달 (키오스크) — 날짜·정모 숨김",
+      "modal-personal": "모달 (개인 v2) — 날짜·정모 입력 유지",
+      "personal-search": "개인 v2 검색 — 용어 스윕",
+      "done": "완료 화면 (명부 외) — 통계 카드 없음"
+    };
+    const notes = {
+      "home-v5": [
+        "<span class=\"chg-remove\">제거</span> 홈의 「출석 명부에 없어요」 버튼",
+        "<span class=\"chg-remove\">제거</span> 「개인 출석 화면」 링크 — 개인은 URL 직접 (attendance-v2.html)",
+        "<span class=\"chg-add\">유지</span> 당일 출석 현황 보기",
+        "탐색은 닉네임/팀 2타일만"
+      ],
+      "home-v4": [
+        "v4 초안에 있던 홈 CTA — <strong>v5에서 폐기</strong>",
+        "「홈 v4 (제거)」 탭으로만 비교용 표시",
+        "개인 링크도 제거 — 개인 출석은 키오스크 UI 비지원"
+      ],
+      "member-list": [
+        "<span class=\"chg-add\">추가</span> 패널 하단 「명단에 없어요 — 여기서 출석」",
+        "다른 사람 이름이 있어도 <strong>항상</strong> 하단에 표시",
+        "첫 글자·팀 선택 후 진입하는 화면"
+      ],
+      "member-empty": [
+        "그리드 empty: 「출석 명부에 해당 닉네임이 없습니다」",
+        "하단 CTA는 empty와 무관하게 <strong>고정</strong>"
+      ],
+      "modal-kiosk": [
+        "제목: 출석 명부에 없는 경우 출석",
+        "안내 + <strong>게살볶음밥</strong> 담당자명",
+        "정모·날짜 입력 숨김 (URL·상단 타이틀만)"
+      ],
+      "modal-personal": [
+        "개인 모드: 날짜·정모 선택 유지",
+        "동일 안내 문구 (게살볶음밥)"
+      ],
+      "personal-search": [
+        "「정회원 명단」→ 「출석 명부」",
+        "「게스트로 출석」→ 「출석 명부에 없는 경우」",
+        "검색 0건 시: 현장은 키오스크 출석 권장 (별도 문구)"
+      ],
+      "done": [
+        "명부 외 출석 완료 — 월 통계·연속 정모 카드 숨김",
+        "3초 후 홈으로 복귀"
+      ]
+    };
+
+    document.getElementById("draftNav").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-screen]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-screen");
+      document.querySelectorAll("#draftNav button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(".draft-screen").forEach((s) => s.classList.remove("active"));
+      const screen = document.getElementById("screen-" + id);
+      if (screen) screen.classList.add("active");
+      document.getElementById("phoneLabel").textContent = labels[id] || "";
+      const list = document.getElementById("notesList");
+      list.innerHTML = (notes[id] || []).map((li) => "<li>" + li + "</li>").join("");
+    });
+  </script>
+</body>
+</html>

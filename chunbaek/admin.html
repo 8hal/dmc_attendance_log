@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#ff3214" />
+  <title>춘백 S3 — 운영진</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-demo-nav" id="admin-demo-nav" style="display:none">
+    <div>화면 전환</div>
+    <select id="demo-screen" aria-label="목업 화면">
+      <option value="auth">⓪ 비밀번호</option>
+      <option value="grid" selected>① 출석 그리드</option>
+      <option value="training">② 훈련 입력</option>
+      <option value="import">③ 일괄 import</option>
+    </select>
+  </div>
+
+  <div class="auth-overlay" id="auth-overlay">
+    <div class="auth-card">
+      <h1>춘백 S3 운영진</h1>
+      <p>운영진 비밀번호를 입력하세요</p>
+      <input type="password" id="auth-pw" placeholder="비밀번호" autocomplete="current-password" />
+      <p class="auth-error" id="auth-error">비밀번호가 올바르지 않습니다</p>
+      <button type="button" class="admin-btn admin-btn-primary" id="btn-auth" style="width:100%">확인</button>
+    </div>
+  </div>
+
+  <div class="admin-shell" id="admin-shell" style="display:none">
+    <header class="admin-topbar">
+      <span class="admin-topbar-title">춘백 <em>S3</em> 운영</span>
+      <span class="admin-topbar-badge">PC</span>
+      <span class="admin-topbar-meta">42일차 · 참가 38명</span>
+    </header>
+
+    <div class="preview-banner" id="preview-banner" style="display:none">
+      운영진 목업 · 가상 데이터 (실제 API 미연동)
+    </div>
+
+    <div class="admin-mobile-hint" id="admin-mobile-hint">
+      모바일 간이 보기 — 출석 수정·훈련 입력은 <strong>PC 권장</strong>
+    </div>
+
+    <div class="admin-layout">
+      <nav class="admin-sidebar" aria-label="운영 메뉴">
+        <button type="button" class="admin-nav-btn active" data-panel="grid">출석 그리드</button>
+        <button type="button" class="admin-nav-btn" data-panel="training">훈련 입력</button>
+        <button type="button" class="admin-nav-btn" data-panel="import">일괄 import</button>
+        <div class="admin-sidebar-foot">
+          URL 비공개<br />
+          단톡에 공유하지 마세요
+        </div>
+      </nav>
+
+      <main class="admin-main">
+        <!-- 출석 그리드 -->
+        <section class="admin-panel active" id="panel-grid">
+          <div class="admin-toolbar">
+            <div>
+              <h2 id="grid-week-title">7주차</h2>
+              <div class="admin-toolbar-sub" id="grid-range">4/7 ~ 4/13</div>
+            </div>
+            <select class="admin-select" id="week-select" aria-label="주차">
+              <option value="7" selected>7주차</option>
+              <option value="6">6주차</option>
+              <option value="8">8주차</option>
+            </select>
+            <label class="admin-chip">
+              <input type="checkbox" id="filter-under" />
+              주 3회 미달만
+            </label>
+            <span class="admin-chip warn" id="grid-under-chip">주 3회 미달 3명</span>
+            <span class="admin-chip danger" id="grid-miss-chip">미출석 셀 12개</span>
+            <div class="admin-toolbar-spacer"></div>
+            <button type="button" class="admin-btn admin-btn-secondary">CSV↓</button>
+          </div>
+          <div class="grid-wrap">
+            <table class="admin-grid" aria-label="주차별 출석">
+              <thead>
+                <tr id="grid-head-row">
+                  <th>회원</th>
+                </tr>
+              </thead>
+              <tbody id="grid-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 훈련 입력 -->
+        <section class="admin-panel" id="panel-training">
+          <div class="admin-toolbar">
+            <div>
+              <h2 id="training-week-title">7주차</h2>
+              <div class="admin-toolbar-sub" id="training-range">4/7 ~ 4/13</div>
+            </div>
+            <select class="admin-select" id="week-select-training" aria-label="주차">
+              <option value="7" selected>7주차</option>
+              <option value="6">6주차</option>
+              <option value="8">8주차</option>
+            </select>
+            <span class="admin-chip" id="training-summary">입력 6/7일 · 훈련일 6일</span>
+            <span class="admin-chip warn" id="training-warning" style="display:none"></span>
+            <div class="admin-toolbar-spacer"></div>
+            <button type="button" class="admin-btn admin-btn-primary" id="btn-save-training">저장</button>
+          </div>
+          <div class="training-list" id="training-list"></div>
+        </section>
+
+        <!-- 일괄 import -->
+        <section class="admin-panel" id="panel-import">
+          <div class="admin-toolbar">
+            <h2>100슬롯 일괄 import</h2>
+          </div>
+          <div class="card import-box" style="padding:20px">
+            <p class="import-hint">
+              시즌 시작 전 <strong>날짜·주차 골격</strong>을 한 번에 넣을 때 사용합니다.<br />
+              시즌 중 훈련 내용은 <strong>훈련 입력</strong> 탭에서 주차별로 등록하세요.
+            </p>
+            <textarea id="import-csv" aria-label="CSV">dayIndex,date,week,trainingTitle,trainingContent,isProgramOff
+1,2026-04-01,1,5km 이지런,,false
+2,2026-04-02,1,인터벌,5×1km (r:90s),false
+3,2026-04-03,1,휴무,,true
+</textarea>
+            <button type="button" class="admin-btn admin-btn-primary" id="btn-import">import (replace)</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- 셀 클릭 모달 -->
+  <div class="modal-backdrop" id="cell-modal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 id="modal-title">김러너</h3>
+      <p class="modal-sub" id="modal-sub">36일 4/07</p>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn-attend" data-modal-action="attend">출석</button>
+        <button type="button" class="modal-btn-miss" data-modal-action="miss">미출석</button>
+        <button type="button" class="modal-btn-exception" data-modal-action="exception">예외</button>
+        <button type="button" class="modal-btn-cancel" data-modal-action="cancel">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
