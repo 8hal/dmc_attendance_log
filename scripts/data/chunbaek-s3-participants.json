@@ -1,8 +1,9 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-12T05:54:16.531Z",
+  "preparedAt": "2026-07-12T08:46:14.146Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
+    "3bpbfd2xvP2CvSQ1ZLpS",
     "wjwN15DBGn92tkBJ0T87",
     "MmR7m0LglvP6bGPObgPT",
     "10V9SmKhpV5BzslmVMCH",
@@ -49,6 +50,11 @@
       "memberId": "i3QaeZLziaN6WRNEHiup",
       "nickname": "501",
       "realName": "김재연"
+    },
+    {
+      "memberId": "3bpbfd2xvP2CvSQ1ZLpS",
+      "nickname": "개마고원",
+      "realName": "박세진"
     },
     {
       "memberId": "wjwN15DBGn92tkBJ0T87",
