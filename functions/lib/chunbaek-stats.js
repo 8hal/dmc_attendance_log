@@ -35,8 +35,8 @@ function displayDayIndex(slot) {
 }
 
 /** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
-function statsSlotsForToday(slots, today) {
-  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+function statsSlotsForToday(slots, today, config) {
+  const seasonStart = config?.startDate || seasonBounds(seasonSlotsOnly(slots)).startDate;
   if (seasonStart && today < seasonStart) {
     return slots.filter(isBetaSlot);
   }
@@ -184,7 +184,7 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
 function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
-  const statsSlots = statsSlotsForToday(slots, todayDate);
+  const statsSlots = statsSlotsForToday(slots, todayDate, config);
   const currentWeek = findWeekForDate(slots, todayDate);
   const inBetaWeek = currentWeek === BETA_WEEK && isDateInBetaWeek(config, slots, todayDate);
 
@@ -437,6 +437,7 @@ module.exports = {
   isBetaSlot,
   isSeasonSlot,
   seasonSlotsOnly,
+  seasonBounds,
   displayDayIndex,
   statsSlotsForToday,
   betaWeekBounds,

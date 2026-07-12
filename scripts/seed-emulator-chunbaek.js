@@ -35,6 +35,45 @@ const SLOTS = [
   { dayIndex: 7, date: "2026-04-07", week: 2, trainingTitle: "인터벌", trainingContent: "", isProgramOff: false },
 ];
 
+const BETA_DAY_INDEX_BASE = 901;
+const SEASON_START = "2026-07-20";
+const DEFAULT_BETA_START = "2026-07-13";
+const DEFAULT_BETA_END = "2026-07-19";
+
+function todayKstDate() {
+  return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+}
+
+function addDaysIso(isoDate, offset) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const ms = Date.UTC(y, m - 1, d) + offset * 86400000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function buildBetaSlots(today) {
+  if (today >= SEASON_START) {
+    const beta = [
+      { dayIndex: 901, date: "2026-07-13", week: 0, trainingTitle: "베타 D1", trainingContent: "", isProgramOff: false },
+      { dayIndex: 902, date: "2026-07-14", week: 0, trainingTitle: "베타 D2", trainingContent: "", isProgramOff: false },
+    ];
+    return { beta, betaWeekStartDate: DEFAULT_BETA_START, betaWeekEndDate: DEFAULT_BETA_END };
+  }
+
+  const betaWeekStartDate = today < DEFAULT_BETA_START ? today : DEFAULT_BETA_START;
+  const beta = [];
+  for (let d = betaWeekStartDate, i = 0; d <= DEFAULT_BETA_END && i < 7; d = addDaysIso(d, 1), i += 1) {
+    beta.push({
+      dayIndex: BETA_DAY_INDEX_BASE + i,
+      date: d,
+      week: 0,
+      trainingTitle: `베타 D${i + 1}`,
+      trainingContent: "",
+      isProgramOff: false,
+    });
+  }
+  return { beta, betaWeekStartDate, betaWeekEndDate: DEFAULT_BETA_END };
+}
+
 (async () => {
   await db.collection("members").doc("chunbaek_seed_a").set({
     nickname: "테스트A",
@@ -59,27 +98,25 @@ const SLOTS = [
     },
   }, { merge: true });
 
+  const today = todayKstDate();
+  const { beta: BETA, betaWeekStartDate, betaWeekEndDate } = buildBetaSlots(today);
+
   await db.collection("chunbaek_season_config").doc("chunbaek-s3").set({
     seasonId: "chunbaek-s3",
     title: "춘백 시즌3",
-    startDate: "2026-07-20",
+    startDate: SEASON_START,
     endDate: "2026-10-27",
-    betaWeekStartDate: "2026-07-13",
-    betaWeekEndDate: "2026-07-19",
+    betaWeekStartDate,
+    betaWeekEndDate,
     weeklyTarget: 3,
     photoRequired: false,
   }, { merge: true });
-
-  const BETA = [
-    { dayIndex: 901, date: "2026-07-13", week: 0, trainingTitle: "베타 D1", trainingContent: "", isProgramOff: false },
-    { dayIndex: 902, date: "2026-07-14", week: 0, trainingTitle: "베타 D2", trainingContent: "", isProgramOff: false },
-  ];
 
   for (const slot of [...SLOTS, ...BETA]) {
     await db.collection("chunbaek_slots").doc(String(slot.dayIndex)).set(slot, { merge: true });
   }
 
-  console.log("[seed-emulator-chunbaek] members 2, slots 9 (incl. 0주차 2), season_config OK");
+  console.log(`[seed-emulator-chunbaek] members 2, slots ${SLOTS.length + BETA.length} (beta ${betaWeekStartDate}~, today=${today}), season_config OK`);
   process.exit(0);
 })().catch((e) => {
   console.error(e);

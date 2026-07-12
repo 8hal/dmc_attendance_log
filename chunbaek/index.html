@@ -73,8 +73,8 @@
 
       <!-- ③ 프로필 -->
       <section id="view-profile" class="view">
-        <h2 class="section-title"><span id="profile-nickname">김러너</span>님의 프로필</h2>
-        <p class="section-sub">자신의 가을 시즌 목표와 간단한 각오·자기소개를 남겨 주세요</p>
+        <h2 class="section-title" id="profile-section-title"><span id="profile-nickname">김러너</span>님의 프로필</h2>
+        <p class="section-sub" id="profile-section-sub">자신의 가을 시즌 목표와 간단한 각오·자기소개를 남겨 주세요</p>
         <div class="card">
           <div class="field-label">닉네임</div>
           <div style="font-weight:700;margin-bottom:16px" id="profile-nick-display">—</div>
@@ -104,6 +104,7 @@
             placeholder="출정식에서 나눈 각오, 이번 시즌 다짐 등 (200자)"></textarea>
         </div>
         <button type="button" class="btn btn-primary" id="btn-create-profile">프로필 만들기</button>
+        <button type="button" class="btn btn-ghost" id="btn-profile-cancel" hidden style="margin-top:12px">취소</button>
       </section>
 
       <!-- ④ 가이드 -->
@@ -210,7 +211,7 @@
       <section id="view-me" class="view">
         <h2 class="section-title">나</h2>
         <dl class="profile-dl" id="me-dl"></dl>
-        <button type="button" class="btn btn-outline" disabled title="MVP: 운영진 문의">프로필 수정</button>
+        <button type="button" class="btn btn-outline" id="btn-edit-profile">프로필 수정</button>
       </section>
     </main>
 

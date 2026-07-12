@@ -8,6 +8,7 @@
     isProcessing: false,
     profile: null,
     todaySlot: null,
+    profileFormMode: "create",
   };
 
   const VIEWS = {
@@ -145,8 +146,10 @@
         state.profile = { profileComplete: true, nickname: data.nickname };
         showView("today");
       } else {
+        state.profileFormMode = "create";
         document.getElementById("profile-nickname").textContent = state.selectedNickname;
         document.getElementById("profile-nick-display").textContent = state.selectedNickname;
+        setProfileFormUi();
         showView("profile");
       }
     } catch (e) {
@@ -165,11 +168,64 @@
     noteEl.hidden = selectedGoalRace() !== "other";
   }
 
-  async function onCreateProfile() {
+  function splitNetTime(seconds) {
+    if (seconds === null || seconds === undefined || seconds === "") {
+      return { h: "", m: "", s: "" };
+    }
+    const total = Number(seconds);
+    if (!Number.isFinite(total) || total < 0) return { h: "", m: "", s: "" };
+    return {
+      h: Math.floor(total / 3600),
+      m: Math.floor((total % 3600) / 60),
+      s: total % 60,
+    };
+  }
+
+  function setProfileFormUi() {
+    const isEdit = state.profileFormMode === "edit";
+    const nick = state.profile?.nickname || state.selectedNickname || "—";
+    const titleEl = document.getElementById("profile-section-title");
+    const subEl = document.getElementById("profile-section-sub");
+    const submitBtn = document.getElementById("btn-create-profile");
+    const cancelBtn = document.getElementById("btn-profile-cancel");
+
+    if (isEdit) {
+      titleEl.textContent = "프로필 수정";
+      subEl.textContent = "목표 대회·기록·각오를 수정할 수 있습니다.";
+      document.getElementById("profile-nick-display").textContent = nick;
+      submitBtn.textContent = "저장";
+      if (cancelBtn) cancelBtn.hidden = false;
+    } else {
+      titleEl.textContent = `${nick}님의 프로필`;
+      subEl.textContent = "자신의 가을 시즌 목표와 간단한 각오·자기소개를 남겨 주세요";
+      document.getElementById("profile-nick-display").textContent = nick;
+      submitBtn.textContent = "프로필 만들기";
+      if (cancelBtn) cancelBtn.hidden = true;
+    }
+  }
+
+  function fillProfileForm(p) {
+    const goalRace = p.goalRace || "chuncheon";
+    document.querySelectorAll('input[name="goal-race"]').forEach((el) => {
+      el.checked = el.value === goalRace;
+    });
+    const goal = splitNetTime(p.goalMarathonNetTime);
+    document.getElementById("goal-h").value = goal.h !== "" ? goal.h : 4;
+    document.getElementById("goal-m").value = goal.m !== "" ? goal.m : 30;
+    document.getElementById("goal-s").value = goal.s !== "" ? goal.s : 0;
+    const pb = splitNetTime(p.existingPbNetTime);
+    document.getElementById("pb-h").value = pb.h;
+    document.getElementById("pb-m").value = pb.m;
+    document.getElementById("pb-s").value = pb.s;
+    document.getElementById("goal-race-note").value = p.goalRaceNote || "";
+    document.getElementById("resolution-text").value = p.resolutionText || "";
+    syncGoalRaceNote();
+  }
+
+  function readProfileFormFromDom() {
     const goalRace = selectedGoalRace();
     if (!goalRace) {
-      showToast("목표 대회를 선택해 주세요", true);
-      return;
+      return { error: "목표 대회를 선택해 주세요" };
     }
     const h = parseInt(document.getElementById("goal-h").value, 10) || 0;
     const m = parseInt(document.getElementById("goal-m").value, 10) || 0;
@@ -178,8 +234,7 @@
     const pbM = parseInt(document.getElementById("pb-m").value, 10);
     const pbS = parseInt(document.getElementById("pb-s").value, 10);
     if (h < 2 || h > 7 || m < 0 || m > 59 || s < 0 || s > 59) {
-      showToast("목표 기록을 2:00:00 ~ 7:00:00 범위로 입력해 주세요", true);
-      return;
+      return { error: "목표 기록을 2:00:00 ~ 7:00:00 범위로 입력해 주세요" };
     }
     const goalMarathonNetTime = h * 3600 + m * 60 + s;
     let existingPbNetTime = null;
@@ -188,22 +243,84 @@
       const ps = Number.isNaN(pbS) ? 0 : pbS;
       existingPbNetTime = pbH * 3600 + pm * 60 + ps;
     }
+    const resolutionText = (document.getElementById("resolution-text").value || "").trim();
+    const goalRaceNote = (document.getElementById("goal-race-note").value || "").trim();
+    return {
+      goalRace,
+      goalRaceNote: goalRace === "other" ? (goalRaceNote || null) : null,
+      goalMarathonNetTime,
+      existingPbNetTime,
+      resolutionText: resolutionText || null,
+    };
+  }
+
+  async function openProfileEdit() {
+    if (state.isProcessing) return;
+    state.profileFormMode = "edit";
     try {
-      const resolutionText = (document.getElementById("resolution-text").value || "").trim();
-      const goalRaceNote = (document.getElementById("goal-race-note").value || "").trim();
+      let p = state.profile;
+      if (!p?.profileComplete || p.goalMarathonNetTime == null) {
+        p = await apiGet("my-profile", {}, true);
+        state.profile = p;
+      }
+      if (!p.profileComplete) {
+        showToast("프로필을 먼저 만든 뒤 수정할 수 있습니다", true);
+        return;
+      }
+      fillProfileForm(p);
+      setProfileFormUi();
+      showView("profile");
+    } catch (e) {
+      showToast(e.message, true);
+    }
+  }
+
+  async function onCreateProfile() {
+    const form = readProfileFormFromDom();
+    if (form.error) {
+      showToast(form.error, true);
+      return;
+    }
+    try {
       const data = await apiPost("create-profile", {
         memberId: state.selectedMemberId,
-        goalRace,
-        goalRaceNote: goalRace === "other" ? (goalRaceNote || null) : null,
-        goalMarathonNetTime,
-        existingPbNetTime,
-        resolutionText: resolutionText || null,
+        ...form,
       });
       setToken(data.token);
-      state.profile = { ...state.profile, resolutionText: resolutionText || null };
+      state.profile = { ...state.profile, resolutionText: form.resolutionText };
       showView("guide");
     } catch (e) {
       showToast(e.message, true);
+    }
+  }
+
+  async function onUpdateProfile() {
+    if (state.isProcessing) return;
+    const form = readProfileFormFromDom();
+    if (form.error) {
+      showToast(form.error, true);
+      return;
+    }
+    state.isProcessing = true;
+    try {
+      const data = await apiPost("update-profile", form, true);
+      state.profile = data;
+      showToast("프로필이 저장되었습니다");
+      renderMe();
+      paintStatsHeader(data);
+      showView("me");
+    } catch (e) {
+      showToast(e.message, true);
+    } finally {
+      state.isProcessing = false;
+    }
+  }
+
+  async function onProfileSubmit() {
+    if (state.profileFormMode === "edit") {
+      await onUpdateProfile();
+    } else {
+      await onCreateProfile();
     }
   }
 
@@ -610,6 +727,10 @@
   function renderMe() {
     const p = state.profile || MOCK.profile;
     const s = p.stats || MOCK.profile.stats;
+    const editBtn = document.getElementById("btn-edit-profile");
+    if (editBtn) {
+      editBtn.disabled = !p.profileComplete;
+    }
     document.getElementById("me-dl").innerHTML = `
       <dt>닉네임</dt><dd>${p.nickname || "김러너"}</dd>
       <dt>목표 대회</dt><dd>${p.goalRaceLabel || "—"}</dd>
@@ -642,7 +763,9 @@
 
     document.getElementById("btn-start").addEventListener("click", () => showView("pick"));
     document.getElementById("btn-pick-next").addEventListener("click", onPickNext);
-    document.getElementById("btn-create-profile").addEventListener("click", onCreateProfile);
+    document.getElementById("btn-create-profile").addEventListener("click", onProfileSubmit);
+    document.getElementById("btn-edit-profile").addEventListener("click", openProfileEdit);
+    document.getElementById("btn-profile-cancel").addEventListener("click", () => showView("me"));
     document.querySelectorAll('input[name="goal-race"]').forEach((el) => {
       el.addEventListener("change", syncGoalRaceNote);
     });

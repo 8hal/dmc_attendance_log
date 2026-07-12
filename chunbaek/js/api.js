@@ -216,6 +216,21 @@ function mockPost(action, body) {
     MOCK.profile.stats.weekAttendCount = 3;
     return Promise.resolve({ ok: true });
   }
+  if (action === "update-profile") {
+    Object.assign(MOCK.profile, {
+      goalRace: body.goalRace,
+      goalRaceNote: body.goalRaceNote || null,
+      goalMarathonNetTime: body.goalMarathonNetTime,
+      existingPbNetTime: body.existingPbNetTime ?? null,
+      resolutionText: body.resolutionText || null,
+      goalRaceLabel: body.goalRace === "jtbc"
+        ? "JTBC 서울마라톤"
+        : body.goalRace === "other"
+          ? (body.goalRaceNote ? `기타: ${body.goalRaceNote}` : "기타")
+          : "춘천 마라톤",
+    });
+    return Promise.resolve({ ok: true, ...MOCK.profile });
+  }
   return Promise.reject(new Error(`preview: unknown action ${action}`));
 }
 

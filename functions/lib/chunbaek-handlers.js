@@ -129,6 +129,47 @@ function findSlotById(slots, slotId) {
   return slots.find((s) => getSlotKey(s) === idStr || String(s.id) === idStr) || null;
 }
 
+function parseProfileFields(body) {
+  const goalMarathonNetTime = Number(body.goalMarathonNetTime);
+  const existingPbNetTime = parseOptionalSeconds(body.existingPbNetTime);
+  const resolutionText = String(body.resolutionText || "").trim().slice(0, 200) || null;
+  const goalRaceParsed = parseGoalRace(body);
+  if (goalRaceParsed.error) return { error: goalRaceParsed.error };
+  if (!Number.isFinite(goalMarathonNetTime)
+    || goalMarathonNetTime < GOAL_MIN_SEC
+    || goalMarathonNetTime > GOAL_MAX_SEC) {
+    return {
+      error: `goalMarathonNetTime must be ${GOAL_MIN_SEC}~${GOAL_MAX_SEC} seconds`,
+    };
+  }
+  return {
+    goalMarathonNetTime,
+    existingPbNetTime,
+    resolutionText,
+    goalRace: goalRaceParsed.goalRace,
+    goalRaceNote: goalRaceParsed.goalRaceNote,
+  };
+}
+
+function buildProfileUpdate(parsed) {
+  const update = {
+    "chunbaekS3.goalMarathonNetTime": parsed.goalMarathonNetTime,
+    "chunbaekS3.goalRace": parsed.goalRace,
+    "chunbaekS3.resolutionText": parsed.resolutionText,
+  };
+  if (parsed.goalRace === "other" && parsed.goalRaceNote) {
+    update["chunbaekS3.goalRaceNote"] = parsed.goalRaceNote;
+  } else {
+    update["chunbaekS3.goalRaceNote"] = FieldValue.delete();
+  }
+  if (parsed.existingPbNetTime !== null) {
+    update["chunbaekS3.existingPbNetTime"] = parsed.existingPbNetTime;
+  } else {
+    update["chunbaekS3.existingPbNetTime"] = FieldValue.delete();
+  }
+  return update;
+}
+
 async function handleMembersRoster(req, res, db) {
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false, error: "GET only" });
@@ -156,25 +197,13 @@ async function handleCreateProfile(req, res, db) {
   }
   const body = req.body || {};
   const memberId = String(body.memberId || "").trim();
-  const goalMarathonNetTime = Number(body.goalMarathonNetTime);
-  const existingPbNetTime = parseOptionalSeconds(body.existingPbNetTime);
-  const resolutionText = String(body.resolutionText || "").trim().slice(0, 200) || null;
-  const goalRaceParsed = parseGoalRace(body);
-  if (goalRaceParsed.error) {
-    return res.status(400).json({ ok: false, error: goalRaceParsed.error });
-  }
-  const { goalRace, goalRaceNote } = goalRaceParsed;
-
   if (!memberId) {
     return res.status(400).json({ ok: false, error: "memberId required" });
   }
-  if (!Number.isFinite(goalMarathonNetTime)
-    || goalMarathonNetTime < GOAL_MIN_SEC
-    || goalMarathonNetTime > GOAL_MAX_SEC) {
-    return res.status(400).json({
-      ok: false,
-      error: `goalMarathonNetTime must be ${GOAL_MIN_SEC}~${GOAL_MAX_SEC} seconds`,
-    });
+
+  const parsed = parseProfileFields(body);
+  if (parsed.error) {
+    return res.status(400).json({ ok: false, error: parsed.error });
   }
 
   const member = await loadParticipantMember(db, memberId);
@@ -187,19 +216,8 @@ async function handleCreateProfile(req, res, db) {
     return res.status(409).json({ ok: false, error: "profile already complete" });
   }
 
-  const update = {
-    "chunbaekS3.goalMarathonNetTime": goalMarathonNetTime,
-    "chunbaekS3.goalRace": goalRace,
-    "chunbaekS3.profileComplete": true,
-    "chunbaekS3.resolutionText": resolutionText,
-  };
-  if (goalRaceNote) {
-    update["chunbaekS3.goalRaceNote"] = goalRaceNote;
-  }
-  if (existingPbNetTime !== null) {
-    update["chunbaekS3.existingPbNetTime"] = existingPbNetTime;
-  }
-
+  const update = buildProfileUpdate(parsed);
+  update["chunbaekS3.profileComplete"] = true;
   await ref.update(update);
   const session = await issueSession(db, memberId);
 
@@ -211,6 +229,37 @@ async function handleCreateProfile(req, res, db) {
     nickname: data.nickname || "",
     profileComplete: true,
   });
+}
+
+async function handleUpdateProfile(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const parsed = parseProfileFields(req.body || {});
+  if (parsed.error) {
+    return res.status(400).json({ ok: false, error: parsed.error });
+  }
+
+  const member = await loadParticipantMember(db, auth.memberId);
+  if (!member) {
+    return res.status(404).json({ ok: false, error: "participant not found" });
+  }
+  if (!member.s3.profileComplete) {
+    return res.status(400).json({ ok: false, error: "profile not complete" });
+  }
+
+  await member.ref.update(buildProfileUpdate(parsed));
+  const { stats } = await loadMemberStatsContext(db, auth.memberId);
+  const fresh = await loadParticipantMember(db, auth.memberId);
+  return res.json(memberProfilePayload(
+    auth.memberId,
+    fresh.data,
+    fresh.s3,
+    stats,
+  ));
 }
 
 async function handleLinkDevice(req, res, db) {
@@ -432,6 +481,9 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "create-profile") {
     return handleCreateProfile(req, res, db);
+  }
+  if (action === "update-profile") {
+    return handleUpdateProfile(req, res, db);
   }
   if (action === "link-device") {
     return handleLinkDevice(req, res, db);

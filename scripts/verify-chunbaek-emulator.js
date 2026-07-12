@@ -8,6 +8,23 @@ const BASE = process.env.CHUNBAEK_API
   || "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/chunbaek";
 
 const ADMIN_PW = process.env.DMC_ADMIN_PW || "dmc2008";
+const BETA_DAY_INDEX_BASE = 901;
+const DEFAULT_BETA_START = "2026-07-13";
+const SEASON_START = "2026-07-20";
+
+function todayKstDate() {
+  return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+}
+
+function betaSlotIdForToday(today) {
+  if (today >= SEASON_START) return 1;
+  const betaStart = today < DEFAULT_BETA_START ? today : DEFAULT_BETA_START;
+  const [sy, sm, sd] = betaStart.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  const offset = Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(sy, sm - 1, sd)) / 86400000);
+  if (offset < 0 || offset >= 7) return null;
+  return BETA_DAY_INDEX_BASE + offset;
+}
 
 async function apiGet(action, params = {}) {
   const qs = new URLSearchParams({ action, ...params });
@@ -45,12 +62,33 @@ async function apiPost(action, body, token) {
   const token = created.data.token;
   assert.ok(token);
 
-  const saved = await apiPost("save-attendance", { slotId: 1, attended: true }, token);
+  const today = todayKstDate();
+  const slotId = betaSlotIdForToday(today);
+  assert.ok(slotId, `no beta slot for today=${today}`);
+
+  const saved = await apiPost("save-attendance", { slotId, attended: true }, token);
   assert.equal(saved.data.ok, true);
 
   const profile = await apiGet("my-profile", { token });
   assert.equal(profile.data.ok, true);
   assert.equal(profile.data.stats.seasonAttendCount, 1);
+
+  const updated = await apiPost("update-profile", {
+    goalMarathonNetTime: 15000,
+    goalRace: "jtbc",
+    resolutionText: "수정됨",
+  }, token);
+  assert.equal(updated.status, 200);
+  assert.equal(updated.data.ok, true);
+  assert.equal(updated.data.goalRace, "jtbc");
+  assert.equal(updated.data.goalMarathonNetTime, 15000);
+  assert.equal(updated.data.resolutionText, "수정됨");
+
+  const noToken = await apiPost("update-profile", {
+    goalMarathonNetTime: 15000,
+    goalRace: "jtbc",
+  });
+  assert.equal(noToken.status, 401);
 
   const noAuth = await apiGet("my-profile");
   assert.equal(noAuth.status, 401);
