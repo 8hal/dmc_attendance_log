@@ -32,9 +32,12 @@ chunbaek/index.html (SPA 셸)
   ├─ chunbaek/js/app.js      — hash 라우팅, 뷰 렌더 (MVP: 단일 파일)
   └─ chunbaek/css/chunbaek.css — 춘천마라톤 톤
 
-chunbaek/admin.html (Task 11, 미구현)
-  └─ chunbaek/js/admin.js
+chunbaek/admin.html (Task 11 — 목업)
+  ├─ chunbaek/js/admin.js   — preview 목업 데이터
+  └─ chunbaek/css/admin.css   — PC 레이아웃
 ```
+
+**운영진 목업:** `/chunbaek/admin.html?preview=1` — API 없이 가상 그리드·훈련 입력
 
 **라우팅:** hash — `#/welcome`, `#/pick`, `#/profile`, `#/guide`, `#/today`, `#/timeline`, `#/team`, `#/me`
 
@@ -127,7 +130,9 @@ chunbaek/admin.html (Task 11, 미구현)
 | `chunbaek/js/api.js` | ✅ 스켈레톤 | API 클라이언트 + 목업 |
 | `chunbaek/js/app.js` | ✅ 스켈레톤 | 라우팅·렌더 (뷰 분리는 Task 9~10) |
 | `chunbaek/js/views-*.js` | ❌ | 탭별 모듈 분리 (연동 시) |
-| `chunbaek/admin.html` | ❌ | 운영진 그리드 |
+| `chunbaek/admin.html` | △ 목업 | 운영진 PC — 그리드·훈련·import |
+| `chunbaek/css/admin.css` | △ 목업 | 운영진 PC 스타일 |
+| `chunbaek/js/admin.js` | △ 목업 | 운영진 목업 데이터·UI |
 
 구현 계획은 `views-today.js` 등 분리를 권장하나, 스켈레톤 단계에서는 `app.js` 단일 파일로 유지. API 연동 후 분리해도 됨.
 
