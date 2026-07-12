@@ -40,6 +40,12 @@ alpha.1 FE가 Mac에 아직 안 올라갔다면, 이번 배포로 **알파 1 전
 | `og:site_name` | 없음 | `동마클 출석` |
 | `meta description` | 짧은 한 줄 | 7/20·온보딩 포함 |
 
+### 운영진 admin (`chunbaek/js/admin.js`)
+
+- 로그인 후 **오늘(KST) 날짜 기준 주차**가 출석 그리드·훈련 입력에 자동 선택
+- 시즌 시작 전(7/20 이전)에는 **1주차** 기본
+- 백엔드 `findWeekForDate`와 연동 (`week` 파라미터 생략 시 서버 기본값)
+
 ### 버전
 
 - `chunbaek/VERSION` → `0.1.0-alpha.2`

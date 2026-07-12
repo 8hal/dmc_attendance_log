@@ -42,7 +42,7 @@ const WEEKS = {
   },
 };
 
-let currentWeek = 7;
+let currentWeek = PREVIEW ? 7 : null;
 let currentPanel = "grid";
 let filterUnderTarget = false;
 let modalContext = null;
@@ -55,6 +55,29 @@ const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 function dowLabel(dateStr) {
   const d = new Date(`${dateStr}T12:00:00`);
   return DOW[d.getDay()];
+}
+
+function syncWeekSelects() {
+  if (currentWeek == null) return;
+  const w = String(currentWeek);
+  const gridSel = document.getElementById("week-select");
+  const trainSel = document.getElementById("week-select-training");
+  if (gridSel) gridSel.value = w;
+  if (trainSel) trainSel.value = w;
+}
+
+function adminWeekParams() {
+  return currentWeek != null ? { week: currentWeek } : {};
+}
+
+async function resolveDefaultWeek() {
+  if (PREVIEW) {
+    currentWeek = currentWeek ?? 7;
+    return;
+  }
+  gridApiData = await adminGet("admin-grid", {});
+  if (gridApiData.week) currentWeek = gridApiData.week;
+  else currentWeek = 1;
 }
 
 function weekData(week) {
@@ -365,8 +388,9 @@ async function refreshGrid() {
     renderGrid();
     return;
   }
-  gridApiData = await adminGet("admin-grid", { week: currentWeek });
+  gridApiData = await adminGet("admin-grid", adminWeekParams());
   if (gridApiData.week) currentWeek = gridApiData.week;
+  syncWeekSelects();
   renderGrid();
 }
 
@@ -375,8 +399,9 @@ async function refreshTraining() {
     renderTraining();
     return;
   }
-  trainingApiData = await adminGet("admin-week-slots", { week: currentWeek });
+  trainingApiData = await adminGet("admin-week-slots", adminWeekParams());
   if (trainingApiData.week) currentWeek = trainingApiData.week;
+  syncWeekSelects();
   renderTraining();
 }
 
@@ -437,9 +462,9 @@ async function tryAuth() {
 }
 
 async function init() {
+  await resolveDefaultWeek();
   populateWeekSelects();
-  document.getElementById("week-select").value = String(currentWeek);
-  document.getElementById("week-select-training").value = String(currentWeek);
+  syncWeekSelects();
 
   if (PREVIEW) {
     document.getElementById("preview-banner").style.display = "block";
@@ -523,12 +548,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("week-select").addEventListener("change", async (e) => {
     currentWeek = Number(e.target.value);
-    document.getElementById("week-select-training").value = e.target.value;
+    syncWeekSelects();
     await refreshGrid();
   });
   document.getElementById("week-select-training").addEventListener("change", async (e) => {
     currentWeek = Number(e.target.value);
-    document.getElementById("week-select").value = e.target.value;
+    syncWeekSelects();
     await refreshTraining();
   });
 
