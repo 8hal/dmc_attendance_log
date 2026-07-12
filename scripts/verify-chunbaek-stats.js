@@ -105,6 +105,13 @@ const beforeSeason = todaySlotPayload(slots, {}, "2026-07-12", config);
 assert.equal(beforeSeason.beforeSeason, true);
 assert.equal(beforeSeason.betaWeek, false);
 
+const betaNoSlot = todaySlotPayload(seasonSlots, {}, "2026-07-16", config);
+assert.equal(betaNoSlot.beforeSeason, false);
+assert.equal(betaNoSlot.betaWeek, true);
+assert.equal(betaNoSlot.betaNoSlotToday, true);
+assert.equal(betaNoSlot.slot, null);
+assert.equal(betaNoSlot.photoRequired, false);
+
 // --- legacy April fixtures (시즌 슬롯만) ---
 const aprilSlots = [
   { id: "1", dayIndex: 1, date: "2026-04-01", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },

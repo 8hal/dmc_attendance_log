@@ -193,6 +193,8 @@ function mockGet(action) {
       slot: MOCK.todaySlot,
       beforeSeason: false,
       afterSeason: false,
+      betaWeek: false,
+      photoRequired: false,
       startDate: "2026-07-20",
       endDate: "2026-10-27",
     });

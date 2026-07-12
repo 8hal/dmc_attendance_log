@@ -392,6 +392,7 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
     ...seasonMeta(bounds),
     betaWeekStartDate: betaBounds?.startDate || null,
     betaWeekEndDate: betaBounds?.endDate || null,
+    photoRequired: !!config.photoRequired,
   };
 
   const todaySlot = findTodaySlot(slots, today);
@@ -409,6 +410,16 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
     return { slot: null, beforeSeason: false, afterSeason: false, noSlots: true, betaWeek: false, ...meta };
   }
   if (today < startDate) {
+    if (isDateInBetaWeek(config, slots, today)) {
+      return {
+        slot: null,
+        beforeSeason: false,
+        afterSeason: false,
+        betaWeek: true,
+        betaNoSlotToday: true,
+        ...meta,
+      };
+    }
     return { slot: null, beforeSeason: true, afterSeason: false, betaWeek: false, ...meta };
   }
   if (today > endDate) {
