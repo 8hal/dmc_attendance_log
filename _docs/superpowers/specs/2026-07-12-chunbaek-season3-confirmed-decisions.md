@@ -14,6 +14,7 @@
 | [PRD](./2026-07-12-chunbaek-season3-attendance-design.md) | 제품·도메인·데이터 모델·API 계약 (상세 SSOT) |
 | [FE Tech Spec](./2026-07-12-chunbaek-season3-fe-tech-spec.md) | 화면·디자인·FE 구조·PRD와의 UI 차이 |
 | [구현 계획](../plans/2026-07-12-chunbaek-season3-mvp-impl.md) | Task 1~12 개발 체크리스트 |
+| [Admin API 스펙](./2026-07-12-chunbaek-season3-admin-api.md) | 운영자 API request/response SSOT |
 | [스펙 리뷰](../reviews/2026-07-12-chunbaek-season3-spec-review.md) | 초기 리뷰 (Critical 4건) |
 
 ---
@@ -180,12 +181,17 @@ chunbaekS3: {
 
 ### 7.2 미구현
 
-| action | 용도 |
-|--------|------|
-| `verify-admin` | 운영진 인증 |
-| `admin-grid` | 출석 그리드 |
-| `admin-set-attendance` | 예외·대리 출석 |
-| `admin-import-slots` | 100슬롯 CSV |
+상세 스펙: [Admin API 스펙](./2026-07-12-chunbaek-season3-admin-api.md)
+
+| action | 용도 | MVP |
+|--------|------|-----|
+| `verify-admin` | 운영진 인증 | 필수 |
+| `admin-grid` | 출석 그리드 | 필수 |
+| `admin-set-attendance` | 예외·대리 출석 | 필수 |
+| `admin-import-slots` | 100슬롯 CSV | 필수 |
+| `admin-set-participant` | 참가자 추가·제외 | 확장 (권장) |
+| `admin-reset-profile` | 프로필 초기화·세션 revoke | 확장 (권장) |
+| `admin-update-profile` | 목표·PB·각오 수정 | 확장 (권장) |
 
 ### 7.3 배포 현황
 
