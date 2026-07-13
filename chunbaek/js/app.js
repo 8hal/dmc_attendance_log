@@ -965,6 +965,7 @@
 
     state.isProcessing = true;
     const cancelBtn = document.getElementById("timeline-modal-cancel-attend");
+    const cancelZone = document.getElementById("timeline-modal-cancel-zone");
     if (cancelBtn) cancelBtn.disabled = true;
     try {
       const data = await apiPost("save-attendance", {
@@ -1011,6 +1012,7 @@
     const hintEl = document.getElementById("timeline-modal-hint");
     const saveBtn = document.getElementById("timeline-modal-save");
     const cancelBtn = document.getElementById("timeline-modal-cancel-attend");
+    const cancelZone = document.getElementById("timeline-modal-cancel-zone");
     const photoSection = document.getElementById("timeline-modal-photo-section");
 
     if (slot.canEdit) {
@@ -1031,7 +1033,7 @@
       renderTimelinePhotoGrid();
       const attended = !!slot.attended;
       if (saveBtn) saveBtn.textContent = attended ? "저장" : "출석하기";
-      if (cancelBtn) cancelBtn.hidden = !attended;
+      if (cancelZone) cancelZone.hidden = !attended;
     } else {
       if (editEl) editEl.hidden = true;
       if (readonlyEl) readonlyEl.hidden = false;

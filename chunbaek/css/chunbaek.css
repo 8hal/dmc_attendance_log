@@ -787,8 +787,34 @@ body {
 .timeline-modal-btns {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   margin-bottom: 4px;
+}
+.timeline-modal-danger-zone {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+.timeline-modal-danger-zone[hidden] { display: none; }
+.timeline-modal-cancel-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.timeline-modal-cancel-btn:hover,
+.timeline-modal-cancel-btn:focus-visible {
+  color: #c62828;
+  background: rgba(198, 40, 40, 0.06);
+}
+.timeline-modal-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .timeline-modal-photo-section { margin-bottom: 8px; }
 .timeline-photo-grid {
