@@ -112,6 +112,18 @@ assert.equal(betaNoSlot.betaNoSlotToday, true);
 assert.equal(betaNoSlot.slot, null);
 assert.equal(betaNoSlot.photoRequired, false);
 
+const betaSlotsNoDate = [{
+  id: "901",
+  dayIndex: 901,
+  week: 0,
+  trainingTitle: "베타 D1",
+  trainingContent: "",
+  isProgramOff: false,
+}];
+const betaNoDateField = todaySlotPayload(betaSlotsNoDate, {}, "2026-07-13", config);
+assert.equal(betaNoDateField.slot.date, "2026-07-13");
+assert.equal(betaNoDateField.slot.trainingTitle, "베타 D1");
+
 // --- legacy April fixtures (시즌 슬롯만) ---
 const aprilSlots = [
   { id: "1", dayIndex: 1, date: "2026-04-01", week: 1, trainingTitle: "이지런", trainingContent: "", isProgramOff: false },

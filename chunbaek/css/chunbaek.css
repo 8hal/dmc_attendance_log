@@ -30,6 +30,11 @@
 
 * { box-sizing: border-box; }
 
+/* hidden 속성 — display:flex 등이 있으면 브라우저 기본 none 이 무시됨 */
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: var(--font-body);
   margin: 0;
