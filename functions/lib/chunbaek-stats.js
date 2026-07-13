@@ -489,6 +489,17 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
   };
 }
 
+/** 팀 탭 목록 정렬 — PRD §7.3: 순위·경쟁 없음. 나 찾기 편의만 우선 */
+function sortTeamMembers(members, viewerMemberId = null) {
+  return [...members].sort((a, b) => {
+    if (viewerMemberId) {
+      if (a.memberId === viewerMemberId) return -1;
+      if (b.memberId === viewerMemberId) return 1;
+    }
+    return (a.nickname || "").localeCompare(b.nickname || "", "ko");
+  });
+}
+
 module.exports = {
   BETA_WEEK,
   BETA_DAY_INDEX_BASE,
@@ -519,6 +530,7 @@ module.exports = {
   rateBar,
   weekBar,
   weekDots,
+  sortTeamMembers,
   todaySlotPayload,
   getSlotKey,
   getAttendance,

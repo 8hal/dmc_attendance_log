@@ -836,8 +836,21 @@
       .catch(() => paintTeam(MOCK.team));
   }
 
+  function sortTeamMembersForDisplay(members) {
+    const me = state.profile?.memberId || null;
+    return [...members].sort((a, b) => {
+      if (me) {
+        if (a.memberId === me) return -1;
+        if (b.memberId === me) return 1;
+      }
+      return (a.nickname || "").localeCompare(b.nickname || "", "ko");
+    });
+  }
+
   function paintTeam(t) {
-    const members = (t.members || []).filter((m) => m.profileComplete !== false);
+    const members = sortTeamMembersForDisplay(
+      (t.members || []).filter((m) => m.profileComplete !== false),
+    );
     const count = members.length;
     const weekMet = members.filter((m) => m.met).length;
     const seasonRate = count > 0

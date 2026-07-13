@@ -15,6 +15,7 @@ const {
   betaDayIndexForDate,
   defaultWeekForAdmin,
   weekBar,
+  sortTeamMembers,
   BETA_DAY_INDEX_BASE,
 } = require("../functions/lib/chunbaek-stats");
 
@@ -128,6 +129,19 @@ assert.equal(betaNoDateField.slot.trainingTitle, "베타 D1");
 assert.equal(weekBar(1, 3), "█░░");
 assert.equal(weekBar(3, 3), "███");
 assert.equal(weekBar(4, 3), "███");
+
+assert.deepEqual(
+  sortTeamMembers(
+    [{ memberId: "b", nickname: "김" }, { memberId: "a", nickname: "가" }],
+    "a",
+  ).map((m) => m.memberId),
+  ["a", "b"],
+);
+assert.deepEqual(
+  sortTeamMembers([{ memberId: "b", nickname: "김" }, { memberId: "a", nickname: "가" }])
+    .map((m) => m.memberId),
+  ["a", "b"],
+);
 
 // --- legacy April fixtures (시즌 슬롯만) ---
 const aprilSlots = [

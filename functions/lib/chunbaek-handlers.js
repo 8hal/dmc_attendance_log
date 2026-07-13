@@ -16,6 +16,7 @@ const {
   formatGoalTime,
   weekBar,
   weekDots,
+  sortTeamMembers,
   getSlotKey,
   isBetaSlot,
   isDateInBetaWeek,
@@ -457,8 +458,8 @@ async function handleTeamSummary(req, res, db) {
     });
   }
 
-  members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
-  const participantCount = members.length;
+  const sorted = sortTeamMembers(members, auth.memberId);
+  const participantCount = sorted.length;
   const seasonRate = participantCount > 0
     ? Math.round(rateSum / participantCount)
     : 0;
@@ -468,7 +469,7 @@ async function handleTeamSummary(req, res, db) {
     seasonRate,
     weekMetCount,
     participantCount,
-    members,
+    members: sorted,
   });
 }
 
