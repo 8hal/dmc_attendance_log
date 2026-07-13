@@ -503,9 +503,13 @@ function mockPost(action, body) {
     if (slot) {
       const attended = !!body.attended;
       slot.attended = attended;
-      slot.note = body.note || "";
-      slot.photoUrl = body.photoUrl || "";
-      slot.photo = !!slot.photoUrl;
+      if (Object.prototype.hasOwnProperty.call(body, "note")) {
+        slot.note = body.note || "";
+      }
+      if (Object.prototype.hasOwnProperty.call(body, "photoUrl")) {
+        slot.photoUrl = body.photoUrl || "";
+        slot.photo = !!slot.photoUrl;
+      }
       if (attended) slot.status = "attend";
       else if (slot.status === "attend") slot.status = "miss";
     }

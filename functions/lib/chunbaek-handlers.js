@@ -376,8 +376,10 @@ async function handleSaveAttendance(req, res, db) {
   const body = req.body || {};
   const slotId = body.slotId;
   const attended = !!body.attended;
-  const note = String(body.note || "").slice(0, 500);
-  const photoUrl = String(body.photoUrl || "").slice(0, 2000);
+  const hasNote = Object.prototype.hasOwnProperty.call(body, "note");
+  const hasPhotoUrl = Object.prototype.hasOwnProperty.call(body, "photoUrl");
+  const note = hasNote ? String(body.note || "").slice(0, 500) : undefined;
+  const photoUrl = hasPhotoUrl ? String(body.photoUrl || "").slice(0, 2000) : undefined;
 
   if (slotId === undefined || slotId === null || slotId === "") {
     return res.status(400).json({ ok: false, error: "slotId required" });
@@ -408,25 +410,32 @@ async function handleSaveAttendance(req, res, db) {
   if (isMemberEditLocked(slot.date)) {
     return res.status(403).json({ ok: false, error: "week deadline passed" });
   }
-  if (config.photoRequired && attended && !photoUrl) {
-    return res.status(400).json({ ok: false, error: "photoUrl required" });
-  }
 
   const docId = `${auth.memberId}_${getSlotKey(slot)}`;
   const existingSnap = await db.collection("chunbaek_attendance").doc(docId).get();
-  if (existingSnap.exists && existingSnap.data().exception) {
+  const existing = existingSnap.exists ? existingSnap.data() : null;
+  if (existing?.exception) {
     return res.status(403).json({ ok: false, error: "exception slot" });
   }
 
-  await db.collection("chunbaek_attendance").doc(docId).set({
+  if (config.photoRequired && attended) {
+    const effectivePhoto = hasPhotoUrl ? photoUrl : (existing?.photoUrl || "");
+    if (!effectivePhoto) {
+      return res.status(400).json({ ok: false, error: "photoUrl required" });
+    }
+  }
+
+  const update = {
     memberId: auth.memberId,
     slotId: slot.dayIndex ?? Number(slot.id),
     attended,
-    note,
-    photoUrl,
     updatedAt: FieldValue.serverTimestamp(),
     updatedBy: "member",
-  }, { merge: true });
+  };
+  if (hasNote) update.note = note;
+  if (hasPhotoUrl) update.photoUrl = photoUrl;
+
+  await db.collection("chunbaek_attendance").doc(docId).set(update, { merge: true });
 
   const { stats } = await loadMemberStatsContext(db, auth.memberId);
   return res.json({

@@ -549,10 +549,6 @@
     setElementVisible(el, new Date(y, m - 1, d).getDay() === 6);
   }
 
-  function setPhotoRowVisible(photoRequired) {
-    setElementVisible(document.getElementById("photo-optional-row"), !!photoRequired);
-  }
-
   function setTodayProgramOff(isOff) {
     const offMsg = document.getElementById("program-off-msg");
     const active = document.getElementById("today-active");
@@ -569,13 +565,11 @@
       state.profile = prof;
 
       if (slotRes.beforeSeason) {
-        setPhotoRowVisible(false);
         updateSaturdayNotice(null);
         paintBeforeSeason(prof, slotRes);
         return;
       }
       if (slotRes.afterSeason) {
-        setPhotoRowVisible(false);
         updateSaturdayNotice(null);
         paintAfterSeason(prof, slotRes);
         return;
@@ -583,7 +577,6 @@
 
       state.todaySlot = enrichTodaySlot(slotRes.slot || null, slotRes);
       paintStatsHeader(prof);
-      setPhotoRowVisible(!!slotRes.photoRequired);
       updateSaturdayNotice(null);
 
       const sl = state.todaySlot;
@@ -745,7 +738,6 @@
       await apiPost("save-attendance", {
         slotId: state.todaySlot.dayIndex ?? state.todaySlot.slotId,
         attended: true,
-        note: document.getElementById("note-input").value || "",
       }, true);
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       showToast(`${dayNum}일차 출석 완료`);

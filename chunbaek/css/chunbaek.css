@@ -490,6 +490,14 @@ body {
   color: var(--green) !important;
   border: 2px solid #6ee7b7 !important;
 }
+.today-attend-hint {
+  margin: -8px 0 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  text-align: center;
+}
+.today-attend-hint strong { color: var(--chun-cyan); }
 
 .week-summary {
   display: flex;
