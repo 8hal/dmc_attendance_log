@@ -647,8 +647,8 @@ body {
   flex-shrink: 0;
 }
 .week-pill--done {
-  background: var(--chun-orange);
-  box-shadow: 0 0 0 2px var(--primary-light);
+  background: var(--green);
+  box-shadow: 0 0 0 2px var(--green-light);
 }
 .week-pill--open {
   background: var(--chun-white);
@@ -1048,6 +1048,17 @@ body {
 .team-week-dots .week-pill {
   width: 12px;
   height: 12px;
+}
+.week-attend-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.week-attend-fraction {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
 }
 
 /* ── 팀 ── */

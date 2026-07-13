@@ -1092,6 +1092,19 @@
     e.target.value = "";
   }
 
+  function teamWeekDotsHtml(m) {
+    if (m.weekDots) return weekDotsToHtml(m.weekDots);
+    return weekBarToHtml(m.bar);
+  }
+
+  function renderTeamWeekProgress(m, { showFraction = false } = {}) {
+    const weekTarget = m.weekTarget || 3;
+    const dots = `<span class="week-progress team-week-dots" aria-hidden="true">${teamWeekDotsHtml(m)}</span>`;
+    if (!showFraction) return dots;
+    const label = `${m.week || `0/${weekTarget}`}${m.met ? " ✓" : ""}`;
+    return `<span class="week-attend-inline">${dots}<span class="week-attend-fraction">${escapeHtml(label)}</span></span>`;
+  }
+
   function weekBarToHtml(bar) {
     return String(bar || "").split("").map((ch) => {
       if (ch === "█") return '<span class="week-pill week-pill--done"></span>';
@@ -1291,10 +1304,7 @@
       <dt>목표 몸무게</dt><dd>${escapeHtml(teamWeightDisplay(m, isMe))}</dd>
       <dt>각오</dt><dd class="profile-intro">${m.resolutionText ? escapeHtml(m.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${m.seasonAttendCount ?? 0}회 (출석률 ${m.seasonAttendRate ?? 0}%)</dd>
-      <dt>이번 주</dt><dd>
-        <span class="week-dots team-week-dots" aria-hidden="true">${weekDotsToHtml(m.weekDots || "")}</span>
-        ${escapeHtml(m.week || `0/${weekTarget}`)}${m.met ? " ✓" : ""}
-      </dd>
+      <dt>이번 주</dt><dd>${renderTeamWeekProgress(m, { showFraction: true })}</dd>
     `;
     const feedEl = document.getElementById("team-profile-feed");
     const feedList = document.getElementById("team-profile-feed-list");
@@ -1365,8 +1375,7 @@
           <div class="team-goal">목표 ${escapeHtml(m.goal || "")}${m.goalRaceLabel ? ` · ${escapeHtml(m.goalRaceLabel)}` : ""}</div>
         </div>
         <div style="text-align:right">
-          <div class="week-dots team-week-dots" aria-hidden="true">${m.weekDots || m.bar}</div>
-          <div class="team-goal">${escapeHtml(m.week || "")} ${m.met ? "✓" : ""}</div>
+          ${renderTeamWeekProgress(m, { showFraction: false })}
         </div>
       </button>
     `).join("");
