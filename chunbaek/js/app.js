@@ -484,16 +484,15 @@
     const el = document.getElementById("saturday-notice");
     if (!el) return;
     if (!slotDate) {
-      el.hidden = true;
+      setElementVisible(el, false);
       return;
     }
     const [y, m, d] = slotDate.split("-").map(Number);
-    el.hidden = new Date(y, m - 1, d).getDay() !== 6;
+    setElementVisible(el, new Date(y, m - 1, d).getDay() === 6);
   }
 
   function setPhotoRowVisible(photoRequired) {
-    const row = document.getElementById("photo-optional-row");
-    if (row) row.hidden = !photoRequired;
+    setElementVisible(document.getElementById("photo-optional-row"), !!photoRequired);
   }
 
   function setTodayProgramOff(isOff) {
@@ -524,7 +523,7 @@
         return;
       }
 
-      state.todaySlot = slotRes.slot || null;
+      state.todaySlot = enrichTodaySlot(slotRes.slot || null, slotRes);
       paintStatsHeader(prof);
       setPhotoRowVisible(!!slotRes.photoRequired);
       updateSaturdayNotice(null);
@@ -573,8 +572,48 @@
     }
   }
 
+  function kstTodayIso() {
+    return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  }
+
+  function addDaysIso(iso, offset) {
+    const [y, m, d] = iso.split("-").map(Number);
+    const ms = Date.UTC(y, m - 1, d) + offset * 86400000;
+    return new Date(ms).toISOString().slice(0, 10);
+  }
+
+  function normalizeClientDate(value) {
+    if (!value) return "";
+    if (typeof value === "string") return value.slice(0, 10);
+    if (typeof value === "object") {
+      const sec = value._seconds ?? value.seconds;
+      if (sec != null) return new Date(sec * 1000).toISOString().slice(0, 10);
+    }
+    return "";
+  }
+
+  function betaStartFromSlotRes(slotRes) {
+    if (slotRes?.betaWeekStartDate) return slotRes.betaWeekStartDate;
+    if (slotRes?.startDate) return addDaysIso(slotRes.startDate, -7);
+    return "2026-07-13";
+  }
+
+  function resolveSlotDateForPaint(sl, slotRes) {
+    const direct = normalizeClientDate(sl?.date);
+    if (direct) return direct;
+    return deriveBetaDate(sl, slotRes);
+  }
+
+  function enrichTodaySlot(sl, slotRes) {
+    if (!sl) return sl;
+    const date = resolveSlotDateForPaint(sl, slotRes);
+    if (date) sl.date = date;
+    if (sl.dayIndex == null && sl.slotId != null) sl.dayIndex = sl.slotId;
+    return sl;
+  }
+
   function paintTodaySlot(sl, slotRes = {}) {
-    const date = sl?.date || deriveBetaDate(sl, slotRes);
+    const date = resolveSlotDateForPaint(sl, slotRes);
     if (!sl || !date) {
       document.getElementById("today-day").textContent = "오늘 훈련 정보를 불러오지 못했습니다";
       document.getElementById("today-training").textContent =
@@ -610,15 +649,17 @@
   }
 
   function deriveBetaDate(sl, slotRes) {
-    if (!sl || sl.date) return sl?.date || "";
-    const betaStart = slotRes.betaWeekStartDate;
+    if (!sl) return "";
+    const betaStart = betaStartFromSlotRes(slotRes);
     const di = sl.dayIndex ?? sl.slotId;
-    if (!betaStart || !di || di < 901) return "";
-    const offset = di - 901;
-    if (offset < 0 || offset > 6) return "";
-    const [y, m, d] = betaStart.split("-").map(Number);
-    const ms = Date.UTC(y, m - 1, d) + offset * 86400000;
-    return new Date(ms).toISOString().slice(0, 10);
+    let offset = null;
+    if (Number.isFinite(di) && di >= 901 && di <= 907) offset = di - 901;
+    else if (sl.displayDayIndex >= 1 && sl.displayDayIndex <= 7) {
+      offset = sl.displayDayIndex - 1;
+    }
+    if (offset != null) return addDaysIso(betaStart, offset);
+    if (slotRes?.betaWeek) return kstTodayIso();
+    return "";
   }
 
   function renderTodayPreview() {
@@ -644,7 +685,7 @@
     btn.disabled = true;
     try {
       await apiPost("save-attendance", {
-        slotId: state.todaySlot.dayIndex,
+        slotId: state.todaySlot.dayIndex ?? state.todaySlot.slotId,
         attended: true,
         note: document.getElementById("note-input").value || "",
       }, true);
