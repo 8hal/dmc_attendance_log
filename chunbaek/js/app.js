@@ -558,8 +558,12 @@
 
   async function loadToday() {
     try {
+      // ensureSession()이 이미 my-profile을 호출했으면 재사용
+      const profilePromise = state.profile
+        ? Promise.resolve(state.profile)
+        : apiGet("my-profile", {}, true);
       const [prof, slotRes] = await Promise.all([
-        apiGet("my-profile", {}, true),
+        profilePromise,
         apiGet("today-slot", {}, true),
       ]);
       state.profile = prof;
