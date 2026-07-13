@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+  // 춘백 출석 사진 — 서버(Admin SDK)만 쓰기. 읽기는 download token URL로.
+    match /chunbaek/attendance/{seasonId}/{slotId}/{memberId}.jpg {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

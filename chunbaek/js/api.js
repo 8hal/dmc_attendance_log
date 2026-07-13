@@ -191,6 +191,8 @@ const MOCK = {
     nickname: "김러너",
     goalMarathonNetTime: 16200,
     existingPbNetTime: 17520,
+    goalBodyWeightKg: 68.5,
+    goalBodyWeightPrivate: false,
     goalRace: "jtbc",
     goalRaceLabel: "JTBC 서울마라톤",
     resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
@@ -219,11 +221,86 @@ const MOCK = {
       attendSummary: "2/3회",
       dots: "●●○○○",
       slots: [
-        { dayIndex: 36, title: "5km 인터벌", content: "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km", status: "attend", photo: true, note: "페이스 잘 나왔다" },
-        { dayIndex: 37, title: "(휴무)", content: "", status: "off" },
-        { dayIndex: 38, title: "장거리", content: "15km 이지, 페이스 6:00~6:15/km", status: "attend" },
-        { dayIndex: 39, title: "인터벌", content: "6×800m", status: "miss" },
-        { dayIndex: 42, title: "인터벌", content: "5×1km", status: "today" },
+        {
+          slotId: 36,
+          dayIndex: 36,
+          displayDayIndex: 36,
+          date: "2026-04-07",
+          title: "5km 인터벌",
+          content: "워밍업 10분, 5×1km (r:90s), 마무리 이지 2km",
+          status: "attend",
+          attended: true,
+          canEdit: true,
+          editLocked: false,
+          exception: false,
+          photo: true,
+          photoUrl: "",
+          note: "페이스 잘 나왔다",
+        },
+        {
+          slotId: 37,
+          dayIndex: 37,
+          displayDayIndex: 37,
+          date: "2026-04-08",
+          title: "(휴무)",
+          content: "",
+          status: "off",
+          attended: false,
+          canEdit: false,
+          editLocked: false,
+          exception: false,
+          photo: false,
+          photoUrl: "",
+          note: "",
+        },
+        {
+          slotId: 38,
+          dayIndex: 38,
+          displayDayIndex: 38,
+          date: "2026-04-09",
+          title: "장거리",
+          content: "15km 이지, 페이스 6:00~6:15/km",
+          status: "attend",
+          attended: true,
+          canEdit: true,
+          editLocked: false,
+          exception: false,
+          photo: false,
+          photoUrl: "",
+          note: "",
+        },
+        {
+          slotId: 39,
+          dayIndex: 39,
+          displayDayIndex: 39,
+          date: "2026-04-10",
+          title: "인터벌",
+          content: "6×800m",
+          status: "miss",
+          attended: false,
+          canEdit: true,
+          editLocked: false,
+          exception: false,
+          photo: false,
+          photoUrl: "",
+          note: "",
+        },
+        {
+          slotId: 42,
+          dayIndex: 42,
+          displayDayIndex: 42,
+          date: "2026-04-11",
+          title: "인터벌",
+          content: "5×1km",
+          status: "today",
+          attended: false,
+          canEdit: true,
+          editLocked: false,
+          exception: false,
+          photo: false,
+          photoUrl: "",
+          note: "",
+        },
       ],
     },
     {
@@ -240,8 +317,46 @@ const MOCK = {
     weekMetCount: 12,
     participantCount: 38,
     members: [
-      { nickname: "김○○", profileComplete: true, goal: "4:30", goalRaceLabel: "춘천 마라톤", bar: "███", weekDots: "●●●○○", week: "3/3", met: true, seasonAttendRate: 80 },
-      { nickname: "이○○", profileComplete: true, goal: "4:00", goalRaceLabel: "JTBC 서울마라톤", bar: "██░", weekDots: "●●○○○", week: "2/3", met: false, seasonAttendRate: 55 },
+      {
+        memberId: "mock_a",
+        nickname: "김○○",
+        profileComplete: true,
+        goal: "4:30",
+        goalMarathonNetTime: 16200,
+        existingPbNetTime: 17520,
+        existingPb: "4:52",
+        goalBodyWeightKg: 65,
+        goalBodyWeightPrivate: false,
+        goalRaceLabel: "춘천 마라톤",
+        resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
+        bar: "███",
+        weekDots: "●●●○○",
+        week: "3/3",
+        weekTarget: 3,
+        met: true,
+        seasonAttendCount: 12,
+        seasonAttendRate: 80,
+      },
+      {
+        memberId: "mock_b",
+        nickname: "이○○",
+        profileComplete: true,
+        goal: "4:00",
+        goalMarathonNetTime: 14400,
+        existingPbNetTime: 15600,
+        existingPb: "4:20",
+        goalBodyWeightKg: null,
+        goalBodyWeightPrivate: true,
+        goalRaceLabel: "JTBC 서울마라톤",
+        resolutionText: "서울마라톤 4시간 컷!",
+        bar: "██░",
+        weekDots: "●●○○○",
+        week: "2/3",
+        weekTarget: 3,
+        met: false,
+        seasonAttendCount: 8,
+        seasonAttendRate: 55,
+      },
     ],
   },
 };
@@ -350,9 +465,21 @@ function mockGet(action) {
   if (action === "members-roster") return Promise.resolve({ ok: true, members: MOCK.roster });
   if (action === "my-profile") return Promise.resolve({ ok: true, ...preview.profile });
   if (action === "today-slot") return Promise.resolve(preview.todaySlot);
-  if (action === "my-timeline") return Promise.resolve({ ok: true, weeks: MOCK.timeline });
+  if (action === "my-timeline") {
+    return Promise.resolve({ ok: true, photoRequired: false, weeks: MOCK.timeline });
+  }
   if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
   return Promise.reject(new Error(`preview: unknown action ${action}`));
+}
+
+function findMockTimelineSlot(slotId) {
+  const id = Number(slotId);
+  for (const week of MOCK.timeline) {
+    for (const slot of week.slots || []) {
+      if (slot.slotId === id || slot.dayIndex === id) return slot;
+    }
+  }
+  return null;
 }
 
 function mockPost(action, body) {
@@ -372,11 +499,41 @@ function mockPost(action, body) {
   }
   if (action === "save-attendance") {
     const scenario = PREVIEW_SCENARIOS[getPreviewScenario()] || PREVIEW_SCENARIOS["beta-mon"];
-    const slot = scenario.todaySlot.slot;
-    if (slot) slot.attended = true;
-    scenario.profile.stats.seasonAttendCount = (scenario.profile.stats.seasonAttendCount || 0) + 1;
-    scenario.profile.stats.weekAttendCount = (scenario.profile.stats.weekAttendCount || 0) + 1;
-    return Promise.resolve({ ok: true });
+    const slot = findMockTimelineSlot(body.slotId);
+    if (slot) {
+      const attended = !!body.attended;
+      slot.attended = attended;
+      if (Object.prototype.hasOwnProperty.call(body, "note")) {
+        slot.note = body.note || "";
+      }
+      if (Object.prototype.hasOwnProperty.call(body, "photoUrl")) {
+        slot.photoUrl = body.photoUrl || "";
+        slot.photo = !!slot.photoUrl;
+      }
+      if (attended) slot.status = "attend";
+      else if (slot.status === "attend") slot.status = "miss";
+    }
+    if (body.attended) {
+      const todaySlot = scenario.todaySlot?.slot;
+      if (todaySlot && (todaySlot.dayIndex === body.slotId || todaySlot.slotId === body.slotId)) {
+        todaySlot.attended = true;
+      }
+      scenario.profile.stats.seasonAttendCount = (scenario.profile.stats.seasonAttendCount || 0) + 1;
+      scenario.profile.stats.weekAttendCount = (scenario.profile.stats.weekAttendCount || 0) + 1;
+    }
+    return Promise.resolve({
+      ok: true,
+      slotId: body.slotId,
+      attended: !!body.attended,
+      stats: scenario.profile.stats,
+    });
+  }
+  if (action === "upload-attendance-photo") {
+    return Promise.resolve({
+      ok: true,
+      slotId: body.slotId,
+      photoUrl: `https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview.jpg?alt=media&token=preview-token`,
+    });
   }
   if (action === "update-profile") {
     Object.assign(MOCK.profile, {
@@ -384,6 +541,8 @@ function mockPost(action, body) {
       goalRaceNote: body.goalRaceNote || null,
       goalMarathonNetTime: body.goalMarathonNetTime,
       existingPbNetTime: body.existingPbNetTime ?? null,
+      goalBodyWeightKg: body.goalBodyWeightKg ?? null,
+      goalBodyWeightPrivate: !!body.goalBodyWeightPrivate,
       resolutionText: body.resolutionText || null,
       goalRaceLabel: body.goalRace === "jtbc"
         ? "JTBC 서울마라톤"

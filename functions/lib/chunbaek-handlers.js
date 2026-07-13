@@ -2,6 +2,8 @@
  * 춘백 시즌3 API handlers — /api/chunbaek
  */
 const { FieldValue } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
+const crypto = require("crypto");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
 const {
@@ -26,8 +28,12 @@ const {
 
 const GOAL_MIN_SEC = 7200;
 const GOAL_MAX_SEC = 25200;
+const GOAL_WEIGHT_MIN_KG = 30;
+const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
 const GOAL_RACE_NOTE_MAX = 80;
+const CHUNBAEK_SEASON_ID = "chunbaek-s3";
+const PHOTO_UPLOAD_MAX_BYTES = 2 * 1024 * 1024;
 
 function parseGoalRace(body) {
   const goalRace = String(body.goalRace || "").trim();
@@ -118,6 +124,8 @@ function memberProfilePayload(memberId, data, s3, stats) {
     goalMarathonNetTime: s3.goalMarathonNetTime ?? null,
     existingPbNetTime: s3.existingPbNetTime ?? null,
     resolutionText: s3.resolutionText ?? null,
+    goalBodyWeightKg: s3.goalBodyWeightKg ?? null,
+    goalBodyWeightPrivate: !!s3.goalBodyWeightPrivate,
     goalRace: s3.goalRace ?? null,
     goalRaceNote: s3.goalRaceNote ?? null,
     goalRaceLabel: formatGoalRaceLabel(s3.goalRace, s3.goalRaceNote),
@@ -131,12 +139,31 @@ function findSlotById(slots, slotId) {
   return slots.find((s) => getSlotKey(s) === idStr || String(s.id) === idStr) || null;
 }
 
+function parseOptionalBodyWeightKg(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < GOAL_WEIGHT_MIN_KG || n > GOAL_WEIGHT_MAX_KG) {
+    return {
+      error: `goalBodyWeightKg must be ${GOAL_WEIGHT_MIN_KG}~${GOAL_WEIGHT_MAX_KG}`,
+    };
+  }
+  return Math.round(n * 10) / 10;
+}
+
 function parseProfileFields(body) {
   const goalMarathonNetTime = Number(body.goalMarathonNetTime);
   const existingPbNetTime = parseOptionalSeconds(body.existingPbNetTime);
   const resolutionText = String(body.resolutionText || "").trim().slice(0, 200) || null;
   const goalRaceParsed = parseGoalRace(body);
   if (goalRaceParsed.error) return { error: goalRaceParsed.error };
+  const weightParsed = parseOptionalBodyWeightKg(body.goalBodyWeightKg);
+  if (weightParsed && typeof weightParsed === "object" && weightParsed.error) {
+    return weightParsed;
+  }
+  const goalBodyWeightKg = weightParsed;
+  const goalBodyWeightPrivate = goalBodyWeightKg === null
+    ? false
+    : !!body.goalBodyWeightPrivate;
   if (!Number.isFinite(goalMarathonNetTime)
     || goalMarathonNetTime < GOAL_MIN_SEC
     || goalMarathonNetTime > GOAL_MAX_SEC) {
@@ -150,6 +177,8 @@ function parseProfileFields(body) {
     resolutionText,
     goalRace: goalRaceParsed.goalRace,
     goalRaceNote: goalRaceParsed.goalRaceNote,
+    goalBodyWeightKg,
+    goalBodyWeightPrivate,
   };
 }
 
@@ -168,6 +197,13 @@ function buildProfileUpdate(parsed) {
     update["chunbaekS3.existingPbNetTime"] = parsed.existingPbNetTime;
   } else {
     update["chunbaekS3.existingPbNetTime"] = FieldValue.delete();
+  }
+  if (parsed.goalBodyWeightKg !== null) {
+    update["chunbaekS3.goalBodyWeightKg"] = parsed.goalBodyWeightKg;
+    update["chunbaekS3.goalBodyWeightPrivate"] = parsed.goalBodyWeightPrivate;
+  } else {
+    update["chunbaekS3.goalBodyWeightKg"] = FieldValue.delete();
+    update["chunbaekS3.goalBodyWeightPrivate"] = FieldValue.delete();
   }
   return update;
 }
@@ -341,8 +377,10 @@ async function handleSaveAttendance(req, res, db) {
   const body = req.body || {};
   const slotId = body.slotId;
   const attended = !!body.attended;
-  const note = String(body.note || "").slice(0, 500);
-  const photoUrl = String(body.photoUrl || "").slice(0, 2000);
+  const hasNote = Object.prototype.hasOwnProperty.call(body, "note");
+  const hasPhotoUrl = Object.prototype.hasOwnProperty.call(body, "photoUrl");
+  const note = hasNote ? String(body.note || "").slice(0, 500) : undefined;
+  const photoUrl = hasPhotoUrl ? String(body.photoUrl || "").slice(0, 2000) : undefined;
 
   if (slotId === undefined || slotId === null || slotId === "") {
     return res.status(400).json({ ok: false, error: "slotId required" });
@@ -373,21 +411,32 @@ async function handleSaveAttendance(req, res, db) {
   if (isMemberEditLocked(slot.date)) {
     return res.status(403).json({ ok: false, error: "week deadline passed" });
   }
-  if (config.photoRequired && attended && !photoUrl) {
-    return res.status(400).json({ ok: false, error: "photoUrl required" });
-  }
 
   const docId = `${auth.memberId}_${getSlotKey(slot)}`;
-  await db.collection("chunbaek_attendance").doc(docId).set({
+  const existingSnap = await db.collection("chunbaek_attendance").doc(docId).get();
+  const existing = existingSnap.exists ? existingSnap.data() : null;
+  if (existing?.exception) {
+    return res.status(403).json({ ok: false, error: "exception slot" });
+  }
+
+  if (config.photoRequired && attended) {
+    const effectivePhoto = hasPhotoUrl ? photoUrl : (existing?.photoUrl || "");
+    if (!effectivePhoto) {
+      return res.status(400).json({ ok: false, error: "photoUrl required" });
+    }
+  }
+
+  const update = {
     memberId: auth.memberId,
     slotId: slot.dayIndex ?? Number(slot.id),
     attended,
-    exception: false,
-    note,
-    photoUrl,
     updatedAt: FieldValue.serverTimestamp(),
     updatedBy: "member",
-  }, { merge: true });
+  };
+  if (hasNote) update.note = note;
+  if (hasPhotoUrl) update.photoUrl = photoUrl;
+
+  await db.collection("chunbaek_attendance").doc(docId).set(update, { merge: true });
 
   const { stats } = await loadMemberStatsContext(db, auth.memberId);
   return res.json({
@@ -412,7 +461,130 @@ async function handleMyTimeline(req, res, db) {
   ]);
   const today = todayKstDate();
   const weeks = buildTimelineWeeks(slots, attendanceMap, config, today);
-  return res.json({ ok: true, weeks });
+  return res.json({
+    ok: true,
+    photoRequired: !!config.photoRequired,
+    weeks,
+  });
+}
+
+function parseImageBase64(body) {
+  const raw = String(body.imageBase64 || body.data || "").trim();
+  if (!raw) return { error: "imageBase64 required" };
+  const match = /^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/i.exec(raw);
+  const b64 = match ? match[2] : raw;
+  let buffer;
+  try {
+    buffer = Buffer.from(b64, "base64");
+  } catch (e) {
+    return { error: "invalid base64 image" };
+  }
+  if (!buffer.length || buffer.length > PHOTO_UPLOAD_MAX_BYTES) {
+    return { error: `image must be under ${PHOTO_UPLOAD_MAX_BYTES} bytes` };
+  }
+  return { buffer };
+}
+
+function buildStorageDownloadUrl(bucketName, storagePath, downloadToken) {
+  const encoded = encodeURIComponent(storagePath);
+  const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+  if (emulatorHost) {
+    return `http://${emulatorHost}/v0/b/${bucketName}/o/${encoded}?alt=media&token=${downloadToken}`;
+  }
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${downloadToken}`;
+}
+
+function resolveStorageBucket() {
+  const storage = getStorage();
+  if (process.env.FIREBASE_STORAGE_BUCKET) {
+    return storage.bucket(process.env.FIREBASE_STORAGE_BUCKET);
+  }
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+  if (projectId) {
+    return storage.bucket(`${projectId}.firebasestorage.app`);
+  }
+  return storage.bucket();
+}
+
+async function saveAttendancePhotoToStorage(bucket, storagePath, buffer) {
+  const downloadToken = crypto.randomUUID();
+  const file = bucket.file(storagePath);
+  await file.save(buffer, {
+    metadata: {
+      contentType: "image/jpeg",
+      cacheControl: "public, max-age=31536000",
+      metadata: {
+        firebaseStorageDownloadTokens: downloadToken,
+      },
+    },
+    resumable: false,
+  });
+  return buildStorageDownloadUrl(bucket.name, storagePath, downloadToken);
+}
+
+async function handleUploadAttendancePhoto(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const body = req.body || {};
+  const slotId = body.slotId;
+  if (slotId === undefined || slotId === null || slotId === "") {
+    return res.status(400).json({ ok: false, error: "slotId required" });
+  }
+
+  const parsed = parseImageBase64(body);
+  if (parsed.error) {
+    return res.status(400).json({ ok: false, error: parsed.error });
+  }
+
+  const [config, slots] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+  ]);
+  const slot = findSlotById(slots, slotId);
+  if (!slot) {
+    return res.status(404).json({ ok: false, error: "slot not found" });
+  }
+  const today = todayKstDate();
+  if (isBetaSlot(slot)) {
+    if (!isDateInBetaWeek(config, slots, today)) {
+      return res.status(403).json({ ok: false, error: "beta week ended" });
+    }
+  } else {
+    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    if (seasonStart && today < seasonStart) {
+      return res.status(403).json({ ok: false, error: "season not started" });
+    }
+  }
+  if (slot.isProgramOff) {
+    return res.status(400).json({ ok: false, error: "program off day" });
+  }
+  if (isMemberEditLocked(slot.date)) {
+    return res.status(403).json({ ok: false, error: "week deadline passed" });
+  }
+
+  const docId = `${auth.memberId}_${getSlotKey(slot)}`;
+  const existingSnap = await db.collection("chunbaek_attendance").doc(docId).get();
+  if (existingSnap.exists && existingSnap.data().exception) {
+    return res.status(403).json({ ok: false, error: "exception slot" });
+  }
+
+  const storagePath = `chunbaek/attendance/${CHUNBAEK_SEASON_ID}/${getSlotKey(slot)}/${auth.memberId}.jpg`;
+  try {
+    const bucket = resolveStorageBucket();
+    const photoUrl = await saveAttendancePhotoToStorage(bucket, storagePath, parsed.buffer);
+    if (photoUrl.length > 2000) {
+      return res.status(500).json({ ok: false, error: "photoUrl too long" });
+    }
+    return res.json({ ok: true, photoUrl, slotId: slot.dayIndex ?? Number(slot.id) });
+  } catch (err) {
+    console.error("[chunbaek] upload-attendance-photo failed", err);
+    const detail = err?.message ? String(err.message).slice(0, 120) : "unknown";
+    return res.status(500).json({ ok: false, error: `photo upload failed: ${detail}` });
+  }
 }
 
 async function handleTeamSummary(req, res, db) {
@@ -450,10 +622,19 @@ async function handleTeamSummary(req, res, db) {
       goalMarathonNetTime: p.s3.goalMarathonNetTime ?? null,
       goalRace: p.s3.goalRace ?? null,
       goalRaceLabel: formatGoalRaceLabel(p.s3.goalRace, p.s3.goalRaceNote),
+      existingPbNetTime: p.s3.existingPbNetTime ?? null,
+      existingPb: formatGoalTime(p.s3.existingPbNetTime),
+      resolutionText: p.s3.resolutionText ?? null,
+      goalBodyWeightKg: (p.s3.goalBodyWeightKg != null && !p.s3.goalBodyWeightPrivate)
+        ? p.s3.goalBodyWeightKg
+        : null,
+      goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
       bar: weekBar(stats.weekAttendCount, stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       week: `${stats.weekAttendCount}/${stats.weekTarget}`,
+      weekTarget: stats.weekTarget,
       met: stats.weekTargetMet,
+      seasonAttendCount: stats.seasonAttendCount,
       seasonAttendRate: stats.seasonAttendRate,
     });
   }
@@ -500,6 +681,9 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "save-attendance") {
     return handleSaveAttendance(req, res, db);
+  }
+  if (action === "upload-attendance-photo") {
+    return handleUploadAttendancePhoto(req, res, db);
   }
   if (action === "my-timeline") {
     return handleMyTimeline(req, res, db);

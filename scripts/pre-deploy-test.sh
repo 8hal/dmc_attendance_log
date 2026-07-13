@@ -48,7 +48,7 @@ INNER_CMD="${SEED} && ${RUNNER}"
 EMU_LOG="${TMPDIR:-/tmp}/dmc-emulators-exec-$$.log"
 set +e
 firebase emulators:exec \
-  --only functions,hosting,firestore \
+  --only functions,hosting,firestore,storage \
   --project dmc-attendance \
   "$INNER_CMD" 2>&1 | tee "$EMU_LOG"
 EXIT_CODE=${PIPESTATUS[0]}
