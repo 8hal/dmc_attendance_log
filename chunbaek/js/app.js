@@ -397,6 +397,12 @@
     weekEl.classList.toggle("met", weekTarget > 0 && weekCount >= weekTarget);
   }
 
+  function setElementVisible(el, visible) {
+    if (!el) return;
+    el.hidden = !visible;
+    el.style.display = visible ? "" : "none";
+  }
+
   function setTodayPanels({ beforeSeason = false, afterSeason = false, active = true, programOff = false }) {
     document.getElementById("before-season-card").hidden = !beforeSeason;
     document.getElementById("after-season-card").hidden = !afterSeason;
@@ -405,8 +411,7 @@
     if (!beforeSeason) {
       document.getElementById("before-season-dday").textContent = "";
     }
-    const sat = document.getElementById("saturday-notice");
-    if (sat) sat.hidden = true;
+    setElementVisible(document.getElementById("saturday-notice"), false);
   }
 
   function paintBeforeSeason(prof, slotRes) {
