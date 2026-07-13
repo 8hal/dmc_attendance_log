@@ -813,9 +813,14 @@ body {
   font-weight: 700;
   padding: 10px;
   border-radius: 0 0 0 10px;
-  width: min(148px, 38vw);
+  width: min(168px, 42vw);
   border-bottom: 2px solid var(--chun-orange);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.demo-nav-scenario {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--chun-orange);
 }
 .demo-nav select {
   width: 100%;

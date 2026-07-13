@@ -17,6 +17,167 @@ function useMock() {
   return PREVIEW_MODE;
 }
 
+function getPreviewScenario() {
+  return new URLSearchParams(location.search).get("scenario") || "beta-mon";
+}
+
+const PREVIEW_SCENARIOS = {
+  "beta-mon": {
+    profile: {
+      stats: {
+        seasonDayIndex: 1,
+        seasonAttendCount: 0,
+        seasonAttendRate: 0,
+        weekAttendCount: 0,
+        weekTarget: 3,
+        inBetaWeek: true,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: {
+        dayIndex: 901,
+        displayDayIndex: 1,
+        date: "2026-07-13",
+        week: 0,
+        trainingTitle: "베타 D1 — 이지런 5km",
+        trainingContent: "워밍업 10분 · 본편 5km 이지 · 마무리 스트레칭",
+        isProgramOff: false,
+        attended: false,
+      },
+      beforeSeason: false,
+      afterSeason: false,
+      betaWeek: true,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+      betaWeekStartDate: "2026-07-13",
+      betaWeekEndDate: "2026-07-19",
+    },
+  },
+  "beta-sat": {
+    profile: {
+      stats: {
+        seasonDayIndex: 4,
+        seasonAttendCount: 3,
+        seasonAttendRate: 100,
+        weekAttendCount: 3,
+        weekTarget: 3,
+        inBetaWeek: true,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: {
+        dayIndex: 904,
+        displayDayIndex: 4,
+        date: "2026-07-16",
+        week: 0,
+        trainingTitle: "베타 D4 — 동마클 토요일",
+        trainingContent: "동마클 정모 + 춘백 출석 각각",
+        isProgramOff: false,
+        attended: false,
+      },
+      beforeSeason: false,
+      afterSeason: false,
+      betaWeek: true,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+      betaWeekStartDate: "2026-07-13",
+      betaWeekEndDate: "2026-07-19",
+    },
+  },
+  "beta-no-slot": {
+    profile: {
+      stats: {
+        seasonDayIndex: 1,
+        seasonAttendCount: 1,
+        seasonAttendRate: 100,
+        weekAttendCount: 1,
+        weekTarget: 3,
+        inBetaWeek: true,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: null,
+      beforeSeason: false,
+      afterSeason: false,
+      betaWeek: true,
+      betaNoSlotToday: true,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+      betaWeekStartDate: "2026-07-13",
+      betaWeekEndDate: "2026-07-19",
+    },
+  },
+  "before-season": {
+    profile: {
+      stats: {
+        seasonDayIndex: 0,
+        seasonAttendCount: 0,
+        seasonAttendRate: 0,
+        weekAttendCount: 0,
+        weekTarget: 3,
+        inBetaWeek: false,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: null,
+      beforeSeason: true,
+      afterSeason: false,
+      betaWeek: false,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+      betaWeekStartDate: "2026-07-13",
+      betaWeekEndDate: "2026-07-19",
+    },
+  },
+  season: {
+    profile: {
+      stats: {
+        seasonDayIndex: 42,
+        seasonAttendCount: 28,
+        seasonAttendRate: 68,
+        weekAttendCount: 2,
+        weekTarget: 3,
+        inBetaWeek: false,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: {
+        dayIndex: 42,
+        displayDayIndex: 42,
+        date: "2026-04-11",
+        week: 7,
+        trainingTitle: "동마클 토요일 훈련",
+        trainingContent: "",
+        isProgramOff: false,
+        attended: false,
+      },
+      beforeSeason: false,
+      afterSeason: false,
+      betaWeek: false,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+    },
+  },
+};
+
+function previewPayload() {
+  const base = PREVIEW_SCENARIOS[getPreviewScenario()] || PREVIEW_SCENARIOS["beta-mon"];
+  return {
+    profile: { ...MOCK.profile, ...base.profile, stats: { ...MOCK.profile.stats, ...base.profile.stats } },
+    todaySlot: base.todaySlot,
+  };
+}
+
 const MOCK = {
   roster: [
     { memberId: "m1", nickname: "게살볶음밥", profileComplete: false },
@@ -185,18 +346,10 @@ async function apiPost(action, body, needToken = false) {
 }
 
 function mockGet(action) {
+  const preview = previewPayload();
   if (action === "members-roster") return Promise.resolve({ ok: true, members: MOCK.roster });
-  if (action === "my-profile") return Promise.resolve({ ok: true, ...MOCK.profile });
-  if (action === "today-slot") {
-    return Promise.resolve({
-      ok: true,
-      slot: MOCK.todaySlot,
-      beforeSeason: false,
-      afterSeason: false,
-      startDate: "2026-07-20",
-      endDate: "2026-10-27",
-    });
-  }
+  if (action === "my-profile") return Promise.resolve({ ok: true, ...preview.profile });
+  if (action === "today-slot") return Promise.resolve(preview.todaySlot);
   if (action === "my-timeline") return Promise.resolve({ ok: true, weeks: MOCK.timeline });
   if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
   return Promise.reject(new Error(`preview: unknown action ${action}`));
@@ -218,8 +371,11 @@ function mockPost(action, body) {
     });
   }
   if (action === "save-attendance") {
-    MOCK.todaySlot.attended = true;
-    MOCK.profile.stats.weekAttendCount = 3;
+    const scenario = PREVIEW_SCENARIOS[getPreviewScenario()] || PREVIEW_SCENARIOS["beta-mon"];
+    const slot = scenario.todaySlot.slot;
+    if (slot) slot.attended = true;
+    scenario.profile.stats.seasonAttendCount = (scenario.profile.stats.seasonAttendCount || 0) + 1;
+    scenario.profile.stats.weekAttendCount = (scenario.profile.stats.weekAttendCount || 0) + 1;
     return Promise.resolve({ ok: true });
   }
   if (action === "update-profile") {

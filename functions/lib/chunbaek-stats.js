@@ -110,6 +110,19 @@ function slotTrainingContent(slot) {
   return slot.trainingContent || "";
 }
 
+/** Firestore Timestamp·문자열 혼재 시 ISO YYYY-MM-DD 로 통일 */
+function normalizeSlotDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.slice(0, 10);
+  if (typeof value.toDate === "function") {
+    return value.toDate().toISOString().slice(0, 10);
+  }
+  if (typeof value === "object" && value._seconds != null) {
+    return new Date(value._seconds * 1000).toISOString().slice(0, 10);
+  }
+  return String(value).slice(0, 10);
+}
+
 function getSlotKey(slot) {
   return String(slot.dayIndex ?? slot.id);
 }
@@ -140,7 +153,7 @@ async function loadMemberAttendance(db, memberId) {
 }
 
 function findTodaySlot(slots, today) {
-  return slots.find((s) => s.date === today) || null;
+  return slots.find((s) => normalizeSlotDate(s.date) === today) || null;
 }
 
 function findWeekForDate(slots, today) {
@@ -368,11 +381,12 @@ function seasonMeta(bounds) {
 
 function slotPayloadFromSlot(slot, attendanceMap) {
   const att = getAttendance(attendanceMap, slot);
+  const date = normalizeSlotDate(slot.date);
   return {
     slotId: slot.dayIndex ?? Number(slot.id),
     dayIndex: slot.dayIndex,
     displayDayIndex: displayDayIndex(slot),
-    date: slot.date,
+    date,
     week: slot.week,
     trainingTitle: slotTrainingTitle(slot),
     trainingContent: slotTrainingContent(slot),
@@ -392,6 +406,7 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
     ...seasonMeta(bounds),
     betaWeekStartDate: betaBounds?.startDate || null,
     betaWeekEndDate: betaBounds?.endDate || null,
+    photoRequired: !!config.photoRequired,
   };
 
   const todaySlot = findTodaySlot(slots, today);
@@ -409,6 +424,16 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
     return { slot: null, beforeSeason: false, afterSeason: false, noSlots: true, betaWeek: false, ...meta };
   }
   if (today < startDate) {
+    if (isDateInBetaWeek(config, slots, today)) {
+      return {
+        slot: null,
+        beforeSeason: false,
+        afterSeason: false,
+        betaWeek: true,
+        betaNoSlotToday: true,
+        ...meta,
+      };
+    }
     return { slot: null, beforeSeason: true, afterSeason: false, betaWeek: false, ...meta };
   }
   if (today > endDate) {

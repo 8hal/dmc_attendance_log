@@ -379,11 +379,17 @@
     const s = prof.stats || {};
     document.getElementById("hdr-nickname").textContent = `${prof.nickname || "—"}님`;
     const dayIdx = s.seasonDayIndex || 0;
-    document.getElementById("hdr-day").textContent = dayIdx > 0
-      ? `${dayIdx}일차 / 100일`
-      : "시작 전";
+    const dayEl = document.getElementById("hdr-day");
+    if (dayIdx > 0) {
+      dayEl.textContent = s.inBetaWeek
+        ? `베타 ${dayIdx}일차`
+        : `${dayIdx}일차 / 100일`;
+    } else {
+      dayEl.textContent = "시작 전";
+    }
+    const attendSuffix = s.inBetaWeek ? " (0주차 체험)" : "";
     document.getElementById("hdr-attend").textContent =
-      `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%`;
+      `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%${attendSuffix}`;
     const weekEl = document.getElementById("week-bar");
     const weekCount = s.weekAttendCount || 0;
     const weekTarget = s.weekTarget || 3;
@@ -471,9 +477,18 @@
 
   function updateSaturdayNotice(slotDate) {
     const el = document.getElementById("saturday-notice");
-    if (!el || !slotDate) return;
-    const d = new Date(slotDate + "T12:00:00");
-    el.hidden = d.getDay() !== 6;
+    if (!el) return;
+    if (!slotDate) {
+      el.hidden = true;
+      return;
+    }
+    const [y, m, d] = slotDate.split("-").map(Number);
+    el.hidden = new Date(y, m - 1, d).getDay() !== 6;
+  }
+
+  function setPhotoRowVisible(photoRequired) {
+    const row = document.getElementById("photo-optional-row");
+    if (row) row.hidden = !photoRequired;
   }
 
   function setTodayProgramOff(isOff) {
@@ -492,24 +507,35 @@
       state.profile = prof;
 
       if (slotRes.beforeSeason) {
+        setPhotoRowVisible(false);
+        updateSaturdayNotice(null);
         paintBeforeSeason(prof, slotRes);
         return;
       }
       if (slotRes.afterSeason) {
+        setPhotoRowVisible(false);
+        updateSaturdayNotice(null);
         paintAfterSeason(prof, slotRes);
         return;
       }
 
       state.todaySlot = slotRes.slot || null;
       paintStatsHeader(prof);
+      setPhotoRowVisible(!!slotRes.photoRequired);
+      updateSaturdayNotice(null);
 
       const sl = state.todaySlot;
       if (!sl) {
         setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: false });
-        document.getElementById("before-season-title").textContent = "오늘 훈련 슬롯이 없습니다";
-        document.getElementById("before-season-desc").textContent = "운영진에게 문의해 주세요.";
+        const betaNoSlot = !!slotRes.betaNoSlotToday;
+        document.getElementById("before-season-title").textContent = betaNoSlot
+          ? "오늘 0주차 훈련이 아직 등록되지 않았습니다"
+          : "오늘 훈련 슬롯이 없습니다";
+        document.getElementById("before-season-desc").textContent = betaNoSlot
+          ? "운영진이 admin에서 0주차(베타) 훈련을 저장하면 여기에 표시됩니다."
+          : "운영진에게 문의해 주세요.";
         document.getElementById("before-season-card").hidden = false;
-        document.getElementById("before-season-eyebrow").textContent = "안내";
+        document.getElementById("before-season-eyebrow").textContent = betaNoSlot ? "0주차 베타" : "안내";
         return;
       }
 
@@ -521,20 +547,7 @@
         return;
       }
 
-      const d = new Date(sl.date + "T12:00:00");
-      const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-      const dayNum = sl.displayDayIndex ?? sl.dayIndex;
-      const dayLabel = `${dayNum}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
-      document.getElementById("today-day").textContent = dayLabel;
-      document.getElementById("today-training").textContent =
-        "📋 " + (sl.trainingTitle || sl.trainingLabel || "훈련 내용 준비 중");
-      const detailEl = document.getElementById("today-training-detail");
-      const content = sl.trainingContent || "";
-      if (detailEl) {
-        detailEl.textContent = content;
-        detailEl.style.display = content ? "block" : "none";
-      }
-      updateSaturdayNotice(sl.date);
+      paintTodaySlot(sl);
 
       const btn = document.getElementById("btn-attend");
       if (sl.attended) {
@@ -547,9 +560,44 @@
         btn.disabled = false;
       }
     } catch (e) {
+      console.error("[chunbaek] loadToday failed", e);
+      setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
+      paintTodaySlot(null);
       if (PREVIEW_MODE) renderTodayPreview();
       else showToast(e.message, true);
     }
+  }
+
+  function paintTodaySlot(sl) {
+    if (!sl || !sl.date) {
+      document.getElementById("today-day").textContent = "오늘 훈련 정보를 불러오지 못했습니다";
+      document.getElementById("today-training").textContent = "잠시 후 다시 시도하거나 운영진에게 문의해 주세요.";
+      const detailEl = document.getElementById("today-training-detail");
+      if (detailEl) {
+        detailEl.textContent = "";
+        detailEl.style.display = "none";
+      }
+      return;
+    }
+
+    const [y, m, d] = String(sl.date).slice(0, 10).split("-").map(Number);
+    const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(y, m - 1, d).getDay()];
+    const dayNum = sl.displayDayIndex ?? sl.dayIndex;
+    const dayLabel = `${dayNum}일차 · ${String(sl.date).slice(5, 7)}월 ${String(sl.date).slice(8, 10)}일 (${dow})`;
+    document.getElementById("today-day").textContent = dayLabel;
+
+    const title = sl.trainingTitle || sl.trainingLabel || "";
+    document.getElementById("today-training").textContent = title
+      ? `📋 ${title}`
+      : "📋 훈련 제목이 아직 없습니다 (admin에서 0주차 저장 필요)";
+
+    const detailEl = document.getElementById("today-training-detail");
+    const content = sl.trainingContent || "";
+    if (detailEl) {
+      detailEl.textContent = content;
+      detailEl.style.display = content ? "block" : "none";
+    }
+    updateSaturdayNotice(sl.date);
   }
 
   function renderTodayPreview() {
@@ -829,6 +877,19 @@
       showView(v);
     });
 
+    const scenarioSelect = document.getElementById("demo-scenario");
+    if (scenarioSelect) {
+      const params = new URLSearchParams(location.search);
+      const currentScenario = params.get("scenario") || "beta-mon";
+      scenarioSelect.value = currentScenario;
+      scenarioSelect.addEventListener("change", async (e) => {
+        const next = new URLSearchParams(location.search);
+        next.set("preview", "1");
+        next.set("scenario", e.target.value);
+        location.search = next.toString();
+      });
+    }
+
     if (PREVIEW_MODE) {
       document.getElementById("preview-banner").style.display = "block";
       document.getElementById("demo-nav").style.display = "block";
@@ -839,8 +900,15 @@
     window.addEventListener("hashchange", () => { navigateFromHash(); });
 
     if (PREVIEW_MODE && !location.hash) {
-      /* 온보딩 플로우 확인용 — 첫 진입은 환영 화면 */
-      showView("welcome");
+      if (!getToken()) setToken("preview-token");
+      const params = new URLSearchParams(location.search);
+      if (params.get("scenario")) {
+        showView("today");
+        await loadToday();
+      } else {
+        /* 온보딩 플로우 확인용 — 첫 진입은 환영 화면 */
+        showView("welcome");
+      }
     } else {
       await navigateFromHash();
     }

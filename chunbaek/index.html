@@ -31,6 +31,14 @@
       <option value="team">팀</option>
       <option value="me">나</option>
     </select>
+    <div class="demo-nav-scenario">홈 시나리오</div>
+    <select id="demo-scenario" aria-label="홈 시나리오 선택">
+      <option value="beta-mon">0주차 · 월(베타 1일차)</option>
+      <option value="beta-sat">0주차 · 토(토요일 안내)</option>
+      <option value="beta-no-slot">0주차 · 훈련 미등록</option>
+      <option value="before-season">본시즌 시작 전</option>
+      <option value="season">본시즌 42일차</option>
+    </select>
   </div>
 
   <div class="app">
@@ -148,7 +156,7 @@
             <p class="before-season-desc" id="after-season-desc">수고하셨습니다. 시즌 출석 기록은 내 100일·나 탭에서 확인할 수 있습니다.</p>
           </div>
           <p class="program-off-msg" id="program-off-msg" hidden>오늘은 프로그램 휴무일입니다</p>
-          <div id="today-active">
+          <div id="today-active" hidden>
           <div class="today-slot-card">
             <div class="today-day" id="today-day">—</div>
             <div class="today-training" id="today-training"></div>
@@ -162,7 +170,7 @@
           <div class="attend-cta">
             <button type="button" class="btn btn-primary" id="btn-attend">✓  출석하기</button>
           </div>
-          <div class="optional-row">
+          <div class="optional-row" id="photo-optional-row" hidden>
             <span>사진 (선택)</span>
             <button type="button" class="btn btn-ghost" style="width:auto" disabled>+ 추가</button>
           </div>
