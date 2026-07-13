@@ -390,6 +390,13 @@ function rateBar(rate) {
   return `${"█".repeat(filled)}${"░".repeat(3 - filled)}`;
 }
 
+/** 팀 탭 이번 주 진행 — PRD §7.3 (최대 3칸, 출석 횟수 기준) */
+function weekBar(attendCount, target = 3) {
+  const slots = 3;
+  const filled = Math.min(slots, Math.max(0, attendCount));
+  return `${"█".repeat(filled)}${"░".repeat(slots - filled)}`;
+}
+
 function seasonBounds(slots) {
   const season = seasonSlotsOnly(slots);
   if (!season.length) return { startDate: null, endDate: null };
@@ -510,6 +517,8 @@ module.exports = {
   buildTimelineWeeks,
   formatGoalTime,
   rateBar,
+  weekBar,
+  weekDots,
   todaySlotPayload,
   getSlotKey,
   getAttendance,

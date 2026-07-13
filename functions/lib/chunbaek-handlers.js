@@ -14,7 +14,8 @@ const {
   todayKstDate,
   isMemberEditLocked,
   formatGoalTime,
-  rateBar,
+  weekBar,
+  weekDots,
   getSlotKey,
   isBetaSlot,
   isDateInBetaWeek,
@@ -439,6 +440,7 @@ async function handleTeamSummary(req, res, db) {
       : emptyStats();
     rateSum += stats.seasonAttendRate;
     if (stats.weekTargetMet) weekMetCount += 1;
+    const currentWeek = stats.currentWeek;
     members.push({
       memberId: p.memberId,
       nickname: p.data.nickname || "",
@@ -447,7 +449,8 @@ async function handleTeamSummary(req, res, db) {
       goalMarathonNetTime: p.s3.goalMarathonNetTime ?? null,
       goalRace: p.s3.goalRace ?? null,
       goalRaceLabel: formatGoalRaceLabel(p.s3.goalRace, p.s3.goalRaceNote),
-      bar: rateBar(stats.seasonAttendRate),
+      bar: weekBar(stats.weekAttendCount, stats.weekTarget),
+      weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       week: `${stats.weekAttendCount}/${stats.weekTarget}`,
       met: stats.weekTargetMet,
       seasonAttendRate: stats.seasonAttendRate,

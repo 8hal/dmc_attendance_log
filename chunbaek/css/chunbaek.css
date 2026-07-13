@@ -760,7 +760,7 @@ body {
   font-size: 14px;
 }
 .team-goal { font-size: 12px; color: var(--text-muted); }
-.team-bar { color: var(--chun-orange); letter-spacing: 1px; font-weight: 700; }
+.team-week-dots { font-size: 14px; letter-spacing: 3px; }
 
 /* ── 나 ── */
 .profile-dl {

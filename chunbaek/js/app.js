@@ -859,7 +859,7 @@
           <div class="team-goal">목표 ${m.goal}${m.goalRaceLabel ? ` · ${escapeHtml(m.goalRaceLabel)}` : ""}</div>
         </div>
         <div style="text-align:right">
-          <div class="team-bar">${m.bar}</div>
+          <div class="week-dots team-week-dots" aria-label="이번 주 출석 ${escapeHtml(m.week)}">${m.weekDots || m.bar}</div>
           <div class="team-goal">${m.week} ${m.met ? "✓" : ""}</div>
         </div>
       </div>

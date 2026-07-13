@@ -14,6 +14,7 @@ const {
   isDateInBetaWeek,
   betaDayIndexForDate,
   defaultWeekForAdmin,
+  weekBar,
   BETA_DAY_INDEX_BASE,
 } = require("../functions/lib/chunbaek-stats");
 
@@ -123,6 +124,10 @@ const betaSlotsNoDate = [{
 const betaNoDateField = todaySlotPayload(betaSlotsNoDate, {}, "2026-07-13", config);
 assert.equal(betaNoDateField.slot.date, "2026-07-13");
 assert.equal(betaNoDateField.slot.trainingTitle, "베타 D1");
+
+assert.equal(weekBar(1, 3), "█░░");
+assert.equal(weekBar(3, 3), "███");
+assert.equal(weekBar(4, 3), "███");
 
 // --- legacy April fixtures (시즌 슬롯만) ---
 const aprilSlots = [
