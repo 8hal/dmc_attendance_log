@@ -24,6 +24,8 @@ const {
   isDateInBetaWeek,
   seasonSlotsOnly,
   seasonBounds,
+  PHOTO_MAX_PER_SLOT,
+  normalizePhotoUrls,
 } = require("./chunbaek-stats");
 
 const GOAL_MIN_SEC = 7200;
@@ -379,8 +381,19 @@ async function handleSaveAttendance(req, res, db) {
   const attended = !!body.attended;
   const hasNote = Object.prototype.hasOwnProperty.call(body, "note");
   const hasPhotoUrl = Object.prototype.hasOwnProperty.call(body, "photoUrl");
+  const hasPhotoUrls = Object.prototype.hasOwnProperty.call(body, "photoUrls");
   const note = hasNote ? String(body.note || "").slice(0, 500) : undefined;
   const photoUrl = hasPhotoUrl ? String(body.photoUrl || "").slice(0, 2000) : undefined;
+  let photoUrls;
+  if (hasPhotoUrls) {
+    if (!Array.isArray(body.photoUrls)) {
+      return res.status(400).json({ ok: false, error: "photoUrls must be an array" });
+    }
+    photoUrls = body.photoUrls
+      .map((u) => String(u || "").trim().slice(0, 2000))
+      .filter(Boolean)
+      .slice(0, PHOTO_MAX_PER_SLOT);
+  }
 
   if (slotId === undefined || slotId === null || slotId === "") {
     return res.status(400).json({ ok: false, error: "slotId required" });
@@ -420,8 +433,11 @@ async function handleSaveAttendance(req, res, db) {
   }
 
   if (config.photoRequired && attended) {
-    const effectivePhoto = hasPhotoUrl ? photoUrl : (existing?.photoUrl || "");
-    if (!effectivePhoto) {
+    let effectiveUrls;
+    if (hasPhotoUrls) effectiveUrls = photoUrls;
+    else if (hasPhotoUrl) effectiveUrls = photoUrl ? [photoUrl] : [];
+    else effectiveUrls = normalizePhotoUrls(existing);
+    if (!effectiveUrls.length) {
       return res.status(400).json({ ok: false, error: "photoUrl required" });
     }
   }
@@ -434,7 +450,13 @@ async function handleSaveAttendance(req, res, db) {
     updatedBy: "member",
   };
   if (hasNote) update.note = note;
-  if (hasPhotoUrl) update.photoUrl = photoUrl;
+  if (hasPhotoUrls) {
+    update.photoUrls = photoUrls;
+    update.photoUrl = photoUrls[0] || "";
+  } else if (hasPhotoUrl) {
+    update.photoUrl = photoUrl;
+    update.photoUrls = photoUrl ? [photoUrl] : [];
+  }
 
   await db.collection("chunbaek_attendance").doc(docId).set(update, { merge: true });
 
@@ -572,7 +594,16 @@ async function handleUploadAttendancePhoto(req, res, db) {
     return res.status(403).json({ ok: false, error: "exception slot" });
   }
 
-  const storagePath = `chunbaek/attendance/${CHUNBAEK_SEASON_ID}/${getSlotKey(slot)}/${auth.memberId}.jpg`;
+  let photoIndex = body.photoIndex;
+  if (photoIndex === undefined || photoIndex === null || photoIndex === "") {
+    photoIndex = 0;
+  }
+  const idx = Number(photoIndex);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= PHOTO_MAX_PER_SLOT) {
+    return res.status(400).json({ ok: false, error: `photoIndex must be 0-${PHOTO_MAX_PER_SLOT - 1}` });
+  }
+
+  const storagePath = `chunbaek/attendance/${CHUNBAEK_SEASON_ID}/${getSlotKey(slot)}/${auth.memberId}_${idx}.jpg`;
   try {
     const bucket = resolveStorageBucket();
     const photoUrl = await saveAttendancePhotoToStorage(bucket, storagePath, parsed.buffer);

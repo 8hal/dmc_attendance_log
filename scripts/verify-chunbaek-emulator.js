@@ -73,6 +73,7 @@ async function apiPost(action, body, token) {
   const uploaded = await apiPost("upload-attendance-photo", {
     slotId,
     imageBase64: tinyJpeg,
+    photoIndex: 0,
   }, token);
   assert.equal(uploaded.status, 200, uploaded.data?.error || "upload failed");
   assert.equal(uploaded.data.ok, true);
@@ -83,7 +84,7 @@ async function apiPost(action, body, token) {
     slotId,
     attended: true,
     note: "사진 테스트",
-    photoUrl: uploaded.data.photoUrl,
+    photoUrls: [uploaded.data.photoUrl],
   }, token);
   assert.equal(withPhoto.data.ok, true);
 

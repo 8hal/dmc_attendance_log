@@ -2,6 +2,8 @@
  * 춘백 시즌3 SPA — 라우팅·뷰 렌더
  */
 (function () {
+  const TIMELINE_PHOTO_MAX = 5;
+
   const state = {
     selectedMemberId: null,
     selectedNickname: "",
@@ -12,9 +14,7 @@
     teamMembers: [],
     timelineSlot: null,
     timelinePhotoRequired: false,
-    timelinePendingPhoto: null,
-    timelinePhotoRemoved: false,
-    timelinePhotoObjectUrl: null,
+    timelinePhotos: [],
   };
 
   const VIEWS = {
@@ -764,22 +764,64 @@
       });
   }
 
+  function getSlotPhotoUrls(slot) {
+    if (!slot) return [];
+    if (Array.isArray(slot.photoUrls) && slot.photoUrls.length) return slot.photoUrls.slice(0, TIMELINE_PHOTO_MAX);
+    if (slot.photoUrl) return [slot.photoUrl];
+    return [];
+  }
+
   function clearTimelinePhotoPicker() {
-    if (state.timelinePhotoObjectUrl) {
-      URL.revokeObjectURL(state.timelinePhotoObjectUrl);
-      state.timelinePhotoObjectUrl = null;
-    }
-    state.timelinePendingPhoto = null;
-    state.timelinePhotoRemoved = false;
+    state.timelinePhotos.forEach((item) => {
+      if (item.kind === "pending" && item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+    });
+    state.timelinePhotos = [];
     const fileInput = document.getElementById("timeline-modal-photo-file");
     if (fileInput) fileInput.value = "";
-    const preview = document.getElementById("timeline-modal-photo-preview");
-    if (preview) {
-      preview.hidden = true;
-      preview.removeAttribute("src");
+    renderTimelinePhotoGrid();
+  }
+
+  function renderTimelinePhotoGrid() {
+    const grid = document.getElementById("timeline-modal-photo-grid");
+    const pickLabel = document.getElementById("timeline-modal-photo-pick");
+    const countEl = document.getElementById("timeline-modal-photo-count");
+    if (!grid) return;
+
+    grid.innerHTML = state.timelinePhotos.map((item, index) => {
+      const src = item.kind === "url" ? item.url : item.objectUrl;
+      return `<div class="timeline-photo-thumb">
+        <img src="${escapeAttr(src)}" alt="출석 사진 ${index + 1}" />
+        <button type="button" class="timeline-photo-thumb-remove" data-photo-remove="${index}" aria-label="사진 제거">×</button>
+      </div>`;
+    }).join("");
+
+    const count = state.timelinePhotos.length;
+    if (countEl) countEl.textContent = count ? `${count}/${TIMELINE_PHOTO_MAX}` : "";
+    if (pickLabel) pickLabel.hidden = count >= TIMELINE_PHOTO_MAX;
+  }
+
+  function renderReadonlyPhotoGrid(urls) {
+    const wrap = document.getElementById("timeline-modal-photo-readonly");
+    if (!wrap) return;
+    if (!urls.length) {
+      wrap.hidden = true;
+      wrap.innerHTML = "";
+      return;
     }
-    const removeBtn = document.getElementById("timeline-modal-photo-remove");
-    if (removeBtn) removeBtn.hidden = true;
+    wrap.hidden = false;
+    wrap.innerHTML = urls.map((url, index) => (
+      `<div class="timeline-photo-thumb">
+        <img src="${escapeAttr(url)}" alt="출석 사진 ${index + 1}" />
+      </div>`
+    )).join("");
+  }
+
+  function removeTimelinePhotoAt(index) {
+    const item = state.timelinePhotos[index];
+    if (!item) return;
+    if (item.kind === "pending" && item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+    state.timelinePhotos.splice(index, 1);
+    renderTimelinePhotoGrid();
   }
 
   function formatSlotDateMeta(slot) {
@@ -793,27 +835,18 @@
     return `${di}일차 · ${m}/${d} (${dow})`;
   }
 
+  function escapeAttr(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;");
+  }
+
   function timelineEditHint(slot) {
     if (slot.status === "future") return "아직 출석할 수 없는 날입니다.";
     if (slot.status === "off") return "프로그램 휴무일입니다.";
     if (slot.exception) return "예외 처리된 날입니다. 변경은 운영진에게 문의해 주세요.";
     if (slot.editLocked) return "이번 주 출석 수정 마감이 지났습니다 (일요일 23:59 KST).";
     return "이번 주 일요일 23:59까지 출석·메모·사진을 수정할 수 있습니다.";
-  }
-
-  function setTimelinePhotoPreview(src, showRemove) {
-    const preview = document.getElementById("timeline-modal-photo-preview");
-    const removeBtn = document.getElementById("timeline-modal-photo-remove");
-    if (!preview) return;
-    if (src) {
-      preview.src = src;
-      preview.hidden = false;
-      if (removeBtn) removeBtn.hidden = !showRemove;
-    } else {
-      preview.hidden = true;
-      preview.removeAttribute("src");
-      if (removeBtn) removeBtn.hidden = true;
-    }
   }
 
   function resizeImageFile(file, maxEdge = 1200) {
@@ -856,14 +889,24 @@
     });
   }
 
-  async function uploadAttendancePhotoIfNeeded(slotId) {
-    if (!state.timelinePendingPhoto) return "";
-    const dataUrl = await readBlobAsDataUrl(state.timelinePendingPhoto);
-    const data = await apiPost("upload-attendance-photo", {
-      slotId,
-      imageBase64: dataUrl,
-    }, true);
-    return data.photoUrl || "";
+  async function uploadTimelinePhotos(slotId) {
+    const urls = [];
+    for (let i = 0; i < state.timelinePhotos.length; i += 1) {
+      const item = state.timelinePhotos[i];
+      if (item.kind === "url") {
+        urls.push(item.url);
+        continue;
+      }
+      const dataUrl = await readBlobAsDataUrl(item.blob);
+      const data = await apiPost("upload-attendance-photo", {
+        slotId,
+        imageBase64: dataUrl,
+        photoIndex: i,
+      }, true);
+      if (!data.photoUrl) throw new Error("사진 업로드에 실패했습니다");
+      urls.push(data.photoUrl);
+    }
+    return urls;
   }
 
   async function saveTimelineAttendance() {
@@ -871,13 +914,9 @@
     if (!slot || !slot.canEdit || state.isProcessing) return;
 
     const note = (document.getElementById("timeline-modal-note-input")?.value || "").trim();
+    const photoCount = state.timelinePhotos.length;
 
-    if (state.timelinePhotoRequired && !slot.photoUrl && !state.timelinePendingPhoto
-      && !state.timelinePhotoRemoved) {
-      showToast("사진을 첨부해 주세요", true);
-      return;
-    }
-    if (state.timelinePhotoRequired && state.timelinePhotoRemoved && !state.timelinePendingPhoto) {
+    if (state.timelinePhotoRequired && photoCount === 0) {
       showToast("사진을 첨부해 주세요", true);
       return;
     }
@@ -892,13 +931,11 @@
         attended: true,
         note,
       };
-      if (state.timelinePendingPhoto) {
+      const hasPending = state.timelinePhotos.some((item) => item.kind === "pending");
+      if (hasPending) {
         if (saveBtn) saveBtn.textContent = "사진 업로드 중…";
-        body.photoUrl = await uploadAttendancePhotoIfNeeded(slot.slotId);
-        if (!body.photoUrl) throw new Error("사진 업로드에 실패했습니다");
-      } else if (state.timelinePhotoRemoved) {
-        body.photoUrl = "";
       }
+      body.photoUrls = await uploadTimelinePhotos(slot.slotId);
       const data = await apiPost("save-attendance", body, true);
       if (data.stats && state.profile) state.profile.stats = data.stats;
       const dayNum = slot.displayDayIndex ?? slot.dayIndex;
@@ -934,7 +971,7 @@
         slotId: slot.slotId,
         attended: false,
         note: "",
-        photoUrl: "",
+        photoUrls: [],
       }, true);
       if (data.stats && state.profile) state.profile.stats = data.stats;
       showToast("출석이 취소되었습니다");
@@ -970,7 +1007,6 @@
     const editEl = document.getElementById("timeline-modal-edit");
     const noteRead = document.getElementById("timeline-modal-note");
     const photoReadWrap = document.getElementById("timeline-modal-photo-readonly");
-    const photoReadImg = document.getElementById("timeline-modal-photo-img");
     const noteInput = document.getElementById("timeline-modal-note-input");
     const hintEl = document.getElementById("timeline-modal-hint");
     const saveBtn = document.getElementById("timeline-modal-save");
@@ -986,12 +1022,13 @@
         photoSection.hidden = false;
         const photoLabel = photoSection.querySelector(".field-label");
         if (photoLabel) {
-          photoLabel.textContent = state.timelinePhotoRequired ? "사진 (필수)" : "사진 (선택)";
+          photoLabel.textContent = state.timelinePhotoRequired
+            ? `사진 (필수, 최대 ${TIMELINE_PHOTO_MAX}장)`
+            : `사진 (선택, 최대 ${TIMELINE_PHOTO_MAX}장)`;
         }
       }
-      if (slot.photoUrl && !state.timelinePhotoRemoved) {
-        setTimelinePhotoPreview(slot.photoUrl, true);
-      }
+      state.timelinePhotos = getSlotPhotoUrls(slot).map((url) => ({ kind: "url", url }));
+      renderTimelinePhotoGrid();
       const attended = !!slot.attended;
       if (saveBtn) saveBtn.textContent = attended ? "저장" : "출석하기";
       if (cancelBtn) cancelBtn.hidden = !attended;
@@ -1008,14 +1045,8 @@
           noteRead.hidden = true;
         }
       }
-      if (photoReadWrap && photoReadImg) {
-        if (slot.photoUrl) {
-          photoReadImg.src = slot.photoUrl;
-          photoReadWrap.hidden = false;
-        } else {
-          photoReadWrap.hidden = true;
-          photoReadImg.removeAttribute("src");
-        }
+      if (photoReadWrap) {
+        renderReadonlyPhotoGrid(getSlotPhotoUrls(slot));
       }
       if (hintEl) hintEl.textContent = "";
     }
@@ -1030,36 +1061,33 @@
   }
 
   async function onTimelinePhotoSelected(e) {
-    const file = e.target.files?.[0];
-    if (!file || !state.timelineSlot) return;
-    if (!file.type.startsWith("image/")) {
-      showToast("이미지 파일만 선택할 수 있습니다", true);
-      e.target.value = "";
-      return;
-    }
-    try {
-      const blob = await resizeImageFile(file);
-      if (state.timelinePhotoObjectUrl) URL.revokeObjectURL(state.timelinePhotoObjectUrl);
-      state.timelinePendingPhoto = blob;
-      state.timelinePhotoRemoved = false;
-      state.timelinePhotoObjectUrl = URL.createObjectURL(blob);
-      setTimelinePhotoPreview(state.timelinePhotoObjectUrl, true);
-    } catch (err) {
-      showToast(err.message || "사진 처리 실패", true);
-      e.target.value = "";
-    }
-  }
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !state.timelineSlot) return;
 
-  function onTimelinePhotoRemove() {
-    state.timelinePendingPhoto = null;
-    state.timelinePhotoRemoved = true;
-    if (state.timelinePhotoObjectUrl) {
-      URL.revokeObjectURL(state.timelinePhotoObjectUrl);
-      state.timelinePhotoObjectUrl = null;
+    let added = 0;
+    for (const file of files) {
+      if (state.timelinePhotos.length >= TIMELINE_PHOTO_MAX) {
+        showToast(`사진은 최대 ${TIMELINE_PHOTO_MAX}장까지입니다`, true);
+        break;
+      }
+      if (!file.type.startsWith("image/")) {
+        showToast("이미지 파일만 선택할 수 있습니다", true);
+        continue;
+      }
+      try {
+        const blob = await resizeImageFile(file);
+        state.timelinePhotos.push({
+          kind: "pending",
+          blob,
+          objectUrl: URL.createObjectURL(blob),
+        });
+        added += 1;
+      } catch (err) {
+        showToast(err.message || "사진 처리 실패", true);
+      }
     }
-    const fileInput = document.getElementById("timeline-modal-photo-file");
-    if (fileInput) fileInput.value = "";
-    setTimelinePhotoPreview(null, false);
+    if (added) renderTimelinePhotoGrid();
+    e.target.value = "";
   }
 
   function slotStatusLabel(status, photo) {
@@ -1316,7 +1344,11 @@
     document.getElementById("timeline-modal-save").addEventListener("click", saveTimelineAttendance);
     document.getElementById("timeline-modal-cancel-attend").addEventListener("click", cancelTimelineAttendance);
     document.getElementById("timeline-modal-photo-file").addEventListener("change", onTimelinePhotoSelected);
-    document.getElementById("timeline-modal-photo-remove").addEventListener("click", onTimelinePhotoRemove);
+    document.getElementById("timeline-modal-photo-grid").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-photo-remove]");
+      if (!btn) return;
+      removeTimelinePhotoAt(Number(btn.dataset.photoRemove));
+    });
 
     document.getElementById("team-profile-close").addEventListener("click", closeTeamProfileModal);
     document.getElementById("team-profile-modal").addEventListener("click", (e) => {

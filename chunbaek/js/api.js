@@ -506,8 +506,16 @@ function mockPost(action, body) {
       if (Object.prototype.hasOwnProperty.call(body, "note")) {
         slot.note = body.note || "";
       }
-      if (Object.prototype.hasOwnProperty.call(body, "photoUrl")) {
+      if (Object.prototype.hasOwnProperty.call(body, "photoUrls")) {
+        const urls = Array.isArray(body.photoUrls)
+          ? body.photoUrls.filter(Boolean).slice(0, 5)
+          : [];
+        slot.photoUrls = urls;
+        slot.photoUrl = urls[0] || "";
+        slot.photo = urls.length > 0;
+      } else if (Object.prototype.hasOwnProperty.call(body, "photoUrl")) {
         slot.photoUrl = body.photoUrl || "";
+        slot.photoUrls = slot.photoUrl ? [slot.photoUrl] : [];
         slot.photo = !!slot.photoUrl;
       }
       if (attended) slot.status = "attend";
@@ -529,10 +537,11 @@ function mockPost(action, body) {
     });
   }
   if (action === "upload-attendance-photo") {
+    const idx = Number(body.photoIndex ?? 0);
     return Promise.resolve({
       ok: true,
       slotId: body.slotId,
-      photoUrl: `https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview.jpg?alt=media&token=preview-token`,
+      photoUrl: `https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview_${idx}.jpg?alt=media&token=preview-token`,
     });
   }
   if (action === "update-profile") {

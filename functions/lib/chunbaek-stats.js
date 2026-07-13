@@ -3,6 +3,20 @@
  */
 const MS_PER_DAY = 86400000;
 
+const PHOTO_MAX_PER_SLOT = 5;
+
+function normalizePhotoUrls(att) {
+  if (!att) return [];
+  if (Array.isArray(att.photoUrls)) {
+    return att.photoUrls
+      .map((u) => (typeof u === "string" ? u.trim() : ""))
+      .filter(Boolean)
+      .slice(0, PHOTO_MAX_PER_SLOT);
+  }
+  const legacy = att.photoUrl ? String(att.photoUrl).trim() : "";
+  return legacy ? [legacy] : [];
+}
+
 const BETA_WEEK = 0;
 const BETA_DAY_INDEX_BASE = 901;
 const BETA_DAY_COUNT = 7;
@@ -377,8 +391,9 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
             exception,
             editLocked,
             canEdit,
-            photo: !!(att?.photoUrl),
-            photoUrl: att?.photoUrl || "",
+            photo: normalizePhotoUrls(att).length > 0,
+            photoUrls: normalizePhotoUrls(att),
+            photoUrl: normalizePhotoUrls(att)[0] || "",
             note: att?.note || "",
             isBeta: isBetaSlot(slot),
           };
@@ -512,6 +527,8 @@ function sortTeamMembers(members, viewerMemberId = null) {
 }
 
 module.exports = {
+  PHOTO_MAX_PER_SLOT,
+  normalizePhotoUrls,
   BETA_WEEK,
   BETA_DAY_INDEX_BASE,
   BETA_DAY_COUNT,
