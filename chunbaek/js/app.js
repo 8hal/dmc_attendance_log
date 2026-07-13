@@ -30,6 +30,36 @@
 
   const TAB_VIEWS = ["today", "timeline", "team", "me"];
 
+  // ── 클라이언트 캐시 (stale-while-revalidate) ──────────────────────────────
+  // sessionStorage를 사용해 탭 닫으면 자동 소멸. 새로고침 후에도 즉시 렌더 가능.
+  const CACHE_KEYS = { profile: "cb_profile", today: "cb_today" };
+
+  function readCache(key) {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return null;
+      const { data, savedAt, date } = JSON.parse(raw);
+      const todayKst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      // today 캐시는 날짜가 바뀌면 무효
+      if (key === CACHE_KEYS.today && date !== todayKst) return null;
+      // profile 캐시는 1시간 TTL
+      if (key === CACHE_KEYS.profile && Date.now() - savedAt > 60 * 60 * 1000) return null;
+      return data;
+    } catch { return null; }
+  }
+
+  function writeCache(key, data) {
+    try {
+      const todayKst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      sessionStorage.setItem(key, JSON.stringify({ data, savedAt: Date.now(), date: todayKst }));
+    } catch {}
+  }
+
+  function clearTodayCache() {
+    try { sessionStorage.removeItem(CACHE_KEYS.today); } catch {}
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
@@ -556,9 +586,74 @@
     if (active) active.hidden = isOff;
   }
 
+  // API 응답(prof, slotRes)으로 today 뷰 전체를 그린다.
+  // loadToday()의 캐시 경로와 신선 경로 모두 이 함수를 공유한다.
+  function renderTodayData(prof, slotRes) {
+    state.profile = prof;
+
+    if (slotRes.beforeSeason) {
+      updateSaturdayNotice(null);
+      paintBeforeSeason(prof, slotRes);
+      return;
+    }
+    if (slotRes.afterSeason) {
+      updateSaturdayNotice(null);
+      paintAfterSeason(prof, slotRes);
+      return;
+    }
+
+    state.todaySlot = enrichTodaySlot(slotRes.slot || null, slotRes);
+    paintStatsHeader(prof);
+    updateSaturdayNotice(null);
+
+    const sl = state.todaySlot;
+    if (!sl) {
+      setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: false });
+      const betaNoSlot = !!slotRes.betaNoSlotToday;
+      document.getElementById("before-season-title").textContent = betaNoSlot
+        ? "오늘 0주차 훈련이 아직 등록되지 않았습니다"
+        : "오늘 훈련 슬롯이 없습니다";
+      document.getElementById("before-season-desc").textContent = betaNoSlot
+        ? "운영진이 admin에서 0주차(베타) 훈련을 저장하면 여기에 표시됩니다."
+        : "운영진에게 문의해 주세요.";
+      document.getElementById("before-season-card").hidden = false;
+      const eyebrow = document.getElementById("before-season-eyebrow");
+      if (eyebrow) eyebrow.textContent = betaNoSlot ? "0주차 베타" : "안내";
+      return;
+    }
+
+    setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
+
+    if (sl.isProgramOff) {
+      setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: true });
+      return;
+    }
+
+    paintTodaySlot(sl, slotRes);
+
+    const btn = document.getElementById("btn-attend");
+    if (sl.attended) {
+      btn.textContent = "출석 완료 ✓";
+      btn.classList.add("attend-done");
+      btn.disabled = true;
+    } else {
+      btn.textContent = "✓  출석하기";
+      btn.classList.remove("attend-done");
+      btn.disabled = false;
+    }
+  }
+
+  // stale-while-revalidate: 캐시가 있으면 즉시 렌더 → 백그라운드에서 신선한 데이터로 갱신
   async function loadToday() {
+    const cachedProfile = readCache(CACHE_KEYS.profile);
+    const cachedToday   = readCache(CACHE_KEYS.today);
+    const hasCache = !!(cachedProfile && cachedToday);
+    if (hasCache) {
+      renderTodayData(cachedProfile, cachedToday);
+    }
+
     try {
-      // ensureSession()이 이미 my-profile을 호출했으면 재사용
+      // state.profile이 이미 있으면(ensureSession 호출 후) my-profile 재요청 생략
       const profilePromise = state.profile
         ? Promise.resolve(state.profile)
         : apiGet("my-profile", {}, true);
@@ -566,64 +661,17 @@
         profilePromise,
         apiGet("today-slot", {}, true),
       ]);
-      state.profile = prof;
-
-      if (slotRes.beforeSeason) {
-        updateSaturdayNotice(null);
-        paintBeforeSeason(prof, slotRes);
-        return;
-      }
-      if (slotRes.afterSeason) {
-        updateSaturdayNotice(null);
-        paintAfterSeason(prof, slotRes);
-        return;
-      }
-
-      state.todaySlot = enrichTodaySlot(slotRes.slot || null, slotRes);
-      paintStatsHeader(prof);
-      updateSaturdayNotice(null);
-
-      const sl = state.todaySlot;
-      if (!sl) {
-        setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: false });
-        const betaNoSlot = !!slotRes.betaNoSlotToday;
-        document.getElementById("before-season-title").textContent = betaNoSlot
-          ? "오늘 0주차 훈련이 아직 등록되지 않았습니다"
-          : "오늘 훈련 슬롯이 없습니다";
-        document.getElementById("before-season-desc").textContent = betaNoSlot
-          ? "운영진이 admin에서 0주차(베타) 훈련을 저장하면 여기에 표시됩니다."
-          : "운영진에게 문의해 주세요.";
-        document.getElementById("before-season-card").hidden = false;
-        const eyebrow = document.getElementById("before-season-eyebrow");
-        if (eyebrow) eyebrow.textContent = betaNoSlot ? "0주차 베타" : "안내";
-        return;
-      }
-
-      setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
-
-      if (sl.isProgramOff) {
-        setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: true });
-        return;
-      }
-
-      paintTodaySlot(sl, slotRes);
-
-      const btn = document.getElementById("btn-attend");
-      if (sl.attended) {
-        btn.textContent = "출석 완료 ✓";
-        btn.classList.add("attend-done");
-        btn.disabled = true;
-      } else {
-        btn.textContent = "✓  출석하기";
-        btn.classList.remove("attend-done");
-        btn.disabled = false;
-      }
+      writeCache(CACHE_KEYS.profile, prof);
+      writeCache(CACHE_KEYS.today, slotRes);
+      renderTodayData(prof, slotRes);
     } catch (e) {
       console.error("[chunbaek] loadToday failed", e);
-      setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
-      paintTodaySlot(null);
-      if (PREVIEW_MODE) renderTodayPreview();
-      else showToast(e.message, true);
+      if (!hasCache) {
+        setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
+        paintTodaySlot(null);
+        if (PREVIEW_MODE) renderTodayPreview();
+        else showToast(e.message, true);
+      }
     }
   }
 
@@ -745,6 +793,7 @@
       }, true);
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       showToast(`${dayNum}일차 출석 완료`);
+      clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
       await loadToday();
     } catch (e) {
       showToast(e.message, true);
