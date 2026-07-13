@@ -1183,7 +1183,40 @@
 
   function closeTeamProfileModal() {
     const modal = document.getElementById("team-profile-modal");
+    const feedList = document.getElementById("team-profile-feed-list");
+    if (feedList) feedList.innerHTML = "";
+    const feedEl = document.getElementById("team-profile-feed");
+    if (feedEl) feedEl.hidden = true;
     if (modal) modal.hidden = true;
+  }
+
+  function formatFeedDate(iso) {
+    if (!iso) return "";
+    const [, m, d] = iso.split("-").map(Number);
+    return `${m}/${d}`;
+  }
+
+  function paintTeamProfileFeed(entries) {
+    const feedEl = document.getElementById("team-profile-feed");
+    const feedList = document.getElementById("team-profile-feed-list");
+    if (!feedList) return;
+    if (!entries.length) {
+      feedList.innerHTML = '<p class="section-sub">아직 공유된 메모·사진이 없습니다.</p>';
+      if (feedEl) feedEl.hidden = false;
+      return;
+    }
+    feedList.innerHTML = entries.map((e) => {
+      const photos = (e.photoUrls || []).slice(0, TIMELINE_PHOTO_MAX);
+      const dateLabel = formatFeedDate(e.date);
+      const dayLabel = e.displayDayIndex ?? e.slotId;
+      return `
+        <article class="team-profile-feed-item">
+          <div class="team-profile-feed-meta">${dayLabel}일차${dateLabel ? ` · ${dateLabel}` : ""} · ${escapeHtml(e.title || "—")}</div>
+          ${e.note ? `<p class="team-profile-feed-note">${escapeHtml(e.note)}</p>` : ""}
+          ${photos.length ? `<div class="timeline-photo-grid team-profile-feed-photos">${photos.map((url, i) => `<div class="timeline-photo-thumb"><img src="${escapeAttr(url)}" alt="출석 사진 ${i + 1}" loading="lazy" /></div>`).join("")}</div>` : ""}
+        </article>`;
+    }).join("");
+    if (feedEl) feedEl.hidden = false;
   }
 
   function openTeamProfileModal(memberId) {
@@ -1209,7 +1242,15 @@
         ${escapeHtml(m.week || `0/${weekTarget}`)}${m.met ? " ✓" : ""}
       </dd>
     `;
+    const feedEl = document.getElementById("team-profile-feed");
+    const feedList = document.getElementById("team-profile-feed-list");
+    if (feedEl) feedEl.hidden = false;
+    if (feedList) feedList.innerHTML = '<p class="section-sub">불러오는 중…</p>';
     document.getElementById("team-profile-modal").hidden = false;
+
+    apiGet("team-member-attendance", { memberId }, true)
+      .then((data) => paintTeamProfileFeed(data.entries || []))
+      .catch(() => paintTeamProfileFeed([]));
   }
 
   function bindTeamListEvents() {

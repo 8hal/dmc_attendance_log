@@ -88,6 +88,16 @@ async function apiPost(action, body, token) {
   }, token);
   assert.equal(withPhoto.data.ok, true);
 
+  const teamFeed = await apiGet("team-member-attendance", { token, memberId: "chunbaek_seed_b" });
+  assert.equal(teamFeed.status, 200);
+  assert.equal(teamFeed.data.ok, true);
+  assert.ok(teamFeed.data.entries.length >= 1);
+  assert.equal(teamFeed.data.entries[0].note, "사진 테스트");
+  assert.ok(teamFeed.data.entries[0].photoUrls.length >= 1);
+
+  const noMember = await apiGet("team-member-attendance", { token, memberId: "no_such_member" });
+  assert.equal(noMember.status, 404);
+
   const profile = await apiGet("my-profile", { token });
   assert.equal(profile.data.ok, true);
   assert.equal(profile.data.stats.seasonAttendCount, 1);

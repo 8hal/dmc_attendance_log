@@ -926,6 +926,41 @@ body {
   line-height: 1.5;
   white-space: pre-wrap;
 }
+.team-profile-feed {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+.team-profile-feed[hidden] { display: none; }
+.team-profile-feed-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.team-profile-feed-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.team-profile-feed-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.team-profile-feed-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.team-profile-feed-note {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.team-profile-feed-photos {
+  margin-bottom: 0;
+}
 
 /* ── 나 ── */
 .profile-dl {

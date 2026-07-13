@@ -26,6 +26,9 @@ const {
   seasonBounds,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
+  getAttendance,
+  displayDayIndex,
+  slotTrainingTitle,
 } = require("./chunbaek-stats");
 
 const GOAL_MIN_SEC = 7200;
@@ -685,6 +688,58 @@ async function handleTeamSummary(req, res, db) {
   });
 }
 
+const TEAM_MEMBER_ATTENDANCE_MAX = 50;
+
+async function handleTeamMemberAttendance(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const memberId = String(req.query.memberId || "").trim();
+  if (!memberId) {
+    return res.status(400).json({ ok: false, error: "memberId required" });
+  }
+
+  const participants = await loadAllParticipants(db);
+  const target = participants.find((p) => p.memberId === memberId);
+  if (!target?.s3?.profileComplete) {
+    return res.status(404).json({ ok: false, error: "member not found" });
+  }
+
+  const [slots, attendanceMap] = await Promise.all([
+    loadAllSlots(db),
+    loadMemberAttendance(db, memberId),
+  ]);
+
+  const entries = [];
+  for (const slot of slots) {
+    if (slot.isProgramOff) continue;
+    const att = getAttendance(attendanceMap, slot);
+    if (!att?.attended) continue;
+    const note = String(att.note || "").trim().slice(0, 500);
+    const photoUrls = normalizePhotoUrls(att);
+    if (!note && !photoUrls.length) continue;
+    entries.push({
+      slotId: slot.dayIndex ?? Number(slot.id),
+      displayDayIndex: displayDayIndex(slot),
+      date: slot.date || "",
+      title: slotTrainingTitle(slot) || "—",
+      note,
+      photoUrls,
+    });
+  }
+
+  entries.sort((a, b) => (b.displayDayIndex ?? 0) - (a.displayDayIndex ?? 0));
+
+  return res.json({
+    ok: true,
+    memberId,
+    entries: entries.slice(0, TEAM_MEMBER_ATTENDANCE_MAX),
+  });
+}
+
 async function handleChunbaekRequest(req, res, { db, action }) {
   const adminHandled = await handleAdminRequest(req, res, db, action);
   if (adminHandled) return undefined;
@@ -721,6 +776,9 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "team-summary") {
     return handleTeamSummary(req, res, db);
+  }
+  if (action === "team-member-attendance") {
+    return handleTeamMemberAttendance(req, res, db);
   }
   return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
 }
