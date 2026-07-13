@@ -717,13 +717,43 @@ body {
   max-height: 70dvh;
   overflow-y: auto;
 }
+.timeline-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.timeline-modal-header-text {
+  flex: 1;
+  min-width: 0;
+}
+.timeline-modal-close-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin: -4px -4px 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.timeline-modal-close-btn:hover,
+.timeline-modal-close-btn:focus-visible {
+  background: var(--bg);
+  color: var(--text);
+}
 .timeline-modal-title {
   margin: 0 0 6px;
   font-size: 18px;
   font-weight: 800;
 }
 .timeline-modal-meta {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 13px;
   color: var(--text-muted);
 }

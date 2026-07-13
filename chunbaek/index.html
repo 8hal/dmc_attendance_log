@@ -199,8 +199,13 @@
       <!-- 타임라인 훈련 상세 (탭) -->
       <div class="timeline-modal-backdrop" id="timeline-modal" role="dialog" aria-modal="true" hidden>
         <div class="timeline-modal-card">
-          <h3 class="timeline-modal-title" id="timeline-modal-title">5km 인터벌</h3>
-          <p class="timeline-modal-meta" id="timeline-modal-meta">36일차 · 4/7</p>
+          <div class="timeline-modal-header">
+            <div class="timeline-modal-header-text">
+              <h3 class="timeline-modal-title" id="timeline-modal-title">5km 인터벌</h3>
+              <p class="timeline-modal-meta" id="timeline-modal-meta">36일차 · 4/7</p>
+            </div>
+            <button type="button" class="timeline-modal-close-btn" id="timeline-modal-close" aria-label="닫기">×</button>
+          </div>
           <p class="timeline-modal-content" id="timeline-modal-content"></p>
           <p class="timeline-modal-status" id="timeline-modal-status"></p>
           <div id="timeline-modal-readonly" hidden>
@@ -231,7 +236,6 @@
               <button type="button" class="btn btn-outline" id="timeline-modal-cancel-attend" hidden>출석 취소</button>
             </div>
           </div>
-          <button type="button" class="btn btn-primary" id="timeline-modal-close" style="margin-top:16px">닫기</button>
         </div>
       </div>
 
@@ -245,10 +249,14 @@
       <!-- 팀원 프로필 (탭) -->
       <div class="timeline-modal-backdrop" id="team-profile-modal" role="dialog" aria-modal="true" aria-labelledby="team-profile-title" hidden>
         <div class="timeline-modal-card">
-          <h3 class="timeline-modal-title" id="team-profile-title">김러너</h3>
-          <p class="timeline-modal-meta" id="team-profile-meta"></p>
+          <div class="timeline-modal-header">
+            <div class="timeline-modal-header-text">
+              <h3 class="timeline-modal-title" id="team-profile-title">김러너</h3>
+              <p class="timeline-modal-meta" id="team-profile-meta"></p>
+            </div>
+            <button type="button" class="timeline-modal-close-btn" id="team-profile-close" aria-label="닫기">×</button>
+          </div>
           <dl class="profile-dl team-profile-dl" id="team-profile-dl"></dl>
-          <button type="button" class="btn btn-primary" id="team-profile-close" style="margin-top:16px">닫기</button>
         </div>
       </div>
 
