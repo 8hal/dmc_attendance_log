@@ -1,0 +1,109 @@
+/**
+ * 춘백 S3 디자인 토큰
+ * 기준 UI: 내 100일 (타임라인) — 흰 캔버스 · 회색 섹션 · 상태 배지 · 브랜드 액센트
+ * 문서: _docs/design/chunbaek-design-tokens.md
+ */
+
+:root {
+  /* ── Brand primitives ── */
+  --brand-orange: #ff3214;
+  --brand-orange-dark: #e02a10;
+  --brand-cyan: #70d1f4;
+  --brand-cyan-dark: #4db8e0;
+  --brand-black: #000000;
+  --brand-white: #ffffff;
+
+  /* Legacy aliases (기존 chunbaek.css 호환) */
+  --chun-orange: var(--brand-orange);
+  --chun-orange-dark: var(--brand-orange-dark);
+  --chun-cyan: var(--brand-cyan);
+  --chun-cyan-dark: var(--brand-cyan-dark);
+  --chun-black: var(--brand-black);
+  --chun-white: var(--brand-white);
+  --primary: var(--brand-orange);
+  --primary-hover: var(--brand-orange-dark);
+  --primary-light: #ffe8e3;
+  --accent: var(--brand-cyan);
+  --accent-light: #e8f7fd;
+
+  /* ── Surface ── */
+  --surface-page: var(--brand-white);
+  --surface-muted: #f5f2ef;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --bg: #faf8f6;
+  --card: var(--brand-white);
+
+  /* ── Text ── */
+  --text-primary: #1a1a1a;
+  --text-secondary: #5c5c5c;
+  --text: var(--text-primary);
+  --text-muted: var(--text-secondary);
+
+  /* ── Border ── */
+  --border-default: #e8e4e0;
+  --border-subtle: #f5f2ef;
+  --border: var(--border-default);
+  --border-light: var(--border-subtle);
+
+  /* ── Semantic: 출석 상태 (내 100일 SSOT) ── */
+  --attend-fg: #059669;
+  --attend-bg: #d1fae5;
+  --attend-gradient-start: #10b981;
+  --attend-gradient-end: #059669;
+  --attend-shadow: rgba(5, 150, 105, 0.35);
+  --attend-inset: rgba(5, 150, 105, 0.12);
+
+  --today-fg: var(--brand-cyan-dark);
+  --today-bg: var(--accent-light);
+  --today-ring: var(--brand-cyan);
+
+  --miss-border: #c9c4be;
+
+  --exception-fg: #d97706;
+  --exception-bg: #fef3c7;
+
+  --future-dot: var(--border-default);
+
+  /* Legacy status aliases */
+  --green: var(--attend-fg);
+  --green-light: var(--attend-bg);
+  --yellow: var(--exception-fg);
+  --yellow-light: var(--exception-bg);
+  --red: #dc2626;
+
+  /* ── Week progress pills ── */
+  --pill-size: 10px;
+  --pill-done-bg: var(--attend-fg);
+  --pill-done-ring: var(--attend-bg);
+  --pill-open-bg: var(--brand-white);
+  --pill-open-ring: var(--brand-orange);
+  --pill-future-bg: var(--border-default);
+  --pill-future-opacity: 0.55;
+
+  /* ── Component sizes (내 100일) ── */
+  --badge-day-size: 40px;
+  --badge-day-radius: 12px;
+  --badge-status-size: 44px;
+  --badge-status-radius: 14px;
+  --radius-section-header: 10px;
+  --radius-card: 14px;
+  --radius-sheet-top: 16px;
+  --radius-pill: 999px;
+  --row-padding: 12px;
+  --row-gap: 10px;
+
+  /* ── Typography ── */
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-body: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  --type-section-size: 18px;
+  --type-section-weight: 800;
+  --type-row-title-size: 13px;
+  --type-row-title-weight: 700;
+  --type-row-meta-size: 12px;
+  --type-caption-size: 11px;
+  --type-caption-weight: 600;
+
+  /* ── Elevation ── */
+  --shadow-app: 0 4px 20px rgba(255, 50, 20, 0.15);
+  --shadow: var(--shadow-app);
+}
