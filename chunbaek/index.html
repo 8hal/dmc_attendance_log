@@ -107,6 +107,13 @@
             <input type="number" id="pb-s" min="0" max="59" placeholder="30" aria-label="PB 초" /> 초
           </div>
           <p class="section-sub">없으면 비워두세요</p>
+          <div class="field-label">목표 몸무게 (선택)</div>
+          <input type="number" class="input" id="goal-weight-kg" min="30" max="200" step="0.1" inputmode="decimal" placeholder="예: 68.5" aria-label="목표 몸무게 kg" />
+          <p class="section-sub">kg 단위. 비우면 입력하지 않습니다.</p>
+          <label class="goal-race-option goal-weight-private-label">
+            <input type="checkbox" id="goal-weight-private" disabled />
+            목표 몸무게 비공개 (팀원에게 보이지 않음)
+          </label>
           <div class="field-label">각오 · 자기소개 (선택)</div>
           <textarea class="input textarea-intro" id="resolution-text" rows="3" maxlength="200"
             placeholder="출정식에서 나눈 각오, 이번 시즌 다짐 등 (200자)"></textarea>

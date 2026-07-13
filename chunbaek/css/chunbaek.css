@@ -355,6 +355,7 @@ body {
   height: 18px;
   accent-color: var(--chun-orange);
 }
+.goal-weight-private-label { margin-bottom: 16px; }
 #goal-race-note {
   margin-bottom: 16px;
 }

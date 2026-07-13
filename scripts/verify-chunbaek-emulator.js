@@ -77,12 +77,16 @@ async function apiPost(action, body, token) {
     goalMarathonNetTime: 15000,
     goalRace: "jtbc",
     resolutionText: "수정됨",
+    goalBodyWeightKg: 67.5,
+    goalBodyWeightPrivate: true,
   }, token);
   assert.equal(updated.status, 200);
   assert.equal(updated.data.ok, true);
   assert.equal(updated.data.goalRace, "jtbc");
   assert.equal(updated.data.goalMarathonNetTime, 15000);
   assert.equal(updated.data.resolutionText, "수정됨");
+  assert.equal(updated.data.goalBodyWeightKg, 67.5);
+  assert.equal(updated.data.goalBodyWeightPrivate, true);
 
   const noToken = await apiPost("update-profile", {
     goalMarathonNetTime: 15000,

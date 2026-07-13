@@ -26,6 +26,8 @@ const {
 
 const GOAL_MIN_SEC = 7200;
 const GOAL_MAX_SEC = 25200;
+const GOAL_WEIGHT_MIN_KG = 30;
+const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
 const GOAL_RACE_NOTE_MAX = 80;
 
@@ -118,6 +120,8 @@ function memberProfilePayload(memberId, data, s3, stats) {
     goalMarathonNetTime: s3.goalMarathonNetTime ?? null,
     existingPbNetTime: s3.existingPbNetTime ?? null,
     resolutionText: s3.resolutionText ?? null,
+    goalBodyWeightKg: s3.goalBodyWeightKg ?? null,
+    goalBodyWeightPrivate: !!s3.goalBodyWeightPrivate,
     goalRace: s3.goalRace ?? null,
     goalRaceNote: s3.goalRaceNote ?? null,
     goalRaceLabel: formatGoalRaceLabel(s3.goalRace, s3.goalRaceNote),
@@ -131,12 +135,31 @@ function findSlotById(slots, slotId) {
   return slots.find((s) => getSlotKey(s) === idStr || String(s.id) === idStr) || null;
 }
 
+function parseOptionalBodyWeightKg(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < GOAL_WEIGHT_MIN_KG || n > GOAL_WEIGHT_MAX_KG) {
+    return {
+      error: `goalBodyWeightKg must be ${GOAL_WEIGHT_MIN_KG}~${GOAL_WEIGHT_MAX_KG}`,
+    };
+  }
+  return Math.round(n * 10) / 10;
+}
+
 function parseProfileFields(body) {
   const goalMarathonNetTime = Number(body.goalMarathonNetTime);
   const existingPbNetTime = parseOptionalSeconds(body.existingPbNetTime);
   const resolutionText = String(body.resolutionText || "").trim().slice(0, 200) || null;
   const goalRaceParsed = parseGoalRace(body);
   if (goalRaceParsed.error) return { error: goalRaceParsed.error };
+  const weightParsed = parseOptionalBodyWeightKg(body.goalBodyWeightKg);
+  if (weightParsed && typeof weightParsed === "object" && weightParsed.error) {
+    return weightParsed;
+  }
+  const goalBodyWeightKg = weightParsed;
+  const goalBodyWeightPrivate = goalBodyWeightKg === null
+    ? false
+    : !!body.goalBodyWeightPrivate;
   if (!Number.isFinite(goalMarathonNetTime)
     || goalMarathonNetTime < GOAL_MIN_SEC
     || goalMarathonNetTime > GOAL_MAX_SEC) {
@@ -150,6 +173,8 @@ function parseProfileFields(body) {
     resolutionText,
     goalRace: goalRaceParsed.goalRace,
     goalRaceNote: goalRaceParsed.goalRaceNote,
+    goalBodyWeightKg,
+    goalBodyWeightPrivate,
   };
 }
 
@@ -168,6 +193,13 @@ function buildProfileUpdate(parsed) {
     update["chunbaekS3.existingPbNetTime"] = parsed.existingPbNetTime;
   } else {
     update["chunbaekS3.existingPbNetTime"] = FieldValue.delete();
+  }
+  if (parsed.goalBodyWeightKg !== null) {
+    update["chunbaekS3.goalBodyWeightKg"] = parsed.goalBodyWeightKg;
+    update["chunbaekS3.goalBodyWeightPrivate"] = parsed.goalBodyWeightPrivate;
+  } else {
+    update["chunbaekS3.goalBodyWeightKg"] = FieldValue.delete();
+    update["chunbaekS3.goalBodyWeightPrivate"] = FieldValue.delete();
   }
   return update;
 }
@@ -450,7 +482,13 @@ async function handleTeamSummary(req, res, db) {
       goalMarathonNetTime: p.s3.goalMarathonNetTime ?? null,
       goalRace: p.s3.goalRace ?? null,
       goalRaceLabel: formatGoalRaceLabel(p.s3.goalRace, p.s3.goalRaceNote),
+      existingPbNetTime: p.s3.existingPbNetTime ?? null,
+      existingPb: formatGoalTime(p.s3.existingPbNetTime),
       resolutionText: p.s3.resolutionText ?? null,
+      goalBodyWeightKg: (p.s3.goalBodyWeightKg != null && !p.s3.goalBodyWeightPrivate)
+        ? p.s3.goalBodyWeightKg
+        : null,
+      goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
       bar: weekBar(stats.weekAttendCount, stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       week: `${stats.weekAttendCount}/${stats.weekTarget}`,

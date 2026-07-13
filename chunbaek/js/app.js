@@ -192,6 +192,33 @@
     noteEl.hidden = selectedGoalRace() !== "other";
   }
 
+  function formatBodyWeightKg(kg) {
+    if (kg == null || !Number.isFinite(Number(kg))) return "—";
+    const n = Number(kg);
+    const text = Number.isInteger(n) ? String(n) : String(n);
+    return `${text} kg`;
+  }
+
+  function teamWeightDisplay(m, isMe) {
+    if (isMe && state.profile?.goalBodyWeightKg != null) {
+      const label = formatBodyWeightKg(state.profile.goalBodyWeightKg);
+      if (state.profile.goalBodyWeightPrivate) return `${label} (팀 비공개)`;
+      return label;
+    }
+    if (m.goalBodyWeightKg != null) return formatBodyWeightKg(m.goalBodyWeightKg);
+    if (m.goalBodyWeightPrivate) return "비공개";
+    return "—";
+  }
+
+  function syncGoalWeightPrivate() {
+    const input = document.getElementById("goal-weight-kg");
+    const priv = document.getElementById("goal-weight-private");
+    if (!input || !priv) return;
+    const hasWeight = String(input.value || "").trim() !== "";
+    priv.disabled = !hasWeight;
+    if (!hasWeight) priv.checked = false;
+  }
+
   function splitNetTime(seconds) {
     if (seconds === null || seconds === undefined || seconds === "") {
       return { h: "", m: "", s: "" };
@@ -243,6 +270,15 @@
     document.getElementById("pb-s").value = pb.s;
     document.getElementById("goal-race-note").value = p.goalRaceNote || "";
     document.getElementById("resolution-text").value = p.resolutionText || "";
+    const weightInput = document.getElementById("goal-weight-kg");
+    const weightPrivate = document.getElementById("goal-weight-private");
+    if (weightInput) {
+      weightInput.value = p.goalBodyWeightKg != null ? String(p.goalBodyWeightKg) : "";
+    }
+    if (weightPrivate) {
+      weightPrivate.checked = !!p.goalBodyWeightPrivate;
+    }
+    syncGoalWeightPrivate();
     syncGoalRaceNote();
   }
 
@@ -269,12 +305,25 @@
     }
     const resolutionText = (document.getElementById("resolution-text").value || "").trim();
     const goalRaceNote = (document.getElementById("goal-race-note").value || "").trim();
+    const weightRaw = String(document.getElementById("goal-weight-kg")?.value || "").trim();
+    let goalBodyWeightKg = null;
+    let goalBodyWeightPrivate = false;
+    if (weightRaw) {
+      const w = Number(weightRaw);
+      if (!Number.isFinite(w) || w < 30 || w > 200) {
+        return { error: "목표 몸무게는 30~200kg 범위로 입력해 주세요" };
+      }
+      goalBodyWeightKg = Math.round(w * 10) / 10;
+      goalBodyWeightPrivate = !!document.getElementById("goal-weight-private")?.checked;
+    }
     return {
       goalRace,
       goalRaceNote: goalRace === "other" ? (goalRaceNote || null) : null,
       goalMarathonNetTime,
       existingPbNetTime,
       resolutionText: resolutionText || null,
+      goalBodyWeightKg,
+      goalBodyWeightPrivate,
     };
   }
 
@@ -849,6 +898,8 @@
     document.getElementById("team-profile-dl").innerHTML = `
       <dt>목표 대회</dt><dd>${m.goalRaceLabel ? escapeHtml(m.goalRaceLabel) : "—"}</dd>
       <dt>풀 목표</dt><dd>${escapeHtml(goalTime)}</dd>
+      <dt>기존 PB</dt><dd>${m.existingPbNetTime != null ? escapeHtml(formatNetTime(m.existingPbNetTime)) : (m.existingPb && m.existingPb !== "—" ? escapeHtml(m.existingPb) : "—")}</dd>
+      <dt>목표 몸무게</dt><dd>${escapeHtml(teamWeightDisplay(m, isMe))}</dd>
       <dt>각오</dt><dd class="profile-intro">${m.resolutionText ? escapeHtml(m.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${m.seasonAttendCount ?? 0}회 (출석률 ${m.seasonAttendRate ?? 0}%)</dd>
       <dt>이번 주</dt><dd>
@@ -939,6 +990,7 @@
       <dt>목표 대회</dt><dd>${p.goalRaceLabel || "—"}</dd>
       <dt>풀 목표</dt><dd>${formatNetTime(p.goalMarathonNetTime)}</dd>
       <dt>기존 PB</dt><dd>${formatNetTime(p.existingPbNetTime)}</dd>
+      <dt>목표 몸무게</dt><dd>${formatBodyWeightKg(p.goalBodyWeightKg)}${p.goalBodyWeightPrivate ? " (팀 비공개)" : ""}</dd>
       <dt>각오</dt><dd class="profile-intro">${p.resolutionText ? escapeHtml(p.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${s.seasonAttendCount || 0}회 (출석률 ${s.seasonAttendRate || 0}%)</dd>
       <dt>이번 주</dt><dd>${s.weekAttendCount || 0}/${s.weekTarget || 3}회</dd>
@@ -972,6 +1024,10 @@
     document.querySelectorAll('input[name="goal-race"]').forEach((el) => {
       el.addEventListener("change", syncGoalRaceNote);
     });
+    const goalWeightInput = document.getElementById("goal-weight-kg");
+    if (goalWeightInput) {
+      goalWeightInput.addEventListener("input", syncGoalWeightPrivate);
+    }
     syncGoalRaceNote();
     document.getElementById("btn-guide-done").addEventListener("click", () => showView("today"));
     document.getElementById("btn-attend").addEventListener("click", onAttend);

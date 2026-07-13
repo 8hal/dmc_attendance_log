@@ -84,6 +84,7 @@ function buildBetaSlots(today) {
       profileComplete: true,
       goalMarathonNetTime: 16200,
       existingPbNetTime: 17520,
+      goalBodyWeightKg: 68,
       resolutionText: "에뮬 시드 A",
     },
   }, { merge: true });
