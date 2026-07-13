@@ -58,6 +58,13 @@
   function clearTodayCache() {
     try { sessionStorage.removeItem(CACHE_KEYS.today); } catch {}
   }
+
+  function clearAllCache() {
+    try {
+      sessionStorage.removeItem(CACHE_KEYS.profile);
+      sessionStorage.removeItem(CACHE_KEYS.today);
+    } catch {}
+  }
   // ──────────────────────────────────────────────────────────────────────────
 
   function escapeHtml(str) {
@@ -119,6 +126,7 @@
       if (e.status === 401 || e.status === 403) {
         setToken(null);
         state.profile = null;
+        clearAllCache();
       }
     }
   }
@@ -653,8 +661,8 @@
     }
 
     try {
-      // state.profile이 이미 있으면(ensureSession 호출 후) my-profile 재요청 생략
-      const profilePromise = state.profile
+      // state.profile에 stats가 있을 때만 재사용 (link-device 직후 최소 프로필 제외)
+      const profilePromise = (state.profile && state.profile.stats)
         ? Promise.resolve(state.profile)
         : apiGet("my-profile", {}, true);
       const [prof, slotRes] = await Promise.all([
@@ -666,6 +674,14 @@
       renderTodayData(prof, slotRes);
     } catch (e) {
       console.error("[chunbaek] loadToday failed", e);
+      // 세션 만료 시 캐시를 비우고 로그아웃 처리
+      if (e.status === 401 || e.status === 403) {
+        setToken(null);
+        state.profile = null;
+        clearAllCache();
+        showView("welcome");
+        return;
+      }
       if (!hasCache) {
         setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
         paintTodaySlot(null);
@@ -1505,6 +1521,7 @@
     document.getElementById("btn-switch-user").addEventListener("click", () => {
       setToken(null);
       state.profile = null;
+      clearAllCache(); // 다음 사용자가 이전 사용자 데이터를 보지 않도록
       showView("welcome");
     });
 
