@@ -547,20 +547,7 @@
         return;
       }
 
-      const [y, m, d] = sl.date.split("-").map(Number);
-      const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(y, m - 1, d).getDay()];
-      const dayNum = sl.displayDayIndex ?? sl.dayIndex;
-      const dayLabel = `${dayNum}일차 · ${sl.date.slice(5).replace("-", "월 ")}일 (${dow})`;
-      document.getElementById("today-day").textContent = dayLabel;
-      document.getElementById("today-training").textContent =
-        "📋 " + (sl.trainingTitle || sl.trainingLabel || "훈련 내용 준비 중");
-      const detailEl = document.getElementById("today-training-detail");
-      const content = sl.trainingContent || "";
-      if (detailEl) {
-        detailEl.textContent = content;
-        detailEl.style.display = content ? "block" : "none";
-      }
-      updateSaturdayNotice(sl.date);
+      paintTodaySlot(sl);
 
       const btn = document.getElementById("btn-attend");
       if (sl.attended) {
@@ -573,9 +560,44 @@
         btn.disabled = false;
       }
     } catch (e) {
+      console.error("[chunbaek] loadToday failed", e);
+      setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
+      paintTodaySlot(null);
       if (PREVIEW_MODE) renderTodayPreview();
       else showToast(e.message, true);
     }
+  }
+
+  function paintTodaySlot(sl) {
+    if (!sl || !sl.date) {
+      document.getElementById("today-day").textContent = "오늘 훈련 정보를 불러오지 못했습니다";
+      document.getElementById("today-training").textContent = "잠시 후 다시 시도하거나 운영진에게 문의해 주세요.";
+      const detailEl = document.getElementById("today-training-detail");
+      if (detailEl) {
+        detailEl.textContent = "";
+        detailEl.style.display = "none";
+      }
+      return;
+    }
+
+    const [y, m, d] = String(sl.date).slice(0, 10).split("-").map(Number);
+    const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(y, m - 1, d).getDay()];
+    const dayNum = sl.displayDayIndex ?? sl.dayIndex;
+    const dayLabel = `${dayNum}일차 · ${String(sl.date).slice(5, 7)}월 ${String(sl.date).slice(8, 10)}일 (${dow})`;
+    document.getElementById("today-day").textContent = dayLabel;
+
+    const title = sl.trainingTitle || sl.trainingLabel || "";
+    document.getElementById("today-training").textContent = title
+      ? `📋 ${title}`
+      : "📋 훈련 제목이 아직 없습니다 (admin에서 0주차 저장 필요)";
+
+    const detailEl = document.getElementById("today-training-detail");
+    const content = sl.trainingContent || "";
+    if (detailEl) {
+      detailEl.textContent = content;
+      detailEl.style.display = content ? "block" : "none";
+    }
+    updateSaturdayNotice(sl.date);
   }
 
   function renderTodayPreview() {
