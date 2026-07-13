@@ -3,6 +3,7 @@
  */
 const { FieldValue } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
+const crypto = require("crypto");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
 const {
@@ -484,6 +485,43 @@ function parseImageBase64(body) {
   return { buffer };
 }
 
+function buildStorageDownloadUrl(bucketName, storagePath, downloadToken) {
+  const encoded = encodeURIComponent(storagePath);
+  const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+  if (emulatorHost) {
+    return `http://${emulatorHost}/v0/b/${bucketName}/o/${encoded}?alt=media&token=${downloadToken}`;
+  }
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${downloadToken}`;
+}
+
+function resolveStorageBucket() {
+  const storage = getStorage();
+  if (process.env.FIREBASE_STORAGE_BUCKET) {
+    return storage.bucket(process.env.FIREBASE_STORAGE_BUCKET);
+  }
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+  if (projectId) {
+    return storage.bucket(`${projectId}.firebasestorage.app`);
+  }
+  return storage.bucket();
+}
+
+async function saveAttendancePhotoToStorage(bucket, storagePath, buffer) {
+  const downloadToken = crypto.randomUUID();
+  const file = bucket.file(storagePath);
+  await file.save(buffer, {
+    metadata: {
+      contentType: "image/jpeg",
+      cacheControl: "public, max-age=31536000",
+      metadata: {
+        firebaseStorageDownloadTokens: downloadToken,
+      },
+    },
+    resumable: false,
+  });
+  return buildStorageDownloadUrl(bucket.name, storagePath, downloadToken);
+}
+
 async function handleUploadAttendancePhoto(req, res, db) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "POST only" });
@@ -536,25 +574,16 @@ async function handleUploadAttendancePhoto(req, res, db) {
 
   const storagePath = `chunbaek/attendance/${CHUNBAEK_SEASON_ID}/${getSlotKey(slot)}/${auth.memberId}.jpg`;
   try {
-    const bucket = getStorage().bucket();
-    const file = bucket.file(storagePath);
-    await file.save(parsed.buffer, {
-      metadata: { contentType: "image/jpeg", cacheControl: "public, max-age=31536000" },
-      resumable: false,
-    });
-    try {
-      await file.makePublic();
-    } catch (pubErr) {
-      console.warn("[chunbaek] makePublic failed, using media URL", pubErr.message);
-    }
-    const photoUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+    const bucket = resolveStorageBucket();
+    const photoUrl = await saveAttendancePhotoToStorage(bucket, storagePath, parsed.buffer);
     if (photoUrl.length > 2000) {
       return res.status(500).json({ ok: false, error: "photoUrl too long" });
     }
     return res.json({ ok: true, photoUrl, slotId: slot.dayIndex ?? Number(slot.id) });
   } catch (err) {
     console.error("[chunbaek] upload-attendance-photo failed", err);
-    return res.status(500).json({ ok: false, error: "photo upload failed" });
+    const detail = err?.message ? String(err.message).slice(0, 120) : "unknown";
+    return res.status(500).json({ ok: false, error: `photo upload failed: ${detail}` });
   }
 }
 

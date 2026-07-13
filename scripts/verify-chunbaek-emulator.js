@@ -69,6 +69,24 @@ async function apiPost(action, body, token) {
   const saved = await apiPost("save-attendance", { slotId, attended: true }, token);
   assert.equal(saved.data.ok, true);
 
+  const tinyJpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGcP//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEABj8Cf//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAT8hf//Z";
+  const uploaded = await apiPost("upload-attendance-photo", {
+    slotId,
+    imageBase64: tinyJpeg,
+  }, token);
+  assert.equal(uploaded.status, 200, uploaded.data?.error || "upload failed");
+  assert.equal(uploaded.data.ok, true);
+  assert.ok(uploaded.data.photoUrl);
+  assert.ok(uploaded.data.photoUrl.includes("token="));
+
+  const withPhoto = await apiPost("save-attendance", {
+    slotId,
+    attended: true,
+    note: "사진 테스트",
+    photoUrl: uploaded.data.photoUrl,
+  }, token);
+  assert.equal(withPhoto.data.ok, true);
+
   const profile = await apiGet("my-profile", { token });
   assert.equal(profile.data.ok, true);
   assert.equal(profile.data.stats.seasonAttendCount, 1);

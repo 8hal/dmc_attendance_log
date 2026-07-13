@@ -871,28 +871,35 @@
     if (!slot || !slot.canEdit || state.isProcessing) return;
 
     const note = (document.getElementById("timeline-modal-note-input")?.value || "").trim();
-    let photoUrl = slot.photoUrl || "";
-    if (state.timelinePhotoRemoved) photoUrl = "";
-    else if (!state.timelinePendingPhoto && slot.photoUrl) photoUrl = slot.photoUrl;
 
-    if (state.timelinePhotoRequired && !photoUrl && !state.timelinePendingPhoto) {
+    if (state.timelinePhotoRequired && !slot.photoUrl && !state.timelinePendingPhoto
+      && !state.timelinePhotoRemoved) {
+      showToast("사진을 첨부해 주세요", true);
+      return;
+    }
+    if (state.timelinePhotoRequired && state.timelinePhotoRemoved && !state.timelinePendingPhoto) {
       showToast("사진을 첨부해 주세요", true);
       return;
     }
 
     state.isProcessing = true;
     const saveBtn = document.getElementById("timeline-modal-save");
+    const saveBtnLabel = saveBtn?.textContent || "";
     if (saveBtn) saveBtn.disabled = true;
     try {
-      if (state.timelinePendingPhoto) {
-        photoUrl = await uploadAttendancePhotoIfNeeded(slot.slotId);
-      }
-      const data = await apiPost("save-attendance", {
+      const body = {
         slotId: slot.slotId,
         attended: true,
         note,
-        photoUrl,
-      }, true);
+      };
+      if (state.timelinePendingPhoto) {
+        if (saveBtn) saveBtn.textContent = "사진 업로드 중…";
+        body.photoUrl = await uploadAttendancePhotoIfNeeded(slot.slotId);
+        if (!body.photoUrl) throw new Error("사진 업로드에 실패했습니다");
+      } else if (state.timelinePhotoRemoved) {
+        body.photoUrl = "";
+      }
+      const data = await apiPost("save-attendance", body, true);
       if (data.stats && state.profile) state.profile.stats = data.stats;
       const dayNum = slot.displayDayIndex ?? slot.dayIndex;
       showToast(`${dayNum}일차 출석 저장됨`);
@@ -907,7 +914,10 @@
       showToast(e.message, true);
     } finally {
       state.isProcessing = false;
-      if (saveBtn) saveBtn.disabled = false;
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = saveBtnLabel;
+      }
     }
   }
 

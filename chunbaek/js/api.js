@@ -532,7 +532,7 @@ function mockPost(action, body) {
     return Promise.resolve({
       ok: true,
       slotId: body.slotId,
-      photoUrl: "https://example.com/chunbaek-preview-photo.jpg",
+      photoUrl: `https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview.jpg?alt=media&token=preview-token`,
     });
   }
   if (action === "update-profile") {
