@@ -10,6 +10,11 @@
     todaySlot: null,
     profileFormMode: "create",
     teamMembers: [],
+    timelineSlot: null,
+    timelinePhotoRequired: false,
+    timelinePendingPhoto: null,
+    timelinePhotoRemoved: false,
+    timelinePhotoObjectUrl: null,
   };
 
   const VIEWS = {
@@ -757,8 +762,302 @@
     const container = document.getElementById("timeline-weeks");
     container.innerHTML = '<p class="section-sub">불러오는 중…</p>';
     apiGet("my-timeline", {}, true)
-      .then((data) => paintTimeline(data.weeks || MOCK.timeline))
-      .catch(() => paintTimeline(MOCK.timeline));
+      .then((data) => {
+        state.timelinePhotoRequired = !!data.photoRequired;
+        paintTimeline(data.weeks || MOCK.timeline);
+      })
+      .catch(() => {
+        state.timelinePhotoRequired = false;
+        paintTimeline(MOCK.timeline);
+      });
+  }
+
+  function clearTimelinePhotoPicker() {
+    if (state.timelinePhotoObjectUrl) {
+      URL.revokeObjectURL(state.timelinePhotoObjectUrl);
+      state.timelinePhotoObjectUrl = null;
+    }
+    state.timelinePendingPhoto = null;
+    state.timelinePhotoRemoved = false;
+    const fileInput = document.getElementById("timeline-modal-photo-file");
+    if (fileInput) fileInput.value = "";
+    const preview = document.getElementById("timeline-modal-photo-preview");
+    if (preview) {
+      preview.hidden = true;
+      preview.removeAttribute("src");
+    }
+    const removeBtn = document.getElementById("timeline-modal-photo-remove");
+    if (removeBtn) removeBtn.hidden = true;
+  }
+
+  function formatSlotDateMeta(slot) {
+    const di = slot.displayDayIndex ?? slot.dayIndex;
+    const date = slot.date || "";
+    if (!date) return `${di}일차`;
+    const [, m, d] = date.split("-").map(Number);
+    const dow = ["일", "월", "화", "수", "목", "금", "토"][
+      new Date(date.replace(/-/g, "/")).getDay()
+    ];
+    return `${di}일차 · ${m}/${d} (${dow})`;
+  }
+
+  function timelineEditHint(slot) {
+    if (slot.status === "future") return "아직 출석할 수 없는 날입니다.";
+    if (slot.status === "off") return "프로그램 휴무일입니다.";
+    if (slot.exception) return "예외 처리된 날입니다. 변경은 운영진에게 문의해 주세요.";
+    if (slot.editLocked) return "이번 주 출석 수정 마감이 지났습니다 (일요일 23:59 KST).";
+    return "이번 주 일요일 23:59까지 출석·메모·사진을 수정할 수 있습니다.";
+  }
+
+  function setTimelinePhotoPreview(src, showRemove) {
+    const preview = document.getElementById("timeline-modal-photo-preview");
+    const removeBtn = document.getElementById("timeline-modal-photo-remove");
+    if (!preview) return;
+    if (src) {
+      preview.src = src;
+      preview.hidden = false;
+      if (removeBtn) removeBtn.hidden = !showRemove;
+    } else {
+      preview.hidden = true;
+      preview.removeAttribute("src");
+      if (removeBtn) removeBtn.hidden = true;
+    }
+  }
+
+  function resizeImageFile(file, maxEdge = 1200) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        let { width, height } = img;
+        const scale = Math.min(1, maxEdge / Math.max(width, height));
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("사진 처리에 실패했습니다"));
+            return;
+          }
+          resolve(blob);
+        }, "image/jpeg", 0.82);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("사진을 불러올 수 없습니다"));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  async function readBlobAsDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("사진 인코딩 실패"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function uploadAttendancePhotoIfNeeded(slotId) {
+    if (!state.timelinePendingPhoto) return "";
+    const dataUrl = await readBlobAsDataUrl(state.timelinePendingPhoto);
+    const data = await apiPost("upload-attendance-photo", {
+      slotId,
+      imageBase64: dataUrl,
+    }, true);
+    return data.photoUrl || "";
+  }
+
+  async function saveTimelineAttendance() {
+    const slot = state.timelineSlot;
+    if (!slot || !slot.canEdit || state.isProcessing) return;
+
+    const note = (document.getElementById("timeline-modal-note-input")?.value || "").trim();
+    let photoUrl = slot.photoUrl || "";
+    if (state.timelinePhotoRemoved) photoUrl = "";
+    else if (!state.timelinePendingPhoto && slot.photoUrl) photoUrl = slot.photoUrl;
+
+    if (state.timelinePhotoRequired && !photoUrl && !state.timelinePendingPhoto) {
+      showToast("사진을 첨부해 주세요", true);
+      return;
+    }
+
+    state.isProcessing = true;
+    const saveBtn = document.getElementById("timeline-modal-save");
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+      if (state.timelinePendingPhoto) {
+        photoUrl = await uploadAttendancePhotoIfNeeded(slot.slotId);
+      }
+      const data = await apiPost("save-attendance", {
+        slotId: slot.slotId,
+        attended: true,
+        note,
+        photoUrl,
+      }, true);
+      if (data.stats && state.profile) state.profile.stats = data.stats;
+      const dayNum = slot.displayDayIndex ?? slot.dayIndex;
+      showToast(`${dayNum}일차 출석 저장됨`);
+      closeTrainingModal();
+      renderTimeline();
+      if (state.todaySlot
+        && (state.todaySlot.dayIndex === slot.slotId
+          || state.todaySlot.slotId === slot.slotId)) {
+        await loadToday();
+      }
+    } catch (e) {
+      showToast(e.message, true);
+    } finally {
+      state.isProcessing = false;
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  async function cancelTimelineAttendance() {
+    const slot = state.timelineSlot;
+    if (!slot || !slot.canEdit || !slot.attended || state.isProcessing) return;
+    if (!window.confirm("이 날 출석을 취소할까요?")) return;
+
+    state.isProcessing = true;
+    const cancelBtn = document.getElementById("timeline-modal-cancel-attend");
+    if (cancelBtn) cancelBtn.disabled = true;
+    try {
+      const data = await apiPost("save-attendance", {
+        slotId: slot.slotId,
+        attended: false,
+        note: "",
+        photoUrl: "",
+      }, true);
+      if (data.stats && state.profile) state.profile.stats = data.stats;
+      showToast("출석이 취소되었습니다");
+      closeTrainingModal();
+      renderTimeline();
+      if (state.todaySlot
+        && (state.todaySlot.dayIndex === slot.slotId
+          || state.todaySlot.slotId === slot.slotId)) {
+        await loadToday();
+      }
+    } catch (e) {
+      showToast(e.message, true);
+    } finally {
+      state.isProcessing = false;
+      if (cancelBtn) cancelBtn.disabled = false;
+    }
+  }
+
+  function openTrainingModal(slot) {
+    state.timelineSlot = slot;
+    clearTimelinePhotoPicker();
+
+    const title = slot.title || slot.label || "—";
+    document.getElementById("timeline-modal-title").textContent = title;
+    document.getElementById("timeline-modal-meta").textContent = formatSlotDateMeta(slot);
+    const contentEl = document.getElementById("timeline-modal-content");
+    contentEl.textContent = slot.content || "";
+    contentEl.style.display = slot.content ? "block" : "none";
+    document.getElementById("timeline-modal-status").textContent =
+      slotStatusLabel(slot.status, slot.photo);
+
+    const readonlyEl = document.getElementById("timeline-modal-readonly");
+    const editEl = document.getElementById("timeline-modal-edit");
+    const noteRead = document.getElementById("timeline-modal-note");
+    const photoReadWrap = document.getElementById("timeline-modal-photo-readonly");
+    const photoReadImg = document.getElementById("timeline-modal-photo-img");
+    const noteInput = document.getElementById("timeline-modal-note-input");
+    const hintEl = document.getElementById("timeline-modal-hint");
+    const saveBtn = document.getElementById("timeline-modal-save");
+    const cancelBtn = document.getElementById("timeline-modal-cancel-attend");
+    const photoSection = document.getElementById("timeline-modal-photo-section");
+
+    if (slot.canEdit) {
+      if (readonlyEl) readonlyEl.hidden = true;
+      if (editEl) editEl.hidden = false;
+      if (noteInput) noteInput.value = slot.note || "";
+      if (hintEl) hintEl.textContent = timelineEditHint(slot);
+      if (photoSection) {
+        photoSection.hidden = false;
+        const photoLabel = photoSection.querySelector(".field-label");
+        if (photoLabel) {
+          photoLabel.textContent = state.timelinePhotoRequired ? "사진 (필수)" : "사진 (선택)";
+        }
+      }
+      if (slot.photoUrl && !state.timelinePhotoRemoved) {
+        setTimelinePhotoPreview(slot.photoUrl, true);
+      }
+      const attended = !!slot.attended;
+      if (saveBtn) saveBtn.textContent = attended ? "저장" : "출석하기";
+      if (cancelBtn) cancelBtn.hidden = !attended;
+    } else {
+      if (editEl) editEl.hidden = true;
+      if (readonlyEl) readonlyEl.hidden = false;
+      const note = (slot.note || "").trim();
+      if (noteRead) {
+        if (note) {
+          noteRead.textContent = `메모: ${note}`;
+          noteRead.hidden = false;
+        } else {
+          noteRead.textContent = "";
+          noteRead.hidden = true;
+        }
+      }
+      if (photoReadWrap && photoReadImg) {
+        if (slot.photoUrl) {
+          photoReadImg.src = slot.photoUrl;
+          photoReadWrap.hidden = false;
+        } else {
+          photoReadWrap.hidden = true;
+          photoReadImg.removeAttribute("src");
+        }
+      }
+      if (hintEl) hintEl.textContent = "";
+    }
+
+    document.getElementById("timeline-modal").hidden = false;
+  }
+
+  function closeTrainingModal() {
+    clearTimelinePhotoPicker();
+    state.timelineSlot = null;
+    document.getElementById("timeline-modal").hidden = true;
+  }
+
+  async function onTimelinePhotoSelected(e) {
+    const file = e.target.files?.[0];
+    if (!file || !state.timelineSlot) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("이미지 파일만 선택할 수 있습니다", true);
+      e.target.value = "";
+      return;
+    }
+    try {
+      const blob = await resizeImageFile(file);
+      if (state.timelinePhotoObjectUrl) URL.revokeObjectURL(state.timelinePhotoObjectUrl);
+      state.timelinePendingPhoto = blob;
+      state.timelinePhotoRemoved = false;
+      state.timelinePhotoObjectUrl = URL.createObjectURL(blob);
+      setTimelinePhotoPreview(state.timelinePhotoObjectUrl, true);
+    } catch (err) {
+      showToast(err.message || "사진 처리 실패", true);
+      e.target.value = "";
+    }
+  }
+
+  function onTimelinePhotoRemove() {
+    state.timelinePendingPhoto = null;
+    state.timelinePhotoRemoved = true;
+    if (state.timelinePhotoObjectUrl) {
+      URL.revokeObjectURL(state.timelinePhotoObjectUrl);
+      state.timelinePhotoObjectUrl = null;
+    }
+    const fileInput = document.getElementById("timeline-modal-photo-file");
+    if (fileInput) fileInput.value = "";
+    setTimelinePhotoPreview(null, false);
   }
 
   function slotStatusLabel(status, photo) {
@@ -776,35 +1075,6 @@
     if (status === "off") return "—";
     if (status === "today") return "오늘";
     return "○";
-  }
-
-  function openTrainingModal(slot) {
-    const title = slot.title || slot.label || "—";
-    document.getElementById("timeline-modal-title").textContent = title;
-    document.getElementById("timeline-modal-meta").textContent =
-      `${slot.displayDayIndex ?? slot.dayIndex}일차 · ${(slot.date || "").slice(5).replace("-", "월 ")}일`;
-    const contentEl = document.getElementById("timeline-modal-content");
-    contentEl.textContent = slot.content || "";
-    contentEl.style.display = slot.content ? "block" : "none";
-    const noteEl = document.getElementById("timeline-modal-note");
-    const note = (slot.note || "").trim();
-    if (noteEl) {
-      if (note) {
-        noteEl.textContent = `메모: ${note}`;
-        noteEl.hidden = false;
-      } else {
-        noteEl.textContent = "";
-        noteEl.hidden = true;
-      }
-    }
-    document.getElementById("timeline-modal-status").textContent =
-      slotStatusLabel(slot.status, slot.photo);
-    const modal = document.getElementById("timeline-modal");
-    modal.hidden = false;
-  }
-
-  function closeTrainingModal() {
-    document.getElementById("timeline-modal").hidden = true;
   }
 
   function bindTimelineEvents() {
@@ -1041,6 +1311,10 @@
     document.getElementById("timeline-modal").addEventListener("click", (e) => {
       if (e.target.id === "timeline-modal") closeTrainingModal();
     });
+    document.getElementById("timeline-modal-save").addEventListener("click", saveTimelineAttendance);
+    document.getElementById("timeline-modal-cancel-attend").addEventListener("click", cancelTimelineAttendance);
+    document.getElementById("timeline-modal-photo-file").addEventListener("change", onTimelinePhotoSelected);
+    document.getElementById("timeline-modal-photo-remove").addEventListener("click", onTimelinePhotoRemove);
 
     document.getElementById("team-profile-close").addEventListener("click", closeTeamProfileModal);
     document.getElementById("team-profile-modal").addEventListener("click", (e) => {

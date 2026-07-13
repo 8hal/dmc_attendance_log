@@ -209,8 +209,35 @@
           <h3 class="timeline-modal-title" id="timeline-modal-title">5km 인터벌</h3>
           <p class="timeline-modal-meta" id="timeline-modal-meta">36일차 · 4/7</p>
           <p class="timeline-modal-content" id="timeline-modal-content"></p>
-          <p class="timeline-modal-note" id="timeline-modal-note" hidden></p>
           <p class="timeline-modal-status" id="timeline-modal-status"></p>
+          <div id="timeline-modal-readonly" hidden>
+            <p class="timeline-modal-note" id="timeline-modal-note" hidden></p>
+            <div class="timeline-modal-photo-readonly" id="timeline-modal-photo-readonly" hidden>
+              <img id="timeline-modal-photo-img" class="timeline-photo-preview" alt="출석 사진" />
+            </div>
+          </div>
+          <div id="timeline-modal-edit" hidden>
+            <label class="field-label" for="timeline-modal-note-input">메모 (선택)</label>
+            <textarea class="input timeline-modal-note-input" id="timeline-modal-note-input" rows="2" maxlength="500" placeholder="오늘 한 줄 메모"></textarea>
+            <div class="timeline-modal-photo-section" id="timeline-modal-photo-section">
+              <label class="field-label">사진 (선택)</label>
+              <div class="timeline-photo-row">
+                <img id="timeline-modal-photo-preview" class="timeline-photo-preview" hidden alt="선택한 사진 미리보기" />
+                <div class="timeline-photo-btns">
+                  <label class="btn btn-ghost timeline-photo-pick">
+                    + 사진 선택
+                    <input type="file" id="timeline-modal-photo-file" accept="image/jpeg,image/png,image/webp" hidden />
+                  </label>
+                  <button type="button" class="btn btn-ghost" id="timeline-modal-photo-remove" hidden>사진 제거</button>
+                </div>
+              </div>
+            </div>
+            <p class="timeline-modal-hint" id="timeline-modal-hint"></p>
+            <div class="timeline-modal-btns">
+              <button type="button" class="btn btn-primary" id="timeline-modal-save">출석하기</button>
+              <button type="button" class="btn btn-outline" id="timeline-modal-cancel-attend" hidden>출석 취소</button>
+            </div>
+          </div>
           <button type="button" class="btn btn-primary" id="timeline-modal-close" style="margin-top:16px">닫기</button>
         </div>
       </div>

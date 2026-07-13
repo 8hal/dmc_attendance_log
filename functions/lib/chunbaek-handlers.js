@@ -2,6 +2,7 @@
  * 춘백 시즌3 API handlers — /api/chunbaek
  */
 const { FieldValue } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
 const {
@@ -30,6 +31,8 @@ const GOAL_WEIGHT_MIN_KG = 30;
 const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
 const GOAL_RACE_NOTE_MAX = 80;
+const CHUNBAEK_SEASON_ID = "chunbaek-s3";
+const PHOTO_UPLOAD_MAX_BYTES = 2 * 1024 * 1024;
 
 function parseGoalRace(body) {
   const goalRace = String(body.goalRace || "").trim();
@@ -410,11 +413,15 @@ async function handleSaveAttendance(req, res, db) {
   }
 
   const docId = `${auth.memberId}_${getSlotKey(slot)}`;
+  const existingSnap = await db.collection("chunbaek_attendance").doc(docId).get();
+  if (existingSnap.exists && existingSnap.data().exception) {
+    return res.status(403).json({ ok: false, error: "exception slot" });
+  }
+
   await db.collection("chunbaek_attendance").doc(docId).set({
     memberId: auth.memberId,
     slotId: slot.dayIndex ?? Number(slot.id),
     attended,
-    exception: false,
     note,
     photoUrl,
     updatedAt: FieldValue.serverTimestamp(),
@@ -444,7 +451,102 @@ async function handleMyTimeline(req, res, db) {
   ]);
   const today = todayKstDate();
   const weeks = buildTimelineWeeks(slots, attendanceMap, config, today);
-  return res.json({ ok: true, weeks });
+  return res.json({
+    ok: true,
+    photoRequired: !!config.photoRequired,
+    weeks,
+  });
+}
+
+function parseImageBase64(body) {
+  const raw = String(body.imageBase64 || body.data || "").trim();
+  if (!raw) return { error: "imageBase64 required" };
+  const match = /^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/i.exec(raw);
+  const b64 = match ? match[2] : raw;
+  let buffer;
+  try {
+    buffer = Buffer.from(b64, "base64");
+  } catch (e) {
+    return { error: "invalid base64 image" };
+  }
+  if (!buffer.length || buffer.length > PHOTO_UPLOAD_MAX_BYTES) {
+    return { error: `image must be under ${PHOTO_UPLOAD_MAX_BYTES} bytes` };
+  }
+  return { buffer };
+}
+
+async function handleUploadAttendancePhoto(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const body = req.body || {};
+  const slotId = body.slotId;
+  if (slotId === undefined || slotId === null || slotId === "") {
+    return res.status(400).json({ ok: false, error: "slotId required" });
+  }
+
+  const parsed = parseImageBase64(body);
+  if (parsed.error) {
+    return res.status(400).json({ ok: false, error: parsed.error });
+  }
+
+  const [config, slots] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+  ]);
+  const slot = findSlotById(slots, slotId);
+  if (!slot) {
+    return res.status(404).json({ ok: false, error: "slot not found" });
+  }
+  const today = todayKstDate();
+  if (isBetaSlot(slot)) {
+    if (!isDateInBetaWeek(config, slots, today)) {
+      return res.status(403).json({ ok: false, error: "beta week ended" });
+    }
+  } else {
+    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    if (seasonStart && today < seasonStart) {
+      return res.status(403).json({ ok: false, error: "season not started" });
+    }
+  }
+  if (slot.isProgramOff) {
+    return res.status(400).json({ ok: false, error: "program off day" });
+  }
+  if (isMemberEditLocked(slot.date)) {
+    return res.status(403).json({ ok: false, error: "week deadline passed" });
+  }
+
+  const docId = `${auth.memberId}_${getSlotKey(slot)}`;
+  const existingSnap = await db.collection("chunbaek_attendance").doc(docId).get();
+  if (existingSnap.exists && existingSnap.data().exception) {
+    return res.status(403).json({ ok: false, error: "exception slot" });
+  }
+
+  const storagePath = `chunbaek/attendance/${CHUNBAEK_SEASON_ID}/${getSlotKey(slot)}/${auth.memberId}.jpg`;
+  try {
+    const bucket = getStorage().bucket();
+    const file = bucket.file(storagePath);
+    await file.save(parsed.buffer, {
+      metadata: { contentType: "image/jpeg", cacheControl: "public, max-age=31536000" },
+      resumable: false,
+    });
+    try {
+      await file.makePublic();
+    } catch (pubErr) {
+      console.warn("[chunbaek] makePublic failed, using media URL", pubErr.message);
+    }
+    const photoUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+    if (photoUrl.length > 2000) {
+      return res.status(500).json({ ok: false, error: "photoUrl too long" });
+    }
+    return res.json({ ok: true, photoUrl, slotId: slot.dayIndex ?? Number(slot.id) });
+  } catch (err) {
+    console.error("[chunbaek] upload-attendance-photo failed", err);
+    return res.status(500).json({ ok: false, error: "photo upload failed" });
+  }
 }
 
 async function handleTeamSummary(req, res, db) {
@@ -541,6 +643,9 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "save-attendance") {
     return handleSaveAttendance(req, res, db);
+  }
+  if (action === "upload-attendance-photo") {
+    return handleUploadAttendancePhoto(req, res, db);
   }
   if (action === "my-timeline") {
     return handleMyTimeline(req, res, db);

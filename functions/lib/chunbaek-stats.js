@@ -359,6 +359,12 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
         slots: weekSlots.map((slot) => {
           const att = getAttendance(attendanceMap, slot);
           const status = slotStatus(slot, attendanceMap, today);
+          const editLocked = isMemberEditLocked(slot.date);
+          const exception = !!att?.exception;
+          const canEdit = !slot.isProgramOff
+            && !exception
+            && !editLocked
+            && slot.date <= today;
           return {
             slotId: slot.dayIndex ?? Number(slot.id),
             dayIndex: slot.dayIndex,
@@ -367,7 +373,12 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
             title: slot.isProgramOff ? "(휴무)" : (slotTrainingTitle(slot) || "—"),
             content: slot.isProgramOff ? "" : slotTrainingContent(slot),
             status,
+            attended: !!att?.attended,
+            exception,
+            editLocked,
+            canEdit,
             photo: !!(att?.photoUrl),
+            photoUrl: att?.photoUrl || "",
             note: att?.note || "",
             isBeta: isBetaSlot(slot),
           };
