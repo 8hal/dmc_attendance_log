@@ -157,7 +157,7 @@ async function loadMemberAttendance(db, memberId) {
   return map;
 }
 
-function resolveSlotDate(slot, config = {}, slots = []) {
+function resolveSlotDate(slot, config = {}, slots = [], today = "") {
   const direct = normalizeSlotDate(slot?.date);
   if (direct) return direct;
   const di = slot?.dayIndex ?? Number(slot?.id);
@@ -170,6 +170,7 @@ function resolveSlotDate(slot, config = {}, slots = []) {
       }
     }
   }
+  if (today && isDateInBetaWeek(config, slots, today)) return today;
   return "";
 }
 
@@ -406,13 +407,14 @@ function seasonMeta(bounds) {
   };
 }
 
-function slotPayloadFromSlot(slot, attendanceMap, config = {}, slots = []) {
+function slotPayloadFromSlot(slot, attendanceMap, config = {}, slots = [], today = "") {
   const att = getAttendance(attendanceMap, slot);
-  const date = resolveSlotDate(slot, config, slots);
+  const dayIndex = slot.dayIndex ?? Number(slot.id);
+  const date = resolveSlotDate(slot, config, slots, today);
   return {
-    slotId: slot.dayIndex ?? Number(slot.id),
-    dayIndex: slot.dayIndex,
-    displayDayIndex: displayDayIndex(slot),
+    slotId: dayIndex,
+    dayIndex,
+    displayDayIndex: displayDayIndex({ ...slot, dayIndex }),
     date,
     week: slot.week,
     trainingTitle: slotTrainingTitle(slot),
@@ -439,7 +441,7 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
   const todaySlot = findTodaySlot(slots, today, config);
   if (todaySlot && isBetaSlot(todaySlot)) {
     return {
-      slot: slotPayloadFromSlot(todaySlot, attendanceMap, config, slots),
+      slot: slotPayloadFromSlot(todaySlot, attendanceMap, config, slots, today),
       beforeSeason: false,
       afterSeason: false,
       betaWeek: true,
@@ -472,7 +474,7 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
   }
 
   return {
-    slot: slotPayloadFromSlot(todaySlot, attendanceMap, config, slots),
+    slot: slotPayloadFromSlot(todaySlot, attendanceMap, config, slots, today),
     beforeSeason: false,
     afterSeason: false,
     betaWeek: false,

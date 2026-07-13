@@ -539,12 +539,12 @@
           ? "운영진이 admin에서 0주차(베타) 훈련을 저장하면 여기에 표시됩니다."
           : "운영진에게 문의해 주세요.";
         document.getElementById("before-season-card").hidden = false;
-        document.getElementById("before-season-eyebrow").textContent = betaNoSlot ? "0주차 베타" : "안내";
+        const eyebrow = document.getElementById("before-season-eyebrow");
+        if (eyebrow) eyebrow.textContent = betaNoSlot ? "0주차 베타" : "안내";
         return;
       }
 
       setTodayPanels({ beforeSeason: false, afterSeason: false, active: true, programOff: false });
-      document.getElementById("before-season-eyebrow").textContent = "100일 준비";
 
       if (sl.isProgramOff) {
         setTodayPanels({ beforeSeason: false, afterSeason: false, active: false, programOff: true });
