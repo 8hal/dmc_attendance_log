@@ -62,8 +62,13 @@ function betaWeekBoundsFromConfig(config = {}) {
 function betaWeekBounds(config, slots) {
   const betaSlots = slots.filter(isBetaSlot);
   if (betaSlots.length) {
-    const dates = betaSlots.map((s) => s.date).sort();
-    return { startDate: dates[0], endDate: dates[dates.length - 1] };
+    const dates = betaSlots
+      .map((s) => normalizeSlotDate(s.date))
+      .filter(Boolean)
+      .sort();
+    if (dates.length) {
+      return { startDate: dates[0], endDate: dates[dates.length - 1] };
+    }
   }
   return betaWeekBoundsFromConfig(config);
 }
@@ -152,12 +157,34 @@ async function loadMemberAttendance(db, memberId) {
   return map;
 }
 
-function findTodaySlot(slots, today) {
-  return slots.find((s) => normalizeSlotDate(s.date) === today) || null;
+function resolveSlotDate(slot, config = {}, slots = []) {
+  const direct = normalizeSlotDate(slot?.date);
+  if (direct) return direct;
+  const di = slot?.dayIndex ?? Number(slot?.id);
+  if (isBetaSlot(slot) && Number.isFinite(di) && di >= BETA_DAY_INDEX_BASE) {
+    const bounds = betaWeekBounds(config, slots);
+    if (bounds) {
+      const offset = di - BETA_DAY_INDEX_BASE;
+      if (offset >= 0 && offset < BETA_DAY_COUNT) {
+        return addDaysIso(bounds.startDate, offset);
+      }
+    }
+  }
+  return "";
 }
 
-function findWeekForDate(slots, today) {
-  const slot = findTodaySlot(slots, today);
+function findTodaySlot(slots, today, config = {}) {
+  const byDate = slots.find((s) => normalizeSlotDate(s.date) === today);
+  if (byDate) return byDate;
+  const betaIdx = betaDayIndexForDate(config, slots, today);
+  if (betaIdx != null) {
+    return slots.find((s) => (s.dayIndex ?? Number(s.id)) === betaIdx) || null;
+  }
+  return null;
+}
+
+function findWeekForDate(slots, today, config = {}) {
+  const slot = findTodaySlot(slots, today, config);
   if (slot) return slot.week;
   let week = 1;
   for (const s of slots) {
@@ -198,7 +225,7 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
   const statsSlots = statsSlotsForToday(slots, todayDate, config);
-  const currentWeek = findWeekForDate(slots, todayDate);
+  const currentWeek = findWeekForDate(slots, todayDate, config);
   const inBetaWeek = currentWeek === BETA_WEEK && isDateInBetaWeek(config, slots, todayDate);
 
   let seasonDayIndex = 0;
@@ -379,9 +406,9 @@ function seasonMeta(bounds) {
   };
 }
 
-function slotPayloadFromSlot(slot, attendanceMap) {
+function slotPayloadFromSlot(slot, attendanceMap, config = {}, slots = []) {
   const att = getAttendance(attendanceMap, slot);
-  const date = normalizeSlotDate(slot.date);
+  const date = resolveSlotDate(slot, config, slots);
   return {
     slotId: slot.dayIndex ?? Number(slot.id),
     dayIndex: slot.dayIndex,
@@ -409,10 +436,10 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
     photoRequired: !!config.photoRequired,
   };
 
-  const todaySlot = findTodaySlot(slots, today);
+  const todaySlot = findTodaySlot(slots, today, config);
   if (todaySlot && isBetaSlot(todaySlot)) {
     return {
-      slot: slotPayloadFromSlot(todaySlot, attendanceMap),
+      slot: slotPayloadFromSlot(todaySlot, attendanceMap, config, slots),
       beforeSeason: false,
       afterSeason: false,
       betaWeek: true,
@@ -445,7 +472,7 @@ function todaySlotPayload(slots, attendanceMap, today, config = {}) {
   }
 
   return {
-    slot: slotPayloadFromSlot(todaySlot, attendanceMap),
+    slot: slotPayloadFromSlot(todaySlot, attendanceMap, config, slots),
     beforeSeason: false,
     afterSeason: false,
     betaWeek: false,

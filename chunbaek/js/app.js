@@ -547,7 +547,7 @@
         return;
       }
 
-      paintTodaySlot(sl);
+      paintTodaySlot(sl, slotRes);
 
       const btn = document.getElementById("btn-attend");
       if (sl.attended) {
@@ -568,10 +568,14 @@
     }
   }
 
-  function paintTodaySlot(sl) {
-    if (!sl || !sl.date) {
+  function paintTodaySlot(sl, slotRes = {}) {
+    const date = sl?.date || deriveBetaDate(sl, slotRes);
+    if (!sl || !date) {
       document.getElementById("today-day").textContent = "오늘 훈련 정보를 불러오지 못했습니다";
-      document.getElementById("today-training").textContent = "잠시 후 다시 시도하거나 운영진에게 문의해 주세요.";
+      document.getElementById("today-training").textContent =
+        slotRes.betaNoSlotToday
+          ? "0주차 슬롯이 DB에 없습니다. seed-chunbaek-week0 실행 후 admin에서 훈련을 저장해 주세요."
+          : "잠시 후 다시 시도하거나 운영진에게 문의해 주세요.";
       const detailEl = document.getElementById("today-training-detail");
       if (detailEl) {
         detailEl.textContent = "";
@@ -580,10 +584,10 @@
       return;
     }
 
-    const [y, m, d] = String(sl.date).slice(0, 10).split("-").map(Number);
+    const [y, m, d] = String(date).slice(0, 10).split("-").map(Number);
     const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(y, m - 1, d).getDay()];
     const dayNum = sl.displayDayIndex ?? sl.dayIndex;
-    const dayLabel = `${dayNum}일차 · ${String(sl.date).slice(5, 7)}월 ${String(sl.date).slice(8, 10)}일 (${dow})`;
+    const dayLabel = `${dayNum}일차 · ${String(date).slice(5, 7)}월 ${String(date).slice(8, 10)}일 (${dow})`;
     document.getElementById("today-day").textContent = dayLabel;
 
     const title = sl.trainingTitle || sl.trainingLabel || "";
@@ -597,7 +601,19 @@
       detailEl.textContent = content;
       detailEl.style.display = content ? "block" : "none";
     }
-    updateSaturdayNotice(sl.date);
+    updateSaturdayNotice(date);
+  }
+
+  function deriveBetaDate(sl, slotRes) {
+    if (!sl || sl.date) return sl?.date || "";
+    const betaStart = slotRes.betaWeekStartDate;
+    const di = sl.dayIndex ?? sl.slotId;
+    if (!betaStart || !di || di < 901) return "";
+    const offset = di - 901;
+    if (offset < 0 || offset > 6) return "";
+    const [y, m, d] = betaStart.split("-").map(Number);
+    const ms = Date.UTC(y, m - 1, d) + offset * 86400000;
+    return new Date(ms).toISOString().slice(0, 10);
   }
 
   function renderTodayPreview() {
