@@ -9,6 +9,7 @@
     profile: null,
     todaySlot: null,
     profileFormMode: "create",
+    teamMembers: [],
   };
 
   const VIEWS = {
@@ -63,7 +64,10 @@
       closeTrainingModal();
       renderTimeline();
     }
-    if (name === "team") renderTeam();
+    if (name === "team") {
+      closeTeamProfileModal();
+      renderTeam();
+    }
     if (name === "me") renderMe();
 
     const main = document.querySelector(".main");
@@ -826,6 +830,46 @@
     bindTimelineEvents();
   }
 
+  function closeTeamProfileModal() {
+    const modal = document.getElementById("team-profile-modal");
+    if (modal) modal.hidden = true;
+  }
+
+  function openTeamProfileModal(memberId) {
+    const m = state.teamMembers.find((x) => x.memberId === memberId);
+    if (!m) return;
+    const me = state.profile?.memberId;
+    const isMe = me && m.memberId === me;
+    document.getElementById("team-profile-title").textContent = m.nickname || "—";
+    document.getElementById("team-profile-meta").textContent = isMe ? "나" : "팀원";
+    const goalTime = m.goalMarathonNetTime != null
+      ? formatNetTime(m.goalMarathonNetTime)
+      : (m.goal || "—");
+    const weekTarget = m.weekTarget || 3;
+    document.getElementById("team-profile-dl").innerHTML = `
+      <dt>목표 대회</dt><dd>${m.goalRaceLabel ? escapeHtml(m.goalRaceLabel) : "—"}</dd>
+      <dt>풀 목표</dt><dd>${escapeHtml(goalTime)}</dd>
+      <dt>각오</dt><dd class="profile-intro">${m.resolutionText ? escapeHtml(m.resolutionText) : "—"}</dd>
+      <dt>시즌 출석</dt><dd>${m.seasonAttendCount ?? 0}회 (출석률 ${m.seasonAttendRate ?? 0}%)</dd>
+      <dt>이번 주</dt><dd>
+        <span class="week-dots team-week-dots" aria-hidden="true">${m.weekDots || ""}</span>
+        ${escapeHtml(m.week || `0/${weekTarget}`)}${m.met ? " ✓" : ""}
+      </dd>
+    `;
+    document.getElementById("team-profile-modal").hidden = false;
+  }
+
+  function bindTeamListEvents() {
+    const listEl = document.getElementById("team-list");
+    if (!listEl || listEl._teamBound) return;
+    listEl._teamBound = true;
+    listEl.addEventListener("click", (e) => {
+      const row = e.target.closest("[data-member-id]");
+      if (!row) return;
+      openTeamProfileModal(row.dataset.memberId);
+    });
+  }
+
   function renderTeam() {
     const summaryEl = document.getElementById("team-summary");
     const listEl = document.getElementById("team-list");
@@ -851,6 +895,7 @@
     const members = sortTeamMembersForDisplay(
       (t.members || []).filter((m) => m.profileComplete !== false),
     );
+    state.teamMembers = members;
     const count = members.length;
     const weekMet = members.filter((m) => m.met).length;
     const seasonRate = count > 0
@@ -866,17 +911,18 @@
       return;
     }
     document.getElementById("team-list").innerHTML = members.map((m) => `
-      <div class="team-row">
+      <button type="button" class="team-row team-row--clickable" data-member-id="${escapeHtml(m.memberId || "")}" aria-label="${escapeHtml(m.nickname || "팀원")} 프로필 보기">
         <div>
-          <strong>${m.nickname}</strong>
-          <div class="team-goal">목표 ${m.goal}${m.goalRaceLabel ? ` · ${escapeHtml(m.goalRaceLabel)}` : ""}</div>
+          <strong>${escapeHtml(m.nickname || "")}</strong>
+          <div class="team-goal">목표 ${escapeHtml(m.goal || "")}${m.goalRaceLabel ? ` · ${escapeHtml(m.goalRaceLabel)}` : ""}</div>
         </div>
         <div style="text-align:right">
-          <div class="week-dots team-week-dots" aria-label="이번 주 출석 ${escapeHtml(m.week)}">${m.weekDots || m.bar}</div>
-          <div class="team-goal">${m.week} ${m.met ? "✓" : ""}</div>
+          <div class="week-dots team-week-dots" aria-hidden="true">${m.weekDots || m.bar}</div>
+          <div class="team-goal">${escapeHtml(m.week || "")} ${m.met ? "✓" : ""}</div>
         </div>
-      </div>
+      </button>
     `).join("");
+    bindTeamListEvents();
   }
 
   function renderMe() {
@@ -939,6 +985,12 @@
     document.getElementById("timeline-modal").addEventListener("click", (e) => {
       if (e.target.id === "timeline-modal") closeTrainingModal();
     });
+
+    document.getElementById("team-profile-close").addEventListener("click", closeTeamProfileModal);
+    document.getElementById("team-profile-modal").addEventListener("click", (e) => {
+      if (e.target.id === "team-profile-modal") closeTeamProfileModal();
+    });
+    bindTeamListEvents();
 
     document.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => showView(btn.dataset.tab));

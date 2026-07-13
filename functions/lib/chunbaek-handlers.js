@@ -450,10 +450,13 @@ async function handleTeamSummary(req, res, db) {
       goalMarathonNetTime: p.s3.goalMarathonNetTime ?? null,
       goalRace: p.s3.goalRace ?? null,
       goalRaceLabel: formatGoalRaceLabel(p.s3.goalRace, p.s3.goalRaceNote),
+      resolutionText: p.s3.resolutionText ?? null,
       bar: weekBar(stats.weekAttendCount, stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       week: `${stats.weekAttendCount}/${stats.weekTarget}`,
+      weekTarget: stats.weekTarget,
       met: stats.weekTargetMet,
+      seasonAttendCount: stats.seasonAttendCount,
       seasonAttendRate: stats.seasonAttendRate,
     });
   }
