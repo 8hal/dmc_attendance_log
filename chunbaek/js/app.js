@@ -1359,9 +1359,21 @@
     const seasonRate = count > 0
       ? Math.round(members.reduce((sum, m) => sum + (m.seasonAttendRate || 0), 0) / count)
       : (t.seasonRate || 0);
+    const weekMetPct = count > 0 ? Math.round((weekMet / count) * 100) : 0;
     document.getElementById("team-summary").innerHTML = `
-      <div>시즌 출석률 <strong>${seasonRate}%</strong> (팀 평균)</div>
-      <div>이번 주 3회 달성 <strong>${weekMet}/${count}명</strong></div>
+      <div class="team-summary-stat">
+        <div class="team-summary-label">시즌 출석률</div>
+        <div class="team-summary-value">${seasonRate}<span class="team-summary-value-unit">%</span></div>
+        <div class="team-summary-caption">팀 평균</div>
+      </div>
+      <div class="team-summary-stat">
+        <div class="team-summary-label">이번 주 3회</div>
+        <div class="team-summary-value team-summary-value--attend">${weekMet}<span class="team-summary-value-unit">명</span></div>
+        <div class="team-summary-caption">달성 · ${count}명 중</div>
+        <div class="team-summary-bar" role="presentation" aria-hidden="true">
+          <span class="team-summary-bar-fill${weekMet ? "" : " team-summary-bar-fill--empty"}" style="width:${weekMetPct}%"></span>
+        </div>
+      </div>
     `;
     if (!count) {
       document.getElementById("team-list").innerHTML =
