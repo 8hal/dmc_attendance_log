@@ -380,12 +380,6 @@ body {
   padding-bottom: 12px;
   border-bottom: 3px solid var(--chun-orange);
 }
-.stats-season {
-  font-family: var(--font-display);
-  font-size: 14px;
-  letter-spacing: 0.08em;
-  color: var(--chun-orange);
-}
 .stats-nickname {
   font-size: 20px;
   font-weight: 800;
