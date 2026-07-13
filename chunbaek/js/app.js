@@ -1092,6 +1092,66 @@
     e.target.value = "";
   }
 
+  function weekBarToHtml(bar) {
+    return String(bar || "").split("").map((ch) => {
+      if (ch === "█") return '<span class="week-pill week-pill--done"></span>';
+      if (ch === "░") return '<span class="week-pill week-pill--open"></span>';
+      return "";
+    }).join("");
+  }
+
+  function weekDotsToHtml(dots) {
+    return String(dots || "").split("").map((ch) => {
+      if (ch === "●") return '<span class="week-pill week-pill--done"></span>';
+      if (ch === "○") return '<span class="week-pill week-pill--open"></span>';
+      if (ch === "·") return '<span class="week-pill week-pill--future"></span>';
+      return "";
+    }).join("");
+  }
+
+  function weekSlotsToProgressHtml(slots) {
+    return (slots || [])
+      .filter((s) => s.status !== "off")
+      .map((s) => {
+        if (s.status === "attend" || s.status === "exception") {
+          return '<span class="week-pill week-pill--done"></span>';
+        }
+        if (s.status === "today" || s.status === "miss") {
+          return '<span class="week-pill week-pill--open"></span>';
+        }
+        return '<span class="week-pill week-pill--future"></span>';
+      })
+      .join("");
+  }
+
+  function slotStatusBadge(status, photo) {
+    const photoTag = photo
+      ? '<span class="status-badge-photo" title="사진 있음" aria-hidden="true">📷</span>'
+      : "";
+    if (status === "attend") {
+      return `<span class="status-badge status-badge--attend" title="출석 완료">${photoTag}<svg class="status-badge-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+    }
+    if (status === "exception") {
+      return '<span class="status-badge status-badge--exception" title="예외">예외</span>';
+    }
+    if (status === "off") {
+      return '<span class="status-badge status-badge--off" title="휴무">휴</span>';
+    }
+    if (status === "today") {
+      return '<span class="status-badge status-badge--today" title="오늘">오늘</span>';
+    }
+    if (status === "future") {
+      return '<span class="status-badge status-badge--future" title="예정"><span class="status-badge-dot"></span></span>';
+    }
+    return '<span class="status-badge status-badge--miss" title="미출석"><span class="status-badge-ring"></span></span>';
+  }
+
+  function slotDayBadge(slot) {
+    const day = slot.displayDayIndex ?? slot.dayIndex;
+    const status = slot.status || "future";
+    return `<span class="slot-day-badge slot-day-badge--${status}"><span class="slot-day-num">${day}</span><span class="slot-day-unit">일</span></span>`;
+  }
+
   function slotStatusLabel(status, photo) {
     if (status === "attend") return `출석 완료${photo ? " · 사진 있음" : ""}`;
     if (status === "exception") return "예외 처리됨";
@@ -1099,14 +1159,6 @@
     if (status === "today") return "오늘";
     if (status === "future") return "예정";
     return "미출석";
-  }
-
-  function slotStatusIcon(status, photo) {
-    if (status === "attend") return `✓${photo ? " 📷" : ""}`;
-    if (status === "exception") return "예외";
-    if (status === "off") return "—";
-    if (status === "today") return "오늘";
-    return "○";
   }
 
   function bindTimelineEvents() {
@@ -1148,7 +1200,7 @@
           <span class="week-arrow">${collapsed ? "▶" : "▼"}</span>
           <span>${w.weekLabel || `${w.week}주차`}</span>
           <span class="week-range">${w.range || ""}</span>
-          <span class="week-dots">${w.dots || ""}</span>
+          <span class="week-progress" aria-hidden="true">${weekSlotsToProgressHtml(slots)}</span>
           <span class="week-summary">${w.attendSummary || ""}</span>
         </div>
         <div class="week-slots">
@@ -1157,16 +1209,18 @@
             const content = s.content || "";
             const note = (s.note || "").trim();
             const off = s.status === "off";
+            const rowStatus = s.status || "future";
             return `
-            <div class="slot-row ${s.status === "today" ? "today" : ""}${off ? " off-day" : ""}"
-                 data-week="${w.week}" data-slot-index="${i}" role="button" tabindex="0">
-              <span class="slot-day">${s.displayDayIndex ?? s.dayIndex}일</span>
+            <div class="slot-row slot-row--${rowStatus}${s.status === "today" ? " today" : ""}${off ? " off-day" : ""}"
+                 data-week="${w.week}" data-slot-index="${i}" role="button" tabindex="0"
+                 aria-label="${s.displayDayIndex ?? s.dayIndex}일차 ${escapeHtml(title)} ${slotStatusLabel(s.status, s.photo)}">
+              ${slotDayBadge(s)}
               <div class="slot-training">
                 <div class="slot-training-title">${escapeHtml(title)}</div>
                 <div class="slot-training-content">${escapeHtml(content)}</div>
                 ${note ? `<div class="slot-training-note">${escapeHtml(note)}</div>` : ""}
               </div>
-              <span class="slot-status">${slotStatusIcon(s.status, s.photo)}</span>
+              ${slotStatusBadge(s.status, s.photo)}
             </div>`;
           }).join("")}
         </div>
@@ -1238,7 +1292,7 @@
       <dt>각오</dt><dd class="profile-intro">${m.resolutionText ? escapeHtml(m.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${m.seasonAttendCount ?? 0}회 (출석률 ${m.seasonAttendRate ?? 0}%)</dd>
       <dt>이번 주</dt><dd>
-        <span class="week-dots team-week-dots" aria-hidden="true">${m.weekDots || ""}</span>
+        <span class="week-dots team-week-dots" aria-hidden="true">${weekDotsToHtml(m.weekDots || "")}</span>
         ${escapeHtml(m.week || `0/${weekTarget}`)}${m.met ? " ✓" : ""}
       </dd>
     `;
