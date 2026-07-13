@@ -20,6 +20,7 @@ const {
   betaWeekBounds,
   betaDayIndexForDate,
   BETA_WEEK,
+  normalizePhotoUrls,
 } = require("./chunbaek-stats");
 
 const MS_PER_DAY = 86400000;
@@ -328,13 +329,15 @@ async function handleAdminGrid(req, res, db) {
       }
       const att = getAttendance(attendanceMap, slot);
       const status = slotStatus(slot, attendanceMap, today);
+      const photoUrls = normalizePhotoUrls(att);
       return {
         slotId: slot.dayIndex ?? Number(slot.id),
         status,
         attended: !!(att?.attended),
         exception: !!(att?.exception),
         exceptionNote: att?.exceptionNote || "",
-        photoUrl: att?.photoUrl || "",
+        photoUrls,
+        photoUrl: photoUrls[0] || "",
         note: att?.note || "",
         updatedBy: att?.updatedBy || null,
       };

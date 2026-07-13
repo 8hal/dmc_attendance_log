@@ -73,6 +73,7 @@ async function apiPost(action, body, token) {
   const uploaded = await apiPost("upload-attendance-photo", {
     slotId,
     imageBase64: tinyJpeg,
+    photoIndex: 0,
   }, token);
   assert.equal(uploaded.status, 200, uploaded.data?.error || "upload failed");
   assert.equal(uploaded.data.ok, true);
@@ -83,9 +84,19 @@ async function apiPost(action, body, token) {
     slotId,
     attended: true,
     note: "사진 테스트",
-    photoUrl: uploaded.data.photoUrl,
+    photoUrls: [uploaded.data.photoUrl],
   }, token);
   assert.equal(withPhoto.data.ok, true);
+
+  const teamFeed = await apiGet("team-member-attendance", { token, memberId: "chunbaek_seed_b" });
+  assert.equal(teamFeed.status, 200);
+  assert.equal(teamFeed.data.ok, true);
+  assert.ok(teamFeed.data.entries.length >= 1);
+  assert.equal(teamFeed.data.entries[0].note, "사진 테스트");
+  assert.ok(teamFeed.data.entries[0].photoUrls.length >= 1);
+
+  const noMember = await apiGet("team-member-attendance", { token, memberId: "no_such_member" });
+  assert.equal(noMember.status, 404);
 
   const profile = await apiGet("my-profile", { token });
   assert.equal(profile.data.ok, true);

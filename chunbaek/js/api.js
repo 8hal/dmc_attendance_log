@@ -234,7 +234,10 @@ const MOCK = {
           editLocked: false,
           exception: false,
           photo: true,
-          photoUrl: "",
+          photoUrl: "https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview_0.jpg?alt=media&token=preview-token",
+          photoUrls: [
+            "https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview_0.jpg?alt=media&token=preview-token",
+          ],
           note: "페이스 잘 나왔다",
         },
         {
@@ -460,7 +463,7 @@ async function apiPost(action, body, needToken = false) {
   return data;
 }
 
-function mockGet(action) {
+function mockGet(action, params = {}) {
   const preview = previewPayload();
   if (action === "members-roster") return Promise.resolve({ ok: true, members: MOCK.roster });
   if (action === "my-profile") return Promise.resolve({ ok: true, ...preview.profile });
@@ -469,6 +472,33 @@ function mockGet(action) {
     return Promise.resolve({ ok: true, photoRequired: false, weeks: MOCK.timeline });
   }
   if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
+  if (action === "team-member-attendance") {
+    const entries = [];
+    for (const week of MOCK.timeline) {
+      for (const slot of week.slots || []) {
+        if (!slot.attended) continue;
+        const note = (slot.note || "").trim();
+        const photoUrls = Array.isArray(slot.photoUrls)
+          ? slot.photoUrls.filter(Boolean)
+          : (slot.photoUrl ? [slot.photoUrl] : []);
+        if (!note && !photoUrls.length) continue;
+        entries.push({
+          slotId: slot.slotId ?? slot.dayIndex,
+          displayDayIndex: slot.displayDayIndex ?? slot.dayIndex,
+          date: slot.date || "",
+          title: slot.title || "—",
+          note,
+          photoUrls,
+        });
+      }
+    }
+    entries.sort((a, b) => (b.displayDayIndex ?? 0) - (a.displayDayIndex ?? 0));
+    return Promise.resolve({
+      ok: true,
+      memberId: params.memberId || "mock_a",
+      entries,
+    });
+  }
   return Promise.reject(new Error(`preview: unknown action ${action}`));
 }
 
@@ -506,8 +536,16 @@ function mockPost(action, body) {
       if (Object.prototype.hasOwnProperty.call(body, "note")) {
         slot.note = body.note || "";
       }
-      if (Object.prototype.hasOwnProperty.call(body, "photoUrl")) {
+      if (Object.prototype.hasOwnProperty.call(body, "photoUrls")) {
+        const urls = Array.isArray(body.photoUrls)
+          ? body.photoUrls.filter(Boolean).slice(0, 5)
+          : [];
+        slot.photoUrls = urls;
+        slot.photoUrl = urls[0] || "";
+        slot.photo = urls.length > 0;
+      } else if (Object.prototype.hasOwnProperty.call(body, "photoUrl")) {
         slot.photoUrl = body.photoUrl || "";
+        slot.photoUrls = slot.photoUrl ? [slot.photoUrl] : [];
         slot.photo = !!slot.photoUrl;
       }
       if (attended) slot.status = "attend";
@@ -529,10 +567,11 @@ function mockPost(action, body) {
     });
   }
   if (action === "upload-attendance-photo") {
+    const idx = Number(body.photoIndex ?? 0);
     return Promise.resolve({
       ok: true,
       slotId: body.slotId,
-      photoUrl: `https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview.jpg?alt=media&token=preview-token`,
+      photoUrl: `https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview_${idx}.jpg?alt=media&token=preview-token`,
     });
   }
   if (action === "update-profile") {
