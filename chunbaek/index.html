@@ -278,9 +278,6 @@
         <h2 class="section-title">나</h2>
         <dl class="profile-dl" id="me-dl"></dl>
         <button type="button" class="btn btn-outline" id="btn-edit-profile">프로필 수정</button>
-        <a href="install.html" class="install-guide-link">
-          <span class="install-guide-icon">📲</span> 홈 화면에 앱으로 추가하기
-        </a>
       </section>
     </main>
 
@@ -302,12 +299,49 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- PWA 설치 배너 (Android Chrome용) -->
+  <div class="pwa-banner" id="pwa-banner" style="display:none">
+    <img class="pwa-banner-icon" src="assets/icon-192.png" alt="" />
+    <div class="pwa-banner-text">
+      <strong>홈 화면에 추가</strong>
+      <span>매일 앱처럼 빠르게 출석 체크</span>
+    </div>
+    <button type="button" class="pwa-banner-btn" id="pwa-install-btn">설치</button>
+    <button type="button" class="pwa-banner-close" id="pwa-dismiss-btn" aria-label="닫기">✕</button>
+  </div>
+
   <script src="js/api.js" defer></script>
   <script src="js/app.js" defer></script>
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/chunbaek/sw.js");
     }
+
+    // PWA 설치 배너
+    let _installPrompt = null;
+    const banner = document.getElementById("pwa-banner");
+
+    window.addEventListener("beforeinstallprompt", function(e) {
+      e.preventDefault();
+      _installPrompt = e;
+      banner.style.display = "flex";
+    });
+
+    document.getElementById("pwa-install-btn").addEventListener("click", async function() {
+      if (!_installPrompt) return;
+      _installPrompt.prompt();
+      const result = await _installPrompt.userChoice;
+      _installPrompt = null;
+      banner.style.display = "none";
+    });
+
+    document.getElementById("pwa-dismiss-btn").addEventListener("click", function() {
+      banner.style.display = "none";
+    });
+
+    window.addEventListener("appinstalled", function() {
+      banner.style.display = "none";
+    });
   </script>
 </body>
 </html>
