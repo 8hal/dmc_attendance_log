@@ -1,4 +1,5 @@
 /* 춘백 S3 운영진 — PC 레이아웃 (chunbaek.css 토큰 재사용) */
+@import url("./tokens.css");
 @import url("./chunbaek.css");
 
 body.admin-body {
