@@ -1231,7 +1231,11 @@
   function slotDayBadge(slot) {
     const day = slot.displayDayIndex ?? slot.dayIndex;
     const status = slot.status || "future";
-    return `<span class="slot-day-badge slot-day-badge--${status}"><span class="slot-day-num">${day}</span><span class="slot-day-unit">일</span></span>`;
+    const date = slot.date || "";
+    const unit = date
+      ? ["일", "월", "화", "수", "목", "금", "토"][new Date(date.replace(/-/g, "/")).getDay()]
+      : "일";
+    return `<span class="slot-day-badge slot-day-badge--${status}"><span class="slot-day-num">${day}</span><span class="slot-day-unit">${unit}</span></span>`;
   }
 
   function slotStatusLabel(status, photo) {
