@@ -334,6 +334,7 @@ const MOCK = {
         resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
         bar: "███",
         weekDots: "●●●○○",
+        weekPhotoCount: 2,
         week: "3/3",
         weekTarget: 3,
         met: true,
