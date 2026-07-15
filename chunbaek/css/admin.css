@@ -415,6 +415,21 @@ body.admin-body {
   color: var(--text-muted);
   margin-bottom: 16px;
 }
+.modal-photo-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.modal-photo-thumb {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+}
+
 .modal-actions {
   display: flex;
   flex-direction: column;
