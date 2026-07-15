@@ -651,6 +651,11 @@
     }
   }
 
+  function setTodayLoading(on) {
+    const el = document.getElementById("today-loading");
+    if (el) el.hidden = !on;
+  }
+
   // stale-while-revalidate: 캐시가 있으면 즉시 렌더 → 백그라운드에서 신선한 데이터로 갱신
   async function loadToday() {
     const cachedProfile = readCache(CACHE_KEYS.profile);
@@ -658,6 +663,8 @@
     const hasCache = !!(cachedProfile && cachedToday);
     if (hasCache) {
       renderTodayData(cachedProfile, cachedToday);
+    } else {
+      setTodayLoading(true);
     }
 
     try {
@@ -671,8 +678,10 @@
       ]);
       writeCache(CACHE_KEYS.profile, prof);
       writeCache(CACHE_KEYS.today, slotRes);
+      setTodayLoading(false);
       renderTodayData(prof, slotRes);
     } catch (e) {
+      setTodayLoading(false);
       console.error("[chunbaek] loadToday failed", e);
       // 세션 만료 시 캐시를 비우고 로그아웃 처리
       if (e.status === 401 || e.status === 403) {
