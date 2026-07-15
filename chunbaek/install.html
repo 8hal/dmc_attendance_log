@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff3214" />
+  <title>홈 화면에 추가 — 춘백 S3</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;600;700;800&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  </noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      min-height: 100dvh;
+    }
+
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 40px;
+    }
+
+    /* 헤더 */
+    .header {
+      background: var(--brand-orange);
+      color: #fff;
+      padding: 20px 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-back {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .header-text p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    /* 카카오 경고 배너 */
+    .kakao-banner {
+      display: none;
+      margin: 16px 16px 0;
+      background: #FEF3C7;
+      border: 1.5px solid #F59E0B;
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .kakao-banner.visible {
+      display: block;
+    }
+    .kakao-banner-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #92400E;
+      margin: 0 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kakao-banner-body {
+      font-size: 13px;
+      color: #78350F;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .kakao-banner-body strong {
+      font-weight: 700;
+    }
+
+    /* 탭 */
+    .tab-row {
+      display: flex;
+      margin: 16px 16px 0;
+      background: var(--surface-muted);
+      border-radius: 10px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--brand-orange);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    /* 탭 콘텐츠 */
+    .tab-content {
+      display: none;
+      padding: 16px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* 섹션 제목 */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin: 0 0 10px;
+    }
+
+    /* 스텝 카드 */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .step {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--card);
+      border: 1px solid var(--border-default);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand-orange);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-body {
+      flex: 1;
+    }
+    .step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 2px 0 4px;
+    }
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0;
+    }
+    .step-desc strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+    .step-icon {
+      font-size: 20px;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    /* 구분선 */
+    .divider {
+      margin: 20px 0 16px;
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* 팁 박스 */
+    .tip-box {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #1E40AF;
+      line-height: 1.5;
+    }
+    .tip-box strong {
+      font-weight: 700;
+    }
+
+    /* 홈으로 버튼 */
+    .btn-home {
+      display: block;
+      margin: 24px 16px 0;
+      padding: 15px;
+      background: var(--brand-orange);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 800;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <button class="header-back" onclick="history.back()" aria-label="뒤로">←</button>
+    <img class="header-icon" src="assets/icon-192.png" alt="춘백 S3 아이콘" />
+    <div class="header-text">
+      <h1>홈 화면에 추가하기</h1>
+      <p>매일 앱처럼 빠르게 출석 체크</p>
+    </div>
+  </div>
+
+  <!-- 카카오 인앱 브라우저 경고 -->
+  <div class="kakao-banner" id="kakao-banner">
+    <p class="kakao-banner-title">⚠️ 카카오톡 브라우저 감지됨</p>
+    <p class="kakao-banner-body">
+      카카오톡 내 브라우저에서는 설치가 불가능합니다.<br />
+      아래 <strong>0단계</strong>부터 먼저 진행해 주세요.
+    </p>
+  </div>
+
+  <!-- OS 탭 선택 -->
+  <div class="tab-row">
+    <button class="tab-btn active" id="tab-android" onclick="switchTab('android')">🤖 Android</button>
+    <button class="tab-btn" id="tab-ios" onclick="switchTab('ios')">🍎 iPhone (iOS)</button>
+  </div>
+
+  <!-- Android 가이드 -->
+  <div class="tab-content active" id="content-android">
+
+    <!-- 0단계: 카카오에서 열었을 때 -->
+    <div id="android-step0" style="display:none">
+      <p class="section-label" style="margin-top:16px">카카오톡으로 열었다면 먼저</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">0</span>
+          <div class="step-body">
+            <p class="step-title">외부 브라우저로 열기</p>
+            <p class="step-desc">
+              화면 <strong>우측 하단 ⋮</strong> 버튼 탭 →<br />
+              <strong>"외부 브라우저로 열기"</strong> 선택<br />
+              (Chrome이 열립니다)
+            </p>
+          </div>
+          <span class="step-icon">⋮</span>
+        </div>
+      </div>
+      <hr class="divider" />
+    </div>
+
+    <p class="section-label" style="margin-top:16px">Chrome에서 진행</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <p class="step-title">춘백 페이지 열기</p>
+          <p class="step-desc">
+            Chrome에서 <strong>dmc-attendance.web.app/chunbaek/</strong> 접속
+          </p>
+        </div>
+        <span class="step-icon">🌐</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <p class="step-title">Chrome 메뉴 열기</p>
+          <p class="step-desc">
+            주소창 <strong>오른쪽 ⋮</strong> 탭
+          </p>
+        </div>
+        <span class="step-icon">⋮</span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <p class="step-title">"홈 화면에 추가" 선택</p>
+          <p class="step-desc">
+            메뉴에서 <strong>"홈 화면에 추가"</strong> 탭
+          </p>
+        </div>
+        <span class="step-icon">➕</span>
+      </div>
+      <div class="step">
+        <span class="step-num">4</span>
+        <div class="step-body">
+          <p class="step-title">설치 확인</p>
+          <p class="step-desc">
+            이름 확인 후 <strong>"추가"</strong> 탭 → 홈 화면에 춘백 아이콘이 생깁니다
+          </p>
+        </div>
+        <span class="step-icon">✅</span>
+      </div>
+    </div>
+
+    <div class="tip-box" style="margin-top:16px">
+      <strong>💡 자동 설치 배너가 뜨면?</strong><br />
+      Chrome이 하단에 "홈 화면에 추가" 배너를 자동으로 띄우기도 합니다. 그 배너를 탭해도 됩니다.
+    </div>
+
+  </div>
+
+  <!-- iOS 가이드 -->
+  <div class="tab-content" id="content-ios">
+
+    <!-- 0단계: 카카오에서 열었을 때 -->
+    <div id="ios-step0" style="display:none">
+      <p class="section-label" style="margin-top:16px">카카오톡으로 열었다면 먼저</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">0</span>
+          <div class="step-body">
+            <p class="step-title">Safari로 열기</p>
+            <p class="step-desc">
+              화면 <strong>하단 오른쪽 나침반(⊙) 버튼</strong> 탭 →<br />
+              <strong>"Safari로 열기"</strong> 선택
+            </p>
+          </div>
+          <span class="step-icon">⊙</span>
+        </div>
+      </div>
+      <hr class="divider" />
+    </div>
+
+    <p class="section-label" style="margin-top:16px">Safari에서 진행</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <p class="step-title">춘백 페이지 열기</p>
+          <p class="step-desc">
+            Safari에서 <strong>dmc-attendance.web.app/chunbaek/</strong> 접속
+          </p>
+        </div>
+        <span class="step-icon">🌐</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <p class="step-title">공유 버튼 탭</p>
+          <p class="step-desc">
+            하단 가운데 <strong>공유 버튼(□↑)</strong> 탭
+          </p>
+        </div>
+        <span class="step-icon">□↑</span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <p class="step-title">"홈 화면에 추가" 선택</p>
+          <p class="step-desc">
+            공유 시트를 <strong>위로 스크롤</strong>해서<br />
+            <strong>"홈 화면에 추가"</strong> 탭
+          </p>
+        </div>
+        <span class="step-icon">➕</span>
+      </div>
+      <div class="step">
+        <span class="step-num">4</span>
+        <div class="step-body">
+          <p class="step-title">추가 확인</p>
+          <p class="step-desc">
+            이름 확인 후 오른쪽 위 <strong>"추가"</strong> 탭 → 홈 화면에 춘백 아이콘이 생깁니다
+          </p>
+        </div>
+        <span class="step-icon">✅</span>
+      </div>
+    </div>
+
+    <div class="tip-box" style="margin-top:16px">
+      <strong>💡 "홈 화면에 추가"가 안 보이면?</strong><br />
+      공유 시트 하단 목록을 아래로 스크롤하거나, 목록 끝 <strong>"더 보기"</strong>에서 찾을 수 있습니다.
+    </div>
+
+  </div>
+
+  <a href="./" class="btn-home">← 출석 앱으로 돌아가기</a>
+
+</div>
+
+<script>
+  // 탭 전환
+  function switchTab(os) {
+    ["android", "ios"].forEach(function(t) {
+      document.getElementById("tab-" + t).classList.toggle("active", t === os);
+      document.getElementById("content-" + t).classList.toggle("active", t === os);
+    });
+  }
+
+  // 카카오 인앱 브라우저 감지
+  var ua = navigator.userAgent || "";
+  var isKakao = /KAKAOTALK/i.test(ua);
+
+  // iOS 감지
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+  // 초기 탭: iOS면 iOS 탭으로
+  if (isIOS) {
+    switchTab("ios");
+  }
+
+  // 카카오 배너 표시
+  if (isKakao) {
+    document.getElementById("kakao-banner").classList.add("visible");
+    // 해당 OS 0단계 표시
+    if (isIOS) {
+      document.getElementById("ios-step0").style.display = "block";
+    } else {
+      document.getElementById("android-step0").style.display = "block";
+    }
+  }
+</script>
+</body>
+</html>

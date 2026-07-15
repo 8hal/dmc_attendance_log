@@ -13,6 +13,8 @@
   <meta property="og:image" content="https://dmc-attendance.web.app/assets/dmc_logo.png" />
   <meta property="og:site_name" content="동마클 출석" />
   <title>춘백 S3 — 100일 출석</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <!-- tokens.css를 직접 로드해 chunbaek.css @import 체인(추가 RTT) 제거 -->
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/chunbaek.css" />
@@ -276,6 +278,9 @@
         <h2 class="section-title">나</h2>
         <dl class="profile-dl" id="me-dl"></dl>
         <button type="button" class="btn btn-outline" id="btn-edit-profile">프로필 수정</button>
+        <a href="install.html" class="install-guide-link">
+          <span class="install-guide-icon">📲</span> 홈 화면에 앱으로 추가하기
+        </a>
       </section>
     </main>
 
@@ -299,5 +304,10 @@
 
   <script src="js/api.js" defer></script>
   <script src="js/app.js" defer></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/chunbaek/sw.js");
+    }
+  </script>
 </body>
 </html>
