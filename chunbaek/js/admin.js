@@ -100,8 +100,15 @@ function normalizeGridFromApi(data) {
 
   const members = (data.members || []).map((m) => {
     const cells = {};
+    const cellPhotos = {};
     (m.cells || []).forEach((c) => {
-      if (c.slotId != null) cells[c.slotId] = apiCellStatus(c);
+      if (c.slotId != null) {
+        cells[c.slotId] = apiCellStatus(c);
+        const urls = Array.isArray(c.photoUrls) && c.photoUrls.length
+          ? c.photoUrls
+          : (c.photoUrl ? [c.photoUrl] : []);
+        if (urls.length) cellPhotos[c.slotId] = urls;
+      }
     });
     return {
       id: m.memberId,
@@ -110,6 +117,7 @@ function normalizeGridFromApi(data) {
       weekTarget: m.weekTarget,
       profileComplete: m.profileComplete,
       cells,
+      cellPhotos,
     };
   });
 
@@ -232,6 +240,8 @@ function renderGrid() {
         td.dataset.slotId = String(slot.slotId);
         td.dataset.memberName = m.nickname;
         td.dataset.slotLabel = `${slot.dayIndex ?? "—"}일 ${slot.date.slice(5).replace("-", "/")}`;
+        const photos = m.cellPhotos?.[slot.slotId];
+        if (photos && photos.length) td.dataset.photoUrls = JSON.stringify(photos);
         td.addEventListener("click", openCellModal);
       }
       tr.appendChild(td);
@@ -331,6 +341,21 @@ function openCellModal(e) {
   };
   document.getElementById("modal-title").textContent = modalContext.memberName;
   document.getElementById("modal-sub").textContent = modalContext.slotLabel;
+
+  // 사진 표시
+  const strip = document.getElementById("modal-photo-strip");
+  const rawPhotos = td.dataset.photoUrls;
+  if (rawPhotos) {
+    const urls = JSON.parse(rawPhotos);
+    strip.style.display = "flex";
+    strip.innerHTML = urls.map((url, i) =>
+      `<img src="${url}" alt="출석 사진 ${i + 1}" class="modal-photo-thumb" />`
+    ).join("");
+  } else {
+    strip.style.display = "none";
+    strip.innerHTML = "";
+  }
+
   document.getElementById("cell-modal").classList.add("show");
 }
 

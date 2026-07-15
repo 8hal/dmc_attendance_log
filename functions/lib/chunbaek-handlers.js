@@ -665,6 +665,10 @@ async function handleTeamSummary(req, res, db) {
       goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
       bar: weekBar(stats.weekAttendCount, stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
+      weekPhotoCount: slots
+        .filter((s) => s.week === currentWeek && !s.isProgramOff)
+        .filter((s) => normalizePhotoUrls(getAttendance(attendanceMap, s)).length > 0)
+        .length,
       week: `${stats.weekAttendCount}/${stats.weekTarget}`,
       weekTarget: stats.weekTarget,
       met: stats.weekTargetMet,

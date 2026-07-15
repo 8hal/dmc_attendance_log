@@ -1168,10 +1168,13 @@
 
   function renderTeamWeekProgress(m, { showFraction = false } = {}) {
     const weekTarget = m.weekTarget || 3;
+    const photoTag = (m.weekPhotoCount > 0)
+      ? `<span class="team-photo-count" aria-label="사진 ${m.weekPhotoCount}개">📷 ${m.weekPhotoCount}</span>`
+      : "";
     const dots = `<span class="week-progress team-week-dots" aria-hidden="true">${teamWeekDotsHtml(m)}</span>`;
-    if (!showFraction) return dots;
+    if (!showFraction) return `<span class="team-week-progress-wrap">${photoTag}${dots}</span>`;
     const label = `${m.week || `0/${weekTarget}`}${m.met ? " ✓" : ""}`;
-    return `<span class="week-attend-inline">${dots}<span class="week-attend-fraction">${escapeHtml(label)}</span></span>`;
+    return `<span class="week-attend-inline">${photoTag}${dots}<span class="week-attend-fraction">${escapeHtml(label)}</span></span>`;
   }
 
   function weekBarToHtml(bar) {
@@ -1321,6 +1324,66 @@
     bindTimelineEvents();
   }
 
+  // ── 사진 라이트박스 ──
+  const _lb = { urls: [], idx: 0, startX: 0, dragging: false };
+
+  function openLightbox(urls, startIdx) {
+    if (!urls || !urls.length) return;
+    _lb.urls = urls;
+    _lb.idx = startIdx || 0;
+    const lb = document.getElementById("photo-lightbox");
+    const track = document.getElementById("photo-lightbox-track");
+    const dotsEl = document.getElementById("photo-lightbox-dots");
+    track.innerHTML = urls.map((url, i) =>
+      `<div class="photo-lightbox-slide"><img src="${escapeAttr(url)}" alt="사진 ${i + 1}" draggable="false" /></div>`
+    ).join("");
+    dotsEl.innerHTML = urls.length > 1
+      ? urls.map((_, i) => `<span class="photo-lightbox-dot${i === _lb.idx ? " active" : ""}"></span>`).join("")
+      : "";
+    lb.hidden = false;
+    document.body.style.overflow = "hidden";
+    _lbGoto(_lb.idx, false);
+  }
+
+  function closeLightbox() {
+    document.getElementById("photo-lightbox").hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function _lbGoto(idx, animate) {
+    const track = document.getElementById("photo-lightbox-track");
+    const slides = track.querySelectorAll(".photo-lightbox-slide");
+    if (!slides.length) return;
+    track.style.transition = animate ? "transform 0.25s ease" : "none";
+    track.style.transform = `translateX(${-idx * slides[0].offsetWidth}px)`;
+    document.querySelectorAll("#photo-lightbox-dots .photo-lightbox-dot").forEach((d, i) => {
+      d.classList.toggle("active", i === idx);
+    });
+    _lb.idx = idx;
+  }
+
+  function _lbBindEvents() {
+    const lb = document.getElementById("photo-lightbox");
+    const track = document.getElementById("photo-lightbox-track");
+    document.getElementById("photo-lightbox-close").addEventListener("click", (e) => {
+      e.stopPropagation(); closeLightbox();
+    });
+    lb.addEventListener("click", (e) => { if (e.target === lb) closeLightbox(); });
+    track.addEventListener("touchstart", (e) => {
+      _lb.startX = e.touches[0].clientX; _lb.dragging = true;
+    }, { passive: true });
+    track.addEventListener("touchend", (e) => {
+      if (!_lb.dragging) return;
+      _lb.dragging = false;
+      const dx = e.changedTouches[0].clientX - _lb.startX;
+      if (Math.abs(dx) < 40) return;
+      if (dx < 0 && _lb.idx < _lb.urls.length - 1) _lbGoto(_lb.idx + 1, true);
+      else if (dx > 0 && _lb.idx > 0) _lbGoto(_lb.idx - 1, true);
+    }, { passive: true });
+    lb.addEventListener("touchmove", (e) => { e.stopPropagation(); }, { passive: false });
+    lb.addEventListener("pointerdown", (e) => { e.stopPropagation(); });
+  }
+
   function closeTeamProfileModal() {
     const modal = document.getElementById("team-profile-modal");
     const feedList = document.getElementById("team-profile-feed-list");
@@ -1345,17 +1408,29 @@
       if (feedEl) feedEl.hidden = false;
       return;
     }
+    const allPhotoGroups = [];
     feedList.innerHTML = entries.map((e) => {
       const photos = (e.photoUrls || []).slice(0, TIMELINE_PHOTO_MAX);
       const dateLabel = formatFeedDate(e.date);
       const dayLabel = e.displayDayIndex ?? e.slotId;
+      const groupIdx = allPhotoGroups.length;
+      if (photos.length) allPhotoGroups.push(photos);
       return `
         <article class="team-profile-feed-item">
           <div class="team-profile-feed-meta">${dayLabel}일차${dateLabel ? ` · ${dateLabel}` : ""} · ${escapeHtml(e.title || "—")}</div>
           ${e.note ? `<p class="team-profile-feed-note">${escapeHtml(e.note)}</p>` : ""}
-          ${photos.length ? `<div class="timeline-photo-grid team-profile-feed-photos">${photos.map((url, i) => `<div class="timeline-photo-thumb"><img src="${escapeAttr(url)}" alt="출석 사진 ${i + 1}" loading="lazy" /></div>`).join("")}</div>` : ""}
+          ${photos.length ? `<div class="timeline-photo-grid team-profile-feed-photos" data-photo-group="${groupIdx}">${photos.map((url, i) => `<div class="timeline-photo-thumb lb-thumb" data-photo-idx="${i}" style="cursor:pointer"><img src="${escapeAttr(url)}" alt="출석 사진 ${i + 1}" loading="lazy" /></div>`).join("")}</div>` : ""}
         </article>`;
     }).join("");
+
+    feedList.querySelectorAll(".lb-thumb").forEach((thumb) => {
+      thumb.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const grid = thumb.closest("[data-photo-group]");
+        openLightbox(allPhotoGroups[Number(grid.dataset.photoGroup)], Number(thumb.dataset.photoIdx));
+      });
+    });
+
     if (feedEl) feedEl.hidden = false;
   }
 
@@ -1546,6 +1621,7 @@
     document.getElementById("team-profile-modal").addEventListener("click", (e) => {
       if (e.target.id === "team-profile-modal") closeTeamProfileModal();
     });
+    _lbBindEvents();
     bindTeamListEvents();
 
     document.querySelectorAll(".tab-btn").forEach((btn) => {
