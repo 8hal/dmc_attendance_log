@@ -818,14 +818,23 @@
       }, true);
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       showToast(`${dayNum}일차 출석 완료`);
-      // 응답 stats로 헤더 즉시 갱신
+
+      // 응답 stats로 헤더 즉시 갱신 (네트워크 추가 요청 없음)
       if (data.stats && state.profile) {
         state.profile.stats = data.stats;
         paintStatsHeader(state.profile);
       }
-      clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
-      if (state.profile) state.profile.stats = null; // 강제 fresh 프로필 fetch
-      await loadToday();
+
+      // 버튼 상태 즉시 갱신
+      if (state.todaySlot) state.todaySlot.attended = true;
+      const btn = document.getElementById("btn-attend");
+      btn.textContent = "출석 완료 ✓";
+      btn.classList.add("attend-done");
+      btn.disabled = true;
+
+      // 캐시만 무효화 (다음 접속 시 fresh 데이터 fetch)
+      clearTodayCache();
+      if (state.profile) writeCache(CACHE_KEYS.profile, state.profile);
     } catch (e) {
       showToast(e.message, true);
       btn.disabled = false;
