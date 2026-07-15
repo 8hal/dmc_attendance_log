@@ -367,6 +367,29 @@ body {
   text-align: right;
 }
 
+.today-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.today-loading[hidden] { display: none; }
+.today-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--brand-orange);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .before-season-card,
 .after-season-card {
   background: linear-gradient(135deg, rgba(112, 209, 244, 0.35), rgba(255, 255, 255, 0.9));
