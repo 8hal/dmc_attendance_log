@@ -17,8 +17,11 @@
   function showRandomTip() {
     const el = document.getElementById("today-tip");
     if (!el) return;
-    const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
-    el.innerHTML = tip;
+    const lastIdx = Number(sessionStorage.getItem("cb_last_tip") ?? "-1");
+    let idx;
+    do { idx = Math.floor(Math.random() * TIPS.length); } while (idx === lastIdx && TIPS.length > 1);
+    sessionStorage.setItem("cb_last_tip", idx);
+    el.innerHTML = TIPS[idx];
   }
 
   const state = {
