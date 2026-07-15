@@ -1,0 +1,24 @@
+{
+  "name": "춘백 S3",
+  "short_name": "춘백",
+  "description": "동마클 춘천마라톤 100일 출석",
+  "start_url": "/chunbaek/",
+  "scope": "/chunbaek/",
+  "display": "standalone",
+  "background_color": "#ff3214",
+  "theme_color": "#ff3214",
+  "icons": [
+    {
+      "src": "/chunbaek/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/chunbaek/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
