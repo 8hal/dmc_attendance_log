@@ -4,6 +4,23 @@
 (function () {
   const TIMELINE_PHOTO_MAX = 5;
 
+  const TIPS = [
+    "메모·사진은 <strong>내 100일</strong>에서 남길 수 있어요.",
+    "<strong>팀 탭</strong>에서 다른 멤버의 출석 현황을 볼 수 있어요.",
+    "출석 수정은 <strong>이번 주 일요일 23:59</strong>까지 가능해요.",
+    "출석 인정 시간: <strong>새벽 운동 종료 전(약 6:30)까지</strong>",
+    "토요일 정모 참석 시 <strong>춘백 출석도 함께</strong> 해주세요 🏃",
+    "주 3회 미완료 시 <strong>다음 주 커피·간식 당첨</strong> ☕",
+    "목표 체중 비공개 설정 시 <strong>운영진도 볼 수 없어요.</strong>",
+  ];
+
+  function showRandomTip() {
+    const el = document.getElementById("today-tip");
+    if (!el) return;
+    const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
+    el.innerHTML = tip;
+  }
+
   const state = {
     selectedMemberId: null,
     selectedNickname: "",
@@ -612,6 +629,7 @@
 
     state.todaySlot = enrichTodaySlot(slotRes.slot || null, slotRes);
     paintStatsHeader(prof);
+    showRandomTip();
     updateSaturdayNotice(null);
 
     const sl = state.todaySlot;
