@@ -5,6 +5,8 @@
  */
 
 :root {
+  color-scheme: light only;
+
   /* ── Brand primitives ── */
   --brand-orange: #ff3214;
   --brand-orange-dark: #e02a10;
