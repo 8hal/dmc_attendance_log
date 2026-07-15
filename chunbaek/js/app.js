@@ -812,13 +812,19 @@
     const btn = document.getElementById("btn-attend");
     btn.disabled = true;
     try {
-      await apiPost("save-attendance", {
+      const data = await apiPost("save-attendance", {
         slotId: state.todaySlot.dayIndex ?? state.todaySlot.slotId,
         attended: true,
       }, true);
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       showToast(`${dayNum}일차 출석 완료`);
+      // 응답 stats로 헤더 즉시 갱신
+      if (data.stats && state.profile) {
+        state.profile.stats = data.stats;
+        paintStatsHeader(state.profile);
+      }
       clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
+      if (state.profile) state.profile.stats = null; // 강제 fresh 프로필 fetch
       await loadToday();
     } catch (e) {
       showToast(e.message, true);
