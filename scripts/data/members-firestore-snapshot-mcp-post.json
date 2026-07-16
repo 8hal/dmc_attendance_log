@@ -1,6 +1,6 @@
 {
   "projectId": "dmc-attendance",
-  "exportedAt": "2026-07-05T07:00:40.354Z",
+  "exportedAt": "2026-07-16T13:00:00.000Z",
   "source": "Firebase MCP post-sync",
   "members": [
     {
@@ -1593,6 +1593,15 @@
       "nickname": "블랙소닉",
       "hidden": false,
       "gender": "",
+      "team": "",
+      "leaveReason": ""
+    },
+    {
+      "id": "gw9qdf1yxXQYONMYNPxU",
+      "realName": "박병규",
+      "nickname": "PBK",
+      "hidden": false,
+      "gender": "M",
       "team": "",
       "leaveReason": ""
     }
