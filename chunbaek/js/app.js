@@ -17,10 +17,10 @@
   function showRandomTip() {
     const el = document.getElementById("today-tip");
     if (!el) return;
-    const lastIdx = Number(sessionStorage.getItem("cb_last_tip") ?? "-1");
+    const lastIdx = Number(localStorage.getItem("cb_last_tip") ?? "-1");
     let idx;
     do { idx = Math.floor(Math.random() * TIPS.length); } while (idx === lastIdx && TIPS.length > 1);
-    sessionStorage.setItem("cb_last_tip", idx);
+    localStorage.setItem("cb_last_tip", idx);
     el.innerHTML = TIPS[idx];
   }
 
@@ -840,9 +840,23 @@
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       showToast(`${dayNum}일차 출석 완료`);
 
-      // 응답 stats로 헤더 즉시 갱신 (네트워크 추가 요청 없음)
-      if (data.stats && state.profile) {
-        state.profile.stats = data.stats;
+      // 응답 stats로 헤더 즉시 갱신
+      if (state.profile) {
+        const prev = state.profile.stats || {};
+        const next = data.stats || {};
+        // Firestore eventual consistency로 인해 서버 stats가 이전 값과 같을 수 있음 → +1 보정
+        state.profile.stats = {
+          ...prev,
+          ...next,
+          seasonAttendCount: Math.max(
+            (next.seasonAttendCount ?? 0),
+            (prev.seasonAttendCount ?? 0) + 1
+          ),
+          weekAttendCount: Math.max(
+            (next.weekAttendCount ?? 0),
+            (prev.weekAttendCount ?? 0) + 1
+          ),
+        };
         paintStatsHeader(state.profile);
       }
 
