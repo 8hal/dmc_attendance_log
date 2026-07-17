@@ -1,0 +1,23 @@
+{
+  "projectId": "dmc-attendance",
+  "generatedAt": "2026-07-16T13:00:00.000Z",
+  "summary": {
+    "add": 1,
+    "update": 0,
+    "leave": 0
+  },
+  "warnings": [],
+  "operations": [
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "박병규",
+        "nickname": "PBK",
+        "hidden": false,
+        "gender": "M",
+        "team": ""
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-12T08:46:14.146Z",
+  "preparedAt": "2026-07-16T13:53:08.360Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "3bpbfd2xvP2CvSQ1ZLpS",
@@ -43,7 +43,8 @@
     "Ktzst6dm5nmtWkM4eTad",
     "H6RdETtfMu6uUokvAKRk",
     "aWZdokx4j9voiB076Bdq",
-    "1bgLC92UQS8F9sPwPIxz"
+    "1bgLC92UQS8F9sPwPIxz",
+    "gw9qdf1yxXQYONMYNPxU"
   ],
   "members": [
     {
@@ -255,6 +256,11 @@
       "memberId": "1bgLC92UQS8F9sPwPIxz",
       "nickname": "James",
       "realName": "김형석"
+    },
+    {
+      "memberId": "gw9qdf1yxXQYONMYNPxU",
+      "nickname": "PBK",
+      "realName": "박병규"
     }
   ]
 }

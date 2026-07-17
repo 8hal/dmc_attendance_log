@@ -2,13 +2,12 @@
 /**
  * 춘백 S3 참가자 participant 시드
  *
- * 입력 JSON 형식 (둘 중 하나):
- *   { "memberIds": ["docId1", "docId2", ...] }
- *   { "members": [{ "memberId": "...", "nickname": "..." }, ...] }
+ * Admin SDK 대신 HTTP API (admin-set-participant) 사용 — GCP 인증 불필요.
  *
  * 사용법:
  *   node scripts/seed-chunbaek-participants.js --input=scripts/data/chunbaek-s3-participants.json --dry-run
  *   node scripts/seed-chunbaek-participants.js --input=scripts/data/chunbaek-s3-participants.json
+ *   node scripts/seed-chunbaek-participants.js --input=... --local   # Functions 에뮬
  *
  * 명단 작성 보조:
  *   node scripts/plan-chunbaek-participants.js --names=실명1,실명2 --baseline=scripts/data/members-firestore-snapshot.json
@@ -16,35 +15,22 @@
 const fs = require("fs");
 const path = require("path");
 
-const functionsDir = path.join(__dirname, "..", "functions");
-const nm = path.join(functionsDir, "node_modules");
-if (!fs.existsSync(nm)) {
-  console.error("functions/node_modules 없음. cd functions && npm ci");
-  process.exit(1);
-}
-const { createRequire } = require("module");
-const requireFromFunctions = createRequire(path.join(nm, "_"));
-const { initializeApp } = requireFromFunctions("firebase-admin/app");
-const { getFirestore, FieldValue } = requireFromFunctions("firebase-admin/firestore");
+const PROD_API = "https://dmc-attendance.web.app/api/chunbaek";
+const LOCAL_API = "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/chunbaek";
 
 const dryRun = process.argv.includes("--dry-run");
-const useEmulator = process.argv.includes("--emulator");
+const useLocal = process.argv.includes("--local") || process.argv.includes("--emulator");
 
 function getArg(name, fallback) {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.split("=").slice(1).join("=") : fallback;
 }
 
-const inputPath = path.resolve(getArg("input", path.join(__dirname, "data", "chunbaek-s3-participants.json")));
-
-if (useEmulator) {
-  if (!process.env.FIRESTORE_EMULATOR_HOST) {
-    process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
-  }
-} else if (process.env.FIRESTORE_EMULATOR_HOST) {
-  console.warn("[seed-chunbaek-participants] FIRESTORE_EMULATOR_HOST 제거 → 프로덕션 대상");
-  delete process.env.FIRESTORE_EMULATOR_HOST;
-}
+const inputPath = path.resolve(
+  getArg("input", path.join(__dirname, "data", "chunbaek-s3-participants.json"))
+);
+const apiBase = getArg("api", useLocal ? LOCAL_API : PROD_API);
+const adminPw = getArg("pw", process.env.DMC_ADMIN_PW || "dmc2008");
 
 function loadMemberIds(data) {
   if (Array.isArray(data.memberIds)) return data.memberIds.map(String);
@@ -54,92 +40,75 @@ function loadMemberIds(data) {
   return [];
 }
 
-initializeApp({ projectId: "dmc-attendance" });
-const db = getFirestore();
+function loadMemberMap(data) {
+  const map = new Map();
+  const list = Array.isArray(data.members) ? data.members : [];
+  list.forEach((m) => {
+    const id = String(m.memberId || m.id || "").trim();
+    if (id) map.set(id, m);
+  });
+  return map;
+}
 
 (async () => {
   if (!fs.existsSync(inputPath)) {
     console.error(`입력 파일 없음: ${inputPath}`);
-    console.error("템플릿: scripts/data/chunbaek-s3-participants.template.json");
     process.exit(1);
   }
 
   const data = JSON.parse(fs.readFileSync(inputPath, "utf8"));
   const memberIds = [...new Set(loadMemberIds(data))];
+  const memberMap = loadMemberMap(data);
+
   if (!memberIds.length) {
     console.error("memberIds가 비어 있습니다.");
     process.exit(1);
   }
 
-  const target = useEmulator ? "에뮬레이터" : "프로덕션";
+  const target = useLocal ? "에뮬레이터" : "프로덕션";
   const mode = dryRun ? "DRY RUN" : "실행";
   console.log(`[seed-chunbaek-participants] ${mode} · ${target}`);
   console.log(`  입력: ${inputPath}`);
-  console.log(`  대상: ${memberIds.length}명\n`);
-
-  const ok = [];
-  const errors = [];
-
-  for (const memberId of memberIds) {
-    const ref = db.collection("members").doc(memberId);
-    const snap = await ref.get();
-    if (!snap.exists) {
-      errors.push({ memberId, error: "members 문서 없음" });
-      continue;
-    }
-    const d = snap.data();
-    if (d.hidden) {
-      errors.push({ memberId, error: "hidden 회원" });
-      continue;
-    }
-    const s3 = d.chunbaekS3 || {};
-    ok.push({
-      memberId,
-      nickname: d.nickname || "",
-      realName: d.realName || "",
-      wasParticipant: !!s3.participant,
-      profileComplete: !!s3.profileComplete,
-    });
-  }
-
-  ok.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
-  errors.forEach((e) => console.log(`  ✗ ${e.memberId}: ${e.error}`));
-  ok.forEach((m) => {
-    const flag = m.wasParticipant ? "(이미 participant)" : "(신규)";
-    console.log(`  ✓ ${m.nickname} / ${m.realName} ${flag}`);
-  });
-
-  console.log(`\n요약: 적용 가능 ${ok.length}명, 오류 ${errors.length}명`);
-
-  if (errors.length) {
-    console.error("\n오류가 있어 중단합니다. 명단을 수정하세요.");
-    process.exit(1);
-  }
+  console.log(`  대상: ${memberIds.length}명`);
+  console.log(`  API: ${apiBase}\n`);
 
   if (dryRun) {
-    console.log("\n[DRY RUN] 변경 없음. 실행:");
+    memberIds.forEach((id) => {
+      const m = memberMap.get(id) || {};
+      console.log(`  (신규 또는 갱신) ${m.nickname || "?"} / ${m.realName || "?"} [${id}]`);
+    });
+    console.log(`\n[DRY RUN] 변경 없음. 실행:`);
     console.log(`  node scripts/seed-chunbaek-participants.js --input=${inputPath}`);
     process.exit(0);
   }
 
-  const batchSize = 400;
-  for (let i = 0; i < ok.length; i += batchSize) {
-    const batch = db.batch();
-    ok.slice(i, i + batchSize).forEach((m) => {
-      const update = {
-        "chunbaekS3.participant": true,
-        "chunbaekS3.updatedAt": FieldValue.serverTimestamp(),
-      };
-      if (!m.wasParticipant && !m.profileComplete) {
-        update["chunbaekS3.profileComplete"] = false;
+  let ok = 0;
+  let failed = 0;
+
+  for (const memberId of memberIds) {
+    const m = memberMap.get(memberId) || {};
+    const label = `${m.nickname || "?"} / ${m.realName || "?"} [${memberId}]`;
+    process.stdout.write(`  ${label} … `);
+    try {
+      const res = await fetch(`${apiBase}?action=admin-set-participant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminPw, memberId, participant: true }),
+      });
+      let json;
+      try { json = await res.json(); } catch { json = {}; }
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || `HTTP ${res.status}`);
       }
-      batch.update(db.collection("members").doc(m.memberId), update);
-    });
-    await batch.commit();
+      const was = json.was ? "(이미 participant)" : "(신규)";
+      console.log(`✅ ${was}`);
+      ok++;
+    } catch (err) {
+      console.log(`❌ ${err.message}`);
+      failed++;
+    }
   }
 
-  console.log(`\n✅ participant 시드 완료: ${ok.length}명`);
-})().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+  console.log(`\n완료: ${ok}건 성공${failed ? `, ${failed}건 실패` : ""}`);
+  if (failed) process.exit(1);
+})();
