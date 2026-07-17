@@ -289,6 +289,13 @@
     <main class="main">
       <!-- 출석 관리 -->
       <section class="panel active" id="panel-attendance">
+        <div class="chips" id="attModeChips" role="tablist" aria-label="출석 관리 모드">
+          <button type="button" class="chip active" data-mode="day">당일</button>
+          <button type="button" class="chip" data-mode="month">월 집계 · 출석왕</button>
+          <button type="button" class="chip" data-mode="csv">기간 CSV</button>
+        </div>
+
+        <div id="attModeDay">
         <div class="toolbar">
           <div class="field">
             <label for="attDate">날짜</label>
@@ -343,6 +350,79 @@
             </tbody>
           </table>
           <p class="hint">목업: 삭제는 confirm만. 실구현은 admin-delete-attendance + verify-admin.</p>
+        </div>
+        </div>
+
+        <div id="attModeMonth" hidden>
+          <div class="toolbar">
+            <div class="field">
+              <label for="attMonth">월</label>
+              <input type="month" id="attMonth" value="2026-07" />
+            </div>
+            <div class="field">
+              <label for="attMonthScope">범위</label>
+              <select id="attMonthScope">
+                <option value="regular" selected>정모만 (화·목·토)</option>
+                <option value="all">전체 유형</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="attMonthLoad">집계</button>
+          </div>
+          <div class="stats">
+            <div class="stat"><strong>5</strong><span>정모 횟수</span></div>
+            <div class="stat"><strong>48</strong><span>출석 합계</span></div>
+            <div class="stat"><strong>박병규</strong><span>출석왕 (5회)</span></div>
+          </div>
+          <div class="card">
+            <h2>월간 랭킹 (시상용)</h2>
+            <table class="data">
+              <thead>
+                <tr><th>순위</th><th>닉네임</th><th>팀</th><th>횟수</th><th>출석일</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>🥇 1</td><td>박병규</td><td>2팀</td><td><strong>5</strong></td><td>7/3 · 7/5 · 7/8 · 7/10 · 7/16</td></tr>
+                <tr><td>🥈 2</td><td>러너킴</td><td>2팀</td><td><strong>4</strong></td><td>7/3 · 7/5 · 7/8 · 7/10</td></tr>
+                <tr><td>🥉 3</td><td>서연</td><td>2팀</td><td><strong>3</strong></td><td>7/5 · 7/10 · 7/16</td></tr>
+                <tr><td>4</td><td>최민</td><td>1팀</td><td>2</td><td>7/10 · 7/16</td></tr>
+              </tbody>
+            </table>
+            <p class="hint">게스트 제외(기본). 동률은 공동 순위. 집계 API는 justification 후.</p>
+          </div>
+        </div>
+
+        <div id="attModeCsv" hidden>
+          <div class="toolbar">
+            <div class="field">
+              <label for="csvFrom">시작</label>
+              <input type="date" id="csvFrom" value="2026-07-01" />
+            </div>
+            <div class="field">
+              <label for="csvTo">종료</label>
+              <input type="date" id="csvTo" value="2026-07-31" />
+            </div>
+            <div class="field">
+              <label for="csvScope">유형</label>
+              <select id="csvScope">
+                <option value="regular" selected>정모만</option>
+                <option value="all">전체</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="csvDownload">CSV 다운로드</button>
+          </div>
+          <div class="card">
+            <h2>내보내기 미리보기 (더미)</h2>
+            <table class="data">
+              <thead>
+                <tr><th>meetingDate</th><th>type</th><th>nickname</th><th>team</th><th>isGuest</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>2026/07/16</td><td>THU</td><td>박병규</td><td>2</td><td>false</td></tr>
+                <tr><td>2026/07/16</td><td>THU</td><td>러너킴</td><td>2</td><td>false</td></tr>
+                <tr><td>2026/07/10</td><td>THU</td><td>서연</td><td>2</td><td>false</td></tr>
+              </tbody>
+            </table>
+            <p class="hint">컬럼: meetingDate, meetingType, nickname, team, memberId, isGuest, time</p>
+          </div>
         </div>
       </section>
 
@@ -484,6 +564,28 @@
       });
       document.getElementById("attAddMock").addEventListener("click", function () {
         toast("운영 추가 — Delete-1/Admin 이후");
+      });
+
+      function showAttMode(mode) {
+        document.getElementById("attModeDay").hidden = mode !== "day";
+        document.getElementById("attModeMonth").hidden = mode !== "month";
+        document.getElementById("attModeCsv").hidden = mode !== "csv";
+        document.querySelectorAll("#attModeChips .chip").forEach(function (c) {
+          c.classList.toggle("active", c.getAttribute("data-mode") === mode);
+        });
+      }
+
+      document.getElementById("attModeChips").addEventListener("click", function (e) {
+        var chip = e.target.closest(".chip");
+        if (!chip) return;
+        showAttMode(chip.getAttribute("data-mode"));
+      });
+
+      document.getElementById("attMonthLoad").addEventListener("click", function () {
+        toast("월 집계 · 출석왕 (목업)");
+      });
+      document.getElementById("csvDownload").addEventListener("click", function () {
+        toast("CSV 다운로드 (목업 — 파일 없음)");
       });
 
       document.querySelectorAll(".mock-admin-del").forEach(function (btn) {

@@ -126,33 +126,35 @@ git commit -m "feat(admin): attendance-admin hub shell and auth"
 
 ---
 
-## Task 2: Admin-1a — 출석 관리 탭 (조회)
+## Task 2: Admin-1a — 출석 관리 탭 (당일 조회 + 월/CSV UI 골격)
 
 **Files:**
 - Modify: `attendance-admin.js`
 - Modify: `attendance-admin.html` (패널 마크업)
 
-- [ ] **Step 1: 날짜·meetingType UI + loadRoster**
+서브모드: **당일 | 월 집계·출석왕 | 기간 CSV** (스펙 §7.0).
+
+- [ ] **Step 1: 당일 — 날짜·meetingType UI + loadRoster**
 
 ```javascript
 // GET /attendance?action=status&date=YYYY/MM/DD
 // GET /attendance?action=sessionCount&meetingDate=...&meetingType=TUE|THU|SAT
-// Filter client-side by meetingType if status returns all types for the day
 ```
 
 표시: 닉네임, 팀, 시각, (있으면) memberId.  
-요약: `sessionCount`의 `memberCount` / `guestCount` (스펙 §7.0).  
-삭제 버튼은 UI만 두고 **disabled** 또는 «Delete-1 후 활성» 툴팁 (Admin-1a에서는 동작 안 함).  
-참고: Delete-1 justification에서 `status` 응답에 doc `id`가 없으면 **복합키 삭제** vs **status에 id 포함 확장** 중 하나를 명시할 것.
+요약: `sessionCount`의 `memberCount` / `guestCount`.  
+삭제 버튼: Admin-1a에서는 disabled 또는 Delete-1 후 활성.
 
-- [ ] **Step 2: 수동 스모크**
+- [ ] **Step 2: 월 집계·CSV — UI만 또는 클라이언트 집계 스텁**
 
-에뮬 또는 프로덕션 읽기: 알려진 정모일에 인원·명단 표시.
+Admin-1a: 랭킹 테이블·CSV 버튼 UI.  
+실데이터 집계/export API는 Task 2b justification 후 (`admin-month-attendance`, export).
 
-- [ ] **Step 3: 커밋**
+- [ ] **Step 3: 수동 스모크** (당일 명단)
+- [ ] **Step 4: 커밋**
 
 ```bash
-git commit -m "feat(admin): attendance tab roster read-only"
+git commit -m "feat(admin): attendance tab day roster + month/csv UI shell"
 ```
 
 ---
