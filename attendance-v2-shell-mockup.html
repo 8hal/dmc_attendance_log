@@ -229,6 +229,43 @@
       color: var(--dmc-color-text);
     }
 
+    .train-info {
+      margin: 0;
+    }
+
+    .train-info-row {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--dmc-line-subtle);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .train-info-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .train-info-row:first-child {
+      padding-top: 0;
+    }
+
+    .train-info-row dt {
+      margin: 0;
+      font-weight: 700;
+      color: var(--dmc-color-text-secondary);
+      font-size: 12px;
+      padding-top: 2px;
+    }
+
+    .train-info-row dd {
+      margin: 0;
+      font-weight: 600;
+      color: var(--dmc-color-text);
+    }
+
     .btn-primary {
       display: block;
       width: 100%;
