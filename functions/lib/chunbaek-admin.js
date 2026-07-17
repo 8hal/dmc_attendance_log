@@ -700,6 +700,49 @@ async function handleAdminImportSlots(req, res, db) {
   });
 }
 
+async function handleAdminSetParticipant(req, res, db) {
+  if (!adminGate(req, res)) return;
+  const body = req.body || {};
+  const memberId = String(body.memberId || "").trim();
+  const participant = body.participant;
+
+  if (!memberId) {
+    return res.status(400).json({ ok: false, error: "memberId required" });
+  }
+  if (typeof participant !== "boolean") {
+    return res.status(400).json({ ok: false, error: "participant (boolean) required" });
+  }
+
+  const ref = db.collection("members").doc(memberId);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    return res.status(404).json({ ok: false, error: "member not found" });
+  }
+  const d = snap.data();
+  if (d.hidden) {
+    return res.status(400).json({ ok: false, error: "hidden member" });
+  }
+
+  const was = !!(d.chunbaekS3 || {}).participant;
+  const update = {
+    "chunbaekS3.participant": participant,
+    "chunbaekS3.updatedAt": FieldValue.serverTimestamp(),
+  };
+  if (participant && !was && !(d.chunbaekS3 || {}).profileComplete) {
+    update["chunbaekS3.profileComplete"] = false;
+  }
+  await ref.update(update);
+
+  return res.json({
+    ok: true,
+    memberId,
+    nickname: d.nickname,
+    realName: d.realName,
+    participant,
+    was,
+  });
+}
+
 const ADMIN_ACTIONS = new Set([
   "verify-admin",
   "admin-grid",
@@ -707,6 +750,7 @@ const ADMIN_ACTIONS = new Set([
   "admin-week-slots",
   "admin-save-week-slots",
   "admin-import-slots",
+  "admin-set-participant",
 ]);
 
 async function handleAdminRequest(req, res, db, action) {
@@ -735,6 +779,10 @@ async function handleAdminRequest(req, res, db, action) {
     await handleAdminImportSlots(req, res, db);
     return true;
   }
+  if (action === "admin-set-participant") {
+    await handleAdminSetParticipant(req, res, db);
+    return true;
+  }
   return false;
 }
 
@@ -747,4 +795,5 @@ module.exports = {
   handleAdminWeekSlots,
   handleAdminSaveWeekSlots,
   handleAdminImportSlots,
+  handleAdminSetParticipant,
 };
