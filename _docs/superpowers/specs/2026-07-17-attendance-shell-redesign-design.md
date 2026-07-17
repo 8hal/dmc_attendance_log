@@ -1,7 +1,7 @@
 # DMC 출석 v2 앱 셸 리뉴얼 — 설계서
 
 > 작성일: 2026-07-17  
-> 상태: **확정 대기 — 미결 기본값 사용자 동의 (2026-07-17)**  
+> 상태: **승인됨 (2026-07-17)** — 구현 계획 후 목업·디자인 컨펌 예정  
 > 선행 문서: `2026-04-17-attendance-page-redesign-v2.md` (Phase 1 MVP, 기능 중심)  
 > 참고 UI: 춘백 S3 (`chunbaek/`) — 앱 셸·토큰·탭 패턴  
 > 범위: **출석 도메인 앱 셸** + 4탭 IA. 대회(races)·개인 레이스(my)는 **링크 진입** 유지.
@@ -135,11 +135,11 @@
 | 기본 필터 | 저장된 **내 팀** |
 | 확장 필터 | 다른 팀 선택 · **동마클 전체** |
 | 기간 | **이번 달** 기본, 월 이동 |
-| 모임 타입 | **정모 중심** (1차). `meetingType === "정모"` 또는 서버 정의 상수 |
+| 모임 타입 | **정모 중심** (1차). 정모 = `meetingType` ∈ `{TUE, THU, SAT}` (`ETC` 제외). UI 라벨은 "화요일 정모" 등 기존 `meetingTypeLabel` 맵 사용 |
 | 멤버 행 | 닉네임, 이번 달 정모 출석 횟수, 출석한 날짜(또는 회차) |
-| 요약 | 팀원 수 / 출석한 사람 수 / 평균 출석률 |
+| 요약 | 팀원 수(`roster`) / 1회 이상 출석한 사람 수(`attended`) / **출석률 = attended ÷ roster** (멤버별 평균 아님) |
 
-**데이터 소스 (구현 시 택1 — §6 참고):**
+**데이터 소스 (구현 시 택1 — §7 참고):**
 
 - 신규 API `team-month-attendance` (권장)
 - 또는 클라이언트에서 월간 정모일 `status` 반복 조회 + members 조인 (MVP 한시적)
@@ -221,7 +221,7 @@ attendance-v2.js              (라우터 + 기존 로직)
 | **장점** | "한 앱에 다 있다" 느낌 |
 | **단점** | 스타일 불일치, 이중 스크롤, 레거시 HTML 개편 필요. **비추천** |
 
-**권장: A → 안정화 후 필요 시 B로 폴더 이전.**
+**권장·확정: A → 안정화 후 필요 시 B로 폴더 이전.** (Approach A는 §10에서 잠금)
 
 ---
 
@@ -244,9 +244,10 @@ attendance-v2.js              (라우터 + 기존 로직)
 |------|------|
 | `team` | 팀명 또는 `__all__` (전체) |
 | `month` | `YYYY-MM` |
-| `meetingType` | 기본 `정모` |
+| `meetingType` | 기본 정모 = `TUE`/`THU`/`SAT`만 집계 (`ETC` 제외). 쿼리 생략 시 정모 필터, 또는 `scope=regular` |
 
-**응답 예:** `{ ok, team, month, members: [{ memberId, nickname, team, attendCount, dates: [] }], summary: { roster, attended } }`
+**응답 예:** `{ ok, team, month, members: [{ memberId, nickname, team, attendCount, dates: [] }], summary: { roster, attended, rate } }`  
+`rate` = `attended / roster` (1회 이상 출석한 인원 비율).
 
 > 신규 API 추가 시 `new-api-validation.mdc` 절차(전역 검색·justification·사용자 승인) 필수.
 
@@ -258,7 +259,7 @@ attendance-v2.js              (라우터 + 기존 로직)
 
 | 단계 | 범위 | 레거시 |
 |------|------|--------|
-| **Phase Shell-1** | 셸 + 오늘 + 더보기(키오스크) + 상단 races | `index.html` QR 유지. v2 베타 배너 제거 |
+| **Phase Shell-1** | 셸 + 오늘 + 더보기(키오스크) + 상단 races. **4탭 UI는 표시**하되 `내 출석`·`팀 출석`은 "준비 중" 스텁 | `index.html` QR 유지. v2 베타 배너 제거 |
 | **Phase Shell-2** | 내 출석 탭 (`history` 대체 UI) | `history.html`에 "v2로 이동" 배너 |
 | **Phase Shell-3** | 팀 출석 탭 + API | `index` 전체 명단 링크 축소 |
 | **Phase Shell-4** (선택) | `index.html` → v2 리다이렉트 | QR URL 변경 공지 |
@@ -282,10 +283,12 @@ attendance-v2.js              (라우터 + 기존 로직)
 | # | 항목 | 결정 |
 |---|------|------|
 | 1 | 레거시 `index.html` 컷오버 | **Shell-4**에서만. 운영진 공지 후 QR/URL 변경 |
-| 2 | 팀 출석 모임 타입 | **Shell-3: 정모만**. 다른 타입 필터는 이후 단계 |
+| 2 | 팀 출석 모임 타입 | **Shell-3: 정모만** = `TUE`/`THU`/`SAT`. `ETC` 제외. 다른 타입 필터는 이후 단계 |
 | 3 | `team-month-attendance` API | Shell-3 전 `new-api-validation` justification + 사용자 승인. 그 전 MVP는 `status` 반복 조인 가능 |
 | 4 | display 폰트 | **1차(Shell-1~3) 생략** — system-ui 유지 |
 | 5 | 더보기 «동마클 홈» | **1차 생략** |
+| 6 | 구현 접근 | **Approach A (셸 래핑 점진 이관)** — B/C 비채택 |
+| 7 | 디자인 게이트 | 구현 계획 작성 후 **목업 → 디자인 컨펌** 다음에 Shell-1 코드 착수 |
 
 ---
 
