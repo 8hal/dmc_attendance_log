@@ -465,50 +465,50 @@
 
       <!-- 정모 훈련 -->
       <section class="panel" id="panel-training" hidden>
-        <div class="chips" id="trainChips">
-          <button type="button" class="chip active" data-slot="thu">7/16 목</button>
-          <button type="button" class="chip" data-slot="tue">7/14 화</button>
-          <button type="button" class="chip" data-slot="sat">7/18 토</button>
+        <div class="week-nav">
+          <button type="button" class="btn btn-outline" id="trainPrevWeek">‹ 지난주</button>
+          <strong id="trainWeekLabel">2026-07-14 주 (화·목·토)</strong>
+          <button type="button" class="btn btn-outline" id="trainNextWeek">다음주 ›</button>
+          <button type="button" class="btn btn-outline" id="trainCopyWeek">지난주 전체 불러오기</button>
+          <button type="button" class="btn btn-primary" id="trainSave">주간 일괄 저장</button>
         </div>
+        <p class="hint" style="margin-top:0;margin-bottom:12px">
+          새 주는 <strong>지난주 내용이 기본 프리필</strong>됩니다. 시간·장소는 요일 기본값(화·목 18:30 / 토 06:00)을 유지하기 쉽습니다.
+        </p>
 
-        <div class="card">
-          <h2>목요일 정모 · 훈련 공지</h2>
-          <div class="form-grid">
-            <div class="field">
-              <label>시간</label>
-              <input value="19:30" />
-            </div>
-            <div class="field">
-              <label>장소</label>
-              <input value="여울공원 운동장(트랙)" style="min-width:220px" />
-            </div>
-            <div class="field full">
-              <label><span class="phase-label">전</span> 훈련</label>
-              <textarea>체조 및 스트레칭, 조깅 운동장 7바퀴</textarea>
-            </div>
-            <div class="field full">
-              <label><span class="phase-label">본</span> 훈련</label>
-              <textarea>300/100 인터벌 10개 &amp; 보강훈련</textarea>
-            </div>
-            <div class="field full">
-              <label><span class="phase-label">후</span> 훈련</label>
-              <textarea>Cool 조깅 10분, 마무리 체조 및 스트레칭</textarea>
-            </div>
-            <div class="field full">
-              <label>급수 및 서포터즈</label>
-              <input value="바우돌리노/보스톤" style="width:100%" />
-            </div>
-            <div class="field full">
-              <label>메모</label>
-              <textarea>7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요.</textarea>
-            </div>
+        <div class="week-board">
+          <div class="card week-card">
+            <h3>화 7/14</h3>
+            <div class="field"><label>시간</label><input value="18:30" /></div>
+            <div class="field"><label>장소</label><input value="여울공원 운동장(트랙)" /></div>
+            <div class="field"><label><span class="phase-label">전</span></label><textarea>체조 · 스트레칭 · 조깅</textarea></div>
+            <div class="field"><label><span class="phase-label">본</span></label><textarea>(전주 프리필) 인터벌 · 보강</textarea></div>
+            <div class="field"><label><span class="phase-label">후</span></label><textarea>쿨다운 · 스트레칭</textarea></div>
+            <div class="field"><label>서포터즈</label><input value="—" /></div>
+            <div class="field"><label>메모</label><textarea></textarea></div>
           </div>
-          <div class="toolbar" style="margin-top:14px;margin-bottom:0">
-            <button type="button" class="btn btn-primary" id="trainSave">저장 (목업)</button>
-            <button type="button" class="btn btn-outline" id="trainCopy">직전 정모 불러오기</button>
+          <div class="card week-card">
+            <h3>목 7/16</h3>
+            <div class="field"><label>시간</label><input value="19:30" /></div>
+            <div class="field"><label>장소</label><input value="여울공원 운동장(트랙)" /></div>
+            <div class="field"><label><span class="phase-label">전</span></label><textarea>체조 및 스트레칭, 조깅 운동장 7바퀴</textarea></div>
+            <div class="field"><label><span class="phase-label">본</span></label><textarea>300/100 인터벌 10개 &amp; 보강훈련</textarea></div>
+            <div class="field"><label><span class="phase-label">후</span></label><textarea>Cool 조깅 10분, 마무리 체조 및 스트레칭</textarea></div>
+            <div class="field"><label>서포터즈</label><input value="바우돌리노/보스톤" /></div>
+            <div class="field"><label>메모</label><textarea>7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요.</textarea></div>
           </div>
-          <p class="hint">회원 앱 오늘 탭이 이 공지를 표로 표시. API는 Admin-1b justification 후.</p>
+          <div class="card week-card">
+            <h3>토 7/18</h3>
+            <div class="field"><label>시간</label><input value="06:00" /></div>
+            <div class="field"><label>장소</label><input value="여울공원 운동장(트랙)" /></div>
+            <div class="field"><label><span class="phase-label">전</span></label><textarea>체조 · 조깅</textarea></div>
+            <div class="field"><label><span class="phase-label">본</span></label><textarea>(전주 프리필) LSD / 페이스런</textarea></div>
+            <div class="field"><label><span class="phase-label">후</span></label><textarea>스트레칭</textarea></div>
+            <div class="field"><label>서포터즈</label><input value="—" /></div>
+            <div class="field"><label>메모</label><textarea></textarea></div>
+          </div>
         </div>
+        <p class="hint">회원 앱은 당일 슬롯만 표시. API는 Admin-1b justification 후 · 주간 일괄 save 권장.</p>
       </section>
     </main>
   </div>
@@ -596,20 +596,16 @@
       });
 
       document.getElementById("trainSave").addEventListener("click", function () {
-        toast("훈련 공지 저장 (목업)");
+        toast("주간 일괄 저장 (목업)");
       });
-      document.getElementById("trainCopy").addEventListener("click", function () {
-        toast("직전 정모 불러오기 (목업)");
+      document.getElementById("trainCopyWeek").addEventListener("click", function () {
+        toast("지난주 화·목·토 내용 복사 (목업)");
       });
-
-      document.getElementById("trainChips").addEventListener("click", function (e) {
-        var chip = e.target.closest(".chip");
-        if (!chip) return;
-        document.querySelectorAll("#trainChips .chip").forEach(function (c) {
-          c.classList.remove("active");
-        });
-        chip.classList.add("active");
-        toast("슬롯: " + chip.textContent.trim());
+      document.getElementById("trainPrevWeek").addEventListener("click", function () {
+        toast("지난주로 이동 (목업)");
+      });
+      document.getElementById("trainNextWeek").addEventListener("click", function () {
+        toast("다음주로 이동 · 비어 있으면 전주 프리필 (목업)");
       });
     })();
   </script>
