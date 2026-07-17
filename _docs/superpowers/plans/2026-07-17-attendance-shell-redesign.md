@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 춘백식 앱 셸(brand-bar + 4탭)을 `attendance-v2`에 올려, 오늘 체크인·더보기(키오스크)·상단 races 진입이 가능한 Shell-1을 배포 가능하게 만든다.
+**Goal:** 춘백식 앱 셸(brand-bar + 4탭)을 `attendance-v2`에 올려, 오늘 체크인·더보기(이용 안내→키오스크)·상단 races 진입이 가능한 Shell-1을 배포 가능하게 만든다.
 
 **Architecture:** Approach A — 기존 `attendance-v2.html`/`attendance-v2.js`를 셸로 래핑. 해시 라우팅(`#today` `#my-attendance` `#team-attendance` `#more`). 인라인 CSS를 `assets/attendance-shell.css`로 추출. 키오스크는 `?mode=kiosk` 시 셸 숨김(현행 UI 유지).
 
@@ -20,11 +20,11 @@
 
 | 파일 | 책임 |
 |------|------|
-| `attendance-v2-shell-mockup.html` | **Create** — 정적 목업 (오늘/내출석/팀/더보기 + 키오스크 진입 미리보기). 데이터 하드코딩 |
+| `attendance-v2-shell-mockup.html` | **Create** — 정적 목업 (오늘/내출석/팀/더보기 + 이용 안내 시트 안 키오스크). 데이터 하드코딩 |
 | `assets/design-tokens.css` | **Modify** — shell/tab/attend 시맨틱 토큰 소량 추가 |
 | `assets/attendance-shell.css` | **Create** — `.app`, brand-bar, tab-bar, stub 뷰, more 리스트 |
 | `attendance-v2.html` | **Modify** — 셸 마크업, 인라인 CSS 제거(셸 부분)·링크, 베타 배너 제거/축소 |
-| `attendance-v2.js` | **Modify** — hash 라우터, 탭 전환, more→키오스크, brand-bar→races, stub 탭 |
+| `attendance-v2.js` | **Modify** — hash 라우터, 탭 전환, more→이용 안내→키오스크, brand-bar→races, stub 탭 |
 | `scripts/pre-deploy-test.sh` 또는 관련 TC | **Modify (필요 시)** — v2 URL/셸 스모크 추가 |
 
 **건드리지 않음 (Shell-1):** `functions/index.js`, `chunbaek/`, `races.html`, `my.html`, `index.html` (리다이렉트 금지).
@@ -65,7 +65,7 @@
       <!-- #today: 대시보드 CTA 더미 -->
       <!-- #my-attendance: 달력/통계 더미 또는 "준비 중" -->
       <!-- #team-attendance: 팀 필터 + 멤버 행 더미 -->
-      <!-- #more: 프로필 / 내 기록 / 키오스크 / 안내 -->
+      <!-- #more: 프로필 / 내 기록 / 이용 안내(키오스크는 안내 안) -->
     </main>
     <nav class="tab-bar">
       <button type="button" class="tab-btn active" data-tab="today">오늘</button>
@@ -85,7 +85,7 @@
 1. 오늘 — 원클릭 CTA + 이번 달 요약 스니펫 (더미 숫자)
 2. 내 출석 — 월 헤더 + 요약 카드 스케치 (Shell-1 스텁이면 "준비 중" 카드도 OK, 최종 UI 예시는 더미 달력이 낫다)
 3. 팀 출석 — 팀 칩(내 팀 / 전체) + 멤버 리스트 더미
-4. 더보기 — 프로필 카드, 내 기록, **키오스크 모드**, 이용 안내
+4. 더보기 — 프로필 카드, 내 기록, 이용 안내(시트 안에 **키오스크 모드**)
 5. brand-bar 우측 **대회 기록**
 
 - [ ] **Step 2: 로컬에서 목업 확인**
@@ -98,7 +98,7 @@ cd /workspace && python3 -m http.server 8765
 # 브라우저: http://127.0.0.1:8765/attendance-v2-shell-mockup.html
 ```
 
-Expected: 4탭 전환, 상단 races 링크, 더보기 키오스크 항목 보임. 모바일 폭(~390px)에서도 탭 잘림 없음.
+Expected: 4탭 전환, 상단 races 링크, 더보기 메인에 키오스크 단독 행 **없음**. 이용 안내 시트 안에 키오스크 항목 보임. 모바일 폭(~390px)에서도 탭 잘림 없음.
 
 - [ ] **Step 3: 커밋**
 
@@ -212,7 +212,7 @@ git commit -m "feat(attendance): 앱 셸 CSS·토큰 추가"
         <div class="stub-card">팀 출석 — 준비 중</div>
       </section>
       <section id="view-more" class="view" hidden>
-        <!-- 프로필 + #btn-edit-profile / my.html / #btn-kiosk-mode / 안내 -->
+        <!-- 프로필 + #btn-edit-profile / my.html / #btn-guide → 시트 안 #btn-kiosk-mode -->
       </section>
     </main>
     <nav class="tab-bar" id="tab-bar">...</nav>
@@ -234,7 +234,7 @@ git commit -m "feat(attendance): 앱 셸 CSS·토큰 추가"
 </body>
 ```
 
-**오늘 탭의 «현장 출석 모드» 링크:** 목업·Shell-1에서 **제거**. 키오스크 진입은 **더보기만**.
+**오늘 탭의 «현장 출석 모드» 링크:** 목업·Shell-1에서 **제거**. 키오스크 진입은 **더보기 → 이용 안내 시트 안만** (메인 더보기 목록·오늘 탭에 두지 않음). URL `?mode=kiosk` 북마크는 유지.
 
 - [ ] **Step 3: 오픈 베타 배너 제거 또는 1줄로 축소**
 
@@ -311,7 +311,8 @@ function setKioskShellVisible(isKiosk) {
 - `#tab-bar` click → `data-tab` → `showShellTab`
 - `hashchange` → `showShellTab(parseShellHash())`
 - `#brandBarHome` → `#today`
-- `#btn-kiosk-mode` (더보기) → confirm 후 키오스크 URL로 이동
+- `#btn-guide` (더보기) → 이용 안내 시트 오픈
+- `#btn-kiosk-mode` (**이용 안내 시트 안**) → confirm 후 키오스크 URL로 이동
 
 confirm 문구 (스펙 §4.4):
 
@@ -378,7 +379,7 @@ if (isKioskMode()) {
 
 1. `#today` — 기존 검색/대시보드/출석 동작
 2. `#my-attendance` / `#team-attendance` — stub
-3. `#more` — my.html 링크, 키오스크 진입
+3. `#more` — my.html 링크, 이용 안내 시트 → 키오스크 진입
 4. `?mode=kiosk` — `.app` 숨김, 기존 키오스크 플로우, **키오스크 종료 → `#more`**
 5. 상단 대회 기록 → races.html
 6. 더보기 프로필 수정 → 기존 팀/검색 플로우
@@ -387,7 +388,7 @@ if (isKioskMode()) {
 
 ```bash
 git add attendance-v2.js
-git commit -m "feat(attendance): 셸 hash 라우터·더보기 키오스크 진입"
+git commit -m "feat(attendance): 셸 hash 라우터·이용 안내 안 키오스크 진입"
 ```
 
 ---
@@ -421,7 +422,7 @@ Expected: `✅ 전체 통과 — 배포 가능`
 `_docs/testing/` 또는 PR 본문에:
 
 - [ ] 오늘 체크인 (프로필 있음/없음)
-- [ ] 더보기 → 키오스크 → 종료 → `#more`
+- [ ] 더보기 → 이용 안내 → 키오스크 → 종료 → `#more`
 - [ ] races 링크
 - [ ] stub 탭 2개
 - [ ] 모바일 폭 탭 바

@@ -687,6 +687,88 @@
       line-height: 1.45;
     }
 
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .sheet-backdrop[hidden] { display: none !important; }
+
+    .guide-sheet {
+      width: 100%;
+      max-width: 480px;
+      max-height: min(78vh, 560px);
+      overflow: auto;
+      background: var(--dmc-color-surface);
+      border-radius: 20px 20px 0 0;
+      padding: 12px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.18);
+    }
+
+    .guide-sheet-handle {
+      width: 36px;
+      height: 4px;
+      margin: 4px auto 14px;
+      border-radius: 999px;
+      background: var(--dmc-color-border);
+    }
+
+    .guide-sheet h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .guide-sheet .guide-body {
+      margin: 0 0 16px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--dmc-color-text-secondary);
+    }
+
+    .guide-sheet .guide-body ul {
+      margin: 8px 0 0;
+      padding-left: 1.2em;
+    }
+
+    .guide-sheet .guide-section-label {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--dmc-color-text-muted);
+    }
+
+    .guide-sheet .sheet-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .guide-sheet .sheet-actions button {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--dmc-color-border);
+      background: var(--dmc-surface-muted);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .guide-sheet .sheet-actions .btn-primary-sheet {
+      background: var(--dmc-color-primary);
+      border-color: var(--dmc-color-primary);
+      color: #fff;
+    }
+
     .tab-bar {
       position: fixed;
       bottom: 0;
@@ -1081,24 +1163,16 @@
             </span>
             <span class="more-chevron" aria-hidden="true">›</span>
           </a>
-          <button type="button" class="more-item" id="mockKioskMode">
-            <span class="more-icon" aria-hidden="true">📟</span>
-            <span class="more-text">
-              <strong>키오스크 모드</strong>
-              <span>공용 기기 · 현장 출석</span>
-            </span>
-            <span class="more-chevron" aria-hidden="true">›</span>
-          </button>
           <button type="button" class="more-item" id="mockGuide">
             <span class="more-icon" aria-hidden="true">ℹ</span>
             <span class="more-text">
               <strong>이용 안내</strong>
-              <span>출석·정모 규칙 요약</span>
+              <span>출석·정모 규칙 · 키오스크</span>
             </span>
             <span class="more-chevron" aria-hidden="true">›</span>
           </button>
         </div>
-        <p class="hint">대회 기록은 상단바만. 동마클 홈 링크는 1차 생략.</p>
+        <p class="hint">대회 기록은 상단바만. 키오스크는 이용 안내 안. 동마클 홈 링크는 1차 생략.</p>
       </section>
     </main>
 
@@ -1119,6 +1193,34 @@
   </div>
 
   <div class="toast" id="toast" role="status"></div>
+
+  <div class="sheet-backdrop" id="guideSheet" hidden>
+    <div class="guide-sheet" role="dialog" aria-modal="true" aria-labelledby="guideSheetTitle">
+      <div class="guide-sheet-handle" aria-hidden="true"></div>
+      <h2 id="guideSheetTitle">이용 안내</h2>
+      <div class="guide-body">
+        <p>출석 앱 베타입니다. 정모(화·목·토) 출석은 «오늘» 탭에서, 개인 출석 취소는 «내 출석» 당일 행에서만 가능합니다.</p>
+        <ul>
+          <li>대회 기록은 상단 «대회 기록»</li>
+          <li>팀 조회는 «팀 출석» 탭</li>
+        </ul>
+      </div>
+      <p class="guide-section-label">현장 · 공용 기기</p>
+      <div class="more-list">
+        <button type="button" class="more-item" id="mockKioskMode">
+          <span class="more-icon" aria-hidden="true">📟</span>
+          <span class="more-text">
+            <strong>키오스크 모드</strong>
+            <span>공용 기기 · 현장 출석 (?mode=kiosk)</span>
+          </span>
+          <span class="more-chevron" aria-hidden="true">›</span>
+        </button>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" id="guideSheetClose">닫기</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -1200,17 +1302,34 @@
         });
       });
 
-      document.getElementById("mockKioskMode").addEventListener("click", function () {
-        if (!confirm("공용 기기에서 사용합니다. 개인 프로필이 숨겨집니다.\n\n(목업이므로 이동하지 않습니다)")) return;
-        showToast("키오스크 진입 확인됨 (목업)");
-      });
+      var guideSheet = document.getElementById("guideSheet");
+
+      function openGuideSheet() {
+        guideSheet.hidden = false;
+      }
+
+      function closeGuideSheet() {
+        guideSheet.hidden = true;
+      }
 
       document.getElementById("mockEditProfile").addEventListener("click", function () {
         showToast("프로필 수정 모달 (목업)");
       });
 
       document.getElementById("mockGuide").addEventListener("click", function () {
-        showToast("이용 안내 시트 (목업)");
+        openGuideSheet();
+      });
+
+      document.getElementById("guideSheetClose").addEventListener("click", closeGuideSheet);
+
+      guideSheet.addEventListener("click", function (e) {
+        if (e.target === guideSheet) closeGuideSheet();
+      });
+
+      document.getElementById("mockKioskMode").addEventListener("click", function () {
+        if (!confirm("공용 기기에서 사용합니다. 개인 프로필이 숨겨집니다.\n\n(목업이므로 이동하지 않습니다)")) return;
+        closeGuideSheet();
+        showToast("키오스크 진입 확인됨 (목업)");
       });
 
       var listPanel = document.getElementById("myAttendListPanel");
