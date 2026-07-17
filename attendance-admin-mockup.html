@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>출석 운영 목업 — 동마클</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: var(--dmc-font-family);
+      background: var(--dmc-slate-3);
+      color: var(--dmc-color-text);
+    }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dmc-slate-2);
+    }
+    .auth-card {
+      width: min(360px, 92vw);
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+      text-align: center;
+    }
+    .auth-card h1 { margin: 0 0 8px; font-size: 20px; }
+    .auth-card p { margin: 0 0 16px; font-size: 13px; color: var(--dmc-color-text-secondary); }
+    .auth-card input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 10px;
+      font-size: 16px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .auth-hint { font-size: 12px; color: var(--dmc-color-text-muted); margin-bottom: 12px; }
+
+    .shell { display: none; min-height: 100dvh; }
+    .shell.show { display: flex; flex-direction: column; }
+
+    .preview-banner {
+      background: var(--dmc-slate-11);
+      color: var(--dmc-blue-5);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+      background: var(--dmc-slate-12);
+      color: #fff;
+    }
+    .topbar img { width: 28px; height: 28px; border-radius: 8px; background: #fff; }
+    .topbar h1 { margin: 0; font-size: 16px; font-weight: 800; }
+    .topbar-meta { margin-left: auto; font-size: 12px; color: var(--dmc-slate-5); }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 10px 16px 0;
+      background: #fff;
+      border-bottom: 1px solid var(--dmc-color-border);
+    }
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--dmc-color-text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-family: inherit;
+    }
+    .tab-btn.active {
+      color: var(--dmc-color-primary);
+      border-bottom-color: var(--dmc-color-primary);
+    }
+
+    .main {
+      flex: 1;
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dmc-color-text-secondary);
+      margin-bottom: 4px;
+    }
+    .field input, .field select, .field textarea {
+      padding: 8px 12px;
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      min-width: 140px;
+    }
+    .field textarea { width: 100%; min-height: 64px; resize: vertical; }
+
+    .btn {
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--dmc-color-primary); color: #fff; }
+    .btn-outline {
+      background: #fff;
+      border: 1px solid var(--dmc-color-border);
+      color: var(--dmc-color-text);
+    }
+    .btn-danger {
+      background: var(--dmc-red-2);
+      color: var(--dmc-red-11);
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+    .btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .card h2 { margin: 0 0 12px; font-size: 16px; }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .stat {
+      background: var(--dmc-surface-muted);
+      border-radius: 12px;
+      padding: 12px 16px;
+      min-width: 100px;
+    }
+    .stat strong { display: block; font-size: 22px; }
+    .stat span { font-size: 12px; color: var(--dmc-color-text-secondary); font-weight: 600; }
+
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    table.data th {
+      text-align: left;
+      padding: 10px 8px;
+      font-size: 12px;
+      color: var(--dmc-color-text-secondary);
+      border-bottom: 2px solid var(--dmc-color-border);
+    }
+    table.data td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--dmc-line-subtle);
+    }
+    table.data tr:hover { background: var(--dmc-blue-2); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .chip {
+      border: 1px solid var(--dmc-color-border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .chip.active {
+      background: var(--dmc-blue-3);
+      border-color: var(--dmc-blue-6);
+      color: var(--dmc-blue-11);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .phase-label {
+      display: inline-block;
+      min-width: 1.5em;
+      margin-right: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--dmc-blue-11);
+      background: var(--dmc-blue-3);
+      border-radius: 6px;
+      padding: 1px 6px;
+      text-align: center;
+    }
+
+    .hint {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: var(--dmc-color-text-muted);
+      line-height: 1.45;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--dmc-slate-11);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <h1>동마클 출석 운영</h1>
+      <p>운영진 비밀번호를 입력하세요</p>
+      <p class="auth-hint">목업: 아무 비밀번호나 입력 후 확인</p>
+      <input type="password" id="authPw" placeholder="비밀번호" />
+      <button type="button" class="btn btn-primary" style="width:100%" id="authBtn">확인</button>
+    </div>
+  </div>
+
+  <div class="shell" id="shell">
+    <div class="preview-banner">운영진 목업 · 가상 데이터 (실제 API 미연동)</div>
+    <header class="topbar">
+      <img src="assets/dmc_logo.png" alt="" width="28" height="28" />
+      <h1>동마클 출석 운영</h1>
+      <span class="topbar-meta">PC 권장 · operator / owner</span>
+    </header>
+    <nav class="tabs" id="tabs">
+      <button type="button" class="tab-btn active" data-tab="attendance">출석 관리</button>
+      <button type="button" class="tab-btn" data-tab="members">회원</button>
+      <button type="button" class="tab-btn" data-tab="training">정모 훈련</button>
+    </nav>
+
+    <main class="main">
+      <!-- 출석 관리 -->
+      <section class="panel active" id="panel-attendance">
+        <div class="toolbar">
+          <div class="field">
+            <label for="attDate">날짜</label>
+            <input type="date" id="attDate" value="2026-07-16" />
+          </div>
+          <div class="field">
+            <label for="attType">정모</label>
+            <select id="attType">
+              <option value="THU" selected>목요일 정모</option>
+              <option value="TUE">화요일 정모</option>
+              <option value="SAT">토요일 정모</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary" id="attReload">불러오기</button>
+          <button type="button" class="btn btn-outline" id="attAddMock" title="Delete-1 이후 운영 추가">+ 출석 추가 (예정)</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><strong>12</strong><span>전체</span></div>
+          <div class="stat"><strong>10</strong><span>정회원</span></div>
+          <div class="stat"><strong>2</strong><span>게스트</span></div>
+        </div>
+
+        <div class="card">
+          <h2>출석 명단</h2>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>닉네임</th>
+                <th>팀</th>
+                <th>시각</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>박병규</td><td>2팀</td><td>19:32</td>
+                <td><button type="button" class="btn btn-danger mock-admin-del">삭제</button></td>
+              </tr>
+              <tr>
+                <td>러너킴</td><td>2팀</td><td>19:35</td>
+                <td><button type="button" class="btn btn-danger mock-admin-del">삭제</button></td>
+              </tr>
+              <tr>
+                <td>서연</td><td>2팀</td><td>19:41</td>
+                <td><button type="button" class="btn btn-danger mock-admin-del">삭제</button></td>
+              </tr>
+              <tr>
+                <td>게스트A</td><td>GUEST</td><td>19:50</td>
+                <td><button type="button" class="btn btn-danger mock-admin-del">삭제</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="hint">목업: 삭제는 confirm만. 실구현은 admin-delete-attendance + verify-admin.</p>
+        </div>
+      </section>
+
+      <!-- 회원 -->
+      <section class="panel" id="panel-members" hidden>
+        <div class="card">
+          <h2>회원 검색 · 추가</h2>
+          <div class="toolbar">
+            <div class="field" style="flex:1">
+              <label for="memSearch">검색</label>
+              <input type="search" id="memSearch" placeholder="닉네임 / 실명" style="width:100%" />
+            </div>
+            <button type="button" class="btn btn-outline">검색</button>
+          </div>
+          <div class="toolbar">
+            <div class="field"><label>닉네임</label><input placeholder="닉네임" /></div>
+            <div class="field"><label>실명</label><input placeholder="실명" /></div>
+            <div class="field">
+              <label>성별</label>
+              <select><option>M</option><option>F</option></select>
+            </div>
+            <button type="button" class="btn btn-primary">추가</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>회원 목록 (더미)</h2>
+          <table class="data">
+            <thead>
+              <tr><th>닉네임</th><th>실명</th><th>성별</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr><td>러너킴</td><td>김러너</td><td>M</td><td><button type="button" class="btn btn-outline" style="font-size:12px;padding:6px 10px">수정</button></td></tr>
+              <tr><td>박병규</td><td>박병규</td><td>M</td><td><button type="button" class="btn btn-outline" style="font-size:12px;padding:6px 10px">수정</button></td></tr>
+              <tr><td>서연</td><td>이서연</td><td>F</td><td><button type="button" class="btn btn-outline" style="font-size:12px;padding:6px 10px">수정</button></td></tr>
+            </tbody>
+          </table>
+          <p class="hint">실구현: 기존 admin.html CRUD를 이 패널로 이식. admin.html → #members 리다이렉트.</p>
+        </div>
+      </section>
+
+      <!-- 정모 훈련 -->
+      <section class="panel" id="panel-training" hidden>
+        <div class="chips" id="trainChips">
+          <button type="button" class="chip active" data-slot="thu">7/16 목</button>
+          <button type="button" class="chip" data-slot="tue">7/14 화</button>
+          <button type="button" class="chip" data-slot="sat">7/18 토</button>
+        </div>
+
+        <div class="card">
+          <h2>목요일 정모 · 훈련 공지</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label>시간</label>
+              <input value="19:30" />
+            </div>
+            <div class="field">
+              <label>장소</label>
+              <input value="여울공원 운동장(트랙)" style="min-width:220px" />
+            </div>
+            <div class="field full">
+              <label><span class="phase-label">전</span> 훈련</label>
+              <textarea>체조 및 스트레칭, 조깅 운동장 7바퀴</textarea>
+            </div>
+            <div class="field full">
+              <label><span class="phase-label">본</span> 훈련</label>
+              <textarea>300/100 인터벌 10개 &amp; 보강훈련</textarea>
+            </div>
+            <div class="field full">
+              <label><span class="phase-label">후</span> 훈련</label>
+              <textarea>Cool 조깅 10분, 마무리 체조 및 스트레칭</textarea>
+            </div>
+            <div class="field full">
+              <label>급수 및 서포터즈</label>
+              <input value="바우돌리노/보스톤" style="width:100%" />
+            </div>
+            <div class="field full">
+              <label>메모</label>
+              <textarea>7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요.</textarea>
+            </div>
+          </div>
+          <div class="toolbar" style="margin-top:14px;margin-bottom:0">
+            <button type="button" class="btn btn-primary" id="trainSave">저장 (목업)</button>
+            <button type="button" class="btn btn-outline" id="trainCopy">직전 정모 불러오기</button>
+          </div>
+          <p class="hint">회원 앱 오늘 탭이 이 공지를 표로 표시. API는 Admin-1b justification 후.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+      function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1800);
+      }
+
+      var TABS = ["attendance", "members", "training"];
+
+      function showTab(id) {
+        TABS.forEach(function (t) {
+          var panel = document.getElementById("panel-" + t);
+          var btn = document.querySelector('.tab-btn[data-tab="' + t + '"]');
+          var on = t === id;
+          if (panel) {
+            panel.classList.toggle("active", on);
+            panel.hidden = !on;
+          }
+          if (btn) btn.classList.toggle("active", on);
+        });
+        if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+      }
+
+      document.getElementById("authBtn").addEventListener("click", function () {
+        document.getElementById("authOverlay").style.display = "none";
+        document.getElementById("shell").classList.add("show");
+        var h = (location.hash || "#attendance").replace(/^#/, "");
+        showTab(TABS.indexOf(h) >= 0 ? h : "attendance");
+        toast("목업 로그인됨");
+      });
+      document.getElementById("authPw").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") document.getElementById("authBtn").click();
+      });
+
+      document.getElementById("tabs").addEventListener("click", function (e) {
+        var btn = e.target.closest(".tab-btn");
+        if (!btn) return;
+        showTab(btn.getAttribute("data-tab"));
+      });
+
+      document.getElementById("attReload").addEventListener("click", function () {
+        toast("명단 불러오기 (목업)");
+      });
+      document.getElementById("attAddMock").addEventListener("click", function () {
+        toast("운영 추가 — Delete-1/Admin 이후");
+      });
+
+      document.querySelectorAll(".mock-admin-del").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (!confirm("이 출석을 삭제할까요? (목업)")) return;
+          toast("운영진 삭제 확인 (목업)");
+        });
+      });
+
+      document.getElementById("trainSave").addEventListener("click", function () {
+        toast("훈련 공지 저장 (목업)");
+      });
+      document.getElementById("trainCopy").addEventListener("click", function () {
+        toast("직전 정모 불러오기 (목업)");
+      });
+
+      document.getElementById("trainChips").addEventListener("click", function (e) {
+        var chip = e.target.closest(".chip");
+        if (!chip) return;
+        document.querySelectorAll("#trainChips .chip").forEach(function (c) {
+          c.classList.remove("active");
+        });
+        chip.classList.add("active");
+        toast("슬롯: " + chip.textContent.trim());
+      });
+    })();
+  </script>
+</body>
+</html>

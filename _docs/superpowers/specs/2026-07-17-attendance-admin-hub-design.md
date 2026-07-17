@@ -1,7 +1,7 @@
 # DMC 출석·운영 어드민 허브 — 설계서
 
 > 작성일: 2026-07-17  
-> 상태: **초안 — 검토 대기**  
+> 상태: **초안 — 구현 계획 작성됨** (`_docs/superpowers/plans/2026-07-17-attendance-admin-hub.md`). 목업·디자인 컨펌 후 Admin-1a.  
 > 관련: `_docs/superpowers/specs/2026-07-17-attendance-shell-redesign-design.md` (회원 앱 셸)  
 > 선행 선례: `chunbaek/admin.html` (탭·훈련 입력), `admin.html` (회원 CRUD)
 
