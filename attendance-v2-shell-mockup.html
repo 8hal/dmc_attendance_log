@@ -502,6 +502,32 @@
       border-radius: 999px;
     }
 
+    .attend-log-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-cancel-attend {
+      border: 1px solid var(--dmc-color-border);
+      background: var(--dmc-color-surface);
+      color: var(--dmc-color-text-secondary);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-cancel-attend:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     .cal-grid.compact {
       gap: 4px;
     }
@@ -880,6 +906,20 @@
           <ul class="attend-log" aria-label="이번 달 출석 목록">
             <li class="attend-log-item">
               <div class="attend-log-date">
+                <span class="attend-log-day">16</span>
+                <span class="attend-log-dow">목</span>
+              </div>
+              <div class="attend-log-body">
+                <strong>목요일 정모</strong>
+                <span>2026/07/16 · 오늘</span>
+              </div>
+              <div class="attend-log-actions">
+                <span class="attend-log-mark">출석</span>
+                <button type="button" class="btn-cancel-attend" data-cancel="today">출석 취소</button>
+              </div>
+            </li>
+            <li class="attend-log-item">
+              <div class="attend-log-date">
                 <span class="attend-log-day">10</span>
                 <span class="attend-log-dow">목</span>
               </div>
@@ -887,7 +927,10 @@
                 <strong>목요일 정모</strong>
                 <span>2026/07/10</span>
               </div>
-              <span class="attend-log-mark">출석</span>
+              <div class="attend-log-actions">
+                <span class="attend-log-mark">출석</span>
+                <button type="button" class="btn-cancel-attend" disabled title="당일만 취소 가능">취소 불가</button>
+              </div>
             </li>
             <li class="attend-log-item">
               <div class="attend-log-date">
@@ -898,7 +941,10 @@
                 <strong>화요일 정모</strong>
                 <span>2026/07/08</span>
               </div>
-              <span class="attend-log-mark">출석</span>
+              <div class="attend-log-actions">
+                <span class="attend-log-mark">출석</span>
+                <button type="button" class="btn-cancel-attend" disabled title="당일만 취소 가능">취소 불가</button>
+              </div>
             </li>
             <li class="attend-log-item">
               <div class="attend-log-date">
@@ -909,7 +955,10 @@
                 <strong>토요일 정모</strong>
                 <span>2026/07/05</span>
               </div>
-              <span class="attend-log-mark">출석</span>
+              <div class="attend-log-actions">
+                <span class="attend-log-mark">출석</span>
+                <button type="button" class="btn-cancel-attend" disabled title="당일만 취소 가능">취소 불가</button>
+              </div>
             </li>
             <li class="attend-log-item">
               <div class="attend-log-date">
@@ -920,10 +969,13 @@
                 <strong>화요일 정모</strong>
                 <span>2026/07/03</span>
               </div>
-              <span class="attend-log-mark">출석</span>
+              <div class="attend-log-actions">
+                <span class="attend-log-mark">출석</span>
+                <button type="button" class="btn-cancel-attend" disabled title="당일만 취소 가능">취소 불가</button>
+              </div>
             </li>
           </ul>
-          <p class="hint">기본은 목록 · 달력은 필요할 때만. Shell-2에서 history/stats API 연동.</p>
+          <p class="hint">개인 삭제: <strong>당일</strong> 행만 «출석 취소». 지난 날은 비활성. 오늘 탭 CTA 옆에도 동일 동작 가능.</p>
         </div>
 
         <div class="card" id="myAttendCalPanel" hidden>
@@ -1142,6 +1194,14 @@
 
       document.getElementById("mockTodayRosterMore").addEventListener("click", function () {
         showToast("전체 당일 출석 명단 (목업)");
+      });
+
+      document.querySelectorAll(".btn-cancel-attend").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (btn.disabled) return;
+          if (!confirm("오늘 출석을 취소할까요? (목업 · 당일·memberId 매칭)")) return;
+          showToast("출석 취소됨 (목업)");
+        });
       });
 
       document.getElementById("mockKioskMode").addEventListener("click", function () {
