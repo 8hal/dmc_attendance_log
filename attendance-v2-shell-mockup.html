@@ -1028,6 +1028,10 @@
         showToast("출석 완료 (목업 — API 없음)");
       });
 
+      document.getElementById("mockTodayRosterMore").addEventListener("click", function () {
+        showToast("전체 당일 출석 명단 (목업)");
+      });
+
       document.getElementById("mockKioskMode").addEventListener("click", function () {
         if (!confirm("공용 기기에서 사용합니다. 개인 프로필이 숨겨집니다.\n\n(목업이므로 이동하지 않습니다)")) return;
         showToast("키오스크 진입 확인됨 (목업)");
