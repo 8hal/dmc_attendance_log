@@ -684,6 +684,53 @@
           </p>
           <button type="button" class="btn-primary" id="mockCheckinBtn">출석하기</button>
         </div>
+
+        <div class="card">
+          <div class="summary-banner" style="margin-bottom:0;background:transparent;padding:0">
+            <div>오늘 출석<br /><strong id="todayRosterCount">12명</strong></div>
+            <div style="text-align:right;font-size:12px;font-weight:600;color:var(--dmc-color-text-secondary)">
+              목요일 정모<br /><span style="color:var(--dmc-color-text)">최신순</span>
+            </div>
+          </div>
+          <ul class="member-list" id="todayRosterList" aria-label="오늘 출석 인원" style="margin-top:8px">
+            <li class="member-row">
+              <div class="member-avatar">박</div>
+              <div class="member-name">박병규<span class="member-dates">2팀 · 방금</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">서</div>
+              <div class="member-name">서연<span class="member-dates">2팀 · 3분 전</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">최</div>
+              <div class="member-name">최민<span class="member-dates">1팀 · 8분 전</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">한</div>
+              <div class="member-name">한지우<span class="member-dates">3팀 · 12분 전</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">김</div>
+              <div class="member-name">김도윤<span class="member-dates">2팀 · 18분 전</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">이</div>
+              <div class="member-name">이서준<span class="member-dates">S팀 · 22분 전</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">정</div>
+              <div class="member-name">정하늘<span class="member-dates">1팀 · 30분 전</span></div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">오</div>
+              <div class="member-name">오세린<span class="member-dates">4팀 · 35분 전</span></div>
+            </li>
+          </ul>
+          <button type="button" class="btn-ghost" id="mockTodayRosterMore" style="margin-top:4px;text-align:center">
+            전체 12명 보기
+          </button>
+          <p class="hint">당일 세션 명단 · 팀 출석 탭(월간)과 역할 분리</p>
+        </div>
       </section>
 
       <!-- 내 출석 -->
