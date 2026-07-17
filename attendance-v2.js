@@ -55,6 +55,8 @@
   const elDash = document.getElementById("viewDashboard");
   const elSuccess = document.getElementById("viewSuccess");
   const elKiosk = document.getElementById("viewKiosk");
+  const elKioskWrap = document.getElementById("kioskWrap");
+  const elAppShell = document.getElementById("app-shell");
   const elSearchInput = document.getElementById("searchInput");
   const elMemberList = document.getElementById("memberList");
   const elSearchMsg = document.getElementById("searchMsg");
@@ -72,8 +74,6 @@
   const elSuccessSessionLine = document.getElementById("successSessionLine");
   const elDashSessionRow = document.getElementById("dashSessionRow");
   const elDashSessionFigures = document.getElementById("dashSessionFigures");
-  const elOpenKioskFromSearchLink = document.getElementById("openKioskFromSearchLink");
-  const elOpenKioskModeLink = document.getElementById("openKioskModeLink");
   const elGuestModal = document.getElementById("guestModal");
   const elGuestModalTitle = document.getElementById("guestModalTitle");
   const elGuestModalHelp = document.getElementById("guestModalHelp");
@@ -252,23 +252,69 @@
     elSearch.classList.toggle("hidden", name !== "search");
     elDash.classList.toggle("hidden", name !== "dashboard");
     elSuccess.classList.toggle("hidden", name !== "success");
-    elKiosk.classList.toggle("hidden", name !== "kiosk");
-    document.body.classList.toggle("kiosk-mode", name === "kiosk");
+    if (name === "kiosk") {
+      setKioskShellVisible(true);
+    } else {
+      setKioskShellVisible(false);
+      if (elKiosk) elKiosk.classList.add("hidden");
+    }
     if (name !== "kiosk") releaseKioskWakeLock().catch(() => {});
   }
 
-  function setKioskEntryLinks() {
-    const params = new URLSearchParams(window.location.search);
-    const defaults = getDefaultDateAndMeetingType();
-    const dateValue = elMeetingDate && elMeetingDate.value ? elMeetingDate.value : dateKeyToInputValue(defaults.dateKey);
-    const typeValue = elMeetingType && elMeetingType.value ? elMeetingType.value : defaults.meetingType;
-    params.set("mode", "kiosk");
-    if (dateValue) params.set("meetingDate", dateValue);
-    if (typeValue) params.set("meetingType", typeValue);
-    const href = "attendance-v2.html?" + params.toString();
-    [elOpenKioskFromSearchLink, elOpenKioskModeLink].forEach((link) => {
-      if (link) link.href = href;
+  function setKioskShellVisible(isKiosk) {
+    document.body.classList.toggle("kiosk-mode", isKiosk);
+    if (elKioskWrap) elKioskWrap.hidden = !isKiosk;
+    if (elKiosk) elKiosk.classList.toggle("hidden", !isKiosk);
+  }
+
+  const shellRouter =
+    typeof globalThis !== "undefined" && globalThis.DmcAttendanceShellRouter
+      ? globalThis.DmcAttendanceShellRouter
+      : null;
+  const SHELL_TABS = shellRouter
+    ? shellRouter.SHELL_TABS
+    : ["today", "my-attendance", "team-attendance", "more"];
+
+  function parseShellHash() {
+    if (shellRouter) return shellRouter.parseShellHash(location.hash);
+    const h = (location.hash || "#today").replace(/^#/, "");
+    return SHELL_TABS.indexOf(h) >= 0 ? h : "today";
+  }
+
+  function showShellTab(tabId) {
+    if (isKioskMode()) return;
+    SHELL_TABS.forEach((id) => {
+      const el = document.getElementById("view-" + id);
+      if (el) {
+        const on = id === tabId;
+        el.classList.toggle("active", on);
+        el.hidden = !on;
+      }
+      const btn = document.querySelector('.tab-btn[data-tab="' + id + '"]');
+      if (btn) btn.classList.toggle("active", id === tabId);
     });
+    if (location.hash !== "#" + tabId) {
+      history.replaceState(null, "", "#" + tabId);
+    }
+    if (tabId === "more") refreshMoreProfileCard();
+  }
+
+  function refreshMoreProfileCard() {
+    const nameEl = document.getElementById("moreProfileName");
+    const metaEl = document.getElementById("moreProfileMeta");
+    if (!nameEl || !metaEl) return;
+    const p = myProfile || loadProfile();
+    if (!p) {
+      nameEl.textContent = "프로필 없음";
+      metaEl.textContent = "오늘 탭에서 본인을 선택해 주세요";
+      return;
+    }
+    nameEl.textContent = p.nickname || "회원";
+    metaEl.textContent = teamLabel(p.team) + (p.memberId ? " · 저장됨" : "");
+  }
+
+  function setKioskEntryLinks() {
+    /* Shell-1: 오늘 탭 키오스크 링크 제거. 이용 안내 시트(#btn-kiosk-mode)만 사용 */
   }
 
   function loadProfile() {
@@ -1666,11 +1712,111 @@
   });
 
   document.getElementById("changeTeamBtn").addEventListener("click", () => {
+    openTeamChangeModal();
+  });
+
+  function openTeamChangeModal() {
     const sel = document.getElementById("teamSelect");
     sel.innerHTML = TEAM_OPTIONS.map((t) => '<option value="' + t.value + '">' + t.label + "</option>").join("");
     sel.value = myProfile && myProfile.team ? myProfile.team : "S";
     elTeamModal.classList.remove("hidden");
+  }
+
+  function openEditProfileFlow() {
+    if (myProfile) {
+      openTeamChangeModal();
+      return;
+    }
+    showShellTab("today");
+    showView("search");
+    elSearchInput.value = "";
+    ensureSearchMembersLoaded().catch(() => {});
+  }
+
+  function openGuideSheet() {
+    const sheet = document.getElementById("guideSheet");
+    if (sheet) sheet.hidden = false;
+  }
+
+  function closeGuideSheet() {
+    const sheet = document.getElementById("guideSheet");
+    if (sheet) sheet.hidden = true;
+  }
+
+  function exitKioskToMore() {
+    if (!confirm("키오스크를 종료하고 개인 화면으로 돌아갈까요?")) return;
+    const u = new URL(location.href);
+    u.searchParams.delete("mode");
+    u.hash = "more";
+    location.href = u.pathname + u.search + u.hash;
+  }
+
+  function enterKioskModeFromGuide() {
+    if (!confirm("공용 기기에서 사용합니다. 개인 프로필이 숨겨집니다.")) return;
+    const u = new URL(location.href);
+    const defaults = getDefaultDateAndMeetingType();
+    u.searchParams.set("mode", "kiosk");
+    const dateValue =
+      elMeetingDate && elMeetingDate.value
+        ? elMeetingDate.value
+        : dateKeyToInputValue(defaults.dateKey);
+    const typeValue =
+      elMeetingType && elMeetingType.value ? elMeetingType.value : defaults.meetingType;
+    if (dateValue) u.searchParams.set("meetingDate", dateValue);
+    if (typeValue) u.searchParams.set("meetingType", typeValue);
+    u.hash = "";
+    location.href = u.pathname + u.search;
+  }
+
+  const elTabBar = document.getElementById("tab-bar");
+  if (elTabBar) {
+    elTabBar.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (!btn) return;
+      showShellTab(btn.getAttribute("data-tab"));
+    });
+  }
+
+  const elBrandBarHome = document.getElementById("brandBarHome");
+  if (elBrandBarHome) {
+    elBrandBarHome.addEventListener("click", () => showShellTab("today"));
+  }
+
+  window.addEventListener("hashchange", () => {
+    if (!isKioskMode()) showShellTab(parseShellHash());
   });
+
+  const elBtnEditProfile = document.getElementById("btn-edit-profile");
+  if (elBtnEditProfile) {
+    elBtnEditProfile.addEventListener("click", openEditProfileFlow);
+  }
+
+  const elBtnGuide = document.getElementById("btn-guide");
+  if (elBtnGuide) {
+    elBtnGuide.addEventListener("click", openGuideSheet);
+  }
+
+  const elGuideClose = document.getElementById("guideSheetClose");
+  if (elGuideClose) {
+    elGuideClose.addEventListener("click", closeGuideSheet);
+  }
+
+  const elGuideSheet = document.getElementById("guideSheet");
+  if (elGuideSheet) {
+    elGuideSheet.addEventListener("click", (e) => {
+      if (e.target === elGuideSheet) closeGuideSheet();
+    });
+  }
+
+  const elBtnKioskMode = document.getElementById("btn-kiosk-mode");
+  if (elBtnKioskMode) {
+    elBtnKioskMode.addEventListener("click", enterKioskModeFromGuide);
+  }
+
+  const elBtnExitKiosk = document.getElementById("btn-exit-kiosk");
+  if (elBtnExitKiosk) {
+    elBtnExitKiosk.addEventListener("click", exitKioskToMore);
+  }
 
   document.getElementById("teamCancelBtn").addEventListener("click", () => elTeamModal.classList.add("hidden"));
   elTeamModal.addEventListener("click", (e) => {
@@ -1773,9 +1919,12 @@
     registerTabletInstallShell();
     setKioskEntryLinks();
     if (urlParams.get("mode") === "kiosk") {
+      setKioskShellVisible(true);
       await openKioskView();
       return;
     }
+    setKioskShellVisible(false);
+    showShellTab(parseShellHash());
     myProfile = loadProfile();
     if (myProfile) {
       showView("dashboard");
@@ -1784,6 +1933,7 @@
       showView("search");
       await ensureSearchMembersLoaded();
     }
+    refreshMoreProfileCard();
   }
 
   init();
