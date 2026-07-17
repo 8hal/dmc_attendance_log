@@ -847,9 +847,9 @@
       <!-- 오늘 -->
       <section id="view-today" class="view active" data-view="today">
         <p class="section-kicker">TODAY · 오늘 출석</p>
-        <h1 class="section-title" id="todayHeroTitle">7월 16일 (목)</h1>
+        <h1 class="section-title" id="todayHeroTitle">—</h1>
         <p class="meeting-line" style="margin-top:-8px;margin-bottom:16px;font-size:15px">
-          <strong>목요일 정모</strong> · 아직 출석 전
+          <strong id="todayMeetingLabel">—</strong> · 아직 출석 전
         </p>
 
         <div class="card">
@@ -878,7 +878,7 @@
 
         <div class="card">
           <p class="section-kicker" style="margin-bottom:8px">오늘 훈련 공지</p>
-          <table class="train-notice" id="todayTrainInfo" aria-label="목요일 정모 훈련 공지">
+          <table class="train-notice" id="todayTrainInfo" aria-label="정모 훈련 공지">
             <tbody>
               <tr>
                 <th scope="row">시간/장소</th>
@@ -909,7 +909,7 @@
           <div class="summary-banner" style="margin-bottom:0;background:transparent;padding:0">
             <div>오늘 출석<br /><strong id="todayRosterCount">12명</strong></div>
             <div style="text-align:right;font-size:12px;font-weight:600;color:var(--dmc-color-text-secondary)">
-              목요일 정모<br /><span style="color:var(--dmc-color-text)">최신순</span>
+              <span id="todayRosterMeetingLabel">—</span><br /><span style="color:var(--dmc-color-text)">최신순</span>
             </div>
           </div>
           <ul class="member-list" id="todayRosterList" aria-label="오늘 출석 인원" style="margin-top:8px">
@@ -986,14 +986,14 @@
 
         <div class="card" id="myAttendListPanel">
           <ul class="attend-log" aria-label="이번 달 출석 목록">
-            <li class="attend-log-item">
+            <li class="attend-log-item" id="myAttendTodayRow">
               <div class="attend-log-date">
-                <span class="attend-log-day">16</span>
-                <span class="attend-log-dow">목</span>
+                <span class="attend-log-day" id="myAttendTodayDay">—</span>
+                <span class="attend-log-dow" id="myAttendTodayDow">—</span>
               </div>
               <div class="attend-log-body">
-                <strong>목요일 정모</strong>
-                <span>2026/07/16 · 오늘</span>
+                <strong id="myAttendTodayMeeting">—</strong>
+                <span id="myAttendTodayMeta">— · 오늘 세션</span>
               </div>
               <div class="attend-log-actions">
                 <span class="attend-log-mark">출석</span>
@@ -1227,6 +1227,70 @@
       var TABS = ["today", "my-attendance", "team-attendance", "more"];
       var toastEl = document.getElementById("toast");
       var toastTimer = null;
+      var MEETING_LABEL = { TUE: "화요일 정모", THU: "목요일 정모", SAT: "토요일 정모", ETC: "기타" };
+      var DOW_KO = { Mon: "월", Tue: "화", Wed: "수", Thu: "목", Fri: "금", Sat: "토", Sun: "일" };
+
+      /** docs/MEETING_INFO.md · attendance-v2.js resolveDefaultMeeting 과 동일 */
+      function resolveDefaultMeeting(now) {
+        now = now || new Date();
+        var dow = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Seoul",
+          weekday: "short"
+        }).format(now);
+        var dayOffset = 0;
+        var meetingType = "SAT";
+        switch (dow) {
+          case "Mon": dayOffset = -2; meetingType = "SAT"; break;
+          case "Tue": dayOffset = 0; meetingType = "TUE"; break;
+          case "Wed": dayOffset = -1; meetingType = "TUE"; break;
+          case "Thu": dayOffset = 0; meetingType = "THU"; break;
+          case "Fri": dayOffset = -1; meetingType = "THU"; break;
+          case "Sat": dayOffset = 0; meetingType = "SAT"; break;
+          case "Sun": dayOffset = -1; meetingType = "SAT"; break;
+        }
+        var kstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+        kstDate.setDate(kstDate.getDate() + dayOffset);
+        var year = kstDate.getFullYear();
+        var month = String(kstDate.getMonth() + 1).padStart(2, "0");
+        var day = String(kstDate.getDate()).padStart(2, "0");
+        var dateKey = year + "/" + month + "/" + day;
+        var weekdayShort = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Seoul",
+          weekday: "short"
+        }).format(kstDate);
+        return {
+          dateKey: dateKey,
+          meetingType: meetingType,
+          year: year,
+          month: Number(month),
+          day: Number(day),
+          weekdayShort: weekdayShort,
+          weekdayKo: DOW_KO[weekdayShort] || "",
+          label: MEETING_LABEL[meetingType] || meetingType
+        };
+      }
+
+      function applyTodayMeetingLabels() {
+        var m = resolveDefaultMeeting();
+        var hero = m.month + "월 " + m.day + "일 (" + m.weekdayKo + ")";
+        var titleEl = document.getElementById("todayHeroTitle");
+        var meetingEl = document.getElementById("todayMeetingLabel");
+        var rosterEl = document.getElementById("todayRosterMeetingLabel");
+        var trainEl = document.getElementById("todayTrainInfo");
+        if (titleEl) titleEl.textContent = hero;
+        if (meetingEl) meetingEl.textContent = m.label;
+        if (rosterEl) rosterEl.textContent = m.label;
+        if (trainEl) trainEl.setAttribute("aria-label", m.label + " 훈련 공지");
+
+        var dayEl = document.getElementById("myAttendTodayDay");
+        var dowEl = document.getElementById("myAttendTodayDow");
+        var meetEl = document.getElementById("myAttendTodayMeeting");
+        var metaEl = document.getElementById("myAttendTodayMeta");
+        if (dayEl) dayEl.textContent = String(m.day);
+        if (dowEl) dowEl.textContent = m.weekdayKo;
+        if (meetEl) meetEl.textContent = m.label;
+        if (metaEl) metaEl.textContent = m.dateKey + " · 오늘 세션";
+      }
 
       function showToast(msg) {
         toastEl.textContent = msg;
@@ -1350,6 +1414,7 @@
       btnList.addEventListener("click", function () { setMyAttendMode("list"); });
       btnCal.addEventListener("click", function () { setMyAttendMode("cal"); });
 
+      applyTodayMeetingLabels();
       showTab(parseHash());
     })();
   </script>
