@@ -495,15 +495,32 @@
 
       <!-- 정모 훈련 -->
       <section class="panel" id="panel-training" hidden>
+        <div class="card" style="border-color:var(--dmc-blue-5);background:var(--dmc-blue-1)">
+          <h2 style="margin:0 0 8px;font-size:16px">① 카페 공지 가져오기 <span class="phase-label">기본</span></h2>
+          <p class="hint" style="margin:0 0 12px">네이버 카페에 올라온 주간 정모 공지를 가져와 파싱합니다. 예: articleid=4853 · menuid=6</p>
+          <div class="toolbar" style="margin-bottom:8px">
+            <div class="field" style="flex:1;min-width:240px">
+              <label for="cafeUrl">카페 글 URL 또는 articleid</label>
+              <input id="cafeUrl" style="width:100%" value="https://cafe.naver.com/2008dmc/...&articleid=4853" />
+            </div>
+            <button type="button" class="btn btn-primary" id="cafeImportBtn">공지 가져오기</button>
+          </div>
+          <div class="field full">
+            <label for="cafePaste">또는 본문 붙여넣기 (회원제 카페·1차 권장)</label>
+            <textarea id="cafePaste" placeholder="카페 글에서 복사한 시간/장소 · 전/본/후 · 서포터즈 · 메모 텍스트"></textarea>
+          </div>
+          <button type="button" class="btn btn-outline" id="cafeParsePaste" style="margin-top:8px">붙여넣기 파싱</button>
+        </div>
+
         <div class="week-nav">
           <button type="button" class="btn btn-outline" id="trainPrevWeek">‹ 지난주</button>
           <strong id="trainWeekLabel">2026-07-14 주 (화·목·토)</strong>
           <button type="button" class="btn btn-outline" id="trainNextWeek">다음주 ›</button>
-          <button type="button" class="btn btn-outline" id="trainCopyWeek">지난주 전체 불러오기</button>
-          <button type="button" class="btn btn-primary" id="trainSave">주간 일괄 저장</button>
+          <button type="button" class="btn btn-outline" id="trainCopyWeek">지난주 DB 불러오기</button>
+          <button type="button" class="btn btn-primary" id="trainSave">② 검토 후 주간 저장</button>
         </div>
         <p class="hint" style="margin-top:0;margin-bottom:12px">
-          새 주는 <strong>지난주 내용이 기본 프리필</strong>됩니다. 시간·장소는 요일 기본값(화·목 18:30 / 토 06:00)을 유지하기 쉽습니다.
+          가져오기 결과를 아래에서 수정한 뒤 저장합니다. 수동 입력·전주 복사는 보조입니다.
         </p>
 
         <div class="week-board">
@@ -512,7 +529,7 @@
             <div class="field"><label>시간</label><input value="18:30" /></div>
             <div class="field"><label>장소</label><input value="여울공원 운동장(트랙)" /></div>
             <div class="field"><label><span class="phase-label">전</span></label><textarea>체조 · 스트레칭 · 조깅</textarea></div>
-            <div class="field"><label><span class="phase-label">본</span></label><textarea>(전주 프리필) 인터벌 · 보강</textarea></div>
+            <div class="field"><label><span class="phase-label">본</span></label><textarea>(카페 파싱) 인터벌 · 보강</textarea></div>
             <div class="field"><label><span class="phase-label">후</span></label><textarea>쿨다운 · 스트레칭</textarea></div>
             <div class="field"><label>서포터즈</label><input value="—" /></div>
             <div class="field"><label>메모</label><textarea></textarea></div>
@@ -532,13 +549,13 @@
             <div class="field"><label>시간</label><input value="06:00" /></div>
             <div class="field"><label>장소</label><input value="여울공원 운동장(트랙)" /></div>
             <div class="field"><label><span class="phase-label">전</span></label><textarea>체조 · 조깅</textarea></div>
-            <div class="field"><label><span class="phase-label">본</span></label><textarea>(전주 프리필) LSD / 페이스런</textarea></div>
+            <div class="field"><label><span class="phase-label">본</span></label><textarea>(카페 파싱) LSD / 페이스런</textarea></div>
             <div class="field"><label><span class="phase-label">후</span></label><textarea>스트레칭</textarea></div>
             <div class="field"><label>서포터즈</label><input value="—" /></div>
             <div class="field"><label>메모</label><textarea></textarea></div>
           </div>
         </div>
-        <p class="hint">회원 앱은 당일 슬롯만 표시. API는 Admin-1b justification 후 · 주간 일괄 save 권장.</p>
+        <p class="hint">카페는 회원제 → 1차는 본문 붙여넣기 파싱이 안전. URL 자동 fetch는 세션/쿠키 검토 후.</p>
       </section>
     </main>
   </div>
@@ -629,13 +646,19 @@
         toast("주간 일괄 저장 (목업)");
       });
       document.getElementById("trainCopyWeek").addEventListener("click", function () {
-        toast("지난주 화·목·토 내용 복사 (목업)");
+        toast("지난주 DB 내용 복사 (목업)");
       });
       document.getElementById("trainPrevWeek").addEventListener("click", function () {
         toast("지난주로 이동 (목업)");
       });
       document.getElementById("trainNextWeek").addEventListener("click", function () {
-        toast("다음주로 이동 · 비어 있으면 전주 프리필 (목업)");
+        toast("다음주로 이동 (목업)");
+      });
+      document.getElementById("cafeImportBtn").addEventListener("click", function () {
+        toast("카페 URL fetch (목업) — 실구현은 회원제·쿠키 이슈 있음");
+      });
+      document.getElementById("cafeParsePaste").addEventListener("click", function () {
+        toast("붙여넣기 파싱 → 주간 보드 채움 (목업)");
       });
     })();
   </script>
