@@ -301,4 +301,11 @@
   --amber-soft: var(--dmc-color-warning-soft);
   --danger: var(--dmc-color-danger);
   --shadow: var(--dmc-shadow-shell);
+
+  /* Attendance shell (2026-07-17 Shell-1) */
+  --dmc-shell-max: 480px;
+  --dmc-brand-bar-h: 52px;
+  --dmc-tab-bar-h: 56px;
+  --dmc-attend-fg: var(--dmc-green-11);
+  --dmc-attend-bg: var(--dmc-green-2);
 }
