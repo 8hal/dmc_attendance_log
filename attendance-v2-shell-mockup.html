@@ -650,8 +650,11 @@
     <main class="main">
       <!-- 오늘 -->
       <section id="view-today" class="view active" data-view="today">
-        <p class="section-kicker">TODAY</p>
-        <h1 class="section-title">오늘 출석</h1>
+        <p class="section-kicker">TODAY · 오늘 출석</p>
+        <h1 class="section-title" id="todayHeroTitle">7월 16일 (목)</h1>
+        <p class="meeting-line" style="margin-top:-8px;margin-bottom:16px;font-size:15px">
+          <strong>목요일 정모</strong> · 아직 출석 전
+        </p>
 
         <div class="card">
           <div class="profile-row">
@@ -678,10 +681,6 @@
         </div>
 
         <div class="card">
-          <p class="meeting-line">
-            <strong>2026/07/16 (목)</strong><br />
-            목요일 정모 · 아직 출석 전
-          </p>
           <button type="button" class="btn-primary" id="mockCheckinBtn">출석하기</button>
         </div>
 
