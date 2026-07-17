@@ -323,6 +323,106 @@
 
     .cal-day.muted { opacity: 0.35; }
 
+    .view-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 4px;
+      border-radius: 12px;
+      background: var(--dmc-surface-muted);
+    }
+
+    .view-toggle-btn {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: transparent;
+      color: var(--dmc-color-text-secondary);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .view-toggle-btn.active {
+      background: var(--dmc-color-surface);
+      color: var(--dmc-blue-11);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .attend-log {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .attend-log-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--dmc-line-subtle);
+    }
+
+    .attend-log-item:last-child { border-bottom: none; }
+
+    .attend-log-date {
+      width: 44px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .attend-log-day {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .attend-log-dow {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dmc-color-text-muted);
+    }
+
+    .attend-log-body { flex: 1; min-width: 0; }
+
+    .attend-log-body strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .attend-log-body span {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--dmc-color-text-secondary);
+    }
+
+    .attend-log-mark {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--dmc-green-11);
+      background: var(--dmc-green-2);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+
+    .cal-grid.compact {
+      gap: 4px;
+    }
+
+    .cal-grid.compact .cal-day {
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
     .filter-chips {
       display: flex;
       flex-wrap: wrap;
@@ -612,8 +712,63 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="cal-grid" aria-label="7월 출석 달력 (더미)">
+        <div class="view-toggle" role="tablist" aria-label="보기 방식">
+          <button type="button" class="view-toggle-btn active" id="myViewList" data-mode="list" role="tab" aria-selected="true">목록</button>
+          <button type="button" class="view-toggle-btn" id="myViewCal" data-mode="cal" role="tab" aria-selected="false">달력</button>
+        </div>
+
+        <div class="card" id="myAttendListPanel">
+          <ul class="attend-log" aria-label="이번 달 출석 목록">
+            <li class="attend-log-item">
+              <div class="attend-log-date">
+                <span class="attend-log-day">10</span>
+                <span class="attend-log-dow">목</span>
+              </div>
+              <div class="attend-log-body">
+                <strong>목요일 정모</strong>
+                <span>2026/07/10</span>
+              </div>
+              <span class="attend-log-mark">출석</span>
+            </li>
+            <li class="attend-log-item">
+              <div class="attend-log-date">
+                <span class="attend-log-day">8</span>
+                <span class="attend-log-dow">화</span>
+              </div>
+              <div class="attend-log-body">
+                <strong>화요일 정모</strong>
+                <span>2026/07/08</span>
+              </div>
+              <span class="attend-log-mark">출석</span>
+            </li>
+            <li class="attend-log-item">
+              <div class="attend-log-date">
+                <span class="attend-log-day">5</span>
+                <span class="attend-log-dow">토</span>
+              </div>
+              <div class="attend-log-body">
+                <strong>토요일 정모</strong>
+                <span>2026/07/05</span>
+              </div>
+              <span class="attend-log-mark">출석</span>
+            </li>
+            <li class="attend-log-item">
+              <div class="attend-log-date">
+                <span class="attend-log-day">3</span>
+                <span class="attend-log-dow">화</span>
+              </div>
+              <div class="attend-log-body">
+                <strong>화요일 정모</strong>
+                <span>2026/07/03</span>
+              </div>
+              <span class="attend-log-mark">출석</span>
+            </li>
+          </ul>
+          <p class="hint">기본은 목록 · 달력은 필요할 때만. Shell-2에서 history/stats API 연동.</p>
+        </div>
+
+        <div class="card" id="myAttendCalPanel" hidden>
+          <div class="cal-grid compact" aria-label="7월 출석 달력 (더미)">
             <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
             <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
             <div class="cal-day muted">28</div><div class="cal-day muted">29</div>
@@ -633,7 +788,7 @@
             <div class="cal-day">26</div><div class="cal-day">27</div><div class="cal-day">28</div>
             <div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day">31</div>
           </div>
-          <p class="hint">초록 = 정모 출석 · 파란 링 = 오늘. Shell-2에서 history/stats API 연동.</p>
+          <p class="hint">초록 = 정모 출석 · 파란 링 = 오늘</p>
         </div>
       </section>
 
@@ -838,6 +993,24 @@
       document.getElementById("mockGuide").addEventListener("click", function () {
         showToast("이용 안내 시트 (목업)");
       });
+
+      var listPanel = document.getElementById("myAttendListPanel");
+      var calPanel = document.getElementById("myAttendCalPanel");
+      var btnList = document.getElementById("myViewList");
+      var btnCal = document.getElementById("myViewCal");
+
+      function setMyAttendMode(mode) {
+        var isList = mode === "list";
+        listPanel.hidden = !isList;
+        calPanel.hidden = isList;
+        btnList.classList.toggle("active", isList);
+        btnCal.classList.toggle("active", !isList);
+        btnList.setAttribute("aria-selected", isList ? "true" : "false");
+        btnCal.setAttribute("aria-selected", isList ? "false" : "true");
+      }
+
+      btnList.addEventListener("click", function () { setMyAttendMode("list"); });
+      btnCal.addEventListener("click", function () { setMyAttendMode("cal"); });
 
       showTab(parseHash());
     })();
