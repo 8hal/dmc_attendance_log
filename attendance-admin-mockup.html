@@ -213,6 +213,36 @@
       color: var(--dmc-blue-11);
     }
 
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .week-nav strong { font-size: 15px; }
+
+    .week-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 900px) {
+      .week-board { grid-template-columns: 1fr; }
+    }
+    .week-card h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .week-card .field { margin-bottom: 8px; }
+    .week-card .field input,
+    .week-card .field textarea {
+      width: 100%;
+      min-width: 0;
+    }
+    .week-card textarea { min-height: 52px; font-size: 13px; }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
