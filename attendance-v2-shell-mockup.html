@@ -266,6 +266,57 @@
       color: var(--dmc-color-text);
     }
 
+    .train-notice {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .train-notice th {
+      width: 88px;
+      vertical-align: top;
+      text-align: left;
+      padding: 10px 10px 10px 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dmc-color-text-secondary);
+      border-bottom: 1px solid var(--dmc-line-subtle);
+    }
+
+    .train-notice td {
+      padding: 10px 0;
+      font-weight: 600;
+      color: var(--dmc-color-text);
+      border-bottom: 1px solid var(--dmc-line-subtle);
+    }
+
+    .train-notice tr:last-child th,
+    .train-notice tr:last-child td {
+      border-bottom: none;
+    }
+
+    .train-phase {
+      margin: 0 0 6px;
+    }
+
+    .train-phase:last-child {
+      margin-bottom: 0;
+    }
+
+    .train-phase span {
+      display: inline-block;
+      min-width: 1.25em;
+      margin-right: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--dmc-blue-11);
+      background: var(--dmc-blue-3);
+      border-radius: 6px;
+      padding: 1px 6px;
+      text-align: center;
+    }
+
     .btn-primary {
       display: block;
       width: 100%;
@@ -718,25 +769,31 @@
         </div>
 
         <div class="card">
-          <p class="section-kicker" style="margin-bottom:8px">오늘 훈련</p>
-          <dl class="train-info" id="todayTrainInfo">
-            <div class="train-info-row">
-              <dt>장소</dt>
-              <dd>동탄호수공원 만남장소</dd>
-            </div>
-            <div class="train-info-row">
-              <dt>시간</dt>
-              <dd>06:30 집결 · 07:00 출발</dd>
-            </div>
-            <div class="train-info-row">
-              <dt>코스</dt>
-              <dd>호수 둘레 10K · 이지 페이스</dd>
-            </div>
-            <div class="train-info-row">
-              <dt>메모</dt>
-              <dd>우천 시 실내 트랙 전환</dd>
-            </div>
-          </dl>
+          <p class="section-kicker" style="margin-bottom:8px">오늘 훈련 공지</p>
+          <table class="train-notice" id="todayTrainInfo" aria-label="목요일 정모 훈련 공지">
+            <tbody>
+              <tr>
+                <th scope="row">시간/장소</th>
+                <td>19:30 여울공원 운동장(트랙)</td>
+              </tr>
+              <tr>
+                <th scope="row">훈련</th>
+                <td>
+                  <div class="train-phase"><span>전</span> 체조 및 스트레칭, 조깅 운동장 7바퀴</div>
+                  <div class="train-phase"><span>본</span> 300/100 인터벌 10개 &amp; 보강훈련</div>
+                  <div class="train-phase"><span>후</span> Cool 조깅 10분, 마무리 체조 및 스트레칭</div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">급수·서포터즈</th>
+                <td>바우돌리노 / 보스톤</td>
+              </tr>
+              <tr>
+                <th scope="row">메모</th>
+                <td>7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요.</td>
+              </tr>
+            </tbody>
+          </table>
           <button type="button" class="btn-primary" id="mockCheckinBtn" style="margin-top:14px">출석하기</button>
         </div>
 

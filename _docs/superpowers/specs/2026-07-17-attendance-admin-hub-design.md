@@ -180,29 +180,36 @@ races / my (링크)                · 정모 훈련 입력                group.
 
 ### 7.2 정모 훈련 (`#training`)
 
-**입력 단위:** `(meetingDateKey, meetingType)` where `meetingType ∈ {TUE, THU, SAT, ETC?}`  
-1차: 정모만 `TUE|THU|SAT` (출석 셸 스펙과 동일).
+**입력 단위:** `(meetingDateKey, meetingType)` where `meetingType ∈ {TUE, THU, SAT}`  
+(공지 헤더 예: «목요일 정모» = `THU` + 해당 날짜)
 
-| 필드 | 예 |
-|------|-----|
-| 장소 | 동탄호수공원 만남장소 |
-| 집결/출발 시간 | 06:30 / 07:00 |
-| 코스 | 호수 둘레 10K · 이지 |
-| 메모 | 우천 시 실내 트랙 |
+**실무 공지 포맷 (2026-07-17 샘플 반영):**
 
-**UI 스케치:**
+| 공지 항목 | 필드 (가칭) | 예 |
+|-----------|-------------|-----|
+| 정모 제목 | `meetingType` (+ 라벨) | 목요일 정모 |
+| **시간/장소** | `timePlace` 또는 `time` + `place` | `19:30` / `여울공원 운동장(트랙)` |
+| **훈련 · 전** | `trainBefore` | 체조 및 스트레칭, 조깅 운동장 7바퀴 |
+| **훈련 · 본** | `trainMain` | 300/100 인터벌 10개 & 보강훈련 |
+| **훈련 · 후** | `trainAfter` | Cool 조깅 10분, 마무리 체조 및 스트레칭 |
+| **급수 및 서포터즈** | `supporters` | 바우돌리노/보스톤 |
+| **메모/안내** | `note` | 7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요. |
+
+회원 앱 오늘 탭은 위 구조를 **읽기 전용**으로 그대로 보여 준다 (표·섹션).  
+단순 «코스 한 줄» 모델은 쓰지 않는다.
+
+**UI 스케치 (운영 입력):**
 
 1. 주간/월 네비 + 정모 날짜 칩 (화·목·토)
-2. 선택 슬롯 폼 + 저장
-3. (선택) 다음 정모 미리 채워 두기
+2. 선택 슬롯 폼: 시간, 장소, 전/본/후, 서포터즈, 메모
+3. (선택) 직전 정모 내용 불러오기 · 다음 정모 복제
 
-**회원 앱 소비:** 출석 셸 `#today`가 같은 키로 조회 → 읽기 전용 표시.
+**회원 앱 소비:** 출석 셸 `#today`가 같은 키로 조회 → 공지 레이아웃으로 표시.
 
 **API:** `meeting-training` get/save 류 — **구현 전 `new-api-validation` + justification + 사용자 승인 필수.**  
-MVP 한시: Firestore 문서 `meeting_training/{dateKey}_{type}` Admin SDK만 쓰는 스크립트는 지양(운영 UI가 목적).
+문서 키 예: `meeting_training/{dateKey}_{type}` (스키마에 전·본·후·supporters 포함).
 
-선례: `chunbaek` `admin-week-slots` / `admin-save-week-slots` — **스키마·컬렉션은 분리.**
-
+선례: `chunbaek` `admin-week-slots` — **스키마·컬렉션은 분리.** 클럽 정모 공지는 위 표가 SSOT.
 ### 7.3 출석 삭제 API (개인 + 운영진) — **필수**
 
 현재 `POST /attendance`는 **등록만** 있고, HTTP **삭제 API는 없음** (스크립트만 존재).  
