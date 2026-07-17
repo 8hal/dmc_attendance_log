@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <title>출석 셸 목업 — 동마클</title>
+  <link rel="icon" type="image/png" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: var(--dmc-font-family);
+      background: var(--dmc-slate-10);
+      color: var(--dmc-color-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--dmc-color-bg);
+      box-shadow: 0 0 40px rgba(15, 23, 42, 0.35);
+    }
+
+    .preview-banner {
+      flex-shrink: 0;
+      background: var(--dmc-slate-11);
+      color: var(--dmc-blue-5);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      padding: 6px 12px;
+      border-bottom: 2px solid var(--dmc-color-primary);
+    }
+
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      padding: 10px 14px;
+      padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      background: var(--dmc-slate-12);
+      color: #fff;
+    }
+
+    .brand-bar-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: none;
+      color: inherit;
+      padding: 0;
+      cursor: pointer;
+      font: inherit;
+      min-width: 0;
+    }
+
+    .brand-bar-home img {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .brand-bar-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .brand-bar-races {
+      margin-left: auto;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(37, 99, 235, 0.35);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .brand-bar-races:hover {
+      background: var(--dmc-color-primary);
+    }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .section-kicker {
+      margin: 0 0 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dmc-color-text-secondary);
+      letter-spacing: 0.02em;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+    }
+
+    .card {
+      background: var(--dmc-color-surface);
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .card-muted {
+      background: var(--dmc-surface-muted);
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .profile-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, var(--dmc-blue-4), var(--dmc-blue-8));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .profile-name {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .profile-meta {
+      margin: 2px 0 0;
+      font-size: 13px;
+      color: var(--dmc-color-text-secondary);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-attend {
+      color: var(--dmc-green-11);
+      background: var(--dmc-green-2);
+    }
+
+    .badge-today {
+      color: var(--dmc-blue-11);
+      background: var(--dmc-blue-3);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 10px 6px;
+      border-radius: 12px;
+      background: var(--dmc-surface-muted);
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--dmc-color-text);
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--dmc-color-text-secondary);
+      font-weight: 600;
+    }
+
+    .meeting-line {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--dmc-color-text-secondary);
+      line-height: 1.45;
+    }
+
+    .meeting-line strong {
+      color: var(--dmc-color-text);
+    }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 18px;
+      background: var(--dmc-color-primary);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+    }
+
+    .btn-primary:active { transform: scale(0.985); }
+
+    .btn-ghost {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: var(--dmc-color-surface);
+      color: var(--dmc-color-text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .month-nav h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .month-nav button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--dmc-color-border);
+      background: var(--dmc-color-surface);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .cal-dow {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--dmc-color-text-muted);
+      padding: 4px 0;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dmc-color-text-secondary);
+      background: transparent;
+    }
+
+    .cal-day.attend {
+      background: var(--dmc-green-2);
+      color: var(--dmc-green-11);
+      font-weight: 800;
+    }
+
+    .cal-day.today-ring {
+      box-shadow: inset 0 0 0 2px var(--dmc-blue-8);
+      color: var(--dmc-blue-11);
+    }
+
+    .cal-day.muted { opacity: 0.35; }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      border: 1px solid var(--dmc-color-border);
+      background: var(--dmc-color-surface);
+      color: var(--dmc-color-text-secondary);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .chip.active {
+      background: var(--dmc-blue-3);
+      border-color: var(--dmc-blue-6);
+      color: var(--dmc-blue-11);
+    }
+
+    .summary-banner {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--dmc-surface-muted);
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dmc-color-text-secondary);
+    }
+
+    .summary-banner strong {
+      color: var(--dmc-color-text);
+      font-size: 15px;
+    }
+
+    .member-list { list-style: none; margin: 0; padding: 0; }
+
+    .member-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--dmc-line-subtle);
+    }
+
+    .member-row:last-child { border-bottom: none; }
+
+    .member-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--dmc-slate-3);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--dmc-slate-8);
+      flex-shrink: 0;
+    }
+
+    .member-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .member-dates {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--dmc-color-text-muted);
+    }
+
+    .member-count {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--dmc-blue-11);
+      white-space: nowrap;
+    }
+
+    .more-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      background: var(--dmc-color-surface);
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .more-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-bottom: 1px solid var(--dmc-line-subtle);
+      background: transparent;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .more-item:last-child { border-bottom: none; }
+
+    .more-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: var(--dmc-surface-muted);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .more-text { flex: 1; min-width: 0; }
+    .more-text strong { display: block; font-size: 14px; font-weight: 700; }
+    .more-text span {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--dmc-color-text-secondary);
+    }
+
+    .more-chevron {
+      color: var(--dmc-color-text-muted);
+      font-size: 18px;
+    }
+
+    .hint {
+      margin: 12px 0 0;
+      font-size: 12px;
+      color: var(--dmc-color-text-muted);
+      line-height: 1.45;
+    }
+
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      background: var(--dmc-color-surface);
+      border-top: 2px solid var(--dmc-color-primary);
+      box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+      padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px));
+      z-index: 100;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 4px;
+      border: none;
+      background: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dmc-color-text-muted);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .tab-btn.active {
+      color: var(--dmc-color-primary);
+      font-weight: 800;
+    }
+
+    .tab-icon { font-size: 18px; line-height: 1; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%) translateY(12px);
+      max-width: min(420px, calc(100% - 32px));
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: var(--dmc-slate-11);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 200;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="preview-banner">목업 미리보기 · 가상 데이터 (실제 출석 기록 아님)</div>
+
+    <header class="brand-bar">
+      <button type="button" class="brand-bar-home" id="brandBarHome" aria-label="오늘으로">
+        <img src="assets/dmc_logo.png" alt="" width="28" height="28" />
+        <span class="brand-bar-title">동마클 출석</span>
+      </button>
+      <a class="brand-bar-races" href="races.html">대회 기록</a>
+    </header>
+
+    <main class="main">
+      <!-- 오늘 -->
+      <section id="view-today" class="view active" data-view="today">
+        <p class="section-kicker">TODAY</p>
+        <h1 class="section-title">오늘 출석</h1>
+
+        <div class="card">
+          <div class="profile-row">
+            <div class="avatar" aria-hidden="true">런</div>
+            <div>
+              <p class="profile-name">러너킴 <span class="badge badge-attend">정회원</span></p>
+              <p class="profile-meta">2팀 · 이번 달 정모 4회</p>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stat">
+              <span class="stat-value">4</span>
+              <span class="stat-label">출석</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">80%</span>
+              <span class="stat-label">출석률</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">연속</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="meeting-line">
+            <strong>2026/07/16 (목)</strong><br />
+            목요일 정모 · 아직 출석 전
+          </p>
+          <button type="button" class="btn-primary" id="mockCheckinBtn">출석하기</button>
+          <button type="button" class="btn-ghost" id="mockKioskFromToday">현장 출석 모드 (키오스크)</button>
+        </div>
+      </section>
+
+      <!-- 내 출석 -->
+      <section id="view-my-attendance" class="view" data-view="my-attendance" hidden>
+        <p class="section-kicker">MY ATTENDANCE</p>
+        <div class="month-nav">
+          <button type="button" aria-label="이전 달">‹</button>
+          <h2>2026년 7월</h2>
+          <button type="button" aria-label="다음 달">›</button>
+        </div>
+
+        <div class="card card-muted">
+          <div class="stats-row" style="margin-top:0">
+            <div class="stat">
+              <span class="stat-value">4</span>
+              <span class="stat-label">정모 출석</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">80%</span>
+              <span class="stat-label">출석률</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">연속</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cal-grid" aria-label="7월 출석 달력 (더미)">
+            <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+            <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+            <div class="cal-day muted">28</div><div class="cal-day muted">29</div>
+            <div class="cal-day">1</div><div class="cal-day">2</div>
+            <div class="cal-day attend" title="화요일 정모">3</div>
+            <div class="cal-day">4</div>
+            <div class="cal-day attend" title="토요일 정모">5</div>
+            <div class="cal-day">6</div><div class="cal-day">7</div>
+            <div class="cal-day attend">8</div><div class="cal-day">9</div>
+            <div class="cal-day attend">10</div><div class="cal-day">11</div><div class="cal-day">12</div>
+            <div class="cal-day">13</div><div class="cal-day">14</div>
+            <div class="cal-day">15</div>
+            <div class="cal-day today-ring">16</div>
+            <div class="cal-day">17</div><div class="cal-day">18</div><div class="cal-day">19</div>
+            <div class="cal-day">20</div><div class="cal-day">21</div><div class="cal-day">22</div>
+            <div class="cal-day">23</div><div class="cal-day">24</div><div class="cal-day">25</div>
+            <div class="cal-day">26</div><div class="cal-day">27</div><div class="cal-day">28</div>
+            <div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day">31</div>
+          </div>
+          <p class="hint">초록 = 정모 출석 · 파란 링 = 오늘. Shell-2에서 history/stats API 연동.</p>
+        </div>
+      </section>
+
+      <!-- 팀 출석 -->
+      <section id="view-team-attendance" class="view" data-view="team-attendance" hidden>
+        <p class="section-kicker">TEAM</p>
+        <h1 class="section-title">팀 출석</h1>
+
+        <div class="filter-chips" role="group" aria-label="팀 필터">
+          <button type="button" class="chip active" data-chip="mine">2팀</button>
+          <button type="button" class="chip" data-chip="all">동마클 전체</button>
+          <button type="button" class="chip" data-chip="1">1팀</button>
+          <button type="button" class="chip" data-chip="3">3팀</button>
+        </div>
+
+        <div class="summary-banner">
+          <div>이번 달 정모<br /><strong>5회 중</strong></div>
+          <div style="text-align:right">출석한 인원<br /><strong>12 / 18 · 67%</strong></div>
+        </div>
+
+        <div class="card">
+          <ul class="member-list">
+            <li class="member-row">
+              <div class="member-avatar">런</div>
+              <div class="member-name">러너킴<span class="member-dates">7/3 · 7/5 · 7/8 · 7/10</span></div>
+              <div class="member-count">4회</div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">박</div>
+              <div class="member-name">박병규<span class="member-dates">7/3 · 7/8 · 7/10</span></div>
+              <div class="member-count">3회</div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">서</div>
+              <div class="member-name">서연<span class="member-dates">7/5 · 7/10</span></div>
+              <div class="member-count">2회</div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">최</div>
+              <div class="member-name">최민<span class="member-dates">7/10</span></div>
+              <div class="member-count">1회</div>
+            </li>
+            <li class="member-row">
+              <div class="member-avatar">한</div>
+              <div class="member-name">한지우<span class="member-dates">미출석</span></div>
+              <div class="member-count">0회</div>
+            </li>
+          </ul>
+          <p class="hint">정모 = TUE/THU/SAT만. Shell-3에서 팀/전체 필터 API 연동.</p>
+        </div>
+      </section>
+
+      <!-- 더보기 -->
+      <section id="view-more" class="view" data-view="more" hidden>
+        <p class="section-kicker">MORE</p>
+        <h1 class="section-title">더보기</h1>
+
+        <div class="card">
+          <div class="profile-row">
+            <div class="avatar" aria-hidden="true">런</div>
+            <div style="flex:1;min-width:0">
+              <p class="profile-name">러너킴</p>
+              <p class="profile-meta">2팀 · 정회원</p>
+            </div>
+            <span class="badge badge-today">프로필</span>
+          </div>
+        </div>
+
+        <div class="more-list">
+          <button type="button" class="more-item" id="mockEditProfile">
+            <span class="more-icon" aria-hidden="true">✎</span>
+            <span class="more-text">
+              <strong>프로필 수정</strong>
+              <span>닉네임·팀 다시 선택</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </button>
+          <a class="more-item" href="my.html">
+            <span class="more-icon" aria-hidden="true">🏁</span>
+            <span class="more-text">
+              <strong>내 기록</strong>
+              <span>개인 레이스 기록 (my)</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </a>
+          <button type="button" class="more-item" id="mockKioskMode">
+            <span class="more-icon" aria-hidden="true">📟</span>
+            <span class="more-text">
+              <strong>키오스크 모드</strong>
+              <span>공용 기기 · 현장 출석</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </button>
+          <button type="button" class="more-item" id="mockGuide">
+            <span class="more-icon" aria-hidden="true">ℹ</span>
+            <span class="more-text">
+              <strong>이용 안내</strong>
+              <span>출석·정모 규칙 요약</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+        <p class="hint">대회 기록은 상단바만. 동마클 홈 링크는 1차 생략.</p>
+      </section>
+    </main>
+
+    <nav class="tab-bar" id="tab-bar" aria-label="출석 앱 탭">
+      <button type="button" class="tab-btn active" data-tab="today">
+        <span class="tab-icon" aria-hidden="true">📍</span>오늘
+      </button>
+      <button type="button" class="tab-btn" data-tab="my-attendance">
+        <span class="tab-icon" aria-hidden="true">📅</span>내 출석
+      </button>
+      <button type="button" class="tab-btn" data-tab="team-attendance">
+        <span class="tab-icon" aria-hidden="true">👥</span>팀 출석
+      </button>
+      <button type="button" class="tab-btn" data-tab="more">
+        <span class="tab-icon" aria-hidden="true">⋯</span>더보기
+      </button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (function () {
+      var TABS = ["today", "my-attendance", "team-attendance", "more"];
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toastEl.classList.remove("show");
+        }, 1800);
+      }
+
+      function parseHash() {
+        var h = (location.hash || "#today").replace(/^#/, "");
+        return TABS.indexOf(h) >= 0 ? h : "today";
+      }
+
+      function showTab(tabId) {
+        TABS.forEach(function (id) {
+          var view = document.getElementById("view-" + id);
+          var on = id === tabId;
+          if (view) {
+            view.classList.toggle("active", on);
+            view.hidden = !on;
+          }
+          var btn = document.querySelector('.tab-btn[data-tab="' + id + '"]');
+          if (btn) btn.classList.toggle("active", on);
+        });
+        if (location.hash !== "#" + tabId) {
+          history.replaceState(null, "", "#" + tabId);
+        }
+      }
+
+      document.getElementById("tab-bar").addEventListener("click", function (e) {
+        var btn = e.target.closest(".tab-btn");
+        if (!btn) return;
+        showTab(btn.getAttribute("data-tab"));
+      });
+
+      document.getElementById("brandBarHome").addEventListener("click", function () {
+        showTab("today");
+      });
+
+      window.addEventListener("hashchange", function () {
+        showTab(parseHash());
+      });
+
+      document.querySelectorAll(".chip").forEach(function (chip) {
+        chip.addEventListener("click", function () {
+          document.querySelectorAll(".chip").forEach(function (c) {
+            c.classList.remove("active");
+          });
+          chip.classList.add("active");
+          showToast(
+            chip.getAttribute("data-chip") === "all"
+              ? "필터: 동마클 전체 (목업)"
+              : "필터: " + chip.textContent.trim() + " (목업)"
+          );
+        });
+      });
+
+      document.getElementById("mockCheckinBtn").addEventListener("click", function () {
+        showToast("출석 완료 (목업 — API 없음)");
+      });
+
+      document.getElementById("mockKioskFromToday").addEventListener("click", function () {
+        showToast("실제 구현: attendance-v2.html?mode=kiosk");
+      });
+
+      document.getElementById("mockKioskMode").addEventListener("click", function () {
+        if (!confirm("공용 기기에서 사용합니다. 개인 프로필이 숨겨집니다.\n\n(목업이므로 이동하지 않습니다)")) return;
+        showToast("키오스크 진입 확인됨 (목업)");
+      });
+
+      document.getElementById("mockEditProfile").addEventListener("click", function () {
+        showToast("프로필 수정 모달 (목업)");
+      });
+
+      document.getElementById("mockGuide").addEventListener("click", function () {
+        showToast("이용 안내 시트 (목업)");
+      });
+
+      showTab(parseHash());
+    })();
+  </script>
+</body>
+</html>
