@@ -306,6 +306,8 @@ attendance-v2.js              (라우터 + 기존 로직)
 | 7 | 디자인 게이트 | 구현 계획 작성 후 **목업 → 디자인 컨펌** 다음에 Shell-1 코드 착수 |
 | 8 | 개인 출석 취소 창 | **A — 활성 세션** = `resolveDefaultMeeting` `(date, type)`만. 달력 당일 아님. (월→토요 취소 가능) |
 
+**Shell-1 구현 노트 (2026-07-17):** `attendance-v2.html`/`.js`에 brand-bar·4탭·더보기(이용 안내→키오스크)·`kioskWrap` 적용. 내 출석·팀 출석은 stub. 배포는 사용자 재확인 후.
+
 ---
 
 ## 11. 검증

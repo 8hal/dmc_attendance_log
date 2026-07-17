@@ -195,10 +195,28 @@ assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
 
 curl -s "$HOST/attendance-v2.html" > "$TMP_DIR/attendance-v2.html"
 curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
+curl -s "$HOST/assets/attendance-shell.css" > "$TMP_DIR/attendance-shell.css"
 assert_contains "attendance-v2.html: 외부 스크립트" "attendance-v2.js" "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: 셸 CSS" "attendance-shell.css" "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: app-shell" 'id="app-shell"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: tab-bar" 'id="tab-bar"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: kioskWrap" 'id="kioskWrap"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: 이용안내 키오스크" 'id="btn-kiosk-mode"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: 키오스크 종료" 'id="btn-exit-kiosk"' "$TMP_DIR/attendance-v2.html"
 assert_contains "attendance-v2.js: 완료 화면 보조" "showSuccessAfterCheckin" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: roster 재로드" "reloadKioskRoster" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: 명부 외 CTA" "kioskMemberNotOnRosterBtn" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: 셸 탭" "showShellTab" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: 키오스크 셸 토글" "setKioskShellVisible" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-shell.css: .app" ".app {" "$TMP_DIR/attendance-shell.css"
+
+if ! grep -q 'id="openKioskModeLink"' "$TMP_DIR/attendance-v2.html" 2>/dev/null; then
+  PASS=$((PASS+1))
+  RESULTS+=("${GREEN}✓${NC} attendance-v2.html: 오늘탭 키오스크 링크 없음")
+else
+  FAIL=$((FAIL+1))
+  RESULTS+=("${RED}✗${NC} attendance-v2.html: 오늘탭 키오스크 링크가 남아 있음")
+fi
 
 curl -s "$HOST/attendance-v2-design-draft.html" > "$TMP_DIR/attendance-v2-design-draft.html"
 assert_contains "attendance-v2-design-draft.html: 드래프트 표시" "DESIGN DRAFT" "$TMP_DIR/attendance-v2-design-draft.html"

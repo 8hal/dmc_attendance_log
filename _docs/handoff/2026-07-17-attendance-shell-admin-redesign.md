@@ -69,21 +69,31 @@ cd /workspace && python3 -m http.server 8765
 
 | 작업 | 상태 |
 |------|------|
-| 설계·계획·목업 | ✅ 브랜치·PR에 있음 |
-| 디자인 컨펌 (사용자) | ⏳ **미완료** — 다음 세션 게이트 |
-| Shell-1 코드 (`attendance-v2` 셸) | ❌ 컨펌 후 |
-| Admin-1a 코드 | ❌ 컨펌 후 |
-| Delete-1 / 훈련 API | ❌ `new-api-validation` + 승인 후 |
-| `firebase deploy` | ❌ 금지 (AI 실행 안 함) |
+| 설계·계획·목업 | ✅ |
+| 디자인 컨펌 (사용자) | ✅ 2026-07-17 «목업 확인 · 개발 진행» (내일 재확인 예정) |
+| **Shell-1 코드** | ✅ 브랜치에 있음 (`attendance-v2` 셸·라우터·더보기→이용안내→키오스크) |
+| Admin-1a 코드 | ❌ 미착수 |
+| Delete-1 / 훈련 API | ❌ justification + 승인 후 |
+| pre-deploy-test 전체 | ⚠ 2026-07-17: Hosting 셸 스모크 OK. Functions 에뮬이 `functions.config()`/v7로 race 로드 실패해 API 구간 hang — Shell-1과 무관한 환경 이슈로 보임 |
+| `firebase deploy` | ❌ 금지 |
+
+### Shell-1 수동 확인 (내일)
+
+- [ ] `#today` 체크인 (프로필 유/무)
+- [ ] stub: 내 출석 / 팀 출석
+- [ ] 더보기 → 이용 안내 → 키오스크 → 종료 → `#more`
+- [ ] 상단 대회 기록
+- [ ] `?mode=kiosk` 북마크
+
 
 ---
 
 ## 5. 다음 세션 권장 순서
 
-1. **목업 디자인 컨펌** (셸 + 허브) — 통과 전 코드 착수 금지  
-2. 컨펌 후: 셸 계획 Task 1~ (Shell-1) **또는** 허브 Admin-1a (병행 가능하되 Delete/훈련 API는 별도 승인)  
-3. Delete-1 전: `_docs/justification/` + 사용자 승인 (`new-api-validation`)  
-4. 훈련 API도 동일 justification 게이트
+1. Shell-1 **수동 목업·실페이지 재확인** (위 체크리스트)  
+2. 통과 시 Admin-1a 착수 또는 Shell-2  
+3. Delete-1 전: `_docs/justification/` + 사용자 승인  
+4. pre-deploy Functions 에뮬 hang 원인(`functions.config` / firebase-functions v7) 별도 점검  
 
 ---
 
