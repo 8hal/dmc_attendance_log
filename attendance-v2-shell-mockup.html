@@ -583,7 +583,6 @@
             목요일 정모 · 아직 출석 전
           </p>
           <button type="button" class="btn-primary" id="mockCheckinBtn">출석하기</button>
-          <button type="button" class="btn-ghost" id="mockKioskFromToday">현장 출석 모드 (키오스크)</button>
         </div>
       </section>
 
@@ -825,10 +824,6 @@
 
       document.getElementById("mockCheckinBtn").addEventListener("click", function () {
         showToast("출석 완료 (목업 — API 없음)");
-      });
-
-      document.getElementById("mockKioskFromToday").addEventListener("click", function () {
-        showToast("실제 구현: attendance-v2.html?mode=kiosk");
       });
 
       document.getElementById("mockKioskMode").addEventListener("click", function () {

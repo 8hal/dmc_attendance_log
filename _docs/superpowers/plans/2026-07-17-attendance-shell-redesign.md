@@ -147,7 +147,10 @@ git commit -m "docs(mockup): 출석 앱 셸 정적 목업 (디자인 컨펌용)"
 - `.tab-bar` — sticky bottom, `padding-bottom: env(safe-area-inset-bottom)`, 4 equal buttons, active 상태 primary border/color
 - `.view` / `.view.active` — display none/block
 - `.stub-card` — "준비 중" 플레이스홀더
+- `body.kiosk-mode .app` — `display: none` (셸 전체; Task 2/3이 이 규칙에 의존)
+- `body.kiosk-mode .brand-bar`, `body.kiosk-mode .tab-bar` — 이중 안전망으로 `display: none`
 - `.kiosk-top-bar` — flex row: 타이틀 + `#btn-exit-kiosk` (기존 헤더가 column이면 row로 조정)
+
 - [ ] **Step 3: 커밋**
 
 ```bash
@@ -231,7 +234,7 @@ git commit -m "feat(attendance): 앱 셸 CSS·토큰 추가"
 </body>
 ```
 
-**오늘 탭의 «현장 출석 모드» 링크 (`#openKioskModeLink` 등):** Shell-1에서는 **유지**. 더보기에도 동일 진입.
+**오늘 탭의 «현장 출석 모드» 링크:** 목업·Shell-1에서 **제거**. 키오스크 진입은 **더보기만**.
 
 - [ ] **Step 3: 오픈 베타 배너 제거 또는 1줄로 축소**
 
