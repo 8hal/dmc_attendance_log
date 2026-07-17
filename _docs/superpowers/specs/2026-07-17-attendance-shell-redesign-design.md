@@ -272,7 +272,7 @@ attendance-v2.js              (라우터 + 기존 로직)
 
 - `races.html` / `my.html` UI 리뉴얼 (링크만)
 - 춘백 앱(`chunbaek/`) 변경
-- 출석 취소/수정 (기존 Phase 2 백로그)
+- 출석 **수정**(필드 변경) — 삭제 후 재등록으로 대체. **삭제는 in-scope** (개인 + 운영진, admin-hub 설계 §7.3)
 - 카카오 알림·QR 출석
 - PWA manifest 통합 (키오스크 manifest는 기존 유지)
 
