@@ -1,6 +1,6 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-16T13:53:08.360Z",
+  "preparedAt": "2026-07-17T09:15:34.062Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "3bpbfd2xvP2CvSQ1ZLpS",
@@ -44,6 +44,7 @@
     "H6RdETtfMu6uUokvAKRk",
     "aWZdokx4j9voiB076Bdq",
     "1bgLC92UQS8F9sPwPIxz",
+    "1W9DlQzKvXr0jTrsMhdL",
     "gw9qdf1yxXQYONMYNPxU"
   ],
   "members": [
@@ -256,6 +257,11 @@
       "memberId": "1bgLC92UQS8F9sPwPIxz",
       "nickname": "James",
       "realName": "김형석"
+    },
+    {
+      "memberId": "1W9DlQzKvXr0jTrsMhdL",
+      "nickname": "Josh",
+      "realName": "조상현"
     },
     {
       "memberId": "gw9qdf1yxXQYONMYNPxU",
