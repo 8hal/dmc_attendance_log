@@ -499,17 +499,17 @@
           <h2 style="margin:0 0 8px;font-size:16px">① 카페 공지 가져오기 <span class="phase-label">기본</span></h2>
           <p class="hint" style="margin:0 0 12px">네이버 카페에 올라온 주간 정모 공지를 가져와 파싱합니다. 예: articleid=4853 · menuid=6</p>
           <div class="toolbar" style="margin-bottom:8px">
-            <div class="field" style="flex:1;min-width:240px">
-              <label for="cafeUrl">카페 글 URL 또는 articleid</label>
-              <input id="cafeUrl" style="width:100%" value="https://cafe.naver.com/2008dmc/...&articleid=4853" />
+            <div class="field" style="flex:1;min-width:240px;opacity:0.55">
+              <label for="cafeUrl">카페 글 URL (이후 · 준비 중)</label>
+              <input id="cafeUrl" style="width:100%" disabled value="URL 자동 fetch는 2차" />
             </div>
-            <button type="button" class="btn btn-primary" id="cafeImportBtn">공지 가져오기</button>
+            <button type="button" class="btn btn-outline" id="cafeImportBtn" disabled title="1차는 붙여넣기">URL 가져오기</button>
           </div>
           <div class="field full">
-            <label for="cafePaste">또는 본문 붙여넣기 (회원제 카페·1차 권장)</label>
+            <label for="cafePaste">① 본문 붙여넣기 (1차 · 기본)</label>
             <textarea id="cafePaste" placeholder="카페 글에서 복사한 시간/장소 · 전/본/후 · 서포터즈 · 메모 텍스트"></textarea>
           </div>
-          <button type="button" class="btn btn-outline" id="cafeParsePaste" style="margin-top:8px">붙여넣기 파싱</button>
+          <button type="button" class="btn btn-primary" id="cafeParsePaste" style="margin-top:8px">붙여넣기 파싱</button>
         </div>
 
         <div class="week-nav">
