@@ -277,18 +277,19 @@ races / my (링크)                · 정모 훈련 입력                group.
 
 | API (가칭) | 누가 | 인증 | 범위 |
 |------------|------|------|------|
-| `delete-attendance` (self) | 회원 앱 | 공개이되 **본인 기록만** | `memberId` 또는 (nicknameKey+meetingDate+meetingType)이 클라이언트 프로필과 일치. **당일(또는 최근 N시간)만** 허용 권장 |
+| `delete-attendance` (self) | 회원 앱 | 공개이되 **본인 기록만** | `memberId` 우선 매칭. **활성 세션만** 허용: `(meetingDate, meetingType) === resolveDefaultMeeting()` (KST). 달력 당일 제한 아님. 예: 월요일에 토요 정모 취소 가능 |
 | `admin-delete-attendance` | 출석 관리 탭 | `verify-admin` (pw/세션) | 임의 날짜·임의 행. 문서 `id` 또는 복합키. **감사 로그**(`event_logs`) 필수 |
 
 **추가(운영진):** Admin-1b에서 누락분 등록은 기존 `POST /attendance` 재사용 가능. 감사·권한이 필요하면 이후 `admin-add-attendance`로 감싼다 (선택).
 
 **개인 삭제 UX (출석 셸) — 2026-07-17 합의:**  
 - **위치: «내 출석» 목록만** (오늘 탭 CTA를 취소로 바꾸지 않음 — 오탭 위험).  
-- **당일 행에만** «출석 취소» **보조 버튼**(작은 outline). 지난 날은 버튼 숨김.  
+- **활성 세션 행에만** «출석 취소» **보조 버튼**(작은 outline). 비활성 세션은 버튼 숨김.  
+- **활성 세션** = `docs/MEETING_INFO.md` / `resolveDefaultMeeting`과 동일 (출석 기본값 창과 취소 창을 맞춤 — **A안**).  
 - 탭 시 **confirm** 필수.  
 - 오늘 탭: 출석 후 CTA는 «출석 완료»(비활성) 유지. 취소는 내 출석으로 안내해도 됨(선택).
 
-**보안 메모 (2026-07-17 합의):** 회원 앱은 로그인 없이 localStorage 프로필이므로 self-delete는 **완전 방지 불가**. 완화: **당일만** 허용, rate limit, 서버에 **memberId 우선 매칭**, 감사 이벤트. 사용자는 이 전제에 동의함.
+**보안 메모 (2026-07-17 합의):** 회원 앱은 로그인 없이 localStorage 프로필이므로 self-delete는 **완전 방지 불가**. 완화: **활성 세션만** 허용, rate limit, 서버에 **memberId 우선 매칭**, 감사 이벤트. 사용자는 이 전제에 동의함.
 
 ---
 
@@ -325,7 +326,7 @@ races / my (링크)                · 정모 훈련 입력                group.
 | `admin.html` 북마크 깨짐 | 즉시 리다이렉트 |
 | 회원 CRUD 회귀 | Admin-1a에서 기존 TC·수동 시나리오 동일 통과 |
 | 삭제 API 성급 추가 | Delete-1 게이트: justification + 승인. self/admin 분리 |
-| self-delete 남용 | 당일 제한 · memberId 매칭 · event_logs |
+| self-delete 남용 | 활성 세션(`resolveDefaultMeeting`) 제한 · memberId 매칭 · event_logs |
 | ops와 혼동 | UI 카피 «출석 운영» / ops는 «시스템·스크래핑» |
 
 ---
@@ -340,7 +341,7 @@ races / my (링크)                · 정모 훈련 입력                group.
 | 4 | ops/report | 허브 밖 유지 |
 | 5 | 구현 순서 | 1a 조회+회원이식 → **Delete-1 (개인+운영진 삭제 API)** → 1b 훈련 → 셸 연동 |
 | 6 | 훈련 API | 1b 전 별도 승인 |
-| 7 | 출석 삭제 | **개인 + 운영진 모두 필수.** 개인 = **내 출석** 당일 행 보조 버튼+confirm (오늘 CTA 교체 금지). 당일·memberId 완화 (**합의됨**) |
+| 7 | 출석 삭제 | **개인 + 운영진 모두 필수.** 개인 = **내 출석** 활성 세션 행 보조 버튼+confirm (오늘 CTA 교체 금지). **활성 세션 = `resolveDefaultMeeting`** (A안 · **합의됨**). memberId 완화 |
 | 8 | 훈련 입력 기본 | **카페 공지 본문 붙여넣기 파싱(A)** → 검토 → 저장. URL 자동 fetch는 이후 (**합의됨**) |
 
 ---

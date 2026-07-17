@@ -230,7 +230,7 @@ git commit -m "feat(admin): move members into hub; redirect admin.html"
 
 | action | 용도 |
 |--------|------|
-| `delete-attendance` | 개인 — 당일 + memberId 매칭 |
+| `delete-attendance` | 개인 — **활성 세션**(`resolveDefaultMeeting`) + memberId 매칭 |
 | `admin-delete-attendance` | 운영 — verify-admin + event_logs |
 
 - [ ] **Step 3: ⛔ 사용자 승인 대기**
@@ -248,7 +248,7 @@ git commit -m "feat(admin): move members into hub; redirect admin.html"
 - Test: 에뮬 또는 `pre-deploy-test`에 스모크 추가
 
 - [ ] **Step 1: 실패하는 테스트/스모크 시나리오 문서화**
-- [ ] **Step 2: self-delete 구현** (당일·memberId)
+- [ ] **Step 2: self-delete 구현** (활성 세션=`resolveDefaultMeeting` · memberId)
 - [ ] **Step 3: admin-delete 구현** (pw 검증·로그)
 - [ ] **Step 4: UI 연결**
 - [ ] **Step 5: pre-deploy-test / 수동 검증**

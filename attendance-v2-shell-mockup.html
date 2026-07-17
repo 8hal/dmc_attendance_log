@@ -993,7 +993,7 @@
               </div>
               <div class="attend-log-body">
                 <strong id="myAttendTodayMeeting">—</strong>
-                <span id="myAttendTodayMeta">— · 오늘 세션</span>
+                <span id="myAttendTodayMeta">— · 활성 세션</span>
               </div>
               <div class="attend-log-actions">
                 <span class="attend-log-mark">출석</span>
@@ -1053,7 +1053,7 @@
               </div>
             </li>
           </ul>
-          <p class="hint">개인 취소는 <strong>내 출석 · 당일 행만</strong> 보조 버튼 + 확인. 오늘 탭 CTA는 바꾸지 않음.</p>
+          <p class="hint">개인 취소는 <strong>내 출석 · 활성 세션 행만</strong> (기본 정모와 동일 · 월요일이면 토요). 오늘 탭 CTA는 바꾸지 않음.</p>
         </div>
 
         <div class="card" id="myAttendCalPanel" hidden>
@@ -1199,7 +1199,7 @@
       <div class="guide-sheet-handle" aria-hidden="true"></div>
       <h2 id="guideSheetTitle">이용 안내</h2>
       <div class="guide-body">
-        <p>출석 앱 베타입니다. 정모(화·목·토) 출석은 «오늘» 탭에서, 개인 출석 취소는 «내 출석» 당일 행에서만 가능합니다.</p>
+        <p>출석 앱 베타입니다. 정모(화·목·토) 출석은 «오늘» 탭에서, 개인 출석 취소는 «내 출석»의 <strong>활성 세션</strong>(접속 요일 기본 정모와 동일) 행에서만 가능합니다.</p>
         <ul>
           <li>대회 기록은 상단 «대회 기록»</li>
           <li>팀 조회는 «팀 출석» 탭</li>
@@ -1289,7 +1289,7 @@
         if (dayEl) dayEl.textContent = String(m.day);
         if (dowEl) dowEl.textContent = m.weekdayKo;
         if (meetEl) meetEl.textContent = m.label;
-        if (metaEl) metaEl.textContent = m.dateKey + " · 오늘 세션";
+        if (metaEl) metaEl.textContent = m.dateKey + " · 활성 세션";
       }
 
       function showToast(msg) {
@@ -1361,7 +1361,7 @@
       document.querySelectorAll(".btn-cancel-attend").forEach(function (btn) {
         btn.addEventListener("click", function () {
           if (btn.disabled) return;
-          if (!confirm("오늘 출석을 취소할까요? (목업 · 당일·memberId 매칭)")) return;
+          if (!confirm("이 정모 출석을 취소할까요?\n(목업 · 활성 세션·memberId 매칭)")) return;
           showToast("출석 취소됨 (목업)");
         });
       });
