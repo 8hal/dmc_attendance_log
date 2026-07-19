@@ -49,30 +49,48 @@
 
 ```
 [0.0s] overlay DOM 생성 + 삽입, opacity 0 → 1 (0.3s fade-in)
-[0.3s] "춘백방 S3" 타이핑 시작 — Bebas Neue, 시안, ~18vw
-         6글자, 글자당 0.12s → 총 0.72s → 완료 시각 1.02s
+
+── 타이핑 파트 ──
+[0.3s] "춘백방 S<span class='cnt-3'>3</span>" 타이핑 시작
+         Bebas Neue, 시안(#70d1f4), ~18vw
+         "춘백방 S" = 5글자, 글자당 0.12s (0.6s)
+         "3" = 별도 span, 같은 속도로 마지막에 등장 → 완료 1.02s
 [1.1s] "지금 시작합니다." 타이핑 시작 — Bebas Neue, 흰색, ~6vw
-         (첫 줄 완료(1.02s) + 여유 0.08s 후 시작)
-         9글자, 글자당 0.10s → 총 0.9s → 완료 시각 2.0s
-[2.0s] 타이핑 완료 후 0.8s 유지
-[2.8s] 타이핑 텍스트 전체 fade-out (0.5s)
-[3.3s] (화면 비움)
+         9글자, 글자당 0.10s → 완료 2.0s
+[2.0s] 0.8s 유지
 
-[3.3s] 숫자 "3" 등장: scale(0.3)→scale(1.0), opacity 0→1, 0.4s
-[3.7s] "3" 퇴장: scale(1.0)→scale(1.5), opacity 1→0, 0.4s
-[4.1s] 숫자 "2" 등장: 0.4s
-[4.5s] "2" 퇴장: 0.4s
-[4.9s] 숫자 "1" 등장: 0.4s
-[5.3s] "1" 퇴장: 0.4s
+── S3 분리 파트 ──
+[2.8s] "춘백방 S", "지금 시작합니다." → fade-out (0.5s)
+         ".cnt-3" span은 fade-out 제외 — 그대로 유지
+[3.3s] ".cnt-3" (숫자 "3") 혼자 화면에 남음
+         transform: translate(-50%,-50%) + translate to center + scale(1→6), duration 0.7s
+         → 화면 중앙에 거대한 흰색 "3"으로 변신
+[4.0s] "3" 완전히 커짐, 0.2s 유지
 
-[5.7s] "START!" 등장 — Bebas Neue, 시안, 화면 꽉, opacity 0→1 (0.3s)
-[6.0s] "START!" 완전히 보임, pulse 애니메이션 시작
+── 카운트다운 파트 ──
+[4.2s] "3" 퇴장: opacity 1→0, scale(1.5), 0.4s
+[4.6s] 숫자 "2" 등장: scale(0.3)→scale(1.0), 0.4s
+[5.0s] "2" 퇴장: 0.4s
+[5.4s] 숫자 "1" 등장: 0.4s
+[5.8s] "1" 퇴장: 0.4s
 
-[6.1s] 클릭 핸들러 활성화 (= 6.0s + 여유 0.1s)
-         동시에 "탭해서 시작" 문구 fade-in (0.4s)
+── 피날레 ──
+[6.2s] "START!" 등장 — Bebas Neue, 시안, 화면 꽉, opacity 0→1 (0.3s)
+[6.5s] "START!" 완전히 보임, pulse 애니메이션 시작
+[6.6s] 클릭 핸들러 활성화 + "탭해서 시작" fade-in (0.4s)
 
-[6.0s~] 대기: 탭/클릭 또는 Escape/Enter → overlay dismiss
+[6.6s~] 대기: 탭/클릭 또는 Escape/Enter → overlay dismiss
 ```
+
+### "S3" 분리 렌더링 방식
+타이핑 JS가 "춘백방 S3" 문자열을 순서대로 한 글자씩 렌더할 때, 마지막 "3"은 일반 텍스트노드가 아닌 별도 span에 삽입:
+```html
+<p class="intro-title">
+  춘백방 S<span class="cnt-3">3</span>
+</p>
+```
+- `.cnt-3`: 초기 색상 시안(`#70d1f4`), 타이핑 파트에서는 주변 글자와 동일
+- 분리 파트 진입 시 `color: #ffffff`로 전환 + `position: fixed`, `transform` 애니메이션으로 중앙 이동·확대
 
 ### 카운트다운 숫자 스타일
 - Bebas Neue, 흰색(`#ffffff`), `font-size: 40vw` (모바일 기준 꽉 차는 크기)

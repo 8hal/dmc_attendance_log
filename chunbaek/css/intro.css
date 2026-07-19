@@ -26,100 +26,42 @@
   transition: opacity 0.4s ease;
 }
 
-/* ── 2. 타이핑 텍스트 ── */
+/* ── 2. 타이핑 텍스트 영역 ── */
 .intro-typing-wrap {
   text-align: center;
-  line-height: 1.1;
-  padding: 0 16px;
-}
-.intro-title {
-  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
-  font-size: clamp(60px, 18vw, 160px);
-  color: var(--brand-cyan, #70d1f4);
-  margin: 0;
-  min-height: 1.1em;
-  letter-spacing: 0.02em;
-}
-.intro-subtitle {
-  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
-  font-size: clamp(24px, 6vw, 56px);
-  color: #ffffff;
-  margin: 0.2em 0 0;
-  min-height: 1.1em;
-  letter-spacing: 0.04em;
+  padding: 0 24px;
+  max-width: 480px;
+  width: 100%;
 }
 .intro-typing-wrap.fading {
   animation: introFadeOut 0.5s ease forwards;
 }
 
-/* ── 3. S3의 "3" — 분리 후 중앙 이동 ── */
-.cnt-3 {
-  display: inline-block;
-  transform-origin: center;
-  color: inherit;
-}
-.cnt-3.expanding {
-  position: fixed;
+/* 시 구절 줄 */
+.intro-poem {
+  font-family: var(--font-body, 'Noto Sans KR', system-ui, sans-serif);
+  font-size: clamp(22px, 6.5vw, 52px);
+  font-weight: 800;
   color: #ffffff;
-  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
-  font-size: clamp(60px, 18vw, 160px);
-  line-height: 1;
-  animation: cnt3Expand 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.cnt-3.expanded {
-  position: fixed;
-  color: #ffffff;
-  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
-  font-size: clamp(60px, 18vw, 160px);
-  line-height: 1;
-  transform: translate(-50%, -50%) scale(6);
-}
-.cnt-3.exit {
-  position: fixed;
-  color: #ffffff;
-  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
-  font-size: clamp(60px, 18vw, 160px);
-  line-height: 1;
-  animation: cntExit 0.4s ease forwards;
-  transform-origin: center;
+  margin: 0.2em 0;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  min-height: 1.5em;
 }
 
-@keyframes cnt3Expand {
-  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  to   { transform: translate(-50%, -50%) scale(6); opacity: 1; }
-}
-
-/* ── 4. 카운트다운 숫자 (2, 1) ── */
-.intro-count {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* 춘백방 S3 타이틀 */
+.intro-title {
   font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
-  font-size: clamp(120px, 40vw, 360px);
-  color: #ffffff;
+  font-size: clamp(48px, 14vw, 130px);
+  font-weight: 900;
+  color: var(--brand-cyan, #70d1f4);
+  margin: 0.4em 0 0;
+  letter-spacing: 0.03em;
   line-height: 1;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 10000;
-}
-.intro-count.enter {
-  animation: cntEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.intro-count.exit {
-  animation: cntExit 0.4s ease forwards;
+  min-height: 1em;
 }
 
-@keyframes cntEnter {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-}
-@keyframes cntExit {
-  from { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-  to   { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-}
-
-/* ── 5. START! ── */
+/* ── 3. START! ── */
 .intro-start {
   position: fixed;
   top: 50%;
@@ -128,6 +70,7 @@
   font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
   font-size: clamp(60px, 18vw, 160px);
   color: var(--brand-cyan, #70d1f4);
+  font-weight: 900;
   text-align: center;
   line-height: 1;
   white-space: nowrap;
@@ -140,16 +83,8 @@
 .intro-start.visible {
   animation: startFadeIn 0.3s ease forwards, startPulse 0.6s ease 0.3s infinite;
 }
-@keyframes startFadeIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-}
-@keyframes startPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1.0); }
-  50%       { transform: translate(-50%, -50%) scale(1.05); }
-}
 
-/* ── 6. "탭해서 시작" ── */
+/* ── 4. "탭해서 시작" ── */
 .intro-hint {
   position: fixed;
   bottom: 10vh;
@@ -170,7 +105,7 @@
   opacity: 1;
 }
 
-/* ── 7. 다시 보기 버튼 ── */
+/* ── 5. 다시 보기 버튼 ── */
 .intro-replay-btn {
   font-size: 13px;
   opacity: 0.65;
@@ -180,13 +115,21 @@
   opacity: 1;
 }
 
-/* ── 8. FadeOut helper ── */
+/* ── 6. Keyframes ── */
 @keyframes introFadeOut {
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+@keyframes startFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+}
+@keyframes startPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1.0); }
+  50%       { transform: translate(-50%, -50%) scale(1.05); }
+}
 
-/* ── 9. prefers-reduced-motion ── */
+/* ── 7. prefers-reduced-motion ── */
 @media (prefers-reduced-motion: reduce) {
   .intro-overlay * {
     animation-duration: 0.001ms !important;
