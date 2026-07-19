@@ -188,7 +188,14 @@ assert_contains "report.html: 대회 예정 탭" 'data-tab="scheduled"' "$TMP_DI
 assert_contains "report.html: 수집/예정 구분 KST" "Asia/Seoul" "$TMP_DIR/report.html"
 
 curl -s "$HOST/admin.html" > "$TMP_DIR/admin.html"
-assert_contains "admin.html: verify-admin" "verify-admin" "$TMP_DIR/admin.html"
+assert_contains "admin.html: 출석 운영 리다이렉트" "attendance-admin.html" "$TMP_DIR/admin.html"
+
+curl -s "$HOST/attendance-admin.html" > "$TMP_DIR/attendance-admin.html"
+curl -s "$HOST/attendance-admin.js" > "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.html: 스크립트" "attendance-admin.js" "$TMP_DIR/attendance-admin.html"
+assert_contains "attendance-admin.js: verify-admin" "verify-admin" "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: all-members" "all-members" "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: sessionCount" "sessionCount" "$TMP_DIR/attendance-admin.js"
 
 curl -s "$HOST/index.html" > "$TMP_DIR/index.html"
 assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
