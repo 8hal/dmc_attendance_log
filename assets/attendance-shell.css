@@ -703,6 +703,46 @@ button.primary.dash-checkin-done {
   margin: 0 0 12px;
 }
 
+.team-member-pb .pb-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--dmc-color-border);
+  border-radius: 12px;
+  background: var(--dmc-color-surface);
+  overflow: hidden;
+}
+
+.team-member-pb .pb-cell {
+  padding: 8px 6px;
+  text-align: center;
+  border-right: 1px solid var(--dmc-color-border);
+}
+
+.team-member-pb .pb-cell:last-child {
+  border-right: none;
+}
+
+.team-member-pb .pb-cell-dist {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin-bottom: 2px;
+  color: var(--dmc-color-text-secondary);
+}
+
+.team-member-pb .pb-cell-time {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--dmc-color-text);
+}
+
+.team-member-pb .pb-cell-time.empty {
+  color: var(--dmc-color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .train-notice-card {
   margin-top: 12px;
   padding: 14px 16px;

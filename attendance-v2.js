@@ -865,9 +865,110 @@
     if (el) el.classList.add("hidden");
   }
 
-  /** Task 5에서 실제 구현. Task 4에서는 no-op로 두어 ReferenceError 방지. */
-  async function loadTeamMemberSheetPb(/* nickname, memberId */) {
-    /* no-op until Task 5 */
+  const PB_SLOT_DISTS = ["full", "half", "10K"];
+  const PB_DIST_LABELS = { full: "풀", half: "하프", "10K": "10K" };
+
+  function raceRecordTime(r) {
+    return String((r && (r.record || r.netTime || r.gunTime || r.time)) || "").trim();
+  }
+
+  function timeToSeconds(t) {
+    const parts = String(t || "")
+      .split(":")
+      .map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return Infinity;
+  }
+
+  function flattenConfirmedRaceResults(races) {
+    const all = [];
+    (Array.isArray(races) ? races : []).forEach(function (race) {
+      (Array.isArray(race && race.results) ? race.results : []).forEach(function (r) {
+        all.push({
+          realName: r.realName || "",
+          nickname: r.nickname || "",
+          distance: r.distance || "",
+          record: raceRecordTime(r),
+          raceName: (race && race.raceName) || r.raceName || "",
+          raceDate: (race && race.raceDate) || r.raceDate || "",
+        });
+      });
+    });
+    return all;
+  }
+
+  function pickPbSlots(personRows) {
+    const best = {};
+    personRows.forEach(function (r) {
+      const dist = String(r.distance || "").trim();
+      if (PB_SLOT_DISTS.indexOf(dist) < 0) return;
+      const sec = timeToSeconds(r.record);
+      if (!best[dist] || sec < timeToSeconds(best[dist].record)) best[dist] = r;
+    });
+    return best;
+  }
+
+  async function loadTeamMemberSheetPb(nickname, memberId) {
+    const pbEl = document.getElementById("teamMemberSheetPb");
+    if (!pbEl) return;
+    pbEl.hidden = true;
+    pbEl.innerHTML = "";
+
+    let realName = "";
+    const snap =
+      teamAttendLastAgg &&
+      memberId &&
+      teamAttendLastAgg.membersById &&
+      teamAttendLastAgg.membersById[memberId];
+    if (snap) realName = snap.realName || "";
+
+    try {
+      const json = await fetch(RACE_LOG_API + "?action=confirmed-races").then(function (r) {
+        return r.json();
+      });
+      if (!json || !json.ok) return;
+      const flat = flattenConfirmedRaceResults(json.races || []);
+      const nickLc = String(nickname || "").toLowerCase();
+      const realLc = String(realName || "").toLowerCase();
+      const mine = flat.filter(function (r) {
+        const rn = String(r.realName || "").toLowerCase();
+        const nn = String(r.nickname || "").toLowerCase();
+        if (realLc && rn === realLc) return true;
+        if (nickLc && (nn === nickLc || rn === nickLc)) return true;
+        return false;
+      });
+      const slots = pickPbSlots(mine);
+      const hasAny = PB_SLOT_DISTS.some(function (d) {
+        return !!slots[d];
+      });
+      if (!hasAny) return;
+
+      pbEl.innerHTML =
+        '<div class="pb-strip">' +
+        PB_SLOT_DISTS.map(function (dist) {
+          const pb = slots[dist];
+          const label = PB_DIST_LABELS[dist] || dist;
+          if (!pb) {
+            return (
+              '<div class="pb-cell"><div class="pb-cell-dist">' +
+              escapeHtml(label) +
+              '</div><div class="pb-cell-time empty">-</div></div>'
+            );
+          }
+          return (
+            '<div class="pb-cell"><div class="pb-cell-dist">' +
+            escapeHtml(label) +
+            '</div><div class="pb-cell-time">' +
+            escapeHtml(String(pb.record)) +
+            "</div></div>"
+          );
+        }).join("") +
+        "</div>";
+      pbEl.hidden = false;
+    } catch (_) {
+      /* keep hidden */
+    }
   }
 
   function openTeamMemberSheetFromRow(rowEl) {
