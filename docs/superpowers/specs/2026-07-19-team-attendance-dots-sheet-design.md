@@ -65,8 +65,9 @@
 
 본문:
 
-- 같은 월 도트 줄 + 짧은 날짜 목록(또는 동등한 이력 리스트)
-- 이번 달 횟수 · 정모 대비 출석률
+- **선택 월**(`teamAttendMonthKey`)과 동일한 도트 줄 + 짧은 날짜 목록(또는 동등한 이력 리스트)
+- 이번 달(선택 월) 횟수 · 출석률  
+  - 출석률 = `count / meetingDateKeys.length` (해당 월 화·목·토 전체 대비). 분모는 “지난 정모만”이 아님.
 - 조회 전용 (액션 버튼 없음)
 
 ### 아바타 제거 범위
@@ -89,7 +90,7 @@
 3. `assets/attendance-team-month.js` → `aggregateTeamMonth`  
    행 필드: `memberId`, `nickname`, `team`, `count`, `dates[]`
 
-신규 API 없음.
+신규 API 없음. 목록·시트 모두 **월 네비로 고른 선택 월** 기준이다 (달력 “오늘이 속한 달”로 시트를 따로 읽지 않음).
 
 ### 도트 빌더 (순수 함수, 테스트 대상)
 
@@ -108,14 +109,14 @@
 - `attendedDateKeys`에 있으면 `attended`
 - 없고 `dateKey < todayKey`이면 `missed`
 - 없고 `dateKey >= todayKey`이면 `upcoming`  
-  (당일 미출석도 `upcoming`으로 두어 “아직 기회 있음”으로 본다. 당일을 `missed`로 바꿀지는 구현 시 한 줄 상수로 고정 가능하나 기본은 `upcoming`.)
+  (당일 미출석도 `upcoming`으로 두어 “아직 기회 있음”으로 본다.)
 
 날짜 키는 기존 `normalize`/`slash` 규칙과 맞춘다.
 
 ### 바텀시트 데이터
 
 - 출석 이력·도트·횟수·율: 목록 집계 결과로 즉시 렌더 (추가 status 호출 불필요)
-- PB: 기존 레이스/my 조회 경로 재사용. 실패 시 상단 신원만 표시
+- PB: `my.html`과 같이 레이스 확인 기록 조회(`race` API의 confirmed-races 계열) + 회원 매칭. 실패·미매칭 시 스트립 숨김.
 
 ## 파일 영향 (예상)
 
