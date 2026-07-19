@@ -592,19 +592,6 @@
 
     .member-row:last-child { border-bottom: none; }
 
-    .member-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--dmc-slate-3);
-      display: grid;
-      place-items: center;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--dmc-slate-8);
-      flex-shrink: 0;
-    }
-
     .member-name {
       flex: 1;
       min-width: 0;
@@ -618,6 +605,37 @@
       font-size: 11px;
       font-weight: 500;
       color: var(--dmc-color-text-muted);
+    }
+
+    .attend-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .attend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .attend-dot[data-state="attended"] {
+      background: var(--dmc-green-9, #16a34a);
+      border: 1px solid var(--dmc-green-9, #16a34a);
+    }
+
+    .attend-dot[data-state="missed"] {
+      background: transparent;
+      border: 1.5px solid var(--dmc-color-border, #cbd5e1);
+    }
+
+    .attend-dot[data-state="upcoming"] {
+      background: var(--dmc-slate-4, #e2e8f0);
+      border: 1px solid transparent;
+      opacity: 0.55;
     }
 
     .member-count {
@@ -914,35 +932,27 @@
           </div>
           <ul class="member-list" id="todayRosterList" aria-label="오늘 출석 인원" style="margin-top:8px">
             <li class="member-row">
-              <div class="member-avatar">박</div>
               <div class="member-name">박병규<span class="member-dates">2팀 · 방금</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">서</div>
               <div class="member-name">서연<span class="member-dates">2팀 · 3분 전</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">최</div>
               <div class="member-name">최민<span class="member-dates">1팀 · 8분 전</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">한</div>
               <div class="member-name">한지우<span class="member-dates">3팀 · 12분 전</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">김</div>
               <div class="member-name">김도윤<span class="member-dates">2팀 · 18분 전</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">이</div>
               <div class="member-name">이서준<span class="member-dates">S팀 · 22분 전</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">정</div>
               <div class="member-name">정하늘<span class="member-dates">1팀 · 30분 전</span></div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">오</div>
               <div class="member-name">오세린<span class="member-dates">4팀 · 35분 전</span></div>
             </li>
           </ul>
@@ -1101,28 +1111,63 @@
         <div class="card">
           <ul class="member-list">
             <li class="member-row">
-              <div class="member-avatar">런</div>
-              <div class="member-name">러너킴<span class="member-dates">7/3 · 7/5 · 7/8 · 7/10</span></div>
+              <div class="member-name">러너킴
+                <span class="attend-dots" role="img" aria-label="정모 출석 도트">
+                  <span class="attend-dot" data-state="attended" title="7/3 출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/5 출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/8 출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/10 출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/12 미출석"></span>
+                </span>
+              </div>
               <div class="member-count">4회</div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">박</div>
-              <div class="member-name">박병규<span class="member-dates">7/3 · 7/8 · 7/10</span></div>
+              <div class="member-name">박병규
+                <span class="attend-dots" role="img" aria-label="정모 출석 도트">
+                  <span class="attend-dot" data-state="attended" title="7/3 출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/5 미출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/8 출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/10 출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/12 미출석"></span>
+                </span>
+              </div>
               <div class="member-count">3회</div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">서</div>
-              <div class="member-name">서연<span class="member-dates">7/5 · 7/10</span></div>
+              <div class="member-name">서연
+                <span class="attend-dots" role="img" aria-label="정모 출석 도트">
+                  <span class="attend-dot" data-state="missed" title="7/3 미출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/5 출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/8 미출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/10 출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/12 미출석"></span>
+                </span>
+              </div>
               <div class="member-count">2회</div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">최</div>
-              <div class="member-name">최민<span class="member-dates">7/10</span></div>
+              <div class="member-name">최민
+                <span class="attend-dots" role="img" aria-label="정모 출석 도트">
+                  <span class="attend-dot" data-state="missed" title="7/3 미출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/5 미출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/8 미출석"></span>
+                  <span class="attend-dot" data-state="attended" title="7/10 출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/12 미출석"></span>
+                </span>
+              </div>
               <div class="member-count">1회</div>
             </li>
             <li class="member-row">
-              <div class="member-avatar">한</div>
-              <div class="member-name">한지우<span class="member-dates">미출석</span></div>
+              <div class="member-name">한지우
+                <span class="attend-dots" role="img" aria-label="정모 출석 도트">
+                  <span class="attend-dot" data-state="missed" title="7/3 미출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/5 미출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/8 미출석"></span>
+                  <span class="attend-dot" data-state="missed" title="7/10 미출석"></span>
+                  <span class="attend-dot" data-state="upcoming" title="7/15 예정"></span>
+                </span>
+              </div>
               <div class="member-count">0회</div>
             </li>
           </ul>
