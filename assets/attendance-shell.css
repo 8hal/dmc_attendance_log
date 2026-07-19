@@ -345,3 +345,30 @@ body.kiosk-mode .tab-bar {
   font-weight: 600;
   cursor: pointer;
 }
+
+.btn-cancel-attend {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--dmc-color-border);
+  background: transparent;
+  color: var(--dmc-color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-cancel-attend:hover {
+  border-color: var(--dmc-color-danger, #dc2626);
+  color: var(--dmc-color-danger, #dc2626);
+}
+
+.my-attend-month-nav button {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--dmc-color-border);
+  background: var(--dmc-color-surface);
+  font-size: 18px;
+  cursor: pointer;
+}

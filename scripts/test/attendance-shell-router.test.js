@@ -42,5 +42,12 @@ describe("attendance-shell-router", () => {
       ),
       false
     );
+    assert.equal(
+      isActiveSessionMatch(
+        { meetingDate: "2026-07-11", meetingType: "sat" },
+        { dateKey: "2026/07/11", meetingType: "SAT" }
+      ),
+      true
+    );
   });
 });

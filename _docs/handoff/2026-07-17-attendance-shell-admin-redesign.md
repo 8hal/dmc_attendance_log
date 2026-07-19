@@ -73,9 +73,18 @@ cd /workspace && python3 -m http.server 8765
 | 디자인 컨펌 (사용자) | ✅ 2026-07-17 «목업 확인 · 개발 진행» (내일 재확인 예정) |
 | **Shell-1 코드** | ✅ 브랜치에 있음 (`attendance-v2` 셸·라우터·더보기→이용안내→키오스크) |
 | **Admin-1a 코드** | ✅ 브랜치 (`attendance-admin.html` · 회원 이식 · `admin.html`→`#members`) |
-| Delete-1 / 훈련 API | ❌ justification + 승인 후 |
+| Delete-1 / 훈련 API | ✅ Delete-1 승인·구현 (self/admin delete + UI). 훈련 API는 justification 대기 |
 | pre-deploy-test 전체 | ⚠ 2026-07-17: Hosting 셸 스모크 OK. Functions 에뮬이 `functions.config()`/v7로 race 로드 실패해 API 구간 hang — Shell-1과 무관한 환경 이슈로 보임 |
 | `firebase deploy` | ❌ 금지 |
+
+### Delete-1 (2026-07-19)
+
+- justification 승인 후 구현
+- `POST ?action=delete-attendance` — 활성 세션 + memberId
+- `POST ?action=admin-delete-attendance` — `{ pw, docId }` + event_logs
+- 셸 «내 출석» 취소 버튼 / 허브 출석 관리 삭제 버튼
+- 단위 테스트: `npm run test:attendance-shell` (router + active-session)
+
 
 ### Shell-1 수동 확인 (내일)
 

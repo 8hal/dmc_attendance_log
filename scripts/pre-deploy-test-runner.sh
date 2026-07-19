@@ -196,6 +196,10 @@ assert_contains "attendance-admin.html: 스크립트" "attendance-admin.js" "$TM
 assert_contains "attendance-admin.js: verify-admin" "verify-admin" "$TMP_DIR/attendance-admin.js"
 assert_contains "attendance-admin.js: all-members" "all-members" "$TMP_DIR/attendance-admin.js"
 assert_contains "attendance-admin.js: sessionCount" "sessionCount" "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: admin-delete" "admin-delete-attendance" "$TMP_DIR/attendance-admin.js"
+
+curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: delete-attendance" "delete-attendance" "$TMP_DIR/attendance-v2.js"
 
 curl -s "$HOST/index.html" > "$TMP_DIR/index.html"
 assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"

@@ -297,6 +297,7 @@
       history.replaceState(null, "", "#" + tabId);
     }
     if (tabId === "more") refreshMoreProfileCard();
+    if (tabId === "my-attendance") loadMyAttendancePanel().catch(() => {});
   }
 
   function refreshMoreProfileCard() {
@@ -311,6 +312,196 @@
     }
     nameEl.textContent = p.nickname || "회원";
     metaEl.textContent = teamLabel(p.team) + (p.memberId ? " · 저장됨" : "");
+  }
+
+  let myAttendMonthKey = "";
+
+  function currentMonthKeyKst() {
+    return new Date()
+      .toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" })
+      .slice(0, 7);
+  }
+
+  function shiftMonthKey(monthKey, delta) {
+    const m = String(monthKey || "").match(/^(\d{4})-(\d{2})$/);
+    if (!m) return currentMonthKeyKst();
+    const d = new Date(Number(m[1]), Number(m[2]) - 1 + delta, 1);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, "0");
+    return y + "-" + mo;
+  }
+
+  function formatMonthLabel(monthKey) {
+    const m = String(monthKey || "").match(/^(\d{4})-(\d{2})$/);
+    if (!m) return monthKey || "—";
+    return m[1] + "년 " + Number(m[2]) + "월";
+  }
+
+  /** 개인 취소용 — URL meetingDate/Type 무시, 서버 resolveDefaultMeeting과 동일 */
+  function activeSessionForCancel() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const testDateParam = urlParams.get("testDate");
+    let now = new Date();
+    if ((IS_LOCAL || IS_STAGING) && testDateParam) {
+      const parsed = new Date(testDateParam + "T10:00:00+09:00");
+      if (!isNaN(parsed.getTime())) now = parsed;
+    }
+    const dow = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      weekday: "short"
+    }).format(now);
+    let dayOffset = 0;
+    let meetingType = "SAT";
+    switch (dow) {
+      case "Mon": dayOffset = -2; meetingType = "SAT"; break;
+      case "Tue": dayOffset = 0; meetingType = "TUE"; break;
+      case "Wed": dayOffset = -1; meetingType = "TUE"; break;
+      case "Thu": dayOffset = 0; meetingType = "THU"; break;
+      case "Fri": dayOffset = -1; meetingType = "THU"; break;
+      case "Sat": dayOffset = 0; meetingType = "SAT"; break;
+      case "Sun": dayOffset = -1; meetingType = "SAT"; break;
+    }
+    const kstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    kstDate.setDate(kstDate.getDate() + dayOffset);
+    const year = kstDate.getFullYear();
+    const month = String(kstDate.getMonth() + 1).padStart(2, "0");
+    const day = String(kstDate.getDate()).padStart(2, "0");
+    return { dateKey: year + "/" + month + "/" + day, meetingType };
+  }
+
+  function isRowActiveSession(item, active) {
+    if (shellRouter && shellRouter.isActiveSessionMatch) {
+      return shellRouter.isActiveSessionMatch(
+        { dateKey: item.meetingDate, meetingType: item.meetingType },
+        active
+      );
+    }
+    return (
+      String(item.meetingDate || "") === String(active.dateKey || "") &&
+      String(item.meetingType || "").toUpperCase() === String(active.meetingType || "").toUpperCase()
+    );
+  }
+
+  async function loadMyAttendancePanel() {
+    const listEl = document.getElementById("myAttendList");
+    const statsEl = document.getElementById("myAttendStats");
+    const labelEl = document.getElementById("myAttendMonthLabel");
+    if (!listEl || !statsEl) return;
+
+    if (!myAttendMonthKey) myAttendMonthKey = currentMonthKeyKst();
+    if (labelEl) labelEl.textContent = formatMonthLabel(myAttendMonthKey);
+
+    const p = myProfile || loadProfile();
+    if (!p || !p.nickname) {
+      statsEl.textContent = "프로필 없음";
+      listEl.innerHTML =
+        '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-text-muted);font-size:14px">오늘 탭에서 프로필을 설정해 주세요</li>';
+      return;
+    }
+
+    statsEl.textContent = "불러오는 중…";
+    listEl.innerHTML = "";
+
+    try {
+      const histUrl =
+        BASE_URL +
+        "?action=history&nickname=" +
+        encodeURIComponent(p.nickname) +
+        "&month=" +
+        encodeURIComponent(myAttendMonthKey);
+      const histJson = await fetch(histUrl).then((r) => r.json());
+      if (!histJson.ok) throw new Error(histJson.error || "history 실패");
+
+      const items = Array.isArray(histJson.items) ? histJson.items : [];
+      const memberItems = items.filter((it) => it.isGuest !== true);
+      statsEl.innerHTML =
+        "출석 <strong style=\"color:var(--dmc-color-text)\">" +
+        (histJson.count != null ? memberItems.length : memberItems.length) +
+        "</strong>회" +
+        (histJson.attendanceRate != null
+          ? " · 출석률 <strong style=\"color:var(--dmc-color-text)\">" +
+            histJson.attendanceRate +
+            "%</strong>"
+          : "");
+
+      if (!memberItems.length) {
+        listEl.innerHTML =
+          '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-text-muted);font-size:14px">이 달 출석 기록이 없습니다</li>';
+        return;
+      }
+
+      const active = activeSessionForCancel();
+      listEl.innerHTML = memberItems
+        .map((it) => {
+          const canCancel = p.memberId && isRowActiveSession(it, active);
+          const day = String(it.meetingDate || "").split("/")[2] || "";
+          const label = it.meetingTypeLabel || it.meetingType || "";
+          const cancelBtn = canCancel
+            ? '<button type="button" class="btn-cancel-attend" data-cancel-date="' +
+              String(it.meetingDate || "").replace(/"/g, "") +
+              '" data-cancel-type="' +
+              String(it.meetingType || "").replace(/"/g, "") +
+              '">출석 취소</button>'
+            : "";
+          return (
+            '<li class="attend-log-item" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--dmc-line-subtle,var(--dmc-color-border-light))">' +
+            '<div style="width:40px;text-align:center"><div style="font-size:18px;font-weight:800;line-height:1">' +
+            day +
+            '</div></div>' +
+            '<div style="flex:1;min-width:0"><strong style="display:block;font-size:14px">' +
+            (label || "정모") +
+            '</strong><span style="font-size:12px;color:var(--dmc-color-text-secondary)">' +
+            (it.meetingDate || "") +
+            (canCancel ? " · 활성 세션" : "") +
+            (it.timeText ? " · " + it.timeText : "") +
+            "</span></div>" +
+            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">' +
+            '<span style="font-size:11px;font-weight:700;color:var(--dmc-attend-fg,var(--dmc-color-success))">출석</span>' +
+            cancelBtn +
+            "</div></li>"
+          );
+        })
+        .join("");
+    } catch (e) {
+      statsEl.textContent = "로드 실패";
+      listEl.innerHTML =
+        '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-danger);font-size:14px">' +
+        (e.message || "오류") +
+        "</li>";
+    }
+  }
+
+  async function cancelMyActiveAttendance(meetingDate, meetingType) {
+    const p = myProfile || loadProfile();
+    if (!p || !p.memberId) {
+      alert("프로필(memberId)이 필요합니다.");
+      return;
+    }
+    if (!confirm("이 정모 출석을 취소할까요?")) return;
+    try {
+      const res = await fetch(BASE_URL + "?action=delete-attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: p.memberId,
+          meetingDate: meetingDate,
+          meetingType: meetingType
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        throw new Error(data.message || data.error || "취소 실패");
+      }
+      alert("출석이 취소되었습니다.");
+      await loadMyAttendancePanel();
+      if (typeof renderDashboard === "function" && myProfile) {
+        try {
+          renderDashboard();
+        } catch (_) {}
+      }
+    } catch (e) {
+      alert(e.message || "취소 실패");
+    }
   }
 
   function setKioskEntryLinks() {
@@ -1816,6 +2007,33 @@
   const elBtnExitKiosk = document.getElementById("btn-exit-kiosk");
   if (elBtnExitKiosk) {
     elBtnExitKiosk.addEventListener("click", exitKioskToMore);
+  }
+
+  const elMyAttendPrev = document.getElementById("myAttendPrev");
+  const elMyAttendNext = document.getElementById("myAttendNext");
+  if (elMyAttendPrev) {
+    elMyAttendPrev.addEventListener("click", () => {
+      myAttendMonthKey = shiftMonthKey(myAttendMonthKey || currentMonthKeyKst(), -1);
+      loadMyAttendancePanel().catch(() => {});
+    });
+  }
+  if (elMyAttendNext) {
+    elMyAttendNext.addEventListener("click", () => {
+      myAttendMonthKey = shiftMonthKey(myAttendMonthKey || currentMonthKeyKst(), 1);
+      loadMyAttendancePanel().catch(() => {});
+    });
+  }
+
+  const elMyAttendList = document.getElementById("myAttendList");
+  if (elMyAttendList) {
+    elMyAttendList.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn-cancel-attend");
+      if (!btn) return;
+      cancelMyActiveAttendance(
+        btn.getAttribute("data-cancel-date"),
+        btn.getAttribute("data-cancel-type")
+      ).catch(() => {});
+    });
   }
 
   document.getElementById("teamCancelBtn").addEventListener("click", () => elTeamModal.classList.add("hidden"));

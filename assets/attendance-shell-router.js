@@ -16,11 +16,20 @@
     return SHELL_TABS.indexOf(h) >= 0 ? h : "today";
   }
 
+  function normalizeDateKey(raw) {
+    const s = String(raw == null ? "" : raw).trim();
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(s)) return s;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s.replace(/-/g, "/");
+    return s;
+  }
+
   /** Active session cancel gate: row matches resolveDefaultMeeting result. */
   function isActiveSessionMatch(row, active) {
     if (!row || !active) return false;
+    const rowDate = normalizeDateKey(row.dateKey || row.meetingDate || "");
+    const activeDate = normalizeDateKey(active.dateKey || active.meetingDate || "");
     return (
-      String(row.dateKey || "") === String(active.dateKey || "") &&
+      rowDate === activeDate &&
       String(row.meetingType || "").toUpperCase() === String(active.meetingType || "").toUpperCase()
     );
   }

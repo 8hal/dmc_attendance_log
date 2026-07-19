@@ -29,6 +29,7 @@
   let showHidden = false;
   let editingId = null;
   let adminRole = "";
+  let adminPwCache = "";
 
   function migrateLegacyAuth() {
     if (sessionStorage.getItem(AUTH_KEY) === "ok") return;
@@ -188,6 +189,7 @@
       if (data.ok) {
         sessionStorage.setItem(AUTH_KEY, "ok");
         adminRole = data.role || "operator";
+        adminPwCache = pw;
         revealShell();
       } else {
         errEl.style.display = "block";
@@ -268,6 +270,14 @@
         .map(function (it) {
           const team = it.teamLabel || it.team || "—";
           const typeLabel = it.meetingTypeLabel || MEETING_LABEL[it.meetingType] || it.meetingType || "";
+          const id = it.id || "";
+          const delBtn = id
+            ? '<button type="button" class="btn btn-danger att-del-btn" data-doc-id="' +
+              esc(id) +
+              '" data-nick="' +
+              esc(it.nickname) +
+              '">삭제</button>'
+            : '<button type="button" class="btn btn-danger" disabled title="문서 id 없음">삭제</button>';
           return (
             "<tr>" +
             "<td>" +
@@ -282,7 +292,9 @@
             "<td>" +
             esc(it.timeText || "") +
             "</td>" +
-            '<td><button type="button" class="btn btn-danger" disabled title="Delete-1 이후">삭제</button></td>' +
+            "<td>" +
+            delBtn +
+            "</td>" +
             "</tr>"
           );
         })
@@ -550,6 +562,38 @@
 
   document.getElementById("attReload").addEventListener("click", function () {
     loadAttendanceDay().catch(function () {});
+  });
+
+  async function adminDeleteAttendance(docId, nickname) {
+    let pw = adminPwCache;
+    if (!pw) {
+      pw = window.prompt("운영진 비밀번호를 다시 입력하세요");
+      if (!pw) return;
+      adminPwCache = pw;
+    }
+    if (!confirm("'" + (nickname || "이 기록") + "' 출석을 삭제할까요?")) return;
+    try {
+      const res = await fetch(ATTENDANCE_API + "?action=admin-delete-attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pw: pw, docId: docId })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        if (res.status === 401) adminPwCache = "";
+        throw new Error(data.error || data.message || "삭제 실패");
+      }
+      showToast("삭제 완료");
+      await loadAttendanceDay();
+    } catch (e) {
+      showToast(e.message || "삭제 실패", true);
+    }
+  }
+
+  document.getElementById("attRosterBody").addEventListener("click", function (e) {
+    const btn = e.target.closest(".att-del-btn");
+    if (!btn) return;
+    adminDeleteAttendance(btn.getAttribute("data-doc-id"), btn.getAttribute("data-nick") || "");
   });
 
   document.getElementById("attMonthLoad").addEventListener("click", function () {

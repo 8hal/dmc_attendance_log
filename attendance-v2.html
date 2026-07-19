@@ -1319,7 +1319,23 @@
         </div>
       </section>
       <section id="view-my-attendance" class="view" data-view="my-attendance" hidden>
-        <div class="stub-card">내 출석 — 준비 중<br /><span style="font-weight:500;font-size:12px">Shell-2에서 연결됩니다</span></div>
+        <div class="wrap my-attend-wrap">
+          <p class="section-kicker" style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--dmc-color-text-muted)">MY ATTENDANCE</p>
+          <div class="month-nav my-attend-month-nav" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+            <button type="button" id="myAttendPrev" aria-label="이전 달">‹</button>
+            <h2 id="myAttendMonthLabel" style="margin:0;font-size:18px">—</h2>
+            <button type="button" id="myAttendNext" aria-label="다음 달">›</button>
+          </div>
+          <div class="card" style="background:var(--dmc-color-surface);border:1px solid var(--dmc-color-border);border-radius:16px;padding:14px 16px;margin-bottom:12px">
+            <div id="myAttendStats" style="display:flex;gap:16px;font-size:13px;color:var(--dmc-color-text-secondary)">불러오는 중…</div>
+          </div>
+          <div class="card" style="background:var(--dmc-color-surface);border:1px solid var(--dmc-color-border);border-radius:16px;padding:4px 0;overflow:hidden">
+            <ul class="attend-log" id="myAttendList" aria-label="이번 달 출석 목록" style="list-style:none;margin:0;padding:0"></ul>
+          </div>
+          <p class="hint" style="margin:12px 0 0;font-size:12px;color:var(--dmc-color-text-muted);line-height:1.45">
+            출석 취소는 <strong>활성 세션</strong>(접속 요일 기본 정모) 행만 가능합니다.
+          </p>
+        </div>
       </section>
       <section id="view-team-attendance" class="view" data-view="team-attendance" hidden>
         <div class="stub-card">팀 출석 — 준비 중<br /><span style="font-weight:500;font-size:12px">Shell-3에서 연결됩니다</span></div>
