@@ -680,12 +680,6 @@ button.primary.dash-checkin-done {
   color: var(--dmc-color-text);
 }
 
-.today-roster-hint {
-  margin: 8px 16px 12px;
-  font-size: 12px;
-  color: var(--dmc-color-text-muted);
-}
-
 .train-notice {
   width: 100%;
   border-collapse: collapse;
