@@ -35,6 +35,105 @@ const SAMPLE_PASTE = `
 급수 및 서포터즈: —
 `;
 
+/** Real Naver cafe paste style (spaced headers, label/value on separate lines) */
+const NAVER_CAFE_PASTE = `
+시간/장소
+
+19:30 / 동탄 예당공원
+
+훈
+
+련
+
+전
+
+조깅 10분, 체조 및 스트레칭
+
+본
+
+▶업힐 훈련 20회전
+
+예당공원 內 회전구간 달리기
+
+오르막 질주 내리막 회복 20회 총 9km
+
+팀별로 함께
+
+후
+
+Cool 마무리 체조 및 스트레칭
+
+급 수 및
+
+서포터즈
+
+옥/루이
+
+정모 모이는 장소 정모소요시간 1시간
+
+https://cafe.naver.com/2008dmc/4618
+
+목 요 일 정 모
+
+시간/장소
+
+19:30 여울공원 운동장(트랙)
+
+훈
+
+련
+
+전
+
+체조 및 스트레칭, 조깅 운동장7바퀴
+
+본
+
+300/100 인터벌 10개 & 보강훈련
+
+후
+
+Cool 조깅 10분, 마무리 체조 및 스트레칭
+
+급 수 및
+
+서포터즈
+
+바우돌리노/보스톤
+
+7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요.
+
+토요일 정모
+
+시간/장소
+
+06:00/동탄여울공원
+
+훈
+
+련
+
+전
+
+스트레칭, 트랙 3바퀵
+
+본
+
+여울공원-동탄ic 4회전 약 25km
+
+후
+
+스트레칭
+
+급 수 및
+
+서포터즈
+
+삼둥/쌩메
+
+더우니까 스피드 붙여서 빠르게 끝내겠습니다.
+`;
+
 describe("meeting-training helpers", () => {
   it("trainingDocId uses dash date and type", () => {
     assert.equal(trainingDocId("2026/07/16", "THU"), "2026-07-16_THU");
@@ -98,5 +197,28 @@ describe("parseCafeTrainingPaste", () => {
     assert.equal(parsed.TUE.time, "");
     assert.equal(parsed.THU.trainMain, "");
     assert.equal(parsed.SAT.place, "");
+  });
+
+  it("parses Naver cafe paste with spaced headers and multiline labels", () => {
+    const parsed = parseCafeTrainingPaste(NAVER_CAFE_PASTE);
+    assert.equal(parsed.TUE.time, "19:30");
+    assert.match(parsed.TUE.place, /예당공원/);
+    assert.match(parsed.TUE.trainBefore, /조깅 10분/);
+    assert.match(parsed.TUE.trainMain, /업힐/);
+    assert.match(parsed.TUE.trainAfter, /마무리/);
+    assert.equal(parsed.TUE.supporters, "옥/루이");
+    assert.match(parsed.TUE.note, /정모소요시간|1시간/);
+
+    assert.equal(parsed.THU.time, "19:30");
+    assert.match(parsed.THU.place, /여울공원/);
+    assert.match(parsed.THU.trainMain, /300\/100/);
+    assert.equal(parsed.THU.supporters, "바우돌리노/보스톤");
+    assert.match(parsed.THU.note, /7월/);
+
+    assert.equal(parsed.SAT.time, "06:00");
+    assert.match(parsed.SAT.place, /여울공원|동탄여울공원/);
+    assert.match(parsed.SAT.trainMain, /25km/);
+    assert.equal(parsed.SAT.supporters, "삼둥/쌩메");
+    assert.match(parsed.SAT.note, /더우니까/);
   });
 });
