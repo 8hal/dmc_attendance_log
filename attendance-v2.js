@@ -2420,10 +2420,12 @@
     await ensureSearchMembersLoaded();
   });
 
-  document.getElementById("changeTeamBtn").addEventListener("click", () => {
-    openTeamChangeModal();
-  });
-
+  const elChangeTeamBtn = document.getElementById("changeTeamBtn");
+  if (elChangeTeamBtn) {
+    elChangeTeamBtn.addEventListener("click", () => {
+      openTeamChangeModal();
+    });
+  }
   function openTeamChangeModal() {
     const sel = document.getElementById("teamSelect");
     sel.innerHTML = TEAM_OPTIONS.map((t) => '<option value="' + t.value + '">' + t.label + "</option>").join("");
