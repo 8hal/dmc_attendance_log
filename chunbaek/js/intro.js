@@ -155,3 +155,25 @@ function startIntro(theme = 'a', skipFlagCheck = false) {
 
 /* ── 실행 (첫 방문) ── */
 startIntro('a');
+
+/* ── 다시 보기 버튼 ── */
+function initReplayButton() {
+  const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10);
+  if (kstDate !== INTRO_TARGET) return;
+
+  const btn = document.getElementById('btn-replay-intro');
+  if (!btn) return;
+
+  btn.hidden = false;
+  btn.addEventListener('click', () => {
+    try { localStorage.removeItem(INTRO_FLAG); } catch { /* ignore */ }
+    startIntro('a', true);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initReplayButton);
+} else {
+  initReplayButton();
+}
