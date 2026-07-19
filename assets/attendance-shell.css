@@ -452,20 +452,28 @@ body.kiosk-mode .tab-bar {
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
+  align-items: center;
 }
 
 .filter-chips .chip {
-  padding: 8px 12px;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  flex: 0 0 auto;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--dmc-color-border);
   background: var(--dmc-color-surface);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
   cursor: pointer;
   color: var(--dmc-color-text-secondary);
+  box-shadow: none;
 }
 
 .filter-chips .chip.active {
