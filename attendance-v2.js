@@ -339,6 +339,7 @@
   let myAttendMonthKey = "";
   let teamAttendMonthKey = "";
   let teamAttendFilter = "";
+  let teamAttendLastAgg = null;
 
   const teamMonthHelper =
     typeof window !== "undefined" && window.DmcAttendanceTeamMonth
@@ -801,6 +802,23 @@
         agg.rate +
         "%</strong></div>";
 
+      const membersById = {};
+      members.forEach(function (m) {
+        if (m && m.id) {
+          membersById[m.id] = {
+            nickname: m.nickname || "",
+            realName: m.realName || m.name || "",
+            team: m.team || "",
+          };
+        }
+      });
+      teamAttendLastAgg = {
+        monthKey: teamAttendMonthKey,
+        meetingDateKeys: dateKeys,
+        rows: agg.rows,
+        membersById: membersById,
+      };
+
       if (!agg.rows.length) {
         listEl.innerHTML =
           '<li class="member-row"><div class="member-name" style="font-weight:500;color:var(--dmc-color-text-muted)">해당 팀 회원이 없습니다</div></li>';
@@ -840,6 +858,70 @@
       listEl.innerHTML =
         '<li class="member-row"><div class="member-name" style="color:var(--dmc-color-danger)">오류</div></li>';
     }
+  }
+
+  function closeTeamMemberSheet() {
+    const el = document.getElementById("teamMemberSheet");
+    if (el) el.classList.add("hidden");
+  }
+
+  /** Task 5에서 실제 구현. Task 4에서는 no-op로 두어 ReferenceError 방지. */
+  async function loadTeamMemberSheetPb(/* nickname, memberId */) {
+    /* no-op until Task 5 */
+  }
+
+  function openTeamMemberSheetFromRow(rowEl) {
+    const sheet = document.getElementById("teamMemberSheet");
+    const title = document.getElementById("teamMemberSheetTitle");
+    const meta = document.getElementById("teamMemberSheetMeta");
+    const body = document.getElementById("teamMemberSheetBody");
+    const pb = document.getElementById("teamMemberSheetPb");
+    if (!sheet || !title || !body) return;
+
+    const nickname = rowEl.getAttribute("data-nickname") || "";
+    const team = rowEl.getAttribute("data-team") || "";
+    const memberId = rowEl.getAttribute("data-member-id") || "";
+    const count = Number(rowEl.getAttribute("data-count") || 0);
+    const dates = String(rowEl.getAttribute("data-dates") || "")
+      .split(",")
+      .filter(Boolean);
+    const meetingDateKeys =
+      (teamAttendLastAgg && teamAttendLastAgg.meetingDateKeys) || [];
+    const rate =
+      teamMonthHelper && teamMonthHelper.memberMonthAttendRate
+        ? teamMonthHelper.memberMonthAttendRate(count, meetingDateKeys.length)
+        : 0;
+
+    title.textContent = nickname || "회원";
+    if (meta) {
+      meta.textContent =
+        teamLabel(team) +
+        " · " +
+        formatMonthLabel(teamAttendMonthKey || currentMonthKeyKst()) +
+        " · " +
+        count +
+        "회 · 출석률 " +
+        rate +
+        "%";
+    }
+    if (pb) {
+      pb.hidden = true;
+      pb.innerHTML = "";
+    }
+    body.innerHTML =
+      renderAttendDotsHtml(meetingDateKeys, dates) +
+      '<ul class="team-member-date-list">' +
+      (dates.length
+        ? dates
+            .map(function (dk) {
+              return "<li>" + escapeHtml(formatShortAttendDate(dk)) + "</li>";
+            })
+            .join("")
+        : '<li class="muted">이번 달 출석 없음</li>') +
+      "</ul>";
+
+    sheet.classList.remove("hidden");
+    loadTeamMemberSheetPb(nickname, memberId).catch(function () {});
   }
 
   async function cancelMyActiveAttendance(meetingDate, meetingType) {
@@ -2673,6 +2755,36 @@
       loadTeamAttendancePanel().catch(() => {});
     });
   }
+
+  const elTeamAttendList = document.getElementById("teamAttendList");
+  if (elTeamAttendList) {
+    elTeamAttendList.addEventListener("click", function (e) {
+      const row = e.target.closest(".member-row[data-nickname]");
+      if (row) openTeamMemberSheetFromRow(row);
+    });
+    elTeamAttendList.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const row = e.target.closest(".member-row[data-nickname]");
+      if (!row) return;
+      e.preventDefault();
+      openTeamMemberSheetFromRow(row);
+    });
+  }
+  const elTeamMemberSheet = document.getElementById("teamMemberSheet");
+  const elTeamMemberSheetClose = document.getElementById("teamMemberSheetCloseBtn");
+  if (elTeamMemberSheetClose) {
+    elTeamMemberSheetClose.addEventListener("click", closeTeamMemberSheet);
+  }
+  if (elTeamMemberSheet) {
+    elTeamMemberSheet.addEventListener("click", function (e) {
+      if (e.target === elTeamMemberSheet) closeTeamMemberSheet();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    const sheet = document.getElementById("teamMemberSheet");
+    if (sheet && !sheet.classList.contains("hidden")) closeTeamMemberSheet();
+  });
 
   document.getElementById("teamCancelBtn").addEventListener("click", () => elTeamModal.classList.add("hidden"));
   elTeamModal.addEventListener("click", (e) => {

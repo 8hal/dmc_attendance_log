@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719j" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719k" />
   <style>
     body {
       margin: 0;
@@ -1594,6 +1594,18 @@
     </div>
   </div>
 
+  <div id="teamMemberSheet" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="teamMemberSheetTitle">
+    <div class="modal-sheet team-member-sheet">
+      <div class="session-roster-head">
+        <h2 id="teamMemberSheetTitle">회원</h2>
+        <button type="button" class="modal-close-button" id="teamMemberSheetCloseBtn">닫기</button>
+      </div>
+      <p id="teamMemberSheetMeta" class="team-member-sheet-meta"></p>
+      <div id="teamMemberSheetPb" class="team-member-pb" hidden></div>
+      <div id="teamMemberSheetBody" class="team-member-sheet-body"></div>
+    </div>
+  </div>
+
   <div id="guestModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="guestModalTitle">
     <div class="modal-sheet">
       <h2 id="guestModalTitle">출석 명부에 없는 경우</h2>
@@ -1631,6 +1643,6 @@
   <script src="assets/attendance-meeting-type.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719e"></script>
   <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
-  <script src="attendance-v2.js?v=20260719j" defer></script>
+  <script src="attendance-v2.js?v=20260719k" defer></script>
 </body>
 </html>
