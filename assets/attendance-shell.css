@@ -544,3 +544,46 @@ body.kiosk-mode .tab-bar {
   color: var(--dmc-color-text);
   flex-shrink: 0;
 }
+
+.train-notice-card {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--dmc-color-border);
+  background: var(--dmc-color-surface);
+}
+
+.train-notice {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.train-notice th {
+  text-align: left;
+  vertical-align: top;
+  width: 88px;
+  padding: 6px 8px 6px 0;
+  color: var(--dmc-color-text-muted);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.train-notice td {
+  padding: 6px 0;
+  color: var(--dmc-color-text);
+  line-height: 1.45;
+}
+
+.train-phase {
+  margin: 0 0 4px;
+}
+
+.train-phase span {
+  display: inline-block;
+  min-width: 1.2em;
+  margin-right: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--dmc-color-primary, #2563eb);
+}

@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260717" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719" />
   <style>
     body {
       margin: 0;
@@ -1286,6 +1286,14 @@
           <span class="dash-session-figures" id="dashSessionFigures" aria-live="polite">…</span>
         </button>
         <button type="button" class="primary dash-checkin" id="checkinBtn">출석 체크</button>
+        <div class="card train-notice-card" id="todayTrainCard" hidden>
+          <p class="section-kicker" style="margin:0 0 8px">오늘 훈련 공지</p>
+          <table class="train-notice" id="todayTrainInfo" aria-label="정모 훈련 공지">
+            <tbody id="todayTrainBody">
+              <tr><td colspan="2" style="color:var(--dmc-color-text-muted)">불러오는 중…</td></tr>
+            </tbody>
+          </table>
+        </div>
         <details class="meeting-adjust" id="meetingAdjust">
           <summary>날짜·유형이 다르면 여기서 수정</summary>
           <div class="meeting-adjust-body">

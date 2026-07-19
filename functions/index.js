@@ -26,7 +26,17 @@ const {
   assertSelfDeleteAllowed,
   normalizeMeetingDateKey,
 } = require("./lib/attendance-active-session");
+const {
+  trainingDocId,
+  normalizeTrainingRow,
+  resolveWeekMeetingDates,
+  emptyTrainingRow,
+  assertSaveRows,
+  REGULAR_TYPES: TRAINING_TYPES,
+} = require("./lib/meeting-training");
 const { google } = require("googleapis");
+
+const MEETING_TRAINING_COLLECTION = "meeting_training";
 
 // 초기화
 initializeApp();
@@ -969,6 +979,10 @@ async function handleGet(req, res) {
       const durationMs = Date.now() - startMs;
       console.log(`[GET sessionCount] ${dateKey} ${meetingTypeQ} m=${sc.memberCount} g=${sc.guestCount} - ${durationMs}ms`);
       return res.json({ ok: true, ...sc });
+    }
+
+    if (action === "meeting-training") {
+      return handleGetMeetingTraining(req, res);
     }
 
     return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
@@ -3911,6 +3925,121 @@ async function handleAdminDeleteAttendance(req, res) {
   }
 }
 
+/**
+ * GET meeting-training — single session or week board
+ * ?action=meeting-training&meetingDate=&meetingType=
+ * ?action=meeting-training&week=YYYY-MM-DD
+ */
+async function handleGetMeetingTraining(req, res) {
+  try {
+    const weekAnchor = str(req.query.week || "").trim();
+    if (weekAnchor) {
+      const weekDates = resolveWeekMeetingDates(weekAnchor);
+      const rows = [];
+      for (const type of TRAINING_TYPES) {
+        const dateKey = weekDates[type];
+        const id = trainingDocId(dateKey, type);
+        let data = emptyTrainingRow(dateKey, type);
+        if (id) {
+          const doc = await db.collection(MEETING_TRAINING_COLLECTION).doc(id).get();
+          if (doc.exists) {
+            data = { ...data, ...normalizeTrainingRow(doc.data()), id: doc.id };
+          } else {
+            data = { ...data, id: null };
+          }
+        }
+        rows.push(data);
+      }
+      return res.json({ ok: true, mode: "week", week: weekDates, rows });
+    }
+
+    const meetingDateKey = normalizeMeetingDateKey(
+      req.query.meetingDate || req.query.date || ""
+    );
+    const meetingType = str(req.query.meetingType || "")
+      .trim()
+      .toUpperCase();
+    if (!meetingDateKey || !TRAINING_TYPES.includes(meetingType)) {
+      return res.status(400).json({
+        ok: false,
+        error: "week= or (meetingDate + meetingType TUE|THU|SAT) required",
+      });
+    }
+    const id = trainingDocId(meetingDateKey, meetingType);
+    const doc = await db.collection(MEETING_TRAINING_COLLECTION).doc(id).get();
+    if (!doc.exists) {
+      return res.json({
+        ok: true,
+        mode: "single",
+        found: false,
+        item: emptyTrainingRow(meetingDateKey, meetingType),
+      });
+    }
+    return res.json({
+      ok: true,
+      mode: "single",
+      found: true,
+      item: { ...normalizeTrainingRow(doc.data()), id: doc.id },
+    });
+  } catch (err) {
+    console.error("[meeting-training GET]", err);
+    return res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+}
+
+/**
+ * POST meeting-training — admin save rows
+ * body: { pw, rows: [{ meetingDate, meetingType, time, place, ... }] }
+ */
+async function handlePostMeetingTraining(req, res) {
+  try {
+    let body = req.body || {};
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch (_) {
+        body = {};
+      }
+    }
+
+    const auth = verifyAdminPassword(body.pw);
+    if (!auth.ok) {
+      return res.status(401).json({ ok: false, error: "invalid password" });
+    }
+
+    const gate = assertSaveRows(body.rows);
+    if (gate) {
+      return res.status(400).json({ ok: false, error: gate });
+    }
+
+    const saved = [];
+    const now = new Date().toISOString();
+    for (const raw of body.rows) {
+      const row = normalizeTrainingRow(raw);
+      const id = trainingDocId(row.meetingDateKey, row.meetingType);
+      if (!id) continue;
+      const payload = {
+        ...row,
+        updatedAt: now,
+        updatedByRole: auth.role,
+      };
+      await db.collection(MEETING_TRAINING_COLLECTION).doc(id).set(payload, { merge: true });
+      saved.push({ id, ...payload });
+    }
+
+    logAttendanceServerEvent("meeting_training_save", {
+      role: auth.role,
+      savedCount: saved.length,
+      ids: saved.map((s) => s.id),
+    });
+
+    return res.json({ ok: true, saved, savedCount: saved.length, role: auth.role });
+  } catch (err) {
+    console.error("[meeting-training POST]", err);
+    return res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+}
+
 exports.attendance = onRequest({ cors: true }, async (req, res) => {
   // CORS 헤더 설정
   res.set("Access-Control-Allow-Origin", "*");
@@ -3928,6 +4057,9 @@ exports.attendance = onRequest({ cors: true }, async (req, res) => {
     }
     if (action === "admin-delete-attendance") {
       return handleAdminDeleteAttendance(req, res);
+    }
+    if (action === "meeting-training") {
+      return handlePostMeetingTraining(req, res);
     }
     return handlePost(req, res);
   }

@@ -407,6 +407,89 @@ body {
   line-height: 1.5;
 }
 
+.train-import-card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.train-import-card textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--dmc-color-border, #e2e8f0);
+  border-radius: 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+.week-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.week-nav strong {
+  min-width: 160px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.week-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.week-card h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.week-card .field {
+  margin-bottom: 8px;
+}
+
+.week-card .field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dmc-color-text-muted, #94a3b8);
+  margin-bottom: 4px;
+}
+
+.week-card .field input,
+.week-card .field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--dmc-color-border, #e2e8f0);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.week-card .field textarea {
+  min-height: 56px;
+  resize: vertical;
+}
+
+.phase-label {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--dmc-blue-1, #eff6ff);
+  color: var(--dmc-color-primary, #2563eb);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+@media (max-width: 960px) {
+  .week-board {
+    grid-template-columns: 1fr;
+  }
+}
+
 .toast {
   position: fixed;
   bottom: 20px;

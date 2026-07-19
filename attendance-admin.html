@@ -179,18 +179,32 @@
       </section>
 
       <section class="panel" id="panel-training" hidden>
-        <div class="card">
-          <h2>정모 훈련</h2>
-          <div class="stub-note">
-            카페 공지 붙여넣기 파싱·저장은 Admin-1b (훈련 API justification·승인 후)에서 연결합니다.
+        <div class="card train-import-card">
+          <h2>① 카페 공지 붙여넣기</h2>
+          <p class="hint">카페에서 복사한 화·목·토 정모 본문을 붙여넣고 파싱합니다. URL 자동 fetch는 준비 중.</p>
+          <div class="field full">
+            <label for="cafePaste">본문</label>
+            <textarea id="cafePaste" rows="8" placeholder="화요일 정모&#10;시간/장소: 18:30 / 여울공원…&#10;훈련 · 전: …&#10;훈련 · 본: …&#10;…"></textarea>
           </div>
-          <p class="hint">스펙: 주간 보드(화·목·토) · time/place/전·본·후/서포터즈/메모</p>
+          <button type="button" class="btn btn-primary" id="cafeParsePaste">붙여넣기 파싱</button>
         </div>
+
+        <div class="week-nav">
+          <button type="button" class="btn btn-outline" id="trainPrevWeek">‹ 지난주</button>
+          <strong id="trainWeekLabel">—</strong>
+          <button type="button" class="btn btn-outline" id="trainNextWeek">다음주 ›</button>
+          <button type="button" class="btn btn-outline" id="trainLoadWeek">DB 불러오기</button>
+          <button type="button" class="btn btn-outline" id="trainCopyPrevWeek">지난주 DB 복사</button>
+          <button type="button" class="btn btn-primary" id="trainSave">② 검토 후 주간 저장</button>
+        </div>
+        <p class="hint" style="margin-top:0">파싱·불러오기 후 필드를 수정하고 저장합니다.</p>
+        <div class="week-board" id="trainWeekBoard"></div>
       </section>
     </main>
   </div>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="attendance-admin.js?v=20260719" defer></script>
+  <script src="assets/meeting-training.js?v=20260719"></script>
+  <script src="attendance-admin.js?v=20260719b" defer></script>
 </body>
 </html>

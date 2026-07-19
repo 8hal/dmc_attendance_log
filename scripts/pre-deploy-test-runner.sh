@@ -201,9 +201,16 @@ assert_contains "attendance-admin.js: admin-delete" "admin-delete-attendance" "$
 curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: delete-attendance" "delete-attendance" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: team attendance" "loadTeamAttendancePanel" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: meeting-training notice" "meeting-training" "$TMP_DIR/attendance-v2.js"
 
 curl -s "$HOST/assets/attendance-team-month.js" > "$TMP_DIR/attendance-team-month.js"
 assert_contains "attendance-team-month.js: aggregate" "aggregateTeamMonth" "$TMP_DIR/attendance-team-month.js"
+
+curl -s "$HOST/assets/meeting-training.js" > "$TMP_DIR/meeting-training.js"
+assert_contains "meeting-training.js: parseCafe" "parseCafeTrainingPaste" "$TMP_DIR/meeting-training.js"
+
+curl -s "$HOST/attendance-admin.js" > "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: meeting-training save" "meeting-training" "$TMP_DIR/attendance-admin.js"
 
 curl -s "$HOST/index.html" > "$TMP_DIR/index.html"
 assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"

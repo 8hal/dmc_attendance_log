@@ -110,5 +110,5 @@
 
 ## 승인
 
-- ⏳ **승인 대기** — 승인 전에는 Admin-1b 코드(API·허브 훈련 저장) 구현 금지
+- ✅ **승인됨** (2026-07-19 사용자) — Admin-1b 구현 진행
 - Shell-2/Shell-3(기존 history/stats/status/members)은 본 justification과 무관하게 진행 가능

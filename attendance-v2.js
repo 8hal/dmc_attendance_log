@@ -997,6 +997,79 @@
     refreshDashPrimaryLines();
     elDashMsg.textContent = "";
     elDashMsg.className = "msg";
+    loadTodayTrainingNotice().catch(() => {});
+  }
+
+  async function loadTodayTrainingNotice() {
+    const card = document.getElementById("todayTrainCard");
+    const body = document.getElementById("todayTrainBody");
+    if (!card || !body) return;
+
+    const dateKey = inputValueToDateKey(elMeetingDate && elMeetingDate.value);
+    const meetingType = String((elMeetingType && elMeetingType.value) || "").toUpperCase();
+    if (!dateKey || !["TUE", "THU", "SAT"].includes(meetingType)) {
+      card.hidden = true;
+      return;
+    }
+
+    card.hidden = false;
+    body.innerHTML =
+      '<tr><td colspan="2" style="color:var(--dmc-color-text-muted)">불러오는 중…</td></tr>';
+
+    try {
+      const url =
+        BASE_URL +
+        "?action=meeting-training&meetingDate=" +
+        encodeURIComponent(dateKey) +
+        "&meetingType=" +
+        encodeURIComponent(meetingType);
+      const json = await fetch(url).then((r) => r.json());
+      if (!json.ok) throw new Error(json.error || "훈련 조회 실패");
+      const item = json.item || {};
+      const hasContent = [
+        item.time,
+        item.place,
+        item.trainBefore,
+        item.trainMain,
+        item.trainAfter,
+        item.supporters,
+        item.note
+      ].some((v) => String(v || "").trim());
+
+      if (!hasContent) {
+        body.innerHTML =
+          '<tr><td colspan="2" style="color:var(--dmc-color-text-muted)">등록된 훈련 공지가 없습니다</td></tr>';
+        return;
+      }
+
+      const timePlace = [item.time, item.place].filter(Boolean).join(" ");
+      const phases = [
+        item.trainBefore ? '<div class="train-phase"><span>전</span> ' + escapeHtml(item.trainBefore) + "</div>" : "",
+        item.trainMain ? '<div class="train-phase"><span>본</span> ' + escapeHtml(item.trainMain) + "</div>" : "",
+        item.trainAfter ? '<div class="train-phase"><span>후</span> ' + escapeHtml(item.trainAfter) + "</div>" : ""
+      ].join("");
+
+      body.innerHTML =
+        (timePlace
+          ? "<tr><th scope=\"row\">시간/장소</th><td>" + escapeHtml(timePlace) + "</td></tr>"
+          : "") +
+        (phases
+          ? "<tr><th scope=\"row\">훈련</th><td>" + phases + "</td></tr>"
+          : "") +
+        (item.supporters
+          ? "<tr><th scope=\"row\">급수·서포터즈</th><td>" +
+            escapeHtml(item.supporters) +
+            "</td></tr>"
+          : "") +
+        (item.note
+          ? "<tr><th scope=\"row\">메모</th><td>" + escapeHtml(item.note) + "</td></tr>"
+          : "");
+    } catch (e) {
+      body.innerHTML =
+        '<tr><td colspan="2" style="color:var(--dmc-color-danger)">' +
+        escapeHtml(e.message || "로드 실패") +
+        "</td></tr>";
+    }
   }
 
   async function fetchMembers() {
@@ -1941,8 +2014,14 @@
   }
 
 
-  elMeetingDate.addEventListener("change", refreshDashPrimaryLines);
-  elMeetingType.addEventListener("change", refreshDashPrimaryLines);
+  elMeetingDate.addEventListener("change", () => {
+    refreshDashPrimaryLines();
+    loadTodayTrainingNotice().catch(() => {});
+  });
+  elMeetingType.addEventListener("change", () => {
+    refreshDashPrimaryLines();
+    loadTodayTrainingNotice().catch(() => {});
+  });
 
   elSearchInput.addEventListener("input", () => {
     elSearchMsg.textContent = "";

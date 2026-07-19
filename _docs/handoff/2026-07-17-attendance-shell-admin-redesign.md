@@ -73,9 +73,10 @@ cd /workspace && python3 -m http.server 8765
 | 디자인 컨펌 (사용자) | ✅ 2026-07-17 «목업 확인 · 개발 진행» (내일 재확인 예정) |
 | **Shell-1 코드** | ✅ 브랜치에 있음 (`attendance-v2` 셸·라우터·더보기→이용안내→키오스크) |
 | **Admin-1a 코드** | ✅ 브랜치 (`attendance-admin.html` · 회원 이식 · `admin.html`→`#members`) |
-| Delete-1 / 훈련 API | ✅ Delete-1 완료. Admin-1b justification 작성·**승인 대기** |
-| Shell-2 / Shell-3 MVP | ✅ 내 출석 stats+목록 · 팀 출석(members+status 조인, 신규 API 없음) |
-| pre-deploy-test 전체 | ⚠ Functions 에뮬 hang 가능 — Hosting assert에 team helper 추가 |
+| Delete-1 / 훈련 API | ✅ Delete-1 완료. **Admin-1b 승인·구현** (`meeting-training` get/save + 붙여넣기 파서) |
+| Shell-2 / Shell-3 MVP | ✅ 내 출석 stats+목록 · 팀 출석(members+status 조인) |
+| 오늘 탭 훈련 공지 | ✅ `meeting-training` 단일 조회 표시 |
+| pre-deploy-test 전체 | ⚠ Functions 에뮬 hang 가능 — Hosting assert에 training 헬퍼 추가 |
 | `firebase deploy` | ❌ 금지 |
 
 ### Delete-1 (2026-07-19)
@@ -93,10 +94,16 @@ cd /workspace && python3 -m http.server 8765
 - Shell-3 MVP: `assets/attendance-team-month.js` + `status` 월간 조인 (정모 TUE/THU/SAT)
 - `team-month-attendance` 전용 API는 **미추가** (필요 시 별도 justification)
 
+### Admin-1b (2026-07-19)
+
+- justification 승인 후 구현
+- `GET/POST ?action=meeting-training` · 컬렉션 `meeting_training`
+- 카페 붙여넣기 파서 (`assets/meeting-training.js` / `functions/lib/meeting-training.js`)
+- 허브 `#training` 주간 보드 · 셸 `#today` 공지 표
+
 ### Admin-1b 게이트
 
-- 문서: `_docs/justification/2026-07-19-meeting-training-justification.md`
-- **승인 전 훈련 API 구현 금지**
+- 문서: `_docs/justification/2026-07-19-meeting-training-justification.md` ✅ 승인됨
 
 
 ### Shell-1 수동 확인 (내일)
@@ -112,10 +119,10 @@ cd /workspace && python3 -m http.server 8765
 
 ## 5. 다음 세션 권장 순서
 
-1. **Admin-1b 승인** (`meeting-training` justification) → 훈련 API·허브 UI·오늘 탭 연동  
+1. 로컬/에뮬에서 훈련 붙여넣기→저장→오늘 탭 표시 수동 확인  
 2. (선택) `team-month-attendance` justification — Shell-3 성능 이슈 시  
 3. Shell-4 `index.html` 컷오버 (운영진 공지 후)  
-4. pre-deploy Functions 에뮬 hang 원인 점검  
+4. pre-deploy Functions 에뮬 hang 원인 점검 · **배포는 사용자**  
 
 ---
 

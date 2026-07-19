@@ -86,6 +86,7 @@
     if (tabId === "attendance") {
       /* keep current day roster; user can reload */
     }
+    if (tabId === "training") loadTrainingWeek().catch(function () {});
   }
 
   function inputToSlashDate(v) {
@@ -648,6 +649,281 @@
       }, 50);
     }
   });
+
+  /* —— Training (Admin-1b) —— */
+
+  const trainHelper =
+    typeof window !== "undefined" && window.DmcMeetingTraining
+      ? window.DmcMeetingTraining
+      : null;
+
+  let trainWeekAnchor = ""; // YYYY-MM-DD (Monday-week containing)
+
+  function kstTodayDash() {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date());
+  }
+
+  function shiftDashDate(dash, days) {
+    const m = String(dash || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return dash;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + days);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + mo + "-" + day;
+  }
+
+  function shortTrainDateLabel(dateKey) {
+    const m = String(dateKey || "").match(/^\d{4}\/(\d{2})\/(\d{2})$/);
+    if (!m) return dateKey || "";
+    return Number(m[1]) + "/" + Number(m[2]);
+  }
+
+  function typeKo(t) {
+    return { TUE: "화", THU: "목", SAT: "토" }[t] || t;
+  }
+
+  function defaultTimeForType(t) {
+    if (t === "SAT") return "06:00";
+    return "18:30";
+  }
+
+  function renderTrainingBoard(rows) {
+    const board = document.getElementById("trainWeekBoard");
+    if (!board) return;
+    const list = Array.isArray(rows) ? rows : [];
+    board.innerHTML = list
+      .map(function (row) {
+        const t = row.meetingType || "";
+        const dateKey = row.meetingDateKey || "";
+        return (
+          '<div class="card week-card" data-train-type="' +
+          esc(t) +
+          '">' +
+          "<h3>" +
+          typeKo(t) +
+          " " +
+          shortTrainDateLabel(dateKey) +
+          "</h3>" +
+          '<input type="hidden" data-f="meetingDateKey" value="' +
+          esc(dateKey) +
+          '" />' +
+          '<input type="hidden" data-f="meetingType" value="' +
+          esc(t) +
+          '" />' +
+          '<div class="field"><label>시간</label><input data-f="time" value="' +
+          esc(row.time || defaultTimeForType(t)) +
+          '" /></div>' +
+          '<div class="field"><label>장소</label><input data-f="place" value="' +
+          esc(row.place || "여울공원 운동장(트랙)") +
+          '" /></div>' +
+          '<div class="field"><label><span class="phase-label">전</span></label><textarea data-f="trainBefore">' +
+          esc(row.trainBefore) +
+          "</textarea></div>" +
+          '<div class="field"><label><span class="phase-label">본</span></label><textarea data-f="trainMain">' +
+          esc(row.trainMain) +
+          "</textarea></div>" +
+          '<div class="field"><label><span class="phase-label">후</span></label><textarea data-f="trainAfter">' +
+          esc(row.trainAfter) +
+          "</textarea></div>" +
+          '<div class="field"><label>서포터즈</label><input data-f="supporters" value="' +
+          esc(row.supporters) +
+          '" /></div>' +
+          '<div class="field"><label>메모</label><textarea data-f="note">' +
+          esc(row.note) +
+          "</textarea></div>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function readTrainingBoardRows() {
+    const board = document.getElementById("trainWeekBoard");
+    if (!board) return [];
+    return Array.prototype.map.call(board.querySelectorAll(".week-card"), function (card) {
+      const row = {};
+      card.querySelectorAll("[data-f]").forEach(function (el) {
+        row[el.getAttribute("data-f")] = el.value;
+      });
+      return row;
+    });
+  }
+
+  function updateTrainWeekLabel(weekDates) {
+    const el = document.getElementById("trainWeekLabel");
+    if (!el) return;
+    const tue = weekDates && weekDates.TUE ? shortTrainDateLabel(weekDates.TUE) : "—";
+    el.textContent = tue + " 주 (화·목·토)";
+  }
+
+  async function loadTrainingWeek(opts) {
+    opts = opts || {};
+    if (!trainWeekAnchor) trainWeekAnchor = kstTodayDash();
+    if (!trainHelper) {
+      showToast("meeting-training 헬퍼 로드 실패", true);
+      return;
+    }
+    const weekDates = trainHelper.resolveWeekMeetingDates(trainWeekAnchor);
+    updateTrainWeekLabel(weekDates);
+
+    if (opts.fromParse) {
+      const emptyRows = ["TUE", "THU", "SAT"].map(function (t) {
+        const p = opts.fromParse[t] || {};
+        return {
+          meetingDateKey: weekDates[t],
+          meetingType: t,
+          time: p.time || "",
+          place: p.place || "",
+          trainBefore: p.trainBefore || "",
+          trainMain: p.trainMain || "",
+          trainAfter: p.trainAfter || "",
+          supporters: p.supporters || "",
+          note: p.note || ""
+        };
+      });
+      renderTrainingBoard(emptyRows);
+      return;
+    }
+
+    try {
+      const url =
+        ATTENDANCE_API +
+        "?action=meeting-training&week=" +
+        encodeURIComponent(trainWeekAnchor);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "불러오기 실패");
+      updateTrainWeekLabel(data.week || weekDates);
+      renderTrainingBoard(data.rows || []);
+    } catch (e) {
+      const fallback = ["TUE", "THU", "SAT"].map(function (t) {
+        return trainHelper.emptyTrainingRow(weekDates[t], t);
+      });
+      renderTrainingBoard(fallback);
+      if (!opts.silentEmpty) showToast(e.message || "훈련 로드 실패", true);
+    }
+  }
+
+  async function saveTrainingWeek() {
+    let pw = adminPwCache;
+    if (!pw) {
+      pw = window.prompt("운영진 비밀번호를 입력하세요");
+      if (!pw) return;
+      adminPwCache = pw;
+    }
+    const rows = readTrainingBoardRows();
+    if (!rows.length) {
+      showToast("저장할 행이 없습니다", true);
+      return;
+    }
+    try {
+      const res = await fetch(ATTENDANCE_API + "?action=meeting-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pw: pw, rows: rows })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        if (res.status === 401) adminPwCache = "";
+        throw new Error(data.error || "저장 실패");
+      }
+      showToast("주간 훈련 " + (data.savedCount || rows.length) + "건 저장");
+      await loadTrainingWeek({ silentEmpty: true });
+    } catch (e) {
+      showToast(e.message || "저장 실패", true);
+    }
+  }
+
+  async function copyPrevWeekFromDb() {
+    if (!trainHelper) return;
+    const prevAnchor = shiftDashDate(trainWeekAnchor || kstTodayDash(), -7);
+    try {
+      const url =
+        ATTENDANCE_API +
+        "?action=meeting-training&week=" +
+        encodeURIComponent(prevAnchor);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "지난주 로드 실패");
+      const weekDates = trainHelper.resolveWeekMeetingDates(trainWeekAnchor || kstTodayDash());
+      const byType = {};
+      (data.rows || []).forEach(function (r) {
+        byType[r.meetingType] = r;
+      });
+      const merged = ["TUE", "THU", "SAT"].map(function (t) {
+        const prev = byType[t] || {};
+        return {
+          meetingDateKey: weekDates[t],
+          meetingType: t,
+          time: prev.time || "",
+          place: prev.place || "",
+          trainBefore: prev.trainBefore || "",
+          trainMain: prev.trainMain || "",
+          trainAfter: prev.trainAfter || "",
+          supporters: prev.supporters || "",
+          note: prev.note || ""
+        };
+      });
+      renderTrainingBoard(merged);
+      showToast("지난주 DB를 현재 주에 복사했습니다 (미저장)");
+    } catch (e) {
+      showToast(e.message || "지난주 복사 실패", true);
+    }
+  }
+
+  const elCafeParse = document.getElementById("cafeParsePaste");
+  if (elCafeParse) {
+    elCafeParse.addEventListener("click", function () {
+      if (!trainHelper) {
+        showToast("파서 헬퍼 없음", true);
+        return;
+      }
+      const paste = (document.getElementById("cafePaste") || {}).value || "";
+      const parsed = trainHelper.parseCafeTrainingPaste(paste);
+      loadTrainingWeek({ fromParse: parsed }).then(function () {
+        showToast("붙여넣기 파싱 완료 — 검토 후 저장");
+      });
+    });
+  }
+
+  const elTrainPrev = document.getElementById("trainPrevWeek");
+  const elTrainNext = document.getElementById("trainNextWeek");
+  const elTrainLoad = document.getElementById("trainLoadWeek");
+  const elTrainCopy = document.getElementById("trainCopyPrevWeek");
+  const elTrainSave = document.getElementById("trainSave");
+  if (elTrainPrev) {
+    elTrainPrev.addEventListener("click", function () {
+      trainWeekAnchor = shiftDashDate(trainWeekAnchor || kstTodayDash(), -7);
+      loadTrainingWeek().catch(function () {});
+    });
+  }
+  if (elTrainNext) {
+    elTrainNext.addEventListener("click", function () {
+      trainWeekAnchor = shiftDashDate(trainWeekAnchor || kstTodayDash(), 7);
+      loadTrainingWeek().catch(function () {});
+    });
+  }
+  if (elTrainLoad) {
+    elTrainLoad.addEventListener("click", function () {
+      loadTrainingWeek().catch(function () {});
+    });
+  }
+  if (elTrainCopy) {
+    elTrainCopy.addEventListener("click", function () {
+      copyPrevWeekFromDb().catch(function () {});
+    });
+  }
+  if (elTrainSave) {
+    elTrainSave.addEventListener("click", function () {
+      saveTrainingWeek().catch(function () {});
+    });
+  }
 
   checkAuth();
 })();
