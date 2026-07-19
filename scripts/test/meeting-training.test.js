@@ -212,6 +212,9 @@ describe("parseCafeTrainingPaste", () => {
     assert.equal(parsed.THU.time, "19:30");
     assert.match(parsed.THU.place, /여울공원/);
     assert.match(parsed.THU.trainMain, /300\/100/);
+    assert.match(parsed.THU.trainMain, /보강훈련/);
+    assert.doesNotMatch(parsed.THU.trainMain, /보강훈련후/);
+    assert.match(parsed.THU.trainAfter, /Cooldown|조깅 10분/);
     assert.equal(parsed.THU.supporters, "바우돌리노/보스톤");
     assert.match(parsed.THU.note, /7월/);
 
@@ -220,5 +223,58 @@ describe("parseCafeTrainingPaste", () => {
     assert.match(parsed.SAT.trainMain, /25km/);
     assert.equal(parsed.SAT.supporters, "삼둥/쌩메");
     assert.match(parsed.SAT.note, /더우니까/);
+  });
+
+  it("parses cafe article API JSON via contentHtml table", () => {
+    const html = `
+<div class="se-viewer">
+  <table>
+    <tr><td>시간/장소</td><td>19:30 / 동탄 예당공원</td></tr>
+    <tr><td>훈<br>련</td><td>전</td><td>조깅 10분, 체조 및 스트레칭</td></tr>
+    <tr><td></td><td>본</td><td>▶업힐 훈련 20회전<br>예당공원 內 회전구간</td></tr>
+    <tr><td></td><td>후</td><td>Cooldown 마무리 체조 및 스트레칭</td></tr>
+    <tr><td>급 수 및<br>서포터즈</td><td>옥/루이</td></tr>
+    <tr><td colspan="3">정모 모이는 장소 정모소요시간 1시간</td></tr>
+    <tr><td colspan="3">목 요 일 정 모</td></tr>
+    <tr><td>시간/장소</td><td>19:30 여울공원 운동장(트랙)</td></tr>
+    <tr><td>훈<br>련</td><td>전</td><td>체조 및 스트레칭, 조깅 운동장7바퀴</td></tr>
+    <tr><td></td><td>본</td><td>300/100 인터벌 10개 &amp; 보강훈련</td></tr>
+    <tr><td></td><td>후</td><td>Cooldown 조깅 10분, 마무리 체조 및 스트레칭</td></tr>
+    <tr><td>급 수 및<br>서포터즈</td><td>바우돌리노/보스톤</td></tr>
+    <tr><td colspan="3">7월에는 갯수 좀 줄일테니 스피드좀 올려 주세요.</td></tr>
+    <tr><td colspan="3">토요일 정모</td></tr>
+    <tr><td>시간/장소</td><td>06:00/동탄여울공원</td></tr>
+    <tr><td>훈<br>련</td><td>전</td><td>스트레칭, 트랙 3바퀵</td></tr>
+    <tr><td></td><td>본</td><td>여울공원-동탄ic 4회전 약 25km</td></tr>
+    <tr><td></td><td>후</td><td>스트레칭</td></tr>
+    <tr><td>급 수 및<br>서포터즈</td><td>삼둥/쌩메</td></tr>
+    <tr><td colspan="3">더우니까 스피드 붙여서 빠르게 끝내겠습니다.</td></tr>
+  </table>
+</div>`;
+    const apiJson = JSON.stringify({
+      result: {
+        cafeId: 30619899,
+        articleId: 4853,
+        article: {
+          id: 4853,
+          subject: "7월3주차 정모공지",
+          contentHtml: html,
+        },
+      },
+    });
+    const parsed = parseCafeTrainingPaste(apiJson);
+    assert.equal(parsed.TUE.time, "19:30");
+    assert.match(parsed.TUE.place, /예당공원/);
+    assert.match(parsed.TUE.trainMain, /업힐/);
+    assert.match(parsed.TUE.trainAfter, /Cooldown/);
+    assert.equal(parsed.TUE.supporters, "옥/루이");
+    assert.equal(parsed.THU.time, "19:30");
+    assert.match(parsed.THU.trainMain, /보강훈련/);
+    assert.doesNotMatch(parsed.THU.trainMain, /보강훈련후/);
+    assert.match(parsed.THU.trainAfter, /Cooldown/);
+    assert.equal(parsed.THU.supporters, "바우돌리노/보스톤");
+    assert.equal(parsed.SAT.time, "06:00");
+    assert.match(parsed.SAT.trainMain, /25km/);
+    assert.equal(parsed.SAT.supporters, "삼둥/쌩메");
   });
 });

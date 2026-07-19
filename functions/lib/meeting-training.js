@@ -97,10 +97,37 @@ function defaultEmptySlots() {
   };
 }
 
+/**
+ * Accept plain paste, contentHtml, or cafe article API JSON
+ * ({ result: { article: { contentHtml } } }).
+ */
+function unwrapCafePasteInput(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s.startsWith("{")) return s;
+  try {
+    const obj = JSON.parse(s);
+    const html =
+      (obj &&
+        obj.result &&
+        obj.result.article &&
+        obj.result.article.contentHtml) ||
+      (obj && obj.article && obj.article.contentHtml) ||
+      (obj && obj.contentHtml) ||
+      "";
+    if (String(html).trim()) return String(html);
+  } catch (_) {
+    /* not JSON — treat as plain text */
+  }
+  return s;
+}
+
 function stripHtml(text) {
   return String(text || "")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n")
+    .replace(/<\/td>/gi, "\n")
+    .replace(/<\/th>/gi, "\n")
+    .replace(/<\/tr>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -113,9 +140,10 @@ function stripHtml(text) {
 /** Fix Naver cafe line-broken labels / spaced titles before line split */
 function normalizeCafePaste(text) {
   let t = String(text || "");
-  t = t.replace(/훈\s*련\s*전/g, "훈련전");
-  t = t.replace(/훈\s*련\s*본/g, "훈련본");
-  t = t.replace(/훈\s*련\s*후/g, "훈련후");
+  // Anchor at line start so "보강훈련\n후" is not rewritten to "보강훈련후"
+  t = t.replace(/(?:^|\n)([ \t]*)훈\s*련\s*전(?=\s*(?:\n|$))/g, "\n$1훈련전");
+  t = t.replace(/(?:^|\n)([ \t]*)훈\s*련\s*본(?=\s*(?:\n|$))/g, "\n$1훈련본");
+  t = t.replace(/(?:^|\n)([ \t]*)훈\s*련\s*후(?=\s*(?:\n|$))/g, "\n$1훈련후");
   t = t.replace(/급\s*수\s*및\s*\n?\s*서\s*포\s*터\s*즈/g, "급수및서포터즈");
   t = t.replace(/급\s*수\s*및/g, "급수및");
   t = t.replace(/시\s*간\s*\/\s*장\s*소|시\s*간\s*장\s*소/g, "시간/장소");
@@ -196,7 +224,7 @@ function appendField(slot, field, value) {
  * First untitled block → TUE (common weekly cafe layout).
  */
 function parseCafeTrainingPaste(raw) {
-  const text = normalizeCafePaste(stripHtml(raw));
+  const text = normalizeCafePaste(stripHtml(unwrapCafePasteInput(raw)));
   const result = defaultEmptySlots();
   const lines = text
     .split(/\n+/)
@@ -311,6 +339,7 @@ module.exports = {
   parseCafeTrainingPaste,
   applyParsedToWeek,
   assertSaveRows,
+  unwrapCafePasteInput,
   stripHtml,
   normalizeCafePaste,
 };
