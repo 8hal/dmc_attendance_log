@@ -182,6 +182,16 @@
         <div class="card train-import-card">
           <h2>① 카페 공지 붙여넣기</h2>
           <p class="hint">네이버 카페 정모 공지 <strong>본문 텍스트</strong>, 또는 글 API JSON(<code>contentHtml</code> 포함)을 붙여넣으면 됩니다. 이미지·URL만으로는 파싱되지 않습니다.</p>
+          <details class="cafe-console-help">
+            <summary>카페 글 화면 콘솔에서 필요한 부분만 복사</summary>
+            <p class="hint">Chrome DevTools 콘솔에 붙여넣고 Enter → 클립보드에 최소 JSON이 복사됩니다. 그다음 아래 칸에 붙여넣기하세요.</p>
+            <p class="hint"><strong>A. 글 본문 화면</strong> (가장 간단)</p>
+            <pre class="cafe-console-snippet" id="cafeConsoleDomSnippet">copy((()=>{const el=document.querySelector(".se-main-container")||document.querySelector(".se-viewer");if(!el){alert("본문을 찾지 못했습니다. 정모 공지 글 화면에서 실행하세요.");return;}const subject=(document.querySelector(".title_text,.ArticleTitle,.article_tit,.tit_area h3")||{}).textContent?.trim()||document.title;return JSON.stringify({result:{article:{subject,contentHtml:el.outerHTML}}});})())</pre>
+            <button type="button" class="btn btn-outline" id="cafeCopyDomSnippet">A 명령어 복사</button>
+            <p class="hint" style="margin-top:0.75rem"><strong>B. Network 응답을 temp1로 저장한 경우</strong> (응답 우클릭 → Store as global variable)</p>
+            <pre class="cafe-console-snippet" id="cafeConsoleTempSnippet">copy(JSON.stringify({result:{article:{subject:temp1.result.article.subject,contentHtml:temp1.result.article.contentHtml}}}))</pre>
+            <button type="button" class="btn btn-outline" id="cafeCopyTempSnippet">B 명령어 복사</button>
+          </details>
           <div class="field full">
             <label for="cafePaste">본문</label>
             <textarea id="cafePaste" rows="10" placeholder="카페 본문 텍스트, 또는 article API JSON 전체&#10;&#10;예: { &quot;result&quot;: { &quot;article&quot;: { &quot;contentHtml&quot;: &quot;…&quot; } } }"></textarea>

@@ -884,11 +884,56 @@
         showToast("파서 헬퍼 없음", true);
         return;
       }
-      const paste = (document.getElementById("cafePaste") || {}).value || "";
+      const pasteEl = document.getElementById("cafePaste");
+      let paste = (pasteEl || {}).value || "";
+      if (typeof trainHelper.minifyCafeArticleForPaste === "function") {
+        const mini = trainHelper.minifyCafeArticleForPaste(paste);
+        if (mini && pasteEl) {
+          pasteEl.value = mini;
+          paste = mini;
+        }
+      }
       const parsed = trainHelper.parseCafeTrainingPaste(paste);
       loadTrainingWeek({ fromParse: parsed }).then(function () {
         showToast("붙여넣기 파싱 완료 — 검토 후 저장");
       });
+    });
+  }
+
+  async function copySnippetText(elId) {
+    const el = document.getElementById(elId);
+    const text = el ? String(el.textContent || "").trim() : "";
+    if (!text) {
+      showToast("복사할 명령어 없음", true);
+      return;
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      showToast("콘솔 명령어를 클립보드에 복사했습니다");
+    } catch (e) {
+      showToast("복사 실패 — 코드를 직접 선택하세요", true);
+    }
+  }
+
+  const elCopyDom = document.getElementById("cafeCopyDomSnippet");
+  if (elCopyDom) {
+    elCopyDom.addEventListener("click", function () {
+      copySnippetText("cafeConsoleDomSnippet");
+    });
+  }
+  const elCopyTemp = document.getElementById("cafeCopyTempSnippet");
+  if (elCopyTemp) {
+    elCopyTemp.addEventListener("click", function () {
+      copySnippetText("cafeConsoleTempSnippet");
     });
   }
 

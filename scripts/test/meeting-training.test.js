@@ -8,6 +8,7 @@ const {
   normalizeTrainingRow,
   resolveWeekMeetingDates,
   emptyTrainingRow,
+  minifyCafeArticleForPaste,
 } = require(path.join(__dirname, "../../functions/lib/meeting-training.js"));
 
 const SAMPLE_PASTE = `
@@ -276,5 +277,36 @@ describe("parseCafeTrainingPaste", () => {
     assert.equal(parsed.SAT.time, "06:00");
     assert.match(parsed.SAT.trainMain, /25km/);
     assert.equal(parsed.SAT.supporters, "삼둥/쌩메");
+  });
+
+  it("minifies cafe API json to subject + contentHtml only", () => {
+    const full = {
+      result: {
+        cafeId: 30619899,
+        articleId: 4853,
+        article: {
+          id: 4853,
+          subject: "7월3주차 정모공지",
+          contentHtml: "<div>표</div>",
+          writer: { nick: "디모" },
+        },
+        user: { nick: "게살볶음밥" },
+      },
+    };
+    const mini = JSON.parse(minifyCafeArticleForPaste(full));
+    assert.deepEqual(mini, {
+      result: {
+        article: {
+          subject: "7월3주차 정모공지",
+          contentHtml: "<div>표</div>",
+        },
+      },
+    });
+    assert.equal(
+      minifyCafeArticleForPaste(JSON.stringify(full)),
+      minifyCafeArticleForPaste(full)
+    );
+    assert.equal(minifyCafeArticleForPaste(""), "");
+    assert.equal(minifyCafeArticleForPaste({ result: {} }), "");
   });
 });

@@ -131,6 +131,37 @@ function unwrapCafePasteInput(raw) {
   return s;
 }
 
+/**
+ * Shrink a cafe article API payload (object or JSON string) to the fields
+ * the training paste parser needs. Empty string if contentHtml is missing.
+ */
+function minifyCafeArticleForPaste(raw) {
+  let obj = raw;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return "";
+    try {
+      obj = JSON.parse(s);
+    } catch (_) {
+      return "";
+    }
+  }
+  if (!obj || typeof obj !== "object") return "";
+  const article =
+    (obj.result && obj.result.article) || obj.article || obj;
+  const contentHtml = article && article.contentHtml;
+  if (!String(contentHtml || "").trim()) return "";
+  const subject = String((article && article.subject) || "").trim();
+  return JSON.stringify({
+    result: {
+      article: {
+        subject,
+        contentHtml: String(contentHtml),
+      },
+    },
+  });
+}
+
 function stripHtml(text) {
   return String(text || "")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -350,6 +381,7 @@ return {
   applyParsedToWeek,
   assertSaveRows,
   unwrapCafePasteInput,
+  minifyCafeArticleForPaste,
   stripHtml,
   normalizeCafePaste,
 };
