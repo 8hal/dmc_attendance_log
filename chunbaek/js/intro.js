@@ -3,6 +3,9 @@
  * 시즌 종료 후 이 파일 삭제 + index.html에서 script 1줄 제거
  */
 
+const INTRO_TARGET = '2026-07-20';
+const INTRO_FLAG   = `chunbaek-intro-seen-${INTRO_TARGET}`;
+
 /* ── 유틸 ── */
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -20,9 +23,9 @@ function typeText(container, text, charDelay) {
 }
 
 /* ── DOM 생성 ── */
-function buildOverlay() {
+function buildOverlay(theme = 'a') {
   const el = document.createElement('div');
-  el.className = 'intro-overlay';
+  el.className = `intro-overlay theme-${theme}`;
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-label', '춘백 S3 시즌 시작 인트로');
@@ -66,7 +69,6 @@ async function runTypingPhase(overlay) {
 
   await delay(1200);
 
-  // 전체 페이드 아웃
   typingWrap.classList.add('fading');
   await delay(600);
   typingWrap.style.display = 'none';
@@ -87,7 +89,6 @@ function activateHandler(overlay, trapTab) {
     overlay.classList.add('dismissing');
     document.body.style.overflow = '';
     document.removeEventListener('keydown', trapTab);
-
     overlay.addEventListener('transitionend', () => {
       overlay.remove();
       previousFocus?.focus();
@@ -95,7 +96,6 @@ function activateHandler(overlay, trapTab) {
   }
 
   overlay.addEventListener('click', dismiss, { once: true });
-
   document.addEventListener('keydown', function onKey(e) {
     if (e.key === 'Escape' || e.key === 'Enter') {
       document.removeEventListener('keydown', onKey);
@@ -113,23 +113,25 @@ async function runTimeline(overlay, trapTab) {
 }
 
 /* ── 메인 진입점 ── */
-function startIntro() {
-  const TARGET = '2026-07-20';
-  const FLAG   = `chunbaek-intro-seen-${TARGET}`;
-
+function startIntro(theme = 'a', skipFlagCheck = false) {
   const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000)
     .toISOString().slice(0, 10);
 
-  if (kstDate !== TARGET) return;
+  if (kstDate !== INTRO_TARGET) return;
 
-  try {
-    if (localStorage.getItem(FLAG)) return;
-    localStorage.setItem(FLAG, '1');
-  } catch {
-    return;
+  if (!skipFlagCheck) {
+    try {
+      if (localStorage.getItem(INTRO_FLAG)) return;
+      localStorage.setItem(INTRO_FLAG, '1');
+    } catch {
+      return;
+    }
   }
 
-  const overlay = buildOverlay();
+  // 이미 재생 중인 overlay가 있으면 제거
+  document.querySelector('.intro-overlay')?.remove();
+
+  const overlay = buildOverlay(theme);
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
 
@@ -151,31 +153,31 @@ function startIntro() {
   runTimeline(overlay, trapTab);
 }
 
-/* ── 실행 ── */
-startIntro();
+/* ── 실행 (첫 방문) ── */
+startIntro('a');
 
-/* ── 다시 보기 버튼 ── */
-function initReplayButton() {
-  const TARGET = '2026-07-20';
-  const FLAG   = `chunbaek-intro-seen-${TARGET}`;
-
+/* ── 테마 선택 바 초기화 ── */
+function initThemeBar() {
   const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000)
     .toISOString().slice(0, 10);
 
-  if (kstDate !== TARGET) return;
+  if (kstDate !== INTRO_TARGET) return;
 
-  const btn = document.getElementById('btn-replay-intro');
-  if (!btn) return;
+  const bar = document.getElementById('intro-theme-bar');
+  if (!bar) return;
 
-  btn.hidden = false;
-  btn.addEventListener('click', () => {
-    try { localStorage.removeItem(FLAG); } catch { /* ignore */ }
-    startIntro();
+  bar.hidden = false;
+
+  bar.querySelectorAll('.intro-theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      try { localStorage.removeItem(INTRO_FLAG); } catch { /* ignore */ }
+      startIntro(btn.dataset.theme, true);
+    });
   });
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initReplayButton);
+  document.addEventListener('DOMContentLoaded', initThemeBar);
 } else {
-  initReplayButton();
+  initThemeBar();
 }
