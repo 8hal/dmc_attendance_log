@@ -594,14 +594,6 @@ body.kiosk-mode .tab-bar {
   color: var(--dmc-color-text-muted);
 }
 
-.today-roster-card .member-list:empty::after {
-  content: "불러오는 중…";
-  display: block;
-  padding: 16px;
-  font-size: 13px;
-  color: var(--dmc-color-text-muted);
-}
-
 .train-notice {
   width: 100%;
   border-collapse: collapse;
