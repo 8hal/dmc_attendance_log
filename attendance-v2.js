@@ -704,12 +704,6 @@
       .join("");
   }
 
-  function kstTodayDateKeySlashForTeam() {
-    return new Date()
-      .toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" })
-      .replace(/-/g, "/");
-  }
-
   function attendDotLabel(dateKey, state) {
     const short = formatShortAttendDate(dateKey);
     if (state === "attended") return short + " 출석";
@@ -724,7 +718,7 @@
     const dots = teamMonthHelper.buildMeetingDots({
       meetingDateKeys: meetingDateKeys,
       attendedDateKeys: attendedDateKeys,
-      todayKey: kstTodayDateKeySlashForTeam(),
+      todayKey: kstTodayDateKeySlash(),
     });
     return (
       '<span class="attend-dots" role="img" aria-label="정모 출석 도트">' +
@@ -733,11 +727,11 @@
           const label = attendDotLabel(d.dateKey, d.state);
           return (
             '<span class="attend-dot" data-state="' +
-            d.state +
+            escapeHtml(d.state) +
             '" title="' +
-            label +
+            escapeHtml(label) +
             '" aria-label="' +
-            label +
+            escapeHtml(label) +
             '"></span>'
           );
         })
@@ -815,16 +809,16 @@
 
       listEl.innerHTML = agg.rows
         .map(function (row) {
-          const nick = String(row.nickname || "").replace(/</g, "&lt;");
+          const nick = escapeHtml(row.nickname);
           const dots = renderAttendDotsHtml(dateKeys, row.dates || []);
-          const mid = row.memberId ? String(row.memberId).replace(/"/g, "") : "";
+          const mid = row.memberId ? escapeHtml(row.memberId) : "";
           return (
             '<li class="member-row" role="button" tabindex="0" data-member-id="' +
             mid +
             '" data-nickname="' +
-            nick.replace(/"/g, "&quot;") +
+            escapeHtml(row.nickname) +
             '" data-team="' +
-            String(row.team || "").replace(/"/g, "&quot;") +
+            escapeHtml(row.team || "") +
             '" data-count="' +
             String(row.count) +
             '" data-dates="' +
