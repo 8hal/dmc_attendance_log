@@ -258,6 +258,11 @@ body.kiosk-mode .tab-bar {
   background: var(--dmc-color-surface);
 }
 
+.more-reset-profile {
+  margin-top: 12px;
+  width: 100%;
+}
+
 .more-profile-card .profile-name {
   margin: 0;
   font-size: 16px;

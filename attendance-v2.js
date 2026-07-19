@@ -2260,6 +2260,8 @@
   document.getElementById("resetProfileBtn").addEventListener("click", async () => {
     if (!confirm("이 기기에 저장된 출석 프로필을 지울까요?")) return;
     clearProfile();
+    refreshMoreProfileCard();
+    showShellTab("today");
     showView("search");
     elSearchInput.value = "";
     await ensureSearchMembersLoaded();

@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719e" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719f" />
   <style>
     body {
       margin: 0;
@@ -1318,7 +1318,6 @@
           </div>
         </details>
 <div id="dashMsg" class="msg"></div>
-        <button type="button" class="danger-ghost" id="resetProfileBtn">다른 사람으로 출석 (프로필 초기화)</button>
       </div>
 
       <div class="card attend-log-card today-roster-card" id="todayRosterCard" tabindex="-1">
@@ -1385,13 +1384,16 @@
         <div class="more-profile-card" id="moreProfileCard">
           <p class="profile-name" id="moreProfileName">프로필 없음</p>
           <p class="profile-meta" id="moreProfileMeta">오늘 탭에서 본인을 선택해 주세요</p>
+          <button type="button" class="danger-ghost more-reset-profile" id="resetProfileBtn">
+            다른 사람으로 출석 (프로필 초기화)
+          </button>
         </div>
         <div class="more-list">
           <button type="button" class="more-item" id="btn-edit-profile">
             <span class="more-icon" aria-hidden="true">✎</span>
             <span class="more-text">
               <strong>프로필 수정</strong>
-              <span>닉네임·팀 다시 선택</span>
+              <span>팀 변경 · 본인 다시 선택</span>
             </span>
             <span class="more-chevron" aria-hidden="true">›</span>
           </button>
@@ -1609,6 +1611,6 @@
   <script src="assets/attendance-shell-router.js?v=20260719"></script>
   <script src="assets/attendance-team-month.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719d"></script>
-  <script src="attendance-v2.js?v=20260719d" defer></script>
+  <script src="attendance-v2.js?v=20260719f" defer></script>
 </body>
 </html>
