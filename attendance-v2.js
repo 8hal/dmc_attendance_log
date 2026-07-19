@@ -298,6 +298,7 @@
     }
     if (tabId === "more") refreshMoreProfileCard();
     if (tabId === "my-attendance") loadMyAttendancePanel().catch(() => {});
+    if (tabId === "team-attendance") loadTeamAttendancePanel().catch(() => {});
   }
 
   function refreshMoreProfileCard() {
@@ -315,6 +316,13 @@
   }
 
   let myAttendMonthKey = "";
+  let teamAttendMonthKey = "";
+  let teamAttendFilter = "";
+
+  const teamMonthHelper =
+    typeof window !== "undefined" && window.DmcAttendanceTeamMonth
+      ? window.DmcAttendanceTeamMonth
+      : null;
 
   function currentMonthKeyKst() {
     return new Date()
@@ -393,13 +401,14 @@
 
     const p = myProfile || loadProfile();
     if (!p || !p.nickname) {
-      statsEl.textContent = "프로필 없음";
+      statsEl.innerHTML =
+        '<div class="stat" style="grid-column:1/-1;text-align:left;font-size:13px;color:var(--dmc-color-text-muted)">프로필 없음</div>';
       listEl.innerHTML =
         '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-text-muted);font-size:14px">오늘 탭에서 프로필을 설정해 주세요</li>';
       return;
     }
 
-    statsEl.textContent = "불러오는 중…";
+    statsEl.innerHTML = '<div class="stat" style="grid-column:1/-1">불러오는 중…</div>';
     listEl.innerHTML = "";
 
     try {
@@ -409,20 +418,48 @@
         encodeURIComponent(p.nickname) +
         "&month=" +
         encodeURIComponent(myAttendMonthKey);
-      const histJson = await fetch(histUrl).then((r) => r.json());
+      const statsUrl =
+        BASE_URL +
+        "?action=stats&month=" +
+        encodeURIComponent(myAttendMonthKey) +
+        (p.memberId
+          ? "&memberId=" + encodeURIComponent(p.memberId)
+          : "&nickname=" + encodeURIComponent(p.nickname));
+
+      const [histJson, statsJson] = await Promise.all([
+        fetch(histUrl).then((r) => r.json()),
+        fetch(statsUrl).then((r) => r.json()),
+      ]);
       if (!histJson.ok) throw new Error(histJson.error || "history 실패");
 
       const items = Array.isArray(histJson.items) ? histJson.items : [];
       const memberItems = items.filter((it) => it.isGuest !== true);
+
+      const monthCount =
+        statsJson.ok && statsJson.thisMonthCount != null
+          ? Number(statsJson.thisMonthCount)
+          : memberItems.length;
+      const rate =
+        statsJson.ok && statsJson.attendanceRate != null
+          ? Number(statsJson.attendanceRate)
+          : histJson.attendanceRate != null
+            ? Number(histJson.attendanceRate)
+            : 0;
+      const streak =
+        statsJson.ok && statsJson.consecutiveClubSessions != null
+          ? Number(statsJson.consecutiveClubSessions)
+          : 0;
+
       statsEl.innerHTML =
-        "출석 <strong style=\"color:var(--dmc-color-text)\">" +
-        (histJson.count != null ? memberItems.length : memberItems.length) +
-        "</strong>회" +
-        (histJson.attendanceRate != null
-          ? " · 출석률 <strong style=\"color:var(--dmc-color-text)\">" +
-            histJson.attendanceRate +
-            "%</strong>"
-          : "");
+        '<div class="stat"><strong>' +
+        monthCount +
+        '</strong><span>출석</span></div>' +
+        '<div class="stat"><strong>' +
+        rate +
+        '%</strong><span>출석률</span></div>' +
+        '<div class="stat"><strong>' +
+        streak +
+        '</strong><span>연속</span></div>';
 
       if (!memberItems.length) {
         listEl.innerHTML =
@@ -463,11 +500,149 @@
         })
         .join("");
     } catch (e) {
-      statsEl.textContent = "로드 실패";
+      statsEl.innerHTML =
+        '<div class="stat" style="grid-column:1/-1;color:var(--dmc-color-danger)">로드 실패</div>';
       listEl.innerHTML =
         '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-danger);font-size:14px">' +
         (e.message || "오류") +
         "</li>";
+    }
+  }
+
+  function formatShortAttendDate(dateKey) {
+    const m = String(dateKey || "").match(/^\d{4}\/(\d{2})\/(\d{2})$/);
+    if (!m) return dateKey || "";
+    return Number(m[1]) + "/" + Number(m[2]);
+  }
+
+  function renderTeamAttendChips() {
+    const chipsEl = document.getElementById("teamAttendChips");
+    if (!chipsEl) return;
+    const p = myProfile || loadProfile();
+    const myTeam = p && p.team ? String(p.team) : "";
+    if (!teamAttendFilter) {
+      teamAttendFilter = myTeam || "ALL";
+    }
+    const chips = [];
+    if (myTeam) {
+      chips.push({ value: myTeam, label: teamLabel(myTeam) });
+    }
+    chips.push({ value: "ALL", label: "동마클 전체" });
+    TEAM_OPTIONS.forEach((t) => {
+      if (String(t.value) === myTeam) return;
+      chips.push({ value: t.value, label: t.label });
+    });
+    chipsEl.innerHTML = chips
+      .map((c) => {
+        const active = String(teamAttendFilter) === String(c.value);
+        return (
+          '<button type="button" class="chip' +
+          (active ? " active" : "") +
+          '" data-team-filter="' +
+          String(c.value).replace(/"/g, "") +
+          '">' +
+          c.label +
+          "</button>"
+        );
+      })
+      .join("");
+  }
+
+  async function loadTeamAttendancePanel() {
+    const listEl = document.getElementById("teamAttendList");
+    const summaryEl = document.getElementById("teamAttendSummary");
+    const labelEl = document.getElementById("teamAttendMonthLabel");
+    if (!listEl || !summaryEl) return;
+
+    if (!teamAttendMonthKey) teamAttendMonthKey = currentMonthKeyKst();
+    if (labelEl) labelEl.textContent = formatMonthLabel(teamAttendMonthKey);
+    renderTeamAttendChips();
+
+    if (!teamMonthHelper) {
+      summaryEl.textContent = "헬퍼 로드 실패";
+      listEl.innerHTML =
+        '<li class="member-row"><div class="member-name">attendance-team-month.js 필요</div></li>';
+      return;
+    }
+
+    summaryEl.innerHTML = "불러오는 중…";
+    listEl.innerHTML = "";
+
+    try {
+      const membersJson = await fetch(BASE_URL + "?action=members").then((r) => r.json());
+      if (!membersJson.ok) throw new Error(membersJson.error || "members 실패");
+      const members = Array.isArray(membersJson.members) ? membersJson.members : [];
+
+      const dateKeys = teamMonthHelper.listRegularMeetingDateKeys(teamAttendMonthKey);
+      const statusByDate = {};
+      const chunkSize = 4;
+      for (let i = 0; i < dateKeys.length; i += chunkSize) {
+        const chunk = dateKeys.slice(i, i + chunkSize);
+        const results = await Promise.all(
+          chunk.map((dk) =>
+            fetch(BASE_URL + "?action=status&date=" + encodeURIComponent(dk))
+              .then((r) => r.json())
+              .then((j) => ({ dk, j }))
+          )
+        );
+        results.forEach(({ dk, j }) => {
+          statusByDate[dk] = j && j.ok && Array.isArray(j.items) ? j.items : [];
+        });
+      }
+
+      const agg = teamMonthHelper.aggregateTeamMonth({
+        monthKey: teamAttendMonthKey,
+        members: members,
+        statusByDate: statusByDate,
+        teamFilter: teamAttendFilter,
+      });
+
+      summaryEl.innerHTML =
+        "<div>이번 달 정모<br /><strong>" +
+        dateKeys.length +
+        "회</strong></div>" +
+        '<div style="text-align:right">출석한 인원<br /><strong>' +
+        agg.attended +
+        " / " +
+        agg.roster +
+        " · " +
+        agg.rate +
+        "%</strong></div>";
+
+      if (!agg.rows.length) {
+        listEl.innerHTML =
+          '<li class="member-row"><div class="member-name" style="font-weight:500;color:var(--dmc-color-text-muted)">해당 팀 회원이 없습니다</div></li>';
+        return;
+      }
+
+      listEl.innerHTML = agg.rows
+        .map((row) => {
+          const initial = String(row.nickname || "?").charAt(0);
+          const dates =
+            row.dates && row.dates.length
+              ? row.dates.map(formatShortAttendDate).join(" · ")
+              : "미출석";
+          return (
+            '<li class="member-row">' +
+            '<div class="member-avatar" aria-hidden="true">' +
+            initial +
+            "</div>" +
+            '<div class="member-name">' +
+            String(row.nickname || "").replace(/</g, "&lt;") +
+            '<span class="member-dates">' +
+            dates +
+            "</span></div>" +
+            '<div class="member-count">' +
+            row.count +
+            "회</div></li>"
+          );
+        })
+        .join("");
+    } catch (e) {
+      summaryEl.innerHTML =
+        '<span style="color:var(--dmc-color-danger)">' + (e.message || "로드 실패") + "</span>";
+      listEl.innerHTML =
+        '<li class="member-row"><div class="member-name" style="color:var(--dmc-color-danger)">오류</div></li>';
     }
   }
 
@@ -2033,6 +2208,30 @@
         btn.getAttribute("data-cancel-date"),
         btn.getAttribute("data-cancel-type")
       ).catch(() => {});
+    });
+  }
+
+  const elTeamAttendPrev = document.getElementById("teamAttendPrev");
+  const elTeamAttendNext = document.getElementById("teamAttendNext");
+  if (elTeamAttendPrev) {
+    elTeamAttendPrev.addEventListener("click", () => {
+      teamAttendMonthKey = shiftMonthKey(teamAttendMonthKey || currentMonthKeyKst(), -1);
+      loadTeamAttendancePanel().catch(() => {});
+    });
+  }
+  if (elTeamAttendNext) {
+    elTeamAttendNext.addEventListener("click", () => {
+      teamAttendMonthKey = shiftMonthKey(teamAttendMonthKey || currentMonthKeyKst(), 1);
+      loadTeamAttendancePanel().catch(() => {});
+    });
+  }
+  const elTeamAttendChips = document.getElementById("teamAttendChips");
+  if (elTeamAttendChips) {
+    elTeamAttendChips.addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-team-filter]");
+      if (!chip) return;
+      teamAttendFilter = chip.getAttribute("data-team-filter") || "ALL";
+      loadTeamAttendancePanel().catch(() => {});
     });
   }
 

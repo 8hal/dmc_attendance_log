@@ -4,7 +4,7 @@
   },
   "scripts": {
     "test:members-sync": "node --test scripts/test/member-leave.test.js scripts/test/member-sync-plan.test.js scripts/test/apply-members-sync-via-api.test.js",
-    "test:attendance-shell": "node --test scripts/test/attendance-shell-router.test.js scripts/test/attendance-active-session.test.js",
+    "test:attendance-shell": "node --test scripts/test/attendance-shell-router.test.js scripts/test/attendance-active-session.test.js scripts/test/attendance-team-month.test.js",
     "test:members-sync:emulator": "bash scripts/test-members-sync-emulator.sh"
   }
 }
