@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719f" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719g" />
   <style>
     body {
       margin: 0;
@@ -1355,8 +1355,16 @@
             <button type="button" id="myAttendNext" aria-label="다음 달">›</button>
           </div>
           <div class="summary-stats" id="myAttendStats" aria-live="polite">불러오는 중…</div>
-          <div class="attend-log-card">
+          <div class="view-toggle" role="tablist" aria-label="보기 방식">
+            <button type="button" class="view-toggle-btn active" id="myViewList" data-mode="list" role="tab" aria-selected="true">목록</button>
+            <button type="button" class="view-toggle-btn" id="myViewCal" data-mode="cal" role="tab" aria-selected="false">달력</button>
+          </div>
+          <div class="attend-log-card" id="myAttendListPanel">
             <ul class="attend-log" id="myAttendList" aria-label="이번 달 출석 목록"></ul>
+          </div>
+          <div class="attend-log-card my-attend-cal-card" id="myAttendCalPanel" hidden>
+            <div class="cal-grid" id="myAttendCalGrid" aria-label="이번 달 출석 달력"></div>
+            <p class="hint my-attend-hint" style="margin:8px 16px 12px">초록 = 출석일 · 파란 링 = 오늘</p>
           </div>
           <p class="hint my-attend-hint">
             출석 취소는 <strong>활성 세션</strong>(접속 요일 기본 정모) 행만 가능합니다.
@@ -1611,6 +1619,7 @@
   <script src="assets/attendance-shell-router.js?v=20260719"></script>
   <script src="assets/attendance-team-month.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719d"></script>
-  <script src="attendance-v2.js?v=20260719f" defer></script>
+  <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
+  <script src="attendance-v2.js?v=20260719g" defer></script>
 </body>
 </html>

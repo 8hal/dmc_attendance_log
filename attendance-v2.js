@@ -12,6 +12,9 @@
 
   const LS_PROFILE = "dmc_attendance_v2_profile";
   const CHECKIN_BTN_LABEL = "출석 체크";
+  const CHECKIN_DONE_LABEL = "출석 완료";
+  let myAttendViewMode = "list";
+  let checkinAlreadyDone = false;
   const SUCCESS_CHEERS_MEMBER = [
     "정모 출석이 기록에 반영되었어요.",
     "출석 등록이 완료되었습니다.",
@@ -401,10 +404,12 @@
     const listEl = document.getElementById("myAttendList");
     const statsEl = document.getElementById("myAttendStats");
     const labelEl = document.getElementById("myAttendMonthLabel");
+    const calGrid = document.getElementById("myAttendCalGrid");
     if (!listEl || !statsEl) return;
 
     if (!myAttendMonthKey) myAttendMonthKey = currentMonthKeyKst();
     if (labelEl) labelEl.textContent = formatMonthLabel(myAttendMonthKey);
+    applyMyAttendViewMode();
 
     const p = myProfile || loadProfile();
     if (!p || !p.nickname) {
@@ -412,11 +417,16 @@
         '<div class="stat" style="grid-column:1/-1;text-align:left;font-size:13px;color:var(--dmc-color-text-muted)">프로필 없음</div>';
       listEl.innerHTML =
         '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-text-muted);font-size:14px">오늘 탭에서 프로필을 설정해 주세요</li>';
+      if (calGrid) {
+        calGrid.innerHTML =
+          '<div class="cal-dow" style="grid-column:1/-1;padding:16px;color:var(--dmc-color-text-muted)">오늘 탭에서 프로필을 설정해 주세요</div>';
+      }
       return;
     }
 
     statsEl.innerHTML = '<div class="stat" style="grid-column:1/-1">불러오는 중…</div>';
     listEl.innerHTML = "";
+    if (calGrid) calGrid.innerHTML = "";
 
     try {
       const histUrl =
@@ -468,6 +478,8 @@
         streak +
         '</strong><span>연속</span></div>';
 
+      renderMyAttendCalendar(memberItems);
+
       if (!memberItems.length) {
         listEl.innerHTML =
           '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-text-muted);font-size:14px">이 달 출석 기록이 없습니다</li>';
@@ -513,6 +525,132 @@
         '<li style="padding:20px 16px;text-align:center;color:var(--dmc-color-danger);font-size:14px">' +
         (e.message || "오류") +
         "</li>";
+      if (calGrid) {
+        calGrid.innerHTML =
+          '<div class="cal-dow" style="grid-column:1/-1;padding:16px;color:var(--dmc-color-danger)">' +
+          escapeHtml(e.message || "오류") +
+          "</div>";
+      }
+    }
+  }
+
+  function applyMyAttendViewMode() {
+    const listPanel = document.getElementById("myAttendListPanel");
+    const calPanel = document.getElementById("myAttendCalPanel");
+    const btnList = document.getElementById("myViewList");
+    const btnCal = document.getElementById("myViewCal");
+    const isList = myAttendViewMode !== "cal";
+    if (listPanel) listPanel.hidden = !isList;
+    if (calPanel) calPanel.hidden = isList;
+    if (btnList) {
+      btnList.classList.toggle("active", isList);
+      btnList.setAttribute("aria-selected", isList ? "true" : "false");
+    }
+    if (btnCal) {
+      btnCal.classList.toggle("active", !isList);
+      btnCal.setAttribute("aria-selected", !isList ? "true" : "false");
+    }
+  }
+
+  function kstTodayDateKeySlash() {
+    const s = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+    return s.replace(/-/g, "/");
+  }
+
+  function renderMyAttendCalendar(memberItems) {
+    const calGrid = document.getElementById("myAttendCalGrid");
+    if (!calGrid) return;
+    const helper =
+      typeof globalThis !== "undefined" && globalThis.DmcAttendanceMyCalendar
+        ? globalThis.DmcAttendanceMyCalendar
+        : null;
+    if (!helper) {
+      calGrid.innerHTML =
+        '<div class="cal-dow" style="grid-column:1/-1;padding:16px">달력 헬퍼 로드 실패</div>';
+      return;
+    }
+    const attended = helper.attendedDateKeySet(memberItems || []);
+    const cells = helper.buildMyAttendCalendarCells({
+      monthKey: myAttendMonthKey || currentMonthKeyKst(),
+      attendedDateKeys: Array.from(attended),
+      todayKey: kstTodayDateKeySlash(),
+    });
+    const dows = ["일", "월", "화", "수", "목", "금", "토"];
+    let html = dows.map((d) => '<div class="cal-dow">' + d + "</div>").join("");
+    cells.forEach((c) => {
+      if (c.kind === "pad") {
+        html += '<div class="cal-day muted" aria-hidden="true"></div>';
+        return;
+      }
+      let cls = "cal-day";
+      if (c.attend) cls += " attend";
+      if (c.today) cls += " today-ring";
+      const title = c.attend ? "출석" : c.today ? "오늘" : "";
+      html +=
+        '<div class="' +
+        cls +
+        '"' +
+        (title ? ' title="' + title + '"' : "") +
+        ">" +
+        c.day +
+        "</div>";
+    });
+    calGrid.innerHTML = html;
+  }
+
+  function setCheckinButtonDone(done) {
+    checkinAlreadyDone = !!done;
+    if (!elCheckinBtn) return;
+    if (done) {
+      elCheckinBtn.disabled = true;
+      elCheckinBtn.textContent = CHECKIN_DONE_LABEL;
+      elCheckinBtn.classList.add("dash-checkin-done");
+    } else {
+      elCheckinBtn.disabled = false;
+      elCheckinBtn.textContent = CHECKIN_BTN_LABEL;
+      elCheckinBtn.classList.remove("dash-checkin-done");
+    }
+  }
+
+  async function refreshCheckinButtonState() {
+    if (!elCheckinBtn) return;
+    const p = myProfile || loadProfile();
+    const dateKey = inputValueToDateKey(elMeetingDate && elMeetingDate.value);
+    const meetingType = elMeetingType && elMeetingType.value;
+    if (!p || !dateKey || !meetingType) {
+      setCheckinButtonDone(false);
+      return;
+    }
+    try {
+      const q =
+        BASE_URL +
+        "?action=status&date=" +
+        encodeURIComponent(dateKey) +
+        "&meetingType=" +
+        encodeURIComponent(meetingType);
+      const json = await fetch(q).then((r) => r.json());
+      if (!json.ok) {
+        setCheckinButtonDone(false);
+        return;
+      }
+      const helper =
+        typeof globalThis !== "undefined" && globalThis.DmcAttendanceMyCalendar
+          ? globalThis.DmcAttendanceMyCalendar
+          : null;
+      const items = Array.isArray(json.items) ? json.items : [];
+      const done = helper
+        ? helper.isProfileCheckedInSession(items, meetingType, p)
+        : items.some(
+            (it) =>
+              String(it.meetingType || "").toUpperCase() ===
+                String(meetingType).toUpperCase() &&
+              ((p.memberId && it.memberId === p.memberId) ||
+                String(it.nickname || "").toLowerCase() ===
+                  String(p.nickname || "").toLowerCase())
+          );
+      setCheckinButtonDone(done);
+    } catch (_) {
+      setCheckinButtonDone(false);
     }
   }
 
@@ -844,6 +982,7 @@
     if (!dk || !mt) {
       elDashSessionFigures.textContent = "–";
       refreshTodayRosterList().catch(() => {});
+      refreshCheckinButtonState().catch(() => {});
       return;
     }
     try {
@@ -867,6 +1006,7 @@
       elDashSessionFigures.textContent = "–";
     }
     refreshTodayRosterList().catch(() => {});
+    refreshCheckinButtonState().catch(() => {});
   }
 
   function scrollToTodayRoster() {
@@ -2202,6 +2342,7 @@
 
   elCheckinBtn.addEventListener("click", async () => {
     if (!myProfile) return;
+    if (checkinAlreadyDone) return;
     const dateKey = inputValueToDateKey(elMeetingDate.value);
     const meetingType = elMeetingType.value;
     if (!dateKey) {
@@ -2221,9 +2362,11 @@
         meetingDate: dateKey,
         isGuest: false
       });
+      setCheckinButtonDone(true);
       await showSuccessAfterCheckin(myProfile.nickname, myProfile.memberId, false, dateKey, result.sessionCount);
     } catch (e) {
       if (e.code === "ALREADY_CHECKED_IN") {
+        setCheckinButtonDone(true);
         logAttendanceEvent("attendance_checkin_error", {
           mode: "dashboard",
           error: "ALREADY_CHECKED_IN",
@@ -2236,8 +2379,6 @@
         refreshSessionCountLine().catch(() => {});
         const rawMsg =
           (e.payload && e.payload.message) || "이미 해당 모임일에 출석 기록이 있습니다.";
-        const dupDate =
-          (e.payload && e.payload.existingRecord && e.payload.existingRecord.meetingDate) || dateKey;
         elDashMsg.innerHTML =
           escapeHtml(rawMsg) +
           ' <button type="button" class="inline-text-button" id="openDuplicateRosterBtn">출석 명단에서 확인</button>';
@@ -2250,13 +2391,22 @@
         }
       } else if (e.code === "MEMBER_NOT_FOUND") {
         elDashMsg.textContent = "회원 정보가 유효하지 않습니다. 프로필을 다시 설정해 주세요.";
+        elDashMsg.className = "msg error";
+        setCheckinButtonDone(false);
       } else {
         elDashMsg.textContent = e.message || "출석 처리에 실패했습니다.";
+        elDashMsg.className = "msg error";
+        setCheckinButtonDone(false);
       }
-      elDashMsg.className = "msg error";
+      if (e.code === "ALREADY_CHECKED_IN") {
+        elDashMsg.className = "msg error";
+      }
     } finally {
-      elCheckinBtn.disabled = false;
-      elCheckinBtn.textContent = CHECKIN_BTN_LABEL;
+      if (!checkinAlreadyDone) {
+        elCheckinBtn.disabled = false;
+        elCheckinBtn.textContent = CHECKIN_BTN_LABEL;
+        elCheckinBtn.classList.remove("dash-checkin-done");
+      }
     }
   });
 
@@ -2389,6 +2539,21 @@
     elMyAttendNext.addEventListener("click", () => {
       myAttendMonthKey = shiftMonthKey(myAttendMonthKey || currentMonthKeyKst(), 1);
       loadMyAttendancePanel().catch(() => {});
+    });
+  }
+
+  const elMyViewList = document.getElementById("myViewList");
+  const elMyViewCal = document.getElementById("myViewCal");
+  if (elMyViewList) {
+    elMyViewList.addEventListener("click", () => {
+      myAttendViewMode = "list";
+      applyMyAttendViewMode();
+    });
+  }
+  if (elMyViewCal) {
+    elMyViewCal.addEventListener("click", () => {
+      myAttendViewMode = "cal";
+      applyMyAttendViewMode();
     });
   }
 
