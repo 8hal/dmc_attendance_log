@@ -619,18 +619,6 @@ button.primary.dash-checkin-done {
   border-bottom: none;
 }
 
-.member-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: var(--dmc-surface-muted, var(--dmc-slate-3));
-  font-size: 13px;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
 .member-name {
   flex: 1;
   min-width: 0;

@@ -27,14 +27,8 @@
     });
   }
 
-  function avatarCharFromNickname(nickname) {
-    const s = String(nickname == null ? "" : nickname).trim();
-    return s ? s.charAt(0) : "?";
-  }
-
   return {
     filterStatusByMeetingType,
     sortSessionRosterNewestFirst,
-    avatarCharFromNickname,
   };
 });

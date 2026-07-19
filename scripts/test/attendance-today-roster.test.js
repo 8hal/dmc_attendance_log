@@ -5,7 +5,6 @@ const path = require("path");
 const {
   filterStatusByMeetingType,
   sortSessionRosterNewestFirst,
-  avatarCharFromNickname,
 } = require(path.join(__dirname, "../../assets/attendance-today-roster.js"));
 
 describe("attendance-today-roster helpers", () => {
@@ -34,11 +33,5 @@ describe("attendance-today-roster helpers", () => {
       sortSessionRosterNewestFirst(items).map((x) => x.nickname),
       ["new", "mid", "old"]
     );
-  });
-
-  it("avatarCharFromNickname uses first character", () => {
-    assert.equal(avatarCharFromNickname("게살볶음밥"), "게");
-    assert.equal(avatarCharFromNickname(""), "?");
-    assert.equal(avatarCharFromNickname(null), "?");
   });
 });

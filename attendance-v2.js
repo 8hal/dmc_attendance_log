@@ -1097,14 +1097,8 @@
         const teamText = (item && (item.teamLabel || teamLabel(item.team))) || "팀 미정";
         const timeText = item && item.timeText ? item.timeText : "";
         const meta = timeText ? teamText + " · " + timeText : teamText;
-        const initial = helper
-          ? helper.avatarCharFromNickname(nickname)
-          : String(nickname).charAt(0) || "?";
         return (
           '<li class="member-row">' +
-          '<div class="member-avatar" aria-hidden="true">' +
-          escapeHtml(initial) +
-          "</div>" +
           '<div class="member-name">' +
           escapeHtml(nickname) +
           '<span class="member-dates">' +
