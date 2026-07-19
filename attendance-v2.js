@@ -308,15 +308,18 @@
   function refreshMoreProfileCard() {
     const nameEl = document.getElementById("moreProfileName");
     const metaEl = document.getElementById("moreProfileMeta");
+    const resetBtn = document.getElementById("resetProfileBtn");
     if (!nameEl || !metaEl) return;
     const p = myProfile || loadProfile();
     if (!p) {
       nameEl.textContent = "프로필 없음";
       metaEl.textContent = "오늘 탭에서 본인을 선택해 주세요";
+      if (resetBtn) resetBtn.hidden = true;
       return;
     }
     nameEl.textContent = p.nickname || "회원";
     metaEl.textContent = teamLabel(p.team) + (p.memberId ? " · 저장됨" : "");
+    if (resetBtn) resetBtn.hidden = false;
   }
 
   let myAttendMonthKey = "";
