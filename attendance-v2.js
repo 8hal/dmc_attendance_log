@@ -340,6 +340,7 @@
   let teamAttendMonthKey = "";
   let teamAttendFilter = "";
   let teamAttendLastAgg = null;
+  let teamMemberSheetPbReqId = 0;
 
   const teamMonthHelper =
     typeof window !== "undefined" && window.DmcAttendanceTeamMonth
@@ -914,6 +915,7 @@
     if (!pbEl) return;
     pbEl.hidden = true;
     pbEl.innerHTML = "";
+    const reqId = ++teamMemberSheetPbReqId;
 
     let realName = "";
     const snap =
@@ -927,6 +929,7 @@
       const json = await fetch(RACE_LOG_API + "?action=confirmed-races").then(function (r) {
         return r.json();
       });
+      if (reqId !== teamMemberSheetPbReqId) return;
       if (!json || !json.ok) return;
       const flat = flattenConfirmedRaceResults(json.races || []);
       const nickLc = String(nickname || "").toLowerCase();
@@ -943,6 +946,7 @@
         return !!slots[d];
       });
       if (!hasAny) return;
+      if (reqId !== teamMemberSheetPbReqId) return;
 
       pbEl.innerHTML =
         '<div class="pb-strip">' +
