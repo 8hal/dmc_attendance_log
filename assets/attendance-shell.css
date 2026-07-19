@@ -258,6 +258,31 @@ body.kiosk-mode .tab-bar {
   background: var(--dmc-color-surface);
 }
 
+.more-list {
+  margin: 0 16px 24px;
+  border: 1px solid var(--dmc-color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--dmc-color-surface);
+}
+
+.more-group + .more-item,
+.more-item + .more-item,
+.more-group + a.more-item,
+.more-item + .more-group {
+  border-top: 1px solid var(--dmc-color-border);
+}
+
+.more-item-sub {
+  padding-left: 28px;
+  background: var(--dmc-surface-muted, var(--dmc-slate-2, #f8fafc));
+}
+
+.more-item-sub .more-text strong {
+  color: var(--dmc-color-danger, #dc2626);
+  font-weight: 700;
+}
+
 .more-reset-profile {
   margin-top: 12px;
   width: 100%;

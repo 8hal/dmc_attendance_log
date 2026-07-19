@@ -1392,19 +1392,26 @@
         <div class="more-profile-card" id="moreProfileCard">
           <p class="profile-name" id="moreProfileName">프로필 없음</p>
           <p class="profile-meta" id="moreProfileMeta">오늘 탭에서 본인을 선택해 주세요</p>
-          <button type="button" class="danger-ghost more-reset-profile" id="resetProfileBtn">
-            다른 사람으로 출석 (프로필 초기화)
-          </button>
         </div>
         <div class="more-list">
-          <button type="button" class="more-item" id="btn-edit-profile">
-            <span class="more-icon" aria-hidden="true">✎</span>
-            <span class="more-text">
-              <strong>프로필 수정</strong>
-              <span>팀 변경 · 본인 다시 선택</span>
-            </span>
-            <span class="more-chevron" aria-hidden="true">›</span>
-          </button>
+          <div class="more-group" id="moreProfileGroup">
+            <button type="button" class="more-item" id="btn-edit-profile">
+              <span class="more-icon" aria-hidden="true">✎</span>
+              <span class="more-text">
+                <strong>프로필 수정</strong>
+                <span>팀 변경</span>
+              </span>
+              <span class="more-chevron" aria-hidden="true">›</span>
+            </button>
+            <button type="button" class="more-item more-item-sub" id="resetProfileBtn" hidden>
+              <span class="more-icon" aria-hidden="true">↺</span>
+              <span class="more-text">
+                <strong>다른 사람으로 출석</strong>
+                <span>이 기기 프로필 초기화</span>
+              </span>
+              <span class="more-chevron" aria-hidden="true">›</span>
+            </button>
+          </div>
           <a class="more-item" href="my.html">
             <span class="more-icon" aria-hidden="true">🏁</span>
             <span class="more-text">
