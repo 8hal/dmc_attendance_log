@@ -704,6 +704,48 @@
       .join("");
   }
 
+  function kstTodayDateKeySlashForTeam() {
+    return new Date()
+      .toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" })
+      .replace(/-/g, "/");
+  }
+
+  function attendDotLabel(dateKey, state) {
+    const short = formatShortAttendDate(dateKey);
+    if (state === "attended") return short + " 출석";
+    if (state === "missed") return short + " 미출석";
+    return short + " 예정";
+  }
+
+  function renderAttendDotsHtml(meetingDateKeys, attendedDateKeys) {
+    if (!teamMonthHelper || typeof teamMonthHelper.buildMeetingDots !== "function") {
+      return "";
+    }
+    const dots = teamMonthHelper.buildMeetingDots({
+      meetingDateKeys: meetingDateKeys,
+      attendedDateKeys: attendedDateKeys,
+      todayKey: kstTodayDateKeySlashForTeam(),
+    });
+    return (
+      '<span class="attend-dots" role="img" aria-label="정모 출석 도트">' +
+      dots
+        .map(function (d) {
+          const label = attendDotLabel(d.dateKey, d.state);
+          return (
+            '<span class="attend-dot" data-state="' +
+            d.state +
+            '" title="' +
+            label +
+            '" aria-label="' +
+            label +
+            '"></span>'
+          );
+        })
+        .join("") +
+      "</span>"
+    );
+  }
+
   async function loadTeamAttendancePanel() {
     const listEl = document.getElementById("teamAttendList");
     const summaryEl = document.getElementById("teamAttendSummary");
@@ -772,22 +814,26 @@
       }
 
       listEl.innerHTML = agg.rows
-        .map((row) => {
-          const initial = String(row.nickname || "?").charAt(0);
-          const dates =
-            row.dates && row.dates.length
-              ? row.dates.map(formatShortAttendDate).join(" · ")
-              : "미출석";
+        .map(function (row) {
+          const nick = String(row.nickname || "").replace(/</g, "&lt;");
+          const dots = renderAttendDotsHtml(dateKeys, row.dates || []);
+          const mid = row.memberId ? String(row.memberId).replace(/"/g, "") : "";
           return (
-            '<li class="member-row">' +
-            '<div class="member-avatar" aria-hidden="true">' +
-            initial +
-            "</div>" +
+            '<li class="member-row" role="button" tabindex="0" data-member-id="' +
+            mid +
+            '" data-nickname="' +
+            nick.replace(/"/g, "&quot;") +
+            '" data-team="' +
+            String(row.team || "").replace(/"/g, "&quot;") +
+            '" data-count="' +
+            String(row.count) +
+            '" data-dates="' +
+            (row.dates || []).join(",") +
+            '">' +
             '<div class="member-name">' +
-            String(row.nickname || "").replace(/</g, "&lt;") +
-            '<span class="member-dates">' +
-            dates +
-            "</span></div>" +
+            nick +
+            dots +
+            "</div>" +
             '<div class="member-count">' +
             row.count +
             "회</div></li>"

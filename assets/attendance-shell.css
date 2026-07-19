@@ -646,6 +646,41 @@ button.primary.dash-checkin-done {
   color: var(--dmc-color-text-muted);
 }
 
+.attend-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.attend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.attend-dot[data-state="attended"] {
+  background: var(--dmc-green-9, #16a34a);
+  border: 1px solid var(--dmc-green-9, #16a34a);
+}
+
+.attend-dot[data-state="missed"] {
+  background: transparent;
+  border: 1.5px solid var(--dmc-color-border, #cbd5e1);
+}
+
+.attend-dot[data-state="upcoming"] {
+  background: var(--dmc-slate-4, #e2e8f0);
+  border: 1px solid transparent;
+  opacity: 0.55;
+}
+
+.member-row[role="button"] {
+  cursor: pointer;
+}
+
 .member-count {
   font-size: 13px;
   font-weight: 800;
