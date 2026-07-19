@@ -3,6 +3,9 @@
 # 사전 준비: _docs/development/github-actions-firebase-deploy.md
 # 시크릿: FIREBASE_SERVICE_ACCOUNT_DMC_ATTENDANCE (GCP 서비스 계정 JSON)
 # 설계: _docs/superpowers/specs/2026-07-19-mobile-firebase-deploy-design.md
+#
+# 참고: functions-all 은 Cloud Scheduler 권한이 필요합니다.
+#       기본 모바일 배포는 hosting / attendance(+race) 를 쓰세요.
 
 name: Deploy DMC Attendance (Firebase)
 
@@ -10,14 +13,16 @@ on:
   workflow_dispatch:
     inputs:
       deploy_target:
-        description: "배포 대상"
+        description: "배포 대상 (functions-all 은 Cloud Scheduler Admin IAM 필요)"
         required: true
         default: hosting
         type: choice
         options:
           - hosting
-          - functions
-          - hosting-and-functions
+          - functions-attendance
+          - functions-attendance-race
+          - hosting-and-attendance
+          - functions-all
 
 concurrency:
   group: deploy-dmc-attendance-${{ github.ref }}
@@ -48,16 +53,30 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DMC_ATTENDANCE }}
 
+      # HTTPS only — no Cloud Scheduler jobs (safe for typical SA used by Chunbaek Actions)
+      - name: Deploy Functions (attendance)
+        if: inputs.deploy_target == 'functions-attendance' || inputs.deploy_target == 'hosting-and-attendance'
+        run: npx firebase-tools@13.29.1 deploy --only functions:attendance --project dmc-attendance --non-interactive
+
+      - name: Deploy Functions (attendance + race)
+        if: inputs.deploy_target == 'functions-attendance-race'
+        run: npx firebase-tools@13.29.1 deploy --only functions:attendance,functions:race --project dmc-attendance --non-interactive
+
+      # Includes onSchedule jobs — needs roles/cloudscheduler.admin (or jobs.update)
       - name: Deploy Functions (all)
-        if: inputs.deploy_target == 'functions' || inputs.deploy_target == 'hosting-and-functions'
+        if: inputs.deploy_target == 'functions-all'
         run: npx firebase-tools@13.29.1 deploy --only functions --project dmc-attendance --non-interactive
 
       - name: Deploy Hosting
-        if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-functions'
+        if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-attendance'
         run: npx firebase-tools@13.29.1 deploy --only hosting --project dmc-attendance --non-interactive
 
       - name: Smoke test — attendance API
-        if: inputs.deploy_target == 'functions' || inputs.deploy_target == 'hosting-and-functions'
+        if: >-
+          inputs.deploy_target == 'functions-attendance' ||
+          inputs.deploy_target == 'functions-attendance-race' ||
+          inputs.deploy_target == 'hosting-and-attendance' ||
+          inputs.deploy_target == 'functions-all'
         run: |
           url="https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance?action=status&date=2026/01/01"
           body="$(curl -fsS "$url")"
@@ -65,7 +84,7 @@ jobs:
           echo "$body" | grep -q '"ok":true'
 
       - name: Smoke test — attendance-v2 hosting
-        if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-functions'
+        if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-attendance'
         run: |
           code="$(curl -sS -o /dev/null -w "%{http_code}" "https://dmc-attendance.web.app/attendance-v2.html")"
           echo "HTTP $code"
