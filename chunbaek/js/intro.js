@@ -3,7 +3,7 @@
  * 시즌 종료 후 이 파일 삭제 + index.html에서 script 1줄 제거
  */
 
-const INTRO_TARGET = '2026-07-20';
+const INTRO_TARGET = '2026-07-19'; // TODO: 배포 전 2026-07-20 복원
 const INTRO_FLAG   = `chunbaek-intro-seen-${INTRO_TARGET}`;
 
 /* ── 유틸 ── */
