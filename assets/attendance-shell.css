@@ -65,12 +65,16 @@
   font-weight: 700;
   color: var(--dmc-color-primary);
   text-decoration: none;
-  padding: 8px 10px;
+  padding: 7px 12px;
   border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--dmc-color-primary) 35%, var(--dmc-color-border));
+  background: var(--dmc-color-surface);
+  line-height: 1.2;
 }
 
 .brand-bar-races:hover {
   background: var(--dmc-color-primary-soft);
+  border-color: var(--dmc-color-primary);
 }
 
 .main {
@@ -254,6 +258,20 @@ body.kiosk-mode .tab-bar {
   background: var(--dmc-color-surface);
 }
 
+.more-item-sub {
+  padding-left: 28px;
+  background: var(--dmc-surface-muted, var(--dmc-slate-2, #f8fafc));
+}
+
+.more-item-sub .more-text strong {
+  color: var(--dmc-color-danger, #dc2626);
+  font-weight: 700;
+}
+
+.more-group .more-item:last-child {
+  border-bottom: none;
+}
+
 .more-profile-card .profile-name {
   margin: 0;
   font-size: 16px;
@@ -264,13 +282,6 @@ body.kiosk-mode .tab-bar {
   margin: 4px 0 0;
   font-size: 13px;
   color: var(--dmc-color-text-secondary);
-}
-
-.more-hint {
-  margin: 0 16px 24px;
-  font-size: 12px;
-  color: var(--dmc-color-text-muted);
-  line-height: 1.45;
 }
 
 /* Guide sheet */
@@ -368,6 +379,10 @@ body.kiosk-mode .tab-bar {
   padding: 16px 16px 24px;
 }
 
+#view-today > .wrap {
+  padding: 12px 16px 24px;
+}
+
 .section-kicker {
   margin: 0 0 8px;
   font-size: 11px;
@@ -452,26 +467,119 @@ body.kiosk-mode .tab-bar {
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
+  align-items: center;
 }
 
 .filter-chips .chip {
-  padding: 8px 12px;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  flex: 0 0 auto;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--dmc-color-border);
   background: var(--dmc-color-surface);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
   cursor: pointer;
   color: var(--dmc-color-text-secondary);
+  box-shadow: none;
 }
 
 .filter-chips .chip.active {
   border-color: var(--dmc-color-primary, #2563eb);
   background: color-mix(in srgb, var(--dmc-color-primary, #2563eb) 12%, white);
   color: var(--dmc-color-primary, #2563eb);
+}
+
+.view-toggle {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--dmc-surface-muted, var(--dmc-slate-3));
+}
+
+.view-toggle-btn {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--dmc-color-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.view-toggle-btn.active {
+  background: var(--dmc-color-surface);
+  color: var(--dmc-color-text);
+  box-shadow: var(--dmc-shadow-1, 0 1px 2px rgba(15, 23, 42, 0.08));
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 12px 14px 4px;
+  text-align: center;
+}
+
+.cal-dow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dmc-color-text-muted);
+  padding: 4px 0;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dmc-color-text-secondary);
+  background: transparent;
+}
+
+.cal-day.attend {
+  background: var(--dmc-green-2, #dcfce7);
+  color: var(--dmc-green-11, #166534);
+  font-weight: 800;
+}
+
+.cal-day.today-ring {
+  box-shadow: inset 0 0 0 2px var(--dmc-blue-8, #2563eb);
+  color: var(--dmc-blue-11, #1d4ed8);
+}
+
+.cal-day.muted {
+  opacity: 0.35;
+}
+
+.my-attend-cal-card {
+  margin-bottom: 8px;
+}
+
+.primary.dash-checkin.dash-checkin-done,
+button.primary.dash-checkin-done {
+  background: var(--dmc-attend-bg, #dcfce7);
+  color: var(--dmc-attend-fg, #166534);
+  border-color: color-mix(in srgb, var(--dmc-attend-fg, #166534) 25%, white);
+  cursor: default;
 }
 
 .summary-banner {
@@ -511,18 +619,6 @@ body.kiosk-mode .tab-bar {
   border-bottom: none;
 }
 
-.member-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: var(--dmc-surface-muted, var(--dmc-slate-3));
-  font-size: 13px;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
 .member-name {
   flex: 1;
   min-width: 0;
@@ -538,11 +634,113 @@ body.kiosk-mode .tab-bar {
   color: var(--dmc-color-text-muted);
 }
 
+.attend-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.attend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.attend-dot[data-state="attended"] {
+  background: var(--dmc-green-9, #16a34a);
+  border: 1px solid var(--dmc-green-9, #16a34a);
+}
+
+.attend-dot[data-state="missed"] {
+  background: transparent;
+  border: 1.5px solid var(--dmc-color-border, #cbd5e1);
+}
+
+.attend-dot[data-state="upcoming"] {
+  background: var(--dmc-slate-4, #e2e8f0);
+  border: 1px solid transparent;
+  opacity: 0.55;
+}
+
+.member-row[role="button"] {
+  cursor: pointer;
+}
+
 .member-count {
   font-size: 13px;
   font-weight: 800;
   color: var(--dmc-color-text);
   flex-shrink: 0;
+}
+
+.team-member-sheet-meta {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--dmc-color-text-muted);
+}
+
+.team-member-date-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.team-member-date-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--dmc-color-border);
+}
+
+.team-member-date-list li.muted {
+  color: var(--dmc-color-text-muted);
+  border-bottom: none;
+}
+
+.team-member-pb {
+  margin: 0 0 12px;
+}
+
+.team-member-pb .pb-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--dmc-color-border);
+  border-radius: 12px;
+  background: var(--dmc-color-surface);
+  overflow: hidden;
+}
+
+.team-member-pb .pb-cell {
+  padding: 8px 6px;
+  text-align: center;
+  border-right: 1px solid var(--dmc-color-border);
+}
+
+.team-member-pb .pb-cell:last-child {
+  border-right: none;
+}
+
+.team-member-pb .pb-cell-dist {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin-bottom: 2px;
+  color: var(--dmc-color-text-secondary);
+}
+
+.team-member-pb .pb-cell-time {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--dmc-color-text);
+}
+
+.team-member-pb .pb-cell-time.empty {
+  color: var(--dmc-color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .train-notice-card {
@@ -551,6 +749,25 @@ body.kiosk-mode .tab-bar {
   border-radius: 16px;
   border: 1px solid var(--dmc-color-border);
   background: var(--dmc-color-surface);
+}
+
+.today-roster-card {
+  margin: 0 0 8px;
+}
+
+.today-roster-banner {
+  margin-bottom: 0;
+}
+
+.today-roster-banner-meta {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dmc-color-text-secondary);
+}
+
+.today-roster-sort {
+  color: var(--dmc-color-text);
 }
 
 .train-notice {

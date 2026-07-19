@@ -125,11 +125,50 @@
     };
   }
 
+  function normalizeDateKey(raw) {
+    const s = String(raw == null ? "" : raw).trim();
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(s)) return s;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s.replace(/-/g, "/");
+    return "";
+  }
+
+  /**
+   * @returns {{ dateKey: string, state: "attended"|"missed"|"upcoming" }[]}
+   */
+  function buildMeetingDots(opts) {
+    const meetingDateKeys = Array.isArray(opts && opts.meetingDateKeys)
+      ? opts.meetingDateKeys
+      : [];
+    const attendedSet = {};
+    (Array.isArray(opts && opts.attendedDateKeys) ? opts.attendedDateKeys : []).forEach(
+      function (k) {
+        const n = normalizeDateKey(k);
+        if (n) attendedSet[n] = true;
+      }
+    );
+    const todayKey = normalizeDateKey(opts && opts.todayKey) || "9999/99/99";
+    return meetingDateKeys.map(function (raw) {
+      const dateKey = normalizeDateKey(raw) || String(raw || "");
+      if (attendedSet[dateKey]) return { dateKey: dateKey, state: "attended" };
+      if (dateKey < todayKey) return { dateKey: dateKey, state: "missed" };
+      return { dateKey: dateKey, state: "upcoming" };
+    });
+  }
+
+  function memberMonthAttendRate(count, meetingDateCount) {
+    const c = Number(count) || 0;
+    const d = Number(meetingDateCount) || 0;
+    if (d <= 0) return 0;
+    return Math.round((c / d) * 100);
+  }
+
   return {
     REGULAR_TYPES: REGULAR_TYPES,
     isValidMonthKey: isValidMonthKey,
     listRegularMeetingDateKeys: listRegularMeetingDateKeys,
     isRegularMeetingType: isRegularMeetingType,
     aggregateTeamMonth: aggregateTeamMonth,
+    buildMeetingDots: buildMeetingDots,
+    memberMonthAttendRate: memberMonthAttendRate,
   };
 });

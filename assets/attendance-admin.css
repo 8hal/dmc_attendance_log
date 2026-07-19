@@ -422,6 +422,33 @@ body {
   resize: vertical;
 }
 
+.cafe-console-help {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--dmc-color-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--dmc-slate-2, #f8fafc);
+}
+
+.cafe-console-help summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cafe-console-snippet {
+  margin: 6px 0 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 11px;
+  line-height: 1.4;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+}
+
 .week-nav {
   display: flex;
   flex-wrap: wrap;

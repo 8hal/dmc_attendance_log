@@ -107,81 +107,235 @@ function defaultEmptySlots() {
   };
 }
 
+/**
+ * Accept plain paste, contentHtml, or cafe article API JSON
+ * ({ result: { article: { contentHtml } } }).
+ */
+function unwrapCafePasteInput(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s.startsWith("{")) return s;
+  try {
+    const obj = JSON.parse(s);
+    const html =
+      (obj &&
+        obj.result &&
+        obj.result.article &&
+        obj.result.article.contentHtml) ||
+      (obj && obj.article && obj.article.contentHtml) ||
+      (obj && obj.contentHtml) ||
+      "";
+    if (String(html).trim()) return String(html);
+  } catch (_) {
+    /* not JSON — treat as plain text */
+  }
+  return s;
+}
+
+/**
+ * Shrink a cafe article API payload (object or JSON string) to the fields
+ * the training paste parser needs. Empty string if contentHtml is missing.
+ */
+function minifyCafeArticleForPaste(raw) {
+  let obj = raw;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return "";
+    try {
+      obj = JSON.parse(s);
+    } catch (_) {
+      return "";
+    }
+  }
+  if (!obj || typeof obj !== "object") return "";
+  const article =
+    (obj.result && obj.result.article) || obj.article || obj;
+  const contentHtml = article && article.contentHtml;
+  if (!String(contentHtml || "").trim()) return "";
+  const subject = String((article && article.subject) || "").trim();
+  return JSON.stringify({
+    result: {
+      article: {
+        subject,
+        contentHtml: String(contentHtml),
+      },
+    },
+  });
+}
+
 function stripHtml(text) {
   return String(text || "")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n")
+    .replace(/<\/td>/gi, "\n")
+    .replace(/<\/th>/gi, "\n")
+    .replace(/<\/tr>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&nbsp;/g, " ")
+    .replace(/\u200b/g, "")
     .replace(/\r/g, "");
 }
 
+/** Fix Naver cafe line-broken labels / spaced titles before line split */
+function normalizeCafePaste(text) {
+  let t = String(text || "");
+  // Anchor at line start so "보강훈련\n후" is not rewritten to "보강훈련후"
+  t = t.replace(/(?:^|\n)([ \t]*)훈\s*련\s*전(?=\s*(?:\n|$))/g, "\n$1훈련전");
+  t = t.replace(/(?:^|\n)([ \t]*)훈\s*련\s*본(?=\s*(?:\n|$))/g, "\n$1훈련본");
+  t = t.replace(/(?:^|\n)([ \t]*)훈\s*련\s*후(?=\s*(?:\n|$))/g, "\n$1훈련후");
+  t = t.replace(/급\s*수\s*및\s*\n?\s*서\s*포\s*터\s*즈/g, "급수및서포터즈");
+  t = t.replace(/급\s*수\s*및/g, "급수및");
+  t = t.replace(/시\s*간\s*\/\s*장\s*소|시\s*간\s*장\s*소/g, "시간/장소");
+  t = t.replace(/화\s*요\s*일\s*정\s*모/g, "화요일 정모");
+  t = t.replace(/목\s*요\s*일\s*정\s*모/g, "목요일 정모");
+  t = t.replace(/토\s*요\s*일\s*정\s*모/g, "토요일 정모");
+  return t;
+}
+
+function compactLabel(s) {
+  return String(s || "")
+    .replace(/\s+/g, "")
+    .replace(/[·・./／]/g, "")
+    .toLowerCase();
+}
+
 function detectMeetingTypeFromHeader(line) {
-  const s = String(line || "");
-  if (/화요|화요일/.test(s)) return "TUE";
-  if (/목요|목요일/.test(s)) return "THU";
-  if (/토요|토요일/.test(s)) return "SAT";
+  const compact = compactLabel(line);
+  if (!compact) return null;
+  if (/화요.*정모|^화요일정모/.test(compact)) return "TUE";
+  if (/목요.*정모|^목요일정모/.test(compact)) return "THU";
+  if (/토요.*정모|^토요일정모/.test(compact)) return "SAT";
   return null;
 }
 
-function parseFieldLine(line) {
-  const m = String(line || "").match(/^([^:：]+)[:：]\s*(.*)$/);
-  if (!m) return null;
-  const label = m[1].replace(/\s+/g, "").toLowerCase();
-  const value = m[2].trim();
-  if (/시간.?장소|시간\/장소|시간장소/.test(label) || label.includes("시간") && label.includes("장소")) {
-    const parts = value.split(/\s*[/／]\s*/);
-    return { time: (parts[0] || "").trim(), place: (parts.slice(1).join(" / ") || "").trim() };
+function parseTimePlaceValue(value) {
+  const v = String(value || "").trim();
+  if (!v) return { time: "", place: "" };
+  const slash = v.split(/\s*[/／]\s*/);
+  if (slash.length >= 2) {
+    return { time: slash[0].trim(), place: slash.slice(1).join(" / ").trim() };
   }
-  if (/^시간$/.test(label) || label === "time") return { time: value };
-  if (/^장소$/.test(label) || label === "place") return { place: value };
-  if (/전/.test(label) && /훈련|전/.test(label)) return { trainBefore: value };
-  if (/본/.test(label) && (/훈련/.test(label) || label.includes("본"))) return { trainMain: value };
-  if (/후/.test(label) && (/훈련/.test(label) || label.includes("후"))) return { trainAfter: value };
-  if (/서포터|급수/.test(label)) return { supporters: value };
-  if (/메모|안내/.test(label)) return { note: value };
+  const m = v.match(/^(\d{1,2}:\d{2})\s+(.+)$/);
+  if (m) return { time: m[1], place: m[2].trim() };
+  if (/^\d{1,2}:\d{2}$/.test(v)) return { time: v, place: "" };
+  return { time: "", place: v };
+}
+
+function detectFieldLabel(line) {
+  const compact = compactLabel(line);
+  if (!compact) return null;
+  if (compact === "시간장소" || compact.startsWith("시간장소")) return "timePlace";
+  if (compact === "시간") return "time";
+  if (compact === "장소") return "place";
+  if (compact === "전" || compact === "훈련전") return "trainBefore";
+  if (compact === "본" || compact === "훈련본") return "trainMain";
+  if (compact === "후" || compact === "훈련후") return "trainAfter";
+  if (compact.includes("서포터") || compact === "급수및서포터즈" || compact === "급수및")
+    return "supporters";
+  if (compact === "메모" || compact === "안내") return "note";
   return null;
+}
+
+function appendField(slot, field, value) {
+  const v = String(value || "").trim();
+  if (!v || !slot || !field) return;
+  if (field === "timePlace") {
+    const tp = parseTimePlaceValue(v);
+    if (tp.time) slot.time = tp.time;
+    if (tp.place) slot.place = tp.place;
+    return;
+  }
+  if (field === "time") {
+    slot.time = v;
+    return;
+  }
+  if (field === "place") {
+    slot.place = v;
+    return;
+  }
+  if (slot[field]) slot[field] = slot[field] + "\n" + v;
+  else slot[field] = v;
 }
 
 /**
  * Parse cafe notice paste into { TUE, THU, SAT } training field objects (no dates).
+ * Accepts colon lines and Naver cafe multiline label/value paste.
+ * First untitled block → TUE (common weekly cafe layout).
  */
 function parseCafeTrainingPaste(raw) {
-  const text = stripHtml(raw);
+  const text = normalizeCafePaste(stripHtml(unwrapCafePasteInput(raw)));
   const result = defaultEmptySlots();
-  const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => l && !/^https?:\/\//i.test(l));
 
   let current = null;
+  let field = null;
+  let untitledBlock = 0;
+  const order = ["TUE", "THU", "SAT"];
+
+  function ensureCurrent() {
+    if (current) return;
+    current = order[Math.min(untitledBlock, 2)];
+    untitledBlock += 1;
+    field = null;
+  }
+
   for (const line of lines) {
     const headerType = detectMeetingTypeFromHeader(line);
-    if (headerType && (/정모/.test(line) || headerType)) {
-      // Prefer lines that look like section headers
-      if (/정모/.test(line) || /^(화|목|토)/.test(line)) {
-        current = headerType;
+    if (headerType && /정모/.test(compactLabel(line))) {
+      current = headerType;
+      field = null;
+      continue;
+    }
+
+    const colon = line.match(/^([^:：]{1,40})[:：]\s*(.*)$/);
+    if (colon) {
+      const label = detectFieldLabel(colon[1]);
+      if (label) {
+        ensureCurrent();
+        field = label;
+        if (colon[2].trim()) {
+          appendField(result[current], field, colon[2]);
+          if (field === "timePlace") field = null;
+        }
         continue;
       }
     }
-    if (!current) {
-      // Orphan field before any header — skip
-      const maybeHeader = detectMeetingTypeFromHeader(line);
-      if (maybeHeader) {
-        current = maybeHeader;
-        continue;
+
+    const labelOnly = detectFieldLabel(line);
+    if (labelOnly) {
+      ensureCurrent();
+      field = labelOnly;
+      continue;
+    }
+
+    if (!current && /^\d{1,2}:\d{2}/.test(line)) {
+      ensureCurrent();
+      field = "timePlace";
+    }
+
+    if (!current || !field) {
+      if (current && result[current].supporters) {
+        appendField(result[current], "note", line);
       }
       continue;
     }
-    const fields = parseFieldLine(line);
-    if (!fields) continue;
-    Object.assign(result[current], fields);
+
+    appendField(result[current], field, line);
+    if (field === "timePlace") field = null;
+    else if (field === "supporters") field = "note";
   }
 
-  // Clear empty meetingDateKey on slots
   REGULAR_TYPES.forEach((t) => {
     result[t].meetingType = t;
     result[t].meetingDateKey = "";
+    ["trainBefore", "trainMain", "trainAfter", "note", "supporters", "place"].forEach((k) => {
+      if (result[t][k]) result[t][k] = String(result[t][k]).trim();
+    });
   });
   return result;
 }
@@ -226,7 +380,10 @@ return {
   parseCafeTrainingPaste,
   applyParsedToWeek,
   assertSaveRows,
+  unwrapCafePasteInput,
+  minifyCafeArticleForPaste,
   stripHtml,
+  normalizeCafePaste,
 };
 
 });

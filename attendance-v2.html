@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719l" />
   <style>
     body {
       margin: 0;
@@ -149,15 +149,19 @@
     .member-name { font-weight: 600; }
     .member-meta { font-size: 12px; color: var(--dmc-color-text-muted); }
     .dash-card {
-      padding: var(--dmc-space-5);
+      padding: var(--dmc-space-4);
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      margin-bottom: var(--dmc-space-3);
     }
     .dash-context-band {
       text-align: center;
-      background: var(--dmc-kiosk-hero-bg);
-      border: 1px solid var(--dmc-kiosk-surface-border);
-      border-radius: var(--dmc-kiosk-card-radius);
-      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-4);
-      box-shadow: var(--dmc-shadow-inset-top);
+      background: var(--dmc-color-surface);
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      box-shadow: none;
     }
     .dash-mega-line1 {
       text-align: center;
@@ -170,7 +174,7 @@
     }
     .dash-mega-line2 {
       text-align: center;
-      margin: 6px 0 0;
+      margin: 4px 0 0;
       font-weight: 900;
       letter-spacing: 0;
       line-height: 1.2;
@@ -182,13 +186,15 @@
       align-items: center;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 6px 12px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--dmc-line-subtle);
+      gap: 4px 10px;
+      margin: 6px 0 0;
+      padding: 0;
+      border-top: none;
+      min-height: 0;
       font-size: 13px;
       font-weight: 600;
       color: var(--dmc-color-text-secondary);
+      line-height: 1.3;
     }
     .btn-dash-link {
       width: auto;
@@ -205,7 +211,7 @@
       text-underline-offset: 2px;
     }
     .btn-dash-link:hover { color: var(--dmc-color-primary); }
-    .meeting-adjust { margin-top: 20px; font-size: 12px; color: var(--dmc-color-text-muted); }
+    .meeting-adjust { margin-top: 12px; font-size: 12px; color: var(--dmc-color-text-muted); }
     .meeting-adjust summary {
       cursor: pointer;
       list-style: none;
@@ -219,6 +225,11 @@
     }
     .meeting-adjust summary::-webkit-details-marker { display: none; }
     .meeting-adjust-body { padding: 6px 0 2px; }
+    .meeting-type-auto {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--dmc-color-text-muted);
+    }
     .dash-checkin {
       margin-top: var(--dmc-space-8);
       min-height: var(--dmc-button-size-xl);
@@ -299,7 +310,8 @@
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      z-index: 50;
+      /* above shell tab-bar (z-index: 100) and brand-bar */
+      z-index: 250;
     }
     .modal-sheet {
       background: var(--dmc-color-surface);
@@ -308,9 +320,11 @@
       border-radius: var(--dmc-kiosk-card-radius) var(--dmc-kiosk-card-radius) 0 0;
       border: 1px solid var(--dmc-kiosk-surface-border);
       border-bottom: 0;
-      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-6);
+      padding: var(--dmc-space-5) var(--dmc-space-4) calc(var(--dmc-space-6) + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       box-shadow: var(--dmc-kiosk-surface-shadow);
+      max-height: min(88dvh, 720px);
+      overflow-y: auto;
     }
     .modal-sheet h2 { margin: 0 0 12px 0; font-size: 16px; }
     .session-roster-head {
@@ -1276,10 +1290,9 @@
           <p class="dash-mega-line2" id="dashNicknameLine"></p>
           <p class="dash-meta-bar">
             <span id="dashTeamRole"></span>
-            <button type="button" class="btn-dash-link" id="changeTeamBtn">팀 변경</button>
           </p>
         </div>
-        <button type="button" class="dash-session-row muted" id="dashSessionRow" aria-label="현재 참여 인원 출석 명단 보기">
+        <button type="button" class="dash-session-row muted" id="dashSessionRow" aria-label="현재 참여 인원 목록으로 이동">
           <div class="dash-session-meta">
             <span class="dash-session-label">현재 참여 인원</span>
           </div>
@@ -1295,12 +1308,12 @@
           </table>
         </div>
         <details class="meeting-adjust" id="meetingAdjust">
-          <summary>날짜·유형이 다르면 여기서 수정</summary>
+          <summary>다른 날짜 출석을 원한다면 여기서 수정</summary>
           <div class="meeting-adjust-body">
             <label for="meetingDate">모임 날짜</label>
             <input type="date" id="meetingDate" />
-            <label for="meetingType" class="form-label-spaced">정모 유형</label>
-            <select id="meetingType">
+            <p class="meeting-type-auto hint" id="meetingTypeAutoHint" aria-live="polite"></p>
+            <select id="meetingType" hidden aria-hidden="true" tabindex="-1">
               <option value="TUE">화요일 정모</option>
               <option value="THU">목요일 정모</option>
               <option value="SAT">토요일 정모</option>
@@ -1309,7 +1322,17 @@
           </div>
         </details>
 <div id="dashMsg" class="msg"></div>
-        <button type="button" class="danger-ghost" id="resetProfileBtn">다른 사람으로 출석 (프로필 초기화)</button>
+      </div>
+
+      <div class="card attend-log-card today-roster-card" id="todayRosterCard" tabindex="-1">
+        <div class="summary-banner today-roster-banner">
+          <div>오늘 출석<br /><strong id="todayRosterCount">–</strong></div>
+          <div class="today-roster-banner-meta">
+            <span id="todayRosterMeetingLabel">—</span><br />
+            <span class="today-roster-sort">최신순</span>
+          </div>
+        </div>
+        <ul class="member-list" id="todayRosterList" aria-label="오늘 출석 인원"></ul>
       </div>
     </div>
 
@@ -1335,8 +1358,16 @@
             <button type="button" id="myAttendNext" aria-label="다음 달">›</button>
           </div>
           <div class="summary-stats" id="myAttendStats" aria-live="polite">불러오는 중…</div>
-          <div class="attend-log-card">
+          <div class="view-toggle" role="tablist" aria-label="보기 방식">
+            <button type="button" class="view-toggle-btn active" id="myViewList" data-mode="list" role="tab" aria-selected="true">목록</button>
+            <button type="button" class="view-toggle-btn" id="myViewCal" data-mode="cal" role="tab" aria-selected="false">달력</button>
+          </div>
+          <div class="attend-log-card" id="myAttendListPanel">
             <ul class="attend-log" id="myAttendList" aria-label="이번 달 출석 목록"></ul>
+          </div>
+          <div class="attend-log-card my-attend-cal-card" id="myAttendCalPanel" hidden>
+            <div class="cal-grid" id="myAttendCalGrid" aria-label="이번 달 출석 달력"></div>
+            <p class="hint my-attend-hint" style="margin:8px 16px 12px">초록 = 출석일 · 파란 링 = 오늘</p>
           </div>
           <p class="hint my-attend-hint">
             출석 취소는 <strong>활성 세션</strong>(접속 요일 기본 정모) 행만 가능합니다.
@@ -1366,14 +1397,24 @@
           <p class="profile-meta" id="moreProfileMeta">오늘 탭에서 본인을 선택해 주세요</p>
         </div>
         <div class="more-list">
-          <button type="button" class="more-item" id="btn-edit-profile">
-            <span class="more-icon" aria-hidden="true">✎</span>
-            <span class="more-text">
-              <strong>프로필 수정</strong>
-              <span>닉네임·팀 다시 선택</span>
-            </span>
-            <span class="more-chevron" aria-hidden="true">›</span>
-          </button>
+          <div class="more-group" id="moreProfileGroup">
+            <button type="button" class="more-item" id="btn-edit-profile">
+              <span class="more-icon" aria-hidden="true">✎</span>
+              <span class="more-text">
+                <strong>프로필 수정</strong>
+                <span>팀 변경</span>
+              </span>
+              <span class="more-chevron" aria-hidden="true">›</span>
+            </button>
+            <button type="button" class="more-item more-item-sub" id="resetProfileBtn" hidden>
+              <span class="more-icon" aria-hidden="true">↺</span>
+              <span class="more-text">
+                <strong>다른 사람으로 출석</strong>
+                <span>이 기기 프로필 초기화</span>
+              </span>
+              <span class="more-chevron" aria-hidden="true">›</span>
+            </button>
+          </div>
           <a class="more-item" href="my.html">
             <span class="more-icon" aria-hidden="true">🏁</span>
             <span class="more-text">
@@ -1391,7 +1432,6 @@
             <span class="more-chevron" aria-hidden="true">›</span>
           </button>
         </div>
-        <p class="more-hint">대회 기록은 상단바만. 키오스크는 이용 안내 안.</p>
       </section>
 
     </main>
@@ -1521,10 +1561,9 @@
       <div class="guide-sheet-handle" aria-hidden="true"></div>
       <h2 id="guideSheetTitle">이용 안내</h2>
       <div class="guide-body">
-        <p>정모(화·목·토) 출석은 «오늘» 탭에서 합니다. 개인 출석 취소는 «내 출석»(준비 중)의 활성 세션에서만 가능합니다.</p>
+        <p>정모(화·목·토) 출석은 «오늘» 탭에서 합니다. 개인 출석 취소는 «내 출석»의 활성 세션에서만 가능합니다.</p>
         <ul>
           <li>대회 기록은 상단 «대회 기록»</li>
-          <li>기본 정모는 접속 요일 규칙(MEETING_INFO)을 따릅니다</li>
         </ul>
       </div>
       <p class="guide-section-label">현장 · 공용 기기</p>
@@ -1552,6 +1591,18 @@
         <button type="button" class="modal-close-button" id="sessionRosterCloseBtn">닫기</button>
       </div>
       <div id="sessionRosterList" class="session-roster-list" role="status">불러오는 중입니다.</div>
+    </div>
+  </div>
+
+  <div id="teamMemberSheet" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="teamMemberSheetTitle">
+    <div class="modal-sheet team-member-sheet">
+      <div class="session-roster-head">
+        <h2 id="teamMemberSheetTitle">회원</h2>
+        <button type="button" class="modal-close-button" id="teamMemberSheetCloseBtn">닫기</button>
+      </div>
+      <p id="teamMemberSheetMeta" class="team-member-sheet-meta"></p>
+      <div id="teamMemberSheetPb" class="team-member-pb" hidden></div>
+      <div id="teamMemberSheetBody" class="team-member-sheet-body"></div>
     </div>
   </div>
 
@@ -1588,7 +1639,10 @@
     </div>
   </div>
   <script src="assets/attendance-shell-router.js?v=20260719"></script>
-  <script src="assets/attendance-team-month.js?v=20260719"></script>
-  <script src="attendance-v2.js" defer></script>
+  <script src="assets/attendance-team-month.js?v=20260719i"></script>
+  <script src="assets/attendance-meeting-type.js?v=20260719"></script>
+  <script src="assets/attendance-today-roster.js?v=20260719e"></script>
+  <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
+  <script src="attendance-v2.js?v=20260719m" defer></script>
 </body>
 </html>

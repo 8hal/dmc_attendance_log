@@ -6,6 +6,8 @@ const {
   listRegularMeetingDateKeys,
   isRegularMeetingType,
   aggregateTeamMonth,
+  buildMeetingDots,
+  memberMonthAttendRate,
 } = require(path.join(__dirname, "../../assets/attendance-team-month.js"));
 
 describe("attendance-team-month", () => {
@@ -60,5 +62,44 @@ describe("attendance-team-month", () => {
     assert.equal(all.roster, 3);
     assert.equal(all.attended, 2);
     assert.equal(all.rate, 67);
+  });
+});
+
+describe("buildMeetingDots", () => {
+  it("marks attended / missed / upcoming from todayKey", () => {
+    const dots = buildMeetingDots({
+      meetingDateKeys: ["2026/07/14", "2026/07/16", "2026/07/18"],
+      attendedDateKeys: ["2026/07/14"],
+      todayKey: "2026/07/16",
+    });
+    assert.deepEqual(dots.map((d) => d.state), ["attended", "upcoming", "upcoming"]);
+    // 7/16 not attended but today → upcoming
+    assert.equal(dots[1].dateKey, "2026/07/16");
+  });
+
+  it("marks past non-attended as missed", () => {
+    const dots = buildMeetingDots({
+      meetingDateKeys: ["2026/07/14", "2026/07/16"],
+      attendedDateKeys: [],
+      todayKey: "2026/07/17",
+    });
+    assert.deepEqual(dots.map((d) => d.state), ["missed", "missed"]);
+  });
+
+  it("normalizes dash attended keys", () => {
+    const dots = buildMeetingDots({
+      meetingDateKeys: ["2026/07/14"],
+      attendedDateKeys: ["2026-07-14"],
+      todayKey: "2026/07/20",
+    });
+    assert.equal(dots[0].state, "attended");
+  });
+});
+
+describe("memberMonthAttendRate", () => {
+  it("uses full meetingDateKeys as denominator", () => {
+    assert.equal(memberMonthAttendRate(2, 13), 15); // Math.round(2/13*100)
+    assert.equal(memberMonthAttendRate(0, 13), 0);
+    assert.equal(memberMonthAttendRate(1, 0), 0);
   });
 });

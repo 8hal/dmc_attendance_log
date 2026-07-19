@@ -11,6 +11,25 @@ function normalizeMeetingDateKey(raw) {
 }
 
 /**
+ * 캘린더 날짜 → 정모 유형.
+ * 화=TUE, 목=THU, 토=SAT, 그 외=ETC.
+ * @param {string} dateKey YYYY/MM/DD 또는 YYYY-MM-DD
+ * @returns {"TUE"|"THU"|"SAT"|"ETC"}
+ */
+function meetingTypeForDateKey(dateKey) {
+  const key = normalizeMeetingDateKey(dateKey);
+  const m = key.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (!m) return "ETC";
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
+  if (Number.isNaN(d.getTime())) return "ETC";
+  const dow = d.getUTCDay();
+  if (dow === 2) return "TUE";
+  if (dow === 4) return "THU";
+  if (dow === 6) return "SAT";
+  return "ETC";
+}
+
+/**
  * @param {Date} [now]
  * @returns {{ dateKey: string, meetingType: string }}
  */
@@ -94,6 +113,7 @@ function assertSelfDeleteAllowed(body, active) {
 
 module.exports = {
   normalizeMeetingDateKey,
+  meetingTypeForDateKey,
   resolveDefaultMeeting,
   isActiveSessionMatch,
   assertSelfDeleteAllowed,
