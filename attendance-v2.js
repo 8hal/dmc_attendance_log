@@ -19,7 +19,7 @@
   ];
   const SUCCESS_CHEERS_GUEST = ["함께해 주셔서 감사해요!", "출석이 기록되었습니다."];
   const NOT_ON_ROSTER_HELP =
-    "출석 명부에 없는 경우입니다. 출석은 기록되며, 명부 반영은 운영진이 따로 합니다. 명부 수정이 필요하면 게살볶음밥에게 알려주세요.";
+    "출석 명부 추가, 수정은 IT운영 총무 게살볶음밥에게 알려주세요.";
 
   const TEAM_OPTIONS = [
     { value: "S", label: "S팀" },
