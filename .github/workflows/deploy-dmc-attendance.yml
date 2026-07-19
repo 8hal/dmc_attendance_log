@@ -1,0 +1,72 @@
+# DMC Attendance 전체 Firebase 배포 — GitHub Actions (모바일 Run workflow)
+#
+# 사전 준비: _docs/development/github-actions-firebase-deploy.md
+# 시크릿: FIREBASE_SERVICE_ACCOUNT_DMC_ATTENDANCE (GCP 서비스 계정 JSON)
+# 설계: _docs/superpowers/specs/2026-07-19-mobile-firebase-deploy-design.md
+
+name: Deploy DMC Attendance (Firebase)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "배포 대상"
+        required: true
+        default: hosting
+        type: choice
+        options:
+          - hosting
+          - functions
+          - hosting-and-functions
+
+concurrency:
+  group: deploy-dmc-attendance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: ${{ inputs.deploy_target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Functions dependencies
+        if: inputs.deploy_target != 'hosting'
+        working-directory: functions
+        run: npm ci
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DMC_ATTENDANCE }}
+
+      - name: Deploy Functions (all)
+        if: inputs.deploy_target == 'functions' || inputs.deploy_target == 'hosting-and-functions'
+        run: npx firebase-tools@13.29.1 deploy --only functions --project dmc-attendance --non-interactive
+
+      - name: Deploy Hosting
+        if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-functions'
+        run: npx firebase-tools@13.29.1 deploy --only hosting --project dmc-attendance --non-interactive
+
+      - name: Smoke test — attendance API
+        if: inputs.deploy_target == 'functions' || inputs.deploy_target == 'hosting-and-functions'
+        run: |
+          url="https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance?action=status&date=2026/01/01"
+          body="$(curl -fsS "$url")"
+          echo "$body"
+          echo "$body" | grep -q '"ok":true'
+
+      - name: Smoke test — attendance-v2 hosting
+        if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-functions'
+        run: |
+          code="$(curl -sS -o /dev/null -w "%{http_code}" "https://dmc-attendance.web.app/attendance-v2.html")"
+          echo "HTTP $code"
+          test "$code" = "200"

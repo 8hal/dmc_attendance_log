@@ -4,11 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
-  <title>출석 체크 (공개 베타) - 동탄 마라톤 클럽</title>
+  <title>동마클 출석</title>
   <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
-  <link rel="stylesheet" href="assets/design-tokens.css?v=20260512-toss-tokens" />
+  <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719" />
   <style>
     body {
       margin: 0;
@@ -1242,14 +1243,18 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <span class="open-beta-pill">공개 베타</span>
-    <div class="open-beta-banner">
-      출석 페이지 디자인 리뉴얼 중입니다. 화면과 문구는 계속 다듬을 예정이니 불편한 점은 게살볶음밥에게 알려 주세요.
-      현재 날짜별 전체 명단·월간 기록은 <a href="index.html">기존 출석 페이지</a>에서 확인할 수 있어요.
-    </div>
-
-    <div id="viewSearch" class="hidden">
+  <div class="app" id="app-shell">
+    <header class="brand-bar" id="brand-bar">
+      <button type="button" class="brand-bar-home" id="brandBarHome" aria-label="오늘">
+        <img src="assets/dmc_logo.png" alt="" width="28" height="28" />
+        <span class="brand-bar-title">동마클 출석</span>
+      </button>
+      <a class="brand-bar-races" href="races.html">대회 기록</a>
+    </header>
+    <main class="main">
+      <section id="view-today" class="view active" data-view="today">
+        <div class="wrap">
+<div id="viewSearch" class="hidden">
       <div class="card">
         <div class="brand">
           <img src="assets/dmc_logo.png" alt="" width="32" height="32" />
@@ -1260,11 +1265,7 @@
         <input id="searchInput" type="search" autocomplete="off" placeholder="닉네임 일부 입력" />
         <div id="memberList" class="member-list"></div>
         <button type="button" class="ghost" id="openGuestBtn">출석 명부에 없는 경우</button>
-        <div class="field-mode-entry">
-          <span>현장 기기에서 여러 명이 순서대로 출석할 때</span>
-          <a id="openKioskFromSearchLink" href="attendance-v2.html?mode=kiosk">현장 출석 모드</a>
-        </div>
-        <div id="searchMsg" class="msg"></div>
+<div id="searchMsg" class="msg"></div>
       </div>
     </div>
 
@@ -1285,6 +1286,14 @@
           <span class="dash-session-figures" id="dashSessionFigures" aria-live="polite">…</span>
         </button>
         <button type="button" class="primary dash-checkin" id="checkinBtn">출석 체크</button>
+        <div class="card train-notice-card" id="todayTrainCard" hidden>
+          <p class="section-kicker" style="margin:0 0 8px">오늘 훈련 공지</p>
+          <table class="train-notice" id="todayTrainInfo" aria-label="정모 훈련 공지">
+            <tbody id="todayTrainBody">
+              <tr><td colspan="2" style="color:var(--dmc-color-text-muted)">불러오는 중…</td></tr>
+            </tbody>
+          </table>
+        </div>
         <details class="meeting-adjust" id="meetingAdjust">
           <summary>날짜·유형이 다르면 여기서 수정</summary>
           <div class="meeting-adjust-body">
@@ -1299,11 +1308,7 @@
             </select>
           </div>
         </details>
-        <div class="field-mode-entry">
-          <span>현장 기기에서 여러 명이 순서대로 출석할 때</span>
-          <a id="openKioskModeLink" href="attendance-v2.html?mode=kiosk">현장 출석 모드</a>
-        </div>
-        <div id="dashMsg" class="msg"></div>
+<div id="dashMsg" class="msg"></div>
         <button type="button" class="danger-ghost" id="resetProfileBtn">다른 사람으로 출석 (프로필 초기화)</button>
       </div>
     </div>
@@ -1319,11 +1324,101 @@
         <button type="button" class="primary form-action-primary" id="successDoneBtn">닫기</button>
       </div>
     </div>
+        </div>
+      </section>
+      <section id="view-my-attendance" class="view" data-view="my-attendance" hidden>
+        <div class="wrap my-attend-wrap">
+          <p class="section-kicker">MY ATTENDANCE</p>
+          <div class="month-nav my-attend-month-nav">
+            <button type="button" id="myAttendPrev" aria-label="이전 달">‹</button>
+            <h2 id="myAttendMonthLabel">—</h2>
+            <button type="button" id="myAttendNext" aria-label="다음 달">›</button>
+          </div>
+          <div class="summary-stats" id="myAttendStats" aria-live="polite">불러오는 중…</div>
+          <div class="attend-log-card">
+            <ul class="attend-log" id="myAttendList" aria-label="이번 달 출석 목록"></ul>
+          </div>
+          <p class="hint my-attend-hint">
+            출석 취소는 <strong>활성 세션</strong>(접속 요일 기본 정모) 행만 가능합니다.
+          </p>
+        </div>
+      </section>
+      <section id="view-team-attendance" class="view" data-view="team-attendance" hidden>
+        <div class="wrap team-attend-wrap">
+          <p class="section-kicker">TEAM</p>
+          <div class="month-nav team-attend-month-nav">
+            <button type="button" id="teamAttendPrev" aria-label="이전 달">‹</button>
+            <h2 id="teamAttendMonthLabel">—</h2>
+            <button type="button" id="teamAttendNext" aria-label="다음 달">›</button>
+          </div>
+          <div class="filter-chips" id="teamAttendChips" role="group" aria-label="팀 필터"></div>
+          <div class="summary-banner" id="teamAttendSummary" aria-live="polite">불러오는 중…</div>
+          <div class="attend-log-card">
+            <ul class="member-list" id="teamAttendList" aria-label="팀 출석 목록"></ul>
+          </div>
+          <p class="hint my-attend-hint">정모(화·목·토)만 집계합니다. 조회 전용.</p>
+        </div>
+      </section>
 
-    <section id="viewKiosk" class="kiosk-view hidden" aria-label="현장 출석부">
+      <section id="view-more" class="view" data-view="more" hidden>
+        <div class="more-profile-card" id="moreProfileCard">
+          <p class="profile-name" id="moreProfileName">프로필 없음</p>
+          <p class="profile-meta" id="moreProfileMeta">오늘 탭에서 본인을 선택해 주세요</p>
+        </div>
+        <div class="more-list">
+          <button type="button" class="more-item" id="btn-edit-profile">
+            <span class="more-icon" aria-hidden="true">✎</span>
+            <span class="more-text">
+              <strong>프로필 수정</strong>
+              <span>닉네임·팀 다시 선택</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </button>
+          <a class="more-item" href="my.html">
+            <span class="more-icon" aria-hidden="true">🏁</span>
+            <span class="more-text">
+              <strong>내 기록</strong>
+              <span>개인 레이스 기록 (my)</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </a>
+          <button type="button" class="more-item" id="btn-guide">
+            <span class="more-icon" aria-hidden="true">ℹ</span>
+            <span class="more-text">
+              <strong>이용 안내</strong>
+              <span>출석·정모 규칙 · 키오스크</span>
+            </span>
+            <span class="more-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+        <p class="more-hint">대회 기록은 상단바만. 키오스크는 이용 안내 안.</p>
+      </section>
+
+    </main>
+    <nav class="tab-bar" id="tab-bar" aria-label="출석 앱 탭">
+      <button type="button" class="tab-btn active" data-tab="today">
+        <span class="tab-icon" aria-hidden="true">📍</span>오늘
+      </button>
+      <button type="button" class="tab-btn" data-tab="my-attendance">
+        <span class="tab-icon" aria-hidden="true">📅</span>내 출석
+      </button>
+      <button type="button" class="tab-btn" data-tab="team-attendance">
+        <span class="tab-icon" aria-hidden="true">👥</span>팀 출석
+      </button>
+      <button type="button" class="tab-btn" data-tab="more">
+        <span class="tab-icon" aria-hidden="true">⋯</span>더보기
+      </button>
+    </nav>
+  </div>
+
+  <div class="wrap" id="kioskWrap" hidden>
+<section id="viewKiosk" class="kiosk-view" aria-label="현장 출석부">
       <header class="kiosk-top-bar">
-        <strong id="kioskMeetingTitleFull" class="kiosk-meeting-title full">정모</strong>
-        <strong id="kioskMeetingTitleCompact" class="kiosk-meeting-title compact">정모</strong>
+        <div class="kiosk-meeting-titles">
+          <strong id="kioskMeetingTitleFull" class="kiosk-meeting-title full">정모</strong>
+          <strong id="kioskMeetingTitleCompact" class="kiosk-meeting-title compact">정모</strong>
+        </div>
+        <button type="button" id="btn-exit-kiosk">키오스크 종료</button>
       </header>
 
       <div id="kioskHomePanel" class="kiosk-panel">
@@ -1420,7 +1515,37 @@
     </section>
   </div>
 
-  <div id="sessionRosterModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="sessionRosterTitle">
+
+  <div class="sheet-backdrop" id="guideSheet" hidden>
+    <div class="guide-sheet" role="dialog" aria-modal="true" aria-labelledby="guideSheetTitle">
+      <div class="guide-sheet-handle" aria-hidden="true"></div>
+      <h2 id="guideSheetTitle">이용 안내</h2>
+      <div class="guide-body">
+        <p>정모(화·목·토) 출석은 «오늘» 탭에서 합니다. 개인 출석 취소는 «내 출석»(준비 중)의 활성 세션에서만 가능합니다.</p>
+        <ul>
+          <li>대회 기록은 상단 «대회 기록»</li>
+          <li>기본 정모는 접속 요일 규칙(MEETING_INFO)을 따릅니다</li>
+        </ul>
+      </div>
+      <p class="guide-section-label">현장 · 공용 기기</p>
+      <div class="more-list">
+        <button type="button" class="more-item" id="btn-kiosk-mode">
+          <span class="more-icon" aria-hidden="true">📟</span>
+          <span class="more-text">
+            <strong>키오스크 모드</strong>
+            <span>공용 기기 · 현장 출석</span>
+          </span>
+          <span class="more-chevron" aria-hidden="true">›</span>
+        </button>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" id="guideSheetClose">닫기</button>
+      </div>
+    </div>
+  </div>
+
+
+<div id="sessionRosterModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="sessionRosterTitle">
     <div class="modal-sheet">
       <div class="session-roster-head">
         <h2 id="sessionRosterTitle">출석 명단</h2>
@@ -1462,7 +1587,8 @@
       <button type="button" class="ghost" id="teamCancelBtn">취소</button>
     </div>
   </div>
-
+  <script src="assets/attendance-shell-router.js?v=20260719"></script>
+  <script src="assets/attendance-team-month.js?v=20260719"></script>
   <script src="attendance-v2.js" defer></script>
 </body>
 </html>

@@ -188,17 +188,57 @@ assert_contains "report.html: 대회 예정 탭" 'data-tab="scheduled"' "$TMP_DI
 assert_contains "report.html: 수집/예정 구분 KST" "Asia/Seoul" "$TMP_DIR/report.html"
 
 curl -s "$HOST/admin.html" > "$TMP_DIR/admin.html"
-assert_contains "admin.html: verify-admin" "verify-admin" "$TMP_DIR/admin.html"
+assert_contains "admin.html: 출석 운영 리다이렉트" "attendance-admin.html" "$TMP_DIR/admin.html"
+
+curl -s "$HOST/attendance-admin.html" > "$TMP_DIR/attendance-admin.html"
+curl -s "$HOST/attendance-admin.js" > "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.html: 스크립트" "attendance-admin.js" "$TMP_DIR/attendance-admin.html"
+assert_contains "attendance-admin.js: verify-admin" "verify-admin" "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: all-members" "all-members" "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: sessionCount" "sessionCount" "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: admin-delete" "admin-delete-attendance" "$TMP_DIR/attendance-admin.js"
+
+curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: delete-attendance" "delete-attendance" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: team attendance" "loadTeamAttendancePanel" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: meeting-training notice" "meeting-training" "$TMP_DIR/attendance-v2.js"
+
+curl -s "$HOST/assets/attendance-team-month.js" > "$TMP_DIR/attendance-team-month.js"
+assert_contains "attendance-team-month.js: aggregate" "aggregateTeamMonth" "$TMP_DIR/attendance-team-month.js"
+
+curl -s "$HOST/assets/meeting-training.js" > "$TMP_DIR/meeting-training.js"
+assert_contains "meeting-training.js: parseCafe" "parseCafeTrainingPaste" "$TMP_DIR/meeting-training.js"
+
+curl -s "$HOST/attendance-admin.js" > "$TMP_DIR/attendance-admin.js"
+assert_contains "attendance-admin.js: meeting-training save" "meeting-training" "$TMP_DIR/attendance-admin.js"
 
 curl -s "$HOST/index.html" > "$TMP_DIR/index.html"
 assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
 
 curl -s "$HOST/attendance-v2.html" > "$TMP_DIR/attendance-v2.html"
 curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
+curl -s "$HOST/assets/attendance-shell.css" > "$TMP_DIR/attendance-shell.css"
 assert_contains "attendance-v2.html: 외부 스크립트" "attendance-v2.js" "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: 셸 CSS" "attendance-shell.css" "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: app-shell" 'id="app-shell"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: tab-bar" 'id="tab-bar"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: kioskWrap" 'id="kioskWrap"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: 이용안내 키오스크" 'id="btn-kiosk-mode"' "$TMP_DIR/attendance-v2.html"
+assert_contains "attendance-v2.html: 키오스크 종료" 'id="btn-exit-kiosk"' "$TMP_DIR/attendance-v2.html"
 assert_contains "attendance-v2.js: 완료 화면 보조" "showSuccessAfterCheckin" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: roster 재로드" "reloadKioskRoster" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: 명부 외 CTA" "kioskMemberNotOnRosterBtn" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: 셸 탭" "showShellTab" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-v2.js: 키오스크 셸 토글" "setKioskShellVisible" "$TMP_DIR/attendance-v2.js"
+assert_contains "attendance-shell.css: .app" ".app {" "$TMP_DIR/attendance-shell.css"
+
+if ! grep -q 'id="openKioskModeLink"' "$TMP_DIR/attendance-v2.html" 2>/dev/null; then
+  PASS=$((PASS+1))
+  RESULTS+=("${GREEN}✓${NC} attendance-v2.html: 오늘탭 키오스크 링크 없음")
+else
+  FAIL=$((FAIL+1))
+  RESULTS+=("${RED}✗${NC} attendance-v2.html: 오늘탭 키오스크 링크가 남아 있음")
+fi
 
 curl -s "$HOST/attendance-v2-design-draft.html" > "$TMP_DIR/attendance-v2-design-draft.html"
 assert_contains "attendance-v2-design-draft.html: 드래프트 표시" "DESIGN DRAFT" "$TMP_DIR/attendance-v2-design-draft.html"

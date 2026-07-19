@@ -21,7 +21,22 @@ const {
 const { normalizeRaceDistance } = require("./lib/raceDistance");
 const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
 const { handleChunbaekRequest } = require("./lib/chunbaek-handlers");
+const {
+  resolveDefaultMeeting,
+  assertSelfDeleteAllowed,
+  normalizeMeetingDateKey,
+} = require("./lib/attendance-active-session");
+const {
+  trainingDocId,
+  normalizeTrainingRow,
+  resolveWeekMeetingDates,
+  emptyTrainingRow,
+  assertSaveRows,
+  REGULAR_TYPES: TRAINING_TYPES,
+} = require("./lib/meeting-training");
 const { google } = require("googleapis");
+
+const MEETING_TRAINING_COLLECTION = "meeting_training";
 
 // 초기화
 initializeApp();
@@ -691,8 +706,9 @@ async function handlePost(req, res) {
   }
 }
 
-function mapAttendanceDocToStatusItem(data) {
+function mapAttendanceDocToStatusItem(data, docId) {
   return {
+    id: docId || null,
     nickname: data.nickname,
     team: data.team || null,
     teamLabel: data.teamLabel,
@@ -700,6 +716,8 @@ function mapAttendanceDocToStatusItem(data) {
     meetingTypeLabel: data.meetingTypeLabel,
     meetingDate: data.meetingDateKey,
     timeText: data.ts ? formatKstKoreanAmPm(new Date(data.ts)) : "",
+    memberId: data.memberId || null,
+    isGuest: data.isGuest === true,
   };
 }
 
@@ -717,7 +735,7 @@ async function fetchAttendanceSnapshotForMeetingDateKey(dateKey) {
  */
 async function getStatusForDate(dateKey) {
   const snapshot = await fetchAttendanceSnapshotForMeetingDateKey(dateKey);
-  const items = snapshot.docs.map((doc) => mapAttendanceDocToStatusItem(doc.data()));
+  const items = snapshot.docs.map((doc) => mapAttendanceDocToStatusItem(doc.data(), doc.id));
   return {
     date: dateKey,
     count: items.length,
@@ -759,7 +777,7 @@ async function getMeetingSessionCounts(meetingDateKey, meetingTypeUpper) {
 async function getStatusAndSessionCountForPost(meetingDateKey, typeCodeUpper) {
   const mt = str(typeCodeUpper).trim().toUpperCase();
   const snapshot = await fetchAttendanceSnapshotForMeetingDateKey(meetingDateKey);
-  const items = snapshot.docs.map((doc) => mapAttendanceDocToStatusItem(doc.data()));
+  const items = snapshot.docs.map((doc) => mapAttendanceDocToStatusItem(doc.data(), doc.id));
   let memberCount = 0;
   let guestCount = 0;
   snapshot.docs.forEach((doc) => {
@@ -809,6 +827,7 @@ async function getHistoryForNicknameMonth(nickname, monthKey) {
     if (!rowGuest) memberAttendanceCount += 1;
 
     items.push({
+      id: doc.id,
       nickname: data.nickname,
       team: data.team || null,
       teamLabel: data.teamLabel,
@@ -817,6 +836,7 @@ async function getHistoryForNicknameMonth(nickname, monthKey) {
       meetingDate: data.meetingDateKey,
       timeText: data.ts ? formatKstKoreanAmPm(new Date(data.ts)) : "",
       isGuest: rowGuest,
+      memberId: data.memberId || null,
     });
 
     if (!rowGuest) {
@@ -959,6 +979,10 @@ async function handleGet(req, res) {
       const durationMs = Date.now() - startMs;
       console.log(`[GET sessionCount] ${dateKey} ${meetingTypeQ} m=${sc.memberCount} g=${sc.guestCount} - ${durationMs}ms`);
       return res.json({ ok: true, ...sc });
+    }
+
+    if (action === "meeting-training") {
+      return handleGetMeetingTraining(req, res);
     }
 
     return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
@@ -3716,6 +3740,306 @@ exports.chunbaek = onRequest(
   }
 );
 
+/**
+ * 개인 출석 취소 — 활성 세션 + memberId
+ * POST /attendance?action=delete-attendance
+ */
+async function handleDeleteAttendance(req, res) {
+  try {
+    let body = req.body || {};
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch (_) {
+        body = {};
+      }
+    }
+
+    const active = resolveDefaultMeeting(new Date());
+    const gate = assertSelfDeleteAllowed(body, active);
+    if (gate === "MEMBER_ID_REQUIRED") {
+      return res.status(400).json({ ok: false, error: gate, message: "memberId is required" });
+    }
+    if (gate === "MEETING_REQUIRED") {
+      return res.status(400).json({ ok: false, error: gate, message: "meetingDate and meetingType required" });
+    }
+    if (gate === "NOT_ACTIVE_SESSION") {
+      return res.status(403).json({
+        ok: false,
+        error: gate,
+        message: "활성 세션 출석만 취소할 수 있습니다",
+        activeSession: active,
+      });
+    }
+
+    const memberId = str(body.memberId).trim();
+    const meetingDateKey = normalizeMeetingDateKey(body.meetingDate || body.meetingDateKey);
+    const meetingType = str(body.meetingType).trim().toUpperCase();
+
+    const snap = await db
+      .collection(COLLECTION)
+      .where("memberId", "==", memberId)
+      .where("meetingDateKey", "==", meetingDateKey)
+      .get();
+
+    const matches = snap.docs.filter(
+      (doc) => str(doc.data().meetingType || "").toUpperCase() === meetingType
+    );
+
+    if (!matches.length) {
+      logAttendanceServerEvent("attendance_delete_error", {
+        mode: "self",
+        error: "NOT_FOUND",
+        memberId,
+        meetingDate: meetingDateKey,
+        meetingType,
+      });
+      return res.status(404).json({ ok: false, error: "NOT_FOUND", message: "출석 기록을 찾을 수 없습니다" });
+    }
+
+    const deletedIds = [];
+    for (const doc of matches) {
+      await doc.ref.delete();
+      deletedIds.push(doc.id);
+    }
+
+    logAttendanceServerEvent("attendance_delete", {
+      mode: "self",
+      memberId,
+      meetingDate: meetingDateKey,
+      meetingType,
+      deletedIds,
+      deletedCount: deletedIds.length,
+    });
+
+    return res.json({
+      ok: true,
+      deletedIds,
+      deletedCount: deletedIds.length,
+      meetingDate: meetingDateKey,
+      meetingType,
+    });
+  } catch (err) {
+    console.error("[delete-attendance]", err);
+    logAttendanceServerEvent("attendance_delete_error", {
+      mode: "self",
+      error: "server_exception",
+      message: String(err.message || err),
+    });
+    return res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+}
+
+function verifyAdminPassword(pw) {
+  const ownerPw = process.env.DMC_OWNER_PW;
+  const adminPw = process.env.DMC_ADMIN_PW || "dmc2008";
+  if (ownerPw && pw === ownerPw) return { ok: true, role: "owner" };
+  if (pw === adminPw) return { ok: true, role: "operator" };
+  return { ok: false };
+}
+
+/**
+ * 운영진 출석 삭제
+ * POST /attendance?action=admin-delete-attendance
+ * body: { pw, docId } 또는 { pw, meetingDate, meetingType, nickname }
+ */
+async function handleAdminDeleteAttendance(req, res) {
+  try {
+    let body = req.body || {};
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch (_) {
+        body = {};
+      }
+    }
+
+    const auth = verifyAdminPassword(body.pw);
+    if (!auth.ok) {
+      return res.status(401).json({ ok: false, error: "invalid password" });
+    }
+
+    const docId = str(body.docId).trim();
+    let docsToDelete = [];
+
+    if (docId) {
+      const ref = db.collection(COLLECTION).doc(docId);
+      const doc = await ref.get();
+      if (!doc.exists) {
+        return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+      }
+      docsToDelete = [doc];
+    } else {
+      const meetingDateKey = normalizeMeetingDateKey(body.meetingDate || body.meetingDateKey);
+      const meetingType = str(body.meetingType).trim().toUpperCase();
+      const nickname = str(body.nickname).trim();
+      if (!meetingDateKey || !meetingType || !nickname) {
+        return res.status(400).json({
+          ok: false,
+          error: "docId or (meetingDate, meetingType, nickname) required",
+        });
+      }
+      const nicknameKey = nickname.toLowerCase();
+      const snap = await db
+        .collection(COLLECTION)
+        .where("nicknameKey", "==", nicknameKey)
+        .where("meetingDateKey", "==", meetingDateKey)
+        .get();
+      docsToDelete = snap.docs.filter(
+        (d) => str(d.data().meetingType || "").toUpperCase() === meetingType
+      );
+      if (!docsToDelete.length) {
+        return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+      }
+    }
+
+    const deleted = [];
+    for (const doc of docsToDelete) {
+      const data = doc.data() || {};
+      await doc.ref.delete();
+      deleted.push({
+        id: doc.id,
+        nickname: data.nickname || null,
+        meetingDate: data.meetingDateKey || null,
+        meetingType: data.meetingType || null,
+        memberId: data.memberId || null,
+      });
+    }
+
+    logAttendanceServerEvent("attendance_admin_delete", {
+      mode: "admin",
+      role: auth.role,
+      deleted,
+      deletedCount: deleted.length,
+    });
+
+    return res.json({ ok: true, deleted, deletedCount: deleted.length, role: auth.role });
+  } catch (err) {
+    console.error("[admin-delete-attendance]", err);
+    logAttendanceServerEvent("attendance_delete_error", {
+      mode: "admin",
+      error: "server_exception",
+      message: String(err.message || err),
+    });
+    return res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+}
+
+/**
+ * GET meeting-training — single session or week board
+ * ?action=meeting-training&meetingDate=&meetingType=
+ * ?action=meeting-training&week=YYYY-MM-DD
+ */
+async function handleGetMeetingTraining(req, res) {
+  try {
+    const weekAnchor = str(req.query.week || "").trim();
+    if (weekAnchor) {
+      const weekDates = resolveWeekMeetingDates(weekAnchor);
+      const rows = [];
+      for (const type of TRAINING_TYPES) {
+        const dateKey = weekDates[type];
+        const id = trainingDocId(dateKey, type);
+        let data = emptyTrainingRow(dateKey, type);
+        if (id) {
+          const doc = await db.collection(MEETING_TRAINING_COLLECTION).doc(id).get();
+          if (doc.exists) {
+            data = { ...data, ...normalizeTrainingRow(doc.data()), id: doc.id };
+          } else {
+            data = { ...data, id: null };
+          }
+        }
+        rows.push(data);
+      }
+      return res.json({ ok: true, mode: "week", week: weekDates, rows });
+    }
+
+    const meetingDateKey = normalizeMeetingDateKey(
+      req.query.meetingDate || req.query.date || ""
+    );
+    const meetingType = str(req.query.meetingType || "")
+      .trim()
+      .toUpperCase();
+    if (!meetingDateKey || !TRAINING_TYPES.includes(meetingType)) {
+      return res.status(400).json({
+        ok: false,
+        error: "week= or (meetingDate + meetingType TUE|THU|SAT) required",
+      });
+    }
+    const id = trainingDocId(meetingDateKey, meetingType);
+    const doc = await db.collection(MEETING_TRAINING_COLLECTION).doc(id).get();
+    if (!doc.exists) {
+      return res.json({
+        ok: true,
+        mode: "single",
+        found: false,
+        item: emptyTrainingRow(meetingDateKey, meetingType),
+      });
+    }
+    return res.json({
+      ok: true,
+      mode: "single",
+      found: true,
+      item: { ...normalizeTrainingRow(doc.data()), id: doc.id },
+    });
+  } catch (err) {
+    console.error("[meeting-training GET]", err);
+    return res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+}
+
+/**
+ * POST meeting-training — admin save rows
+ * body: { pw, rows: [{ meetingDate, meetingType, time, place, ... }] }
+ */
+async function handlePostMeetingTraining(req, res) {
+  try {
+    let body = req.body || {};
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch (_) {
+        body = {};
+      }
+    }
+
+    const auth = verifyAdminPassword(body.pw);
+    if (!auth.ok) {
+      return res.status(401).json({ ok: false, error: "invalid password" });
+    }
+
+    const gate = assertSaveRows(body.rows);
+    if (gate) {
+      return res.status(400).json({ ok: false, error: gate });
+    }
+
+    const saved = [];
+    const now = new Date().toISOString();
+    for (const raw of body.rows) {
+      const row = normalizeTrainingRow(raw);
+      const id = trainingDocId(row.meetingDateKey, row.meetingType);
+      if (!id) continue;
+      const payload = {
+        ...row,
+        updatedAt: now,
+        updatedByRole: auth.role,
+      };
+      await db.collection(MEETING_TRAINING_COLLECTION).doc(id).set(payload, { merge: true });
+      saved.push({ id, ...payload });
+    }
+
+    logAttendanceServerEvent("meeting_training_save", {
+      role: auth.role,
+      savedCount: saved.length,
+      ids: saved.map((s) => s.id),
+    });
+
+    return res.json({ ok: true, saved, savedCount: saved.length, role: auth.role });
+  } catch (err) {
+    console.error("[meeting-training POST]", err);
+    return res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+}
+
 exports.attendance = onRequest({ cors: true }, async (req, res) => {
   // CORS 헤더 설정
   res.set("Access-Control-Allow-Origin", "*");
@@ -3727,6 +4051,16 @@ exports.attendance = onRequest({ cors: true }, async (req, res) => {
   }
 
   if (req.method === "POST") {
+    const action = str(req.query.action || "").trim();
+    if (action === "delete-attendance") {
+      return handleDeleteAttendance(req, res);
+    }
+    if (action === "admin-delete-attendance") {
+      return handleAdminDeleteAttendance(req, res);
+    }
+    if (action === "meeting-training") {
+      return handlePostMeetingTraining(req, res);
+    }
     return handlePost(req, res);
   }
 

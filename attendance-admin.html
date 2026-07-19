@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>동마클 출석 운영</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css?v=20260719-admin" />
+  <link rel="stylesheet" href="assets/attendance-admin.css?v=20260719" />
+</head>
+<body>
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <h1>동마클 출석 운영</h1>
+      <p>운영진 비밀번호를 입력하세요</p>
+      <input type="password" id="authPw" placeholder="비밀번호" autocomplete="current-password" />
+      <div class="auth-error" id="authError">비밀번호가 올바르지 않습니다</div>
+      <button type="button" class="btn btn-primary" style="width:100%" id="authBtn">확인</button>
+    </div>
+  </div>
+
+  <div class="shell" id="shell">
+    <header class="topbar">
+      <img src="assets/dmc_logo.png" alt="" width="28" height="28" />
+      <h1>동마클 출석 운영</h1>
+      <div class="topbar-links">
+        <a href="races.html">대회 기록</a>
+        <a href="report.html">주간 리포트</a>
+        <a href="group.html">단체 대회</a>
+      </div>
+      <span class="topbar-meta" id="topbarMeta">operator / owner</span>
+    </header>
+
+    <nav class="tabs" id="tabs" aria-label="출석 운영 탭">
+      <button type="button" class="tab-btn active" data-tab="attendance">출석 관리</button>
+      <button type="button" class="tab-btn" data-tab="members">회원</button>
+      <button type="button" class="tab-btn" data-tab="training">정모 훈련</button>
+    </nav>
+
+    <main class="main">
+      <section class="panel active" id="panel-attendance">
+        <div class="chips" id="attModeChips" role="tablist" aria-label="출석 관리 모드">
+          <button type="button" class="chip active" data-mode="day">당일</button>
+          <button type="button" class="chip" data-mode="month">월 집계 · 출석왕</button>
+          <button type="button" class="chip" data-mode="csv">기간 CSV</button>
+        </div>
+
+        <div id="attModeDay">
+          <div class="toolbar">
+            <div class="field">
+              <label for="attDate">날짜</label>
+              <input type="date" id="attDate" />
+            </div>
+            <div class="field">
+              <label for="attType">정모</label>
+              <select id="attType">
+                <option value="TUE">화요일 정모</option>
+                <option value="THU">목요일 정모</option>
+                <option value="SAT">토요일 정모</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="attReload">불러오기</button>
+            <button type="button" class="btn btn-outline" id="attAddStub" disabled title="Delete-1 이후">+ 출석 추가 (예정)</button>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><strong id="attTotal">—</strong><span>전체</span></div>
+            <div class="stat"><strong id="attMembers">—</strong><span>정회원</span></div>
+            <div class="stat"><strong id="attGuests">—</strong><span>게스트</span></div>
+          </div>
+
+          <div class="card">
+            <h2>출석 명단</h2>
+            <div style="overflow-x:auto">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th>닉네임</th>
+                    <th>팀</th>
+                    <th>유형</th>
+                    <th>시각</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="attRosterBody">
+                  <tr><td colspan="5" style="text-align:center;color:var(--dmc-color-text-muted);padding:24px">날짜·정모를 선택한 뒤 불러오세요</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="hint">삭제는 운영진 비밀번호로 확인된 세션에서 바로 적용됩니다. event_logs에 감사 기록이 남습니다.</p>
+          </div>
+        </div>
+
+        <div id="attModeMonth" hidden>
+          <div class="toolbar">
+            <div class="field">
+              <label for="attMonth">월</label>
+              <input type="month" id="attMonth" />
+            </div>
+            <div class="field">
+              <label for="attMonthScope">범위</label>
+              <select id="attMonthScope">
+                <option value="regular" selected>정모만 (화·목·토)</option>
+                <option value="all">전체 유형</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="attMonthLoad" disabled title="집계 API 예정">집계 (예정)</button>
+          </div>
+          <div class="card">
+            <div class="stub-note">월 집계·출석왕 API는 justification 후 연결합니다.<br />UI 골격만 제공합니다.</div>
+          </div>
+        </div>
+
+        <div id="attModeCsv" hidden>
+          <div class="toolbar">
+            <div class="field">
+              <label for="csvFrom">시작</label>
+              <input type="date" id="csvFrom" />
+            </div>
+            <div class="field">
+              <label for="csvTo">종료</label>
+              <input type="date" id="csvTo" />
+            </div>
+            <div class="field">
+              <label for="csvScope">유형</label>
+              <select id="csvScope">
+                <option value="regular" selected>정모만</option>
+                <option value="all">전체</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="csvDownload" disabled title="export API 예정">CSV 다운로드 (예정)</button>
+          </div>
+          <div class="card">
+            <div class="stub-note">기간 CSV export API는 justification 후 연결합니다.</div>
+            <p class="hint">예정 컬럼: meetingDate, meetingType, nickname, team, memberId, isGuest, time</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-members" hidden>
+        <div class="card">
+          <h2>회원 추가</h2>
+          <div class="add-form">
+            <input type="text" id="addNickname" placeholder="닉네임 *" style="flex:2;min-width:100px" />
+            <input type="text" id="addRealName" placeholder="실명 *" style="flex:2;min-width:100px" />
+            <select id="addGender" style="width:80px">
+              <option value="">성별</option>
+              <option value="M">남</option>
+              <option value="F">여</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" id="addBtn">추가</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h2 style="margin:0">회원 목록</h2>
+            <span class="show-hidden-toggle" id="toggleHidden">숨긴 회원 보기</span>
+          </div>
+          <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="닉네임 또는 실명으로 검색" />
+          </div>
+          <div class="stat-bar" id="statBar"></div>
+          <div style="overflow-x:auto">
+            <table class="member-table">
+              <thead>
+                <tr>
+                  <th>닉네임</th>
+                  <th>실명</th>
+                  <th>성별</th>
+                  <th style="width:100px"></th>
+                </tr>
+              </thead>
+              <tbody id="memberBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-training" hidden>
+        <div class="card train-import-card">
+          <h2>① 카페 공지 붙여넣기</h2>
+          <p class="hint">카페에서 복사한 화·목·토 정모 본문을 붙여넣고 파싱합니다. URL 자동 fetch는 준비 중.</p>
+          <div class="field full">
+            <label for="cafePaste">본문</label>
+            <textarea id="cafePaste" rows="8" placeholder="화요일 정모&#10;시간/장소: 18:30 / 여울공원…&#10;훈련 · 전: …&#10;훈련 · 본: …&#10;…"></textarea>
+          </div>
+          <button type="button" class="btn btn-primary" id="cafeParsePaste">붙여넣기 파싱</button>
+        </div>
+
+        <div class="week-nav">
+          <button type="button" class="btn btn-outline" id="trainPrevWeek">‹ 지난주</button>
+          <strong id="trainWeekLabel">—</strong>
+          <button type="button" class="btn btn-outline" id="trainNextWeek">다음주 ›</button>
+          <button type="button" class="btn btn-outline" id="trainLoadWeek">DB 불러오기</button>
+          <button type="button" class="btn btn-outline" id="trainCopyPrevWeek">지난주 DB 복사</button>
+          <button type="button" class="btn btn-primary" id="trainSave">② 검토 후 주간 저장</button>
+        </div>
+        <p class="hint" style="margin-top:0">파싱·불러오기 후 필드를 수정하고 저장합니다.</p>
+        <div class="week-board" id="trainWeekBoard"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="assets/meeting-training.js?v=20260719"></script>
+  <script src="attendance-admin.js?v=20260719b" defer></script>
+</body>
+</html>
