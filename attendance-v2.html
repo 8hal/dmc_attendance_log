@@ -225,6 +225,11 @@
     }
     .meeting-adjust summary::-webkit-details-marker { display: none; }
     .meeting-adjust-body { padding: 6px 0 2px; }
+    .meeting-type-auto {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--dmc-color-text-muted);
+    }
     .dash-checkin {
       margin-top: var(--dmc-space-8);
       min-height: var(--dmc-button-size-xl);
@@ -1303,12 +1308,12 @@
           </table>
         </div>
         <details class="meeting-adjust" id="meetingAdjust">
-          <summary>날짜·유형이 다르면 여기서 수정</summary>
+          <summary>날짜가 다르면 여기서 수정</summary>
           <div class="meeting-adjust-body">
             <label for="meetingDate">모임 날짜</label>
             <input type="date" id="meetingDate" />
-            <label for="meetingType" class="form-label-spaced">정모 유형</label>
-            <select id="meetingType">
+            <p class="meeting-type-auto hint" id="meetingTypeAutoHint" aria-live="polite"></p>
+            <select id="meetingType" hidden aria-hidden="true" tabindex="-1">
               <option value="TUE">화요일 정모</option>
               <option value="THU">목요일 정모</option>
               <option value="SAT">토요일 정모</option>
@@ -1623,6 +1628,7 @@
   </div>
   <script src="assets/attendance-shell-router.js?v=20260719"></script>
   <script src="assets/attendance-team-month.js?v=20260719"></script>
+  <script src="assets/attendance-meeting-type.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719d"></script>
   <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
   <script src="attendance-v2.js?v=20260719h" defer></script>

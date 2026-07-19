@@ -68,7 +68,18 @@
   const elDashTeamRole = document.getElementById("dashTeamRole");
   const elMeetingDate = document.getElementById("meetingDate");
   const elMeetingType = document.getElementById("meetingType");
+  const elMeetingTypeAutoHint = document.getElementById("meetingTypeAutoHint");
   const elCheckinBtn = document.getElementById("checkinBtn");
+  const meetingTypeHelper =
+    typeof window !== "undefined" && window.DmcAttendanceMeetingType
+      ? window.DmcAttendanceMeetingType
+      : null;
+  const MEETING_TYPE_LABELS = {
+    TUE: "화요일 정모",
+    THU: "목요일 정모",
+    SAT: "토요일 정모",
+    ETC: "기타",
+  };
   const elDashMsg = document.getElementById("dashMsg");
   const elSuccessLine = document.getElementById("successLine");
   const elSuccessCheer = document.getElementById("successCheer");
@@ -1233,10 +1244,41 @@
     return y + "-" + mo;
   }
 
+  function meetingTypeForDateKeyLocal(dateKey) {
+    if (meetingTypeHelper && typeof meetingTypeHelper.meetingTypeForDateKey === "function") {
+      return meetingTypeHelper.meetingTypeForDateKey(dateKey);
+    }
+    const raw = String(dateKey || "").trim();
+    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+      ? raw.replace(/-/g, "/")
+      : raw;
+    const m = normalized.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+    if (!m) return "ETC";
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
+    if (Number.isNaN(d.getTime())) return "ETC";
+    const dow = d.getUTCDay();
+    if (dow === 2) return "TUE";
+    if (dow === 4) return "THU";
+    if (dow === 6) return "SAT";
+    return "ETC";
+  }
+
+  function syncMeetingTypeFromDate() {
+    if (!elMeetingDate || !elMeetingType) return;
+    const inputVal = elMeetingDate.value;
+    if (!inputVal) return;
+    const type = meetingTypeForDateKeyLocal(inputVal);
+    elMeetingType.value = type;
+    if (elMeetingTypeAutoHint) {
+      elMeetingTypeAutoHint.textContent =
+        "정모 유형: " + (MEETING_TYPE_LABELS[type] || type) + " (요일에 맞춰 자동)";
+    }
+  }
+
   function applyDefaultMeetingFields() {
-    const { dateKey, meetingType } = getDefaultDateAndMeetingType();
+    const { dateKey } = getDefaultDateAndMeetingType();
     elMeetingDate.value = dateKeyToInputValue(dateKey);
-    elMeetingType.value = meetingType;
+    syncMeetingTypeFromDate();
   }
 
   function renderDashboard() {
@@ -2266,13 +2308,16 @@
 
 
   elMeetingDate.addEventListener("change", () => {
+    syncMeetingTypeFromDate();
     refreshDashPrimaryLines();
     loadTodayTrainingNotice().catch(() => {});
   });
-  elMeetingType.addEventListener("change", () => {
-    refreshDashPrimaryLines();
-    loadTodayTrainingNotice().catch(() => {});
-  });
+  if (elMeetingType) {
+    elMeetingType.addEventListener("change", () => {
+      refreshDashPrimaryLines();
+      loadTodayTrainingNotice().catch(() => {});
+    });
+  }
 
   elSearchInput.addEventListener("input", () => {
     elSearchMsg.textContent = "";

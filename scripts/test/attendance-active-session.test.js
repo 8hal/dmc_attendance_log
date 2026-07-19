@@ -7,6 +7,7 @@ const {
   isActiveSessionMatch,
   assertSelfDeleteAllowed,
   normalizeMeetingDateKey,
+  meetingTypeForDateKey,
 } = require(path.join(__dirname, "../../functions/lib/attendance-active-session.js"));
 
 describe("resolveDefaultMeeting", () => {
@@ -20,6 +21,17 @@ describe("resolveDefaultMeeting", () => {
     const r = resolveDefaultMeeting(new Date("2026-07-17T12:00:00+09:00"));
     assert.equal(r.meetingType, "THU");
     assert.equal(r.dateKey, "2026/07/16");
+  });
+});
+
+describe("meetingTypeForDateKey", () => {
+  it("maps Tue/Thu/Sat to meeting types; other days to ETC", () => {
+    assert.equal(meetingTypeForDateKey("2026/07/14"), "TUE");
+    assert.equal(meetingTypeForDateKey("2026/07/16"), "THU");
+    assert.equal(meetingTypeForDateKey("2026/07/18"), "SAT");
+    assert.equal(meetingTypeForDateKey("2026-07-15"), "ETC"); // Wed
+    assert.equal(meetingTypeForDateKey("2026/07/19"), "ETC"); // Sun
+    assert.equal(meetingTypeForDateKey(""), "ETC");
   });
 });
 
