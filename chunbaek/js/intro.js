@@ -1,7 +1,36 @@
 /* chunbaek/js/intro.js
  * 춘백 S3 — 1주차 1일 인트로 애니메이션
  * 시즌 종료 후 이 파일 삭제 + index.html에서 script 1줄 제거
+ *
+ * ── 오늘(TARGET 전) 콘솔 테스트 ──
+ *   localStorage.setItem('chunbaek-intro-target-override', '2026-07-19');
+ *   localStorage.removeItem('chunbaek-intro-seen-2026-07-19');
+ *   location.reload();
+ * 또는 리로드 없이 즉시 재생:
+ *   window.__chunbaekIntro.play()
+ *   window.__chunbaekIntro.showReplay()
+ * 테스트 해제:
+ *   localStorage.removeItem('chunbaek-intro-target-override');
  */
+
+const INTRO_DEFAULT_TARGET = '2026-07-20';
+const INTRO_OVERRIDE_KEY = 'chunbaek-intro-target-override';
+
+function getKstDate() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function getIntroTarget() {
+  try {
+    const override = localStorage.getItem(INTRO_OVERRIDE_KEY);
+    if (override) return override;
+  } catch { /* ignore */ }
+  return INTRO_DEFAULT_TARGET;
+}
+
+function getIntroFlag(target) {
+  return `chunbaek-intro-seen-${target}`;
+}
 
 /* ── 유틸 ── */
 function delay(ms) {
@@ -66,7 +95,6 @@ async function runTypingPhase(overlay) {
 
   await delay(1200);
 
-  // 전체 페이드 아웃
   typingWrap.classList.add('fading');
   await delay(600);
   typingWrap.style.display = 'none';
@@ -112,22 +140,31 @@ async function runTimeline(overlay, trapTab) {
   activateHandler(overlay, trapTab);
 }
 
-/* ── 메인 진입점 ── */
-function startIntro() {
-  const TARGET = '2026-07-20';
-  const FLAG   = `chunbaek-intro-seen-${TARGET}`;
+/**
+ * @param {{ force?: boolean, skipFlag?: boolean }} [opts]
+ *   force: 날짜·플래그 무시하고 즉시 재생
+ *   skipFlag: 날짜는 지키되 이미 봤음 플래그 무시 (다시 보기용)
+ */
+function startIntro(opts = {}) {
+  const { force = false, skipFlag = false } = opts;
+  const target = getIntroTarget();
+  const flag = getIntroFlag(target);
+  const kstDate = getKstDate();
 
-  const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000)
-    .toISOString().slice(0, 10);
+  if (!force && kstDate !== target) return;
 
-  if (kstDate !== TARGET) return;
-
-  try {
-    if (localStorage.getItem(FLAG)) return;
-    localStorage.setItem(FLAG, '1');
-  } catch {
-    return;
+  if (!force && !skipFlag) {
+    try {
+      if (localStorage.getItem(flag)) return;
+      localStorage.setItem(flag, '1');
+    } catch {
+      return;
+    }
+  } else if (!force && skipFlag) {
+    try { localStorage.setItem(flag, '1'); } catch { /* ignore */ }
   }
+
+  document.querySelector('.intro-overlay')?.remove();
 
   const overlay = buildOverlay();
   document.body.appendChild(overlay);
@@ -156,21 +193,19 @@ startIntro();
 
 /* ── 다시 보기 버튼 ── */
 function initReplayButton() {
-  const TARGET = '2026-07-20';
-  const FLAG   = `chunbaek-intro-seen-${TARGET}`;
+  const target = getIntroTarget();
+  const flag = getIntroFlag(target);
+  const kstDate = getKstDate();
 
-  const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000)
-    .toISOString().slice(0, 10);
-
-  if (kstDate !== TARGET) return;
+  if (kstDate !== target) return;
 
   const btn = document.getElementById('btn-replay-intro');
   if (!btn) return;
 
   btn.hidden = false;
   btn.addEventListener('click', () => {
-    try { localStorage.removeItem(FLAG); } catch { /* ignore */ }
-    startIntro();
+    try { localStorage.removeItem(flag); } catch { /* ignore */ }
+    startIntro({ skipFlag: true });
   });
 }
 
@@ -179,3 +214,37 @@ if (document.readyState === 'loading') {
 } else {
   initReplayButton();
 }
+
+/* ── 콘솔 테스트 API ── */
+window.__chunbaekIntro = {
+  /** 날짜·플래그 무시하고 즉시 재생 */
+  play() {
+    startIntro({ force: true });
+  },
+  /** 다시 보기 버튼 강제 표시 */
+  showReplay() {
+    const btn = document.getElementById('btn-replay-intro');
+    if (!btn) return;
+    btn.hidden = false;
+    if (!btn.dataset.bound) {
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => startIntro({ force: true }));
+    }
+  },
+  /**
+   * 오늘 날짜를 TARGET으로 오버라이드 후 리로드
+   * 예: window.enableTestToday()
+   */
+  enableTestToday() {
+    try {
+      localStorage.setItem(INTRO_OVERRIDE_KEY, getKstDate());
+      localStorage.removeItem(getIntroFlag(getKstDate()));
+    } catch { /* ignore */ }
+    location.reload();
+  },
+  /** 오버라이드 해제 후 리로드 */
+  disableTest() {
+    try { localStorage.removeItem(INTRO_OVERRIDE_KEY); } catch { /* ignore */ }
+    location.reload();
+  },
+};
