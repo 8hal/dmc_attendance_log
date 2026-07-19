@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719b" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719d" />
   <style>
     body {
       margin: 0;
@@ -149,15 +149,19 @@
     .member-name { font-weight: 600; }
     .member-meta { font-size: 12px; color: var(--dmc-color-text-muted); }
     .dash-card {
-      padding: var(--dmc-space-5);
+      padding: var(--dmc-space-4);
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      margin-bottom: var(--dmc-space-3);
     }
     .dash-context-band {
       text-align: center;
-      background: var(--dmc-kiosk-hero-bg);
-      border: 1px solid var(--dmc-kiosk-surface-border);
-      border-radius: var(--dmc-kiosk-card-radius);
-      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-4);
-      box-shadow: var(--dmc-shadow-inset-top);
+      background: var(--dmc-color-surface);
+      border: 1px solid var(--dmc-color-border);
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      box-shadow: none;
     }
     .dash-mega-line1 {
       text-align: center;
@@ -170,7 +174,7 @@
     }
     .dash-mega-line2 {
       text-align: center;
-      margin: 6px 0 0;
+      margin: 4px 0 0;
       font-weight: 900;
       letter-spacing: 0;
       line-height: 1.2;
@@ -182,13 +186,15 @@
       align-items: center;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 6px 12px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--dmc-line-subtle);
+      gap: 4px 10px;
+      margin: 6px 0 0;
+      padding: 0;
+      border-top: none;
+      min-height: 0;
       font-size: 13px;
       font-weight: 600;
       color: var(--dmc-color-text-secondary);
+      line-height: 1.3;
     }
     .btn-dash-link {
       width: auto;
@@ -205,7 +211,7 @@
       text-underline-offset: 2px;
     }
     .btn-dash-link:hover { color: var(--dmc-color-primary); }
-    .meeting-adjust { margin-top: 20px; font-size: 12px; color: var(--dmc-color-text-muted); }
+    .meeting-adjust { margin-top: 12px; font-size: 12px; color: var(--dmc-color-text-muted); }
     .meeting-adjust summary {
       cursor: pointer;
       list-style: none;
@@ -1282,7 +1288,7 @@
             <button type="button" class="btn-dash-link" id="changeTeamBtn">팀 변경</button>
           </p>
         </div>
-        <button type="button" class="dash-session-row muted" id="dashSessionRow" aria-label="현재 참여 인원 출석 명단 보기">
+        <button type="button" class="dash-session-row muted" id="dashSessionRow" aria-label="현재 참여 인원 목록으로 이동">
           <div class="dash-session-meta">
             <span class="dash-session-label">현재 참여 인원</span>
           </div>
@@ -1313,6 +1319,18 @@
         </details>
 <div id="dashMsg" class="msg"></div>
         <button type="button" class="danger-ghost" id="resetProfileBtn">다른 사람으로 출석 (프로필 초기화)</button>
+      </div>
+
+      <div class="card attend-log-card today-roster-card" id="todayRosterCard" tabindex="-1">
+        <div class="summary-banner today-roster-banner">
+          <div>오늘 출석<br /><strong id="todayRosterCount">–</strong></div>
+          <div class="today-roster-banner-meta">
+            <span id="todayRosterMeetingLabel">—</span><br />
+            <span class="today-roster-sort">최신순</span>
+          </div>
+        </div>
+        <ul class="member-list" id="todayRosterList" aria-label="오늘 출석 인원"></ul>
+        <p class="hint today-roster-hint">당일 세션 명단 · 팀 출석 탭(월간)과 역할 분리</p>
       </div>
     </div>
 
@@ -1592,6 +1610,7 @@
   </div>
   <script src="assets/attendance-shell-router.js?v=20260719"></script>
   <script src="assets/attendance-team-month.js?v=20260719"></script>
-  <script src="attendance-v2.js" defer></script>
+  <script src="assets/attendance-today-roster.js?v=20260719d"></script>
+  <script src="attendance-v2.js?v=20260719d" defer></script>
 </body>
 </html>

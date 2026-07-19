@@ -65,12 +65,16 @@
   font-weight: 700;
   color: var(--dmc-color-primary);
   text-decoration: none;
-  padding: 8px 10px;
+  padding: 7px 12px;
   border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--dmc-color-primary) 35%, var(--dmc-color-border));
+  background: var(--dmc-color-surface);
+  line-height: 1.2;
 }
 
 .brand-bar-races:hover {
   background: var(--dmc-color-primary-soft);
+  border-color: var(--dmc-color-primary);
 }
 
 .main {
@@ -368,6 +372,10 @@ body.kiosk-mode .tab-bar {
   padding: 16px 16px 24px;
 }
 
+#view-today > .wrap {
+  padding: 12px 16px 24px;
+}
+
 .section-kicker {
   margin: 0 0 8px;
   font-size: 11px;
@@ -559,6 +567,39 @@ body.kiosk-mode .tab-bar {
   border-radius: 16px;
   border: 1px solid var(--dmc-color-border);
   background: var(--dmc-color-surface);
+}
+
+.today-roster-card {
+  margin: 0 0 8px;
+}
+
+.today-roster-banner {
+  margin-bottom: 0;
+}
+
+.today-roster-banner-meta {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dmc-color-text-secondary);
+}
+
+.today-roster-sort {
+  color: var(--dmc-color-text);
+}
+
+.today-roster-hint {
+  margin: 8px 16px 12px;
+  font-size: 12px;
+  color: var(--dmc-color-text-muted);
+}
+
+.today-roster-card .member-list:empty::after {
+  content: "불러오는 중…";
+  display: block;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--dmc-color-text-muted);
 }
 
 .train-notice {

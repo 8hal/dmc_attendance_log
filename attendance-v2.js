@@ -74,6 +74,10 @@
   const elSuccessSessionLine = document.getElementById("successSessionLine");
   const elDashSessionRow = document.getElementById("dashSessionRow");
   const elDashSessionFigures = document.getElementById("dashSessionFigures");
+  const elTodayRosterCard = document.getElementById("todayRosterCard");
+  const elTodayRosterList = document.getElementById("todayRosterList");
+  const elTodayRosterCount = document.getElementById("todayRosterCount");
+  const elTodayRosterMeetingLabel = document.getElementById("todayRosterMeetingLabel");
   const elGuestModal = document.getElementById("guestModal");
   const elGuestModalTitle = document.getElementById("guestModalTitle");
   const elGuestModalHelp = document.getElementById("guestModalHelp");
@@ -836,6 +840,7 @@
     elDashSessionFigures.textContent = "…";
     if (!dk || !mt) {
       elDashSessionFigures.textContent = "–";
+      refreshTodayRosterList().catch(() => {});
       return;
     }
     try {
@@ -857,6 +862,109 @@
       if (e.name === "AbortError" || myReq !== sessionCountReqId) return;
       elDashSessionRow.classList.add("muted");
       elDashSessionFigures.textContent = "–";
+    }
+    refreshTodayRosterList().catch(() => {});
+  }
+
+  function scrollToTodayRoster() {
+    if (!elTodayRosterCard) return;
+    elTodayRosterCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      elTodayRosterCard.focus({ preventScroll: true });
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  let todayRosterReqId = 0;
+
+  function renderTodayRosterList(items) {
+    if (!elTodayRosterList) return;
+    const helper =
+      typeof globalThis !== "undefined" && globalThis.DmcAttendanceTodayRoster
+        ? globalThis.DmcAttendanceTodayRoster
+        : null;
+    const sorted = helper
+      ? helper.sortSessionRosterNewestFirst(items)
+      : (Array.isArray(items) ? items.slice() : []).sort(
+          (a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0)
+        );
+    if (elTodayRosterCount) {
+      elTodayRosterCount.textContent = sorted.length ? sorted.length + "명" : "0명";
+    }
+    if (!sorted.length) {
+      elTodayRosterList.innerHTML =
+        '<li class="member-row"><div class="member-name" style="font-weight:500;color:var(--dmc-color-text-muted)">아직 출석자가 없습니다</div></li>';
+      return;
+    }
+    elTodayRosterList.innerHTML = sorted
+      .map((item) => {
+        const nickname = item && item.nickname ? item.nickname : "이름 없음";
+        const teamText = (item && (item.teamLabel || teamLabel(item.team))) || "팀 미정";
+        const timeText = item && item.timeText ? item.timeText : "";
+        const meta = timeText ? teamText + " · " + timeText : teamText;
+        const initial = helper
+          ? helper.avatarCharFromNickname(nickname)
+          : String(nickname).charAt(0) || "?";
+        return (
+          '<li class="member-row">' +
+          '<div class="member-avatar" aria-hidden="true">' +
+          escapeHtml(initial) +
+          "</div>" +
+          '<div class="member-name">' +
+          escapeHtml(nickname) +
+          '<span class="member-dates">' +
+          escapeHtml(meta) +
+          "</span></div></li>"
+        );
+      })
+      .join("");
+  }
+
+  async function refreshTodayRosterList() {
+    if (!elTodayRosterList) return;
+    const myReq = ++todayRosterReqId;
+    const dateKey = inputValueToDateKey(elMeetingDate.value);
+    const meetingType = elMeetingType.value;
+    if (elTodayRosterMeetingLabel) {
+      elTodayRosterMeetingLabel.textContent = meetingTypeLabel(meetingType) || "—";
+    }
+    if (!dateKey || !meetingType) {
+      if (elTodayRosterCount) elTodayRosterCount.textContent = "–";
+      elTodayRosterList.innerHTML =
+        '<li class="member-row"><div class="member-name" style="font-weight:500;color:var(--dmc-color-text-muted)">날짜와 유형을 선택해 주세요</div></li>';
+      return;
+    }
+    elTodayRosterList.innerHTML =
+      '<li class="member-row"><div class="member-name" style="font-weight:500;color:var(--dmc-color-text-muted)">불러오는 중…</div></li>';
+    try {
+      const q =
+        BASE_URL +
+        "?action=status&date=" +
+        encodeURIComponent(dateKey) +
+        "&meetingType=" +
+        encodeURIComponent(meetingType);
+      const res = await fetch(q);
+      const json = await res.json();
+      if (myReq !== todayRosterReqId) return;
+      if (!json.ok) throw new Error(json.error || "bad response");
+      const helper =
+        typeof globalThis !== "undefined" && globalThis.DmcAttendanceTodayRoster
+          ? globalThis.DmcAttendanceTodayRoster
+          : null;
+      const filtered = helper
+        ? helper.filterStatusByMeetingType(json.items || [], meetingType)
+        : (json.items || []).filter(
+            (it) =>
+              String((it && it.meetingType) || "").toUpperCase() ===
+              String(meetingType).toUpperCase()
+          );
+      renderTodayRosterList(filtered);
+    } catch (e) {
+      if (myReq !== todayRosterReqId) return;
+      if (elTodayRosterCount) elTodayRosterCount.textContent = "–";
+      elTodayRosterList.innerHTML =
+        '<li class="member-row"><div class="member-name" style="color:var(--dmc-color-danger)">출석 명단을 불러오지 못했습니다</div></li>';
     }
   }
 
@@ -2133,7 +2241,8 @@
         const dupBtn = document.getElementById("openDuplicateRosterBtn");
         if (dupBtn) {
           dupBtn.addEventListener("click", () => {
-            openSessionRosterModal(dupDate, meetingType).catch(() => {});
+            scrollToTodayRoster();
+            refreshTodayRosterList().catch(() => {});
           });
         }
       } else if (e.code === "MEMBER_NOT_FOUND") {
@@ -2320,7 +2429,8 @@
   });
 
   elDashSessionRow.addEventListener("click", () => {
-    openSessionRosterModal().catch(() => {});
+    scrollToTodayRoster();
+    refreshTodayRosterList().catch(() => {});
   });
   elSessionRosterCloseBtn.addEventListener("click", closeSessionRosterModal);
   elSessionRosterModal.addEventListener("click", (e) => {
