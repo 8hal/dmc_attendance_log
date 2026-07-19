@@ -19,6 +19,8 @@
   <!-- tokens.css를 직접 로드해 chunbaek.css @import 체인(추가 RTT) 제거 -->
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/chunbaek.css" />
+  <!-- intro: 시즌 종료 후 아래 줄 + js/intro.js 두 파일 삭제 -->
+  <link rel="stylesheet" href="css/intro.css" />
   <!-- Google Fonts: preconnect + 비동기 로드(렌더 블로킹 해제) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -198,6 +200,8 @@
           </div>
           </div>
         </div>
+        <button type="button" class="btn btn-ghost intro-replay-btn" id="btn-replay-intro"
+                hidden style="margin-top:8px">▶ 인트로 다시 보기</button>
         <button type="button" class="btn btn-ghost" id="btn-switch-user" style="margin-top:24px">다른 사람으로</button>
       </section>
 
@@ -355,5 +359,6 @@
       banner.style.display = "none";
     });
   </script>
+  <script src="js/intro.js" defer></script>
 </body>
 </html>

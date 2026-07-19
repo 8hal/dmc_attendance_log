@@ -1,0 +1,139 @@
+/* chunbaek/css/intro.css
+ * 춘백 S3 — 1주차 1일 인트로 애니메이션
+ * 시즌 종료 후 이 파일 삭제 + index.html에서 link 1줄 제거
+ */
+
+/* ── 1. Overlay ── */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--brand-orange, #ff3214);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.intro-overlay.visible {
+  opacity: 1;
+}
+.intro-overlay.dismissing {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* ── 2. 타이핑 텍스트 영역 ── */
+.intro-typing-wrap {
+  text-align: center;
+  padding: 0 24px;
+  max-width: 480px;
+  width: 100%;
+}
+.intro-typing-wrap.fading {
+  animation: introFadeOut 0.5s ease forwards;
+}
+
+/* 시 구절 줄 */
+.intro-poem {
+  font-family: var(--font-body, 'Noto Sans KR', system-ui, sans-serif);
+  font-size: clamp(22px, 6.5vw, 52px);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0.2em 0;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+/* 춘백방 S3 타이틀 */
+.intro-title {
+  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
+  font-size: clamp(48px, 14vw, 130px);
+  font-weight: 900;
+  color: var(--brand-cyan, #70d1f4);
+  margin: 0.4em 0 0;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  min-height: 1em;
+}
+
+/* ── 3. START! ── */
+.intro-start {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display, 'Bebas Neue', 'Arial Narrow', sans-serif);
+  font-size: clamp(60px, 18vw, 160px);
+  color: var(--brand-cyan, #70d1f4);
+  font-weight: 900;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10000;
+  margin: 0;
+}
+.intro-start.visible {
+  animation: startFadeIn 0.3s ease forwards, startPulse 0.6s ease 0.3s infinite;
+}
+
+/* ── 4. "탭해서 시작" ── */
+.intro-hint {
+  position: fixed;
+  bottom: 10vh;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-body, 'Noto Sans KR', system-ui, sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 10000;
+  margin: 0;
+}
+.intro-hint.visible {
+  opacity: 1;
+}
+
+/* ── 5. 다시 보기 버튼 ── */
+.intro-replay-btn {
+  font-size: 13px;
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
+}
+.intro-replay-btn:hover {
+  opacity: 1;
+}
+
+/* ── 6. Keyframes ── */
+@keyframes introFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes startFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+}
+@keyframes startPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1.0); }
+  50%       { transform: translate(-50%, -50%) scale(1.05); }
+}
+
+/* ── 7. prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .intro-overlay * {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.001ms !important;
+  }
+}
