@@ -299,7 +299,8 @@
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      z-index: 50;
+      /* above shell tab-bar (z-index: 100) and brand-bar */
+      z-index: 250;
     }
     .modal-sheet {
       background: var(--dmc-color-surface);
@@ -308,9 +309,11 @@
       border-radius: var(--dmc-kiosk-card-radius) var(--dmc-kiosk-card-radius) 0 0;
       border: 1px solid var(--dmc-kiosk-surface-border);
       border-bottom: 0;
-      padding: var(--dmc-space-5) var(--dmc-space-4) var(--dmc-space-6);
+      padding: var(--dmc-space-5) var(--dmc-space-4) calc(var(--dmc-space-6) + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       box-shadow: var(--dmc-kiosk-surface-shadow);
+      max-height: min(88dvh, 720px);
+      overflow-y: auto;
     }
     .modal-sheet h2 { margin: 0 0 12px 0; font-size: 16px; }
     .session-roster-head {
