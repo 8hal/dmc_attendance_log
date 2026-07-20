@@ -16,6 +16,12 @@ function todayKstDate() {
   return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
 }
 
+function addDaysIso(isoDate, offset) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const ms = Date.UTC(y, m - 1, d) + offset * 86400000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
 function betaSlotIdForToday(today) {
   if (today >= SEASON_START) return 1;
   const betaStart = today < DEFAULT_BETA_START ? today : DEFAULT_BETA_START;
@@ -63,6 +69,37 @@ async function apiPost(action, body, token) {
   assert.ok(token);
 
   const today = todayKstDate();
+  const weekForToday = await apiGet("admin-week-slots", { week: 1, adminPw: ADMIN_PW });
+  assert.equal(weekForToday.status, 200, weekForToday.data?.error);
+  const alignedWeek = await apiPost("admin-save-week-slots", {
+    adminPw: ADMIN_PW,
+    week: 1,
+    rows: weekForToday.data.slots.map((s, idx) => ({
+      dayIndex: s.dayIndex,
+      date: addDaysIso(today, idx),
+      trainingTitle: s.trainingTitle || "테스트 훈련",
+      trainingContent: s.trainingContent || "",
+      isProgramOff: s.isProgramOff,
+    })),
+  });
+  assert.equal(alignedWeek.status, 200, alignedWeek.data?.error);
+  const weekTwo = await apiGet("admin-week-slots", { week: 2, adminPw: ADMIN_PW });
+  assert.equal(weekTwo.status, 200, weekTwo.data?.error);
+  if (weekTwo.data.slots.length) {
+    const alignedWeekTwo = await apiPost("admin-save-week-slots", {
+      adminPw: ADMIN_PW,
+      week: 2,
+      rows: weekTwo.data.slots.map((s, idx) => ({
+        dayIndex: s.dayIndex,
+        date: addDaysIso(today, weekForToday.data.slots.length + idx),
+        trainingTitle: s.trainingTitle || "테스트 훈련",
+        trainingContent: s.trainingContent || "",
+        isProgramOff: s.isProgramOff,
+      })),
+    });
+    assert.equal(alignedWeekTwo.status, 200, alignedWeekTwo.data?.error);
+  }
+
   const slotId = betaSlotIdForToday(today);
   assert.ok(slotId, `no beta slot for today=${today}`);
 
@@ -125,6 +162,49 @@ async function apiPost(action, body, token) {
 
   const noAuth = await apiGet("my-profile");
   assert.equal(noAuth.status, 401);
+
+  // --- exception requests ---
+  const excStart = today;
+  const excEnd = addDaysIso(today, 2);
+  const reqExc = await apiPost("request-exception", {
+    reason: "에뮬 부상 테스트",
+    startDate: excStart,
+    endDate: excEnd,
+  }, token);
+  assert.equal(reqExc.status, 200, reqExc.data?.error || "request-exception failed");
+  assert.ok(reqExc.data.requestId);
+  assert.ok(reqExc.data.preview);
+
+  const dup = await apiPost("request-exception", {
+    reason: "중복",
+    startDate: today,
+    endDate: today,
+  }, token);
+  assert.equal(dup.status, 400);
+
+  const pendingList = await apiGet("admin-list-exception-requests", {
+    adminPw: ADMIN_PW,
+    status: "pending",
+  });
+  assert.equal(pendingList.status, 200, pendingList.data?.error);
+  assert.ok(pendingList.data.requests.some((r) => r.requestId === reqExc.data.requestId));
+
+  const approved = await apiPost("admin-review-exception-request", {
+    adminPw: ADMIN_PW,
+    requestId: reqExc.data.requestId,
+    decision: "approve",
+    reviewNote: "확인",
+  });
+  assert.equal(approved.status, 200, approved.data?.error);
+  assert.equal(approved.data.status, "approved");
+
+  const myReqs = await apiGet("my-exception-requests", { token });
+  assert.equal(myReqs.status, 200);
+  assert.equal(myReqs.data.requests[0].status, "approved");
+
+  const cleared = await apiPost("self-clear-future-exceptions", {}, token);
+  assert.equal(cleared.status, 200, cleared.data?.error);
+  assert.ok(Array.isArray(cleared.data.clearedSlotIds));
 
   // --- admin smoke ---
   const badVerify = await apiPost("verify-admin", { pw: "wrong" });
