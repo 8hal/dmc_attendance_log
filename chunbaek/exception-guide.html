@@ -117,20 +117,6 @@
     .bullets li { margin: 0 0 8px; }
     .bullets li:last-child { margin-bottom: 0; }
 
-    .notice-box {
-      background: var(--surface-muted);
-      border-radius: 12px;
-      padding: 14px;
-      white-space: pre-wrap;
-      font-size: 13px;
-      line-height: 1.55;
-      color: var(--text-primary);
-    }
-    .copy-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -149,12 +135,6 @@
       color: #fff;
       width: 100%;
     }
-    .btn-outline {
-      background: #fff;
-      color: var(--brand-orange);
-      border: 1.5px solid var(--brand-orange);
-      flex: 1;
-    }
     .cta {
       margin: 20px 16px 0;
     }
@@ -164,23 +144,6 @@
       color: var(--text-secondary);
       text-align: center;
     }
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 28px;
-      transform: translateX(-50%);
-      background: #1a1a1a;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-      z-index: 20;
-    }
-    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -195,12 +158,6 @@
       <p class="kakao-banner-title">카카오톡 안에서 보시는 경우</p>
       <p class="kakao-banner-body">오른쪽 아래 <strong>⋯</strong> → <strong>다른 브라우저로 열기</strong>를 누르면 앱 사용이 더 편합니다.</p>
     </div>
-
-    <section class="section">
-      <h2>무엇을 위한 기능인가요?</h2>
-      <p>예외로 승인된 날은 <strong>출석 횟수에서 빼고</strong>, 그날은 출석할 수 없습니다.</p>
-      <p class="muted">이미 출석한 날은 그대로 유지됩니다. 운영진이 승인해야 반영됩니다.</p>
-    </section>
 
     <section class="section">
       <h2>요청 방법</h2>
@@ -234,31 +191,11 @@
       </ul>
     </section>
 
-    <section class="section">
-      <h2>단톡 공지 문구 (복사해서 쓰세요)</h2>
-      <div class="notice-box" id="notice-text">[춘백 S3] 출석 예외 요청 안내
-
-부상·휴가·출장 등은 단톡에만 남기지 마시고,
-춘백 앱 → 나 → 출석 예외 → 예외 요청
-에서 기간을 올려 주세요.
-
-운영 승인 후 해당 날은 출석 집계에서 빠지며, 그날은 출석할 수 없습니다.
-회복되면 나 탭의 「조기 복귀」로 남은 예외를 해제할 수 있습니다.
-
-안내 페이지
-https://dmc-attendance.web.app/chunbaek/exception-guide.html</div>
-      <div class="copy-row">
-        <button type="button" class="btn btn-outline" id="btn-copy">공지 문구 복사</button>
-      </div>
-    </section>
-
     <div class="cta">
-      <a class="btn btn-primary" href="/chunbaek/">춘백 앱 열기</a>
+      <a class="btn btn-primary" href="/chunbaek/#/me">춘백 앱 열기</a>
     </div>
     <p class="foot">동마클 · 춘백 S3</p>
   </div>
-
-  <div class="toast" id="toast" role="status">복사되었습니다</div>
 
   <script>
     (function () {
@@ -266,31 +203,6 @@ https://dmc-attendance.web.app/chunbaek/exception-guide.html</div>
       if (/KAKAOTALK/i.test(ua)) {
         document.getElementById("kakao-banner").classList.add("visible");
       }
-
-      var toast = document.getElementById("toast");
-      var toastTimer = null;
-      function showToast() {
-        toast.classList.add("show");
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          toast.classList.remove("show");
-        }, 1800);
-      }
-
-      document.getElementById("btn-copy").addEventListener("click", async function () {
-        var text = document.getElementById("notice-text").textContent;
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast();
-        } catch (e) {
-          var range = document.createRange();
-          range.selectNodeContents(document.getElementById("notice-text"));
-          var sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-          showToast();
-        }
-      });
     })();
   </script>
 </body>
