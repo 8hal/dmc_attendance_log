@@ -483,17 +483,28 @@ function mockGet(action, params = {}) {
           ? slot.photoUrls.filter(Boolean)
           : (slot.photoUrl ? [slot.photoUrl] : []);
         if (!note && !photoUrls.length) continue;
+        const slotId = slot.slotId ?? slot.dayIndex;
+        const display = slot.displayDayIndex ?? slot.dayIndex;
+        const weekNum = slot.week ?? week.week ?? null;
+        const isBeta = weekNum === 0 || (Number(slotId) >= 901 && Number(slotId) < 908);
         entries.push({
-          slotId: slot.slotId ?? slot.dayIndex,
-          displayDayIndex: slot.displayDayIndex ?? slot.dayIndex,
+          slotId,
+          displayDayIndex: display,
+          week: weekNum,
           date: slot.date || "",
           title: slot.title || "—",
           note,
           photoUrls,
+          dayLabel: isBeta ? `베타 ${display}일차` : `${display}일차`,
         });
       }
     }
-    entries.sort((a, b) => (b.displayDayIndex ?? 0) - (a.displayDayIndex ?? 0));
+    entries.sort((a, b) => {
+      const da = String(a.date || "");
+      const db = String(b.date || "");
+      if (db !== da) return db.localeCompare(da);
+      return (Number(b.slotId) || 0) - (Number(a.slotId) || 0);
+    });
     return Promise.resolve({
       ok: true,
       memberId: params.memberId || "mock_a",

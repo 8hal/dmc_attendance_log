@@ -48,6 +48,36 @@ function displayDayIndex(slot) {
   return slot.dayIndex;
 }
 
+/**
+ * 팀 프로필 피드 정렬 — displayDayIndex(베타1·시즌1 충돌)가 아니라 날짜 내림차순.
+ * @param {Array<{ date?: string, slotId?: number }>} entries
+ */
+function sortTeamMemberAttendanceEntries(entries) {
+  return [...(Array.isArray(entries) ? entries : [])].sort((a, b) => {
+    const da = String((a && a.date) || "");
+    const db = String((b && b.date) || "");
+    if (db !== da) return db.localeCompare(da);
+    return (Number(b && b.slotId) || 0) - (Number(a && a.slotId) || 0);
+  });
+}
+
+/**
+ * @param {{ displayDayIndex?: number, slotId?: number, week?: number }} entry
+ * @returns {string}
+ */
+function formatTeamFeedDayLabel(entry) {
+  const n = entry && (entry.displayDayIndex ?? entry.slotId);
+  const week = entry && entry.week;
+  const slotId = Number(entry && entry.slotId);
+  const isBeta =
+    week === BETA_WEEK ||
+    (Number.isFinite(slotId) &&
+      slotId >= BETA_DAY_INDEX_BASE &&
+      slotId < BETA_DAY_INDEX_BASE + BETA_DAY_COUNT);
+  if (isBeta) return `베타 ${n}일차`;
+  return `${n}일차`;
+}
+
 /** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
 function statsSlotsForToday(slots, today, config) {
   const seasonStart = config?.startDate || seasonBounds(seasonSlotsOnly(slots)).startDate;
@@ -539,6 +569,8 @@ module.exports = {
   seasonSlotsOnly,
   seasonBounds,
   displayDayIndex,
+  sortTeamMemberAttendanceEntries,
+  formatTeamFeedDayLabel,
   statsSlotsForToday,
   betaWeekBounds,
   betaWeekBoundsFromConfig,
