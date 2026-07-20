@@ -22,6 +22,11 @@ const {
   BETA_WEEK,
   normalizePhotoUrls,
 } = require("./chunbaek-stats");
+const {
+  previewExceptionApplication,
+  formatRequestExceptionNote,
+  buildSlotExceptionPatch,
+} = require("./chunbaek-exception-requests");
 
 const MS_PER_DAY = 86400000;
 const TITLE_MAX = 80;
@@ -29,6 +34,19 @@ const CONTENT_MAX = 500;
 const EXCEPTION_NOTE_MAX = 200;
 const NOTE_MAX = 500;
 const PHOTO_URL_MAX = 2000;
+const ADMIN_EXCEPTION_REQUEST_LIMIT_DEFAULT = 50;
+const ADMIN_EXCEPTION_REQUEST_LIMIT_MAX = 50;
+
+function timestampToIso(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._seconds != null) {
+    return new Date(value._seconds * 1000).toISOString();
+  }
+  return null;
+}
 
 function requireAdmin(req) {
   const adminPw = req.method === "GET"
@@ -60,6 +78,22 @@ function parseWeekParam(value, defaultWeek) {
   const week = Number(value);
   if (!Number.isFinite(week) || week < 0) return null;
   return Math.floor(week);
+}
+
+function parseAdminExceptionRequestLimit(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return ADMIN_EXCEPTION_REQUEST_LIMIT_DEFAULT;
+  return Math.min(
+    ADMIN_EXCEPTION_REQUEST_LIMIT_MAX,
+    Math.max(1, parsed),
+  );
+}
+
+function parseAdminExceptionRequestStatusFilter(value) {
+  if (value === undefined || value === null) return "pending";
+  const status = String(value).trim().toLowerCase();
+  if (!status || status === "all") return "";
+  return status;
 }
 
 function weekDatesFromStart(startDate, weekNum) {
@@ -743,6 +777,158 @@ async function handleAdminSetParticipant(req, res, db) {
   });
 }
 
+async function handleAdminListExceptionRequests(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  if (!adminGate(req, res)) return undefined;
+
+  const statusFilter = parseAdminExceptionRequestStatusFilter(req.query.status);
+  const limit = parseAdminExceptionRequestLimit(req.query.limit);
+
+  let query = db.collection("chunbaek_exception_requests")
+    .where("type", "==", "exception");
+  if (statusFilter) {
+    query = query.where("status", "==", statusFilter);
+  }
+  query = query.orderBy("createdAt", "desc").limit(limit);
+
+  const [config, slots, snap] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+    query.get(),
+  ]);
+
+  const docs = snap.docs;
+  const memberIds = [...new Set(
+    docs
+      .map((doc) => String((doc.data() || {}).memberId || "").trim())
+      .filter(Boolean),
+  )];
+  const attendanceByMemberId = new Map();
+  await Promise.all(memberIds.map(async (memberId) => {
+    attendanceByMemberId.set(memberId, await loadMemberAttendance(db, memberId));
+  }));
+
+  const requests = docs.map((doc) => {
+    const data = doc.data() || {};
+    const memberId = String(data.memberId || "").trim();
+    const preview = previewExceptionApplication({
+      slots,
+      attendanceMap: attendanceByMemberId.get(memberId) || {},
+      config,
+      startDate: data.startDate,
+      endDate: data.endDate,
+    });
+    return {
+      requestId: doc.id,
+      ...data,
+      createdAt: timestampToIso(data.createdAt),
+      updatedAt: timestampToIso(data.updatedAt),
+      reviewedAt: timestampToIso(data.reviewedAt),
+      preview,
+    };
+  });
+
+  return res.json({ ok: true, requests });
+}
+
+async function handleAdminReviewExceptionRequest(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  if (!adminGate(req, res)) return undefined;
+
+  const body = req.body || {};
+  const requestId = String(body.requestId || "").trim();
+  const decision = String(body.decision || "").trim().toLowerCase();
+  const reviewNote = String(body.reviewNote || "").slice(0, NOTE_MAX);
+
+  if (!requestId) {
+    return res.status(400).json({ ok: false, error: "requestId required" });
+  }
+  if (decision !== "approve" && decision !== "reject") {
+    return res.status(400).json({ ok: false, error: "invalid decision" });
+  }
+
+  const ref = db.collection("chunbaek_exception_requests").doc(requestId);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    return res.status(404).json({ ok: false, error: "request not found" });
+  }
+
+  const request = snap.data() || {};
+  if (request.status !== "pending") {
+    return res.status(400).json({ ok: false, error: "already reviewed" });
+  }
+
+  if (decision === "reject") {
+    await ref.update({
+      status: "rejected",
+      reviewedBy: "admin",
+      reviewedAt: FieldValue.serverTimestamp(),
+      reviewNote,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return res.json({ ok: true, requestId, status: "rejected" });
+  }
+
+  const [slots, config, attendanceMap] = await Promise.all([
+    loadAllSlots(db),
+    loadSeasonConfig(db),
+    loadMemberAttendance(db, request.memberId),
+  ]);
+  const preview = previewExceptionApplication({
+    slots,
+    attendanceMap,
+    config,
+    startDate: request.startDate,
+    endDate: request.endDate,
+  });
+
+  const applicableSlots = [];
+  for (const slotId of preview.applicableSlotIds) {
+    const slot = findSlotById(slots, slotId);
+    if (!slot) {
+      return res.status(500).json({ ok: false, error: "slot not found for request" });
+    }
+    applicableSlots.push(slot);
+  }
+
+  const exceptionNote = formatRequestExceptionNote(request.reason);
+  for (const slot of applicableSlots) {
+    const patch = buildSlotExceptionPatch({
+      memberId: request.memberId,
+      slot,
+      exception: true,
+      exceptionNote,
+      updatedBy: "admin",
+    });
+    await db.collection("chunbaek_attendance").doc(`${request.memberId}_${getSlotKey(slot)}`).set({
+      ...patch,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+
+  await ref.update({
+    status: "approved",
+    appliedSlotIds: preview.applicableSlotIds,
+    skippedSlotIds: preview.skippedSlotIds,
+    reviewedBy: "admin",
+    reviewedAt: FieldValue.serverTimestamp(),
+    reviewNote,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  return res.json({
+    ok: true,
+    requestId,
+    status: "approved",
+    appliedSlotIds: preview.applicableSlotIds,
+    skippedSlotIds: preview.skippedSlotIds,
+  });
+}
+
 const ADMIN_ACTIONS = new Set([
   "verify-admin",
   "admin-grid",
@@ -751,6 +937,8 @@ const ADMIN_ACTIONS = new Set([
   "admin-save-week-slots",
   "admin-import-slots",
   "admin-set-participant",
+  "admin-list-exception-requests",
+  "admin-review-exception-request",
 ]);
 
 async function handleAdminRequest(req, res, db, action) {
@@ -783,6 +971,14 @@ async function handleAdminRequest(req, res, db, action) {
     await handleAdminSetParticipant(req, res, db);
     return true;
   }
+  if (action === "admin-list-exception-requests") {
+    await handleAdminListExceptionRequests(req, res, db);
+    return true;
+  }
+  if (action === "admin-review-exception-request") {
+    await handleAdminReviewExceptionRequest(req, res, db);
+    return true;
+  }
   return false;
 }
 
@@ -796,4 +992,6 @@ module.exports = {
   handleAdminSaveWeekSlots,
   handleAdminImportSlots,
   handleAdminSetParticipant,
+  handleAdminListExceptionRequests,
+  handleAdminReviewExceptionRequest,
 };
