@@ -32,6 +32,7 @@ alwaysApply: true
 | 코드 리뷰 요청 | `.cursor/skills/requesting-code-review/SKILL.md` |
 | 코드 리뷰 수신 | `.cursor/skills/receiving-code-review/SKILL.md` |
 | 브랜치 마무리 | `.cursor/skills/finishing-a-development-branch/SKILL.md` |
+| **머지된 PR 이후 핫픽스 / 재머지** | `.cursor/skills/merged-pr-follow-up/SKILL.md` |
 | Git 워크트리 사용 | `.cursor/skills/using-git-worktrees/SKILL.md` |
 | 서브에이전트 기반 구현 | `.cursor/skills/subagent-driven-development/SKILL.md` |
 | 스킬 작성/수정 | `.cursor/skills/writing-skills/SKILL.md` |

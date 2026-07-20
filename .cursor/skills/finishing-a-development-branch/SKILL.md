@@ -105,6 +105,9 @@ EOF
 
 Then: Cleanup worktree (Step 5)
 
+**After the PR may have been merged:** do **not** keep pushing hotfixes to the same feature branch.  
+**REQUIRED SUB-SKILL:** Use `merged-pr-follow-up` — check PR state; if MERGED, new branch from `main` + new PR.
+
 #### Option 3: Keep As-Is
 
 Report: "Keeping branch <name>. Worktree preserved at <path>."
@@ -159,6 +162,10 @@ git worktree remove <worktree-path>
 | 4. Discard | - | - | - | ✓ (force) |
 
 ## Common Mistakes
+
+**Pushing follow-ups to an already-merged PR branch**
+- **Problem:** Commits never land on `main`; user asks how to "merge again"
+- **Fix:** Use `merged-pr-follow-up` — verify PR state before every follow-up push; if MERGED, new branch from `main` + new PR
 
 **Skipping test verification**
 - **Problem:** Merge broken code, create failing PR
