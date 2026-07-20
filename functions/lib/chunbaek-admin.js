@@ -805,19 +805,33 @@ async function handleAdminListExceptionRequests(req, res, db) {
   }
   const limit = parseAdminExceptionRequestLimit(req.query.limit);
 
-  let query = db.collection("chunbaek_exception_requests")
-    .where("type", "==", "exception")
-    .where("status", "==", statusFilter.status)
-    .orderBy("createdAt", "desc")
-    .limit(limit);
-
+  // status equality only — avoids composite index (type+status+createdAt).
+  // Filter type + sort/limit in memory; pending queue volume is small.
   const [config, slots, snap] = await Promise.all([
     loadSeasonConfig(db),
     loadAllSlots(db),
-    query.get(),
+    db.collection("chunbaek_exception_requests")
+      .where("status", "==", statusFilter.status)
+      .get(),
   ]);
 
-  const docs = snap.docs;
+  const docs = snap.docs
+    .filter((doc) => {
+      const data = doc.data() || {};
+      return (data.type || "") === "exception";
+    })
+    .sort((a, b) => {
+      const createdMs = (doc) => {
+        const v = (doc.data() || {}).createdAt;
+        if (!v) return 0;
+        if (typeof v.toMillis === "function") return v.toMillis();
+        if (typeof v.toDate === "function") return v.toDate().getTime();
+        const parsed = Date.parse(String(v));
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+      return createdMs(b) - createdMs(a);
+    })
+    .slice(0, limit);
   const memberIds = [...new Set(
     docs
       .map((doc) => String((doc.data() || {}).memberId || "").trim())

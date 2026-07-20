@@ -479,33 +479,45 @@ async function handleMyExceptionRequests(req, res, db) {
   const auth = await requireMember(req, res, db);
   if (!auth) return undefined;
 
+  // memberId equality only — avoids composite index (memberId + createdAt).
+  // Sort/limit in memory; per-member volume is small.
   const snap = await db.collection("chunbaek_exception_requests")
     .where("memberId", "==", auth.memberId)
-    .orderBy("createdAt", "desc")
-    .limit(20)
     .get();
 
-  const requests = snap.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      requestId: doc.id,
-      seasonId: data.seasonId || "",
-      type: data.type || "",
-      memberId: data.memberId || "",
-      nickname: data.nickname || "",
-      reason: data.reason || "",
-      startDate: data.startDate || "",
-      endDate: data.endDate || "",
-      status: data.status || "",
-      createdAt: timestampToIso(data.createdAt),
-      updatedAt: timestampToIso(data.updatedAt),
-      reviewedBy: data.reviewedBy || null,
-      reviewedAt: timestampToIso(data.reviewedAt),
-      reviewNote: data.reviewNote || "",
-      appliedSlotIds: Array.isArray(data.appliedSlotIds) ? data.appliedSlotIds : [],
-      skippedSlotIds: Array.isArray(data.skippedSlotIds) ? data.skippedSlotIds : [],
-    };
-  });
+  const requests = snap.docs
+    .map((doc) => {
+      const data = doc.data() || {};
+      return {
+        requestId: doc.id,
+        seasonId: data.seasonId || "",
+        type: data.type || "",
+        memberId: data.memberId || "",
+        nickname: data.nickname || "",
+        reason: data.reason || "",
+        startDate: data.startDate || "",
+        endDate: data.endDate || "",
+        status: data.status || "",
+        createdAt: timestampToIso(data.createdAt),
+        updatedAt: timestampToIso(data.updatedAt),
+        reviewedBy: data.reviewedBy || null,
+        reviewedAt: timestampToIso(data.reviewedAt),
+        reviewNote: data.reviewNote || "",
+        appliedSlotIds: Array.isArray(data.appliedSlotIds) ? data.appliedSlotIds : [],
+        skippedSlotIds: Array.isArray(data.skippedSlotIds) ? data.skippedSlotIds : [],
+        _createdAtMs: (() => {
+          const v = data.createdAt;
+          if (!v) return 0;
+          if (typeof v.toMillis === "function") return v.toMillis();
+          if (typeof v.toDate === "function") return v.toDate().getTime();
+          const parsed = Date.parse(String(v));
+          return Number.isFinite(parsed) ? parsed : 0;
+        })(),
+      };
+    })
+    .sort((a, b) => b._createdAtMs - a._createdAtMs)
+    .slice(0, 20)
+    .map(({ _createdAtMs, ...row }) => row);
 
   return res.json({ ok: true, requests });
 }
