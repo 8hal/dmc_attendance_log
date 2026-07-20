@@ -333,7 +333,7 @@ const MOCK = {
         goalRaceLabel: "춘천 마라톤",
         resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
         bar: "███",
-        weekDots: "●●●○○",
+        weekDots: "◉●●○○",
         weekPhotoCount: 2,
         week: "3/3",
         weekTarget: 3,

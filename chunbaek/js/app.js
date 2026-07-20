@@ -1349,6 +1349,7 @@
   function weekDotsToHtml(dots) {
     return String(dots || "").split("").map((ch) => {
       if (ch === "●") return '<span class="week-pill week-pill--done"></span>';
+      if (ch === "◉") return '<span class="week-pill week-pill--exception"></span>';
       if (ch === "○") return '<span class="week-pill week-pill--open"></span>';
       if (ch === "·") return '<span class="week-pill week-pill--future"></span>';
       return "";
@@ -1359,7 +1360,10 @@
     return (slots || [])
       .filter((s) => s.status !== "off")
       .map((s) => {
-        if (s.status === "attend" || s.status === "exception") {
+        if (s.status === "exception") {
+          return '<span class="week-pill week-pill--exception"></span>';
+        }
+        if (s.status === "attend") {
           return '<span class="week-pill week-pill--done"></span>';
         }
         if (s.status === "today" || s.status === "miss") {
