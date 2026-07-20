@@ -937,29 +937,39 @@ async function handleAdminReviewExceptionRequest(req, res, db) {
         endDate: request.endDate,
       });
 
+      // Firestore transactions: all reads before all writes.
+      const attendanceReads = [];
       for (const slot of targetSlots) {
         const slotId = slot.dayIndex ?? Number(slot.id);
         const attRef = db.collection("chunbaek_attendance").doc(`${request.memberId}_${getSlotKey(slot)}`);
         const attSnap = await tx.get(attRef);
-        const attendance = attSnap.exists ? (attSnap.data() || {}) : null;
-        if (attendance?.attended) {
-          skippedSlotIds.push(slotId);
+        attendanceReads.push({
+          slot,
+          slotId,
+          attRef,
+          attendance: attSnap.exists ? (attSnap.data() || {}) : null,
+        });
+      }
+
+      for (const row of attendanceReads) {
+        if (row.attendance?.attended) {
+          skippedSlotIds.push(row.slotId);
           continue;
         }
-        if (attendance?.exception) continue;
+        if (row.attendance?.exception) continue;
 
         const patch = buildSlotExceptionPatch({
           memberId: request.memberId,
-          slot,
+          slot: row.slot,
           exception: true,
           exceptionNote,
           updatedBy: "admin",
         });
-        tx.set(attRef, {
+        tx.set(row.attRef, {
           ...patch,
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
-        appliedSlotIds.push(slotId);
+        appliedSlotIds.push(row.slotId);
       }
 
       tx.update(ref, {
