@@ -12,9 +12,15 @@
     todaySlot: null,
     profileFormMode: "create",
     teamMembers: [],
+    timelineWeeks: [],
     timelineSlot: null,
     timelinePhotoRequired: false,
     timelinePhotos: [],
+    exceptionRequests: [],
+    hasFutureExceptions: false,
+    futureExceptionCount: null,
+    exceptionPanelLoadId: 0,
+    exceptionPreviewLoadId: 0,
   };
 
   const VIEWS = {
@@ -57,6 +63,20 @@
 
   function clearTodayCache() {
     try { sessionStorage.removeItem(CACHE_KEYS.today); } catch {}
+  }
+
+  function resetSessionViewState() {
+    state.todaySlot = null;
+    state.teamMembers = [];
+    state.timelineWeeks = [];
+    state.timelineSlot = null;
+    state.timelinePhotoRequired = false;
+    state.timelinePhotos = [];
+    state.exceptionRequests = [];
+    state.hasFutureExceptions = false;
+    state.futureExceptionCount = null;
+    state.exceptionPanelLoadId += 1;
+    state.exceptionPreviewLoadId += 1;
   }
 
   function clearAllCache() {
@@ -126,6 +146,7 @@
       if (e.status === 401 || e.status === 403) {
         setToken(null);
         state.profile = null;
+        resetSessionViewState();
         clearAllCache();
       }
     }
@@ -459,6 +480,64 @@
     return `${m}/${d}(${dow})`;
   }
 
+  function formatShortDateTime(iso) {
+    if (!iso) return "";
+    const text = String(iso).slice(0, 16);
+    if (!text.includes("T")) return text;
+    const [date, time] = text.split("T");
+    const [, m, d] = date.split("-");
+    return `${Number(m)}/${Number(d)} ${time}`;
+  }
+
+  function formatExceptionDateRange(startDate, endDate) {
+    if (!startDate && !endDate) return "기간 미정";
+    if (!endDate || startDate === endDate) return formatIsoDateKo(startDate);
+    return `${formatIsoDateKo(startDate)} ~ ${formatIsoDateKo(endDate)}`;
+  }
+
+  function exceptionStatusLabel(status) {
+    if (status === "pending") return "승인 대기";
+    if (status === "approved") return "승인됨";
+    if (status === "rejected") return "반려";
+    return "상태 미상";
+  }
+
+  function exceptionPreviewSummary(preview) {
+    const applicable = Array.isArray(preview?.applicableSlotIds) ? preview.applicableSlotIds.length : 0;
+    const skipped = Array.isArray(preview?.skippedSlotIds) ? preview.skippedSlotIds.length : 0;
+    return `적용 예정 ${applicable}일 · 출석 유지 ${skipped}일`;
+  }
+
+  function normalizeExceptionError(error) {
+    const msg = error?.message || "오류가 발생했습니다";
+    if (msg === "pending request exists") return "이미 승인 대기 중인 예외 요청이 있습니다";
+    if (msg === "no future exceptions") return "해제할 미래 예외가 없습니다";
+    return msg;
+  }
+
+  function setExceptionPreviewText(message, isError = false) {
+    const previewEl = document.getElementById("exception-preview");
+    if (!previewEl) return;
+    previewEl.textContent = message || "";
+    previewEl.classList.toggle("hint-error", !!isError);
+  }
+
+  function readExceptionFormFromDom() {
+    return {
+      reason: (document.getElementById("exception-reason")?.value || "").trim(),
+      startDate: document.getElementById("exception-start")?.value || "",
+      endDate: document.getElementById("exception-end")?.value || "",
+    };
+  }
+
+  function validateExceptionForm(form) {
+    if (!form.reason) return "사유를 입력해 주세요";
+    if (!form.startDate) return "시작일을 선택해 주세요";
+    if (!form.endDate) return "종료일을 선택해 주세요";
+    if (form.endDate < form.startDate) return "종료일은 시작일 이후로 선택해 주세요";
+    return "";
+  }
+
   function daysUntilKst(isoDate) {
     if (!isoDate) return null;
     const today = new Date();
@@ -687,6 +766,7 @@
       if (e.status === 401 || e.status === 403) {
         setToken(null);
         state.profile = null;
+        resetSessionViewState();
         clearAllCache();
         showView("welcome");
         return;
@@ -718,6 +798,71 @@
       if (sec != null) return new Date(sec * 1000).toISOString().slice(0, 10);
     }
     return "";
+  }
+
+  function updateExceptionEndDateConstraints() {
+    const startEl = document.getElementById("exception-start");
+    const endEl = document.getElementById("exception-end");
+    if (!startEl || !endEl) return;
+    const startDate = startEl.value || kstTodayIso();
+    endEl.min = startDate;
+    endEl.max = addDaysIso(startDate, 14);
+    if (!endEl.value || endEl.value < startDate) {
+      endEl.value = startDate;
+      return;
+    }
+    if (endEl.value > endEl.max) {
+      endEl.value = endEl.max;
+    }
+  }
+
+  function collectFutureExceptionSlotIds() {
+    const today = kstTodayIso();
+    const slotIds = new Set();
+    const todayDate = normalizeClientDate(state.todaySlot?.date);
+    if (state.todaySlot?.exception && todayDate && todayDate >= today) {
+      slotIds.add(Number(state.todaySlot.slotId ?? state.todaySlot.dayIndex));
+    }
+    for (const week of state.timelineWeeks || []) {
+      for (const slot of week.slots || []) {
+        const slotDate = normalizeClientDate(slot?.date);
+        if (!slot?.exception || !slotDate || slotDate < today) continue;
+        slotIds.add(Number(slot.slotId ?? slot.dayIndex));
+      }
+    }
+    return [...slotIds].filter(Number.isFinite);
+  }
+
+  function countApprovedFutureExceptionDays() {
+    const today = kstTodayIso();
+    return (state.exceptionRequests || []).reduce((count, request) => {
+      if (request.status !== "approved") return count;
+      if (!request.endDate || request.endDate < today) return count;
+      const applied = Array.isArray(request.appliedSlotIds) ? request.appliedSlotIds.length : 0;
+      return count + applied;
+    }, 0);
+  }
+
+  function resolveFutureExceptionCount() {
+    if (useMock()) {
+      if (Number.isFinite(MOCK.futureExceptionCount)) return MOCK.futureExceptionCount;
+      return MOCK.hasFutureExceptions ? 1 : 0;
+    }
+    const slotIds = collectFutureExceptionSlotIds();
+    if (slotIds.length) return slotIds.length;
+    if (Number.isFinite(state.futureExceptionCount) && state.futureExceptionCount > 0) {
+      return state.futureExceptionCount;
+    }
+    return countApprovedFutureExceptionDays();
+  }
+
+  function updateEarlyReturnButtonVisibility() {
+    const btn = document.getElementById("btn-early-return");
+    if (!btn) return;
+    const count = resolveFutureExceptionCount();
+    state.futureExceptionCount = count;
+    state.hasFutureExceptions = count > 0;
+    btn.hidden = !state.hasFutureExceptions;
   }
 
   function betaStartFromSlotRes(slotRes) {
@@ -1284,9 +1429,11 @@
   }
 
   function paintTimeline(weeks) {
+    state.timelineWeeks = weeks || [];
     const container = document.getElementById("timeline-weeks");
     if (!weeks.length) {
       container.innerHTML = '<p class="section-sub">아직 표시할 주차가 없습니다.</p>';
+      updateEarlyReturnButtonVisibility();
       return;
     }
     container.innerHTML = weeks.map((w) => {
@@ -1331,6 +1478,7 @@
     });
 
     bindTimelineEvents();
+    updateEarlyReturnButtonVisibility();
   }
 
   // ── 사진 라이트박스 ──
@@ -1551,6 +1699,205 @@
     bindTeamListEvents();
   }
 
+  function renderExceptionRequestList(requests) {
+    const list = document.getElementById("me-exception-list");
+    if (!list) return;
+    if (!requests.length) {
+      list.innerHTML = '<li class="me-exception-empty">아직 상신한 예외 요청이 없습니다.</li>';
+      return;
+    }
+    list.innerHTML = requests.map((request) => {
+      const status = request.status || "";
+      const createdLabel = formatShortDateTime(request.createdAt);
+      const reviewedLabel = formatShortDateTime(request.reviewedAt);
+      const hasApprovedCounts = status === "approved"
+        && Array.isArray(request.appliedSlotIds)
+        && Array.isArray(request.skippedSlotIds);
+      let summary = "";
+      if (hasApprovedCounts) {
+        summary = exceptionPreviewSummary(request);
+      } else if (status === "pending") {
+        summary = "운영 확인 대기 중입니다.";
+      } else if (status === "rejected") {
+        summary = "운영진이 요청을 검토했습니다.";
+      }
+      const note = (request.reviewNote || "").trim();
+      return `
+        <li class="me-exception-item">
+          <div class="me-exception-item-head">
+            <strong class="me-exception-item-period">${escapeHtml(formatExceptionDateRange(request.startDate, request.endDate))}</strong>
+            <span class="me-exception-status me-exception-status--${escapeHtml(status || "unknown")}">${escapeHtml(exceptionStatusLabel(status))}</span>
+          </div>
+          <div class="me-exception-item-reason">${escapeHtml(request.reason || "사유 없음")}</div>
+          ${createdLabel ? `<div class="me-exception-item-meta">요청 ${escapeHtml(createdLabel)}</div>` : ""}
+          ${reviewedLabel && status !== "pending" ? `<div class="me-exception-item-meta">검토 ${escapeHtml(reviewedLabel)}</div>` : ""}
+          ${summary ? `<div class="me-exception-item-summary">${escapeHtml(summary)}</div>` : ""}
+          ${note ? `<div class="me-exception-item-note">${escapeHtml(note)}</div>` : ""}
+        </li>
+      `;
+    }).join("");
+  }
+
+  async function loadMeExceptionPanel() {
+    const section = document.getElementById("me-exception-section");
+    const list = document.getElementById("me-exception-list");
+    const p = state.profile || MOCK.profile;
+    if (!section || !list) return;
+    if (!p?.profileComplete) {
+      section.hidden = true;
+      state.exceptionRequests = [];
+      state.hasFutureExceptions = false;
+      state.futureExceptionCount = null;
+      list.innerHTML = "";
+      return;
+    }
+
+    section.hidden = false;
+    list.innerHTML = '<li class="me-exception-empty">불러오는 중…</li>';
+    const loadId = state.exceptionPanelLoadId + 1;
+    state.exceptionPanelLoadId = loadId;
+    try {
+      const data = await apiGet("my-exception-requests", {}, true);
+      if (loadId !== state.exceptionPanelLoadId) return;
+      state.exceptionRequests = Array.isArray(data.requests) ? data.requests : [];
+      state.futureExceptionCount = resolveFutureExceptionCount();
+      renderExceptionRequestList(state.exceptionRequests);
+    } catch (e) {
+      if (loadId !== state.exceptionPanelLoadId) return;
+      console.error("[chunbaek] loadMeExceptionPanel failed", e);
+      state.exceptionRequests = [];
+      renderExceptionRequestList([]);
+      showToast(normalizeExceptionError(e), true);
+    }
+    updateEarlyReturnButtonVisibility();
+  }
+
+  function openExceptionRequestModal() {
+    if (state.isProcessing) {
+      showToast("처리 중입니다. 잠시 후 다시 시도해 주세요", true);
+      return;
+    }
+    const modal = document.getElementById("exception-request-modal");
+    const reasonEl = document.getElementById("exception-reason");
+    const startEl = document.getElementById("exception-start");
+    const endEl = document.getElementById("exception-end");
+    if (!modal || !reasonEl || !startEl || !endEl) return;
+
+    const today = kstTodayIso();
+    startEl.min = addDaysIso(today, -6);
+    startEl.value = today;
+    endEl.value = today;
+    updateExceptionEndDateConstraints();
+    reasonEl.value = "";
+    setExceptionPreviewText("사유와 기간을 입력하면 적용 예정 일수를 미리 보여드립니다.");
+    modal.hidden = false;
+    reasonEl.focus();
+  }
+
+  function closeExceptionRequestModal() {
+    state.exceptionPreviewLoadId += 1;
+    const modal = document.getElementById("exception-request-modal");
+    if (modal) modal.hidden = true;
+  }
+
+  async function refreshExceptionPreview() {
+    const form = readExceptionFormFromDom();
+    updateExceptionEndDateConstraints();
+    if (!form.reason || !form.startDate || !form.endDate) {
+      setExceptionPreviewText("사유와 기간을 입력하면 적용 예정 일수를 미리 보여드립니다.");
+      return;
+    }
+    const error = validateExceptionForm(form);
+    if (error) {
+      setExceptionPreviewText(error, true);
+      return;
+    }
+    const loadId = state.exceptionPreviewLoadId + 1;
+    state.exceptionPreviewLoadId = loadId;
+    setExceptionPreviewText("적용 예정 일수를 확인하는 중…");
+    try {
+      const data = await apiPost("request-exception", { ...form, dryRun: true }, true);
+      if (loadId !== state.exceptionPreviewLoadId) return;
+      setExceptionPreviewText(exceptionPreviewSummary(data.preview));
+    } catch (e) {
+      if (loadId !== state.exceptionPreviewLoadId) return;
+      setExceptionPreviewText(normalizeExceptionError(e), true);
+    }
+  }
+
+  async function submitExceptionRequest() {
+    if (state.isProcessing) return;
+    const form = readExceptionFormFromDom();
+    const error = validateExceptionForm(form);
+    if (error) {
+      setExceptionPreviewText(error, true);
+      showToast(error, true);
+      return;
+    }
+    if (!window.confirm("이 기간으로 출석 예외를 상신할까요?")) return;
+
+    state.isProcessing = true;
+    const submitBtn = document.getElementById("exception-request-submit");
+    const submitLabel = submitBtn?.textContent || "";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "상신 중…";
+    }
+    try {
+      await apiPost("request-exception", form, true);
+      closeExceptionRequestModal();
+      showToast("예외 요청이 상신되었습니다");
+      await loadMeExceptionPanel();
+    } catch (e) {
+      const msg = normalizeExceptionError(e);
+      setExceptionPreviewText(msg, true);
+      showToast(msg, true);
+    } finally {
+      state.isProcessing = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitLabel;
+      }
+    }
+  }
+
+  async function onEarlyReturn() {
+    if (state.isProcessing) return;
+    const count = resolveFutureExceptionCount();
+    const prompt = count > 0
+      ? `오늘 이후 예외 ${count}일을 해제하고 다시 출석할까요?`
+      : "오늘 이후 예외를 해제하고 다시 출석할까요?";
+    if (!window.confirm(prompt)) return;
+
+    state.isProcessing = true;
+    const btn = document.getElementById("btn-early-return");
+    if (btn) btn.disabled = true;
+    try {
+      const data = await apiPost("self-clear-future-exceptions", {}, true);
+      const clearedCount = Array.isArray(data.clearedSlotIds) ? data.clearedSlotIds.length : 0;
+      state.futureExceptionCount = 0;
+      state.hasFutureExceptions = false;
+      if (useMock()) {
+        MOCK.futureExceptionCount = 0;
+        MOCK.hasFutureExceptions = false;
+      }
+      updateEarlyReturnButtonVisibility();
+      showToast(clearedCount ? `${clearedCount}일의 예외가 해제되었습니다` : "예외가 해제되었습니다");
+      await loadMeExceptionPanel();
+    } catch (e) {
+      const msg = normalizeExceptionError(e);
+      if (msg === "해제할 미래 예외가 없습니다") {
+        state.futureExceptionCount = 0;
+        state.hasFutureExceptions = false;
+        updateEarlyReturnButtonVisibility();
+      }
+      showToast(msg, true);
+    } finally {
+      state.isProcessing = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function renderMe() {
     const p = state.profile || MOCK.profile;
     const s = p.stats || MOCK.profile.stats;
@@ -1570,6 +1917,7 @@
       <dt>시즌 출석</dt><dd>${s.seasonAttendCount || 0}회 (출석률 ${s.seasonAttendRate || 0}%)</dd>
       <dt>이번 주</dt><dd>${s.weekAttendCount || 0}/${s.weekTarget || 3}회</dd>
     `;
+    void loadMeExceptionPanel();
   }
 
   function goHome() {
@@ -1596,6 +1944,8 @@
     document.getElementById("btn-create-profile").addEventListener("click", onProfileSubmit);
     document.getElementById("btn-edit-profile").addEventListener("click", openProfileEdit);
     document.getElementById("btn-profile-cancel").addEventListener("click", () => showView("me"));
+    document.getElementById("btn-request-exception").addEventListener("click", openExceptionRequestModal);
+    document.getElementById("btn-early-return").addEventListener("click", onEarlyReturn);
     document.querySelectorAll('input[name="goal-race"]').forEach((el) => {
       el.addEventListener("change", syncGoalRaceNote);
     });
@@ -1609,6 +1959,7 @@
     document.getElementById("btn-switch-user").addEventListener("click", () => {
       setToken(null);
       state.profile = null;
+      resetSessionViewState();
       clearAllCache(); // 다음 사용자가 이전 사용자 데이터를 보지 않도록
       showView("welcome");
     });
@@ -1625,6 +1976,20 @@
       if (!btn) return;
       removeTimelinePhotoAt(Number(btn.dataset.photoRemove));
     });
+
+    document.getElementById("exception-request-close").addEventListener("click", closeExceptionRequestModal);
+    document.getElementById("exception-request-modal").addEventListener("click", (e) => {
+      if (e.target.id === "exception-request-modal") closeExceptionRequestModal();
+    });
+    document.getElementById("exception-request-submit").addEventListener("click", submitExceptionRequest);
+    document.getElementById("exception-reason").addEventListener("input", () => {
+      refreshExceptionPreview();
+    });
+    document.getElementById("exception-start").addEventListener("change", () => {
+      updateExceptionEndDateConstraints();
+      refreshExceptionPreview();
+    });
+    document.getElementById("exception-end").addEventListener("change", refreshExceptionPreview);
 
     document.getElementById("team-profile-close").addEventListener("click", closeTeamProfileModal);
     document.getElementById("team-profile-modal").addEventListener("click", (e) => {

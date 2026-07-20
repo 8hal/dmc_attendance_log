@@ -163,6 +163,24 @@ body {
   margin: 0 0 16px;
 }
 
+.section-subtitle {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.hint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.hint-error {
+  color: var(--chun-orange-dark);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1191,6 +1209,116 @@ body {
 }
 .profile-dl dt { color: var(--text-muted); }
 .profile-dl dd { margin: 0; font-weight: 700; }
+
+.me-exception-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.me-exception-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.me-exception-actions .btn {
+  margin: 0;
+}
+
+.me-exception-actions .btn-ghost {
+  width: auto;
+  min-width: 112px;
+}
+
+.me-exception-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.me-exception-item,
+.me-exception-empty {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  padding: 12px 14px;
+}
+
+.me-exception-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.me-exception-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.me-exception-item-period {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.me-exception-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.me-exception-status--pending {
+  background: rgba(255, 178, 73, 0.18);
+  color: #9a5a00;
+}
+
+.me-exception-status--approved {
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+
+.me-exception-status--rejected {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+.me-exception-item-reason {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.me-exception-item-meta,
+.me-exception-item-summary,
+.me-exception-item-note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.me-exception-item-summary {
+  color: var(--text);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.me-exception-item-note {
+  margin-top: 4px;
+}
 
 /* ── 토스트 ── */
 .toast {

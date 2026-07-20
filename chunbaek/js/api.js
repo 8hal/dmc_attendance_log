@@ -363,6 +363,9 @@ const MOCK = {
       },
     ],
   },
+  exceptionRequests: [],
+  hasFutureExceptions: true,
+  futureExceptionCount: 1,
 };
 
 function getToken() {
@@ -472,6 +475,9 @@ function mockGet(action, params = {}) {
   if (action === "my-timeline") {
     return Promise.resolve({ ok: true, photoRequired: false, weeks: MOCK.timeline });
   }
+  if (action === "my-exception-requests") {
+    return Promise.resolve({ ok: true, requests: MOCK.exceptionRequests || [] });
+  }
   if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
   if (action === "team-member-attendance") {
     const entries = [];
@@ -511,6 +517,13 @@ function findMockTimelineSlot(slotId) {
     }
   }
   return null;
+}
+
+function mockExceptionPreview() {
+  return {
+    applicableSlotIds: [1, 2],
+    skippedSlotIds: [],
+  };
 }
 
 function mockPost(action, body) {
@@ -591,6 +604,44 @@ function mockPost(action, body) {
           : "춘천 마라톤",
     });
     return Promise.resolve({ ok: true, ...MOCK.profile });
+  }
+  if (action === "request-exception") {
+    const preview = mockExceptionPreview();
+    if (body?.dryRun) {
+      return Promise.resolve({ ok: true, preview });
+    }
+    if ((MOCK.exceptionRequests || []).some((request) => request.status === "pending")) {
+      const err = new Error("pending request exists");
+      err.status = 400;
+      return Promise.reject(err);
+    }
+    const requestId = `mock_req_${Date.now()}`;
+    const now = new Date().toISOString();
+    const request = {
+      requestId,
+      seasonId: "chunbaek-s3",
+      type: "exception",
+      memberId: MOCK.profile.memberId || "m2",
+      nickname: MOCK.profile.nickname || "김러너",
+      reason: String(body?.reason || ""),
+      startDate: String(body?.startDate || ""),
+      endDate: String(body?.endDate || ""),
+      status: "pending",
+      createdAt: now,
+      updatedAt: now,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNote: "",
+      appliedSlotIds: [],
+      skippedSlotIds: [],
+    };
+    MOCK.exceptionRequests.unshift(request);
+    return Promise.resolve({ ok: true, requestId, preview });
+  }
+  if (action === "self-clear-future-exceptions") {
+    MOCK.futureExceptionCount = 0;
+    MOCK.hasFutureExceptions = false;
+    return Promise.resolve({ ok: true, clearedSlotIds: [1] });
   }
   return Promise.reject(new Error(`preview: unknown action ${action}`));
 }
