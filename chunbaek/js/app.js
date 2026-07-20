@@ -512,7 +512,7 @@
           : Array.isArray(preview?.preview?.applicableSlotIds)
             ? preview.preview.applicableSlotIds.length
             : 0;
-    return `적용 예정 ${applicable}일`;
+    return `예외 요청 일수 ${applicable}일`;
   }
 
   function normalizeExceptionError(error) {
@@ -1795,7 +1795,7 @@
     endEl.value = today;
     updateExceptionEndDateConstraints();
     reasonEl.value = "";
-    setExceptionPreviewText("사유와 기간을 입력하면 적용 예정 일수를 미리 보여드립니다.");
+    setExceptionPreviewText("사유와 기간을 입력하면 예외 요청 일수를 미리 보여드립니다.");
     modal.hidden = false;
     reasonEl.focus();
   }
@@ -1810,7 +1810,7 @@
     const form = readExceptionFormFromDom();
     updateExceptionEndDateConstraints();
     if (!form.reason || !form.startDate || !form.endDate) {
-      setExceptionPreviewText("사유와 기간을 입력하면 적용 예정 일수를 미리 보여드립니다.");
+      setExceptionPreviewText("사유와 기간을 입력하면 예외 요청 일수를 미리 보여드립니다.");
       return;
     }
     const error = validateExceptionForm(form);
@@ -1820,7 +1820,7 @@
     }
     const loadId = state.exceptionPreviewLoadId + 1;
     state.exceptionPreviewLoadId = loadId;
-    setExceptionPreviewText("적용 예정 일수를 확인하는 중…");
+    setExceptionPreviewText("예외 요청 일수를 확인하는 중…");
     try {
       const data = await apiPost("request-exception", { ...form, dryRun: true }, true);
       if (loadId !== state.exceptionPreviewLoadId) return;
