@@ -562,6 +562,7 @@ module.exports = {
   todaySlotPayload,
   getSlotKey,
   getAttendance,
+  resolveSlotDate,
   slotStatus,
   slotTrainingTitle,
   slotTrainingContent,
