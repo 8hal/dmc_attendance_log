@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff3214" />
+  <meta name="description" content="춘백 S3 출석 예외 요청 안내 — 부상·휴가·출장 시 나 탭에서 상신" />
+  <title>출석 예외 요청 안내 — 춘백 S3</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: "Noto Sans KR", sans-serif;
+      min-height: 100dvh;
+      line-height: 1.5;
+    }
+    .page { max-width: 480px; margin: 0 auto; padding: 0 0 48px; }
+
+    .header {
+      background: var(--brand-orange);
+      color: #fff;
+      padding: 28px 20px 32px;
+    }
+    .header-eyebrow {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      opacity: 0.9;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+    .header p {
+      margin: 10px 0 0;
+      font-size: 14px;
+      opacity: 0.92;
+    }
+
+    .kakao-banner {
+      display: none;
+      margin: 16px 16px 0;
+      background: #FEF3C7;
+      border: 1.5px solid #F59E0B;
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .kakao-banner.visible { display: block; }
+    .kakao-banner-title {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #92400E;
+    }
+    .kakao-banner-body {
+      margin: 0;
+      font-size: 13px;
+      color: #78350F;
+    }
+
+    .section {
+      margin: 20px 16px 0;
+      background: var(--card);
+      border: 1px solid var(--border-default, #e8e4df);
+      border-radius: 16px;
+      padding: 18px 16px;
+    }
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .section p, .section li {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+    .section p { margin: 0 0 10px; }
+    .section p:last-child { margin-bottom: 0; }
+    .muted { color: var(--text-secondary); }
+
+    .steps { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: var(--surface-muted);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand-orange);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step strong { font-weight: 800; }
+
+    .bullets { margin: 0; padding-left: 1.2em; }
+    .bullets li { margin: 0 0 8px; }
+    .bullets li:last-child { margin-bottom: 0; }
+
+    .notice-box {
+      background: var(--surface-muted);
+      border-radius: 12px;
+      padding: 14px;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text-primary);
+    }
+    .copy-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--brand-orange);
+      color: #fff;
+      width: 100%;
+    }
+    .btn-outline {
+      background: #fff;
+      color: var(--brand-orange);
+      border: 1.5px solid var(--brand-orange);
+      flex: 1;
+    }
+    .cta {
+      margin: 20px 16px 0;
+    }
+    .foot {
+      margin: 24px 16px 0;
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 20;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <p class="header-eyebrow">춘백 S3</p>
+      <h1>출석 예외<br />이렇게 요청해요</h1>
+      <p>부상·휴가·출장 등으로 훈련이 어려울 때,<br />단톡 대신 앱에서 기간을 올려 주세요.</p>
+    </header>
+
+    <div class="kakao-banner" id="kakao-banner">
+      <p class="kakao-banner-title">카카오톡 안에서 보시는 경우</p>
+      <p class="kakao-banner-body">오른쪽 아래 <strong>⋯</strong> → <strong>다른 브라우저로 열기</strong>를 누르면 앱 사용이 더 편합니다.</p>
+    </div>
+
+    <section class="section">
+      <h2>무엇을 위한 기능인가요?</h2>
+      <p>예외로 승인된 날은 <strong>출석 횟수에서 빼고</strong>, 그날은 출석할 수 없습니다.</p>
+      <p class="muted">이미 출석한 날은 그대로 유지됩니다. 운영진이 승인해야 반영됩니다.</p>
+    </section>
+
+    <section class="section">
+      <h2>요청 방법</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <div><strong>춘백 앱</strong>을 열고 아래 <strong>나</strong> 탭으로 이동합니다.</div>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <div><strong>출석 예외</strong>에서 <strong>예외 요청</strong>을 누릅니다.</div>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <div>사유와 기간을 적고 <strong>상신하기</strong>를 누릅니다.</div>
+        </li>
+        <li class="step">
+          <span class="step-num">4</span>
+          <div>운영진이 확인하면 <strong>승인됨</strong>으로 바뀝니다.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>알아두면 좋아요</h2>
+      <ul class="bullets">
+        <li>최근 <strong>7일(오늘 포함)</strong>부터 앞으로, 한 번에 최대 <strong>14일</strong>까지 요청할 수 있습니다.</li>
+        <li>승인 대기 중에는 <strong>새 요청을 하나 더 올릴 수 없습니다.</strong> 잘못 올렸다면 운영진에게 반려를 요청해 주세요.</li>
+        <li>예외 기간 중 회복되면 <strong>나 → 조기 복귀</strong>로 오늘 이후 예외를 바로 해제할 수 있습니다.</li>
+        <li>승인된 날은 <strong>내 100일</strong>에 「예외」로 보입니다.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>단톡 공지 문구 (복사해서 쓰세요)</h2>
+      <div class="notice-box" id="notice-text">[춘백 S3] 출석 예외 요청 안내
+
+부상·휴가·출장 등은 단톡에만 남기지 마시고,
+춘백 앱 → 나 → 출석 예외 → 예외 요청
+에서 기간을 올려 주세요.
+
+운영 승인 후 해당 날은 출석 집계에서 빠지며, 그날은 출석할 수 없습니다.
+회복되면 나 탭의 「조기 복귀」로 남은 예외를 해제할 수 있습니다.
+
+안내 페이지
+https://dmc-attendance.web.app/chunbaek/exception-guide.html</div>
+      <div class="copy-row">
+        <button type="button" class="btn btn-outline" id="btn-copy">공지 문구 복사</button>
+      </div>
+    </section>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="/chunbaek/">춘백 앱 열기</a>
+    </div>
+    <p class="foot">동마클 · 춘백 S3</p>
+  </div>
+
+  <div class="toast" id="toast" role="status">복사되었습니다</div>
+
+  <script>
+    (function () {
+      var ua = navigator.userAgent || "";
+      if (/KAKAOTALK/i.test(ua)) {
+        document.getElementById("kakao-banner").classList.add("visible");
+      }
+
+      var toast = document.getElementById("toast");
+      var toastTimer = null;
+      function showToast() {
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove("show");
+        }, 1800);
+      }
+
+      document.getElementById("btn-copy").addEventListener("click", async function () {
+        var text = document.getElementById("notice-text").textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast();
+        } catch (e) {
+          var range = document.createRange();
+          range.selectNodeContents(document.getElementById("notice-text"));
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          showToast();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
