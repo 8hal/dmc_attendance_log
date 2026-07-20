@@ -34,6 +34,8 @@ const {
   normalizePhotoUrls,
   getAttendance,
   displayDayIndex,
+  sortTeamMemberAttendanceEntries,
+  formatTeamFeedDayLabel,
   slotTrainingTitle,
 } = require("./chunbaek-stats");
 
@@ -922,22 +924,31 @@ async function handleTeamMemberAttendance(req, res, db) {
     const note = String(att.note || "").trim().slice(0, 500);
     const photoUrls = normalizePhotoUrls(att);
     if (!note && !photoUrls.length) continue;
+    const slotId = slot.dayIndex ?? Number(slot.id);
+    const display = displayDayIndex(slot);
+    const week = slot.week ?? null;
     entries.push({
-      slotId: slot.dayIndex ?? Number(slot.id),
-      displayDayIndex: displayDayIndex(slot),
+      slotId,
+      displayDayIndex: display,
+      week,
       date: slot.date || "",
       title: slotTrainingTitle(slot) || "—",
       note,
       photoUrls,
+      dayLabel: formatTeamFeedDayLabel({
+        displayDayIndex: display,
+        slotId,
+        week,
+      }),
     });
   }
 
-  entries.sort((a, b) => (b.displayDayIndex ?? 0) - (a.displayDayIndex ?? 0));
+  const sorted = sortTeamMemberAttendanceEntries(entries);
 
   return res.json({
     ok: true,
     memberId,
-    entries: entries.slice(0, TEAM_MEMBER_ATTENDANCE_MAX),
+    entries: sorted.slice(0, TEAM_MEMBER_ATTENDANCE_MAX),
   });
 }
 
