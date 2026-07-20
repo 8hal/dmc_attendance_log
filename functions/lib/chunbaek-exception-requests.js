@@ -3,12 +3,24 @@
 const { addDaysIso, getAttendance, getSlotKey, resolveSlotDate } = require("./chunbaek-stats");
 
 const EXCEPTION_REASON_MAX = 200;
+const EXCEPTION_NOTE_MAX = 200;
+const EXCEPTION_NOTE_PREFIX = "[상신] ";
 const EXCEPTION_MAX_SPAN_DAYS = 14;
 const EXCEPTION_LOOKBACK_DAYS = 7; // today 포함 7일 → today-6
 
 function parseIsoDate(s) {
   const v = String(s || "").trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const [y, m, d] = v.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== m - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    return null;
+  }
+  return v;
 }
 
 function calendarDayDiff(startDate, endDate) {
@@ -90,7 +102,7 @@ function slotsEligibleForSelfClear({ slots, attendanceMap, config, todayKst }) {
 }
 
 function formatRequestExceptionNote(reason) {
-  return `[상신] ${String(reason).trim()}`.slice(0, 200);
+  return (EXCEPTION_NOTE_PREFIX + String(reason).trim()).slice(0, EXCEPTION_NOTE_MAX);
 }
 
 function buildSlotExceptionPatch({ memberId, slot, exception, exceptionNote, updatedBy }) {
@@ -99,7 +111,7 @@ function buildSlotExceptionPatch({ memberId, slot, exception, exceptionNote, upd
     memberId,
     slotId,
     exception: !!exception,
-    exceptionNote: exception ? String(exceptionNote || "").slice(0, 200) : "",
+    exceptionNote: exception ? String(exceptionNote || "").slice(0, EXCEPTION_NOTE_MAX) : "",
     updatedBy,
   };
   if (exception) patch.attended = false;

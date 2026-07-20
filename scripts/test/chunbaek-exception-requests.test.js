@@ -8,6 +8,7 @@ const {
   previewExceptionApplication,
   slotsEligibleForSelfClear,
   formatRequestExceptionNote,
+  buildSlotExceptionPatch,
   EXCEPTION_REASON_MAX,
   EXCEPTION_MAX_SPAN_DAYS,
   EXCEPTION_LOOKBACK_DAYS,
@@ -81,6 +82,18 @@ describe("validateExceptionRequestInput", () => {
     });
     assert.equal(r.ok, false);
   });
+
+  it("rejects impossible calendar dates", () => {
+    const r = validateExceptionRequestInput({
+      reason: "휴가",
+      startDate: "2026-07-20",
+      endDate: "2026-07-32",
+      todayKst: today,
+      seasonEndDate: seasonEnd,
+    });
+    assert.equal(r.ok, false);
+    assert.match(r.error, /invalid date range/i);
+  });
 });
 
 describe("trainingSlotsInDateRange", () => {
@@ -151,5 +164,44 @@ describe("slotsEligibleForSelfClear", () => {
 describe("formatRequestExceptionNote", () => {
   it("prefixes reason for audit", () => {
     assert.equal(formatRequestExceptionNote("발목"), "[상신] 발목");
+  });
+
+  it("keeps max-length reason note within 200 chars and prefixed", () => {
+    const reason = "가".repeat(EXCEPTION_REASON_MAX);
+    const note = formatRequestExceptionNote(reason);
+    assert.ok(note.startsWith("[상신] "));
+    assert.ok(note.length <= 200);
+  });
+});
+
+describe("buildSlotExceptionPatch", () => {
+  const slot = { id: "1", dayIndex: 1 };
+
+  it("sets attended false and exceptionNote when exception true", () => {
+    const note = formatRequestExceptionNote("가".repeat(EXCEPTION_REASON_MAX));
+    const patch = buildSlotExceptionPatch({
+      memberId: "m1",
+      slot,
+      exception: true,
+      exceptionNote: note,
+      updatedBy: "admin",
+    });
+    assert.equal(patch.exception, true);
+    assert.equal(patch.attended, false);
+    assert.equal(patch.exceptionNote, note);
+    assert.ok(patch.exceptionNote.length <= 200);
+  });
+
+  it("clears exceptionNote and does not set attended when exception false", () => {
+    const patch = buildSlotExceptionPatch({
+      memberId: "m1",
+      slot,
+      exception: false,
+      exceptionNote: "ignored",
+      updatedBy: "member",
+    });
+    assert.equal(patch.exception, false);
+    assert.equal(patch.exceptionNote, "");
+    assert.equal("attended" in patch, false);
   });
 });
