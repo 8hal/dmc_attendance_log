@@ -191,31 +191,11 @@
       </ul>
     </section>
 
-    <section class="section">
-      <h2>단톡 공지 문구 (복사해서 쓰세요)</h2>
-      <div class="notice-box" id="notice-text">[춘백 S3] 출석 예외 요청 안내
-
-부상·휴가·출장 등은 단톡에만 남기지 마시고,
-춘백 앱 → 나 → 출석 예외 → 예외 요청
-에서 기간을 올려 주세요.
-
-운영 승인 후 해당 날은 출석 집계에서 빠지며, 그날은 출석할 수 없습니다.
-회복되면 나 탭의 「조기 복귀」로 남은 예외를 해제할 수 있습니다.
-
-안내 페이지
-https://dmc-attendance.web.app/chunbaek/exception-guide.html</div>
-      <div class="copy-row">
-        <button type="button" class="btn btn-outline" id="btn-copy">공지 문구 복사</button>
-      </div>
-    </section>
-
     <div class="cta">
       <a class="btn btn-primary" href="/chunbaek/">춘백 앱 열기</a>
     </div>
     <p class="foot">동마클 · 춘백 S3</p>
   </div>
-
-  <div class="toast" id="toast" role="status">복사되었습니다</div>
 
   <script>
     (function () {
@@ -223,31 +203,6 @@ https://dmc-attendance.web.app/chunbaek/exception-guide.html</div>
       if (/KAKAOTALK/i.test(ua)) {
         document.getElementById("kakao-banner").classList.add("visible");
       }
-
-      var toast = document.getElementById("toast");
-      var toastTimer = null;
-      function showToast() {
-        toast.classList.add("show");
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          toast.classList.remove("show");
-        }, 1800);
-      }
-
-      document.getElementById("btn-copy").addEventListener("click", async function () {
-        var text = document.getElementById("notice-text").textContent;
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast();
-        } catch (e) {
-          var range = document.createRange();
-          range.selectNodeContents(document.getElementById("notice-text"));
-          var sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-          showToast();
-        }
-      });
     })();
   </script>
 </body>
