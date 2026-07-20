@@ -415,33 +415,59 @@ async function handleRequestException(req, res, db) {
     return res.json({ ok: true, preview });
   }
 
-  const pendingSnap = await db.collection("chunbaek_exception_requests")
-    .where("memberId", "==", auth.memberId)
-    .where("status", "==", "pending")
-    .limit(1)
-    .get();
-  if (!pendingSnap.empty) {
-    return res.status(400).json({ ok: false, error: "pending request exists" });
-  }
-
   const requestId = crypto.randomUUID();
-  await db.collection("chunbaek_exception_requests").doc(requestId).set({
-    seasonId: CHUNBAEK_SEASON_ID,
-    type: "exception",
-    memberId: auth.memberId,
-    nickname: member.data.nickname || "",
-    reason: parsed.reason,
-    startDate: parsed.startDate,
-    endDate: parsed.endDate,
-    status: "pending",
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-    reviewedBy: null,
-    reviewedAt: null,
-    reviewNote: "",
-    appliedSlotIds: [],
-    skippedSlotIds: [],
-  });
+  const lockRef = db.collection("chunbaek_exception_locks").doc(auth.memberId);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const lockSnap = await tx.get(lockRef);
+      const pendingRequestId = lockSnap.exists
+        ? String((lockSnap.data() || {}).pendingRequestId || "").trim()
+        : "";
+      if (pendingRequestId) {
+        const pendingRef = db.collection("chunbaek_exception_requests").doc(pendingRequestId);
+        const pendingRequestSnap = await tx.get(pendingRef);
+        const pendingRequest = pendingRequestSnap.exists ? (pendingRequestSnap.data() || {}) : null;
+        if (
+          pendingRequest
+          && pendingRequest.memberId === auth.memberId
+          && pendingRequest.type === "exception"
+          && pendingRequest.status === "pending"
+        ) {
+          const err = new Error("pending request exists");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      tx.set(db.collection("chunbaek_exception_requests").doc(requestId), {
+        seasonId: CHUNBAEK_SEASON_ID,
+        type: "exception",
+        memberId: auth.memberId,
+        nickname: member.data.nickname || "",
+        reason: parsed.reason,
+        startDate: parsed.startDate,
+        endDate: parsed.endDate,
+        status: "pending",
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewNote: "",
+        appliedSlotIds: [],
+        skippedSlotIds: [],
+      });
+      tx.set(lockRef, {
+        pendingRequestId: requestId,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    });
+  } catch (err) {
+    if (err && err.status === 400 && err.message === "pending request exists") {
+      return res.status(400).json({ ok: false, error: "pending request exists" });
+    }
+    throw err;
+  }
 
   return res.json({ ok: true, requestId, preview });
 }

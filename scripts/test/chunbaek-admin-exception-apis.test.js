@@ -330,6 +330,12 @@ function seedAdminDb() {
         createdAt: new FakeTimestamp("2026-07-22T05:00:00.000Z"),
       },
     },
+    chunbaek_exception_locks: {
+      m1: {
+        pendingRequestId: "reqPending",
+        updatedAt: new FakeTimestamp("2026-07-20T05:00:00.000Z"),
+      },
+    },
   });
 }
 
@@ -427,6 +433,9 @@ describe("chunbaek admin exception request APIs", () => {
     assert.deepEqual(requests.reqPending.skippedSlotIds, [1]);
     assert.equal(requests.reqPending.reviewedBy, "admin");
     assert.equal(requests.reqPending.reviewNote, "확인 완료");
+
+    const locks = db.dumpCollection("chunbaek_exception_locks");
+    assert.equal(locks.m1.pendingRequestId, null);
   });
 
   it("admin-review-exception-request reject updates request without attendance writes", async () => {
@@ -457,6 +466,9 @@ describe("chunbaek admin exception request APIs", () => {
     assert.equal(requests.reqPending.status, "rejected");
     assert.equal(requests.reqPending.reviewedBy, "admin");
     assert.equal(requests.reqPending.reviewNote, "증빙 부족");
+
+    const locks = db.dumpCollection("chunbaek_exception_locks");
+    assert.equal(locks.m1.pendingRequestId, null);
   });
 
   it("admin-review-exception-request blocks already reviewed requests", async () => {

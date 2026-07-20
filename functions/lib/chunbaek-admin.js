@@ -891,6 +891,10 @@ async function handleAdminReviewExceptionRequest(req, res, db) {
       if (request.status !== "pending") {
         throw createHttpError(400, "already reviewed");
       }
+      const memberId = String(request.memberId || "").trim();
+      const lockRef = memberId
+        ? db.collection("chunbaek_exception_locks").doc(memberId)
+        : null;
 
       if (decision === "reject") {
         tx.update(ref, {
@@ -900,6 +904,12 @@ async function handleAdminReviewExceptionRequest(req, res, db) {
           reviewNote,
           updatedAt: FieldValue.serverTimestamp(),
         });
+        if (lockRef) {
+          tx.set(lockRef, {
+            pendingRequestId: null,
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+        }
         return { requestId, status: "rejected" };
       }
 
@@ -947,6 +957,12 @@ async function handleAdminReviewExceptionRequest(req, res, db) {
         reviewNote,
         updatedAt: FieldValue.serverTimestamp(),
       });
+      if (lockRef) {
+        tx.set(lockRef, {
+          pendingRequestId: null,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
 
       return {
         requestId,

@@ -136,6 +136,7 @@ class FakeCollectionRef extends FakeQuery {
 class FakeDb {
   constructor(seed = {}) {
     this.collections = new Map();
+    this.transactionCalls = 0;
     for (const [name, docs] of Object.entries(seed)) {
       this.collections.set(name, new Map(Object.entries(cloneValue(docs))));
     }
@@ -151,12 +152,61 @@ class FakeDb {
   dumpCollection(name) {
     return Object.fromEntries(this.collections.get(name) || []);
   }
+
+  async runTransaction(callback) {
+    this.transactionCalls += 1;
+    const operations = [];
+    const tx = {
+      get: async (docRef) => docRef.get(),
+      set: (docRef, value, options = {}) => {
+        operations.push({ kind: "set", docRef, value, options });
+      },
+    };
+    const result = await callback(tx);
+    const nextCollections = cloneCollections(this.collections);
+    for (const op of operations) {
+      applyOperation(nextCollections, op);
+    }
+    this.collections = nextCollections;
+    return result;
+  }
 }
 
 function sortableValue(value) {
   if (value && typeof value.toDate === "function") return value.toDate().getTime();
   if (value instanceof Date) return value.getTime();
   return value ?? 0;
+}
+
+function mergeDocs(prev, value) {
+  return { ...cloneValue(prev), ...cloneValue(value) };
+}
+
+function cloneCollections(collections) {
+  const next = new Map();
+  for (const [name, docs] of collections.entries()) {
+    next.set(name, new Map(Object.entries(cloneValue(Object.fromEntries(docs)))));
+  }
+  return next;
+}
+
+function applyOperation(collections, op) {
+  const name = op.docRef.collection.name;
+  if (!collections.has(name)) {
+    collections.set(name, new Map());
+  }
+  const docs = collections.get(name);
+  if (op.kind === "set") {
+    const next = cloneValue(op.value);
+    if (op.options.merge) {
+      const prev = docs.get(op.docRef.id) || {};
+      docs.set(op.docRef.id, mergeDocs(prev, next));
+      return;
+    }
+    docs.set(op.docRef.id, next);
+    return;
+  }
+  throw new Error(`unsupported operation: ${op.kind}`);
 }
 
 function makeRes() {
@@ -251,6 +301,67 @@ describe("chunbaek member exception APIs", () => {
         },
       });
       assert.deepEqual(db.dumpCollection("chunbaek_exception_requests"), {});
+    });
+  });
+
+  it("request-exception creates a pending request and member lock in one transaction", async () => {
+    const db = new FakeDb({
+      members: {
+        m1: {
+          nickname: "초이스",
+          chunbaekS3: { participant: true, profileComplete: true },
+        },
+      },
+      chunbaek_sessions: {
+        tok: {
+          token: "tok",
+          memberId: "m1",
+          revoked: false,
+          expiresAt: new FakeTimestamp("2099-01-01T00:00:00.000Z"),
+        },
+      },
+      chunbaek_season_config: {
+        "chunbaek-s3": { weeklyTarget: 3, photoRequired: false },
+      },
+      chunbaek_slots: {
+        "1": { dayIndex: 1, date: "2026-07-20", week: 1, isProgramOff: false },
+        "2": { dayIndex: 2, date: "2026-07-21", week: 1, isProgramOff: false },
+        "3": { dayIndex: 3, date: "2026-07-22", week: 1, isProgramOff: false },
+      },
+      chunbaek_attendance: {
+        a1: { memberId: "m1", slotId: 1, attended: true, exception: false },
+        a2: { memberId: "m1", slotId: 2, attended: false, exception: true },
+      },
+    });
+
+    await withMockedNow("2026-07-20T03:00:00.000Z", async () => {
+      const res = await runAction("request-exception", {
+        method: "POST",
+        query: { token: "tok" },
+        body: {
+          reason: "발목 통증",
+          startDate: "2026-07-20",
+          endDate: "2026-07-22",
+        },
+      }, db);
+
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.ok, true);
+      assert.equal(typeof res.body.requestId, "string");
+      assert.deepEqual(res.body.preview, {
+        applicableSlotIds: [3],
+        skippedSlotIds: [1],
+      });
+      assert.equal(db.transactionCalls, 1);
+
+      const requests = db.dumpCollection("chunbaek_exception_requests");
+      assert.deepEqual(Object.keys(requests), [res.body.requestId]);
+      assert.equal(requests[res.body.requestId].memberId, "m1");
+      assert.equal(requests[res.body.requestId].status, "pending");
+
+      const locks = db.dumpCollection("chunbaek_exception_locks");
+      assert.equal(locks.m1.pendingRequestId, res.body.requestId);
+      assert.ok(locks.m1.updatedAt);
     });
   });
 

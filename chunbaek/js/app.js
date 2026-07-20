@@ -503,8 +503,20 @@
   }
 
   function exceptionPreviewSummary(preview) {
-    const applicable = Array.isArray(preview?.applicableSlotIds) ? preview.applicableSlotIds.length : 0;
-    const skipped = Array.isArray(preview?.skippedSlotIds) ? preview.skippedSlotIds.length : 0;
+    const applicable = Array.isArray(preview?.appliedSlotIds)
+      ? preview.appliedSlotIds.length
+      : Array.isArray(preview?.applicableSlotIds)
+        ? preview.applicableSlotIds.length
+        : Array.isArray(preview?.preview?.appliedSlotIds)
+          ? preview.preview.appliedSlotIds.length
+          : Array.isArray(preview?.preview?.applicableSlotIds)
+            ? preview.preview.applicableSlotIds.length
+            : 0;
+    const skipped = Array.isArray(preview?.skippedSlotIds)
+      ? preview.skippedSlotIds.length
+      : Array.isArray(preview?.preview?.skippedSlotIds)
+        ? preview.preview.skippedSlotIds.length
+        : 0;
     return `적용 예정 ${applicable}일 · 출석 유지 ${skipped}일`;
   }
 
@@ -1710,11 +1722,8 @@
       const status = request.status || "";
       const createdLabel = formatShortDateTime(request.createdAt);
       const reviewedLabel = formatShortDateTime(request.reviewedAt);
-      const hasApprovedCounts = status === "approved"
-        && Array.isArray(request.appliedSlotIds)
-        && Array.isArray(request.skippedSlotIds);
       let summary = "";
-      if (hasApprovedCounts) {
+      if (status === "approved") {
         summary = exceptionPreviewSummary(request);
       } else if (status === "pending") {
         summary = "운영 확인 대기 중입니다.";
