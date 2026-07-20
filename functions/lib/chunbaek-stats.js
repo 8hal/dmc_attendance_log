@@ -355,7 +355,8 @@ function weekDots(slots, attendanceMap, week, today) {
     .sort((a, b) => a.dayIndex - b.dayIndex);
   return training.map((slot) => {
     const status = slotStatus(slot, attendanceMap, today);
-    if (status === "attend" || status === "exception") return "●";
+    if (status === "exception") return "◉";
+    if (status === "attend") return "●";
     if (status === "today" || status === "miss") return "○";
     return "·";
   }).join("");

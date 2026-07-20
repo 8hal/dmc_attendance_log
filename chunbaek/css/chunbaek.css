@@ -655,6 +655,10 @@ body {
   background: var(--pill-done-bg);
   box-shadow: 0 0 0 2px var(--pill-done-ring);
 }
+.week-pill--exception {
+  background: var(--pill-exception-bg);
+  box-shadow: 0 0 0 2px var(--pill-exception-ring);
+}
 .week-pill--open {
   background: var(--pill-open-bg);
   border: 2px solid var(--pill-open-ring);
