@@ -167,12 +167,20 @@ class FakeDb {
   async runTransaction(callback) {
     this.transactionCalls += 1;
     const operations = [];
+    let writesStarted = false;
     const tx = {
-      get: async (docRef) => docRef.get(),
+      get: async (docRef) => {
+        if (writesStarted) {
+          throw new Error("Firestore transactions require all reads to be executed before all writes.");
+        }
+        return docRef.get();
+      },
       set: (docRef, value, options = {}) => {
+        writesStarted = true;
         operations.push({ kind: "set", docRef, value, options });
       },
       update: (docRef, value) => {
+        writesStarted = true;
         operations.push({ kind: "update", docRef, value });
       },
     };
