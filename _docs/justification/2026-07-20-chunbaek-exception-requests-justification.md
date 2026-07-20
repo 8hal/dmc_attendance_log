@@ -14,7 +14,7 @@
 | `exception` in `functions/lib/chunbaek-admin.js` | `admin-set-attendance`·`admin-grid`에서 슬롯 단건 `exception`/`exceptionNote` 설정·표시 |
 | `admin-set-attendance` in `chunbaek/` | `chunbaek/js/admin.js` — 어드민 그리드 셀 모달에서 단건 호출 |
 | `action.*chunbaek\|chunbaek.*action` in `functions/` | **매치 없음** (라우팅은 `exports.chunbaek` + `?action=` 쿼리) |
-| `request-exception` / `cancel-exception` / `my-exception` / `self-clear` / `exception-request` (전역) | **구현·호출처 없음** (스펙·계획 문서만) |
+| `request-exception` / `my-exception` / `self-clear` / `exception-request` (전역) | **구현·호출처 없음** (스펙·계획 문서만) |
 | `chunbaek_exception_requests` (전역) | **컬렉션·규칙 미구현** (스펙 §4.1 설계만) |
 
 ### 체크리스트
@@ -80,33 +80,32 @@
 
 - 예외 **상신** (`pending` 문서 생성): 없음
 - 내 상신 **조회**: 없음
-- pending **취소**: 없음
 - 승인 후 **조기 복귀**(오늘 이후 exception 해제): 없음  
   → 현재는 단톡 + 운영 `admin-set-attendance` 반복만 가능
 
 ---
 
-## 4. 신규 API (6개)
+## 4. 신규 API (5개)
 
 | action | 누가 | 용도 | 호출처 (예정) |
 |--------|------|------|----------------|
 | `request-exception` | 회원 | 예외 상신 (`chunbaek_exception_requests` pending 생성) | `chunbaek/js/app.js` — 「나」탭 예외 요청 모달 |
-| `cancel-exception-request` | 회원 | 본인 pending 요청 취소 | `chunbaek/js/app.js` — 내 요청 목록 |
 | `my-exception-requests` | 회원 | 내 상신 목록·상태 조회 | `chunbaek/js/app.js` — 「나」탭 「내 요청」 |
 | `self-clear-future-exceptions` | 회원 | 조기 복귀 — `date >= todayKst` exception 슬롯 즉시 해제 | `chunbaek/js/app.js` — 「조기 복귀」 확인 후 |
 | `admin-list-exception-requests` | 운영 | pending/최근 예외 상신 목록 | `chunbaek/js/admin.js` — 예외 요청 패널 |
 | `admin-review-exception-request` | 운영 | approve / reject + 승인 시 슬롯 일괄 적용 | `chunbaek/js/admin.js` — 승인·반려 버튼 |
 
+**1차 비범위:** `cancel-exception-request` (회원 pending 취소) — 오버스펙. 잘못 올리면 운영 반려 후 재상신. pending 1건 규칙으로 대기 중 추가 상신 불가.
+
 스펙: `_docs/superpowers/specs/2026-07-20-chunbaek-exception-request-design.md` §5.5
 
 ---
 
-## 5. 신규 6개를 더 적게 합칠 수 없는 이유
+## 5. 신규 5개를 더 적게 합칠 수 없는 이유
 
 | action | 분리 필요 이유 |
 |--------|----------------|
-| `request-exception` | **쓰기 + 검증**(7일 소급·14일 상한·pending 1건·시즌 경계). 슬롯은 승인 전 변경하지 않음. 조회·취소·즉시 해제와 HTTP 의미·권한이 다름. |
-| `cancel-exception-request` | `pending` → `cancelled` 상태 전환만. `requestId` 필수·본인 소유 검증. 상신 body와 합치면 `action` 분기 오용·재상신 버그 위험. |
+| `request-exception` | **쓰기 + 검증**(7일 소급·14일 상한·pending 1건·시즌 경계). 슬롯은 승인 전 변경하지 않음. 조회·즉시 해제와 HTTP 의미·권한이 다름. |
 | `my-exception-requests` | **읽기 전용** GET 성격. 「나」탭 목록·배지 갱신용. POST 상신/해제와 분리하지 않으면 캐시·mock·에러 처리가 `api-patterns.md`와 어긋남. |
 | `self-clear-future-exceptions` | **승인 큐 없이** `chunbaek_attendance`에 즉시 write. 대상=`exception && date >= todayKst`. 상신 API와 합치면 “pending 생성 vs 즉시 해제”가 한 body로 섞여 운영 승인 우회 위험. |
 | `admin-list-exception-requests` | 운영 **목록·뱃지** 전용 read. `adminGate` + `status` 필터. review write와 분리해 어드민 그리드 새로고침·preview mock을 단순화. |
@@ -132,22 +131,27 @@
 - 회원이 승인 없이 `exception: true`를 켜면 집계·출석 차단 정책 위반 (스펙 비목표: “승인 없이 회원이 예외를 켜기”)
 - 출석 저장과 예외 상신은 검증·권한·Firestore 대상 컬렉션이 다름 (`chunbaek_attendance` vs `chunbaek_exception_requests`)
 
-### 조기 복귀를 `cancel-exception-request`나 운영 review로만 처리할 수 없는가?
+### 조기 복귀를 운영 review로만 처리할 수 없는가?
 
-- 조기 복귀는 **이미 approved·적용된 슬롯**에 대한 즉시 해제 — pending 문서 취소와 무관
+- 조기 복귀는 **이미 approved·적용된 슬롯**에 대한 즉시 해제 — pending 문서와 무관
 - 스펙: 운영 승인 큐 없음 → 전용 `self-clear-future-exceptions` 필요
+
+### 왜 `cancel-exception-request`는 빠졌나?
+
+- 1차 YAGNI — 잘못 상신 시 운영 **반려**로 충분
+- pending 1건이면 대기 중 재상신 불가 → 운영이 반려해야 다음 상신 가능 (의도된 단순화)
 
 ---
 
 ## 7. 결정
 
-- ✅ **추가 필요** (스펙 2026-07-20 **디자인 승인됨** — **구현 전 사용자 API 승인 대기**)
+- ✅ **추가 필요** (스펙 2026-07-20 **디자인 승인됨** — cancel 제외 5 API — **구현 전 사용자 API 승인 대기**)
 - ⚠️ 대안: 단톡 + `admin-set-attendance` 반복은 운영 병목·감사 부재로 제품 목표(§1) 미충족
 
 ### 잠긴 제품 규칙 (스펙 합의)
 
 - 상신 UI 주 진입: 「나」탭 (`#view-me`)
-- 승인 전 슬롯 무변경 · pending만 취소 가능
+- 승인 전 슬롯 무변경 · 회원 pending 취소 **없음** (운영 반려)
 - 승인 시 출석일(`attended: true`) 스킵 · 미출석 훈련일만 `exception`
 - 조기 복귀: 오늘 이후 exception만 즉시 해제 · 과거 유지
 - 신규 컬렉션: `chunbaek_exception_requests`
@@ -162,4 +166,4 @@
 
 ## 승인
 
-- ⏳ **사용자 API 승인 대기** — 본 문서 제출 후 구현(Task 1+) 진행
+- ⏳ **사용자 API 승인 대기** (5개, cancel 제외) — 승인 후 구현(Task 1+) 진행

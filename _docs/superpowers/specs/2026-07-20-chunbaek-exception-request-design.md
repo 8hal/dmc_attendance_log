@@ -37,7 +37,7 @@
 | 이미 출석한 날 | **출석 유지(스킵)** — 예외로 덮지 않음 |
 | 소급 | **롤링 최근 7일(오늘 포함, KST)** ~ 미래 |
 | 조기 회복 | 회원 **즉시 해제** (운영 승인 없음). **오늘 이후** 예외 슬롯만 해제, 과거 예외 유지 |
-| 승인 전 | 슬롯 변경 없음. pending 취소 가능 |
+| 승인 전 | 슬롯 변경 없음. pending은 운영 승인/반려만 (회원 취소 없음 — YAGNI) |
 | 회원 UI 진입점 | **「나」탭** (`#view-me`) — 프로필·설정성 액션과 함께 |
 
 ### 예외 의미 (현행 유지)
@@ -60,7 +60,8 @@
 조기 복귀는 **요청 문서가 아니라 즉시 API**로 처리한다. (감사 로그는 아래 5.3)
 
 ### 상태 (`exception` 요청만)
-`pending` → `approved` | `rejected` | `cancelled`(회원, pending만)
+`pending` → `approved` | `rejected`  
+(회원 취소 없음. 잘못 올렸으면 운영 반려 후 재상신.)
 
 ---
 
@@ -79,7 +80,7 @@
   reason: string,            // 1~200자
   startDate: "YYYY-MM-DD",
   endDate: "YYYY-MM-DD",
-  status: "pending" | "approved" | "rejected" | "cancelled",
+  status: "pending" | "approved" | "rejected",
   createdAt, updatedAt,
   reviewedBy: string | null,
   reviewedAt: Timestamp | null,
@@ -139,16 +140,15 @@
 확인 UI: 「오늘 이후 예외 N일을 해제하고 다시 출석할까요?」→ 확인 후 즉시 적용.  
 사유·기간 입력 불필요(이미 예외로 묶인 남은 날 전체 해제). 부분 해제가 필요하면 운영 그리드.
 
-### 5.4 반려 · 취소
+### 5.4 반려
 - 반려: 슬롯 변경 없음, `reviewNote` 권장
-- 회원 취소: `pending`만
+- 회원 측 pending 취소 API는 **1차 비범위** (운영 반려로 충분)
 
 ### 5.5 API (신규 — justification 별도 작성·승인 후 구현)
 
 | action | 누가 | 역할 |
 |--------|------|------|
 | `request-exception` | 회원 | 예외 상신 |
-| `cancel-exception-request` | 회원 | pending 취소 |
 | `my-exception-requests` | 회원 | 내 상신 목록 |
 | `self-clear-future-exceptions` | 회원 | 조기 복귀(즉시 해제) |
 | `admin-list-exception-requests` | 운영 | 대기/최근 (type=exception만) |
