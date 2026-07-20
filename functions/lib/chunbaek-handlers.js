@@ -7,6 +7,12 @@ const crypto = require("crypto");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
 const {
+  validateExceptionRequestInput,
+  previewExceptionApplication,
+  slotsEligibleForSelfClear,
+  buildSlotExceptionPatch,
+} = require("./chunbaek-exception-requests");
+const {
   loadSeasonConfig,
   loadAllSlots,
   loadMemberAttendance,
@@ -142,6 +148,17 @@ function memberProfilePayload(memberId, data, s3, stats) {
 function findSlotById(slots, slotId) {
   const idStr = String(slotId);
   return slots.find((s) => getSlotKey(s) === idStr || String(s.id) === idStr) || null;
+}
+
+function timestampToIso(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._seconds != null) {
+    return new Date(value._seconds * 1000).toISOString();
+  }
+  return null;
 }
 
 function parseOptionalBodyWeightKg(value) {
@@ -353,6 +370,160 @@ async function handleMyProfile(req, res, db) {
     member.s3,
     stats,
   ));
+}
+
+async function handleRequestException(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const member = await loadParticipantMember(db, auth.memberId);
+  if (!member) {
+    return res.status(404).json({ ok: false, error: "participant not found" });
+  }
+
+  const body = req.body || {};
+  const [config, slots, attendanceMap] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+    loadMemberAttendance(db, auth.memberId),
+  ]);
+  const todayKst = todayKstDate();
+  const seasonSlotList = seasonSlotsOnly(slots);
+  const seasonEndDate = seasonBounds(seasonSlotList.length ? seasonSlotList : slots).endDate;
+  const parsed = validateExceptionRequestInput({
+    reason: body.reason,
+    startDate: body.startDate,
+    endDate: body.endDate,
+    todayKst,
+    seasonEndDate,
+  });
+  if (!parsed.ok) {
+    return res.status(400).json({ ok: false, error: parsed.error });
+  }
+
+  const preview = previewExceptionApplication({
+    slots,
+    attendanceMap,
+    config,
+    startDate: parsed.startDate,
+    endDate: parsed.endDate,
+  });
+  if (body.dryRun === true) {
+    return res.json({ ok: true, preview });
+  }
+
+  const pendingSnap = await db.collection("chunbaek_exception_requests")
+    .where("memberId", "==", auth.memberId)
+    .where("status", "==", "pending")
+    .limit(1)
+    .get();
+  if (!pendingSnap.empty) {
+    return res.status(400).json({ ok: false, error: "pending request exists" });
+  }
+
+  const requestId = crypto.randomUUID();
+  await db.collection("chunbaek_exception_requests").doc(requestId).set({
+    seasonId: CHUNBAEK_SEASON_ID,
+    type: "exception",
+    memberId: auth.memberId,
+    nickname: member.data.nickname || "",
+    reason: parsed.reason,
+    startDate: parsed.startDate,
+    endDate: parsed.endDate,
+    status: "pending",
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    reviewedBy: null,
+    reviewedAt: null,
+    reviewNote: "",
+    appliedSlotIds: [],
+    skippedSlotIds: [],
+  });
+
+  return res.json({ ok: true, requestId, preview });
+}
+
+async function handleMyExceptionRequests(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const snap = await db.collection("chunbaek_exception_requests")
+    .where("memberId", "==", auth.memberId)
+    .orderBy("createdAt", "desc")
+    .limit(20)
+    .get();
+
+  const requests = snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      requestId: doc.id,
+      seasonId: data.seasonId || "",
+      type: data.type || "",
+      memberId: data.memberId || "",
+      nickname: data.nickname || "",
+      reason: data.reason || "",
+      startDate: data.startDate || "",
+      endDate: data.endDate || "",
+      status: data.status || "",
+      createdAt: timestampToIso(data.createdAt),
+      updatedAt: timestampToIso(data.updatedAt),
+      reviewedBy: data.reviewedBy || null,
+      reviewedAt: timestampToIso(data.reviewedAt),
+      reviewNote: data.reviewNote || "",
+      appliedSlotIds: Array.isArray(data.appliedSlotIds) ? data.appliedSlotIds : [],
+      skippedSlotIds: Array.isArray(data.skippedSlotIds) ? data.skippedSlotIds : [],
+    };
+  });
+
+  return res.json({ ok: true, requests });
+}
+
+async function handleSelfClearFutureExceptions(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const [slots, attendanceMap, config] = await Promise.all([
+    loadAllSlots(db),
+    loadMemberAttendance(db, auth.memberId),
+    loadSeasonConfig(db),
+  ]);
+  const clearableSlots = slotsEligibleForSelfClear({
+    slots,
+    attendanceMap,
+    config,
+    todayKst: todayKstDate(),
+  });
+  if (!clearableSlots.length) {
+    return res.status(400).json({ ok: false, error: "no future exceptions" });
+  }
+
+  const clearedSlotIds = [];
+  for (const slot of clearableSlots) {
+    const docId = `${auth.memberId}_${getSlotKey(slot)}`;
+    const patch = buildSlotExceptionPatch({
+      memberId: auth.memberId,
+      slot,
+      exception: false,
+      exceptionNote: "",
+      updatedBy: auth.memberId,
+    });
+    await db.collection("chunbaek_attendance").doc(docId).set({
+      ...patch,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    clearedSlotIds.push(slot.dayIndex ?? Number(slot.id));
+  }
+
+  return res.json({ ok: true, clearedSlotIds });
 }
 
 async function handleTodaySlot(req, res, db) {
@@ -765,6 +936,15 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "my-profile") {
     return handleMyProfile(req, res, db);
+  }
+  if (action === "request-exception") {
+    return handleRequestException(req, res, db);
+  }
+  if (action === "my-exception-requests") {
+    return handleMyExceptionRequests(req, res, db);
+  }
+  if (action === "self-clear-future-exceptions") {
+    return handleSelfClearFutureExceptions(req, res, db);
   }
   if (action === "today-slot") {
     return handleTodaySlot(req, res, db);

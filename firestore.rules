@@ -53,5 +53,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    match /chunbaek_exception_requests/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
   }
 }
