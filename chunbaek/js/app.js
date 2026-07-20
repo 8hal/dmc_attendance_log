@@ -512,12 +512,7 @@
           : Array.isArray(preview?.preview?.applicableSlotIds)
             ? preview.preview.applicableSlotIds.length
             : 0;
-    const skipped = Array.isArray(preview?.skippedSlotIds)
-      ? preview.skippedSlotIds.length
-      : Array.isArray(preview?.preview?.skippedSlotIds)
-        ? preview.preview.skippedSlotIds.length
-        : 0;
-    return `적용 예정 ${applicable}일 · 출석 유지 ${skipped}일`;
+    return `적용 예정 ${applicable}일`;
   }
 
   function normalizeExceptionError(error) {
