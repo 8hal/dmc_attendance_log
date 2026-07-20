@@ -42,6 +42,53 @@ const WEEKS = {
   },
 };
 
+let exceptionRequestItems = [
+  {
+    requestId: "mock-exc-1",
+    seasonId: "chunbaek-s3",
+    type: "exception",
+    memberId: "m4",
+    nickname: "최인터벌",
+    reason: "발목 통증으로 금~일 훈련 예외 요청",
+    startDate: "2026-04-10",
+    endDate: "2026-04-12",
+    status: "pending",
+    createdAt: "2026-04-10T08:30:00.000Z",
+    updatedAt: "2026-04-10T08:30:00.000Z",
+    reviewedBy: null,
+    reviewedAt: null,
+    reviewNote: "",
+    appliedSlotIds: [],
+    skippedSlotIds: [],
+    preview: {
+      applicableSlotIds: [39, 40],
+      skippedSlotIds: [41],
+    },
+  },
+  {
+    requestId: "mock-exc-2",
+    seasonId: "chunbaek-s3",
+    type: "exception",
+    memberId: "m2",
+    nickname: "이페이스",
+    reason: "출장 이동으로 토요일 하루 예외 필요",
+    startDate: "2026-04-12",
+    endDate: "2026-04-12",
+    status: "pending",
+    createdAt: "2026-04-11T22:10:00.000Z",
+    updatedAt: "2026-04-11T22:10:00.000Z",
+    reviewedBy: null,
+    reviewedAt: null,
+    reviewNote: "",
+    appliedSlotIds: [],
+    skippedSlotIds: [],
+    preview: {
+      applicableSlotIds: [41],
+      skippedSlotIds: [],
+    },
+  },
+];
+
 let currentWeek = PREVIEW ? 7 : null;
 let currentPanel = "grid";
 let filterUnderTarget = false;
@@ -319,6 +366,94 @@ function renderTraining() {
   }
 }
 
+function formatIsoDateKo(iso) {
+  if (!iso) return "—";
+  const [y, m, d] = String(iso).split("-").map(Number);
+  const dow = DOW[new Date(y, m - 1, d).getDay()];
+  return `${m}/${d}(${dow})`;
+}
+
+function formatShortDateTime(iso) {
+  if (!iso) return "";
+  const text = String(iso).slice(0, 16);
+  if (!text.includes("T")) return text;
+  const [date, time] = text.split("T");
+  const [, m, d] = date.split("-");
+  return `${Number(m)}/${Number(d)} ${time}`;
+}
+
+function formatExceptionDateRange(startDate, endDate) {
+  if (!startDate && !endDate) return "기간 미정";
+  if (!endDate || startDate === endDate) return formatIsoDateKo(startDate);
+  return `${formatIsoDateKo(startDate)} ~ ${formatIsoDateKo(endDate)}`;
+}
+
+function exceptionStatusLabel(status) {
+  if (status === "pending") return "승인 대기";
+  if (status === "approved") return "승인됨";
+  if (status === "rejected") return "반려";
+  return "상태 미상";
+}
+
+function exceptionPreviewSummary(preview) {
+  const applicable = Array.isArray(preview?.applicableSlotIds)
+    ? preview.applicableSlotIds.length
+    : Array.isArray(preview?.appliedSlotIds)
+      ? preview.appliedSlotIds.length
+      : 0;
+  const skipped = Array.isArray(preview?.skippedSlotIds) ? preview.skippedSlotIds.length : 0;
+  return `적용 예정 ${applicable}일 · 출석 유지 ${skipped}일`;
+}
+
+function updateExceptionBadge(count) {
+  const badge = document.getElementById("exceptions-pending-badge");
+  if (!badge) return;
+  badge.hidden = count <= 0;
+  badge.textContent = count > 99 ? "99+" : String(count);
+}
+
+function renderExceptionRequests(requests) {
+  const list = document.getElementById("exceptions-list");
+  if (!list) return;
+  if (!requests.length) {
+    list.innerHTML = '<div class="exception-req-empty">승인 대기 중인 예외 요청이 없습니다.</div>';
+    return;
+  }
+
+  list.innerHTML = requests.map((request) => {
+    const createdLabel = formatShortDateTime(request.createdAt);
+    const summary = exceptionPreviewSummary(request.preview || request);
+    const reviewNote = String(request.reviewNote || "").trim();
+    const metaItems = [];
+    if (createdLabel) metaItems.push(`요청 ${createdLabel}`);
+    if (summary) metaItems.push(summary);
+    return `
+      <article class="exception-req-row">
+        <div class="exception-req-main">
+          <div class="exception-req-head">
+            <strong class="exception-req-name">${escapeHtml(request.nickname || "이름 없음")}</strong>
+            <span class="exception-req-status">${escapeHtml(exceptionStatusLabel(request.status || "pending"))}</span>
+          </div>
+          <div class="exception-req-period">${escapeHtml(formatExceptionDateRange(request.startDate, request.endDate))}</div>
+          <div class="exception-req-reason">${escapeHtml(request.reason || "사유 없음")}</div>
+          <div class="exception-req-meta">${escapeHtml(metaItems.join(" · "))}</div>
+          ${reviewNote ? `<div class="exception-req-meta">메모: ${escapeHtml(reviewNote)}</div>` : ""}
+        </div>
+        <div class="exception-req-actions">
+          <button type="button" class="admin-btn admin-btn-primary" data-exception-action="approve" data-request-id="${escapeAttr(request.requestId || "")}">승인</button>
+          <button type="button" class="admin-btn admin-btn-danger" data-exception-action="reject" data-request-id="${escapeAttr(request.requestId || "")}">반려</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-exception-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      reviewExceptionRequest(btn.dataset.requestId, btn.dataset.exceptionAction);
+    });
+  });
+}
+
 function escapeAttr(s) {
   return String(s || "").replace(/"/g, "&quot;");
 }
@@ -430,6 +565,33 @@ async function refreshTraining() {
   renderTraining();
 }
 
+async function refreshExceptionRequests(options = {}) {
+  const { suppressToast = false } = options;
+  try {
+    const requests = PREVIEW
+      ? exceptionRequestItems.filter((request) => request.status === "pending")
+      : (await adminGet("admin-list-exception-requests", { status: "pending" })).requests || [];
+
+    if (!PREVIEW) {
+      exceptionRequestItems = Array.isArray(requests) ? requests : [];
+    }
+
+    const pendingRequests = Array.isArray(requests) ? requests : [];
+    updateExceptionBadge(pendingRequests.length);
+    renderExceptionRequests(pendingRequests);
+    return pendingRequests;
+  } catch (err) {
+    console.error(err);
+    if (!PREVIEW) exceptionRequestItems = [];
+    updateExceptionBadge(0);
+    renderExceptionRequests([]);
+    if (!suppressToast) {
+      showToast(err.message || "예외 요청을 불러오지 못했습니다", true);
+    }
+    return [];
+  }
+}
+
 function weekOptionLabel(w) {
   return w === 0 ? "0주차 (베타)" : `${w}주차`;
 }
@@ -461,6 +623,7 @@ async function switchPanel(panel) {
   });
   if (panel === "grid") await refreshGrid();
   if (panel === "training") await refreshTraining();
+  if (panel === "exceptions") await refreshExceptionRequests();
 }
 
 async function tryAuth() {
@@ -502,7 +665,11 @@ async function init() {
     document.getElementById("preview-banner").style.display = "none";
   }
 
+  const exceptionPrefetch = currentPanel === "exceptions"
+    ? Promise.resolve([])
+    : refreshExceptionRequests({ suppressToast: true });
   await switchPanel(currentPanel);
+  await exceptionPrefetch;
 }
 
 async function saveTraining() {
@@ -560,6 +727,69 @@ async function runImport() {
   } catch (err) {
     console.error(err);
     showToast(err.message || "import 실패", true);
+  } finally {
+    isProcessing = false;
+  }
+}
+
+async function reviewExceptionRequest(requestId, decision) {
+  if (!requestId) return;
+  if (decision !== "approve" && decision !== "reject") return;
+
+  const request = exceptionRequestItems.find((item) => item.requestId === requestId);
+  if (!request) {
+    showToast("요청 정보를 찾지 못했습니다", true);
+    return;
+  }
+
+  let reviewNote = "";
+  if (decision === "reject") {
+    const note = prompt("반려 메모를 입력하세요 (선택)", request.reviewNote || "");
+    if (note === null) return;
+    reviewNote = note.trim();
+  }
+
+  const decisionLabel = decision === "approve" ? "승인" : "반려";
+  const confirmed = confirm(
+    `${request.nickname || "해당 회원"}님의 ${formatExceptionDateRange(request.startDate, request.endDate)} 예외 요청을 ${decisionLabel}하시겠습니까?`,
+  );
+  if (!confirmed) return;
+
+  if (PREVIEW) {
+    const reviewedAt = new Date().toISOString();
+    exceptionRequestItems = exceptionRequestItems.map((item) => {
+      if (item.requestId !== requestId) return item;
+      return {
+        ...item,
+        status: decision === "approve" ? "approved" : "rejected",
+        reviewedBy: "admin",
+        reviewedAt,
+        updatedAt: reviewedAt,
+        reviewNote,
+        appliedSlotIds: decision === "approve"
+          ? [...(item.preview?.applicableSlotIds || [])]
+          : [],
+        skippedSlotIds: decision === "approve"
+          ? [...(item.preview?.skippedSlotIds || [])]
+          : [],
+      };
+    });
+    await refreshExceptionRequests({ suppressToast: true });
+    showToast(`목업: 예외 요청 ${decisionLabel} 처리`);
+    return;
+  }
+
+  if (isProcessing) return;
+  isProcessing = true;
+  try {
+    const body = { requestId, decision };
+    if (reviewNote) body.reviewNote = reviewNote;
+    await adminPost("admin-review-exception-request", body);
+    showToast(decision === "approve" ? "예외 요청 승인됨" : "예외 요청 반려됨");
+    await refreshExceptionRequests();
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || `예외 요청 ${decisionLabel} 실패`, true);
   } finally {
     isProcessing = false;
   }

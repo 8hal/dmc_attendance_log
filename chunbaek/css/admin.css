@@ -63,7 +63,10 @@ body.admin-body {
   gap: 4px;
 }
 .admin-nav-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   width: 100%;
   text-align: left;
   padding: 12px 20px;
@@ -84,6 +87,20 @@ body.admin-body {
   color: var(--chun-cyan);
   border-left-color: var(--chun-orange);
   background: rgba(112, 209, 244, 0.08);
+}
+.admin-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: var(--chun-white);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 .admin-sidebar-foot {
   margin-top: auto;
@@ -346,6 +363,85 @@ body.admin-body {
   margin-bottom: 16px;
 }
 
+/* ── 예외 요청 ── */
+.exceptions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.exception-req-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.exception-req-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.exception-req-name {
+  font-size: 16px;
+  font-weight: 800;
+}
+.exception-req-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--yellow-light);
+  color: var(--yellow);
+  font-size: 12px;
+  font-weight: 800;
+}
+.exception-req-period {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.exception-req-reason {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.exception-req-meta {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.exception-req-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 112px;
+}
+.admin-btn-danger {
+  background: #fef2f2;
+  color: var(--red);
+  border: 1px solid #fecaca;
+}
+.admin-btn-danger:hover {
+  background: #fee2e2;
+}
+.exception-req-empty {
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 24px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
 /* ── 인증 오버레이 ── */
 .auth-overlay {
   position: fixed;
@@ -533,6 +629,19 @@ body.admin-body {
     font-size: 13px;
   }
   .admin-nav-btn.active { border-bottom-color: var(--chun-orange); }
+
+  .exception-req-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px;
+  }
+  .exception-req-actions {
+    flex-direction: row;
+    min-width: 0;
+  }
+  .exception-req-actions .admin-btn {
+    flex: 1;
+  }
 
   .grid-wrap {
     margin: 0 -4px;

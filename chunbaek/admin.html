@@ -20,6 +20,7 @@
       <option value="grid" selected>① 출석 그리드</option>
       <option value="training">② 훈련 입력</option>
       <option value="import">③ 일괄 import</option>
+      <option value="exceptions">④ 예외 요청</option>
     </select>
   </div>
 
@@ -53,6 +54,9 @@
         <button type="button" class="admin-nav-btn active" data-panel="grid">출석 그리드</button>
         <button type="button" class="admin-nav-btn" data-panel="training">훈련 입력</button>
         <button type="button" class="admin-nav-btn" data-panel="import">일괄 import</button>
+        <button type="button" class="admin-nav-btn" data-panel="exceptions">
+          예외 요청 <span class="admin-nav-badge" id="exceptions-pending-badge" hidden></span>
+        </button>
         <div class="admin-sidebar-foot">
           URL 비공개<br />
           단톡에 공유하지 마세요
@@ -130,6 +134,17 @@
 </textarea>
             <button type="button" class="admin-btn admin-btn-primary" id="btn-import">import (replace)</button>
           </div>
+        </section>
+
+        <!-- 예외 요청 -->
+        <section class="admin-panel" id="panel-exceptions">
+          <div class="admin-toolbar">
+            <div>
+              <h2>예외 요청</h2>
+              <div class="admin-toolbar-sub">승인 대기 목록</div>
+            </div>
+          </div>
+          <div class="exceptions-list" id="exceptions-list"></div>
         </section>
       </main>
     </div>
