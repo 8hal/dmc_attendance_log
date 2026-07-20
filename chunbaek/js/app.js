@@ -1581,12 +1581,14 @@
     feedList.innerHTML = entries.map((e) => {
       const photos = (e.photoUrls || []).slice(0, TIMELINE_PHOTO_MAX);
       const dateLabel = formatFeedDate(e.date);
-      const dayLabel = e.displayDayIndex ?? e.slotId;
+      const dayLabel =
+        e.dayLabel ||
+        `${e.displayDayIndex ?? e.slotId}일차`;
       const groupIdx = allPhotoGroups.length;
       if (photos.length) allPhotoGroups.push(photos);
       return `
         <article class="team-profile-feed-item">
-          <div class="team-profile-feed-meta">${dayLabel}일차${dateLabel ? ` · ${dateLabel}` : ""} · ${escapeHtml(e.title || "—")}</div>
+          <div class="team-profile-feed-meta">${escapeHtml(dayLabel)}${dateLabel ? ` · ${dateLabel}` : ""} · ${escapeHtml(e.title || "—")}</div>
           ${e.note ? `<p class="team-profile-feed-note">${escapeHtml(e.note)}</p>` : ""}
           ${photos.length ? `<div class="timeline-photo-grid team-profile-feed-photos" data-photo-group="${groupIdx}">${photos.map((url, i) => `<div class="timeline-photo-thumb lb-thumb" data-photo-idx="${i}" style="cursor:pointer"><img src="${escapeAttr(url)}" alt="출석 사진 ${i + 1}" loading="lazy" /></div>`).join("")}</div>` : ""}
         </article>`;
