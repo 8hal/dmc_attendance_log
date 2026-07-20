@@ -26,6 +26,7 @@ const {
   previewExceptionApplication,
   formatRequestExceptionNote,
   buildSlotExceptionPatch,
+  trainingSlotsInDateRange,
 } = require("./chunbaek-exception-requests");
 
 const MS_PER_DAY = 86400000;
@@ -36,6 +37,7 @@ const NOTE_MAX = 500;
 const PHOTO_URL_MAX = 2000;
 const ADMIN_EXCEPTION_REQUEST_LIMIT_DEFAULT = 50;
 const ADMIN_EXCEPTION_REQUEST_LIMIT_MAX = 50;
+const ADMIN_EXCEPTION_REQUEST_STATUSES = new Set(["pending", "approved", "rejected"]);
 
 function timestampToIso(value) {
   if (!value) return null;
@@ -90,10 +92,24 @@ function parseAdminExceptionRequestLimit(value) {
 }
 
 function parseAdminExceptionRequestStatusFilter(value) {
-  if (value === undefined || value === null) return "pending";
+  if (value === undefined || value === null) {
+    return { ok: true, status: "pending" };
+  }
   const status = String(value).trim().toLowerCase();
-  if (!status || status === "all") return "";
-  return status;
+  if (!status) {
+    return { ok: true, status: "pending" };
+  }
+  if (!ADMIN_EXCEPTION_REQUEST_STATUSES.has(status)) {
+    return { ok: false, error: "invalid status" };
+  }
+  return { ok: true, status };
+}
+
+function createHttpError(status, error) {
+  const err = new Error(error);
+  err.status = status;
+  err.publicMessage = error;
+  return err;
 }
 
 function weekDatesFromStart(startDate, weekNum) {
@@ -784,14 +800,16 @@ async function handleAdminListExceptionRequests(req, res, db) {
   if (!adminGate(req, res)) return undefined;
 
   const statusFilter = parseAdminExceptionRequestStatusFilter(req.query.status);
+  if (!statusFilter.ok) {
+    return res.status(400).json({ ok: false, error: statusFilter.error });
+  }
   const limit = parseAdminExceptionRequestLimit(req.query.limit);
 
   let query = db.collection("chunbaek_exception_requests")
-    .where("type", "==", "exception");
-  if (statusFilter) {
-    query = query.where("status", "==", statusFilter);
-  }
-  query = query.orderBy("createdAt", "desc").limit(limit);
+    .where("type", "==", "exception")
+    .where("status", "==", statusFilter.status)
+    .orderBy("createdAt", "desc")
+    .limit(limit);
 
   const [config, slots, snap] = await Promise.all([
     loadSeasonConfig(db),
@@ -852,81 +870,102 @@ async function handleAdminReviewExceptionRequest(req, res, db) {
   }
 
   const ref = db.collection("chunbaek_exception_requests").doc(requestId);
-  const snap = await ref.get();
-  if (!snap.exists) {
-    return res.status(404).json({ ok: false, error: "request not found" });
-  }
+  const [slots, config] = decision === "approve"
+    ? await Promise.all([
+      loadAllSlots(db),
+      loadSeasonConfig(db),
+    ])
+    : [null, null];
 
-  const request = snap.data() || {};
-  if (request.status !== "pending") {
-    return res.status(400).json({ ok: false, error: "already reviewed" });
-  }
+  try {
+    const result = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw createHttpError(404, "request not found");
+      }
 
-  if (decision === "reject") {
-    await ref.update({
-      status: "rejected",
-      reviewedBy: "admin",
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewNote,
-      updatedAt: FieldValue.serverTimestamp(),
+      const request = snap.data() || {};
+      if (request.type !== "exception") {
+        throw createHttpError(400, "invalid request type");
+      }
+      if (request.status !== "pending") {
+        throw createHttpError(400, "already reviewed");
+      }
+
+      if (decision === "reject") {
+        tx.update(ref, {
+          status: "rejected",
+          reviewedBy: "admin",
+          reviewedAt: FieldValue.serverTimestamp(),
+          reviewNote,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return { requestId, status: "rejected" };
+      }
+
+      const appliedSlotIds = [];
+      const skippedSlotIds = [];
+      const exceptionNote = formatRequestExceptionNote(request.reason);
+      const targetSlots = trainingSlotsInDateRange({
+        slots,
+        config,
+        startDate: request.startDate,
+        endDate: request.endDate,
+      });
+
+      for (const slot of targetSlots) {
+        const slotId = slot.dayIndex ?? Number(slot.id);
+        const attRef = db.collection("chunbaek_attendance").doc(`${request.memberId}_${getSlotKey(slot)}`);
+        const attSnap = await tx.get(attRef);
+        const attendance = attSnap.exists ? (attSnap.data() || {}) : null;
+        if (attendance?.attended) {
+          skippedSlotIds.push(slotId);
+          continue;
+        }
+        if (attendance?.exception) continue;
+
+        const patch = buildSlotExceptionPatch({
+          memberId: request.memberId,
+          slot,
+          exception: true,
+          exceptionNote,
+          updatedBy: "admin",
+        });
+        tx.set(attRef, {
+          ...patch,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        appliedSlotIds.push(slotId);
+      }
+
+      tx.update(ref, {
+        status: "approved",
+        appliedSlotIds,
+        skippedSlotIds,
+        reviewedBy: "admin",
+        reviewedAt: FieldValue.serverTimestamp(),
+        reviewNote,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+
+      return {
+        requestId,
+        status: "approved",
+        appliedSlotIds,
+        skippedSlotIds,
+      };
     });
-    return res.json({ ok: true, requestId, status: "rejected" });
-  }
 
-  const [slots, config, attendanceMap] = await Promise.all([
-    loadAllSlots(db),
-    loadSeasonConfig(db),
-    loadMemberAttendance(db, request.memberId),
-  ]);
-  const preview = previewExceptionApplication({
-    slots,
-    attendanceMap,
-    config,
-    startDate: request.startDate,
-    endDate: request.endDate,
-  });
-
-  const applicableSlots = [];
-  for (const slotId of preview.applicableSlotIds) {
-    const slot = findSlotById(slots, slotId);
-    if (!slot) {
-      return res.status(500).json({ ok: false, error: "slot not found for request" });
+    return res.json({
+      ok: true,
+      ...result,
+    });
+  } catch (err) {
+    if (err && Number.isInteger(err.status) && err.publicMessage) {
+      return res.status(err.status).json({ ok: false, error: err.publicMessage });
     }
-    applicableSlots.push(slot);
+    throw err;
   }
-
-  const exceptionNote = formatRequestExceptionNote(request.reason);
-  for (const slot of applicableSlots) {
-    const patch = buildSlotExceptionPatch({
-      memberId: request.memberId,
-      slot,
-      exception: true,
-      exceptionNote,
-      updatedBy: "admin",
-    });
-    await db.collection("chunbaek_attendance").doc(`${request.memberId}_${getSlotKey(slot)}`).set({
-      ...patch,
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-  }
-
-  await ref.update({
-    status: "approved",
-    appliedSlotIds: preview.applicableSlotIds,
-    skippedSlotIds: preview.skippedSlotIds,
-    reviewedBy: "admin",
-    reviewedAt: FieldValue.serverTimestamp(),
-    reviewNote,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
-  return res.json({
-    ok: true,
-    requestId,
-    status: "approved",
-    appliedSlotIds: preview.applicableSlotIds,
-    skippedSlotIds: preview.skippedSlotIds,
-  });
 }
 
 const ADMIN_ACTIONS = new Set([

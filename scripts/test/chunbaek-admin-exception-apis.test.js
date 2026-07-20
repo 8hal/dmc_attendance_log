@@ -76,7 +76,7 @@ class FakeDocRef {
     if (prev === undefined) {
       throw new Error(`doc ${this.collection.name}/${this.id} does not exist`);
     }
-    this.collection.docs.set(this.id, { ...cloneValue(prev), ...cloneValue(value) });
+    this.collection.docs.set(this.id, mergeDocs(prev, value));
   }
 }
 
@@ -147,6 +147,7 @@ class FakeCollectionRef extends FakeQuery {
 class FakeDb {
   constructor(seed = {}) {
     this.collections = new Map();
+    this.transactionCalls = 0;
     for (const [name, docs] of Object.entries(seed)) {
       this.collections.set(name, new Map(Object.entries(cloneValue(docs))));
     }
@@ -162,12 +163,72 @@ class FakeDb {
   dumpCollection(name) {
     return Object.fromEntries(this.collections.get(name) || []);
   }
+
+  async runTransaction(callback) {
+    this.transactionCalls += 1;
+    const operations = [];
+    const tx = {
+      get: async (docRef) => docRef.get(),
+      set: (docRef, value, options = {}) => {
+        operations.push({ kind: "set", docRef, value, options });
+      },
+      update: (docRef, value) => {
+        operations.push({ kind: "update", docRef, value });
+      },
+    };
+    const result = await callback(tx);
+    const nextCollections = cloneCollections(this.collections);
+    for (const op of operations) {
+      applyOperation(nextCollections, op);
+    }
+    this.collections = nextCollections;
+    return result;
+  }
 }
 
 function sortableValue(value) {
   if (value && typeof value.toDate === "function") return value.toDate().getTime();
   if (value instanceof Date) return value.getTime();
   return value ?? 0;
+}
+
+function mergeDocs(prev, value) {
+  return { ...cloneValue(prev), ...cloneValue(value) };
+}
+
+function cloneCollections(collections) {
+  const next = new Map();
+  for (const [name, docs] of collections.entries()) {
+    next.set(name, new Map(Object.entries(cloneValue(Object.fromEntries(docs)))));
+  }
+  return next;
+}
+
+function applyOperation(collections, op) {
+  const name = op.docRef.collection.name;
+  if (!collections.has(name)) {
+    collections.set(name, new Map());
+  }
+  const docs = collections.get(name);
+  if (op.kind === "set") {
+    const next = cloneValue(op.value);
+    if (op.options.merge) {
+      const prev = docs.get(op.docRef.id) || {};
+      docs.set(op.docRef.id, mergeDocs(prev, next));
+      return;
+    }
+    docs.set(op.docRef.id, next);
+    return;
+  }
+  if (op.kind === "update") {
+    const prev = docs.get(op.docRef.id);
+    if (prev === undefined) {
+      throw new Error(`doc ${name}/${op.docRef.id} does not exist`);
+    }
+    docs.set(op.docRef.id, mergeDocs(prev, op.value));
+    return;
+  }
+  throw new Error(`unsupported operation: ${op.kind}`);
 }
 
 function makeRes() {
@@ -311,6 +372,21 @@ describe("chunbaek admin exception request APIs", () => {
     });
   });
 
+  it("admin-list-exception-requests rejects invalid status filters", async () => {
+    const db = seedAdminDb();
+
+    const res = await runAction("admin-list-exception-requests", {
+      method: "GET",
+      query: { adminPw: "dmc2008", status: "all" },
+    }, db);
+
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, {
+      ok: false,
+      error: "invalid status",
+    });
+  });
+
   it("admin-review-exception-request approve applies only preview-applicable slots", async () => {
     const db = seedAdminDb();
 
@@ -343,6 +419,7 @@ describe("chunbaek admin exception request APIs", () => {
     assert.equal(attendance["m1_2"].updatedBy, "admin");
     assert.equal(attendance["m1_3"].exceptionNote, "[상신] 기존");
     assert.equal(attendance["m1_3"].updatedBy, "member");
+    assert.equal(db.transactionCalls, 1);
 
     const requests = db.dumpCollection("chunbaek_exception_requests");
     assert.equal(requests.reqPending.status, "approved");
@@ -374,6 +451,7 @@ describe("chunbaek admin exception request APIs", () => {
 
     const attendance = db.dumpCollection("chunbaek_attendance");
     assert.equal(attendance["m1_2"], undefined);
+    assert.equal(db.transactionCalls, 1);
 
     const requests = db.dumpCollection("chunbaek_exception_requests");
     assert.equal(requests.reqPending.status, "rejected");
@@ -397,6 +475,25 @@ describe("chunbaek admin exception request APIs", () => {
     assert.deepEqual(res.body, {
       ok: false,
       error: "already reviewed",
+    });
+  });
+
+  it("admin-review-exception-request rejects non-exception request docs", async () => {
+    const db = seedAdminDb();
+
+    const res = await runAction("admin-review-exception-request", {
+      method: "POST",
+      body: {
+        adminPw: "dmc2008",
+        requestId: "reqOtherType",
+        decision: "approve",
+      },
+    }, db);
+
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, {
+      ok: false,
+      error: "invalid request type",
     });
   });
 });
