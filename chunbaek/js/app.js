@@ -1717,16 +1717,6 @@
     }
     list.innerHTML = requests.map((request) => {
       const status = request.status || "";
-      const createdLabel = formatShortDateTime(request.createdAt);
-      const reviewedLabel = formatShortDateTime(request.reviewedAt);
-      let summary = "";
-      if (status === "approved") {
-        summary = exceptionPreviewSummary(request);
-      } else if (status === "pending") {
-        summary = "운영 확인 대기 중입니다.";
-      } else if (status === "rejected") {
-        summary = "운영진이 요청을 검토했습니다.";
-      }
       const note = (request.reviewNote || "").trim();
       return `
         <li class="me-exception-item">
@@ -1735,9 +1725,6 @@
             <span class="me-exception-status me-exception-status--${escapeHtml(status || "unknown")}">${escapeHtml(exceptionStatusLabel(status))}</span>
           </div>
           <div class="me-exception-item-reason">${escapeHtml(request.reason || "사유 없음")}</div>
-          ${createdLabel ? `<div class="me-exception-item-meta">요청 ${escapeHtml(createdLabel)}</div>` : ""}
-          ${reviewedLabel && status !== "pending" ? `<div class="me-exception-item-meta">검토 ${escapeHtml(reviewedLabel)}</div>` : ""}
-          ${summary ? `<div class="me-exception-item-summary">${escapeHtml(summary)}</div>` : ""}
           ${note ? `<div class="me-exception-item-note">${escapeHtml(note)}</div>` : ""}
         </li>
       `;
