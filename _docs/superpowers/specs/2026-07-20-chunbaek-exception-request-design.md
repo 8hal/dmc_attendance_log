@@ -1,7 +1,7 @@
 # 춘백 S3 출석 예외 상신·승인 디자인
 
 날짜: 2026-07-20  
-상태: 초안 개정 (사용자 리뷰 반영)  
+상태: **승인됨** (2026-07-20) — 구현 계획(writing-plans) 대기  
 관련: `_docs/superpowers/specs/2026-07-12-chunbaek-season3-attendance-design.md` §예외  
 선행 결정: 기존 슬롯 `exception` 재사용 · 출석일 스킵 · 롤링 7일 소급 · **조기 복귀는 회원 즉시 해제** · **상신 UI는「나」탭**
 
