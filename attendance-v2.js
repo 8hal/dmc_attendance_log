@@ -1834,6 +1834,16 @@
     const cheers = isGuest ? SUCCESS_CHEERS_GUEST : SUCCESS_CHEERS_MEMBER;
     elSuccessCheer.textContent = cheers[Math.floor(Math.random() * cheers.length)];
     setSuccessSessionLineFromPayload(sessionCountFromPost, isGuest);
+    // 대시보드 세션 카운트도 즉시 갱신 (POST 응답의 최신값 활용)
+    if (sessionCountFromPost && typeof sessionCountFromPost.memberCount === "number") {
+      if (elDashSessionFigures && elDashSessionRow) {
+        const m = Number(sessionCountFromPost.memberCount) || 0;
+        const g = Number(sessionCountFromPost.guestCount) || 0;
+        elDashSessionFigures.innerHTML = formatSessionFiguresHtml(m, g);
+        elDashSessionRow.classList.remove("muted");
+      }
+    }
+    refreshTodayRosterList().catch(() => {});
     lastSuccessMeetingDateKey = meetingDateKey || "";
     lastSuccessGuest = !!isGuest;
     lastSuccessStatsLoaded = false;
