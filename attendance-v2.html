@@ -1257,6 +1257,37 @@
       .kiosk-team-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
+      /* 아이패드 가로 모드 — 훈련 공지 대형 표시 */
+      .kiosk-idle-section-label {
+        font-size: clamp(28px, 3.2vw, 40px);
+        margin-bottom: 10px;
+      }
+      .kiosk-idle-train-card {
+        gap: 22px;
+        padding: 28px 36px;
+      }
+      .kiosk-idle-timeplace {
+        font-size: clamp(60px, 7.5vw, 96px);
+      }
+      .kiosk-idle-phases {
+        gap: 16px;
+      }
+      .kiosk-idle-phase {
+        font-size: clamp(48px, 6.2vw, 80px);
+        gap: 14px;
+      }
+      .kiosk-idle-phase-label {
+        min-width: 52px;
+        height: 52px;
+        font-size: 22px;
+        border-radius: 14px;
+      }
+      .kiosk-idle-train-empty {
+        font-size: clamp(36px, 4.5vw, 58px);
+      }
+      .kiosk-idle-checkin-btn {
+        min-height: clamp(120px, 18vmin, 160px);
+      }
     }
 
     @media (orientation: landscape) and (max-height: 520px) {
