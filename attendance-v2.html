@@ -1118,6 +1118,110 @@
       display: none;
     }
 
+    /* 키오스크 아이들(대기) 화면 */
+    .kiosk-idle-panel {
+      justify-content: space-between;
+      gap: var(--dmc-space-4);
+    }
+    .kiosk-idle-info {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .kiosk-idle-section-label {
+      flex: 0 0 auto;
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0;
+      color: var(--dmc-color-text-secondary);
+      text-transform: none;
+    }
+    .kiosk-idle-train-card {
+      flex: 0 0 auto;
+      border: 1px solid var(--dmc-kiosk-surface-border);
+      border-radius: var(--dmc-kiosk-card-radius);
+      background: var(--dmc-kiosk-surface-bg);
+      box-shadow: var(--dmc-kiosk-surface-shadow);
+      padding: var(--dmc-space-4) var(--dmc-space-5);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .kiosk-idle-timeplace {
+      font-size: clamp(20px, 4.5vw, 26px);
+      font-weight: 900;
+      color: var(--dmc-color-text);
+      line-height: 1.2;
+    }
+    .kiosk-idle-phases {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .kiosk-idle-phase {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: clamp(16px, 3.5vw, 20px);
+      color: var(--dmc-color-text);
+      line-height: 1.3;
+    }
+    .kiosk-idle-phase-label {
+      flex: 0 0 auto;
+      min-width: 28px;
+      height: 28px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--dmc-color-primary-surface);
+      color: var(--dmc-color-primary);
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .kiosk-idle-train-empty {
+      margin: 0;
+      color: var(--dmc-color-text-muted);
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .kiosk-idle-checkin-btn {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: clamp(100px, 22vmin, 130px);
+      background: var(--dmc-kiosk-action-primary-bg);
+      color: var(--dmc-kiosk-action-primary-text);
+      border: none;
+      border-radius: var(--dmc-kiosk-card-radius);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: var(--dmc-kiosk-action-primary-shadow);
+      transition: opacity 0.12s;
+    }
+    .kiosk-idle-checkin-btn:active {
+      opacity: 0.85;
+    }
+    .kiosk-idle-checkin-main {
+      display: block;
+      font-size: var(--dmc-kiosk-action-title-size);
+      font-weight: 1000;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .kiosk-idle-checkin-hint {
+      display: block;
+      font-size: 17px;
+      font-weight: 800;
+      opacity: 0.82;
+    }
+
     /* 키오스크 반응형 — 휴대폰·태블릿·가로/세로 */
     @media (min-width: 600px) {
       body.kiosk-mode {
@@ -1461,6 +1565,19 @@
         <button type="button" id="btn-exit-kiosk">키오스크 종료</button>
       </header>
 
+      <div id="kioskIdlePanel" class="kiosk-panel kiosk-idle-panel hidden">
+        <div class="kiosk-idle-info">
+          <p class="kiosk-idle-section-label">오늘의 훈련</p>
+          <div class="kiosk-idle-train-card" id="kioskIdleTrainCard">
+            <p class="kiosk-idle-train-empty" id="kioskIdleTrainBody">훈련 정보를 불러오는 중…</p>
+          </div>
+        </div>
+        <button type="button" class="kiosk-idle-checkin-btn" id="kioskIdleCheckinBtn">
+          <span class="kiosk-idle-checkin-main">출석하기</span>
+          <span class="kiosk-idle-checkin-hint">여기를 터치하세요</span>
+        </button>
+      </div>
+
       <div id="kioskHomePanel" class="kiosk-panel">
         <div class="kiosk-choice-grid">
           <button type="button" class="kiosk-choice-button kiosk-choice-nickname" id="kioskChooseNicknameBtn">
@@ -1643,6 +1760,6 @@
   <script src="assets/attendance-meeting-type.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719e"></script>
   <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
-  <script src="attendance-v2.js?v=20260719m" defer></script>
+  <script src="attendance-v2.js?v=20260722a" defer></script>
 </body>
 </html>

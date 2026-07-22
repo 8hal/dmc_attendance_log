@@ -104,6 +104,7 @@
   const elSessionRosterCloseBtn = document.getElementById("sessionRosterCloseBtn");
   const elKioskMeetingTitleFull = document.getElementById("kioskMeetingTitleFull");
   const elKioskMeetingTitleCompact = document.getElementById("kioskMeetingTitleCompact");
+  const elKioskIdlePanel = document.getElementById("kioskIdlePanel");
   const elKioskHomePanel = document.getElementById("kioskHomePanel");
   const elKioskInitialPanel = document.getElementById("kioskInitialPanel");
   const elKioskTeamPanel = document.getElementById("kioskTeamPanel");
@@ -165,6 +166,8 @@
     wakeLockSentinel: null,
     wakeLockEnabled: false,
     notOnRosterReturn: "home",
+    training: null,
+    trainingLoading: false,
   };
   let isKioskProcessing = false;
 
@@ -1990,6 +1993,7 @@
   }
 
   function setKioskPanels(name) {
+    if (elKioskIdlePanel) elKioskIdlePanel.classList.toggle("hidden", name !== "idle");
     elKioskHomePanel.classList.toggle("hidden", name !== "home");
     elKioskInitialPanel.classList.toggle("hidden", name !== "initial");
     elKioskTeamPanel.classList.toggle("hidden", name !== "team");
@@ -2063,6 +2067,105 @@
       kioskState.wakeLockEnabled = false;
       setKioskWakeLockStatus("배터리 또는 브라우저 설정 때문에 화면 켜짐 유지 요청이 거절되었습니다", "warn");
     }
+  }
+
+  async function fetchKioskTraining() {
+    const { meetingDateKey, meetingType } = kioskState;
+    if (!["TUE", "THU", "SAT"].includes(meetingType)) {
+      kioskState.training = null;
+      return null;
+    }
+    const url =
+      BASE_URL +
+      "?action=meeting-training&meetingDate=" +
+      encodeURIComponent(meetingDateKey) +
+      "&meetingType=" +
+      encodeURIComponent(meetingType);
+    const json = await fetch(url).then((r) => r.json());
+    if (!json.ok) throw new Error(json.error || "training fetch failed");
+    const item = json.item || {};
+    const hasContent = [
+      item.time,
+      item.place,
+      item.trainBefore,
+      item.trainMain,
+      item.trainAfter,
+      item.supporters,
+      item.note,
+    ].some((v) => String(v || "").trim());
+    kioskState.training = hasContent ? item : null;
+    return kioskState.training;
+  }
+
+  function updateKioskIdleContent() {
+    const elBody = document.getElementById("kioskIdleTrainBody");
+    if (!elBody) return;
+
+    if (kioskState.trainingLoading) {
+      elBody.outerHTML =
+        '<p class="kiosk-idle-train-empty" id="kioskIdleTrainBody">훈련 정보를 불러오는 중…</p>';
+      return;
+    }
+
+    const item = kioskState.training;
+    if (!item) {
+      elBody.outerHTML =
+        '<p class="kiosk-idle-train-empty" id="kioskIdleTrainBody">등록된 훈련 공지가 없습니다</p>';
+      return;
+    }
+
+    const timePlace = [item.time, item.place].filter(Boolean).join("  ·  ");
+    const phases = [
+      item.trainBefore ? ["전", item.trainBefore] : null,
+      item.trainMain ? ["본", item.trainMain] : null,
+      item.trainAfter ? ["후", item.trainAfter] : null,
+    ].filter(Boolean);
+
+    let html = "";
+    if (timePlace) {
+      html += '<div class="kiosk-idle-timeplace">' + escapeHtml(timePlace) + "</div>";
+    }
+    if (phases.length) {
+      html += '<div class="kiosk-idle-phases">';
+      for (const [label, text] of phases) {
+        html +=
+          '<div class="kiosk-idle-phase">' +
+          '<span class="kiosk-idle-phase-label">' +
+          escapeHtml(label) +
+          "</span>" +
+          "<span>" +
+          escapeHtml(text) +
+          "</span>" +
+          "</div>";
+      }
+      html += "</div>";
+    }
+    if (item.note) {
+      html +=
+        '<div class="kiosk-idle-phase" style="margin-top:4px;opacity:0.75">' +
+        '<span class="kiosk-idle-phase-label">메</span>' +
+        "<span>" +
+        escapeHtml(item.note) +
+        "</span></div>";
+    }
+
+    if (!html) {
+      elBody.outerHTML =
+        '<p class="kiosk-idle-train-empty" id="kioskIdleTrainBody">등록된 훈련 공지가 없습니다</p>';
+      return;
+    }
+    elBody.outerHTML = '<div id="kioskIdleTrainBody">' + html + "</div>";
+  }
+
+  function renderKioskIdleScreen(options = {}) {
+    clearKioskReturnTimer();
+    kioskState.previousPicker = "home";
+    kioskState.selectedInitial = "";
+    kioskState.selectedTeam = "";
+    setKioskPanels("idle");
+    syncKioskHistory(kioskHistoryRoute("idle"), options.history);
+    updateKioskIdleContent();
+    if (isKioskVisible()) requestKioskWakeLock().catch(() => {});
   }
 
   function renderKioskHomeScreen(options = {}) {
@@ -2293,7 +2396,7 @@
     if (reqId) loadKioskMemberStats(member, reqId).catch(() => {});
     clearKioskReturnTimer();
     kioskState.returnTimer = setTimeout(() => {
-      renderKioskHomeScreen({ history: "replace" });
+      renderKioskIdleScreen({ history: "replace" });
     }, 3000);
   }
 
@@ -2476,7 +2579,8 @@
     if (!route || route.view !== "kiosk") return false;
     kioskState.applyingHistory = true;
     try {
-      if (route.screen === "initial") renderKioskInitialScreen();
+      if (route.screen === "idle") renderKioskIdleScreen();
+      else if (route.screen === "initial") renderKioskInitialScreen();
       else if (route.screen === "team") renderKioskTeamScreen();
       else if (route.screen === "member") renderKioskMemberScreen(route.source || "initial", route.value || "");
       else if (route.screen === "not_on_roster") renderKioskNotOnRosterScreen();
@@ -2501,25 +2605,38 @@
     kioskState.pendingMemberId = "";
     kioskState.loading = true;
     kioskState.error = "";
+    kioskState.training = null;
+    kioskState.trainingLoading = true;
     updateKioskMeetingTitle(defaults.dateKey, defaults.meetingType);
     showView("kiosk");
-    renderKioskHomeScreen({ history: "replace" });
+    renderKioskIdleScreen({ history: "replace" });
     await requestKioskWakeLock();
+
+    // 출석 명부와 훈련 정보를 병렬로 로딩
+    const membersAndRoster = Promise.all([
+      fetchKioskMembers(),
+      fetchKioskRoster(defaults.dateKey),
+    ]);
+    const trainingFetch = fetchKioskTraining()
+      .catch(() => null)
+      .finally(() => {
+        kioskState.trainingLoading = false;
+        updateKioskIdleContent();
+      });
+
     try {
-      const [members, status] = await Promise.all([
-        fetchKioskMembers(),
-        fetchKioskRoster(defaults.dateKey)
-      ]);
+      const [members, status] = await membersAndRoster;
       kioskState.members = members.filter((member) => member && member.id && member.nickname);
       kioskState.rosterItems = Array.isArray(status.items) ? status.items : [];
       kioskState.loading = false;
       kioskState.error = "";
-      renderKioskHomeScreen({ history: "replace" });
     } catch (e) {
       kioskState.loading = false;
       kioskState.error = "출석 명부를 불러오지 못했습니다. 네트워크를 확인해 주세요.";
-      renderKioskHomeScreen({ history: "replace" });
     }
+
+    // 훈련 로딩도 기다려서 아이들 화면이 완성된 상태로 표시
+    await trainingFetch;
   }
 
   function registerTabletInstallShell() {
@@ -2917,6 +3034,13 @@
     showView("dashboard");
     renderDashboard();
   });
+
+  const elKioskIdleCheckinBtn = document.getElementById("kioskIdleCheckinBtn");
+  if (elKioskIdleCheckinBtn) {
+    elKioskIdleCheckinBtn.addEventListener("click", () => {
+      renderKioskHomeScreen({ history: "push" });
+    });
+  }
 
   document.getElementById("kioskChooseNicknameBtn").addEventListener("click", () => {
     renderKioskInitialScreen({ history: "push" });
