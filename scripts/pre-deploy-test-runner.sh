@@ -224,7 +224,6 @@ assert_contains "attendance-v2.html: app-shell" 'id="app-shell"' "$TMP_DIR/atten
 assert_contains "attendance-v2.html: tab-bar" 'id="tab-bar"' "$TMP_DIR/attendance-v2.html"
 assert_contains "attendance-v2.html: kioskWrap" 'id="kioskWrap"' "$TMP_DIR/attendance-v2.html"
 assert_contains "attendance-v2.html: 이용안내 키오스크" 'id="btn-kiosk-mode"' "$TMP_DIR/attendance-v2.html"
-assert_contains "attendance-v2.html: 키오스크 종료" 'id="btn-exit-kiosk"' "$TMP_DIR/attendance-v2.html"
 assert_contains "attendance-v2.js: 완료 화면 보조" "showSuccessAfterCheckin" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: roster 재로드" "reloadKioskRoster" "$TMP_DIR/attendance-v2.js"
 assert_contains "attendance-v2.js: 명부 외 CTA" "kioskMemberNotOnRosterBtn" "$TMP_DIR/attendance-v2.js"

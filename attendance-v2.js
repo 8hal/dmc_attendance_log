@@ -2837,14 +2837,6 @@
     if (sheet) sheet.hidden = true;
   }
 
-  function exitKioskToMore() {
-    if (!confirm("키오스크를 종료하고 개인 화면으로 돌아갈까요?")) return;
-    const u = new URL(location.href);
-    u.searchParams.delete("mode");
-    u.hash = "more";
-    location.href = u.pathname + u.search + u.hash;
-  }
-
   function enterKioskModeFromGuide() {
     if (!confirm("공용 기기에서 사용합니다. 개인 프로필이 숨겨집니다.")) return;
     const u = new URL(location.href);
@@ -2907,10 +2899,6 @@
     elBtnKioskMode.addEventListener("click", enterKioskModeFromGuide);
   }
 
-  const elBtnExitKiosk = document.getElementById("btn-exit-kiosk");
-  if (elBtnExitKiosk) {
-    elBtnExitKiosk.addEventListener("click", exitKioskToMore);
-  }
 
   const elMyAttendPrev = document.getElementById("myAttendPrev");
   const elMyAttendNext = document.getElementById("myAttendNext");
