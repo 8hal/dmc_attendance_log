@@ -33,6 +33,7 @@
     { value: "T5", label: "5팀" }
   ];
   const KIOSK_INITIAL_BUCKETS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ", "A-Z", "0-9"];
+  const KIOSK_IDLE_TIMEOUT_MS = 60_000;
   const HANGUL_INITIALS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
   const HANGUL_DOUBLE_INITIAL_MAP = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" };
   const DOW_SHORT_TO_FULL_KO = {
@@ -168,6 +169,7 @@
     notOnRosterReturn: "home",
     training: null,
     trainingLoading: false,
+    idleTimer: null,
   };
   let isKioskProcessing = false;
 
@@ -1730,6 +1732,7 @@
 
   async function renderKioskRosterScreen(opts) {
     if (!elKioskRosterPanel || !elKioskRosterList || !elKioskRosterTitle) return;
+    resetKioskIdleTimer();
     setKioskPanels("roster");
     setKioskMessage("");
     elKioskRosterTitle.textContent = formatSessionRosterTitle(
@@ -1752,6 +1755,7 @@
 
   function renderKioskNotOnRosterScreen(opts) {
     if (!elKioskNotOnRosterPanel) return;
+    resetKioskIdleTimer();
     setKioskPanels("not_on_roster");
     setKioskMessage("");
     if (elKioskGuestNickname) elKioskGuestNickname.value = "";
@@ -1887,6 +1891,24 @@
       clearTimeout(kioskState.returnTimer);
       kioskState.returnTimer = null;
     }
+  }
+
+  function clearKioskIdleTimer() {
+    if (kioskState.idleTimer) {
+      clearTimeout(kioskState.idleTimer);
+      kioskState.idleTimer = null;
+    }
+  }
+
+  function resetKioskIdleTimer() {
+    clearKioskIdleTimer();
+    if (!isKioskVisible()) return;
+    // 아이들·완료 화면에서는 별도 흐름이 있으므로 타이머 없음
+    if (elKioskIdlePanel && !elKioskIdlePanel.classList.contains("hidden")) return;
+    if (!elKioskDonePanel.classList.contains("hidden")) return;
+    kioskState.idleTimer = setTimeout(() => {
+      renderKioskIdleScreen({ history: "replace" });
+    }, KIOSK_IDLE_TIMEOUT_MS);
   }
 
   function kioskDoneMemberIds() {
@@ -2159,6 +2181,7 @@
 
   function renderKioskIdleScreen(options = {}) {
     clearKioskReturnTimer();
+    clearKioskIdleTimer();
     kioskState.previousPicker = "home";
     kioskState.selectedInitial = "";
     kioskState.selectedTeam = "";
@@ -2175,6 +2198,7 @@
     kioskState.selectedTeam = "";
     setKioskPanels("home");
     syncKioskHistory(kioskHistoryRoute("home"), options.history);
+    resetKioskIdleTimer();
     if (kioskState.loading) {
       setKioskMessage("출석 명부를 불러오는 중입니다.");
     } else if (kioskState.error) {
@@ -2192,6 +2216,7 @@
     kioskState.selectedTeam = "";
     setKioskPanels("initial");
     syncKioskHistory(kioskHistoryRoute("initial"), options.history);
+    resetKioskIdleTimer();
     if (kioskState.loading) {
       elKioskInitialGrid.innerHTML = '<div class="kiosk-empty" role="status">출석 명부를 불러오는 중입니다.</div>';
       setKioskMessage("");
@@ -2237,6 +2262,7 @@
     kioskState.selectedTeam = "";
     setKioskPanels("team");
     syncKioskHistory(kioskHistoryRoute("team"), options.history);
+    resetKioskIdleTimer();
     if (kioskState.loading) {
       elKioskTeamGrid.innerHTML = '<div class="kiosk-empty" role="status">출석 명부를 불러오는 중입니다.</div>';
       setKioskMessage("");
@@ -2269,6 +2295,7 @@
 
   function renderKioskMemberScreen(source, value, options = {}) {
     clearKioskReturnTimer();
+    resetKioskIdleTimer();
     const fromTeam = source === "team";
     let members = [];
     kioskState.previousPicker = source === "team" ? "team" : "initial";
@@ -2388,6 +2415,7 @@
   }
 
   function showKioskDone(member, statusText) {
+    clearKioskIdleTimer();
     setKioskPanels("done");
     elKioskDoneName.textContent = (member && member.nickname ? member.nickname : "출석자") + "님";
     elKioskDoneStatus.textContent = statusText || "출석 완료";
@@ -2594,6 +2622,7 @@
 
   async function openKioskView() {
     clearKioskReturnTimer();
+    clearKioskIdleTimer();
     const defaults = getDefaultDateAndMeetingType();
     kioskState.meetingDateKey = defaults.dateKey;
     kioskState.meetingType = defaults.meetingType;
@@ -3091,6 +3120,12 @@
     const route = event.state && event.state.dmcAttendanceKiosk;
     if (route) renderKioskRouteFromHistory(route);
   });
+
+  // 키오스크: 터치·클릭 시 유휴 타이머 리셋
+  if (elKiosk) {
+    elKiosk.addEventListener("touchstart", resetKioskIdleTimer, { passive: true });
+    elKiosk.addEventListener("click", resetKioskIdleTimer);
+  }
 
   document.addEventListener("visibilitychange", async () => {
     if (document.visibilityState === "visible") {
