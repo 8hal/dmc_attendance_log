@@ -33,7 +33,7 @@
     { value: "T5", label: "5팀" }
   ];
   const KIOSK_INITIAL_BUCKETS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ", "A-Z", "0-9"];
-  const KIOSK_IDLE_TIMEOUT_MS = 60_000;
+  const KIOSK_IDLE_TIMEOUT_MS = 30_000;
   const HANGUL_INITIALS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
   const HANGUL_DOUBLE_INITIAL_MAP = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" };
   const DOW_SHORT_TO_FULL_KO = {
