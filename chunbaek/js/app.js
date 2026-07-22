@@ -964,10 +964,13 @@
     const btn = document.getElementById("btn-attend");
     btn.disabled = true;
     try {
-      await apiPost("save-attendance", {
+      const attendResult = await apiPost("save-attendance", {
         slotId: state.todaySlot.dayIndex ?? state.todaySlot.slotId,
         attended: true,
       }, true);
+      if (attendResult.stats && state.profile) {
+        state.profile.stats = attendResult.stats;
+      }
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       showToast(`${dayNum}일차 출석 완료`);
       clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
