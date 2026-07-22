@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260719l" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260722b" />
   <style>
     body {
       margin: 0;
@@ -1316,6 +1316,10 @@
       .kiosk-choice-button .kiosk-compact-text {
         display: inline;
       }
+      .kiosk-meeting-title.compact {
+        font-size: clamp(20px, 5.8vw, 26px);
+        white-space: nowrap;
+      }
       .kiosk-choice-button strong {
         font-size: clamp(34px, 10vw, 40px);
       }
@@ -1336,6 +1340,14 @@
       .kiosk-panel {
         padding-left: max(14px, var(--kiosk-safe-left));
         padding-right: max(14px, var(--kiosk-safe-right));
+      }
+    }
+
+    @media (max-width: 540px) {
+      /* 폰 크기 화면에서 full 타이틀도 한 줄에 들어오도록 폰트 축소 */
+      .kiosk-meeting-title.full {
+        font-size: clamp(22px, 5.5vw, 30px);
+        white-space: nowrap;
       }
     }
     .kiosk-personal-link {

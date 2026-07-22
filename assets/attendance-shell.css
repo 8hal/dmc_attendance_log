@@ -172,7 +172,7 @@ body.kiosk-mode .tab-bar {
 
 #btn-exit-kiosk {
   flex-shrink: 0;
-  align-self: center;
+  align-self: flex-start;
   margin: 0;
   padding: 10px 12px;
   border-radius: 12px;
