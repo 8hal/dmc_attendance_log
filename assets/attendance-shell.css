@@ -157,32 +157,16 @@ body.kiosk-mode .tab-bar {
   display: none !important;
 }
 
-/* Kiosk header: title + exit */
+/* Kiosk header: title */
 .kiosk-top-bar {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 12px;
 }
 
 .kiosk-top-bar .kiosk-meeting-titles {
   flex: 1;
   min-width: 0;
-}
-
-#btn-exit-kiosk {
-  flex-shrink: 0;
-  align-self: center;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--dmc-kiosk-surface-border-strong, var(--dmc-color-border));
-  background: var(--dmc-color-surface);
-  color: var(--dmc-color-text);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 /* More tab list */
