@@ -2458,6 +2458,10 @@
       if (isKioskMemberDone(member)) showKioskDone(member, "이미 출석 완료");
       return;
     }
+    if (!member.team) {
+      setKioskMessage("팀이 지정되지 않은 회원입니다. 운영자에게 문의해 주세요.", "error");
+      return;
+    }
     isKioskProcessing = true;
     kioskState.pendingMemberId = member.id;
     renderKioskCurrentMemberScreen();
