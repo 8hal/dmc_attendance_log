@@ -201,9 +201,32 @@ async function loadMemberAttendance(db, memberId) {
   return map;
 }
 
-function resolveSlotDate(slot, config = {}, slots = [], today = "") {
-  const direct = normalizeSlotDate(slot?.date);
-  if (direct) return direct;
+function deriveSeasonDate(config, dayIndex) {
+  const start = config?.startDate;
+  const di = Number(dayIndex);
+  if (!start || !Number.isFinite(di) || di < 1 || di > 100) return null;
+  return addDaysIso(start, di - 1);
+}
+
+function deriveSeasonWeek(dayIndex) {
+  const di = Number(dayIndex);
+  if (!Number.isFinite(di) || di < 1) return null;
+  return Math.ceil(di / 7);
+}
+
+function effectiveSeasonStart(config, slots = []) {
+  if (config?.startDate) return config.startDate;
+  return seasonBounds(seasonSlotsOnly(slots)).startDate;
+}
+
+function effectiveSeasonEnd(config, slots = []) {
+  if (config?.endDate) return config.endDate;
+  const start = effectiveSeasonStart(config, slots);
+  if (start) return addDaysIso(start, 99);
+  return seasonBounds(seasonSlotsOnly(slots)).endDate;
+}
+
+function deriveSlotDate(slot, config = {}, slots = []) {
   const di = slot?.dayIndex ?? Number(slot?.id);
   if (isBetaSlot(slot) && Number.isFinite(di) && di >= BETA_DAY_INDEX_BASE) {
     const bounds = betaWeekBounds(config, slots);
@@ -214,6 +237,16 @@ function resolveSlotDate(slot, config = {}, slots = [], today = "") {
       }
     }
   }
+  if (Number.isFinite(di) && di >= 1 && di <= 100) {
+    const derived = deriveSeasonDate(config, di);
+    if (derived) return derived;
+  }
+  return normalizeSlotDate(slot?.date) || "";
+}
+
+function resolveSlotDate(slot, config = {}, slots = [], today = "") {
+  const derived = deriveSlotDate(slot, config, slots);
+  if (derived) return derived;
   if (today && isDateInBetaWeek(config, slots, today)) return today;
   return "";
 }
@@ -595,6 +628,11 @@ module.exports = {
   todaySlotPayload,
   getSlotKey,
   getAttendance,
+  deriveSeasonDate,
+  deriveSeasonWeek,
+  effectiveSeasonStart,
+  effectiveSeasonEnd,
+  deriveSlotDate,
   resolveSlotDate,
   slotStatus,
   slotTrainingTitle,
