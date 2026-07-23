@@ -10,7 +10,10 @@ const {
   findTodaySlot,
   defaultWeekForAdmin,
 } = require("../../functions/lib/chunbaek-stats");
-const { slotWriteFieldsFromRow } = require("../../functions/lib/chunbaek-admin");
+const {
+  slotWriteFieldsFromRow,
+  correctImportRow,
+} = require("../../functions/lib/chunbaek-admin");
 
 const config = {
   startDate: "2026-07-20",
@@ -95,4 +98,64 @@ test("slotWriteFieldsFromRow derives date for new slots", () => {
   });
   assert.equal(patch.date, "2026-07-20");
   assert.equal(patch.week, 1);
+});
+
+test("correctImportRow fixes polluted season date", () => {
+  const { row, warnings } = correctImportRow(
+    {
+      dayIndex: 1,
+      date: "2026-07-27",
+      week: 1,
+      trainingTitle: "x",
+      trainingContent: "",
+      isProgramOff: false,
+    },
+    { startDate: "2026-07-20" },
+  );
+  assert.equal(row.date, "2026-07-20");
+  assert.equal(row.week, 1);
+  assert.equal(warnings.length, 1);
+  assert.deepEqual(warnings[0], {
+    dayIndex: 1,
+    field: "date",
+    from: "2026-07-27",
+    to: "2026-07-20",
+  });
+});
+
+test("correctImportRow fixes polluted season week", () => {
+  const { row, warnings } = correctImportRow(
+    {
+      dayIndex: 8,
+      date: "2026-07-27",
+      week: 1,
+      trainingTitle: "x",
+      trainingContent: "",
+      isProgramOff: false,
+    },
+    { startDate: "2026-07-20" },
+  );
+  assert.equal(row.date, "2026-07-27");
+  assert.equal(row.week, 2);
+  assert.equal(warnings.length, 1);
+  assert.equal(warnings[0].field, "week");
+  assert.equal(warnings[0].to, 2);
+});
+
+test("correctImportRow fixes beta date and forces week 0", () => {
+  const { row, warnings } = correctImportRow(
+    {
+      dayIndex: 901,
+      date: "2099-01-01",
+      week: 3,
+      trainingTitle: "beta",
+      trainingContent: "",
+      isProgramOff: false,
+    },
+    config,
+  );
+  assert.equal(row.date, "2026-07-13");
+  assert.equal(row.week, 0);
+  assert.ok(warnings.some((w) => w.field === "date"));
+  assert.ok(warnings.some((w) => w.field === "week" && w.to === 0));
 });

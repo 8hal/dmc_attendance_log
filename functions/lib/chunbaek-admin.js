@@ -20,6 +20,7 @@ const {
   betaWeekBounds,
   betaDayIndexForDate,
   deriveSlotDate,
+  deriveSeasonDate,
   deriveSeasonWeek,
   BETA_WEEK,
   normalizePhotoUrls,
@@ -60,6 +61,38 @@ function slotWriteFieldsFromRow({ existing, dayIndex, week, row, config, slots }
     date: deriveSlotDate({ dayIndex, week }, config, slots),
     week: week === BETA_WEEK ? BETA_WEEK : deriveSeasonWeek(dayIndex),
   };
+}
+
+/** Correct import row date/week from dayIndex + season config (SSOT). */
+function correctImportRow(row, config) {
+  const di = Number(row.dayIndex);
+  const warnings = [];
+  let date = row.date;
+  let week = Number(row.week);
+  const isBeta = week === 0 || di >= 901;
+  if (isBeta) {
+    const expectedDate = deriveSlotDate({ dayIndex: di, week: 0 }, config, []);
+    if (expectedDate && date !== expectedDate) {
+      warnings.push({ dayIndex: di, field: "date", from: date, to: expectedDate });
+      date = expectedDate;
+    }
+    if (week !== 0) {
+      warnings.push({ dayIndex: di, field: "week", from: week, to: 0 });
+      week = 0;
+    }
+  } else {
+    const expectedDate = deriveSeasonDate(config, di);
+    const expectedWeek = deriveSeasonWeek(di);
+    if (expectedDate && date !== expectedDate) {
+      warnings.push({ dayIndex: di, field: "date", from: date, to: expectedDate });
+      date = expectedDate;
+    }
+    if (expectedWeek != null && week !== expectedWeek) {
+      warnings.push({ dayIndex: di, field: "week", from: week, to: expectedWeek });
+      week = expectedWeek;
+    }
+  }
+  return { row: { ...row, date, week }, warnings };
 }
 
 function timestampToIso(value) {
@@ -711,24 +744,30 @@ async function handleAdminImportSlots(req, res, db) {
     return res.status(400).json({ ok: false, error: "rows or csv required" });
   }
 
+  const config = await loadSeasonConfig(db);
+
   const seenDayIndex = new Set();
   const normalized = [];
+  const correctionWarnings = [];
   for (const row of rows) {
     const err = validateImportRow(row, seenDayIndex);
     if (err) return res.status(400).json({ ok: false, error: err });
-    normalized.push({
+    const base = {
       dayIndex: Number(row.dayIndex),
       date: row.date,
       week: Number(row.week),
       trainingTitle: String(row.trainingTitle || "").slice(0, TITLE_MAX),
       trainingContent: String(row.trainingContent || "").slice(0, CONTENT_MAX),
       isProgramOff: !!row.isProgramOff,
-    });
+    };
+    const corrected = correctImportRow(base, config);
+    normalized.push(corrected.row);
+    correctionWarnings.push(...corrected.warnings);
   }
 
   const attendanceSnap = await db.collection("chunbaek_attendance").limit(1).get();
   const attendanceExists = !attendanceSnap.empty;
-  const warnings = [];
+  const warnings = [...correctionWarnings];
 
   if (mode === "replace") {
     if (attendanceExists) {
@@ -1092,4 +1131,5 @@ module.exports = {
   handleAdminListExceptionRequests,
   handleAdminReviewExceptionRequest,
   slotWriteFieldsFromRow,
+  correctImportRow,
 };
