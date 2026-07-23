@@ -10,6 +10,7 @@ const {
   findTodaySlot,
   defaultWeekForAdmin,
 } = require("../../functions/lib/chunbaek-stats");
+const { slotWriteFieldsFromRow } = require("../../functions/lib/chunbaek-admin");
 
 const config = {
   startDate: "2026-07-20",
@@ -68,4 +69,30 @@ test("defaultWeekForAdmin uses config when slot dates polluted", () => {
     { id: "8", dayIndex: 8, week: 2, date: "2099-01-01", isProgramOff: false },
   ];
   assert.equal(defaultWeekForAdmin(config, slots, "2026-07-27"), 2);
+});
+
+test("slotWriteFieldsFromRow keeps date off existing docs", () => {
+  const patch = slotWriteFieldsFromRow({
+    existing: { dayIndex: 1, date: "2026-07-20", week: 1 },
+    dayIndex: 1,
+    week: 1,
+    row: { trainingTitle: "X", trainingContent: "Y", isProgramOff: false, date: "2026-07-27" },
+    config: { startDate: "2026-07-20" },
+    slots: [],
+  });
+  assert.equal(patch.date, undefined);
+  assert.equal(patch.trainingTitle, "X");
+});
+
+test("slotWriteFieldsFromRow derives date for new slots", () => {
+  const patch = slotWriteFieldsFromRow({
+    existing: null,
+    dayIndex: 1,
+    week: 1,
+    row: { trainingTitle: "X", trainingContent: "", isProgramOff: false, date: "2099-01-01" },
+    config: { startDate: "2026-07-20" },
+    slots: [],
+  });
+  assert.equal(patch.date, "2026-07-20");
+  assert.equal(patch.week, 1);
 });

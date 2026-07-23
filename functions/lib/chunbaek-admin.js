@@ -19,6 +19,8 @@ const {
   seasonSlotsOnly,
   betaWeekBounds,
   betaDayIndexForDate,
+  deriveSlotDate,
+  deriveSeasonWeek,
   BETA_WEEK,
   normalizePhotoUrls,
 } = require("./chunbaek-stats");
@@ -38,6 +40,27 @@ const PHOTO_URL_MAX = 2000;
 const ADMIN_EXCEPTION_REQUEST_LIMIT_DEFAULT = 50;
 const ADMIN_EXCEPTION_REQUEST_LIMIT_MAX = 50;
 const ADMIN_EXCEPTION_REQUEST_STATUSES = new Set(["pending", "approved", "rejected"]);
+
+/** Pure fields for chunbaek_slots write. Existing docs omit date/week (SSOT: no overwrite). */
+function slotWriteFieldsFromRow({ existing, dayIndex, week, row, config, slots }) {
+  const isProgramOff = !!row.isProgramOff;
+  const trainingTitle = String(row.trainingTitle || "").slice(0, TITLE_MAX).trim();
+  const trainingContent = String(row.trainingContent || "").slice(0, CONTENT_MAX);
+  const base = {
+    dayIndex,
+    trainingTitle: isProgramOff ? (trainingTitle || "휴무") : trainingTitle,
+    trainingContent: isProgramOff ? "" : trainingContent,
+    isProgramOff,
+  };
+  if (existing) {
+    return base;
+  }
+  return {
+    ...base,
+    date: deriveSlotDate({ dayIndex, week }, config, slots),
+    week: week === BETA_WEEK ? BETA_WEEK : deriveSeasonWeek(dayIndex),
+  };
+}
 
 function timestampToIso(value) {
   if (!value) return null;
@@ -616,7 +639,6 @@ async function handleAdminSaveWeekSlots(req, res, db) {
     }
     const isProgramOff = !!row.isProgramOff;
     const trainingTitle = String(row.trainingTitle || "").slice(0, TITLE_MAX).trim();
-    const trainingContent = String(row.trainingContent || "").slice(0, CONTENT_MAX);
 
     if (!isProgramOff && !trainingTitle) {
       return res.status(400).json({ ok: false, error: "trainingTitle required" });
@@ -647,13 +669,9 @@ async function handleAdminSaveWeekSlots(req, res, db) {
     }
 
     const docRef = db.collection("chunbaek_slots").doc(String(dayIndex));
+    const patch = slotWriteFieldsFromRow({ existing, dayIndex, week, row, config, slots });
     batch.set(docRef, {
-      dayIndex,
-      date,
-      week,
-      trainingTitle: isProgramOff ? (trainingTitle || "휴무") : trainingTitle,
-      trainingContent: isProgramOff ? "" : trainingContent,
-      isProgramOff,
+      ...patch,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     saved += 1;
@@ -1073,4 +1091,5 @@ module.exports = {
   handleAdminSetParticipant,
   handleAdminListExceptionRequests,
   handleAdminReviewExceptionRequest,
+  slotWriteFieldsFromRow,
 };
