@@ -28,9 +28,8 @@ const {
   getSlotKey,
   isBetaSlot,
   isDateInBetaWeek,
-  seasonSlotsOnly,
-  seasonBounds,
   effectiveSeasonStart,
+  effectiveSeasonEnd,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
   getAttendance,
@@ -394,8 +393,7 @@ async function handleRequestException(req, res, db) {
     loadMemberAttendance(db, auth.memberId),
   ]);
   const todayKst = todayKstDate();
-  const seasonSlotList = seasonSlotsOnly(slots);
-  const seasonEndDate = seasonBounds(seasonSlotList.length ? seasonSlotList : slots).endDate;
+  const seasonEndDate = effectiveSeasonEnd(config, slots);
   const parsed = validateExceptionRequestInput({
     reason: body.reason,
     startDate: body.startDate,

@@ -261,13 +261,13 @@ function findTodaySlot(slots, today, config = {}) {
     );
     if (offset >= 0 && offset < 100) {
       const di = offset + 1;
-      const hit = slots.find((s) => (s.dayIndex ?? Number(s.id)) === di);
+      const hit = slots.find((s) => Number(s.dayIndex ?? s.id) === di);
       if (hit) return hit;
     }
   }
   const betaIdx = betaDayIndexForDate(config, slots, today);
   if (betaIdx != null) {
-    return slots.find((s) => (s.dayIndex ?? Number(s.id)) === betaIdx) || null;
+    return slots.find((s) => Number(s.dayIndex ?? s.id) === betaIdx) || null;
   }
   return slots.find((s) => normalizeSlotDate(s.date) === today) || null;
 }

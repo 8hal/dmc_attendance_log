@@ -67,6 +67,15 @@ test("findTodaySlot uses dayIndex derivation when stored dates wrong", () => {
   assert.equal(hit.dayIndex, 4);
 });
 
+test("findTodaySlot coerces string dayIndex when stored dates wrong", () => {
+  const slots = [
+    { id: "4", dayIndex: "4", week: 1, date: "2099-01-01", isProgramOff: false },
+  ];
+  const hit = findTodaySlot(slots, "2026-07-23", config);
+  assert.ok(hit);
+  assert.equal(hit.dayIndex, "4");
+});
+
 test("defaultWeekForAdmin uses config when slot dates polluted", () => {
   const slots = [
     { id: "8", dayIndex: 8, week: 2, date: "2099-01-01", isProgramOff: false },
