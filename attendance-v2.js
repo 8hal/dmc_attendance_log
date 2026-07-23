@@ -110,6 +110,9 @@
   const elKioskInitialPanel = document.getElementById("kioskInitialPanel");
   const elKioskTeamPanel = document.getElementById("kioskTeamPanel");
   const elKioskMemberPanel = document.getElementById("kioskMemberPanel");
+  const elKioskAssignTeamPanel = document.getElementById("kioskAssignTeamPanel");
+  const elKioskAssignTeamGrid = document.getElementById("kioskAssignTeamGrid");
+  const elKioskAssignTeamHelp = document.getElementById("kioskAssignTeamHelp");
   const elKioskNotOnRosterPanel = document.getElementById("kioskNotOnRosterPanel");
   const elKioskRosterPanel = document.getElementById("kioskRosterPanel");
   const elKioskDonePanel = document.getElementById("kioskDonePanel");
@@ -170,6 +173,7 @@
     training: null,
     trainingLoading: false,
     idleTimer: null,
+    assignTeamMember: null,
   };
   let isKioskProcessing = false;
 
@@ -2030,6 +2034,7 @@
     elKioskInitialPanel.classList.toggle("hidden", name !== "initial");
     elKioskTeamPanel.classList.toggle("hidden", name !== "team");
     elKioskMemberPanel.classList.toggle("hidden", name !== "member");
+    if (elKioskAssignTeamPanel) elKioskAssignTeamPanel.classList.toggle("hidden", name !== "assign-team");
     if (elKioskNotOnRosterPanel) elKioskNotOnRosterPanel.classList.toggle("hidden", name !== "not_on_roster");
     if (elKioskRosterPanel) elKioskRosterPanel.classList.toggle("hidden", name !== "roster");
     elKioskDonePanel.classList.toggle("hidden", name !== "done");
@@ -2303,6 +2308,36 @@
     setKioskMessage("");
   }
 
+  function renderKioskAssignTeamScreen(member) {
+    clearKioskReturnTimer();
+    resetKioskIdleTimer();
+    kioskState.assignTeamMember = member;
+    setKioskPanels("assign-team");
+    setKioskMessage("");
+    if (elKioskAssignTeamHelp) {
+      elKioskAssignTeamHelp.textContent =
+        member.nickname + "님은 팀이 지정되지 않았습니다. 출석을 위해 팀을 선택해 주세요.";
+    }
+    if (!elKioskAssignTeamGrid) return;
+    elKioskAssignTeamGrid.innerHTML = TEAM_OPTIONS.map((team) =>
+      '<button type="button" class="kiosk-team-button" data-team="' +
+      escapeHtml(team.value) +
+      '"><strong>' +
+      escapeHtml(team.label) +
+      "</strong></button>"
+    ).join("");
+    elKioskAssignTeamGrid.querySelectorAll(".kiosk-team-button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const team = btn.getAttribute("data-team");
+        const m = kioskState.assignTeamMember;
+        if (m && team) {
+          kioskState.assignTeamMember = null;
+          handleKioskMemberCheckin({ ...m, team }).catch(() => {});
+        }
+      });
+    });
+  }
+
   function renderKioskMemberScreen(source, value, options = {}) {
     clearKioskReturnTimer();
     resetKioskIdleTimer();
@@ -2459,7 +2494,7 @@
       return;
     }
     if (!member.team) {
-      setKioskMessage("팀이 지정되지 않은 회원입니다. 운영자에게 문의해 주세요.", "error");
+      renderKioskAssignTeamScreen(member);
       return;
     }
     isKioskProcessing = true;
@@ -3109,6 +3144,14 @@
       } finally {
         elKioskNotOnRosterSubmitBtn.disabled = false;
       }
+    });
+  }
+
+  const elKioskAssignTeamBackBtn = document.getElementById("kioskAssignTeamBackBtn");
+  if (elKioskAssignTeamBackBtn) {
+    elKioskAssignTeamBackBtn.addEventListener("click", () => {
+      kioskState.assignTeamMember = null;
+      renderKioskCurrentMemberScreen({ history: "replace" });
     });
   }
 
