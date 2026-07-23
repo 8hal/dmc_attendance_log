@@ -30,6 +30,7 @@ const {
   isDateInBetaWeek,
   seasonSlotsOnly,
   seasonBounds,
+  effectiveSeasonStart,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
   getAttendance,
@@ -627,7 +628,7 @@ async function handleSaveAttendance(req, res, db) {
       return res.status(403).json({ ok: false, error: "beta week ended" });
     }
   } else {
-    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    const seasonStart = effectiveSeasonStart(config, slots);
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
@@ -790,7 +791,7 @@ async function handleUploadAttendancePhoto(req, res, db) {
       return res.status(403).json({ ok: false, error: "beta week ended" });
     }
   } else {
-    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    const seasonStart = effectiveSeasonStart(config, slots);
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }

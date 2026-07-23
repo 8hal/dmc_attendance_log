@@ -6,6 +6,8 @@ const {
   deriveSlotDate,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  todaySlotPayload,
+  findTodaySlot,
 } = require("../../functions/lib/chunbaek-stats");
 
 const config = {
@@ -41,5 +43,21 @@ test("effectiveSeasonStart/End use config when present", () => {
   assert.equal(effectiveSeasonEnd(config, []), "2026-10-27");
 });
 
-// todaySlotPayload pollution fix is Task 2 — skipped here
-test.skip("todaySlotPayload ignores polluted dayIndex1 date for beforeSeason", () => {});
+test("todaySlotPayload ignores polluted dayIndex1 date for beforeSeason", () => {
+  const slots = [
+    { id: "1", dayIndex: 1, week: 1, date: "2026-07-27", isProgramOff: false },
+    { id: "4", dayIndex: 4, week: 1, date: "2026-07-23", isProgramOff: false },
+  ];
+  const payload = todaySlotPayload(slots, {}, "2026-07-23", config);
+  assert.equal(payload.beforeSeason, false);
+  assert.equal(payload.startDate, "2026-07-20");
+});
+
+test("findTodaySlot uses dayIndex derivation when stored dates wrong", () => {
+  const slots = [
+    { id: "4", dayIndex: 4, week: 1, date: "2099-01-01", isProgramOff: false },
+  ];
+  const hit = findTodaySlot(slots, "2026-07-23", config);
+  assert.ok(hit);
+  assert.equal(hit.dayIndex, 4);
+});

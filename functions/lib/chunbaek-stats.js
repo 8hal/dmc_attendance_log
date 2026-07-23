@@ -80,7 +80,7 @@ function formatTeamFeedDayLabel(entry) {
 
 /** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
 function statsSlotsForToday(slots, today, config) {
-  const seasonStart = config?.startDate || seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const seasonStart = effectiveSeasonStart(config, slots);
   if (seasonStart && today < seasonStart) {
     return slots.filter(isBetaSlot);
   }
@@ -252,13 +252,24 @@ function resolveSlotDate(slot, config = {}, slots = [], today = "") {
 }
 
 function findTodaySlot(slots, today, config = {}) {
-  const byDate = slots.find((s) => normalizeSlotDate(s.date) === today);
-  if (byDate) return byDate;
+  const start = effectiveSeasonStart(config, slots);
+  if (start && today >= start) {
+    const [sy, sm, sd] = start.split("-").map(Number);
+    const [ty, tm, td] = today.split("-").map(Number);
+    const offset = Math.round(
+      (Date.UTC(ty, tm - 1, td) - Date.UTC(sy, sm - 1, sd)) / MS_PER_DAY,
+    );
+    if (offset >= 0 && offset < 100) {
+      const di = offset + 1;
+      const hit = slots.find((s) => (s.dayIndex ?? Number(s.id)) === di);
+      if (hit) return hit;
+    }
+  }
   const betaIdx = betaDayIndexForDate(config, slots, today);
   if (betaIdx != null) {
     return slots.find((s) => (s.dayIndex ?? Number(s.id)) === betaIdx) || null;
   }
-  return null;
+  return slots.find((s) => normalizeSlotDate(s.date) === today) || null;
 }
 
 function findWeekForDate(slots, today, config = {}) {
@@ -273,7 +284,7 @@ function findWeekForDate(slots, today, config = {}) {
 
 function defaultWeekForAdmin(config, slots, today) {
   if (isDateInBetaWeek(config, slots, today)) return BETA_WEEK;
-  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const seasonStart = effectiveSeasonStart(config, slots);
   if (seasonStart && today < seasonStart) {
     const bounds = betaWeekBounds(config, slots);
     if (bounds) return BETA_WEEK;
@@ -407,9 +418,9 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
     weekMap.get(slot.week).push(slot);
   }
 
-  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const seasonStart = effectiveSeasonStart(config, slots);
   const showBetaInTimeline = !!(seasonStart && today < seasonStart);
-  const currentWeek = findWeekForDate(slots, today);
+  const currentWeek = findWeekForDate(slots, today, config);
 
   const weeks = [...weekMap.entries()]
     .filter(([week]) => {
@@ -524,12 +535,12 @@ function slotPayloadFromSlot(slot, attendanceMap, config = {}, slots = [], today
 }
 
 function todaySlotPayload(slots, attendanceMap, today, config = {}) {
-  const seasonOnly = seasonSlotsOnly(slots);
-  const bounds = seasonBounds(seasonOnly.length ? seasonOnly : slots);
-  const { startDate, endDate } = bounds;
+  const startDate = effectiveSeasonStart(config, slots);
+  const endDate = effectiveSeasonEnd(config, slots);
   const betaBounds = betaWeekBounds(config, slots);
   const meta = {
-    ...seasonMeta(bounds),
+    startDate,
+    endDate,
     betaWeekStartDate: betaBounds?.startDate || null,
     betaWeekEndDate: betaBounds?.endDate || null,
     photoRequired: !!config.photoRequired,
