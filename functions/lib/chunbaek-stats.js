@@ -289,7 +289,7 @@ function defaultWeekForAdmin(config, slots, today) {
     const bounds = betaWeekBounds(config, slots);
     if (bounds) return BETA_WEEK;
   }
-  return findWeekForDate(slots, today);
+  return findWeekForDate(slots, today, config);
 }
 
 function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig) {

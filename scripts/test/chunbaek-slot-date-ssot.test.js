@@ -8,6 +8,7 @@ const {
   effectiveSeasonEnd,
   todaySlotPayload,
   findTodaySlot,
+  defaultWeekForAdmin,
 } = require("../../functions/lib/chunbaek-stats");
 
 const config = {
@@ -60,4 +61,11 @@ test("findTodaySlot uses dayIndex derivation when stored dates wrong", () => {
   const hit = findTodaySlot(slots, "2026-07-23", config);
   assert.ok(hit);
   assert.equal(hit.dayIndex, 4);
+});
+
+test("defaultWeekForAdmin uses config when slot dates polluted", () => {
+  const slots = [
+    { id: "8", dayIndex: 8, week: 2, date: "2099-01-01", isProgramOff: false },
+  ];
+  assert.equal(defaultWeekForAdmin(config, slots, "2026-07-27"), 2);
 });
