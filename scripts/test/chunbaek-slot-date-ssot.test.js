@@ -31,6 +31,11 @@ test("deriveSlotDate prefers derived over polluted stored date", () => {
   assert.equal(deriveSlotDate(slot, config, [slot]), "2026-07-20");
 });
 
+test("deriveSlotDate coerces string dayIndex", () => {
+  const slot = { dayIndex: "1", week: 1, date: "2026-07-27" };
+  assert.equal(deriveSlotDate(slot, config, [slot]), "2026-07-20");
+});
+
 test("effectiveSeasonStart/End use config when present", () => {
   assert.equal(effectiveSeasonStart(config, []), "2026-07-20");
   assert.equal(effectiveSeasonEnd(config, []), "2026-10-27");

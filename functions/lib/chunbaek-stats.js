@@ -227,7 +227,7 @@ function effectiveSeasonEnd(config, slots = []) {
 }
 
 function deriveSlotDate(slot, config = {}, slots = []) {
-  const di = slot?.dayIndex ?? Number(slot?.id);
+  const di = Number(slot?.dayIndex ?? slot?.id);
   if (isBetaSlot(slot) && Number.isFinite(di) && di >= BETA_DAY_INDEX_BASE) {
     const bounds = betaWeekBounds(config, slots);
     if (bounds) {
