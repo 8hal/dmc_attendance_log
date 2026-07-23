@@ -1,6 +1,7 @@
 # 춘백 슬롯 dayIndex↔date SSOT 설계
 
-> **상태:** 승인 대기 (2026-07-23 사고 후 설계)  
+> **상태:** 구현 완료 (2026-07-23)  
+> **커밋:** `05abe6ee` … `47a76740` (설계·헬퍼·읽기/쓰기 경로·import 교정·감사 스크립트)  
 > **관련 사고:** dayIndex 1·2·3의 `date`가 7일 밀려 before-season UI 오표시  
 > **복구:** `scripts/fix-chunbaek-slot-dates.js`로 CSV 기준 date/week 복구 완료
 
