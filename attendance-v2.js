@@ -1174,7 +1174,7 @@
   async function persistMemberTeam(memberId, team) {
     const id = String(memberId || "").trim();
     const code = normalizeRosterTeam(team);
-    if (!id || !code) return;
+    if (!id || !code) return false;
     try {
       const res = await fetch(RACE_LOG_API + "?action=update-member", {
         method: "POST",
@@ -1191,8 +1191,10 @@
         const row = kioskState.members.find((m) => m && m.id === id);
         if (row) row.team = code;
       }
+      return true;
     } catch (e) {
       console.error("persistMemberTeam", e);
+      return false;
     }
   }
 
@@ -3158,17 +3160,29 @@
       };
       pendingProfilePick = null;
       saveProfile(profile);
-      persistMemberTeam(profile.memberId, v).catch(() => {});
       elTeamModal.classList.add("hidden");
       showView("dashboard");
       renderDashboard();
+      persistMemberTeam(profile.memberId, v).then((ok) => {
+        if (!ok) {
+          alert(
+            "이 기기 프로필은 저장됐습니다. 명단 팀 반영에 실패했습니다. 출석 체크 시 자동으로 반영됩니다."
+          );
+        }
+      });
       return;
     }
     if (!myProfile) return;
     saveProfile({ ...myProfile, team: v });
-    persistMemberTeam(myProfile.memberId, v).catch(() => {});
     elTeamModal.classList.add("hidden");
     renderDashboard();
+    persistMemberTeam(myProfile.memberId, v).then((ok) => {
+      if (!ok) {
+        alert(
+          "이 기기 프로필은 저장됐습니다. 명단 팀 반영에 실패했습니다. 출석 체크 시 자동으로 반영됩니다."
+        );
+      }
+    });
   });
 
   document.getElementById("successDoneBtn").addEventListener("click", () => {

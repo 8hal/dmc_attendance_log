@@ -671,7 +671,14 @@ async function handlePost(req, res) {
       const backfillTeam = normalizeMemberTeam(teamCode);
       if (backfillTeam) {
         try {
-          await db.collection("members").doc(memberId).update({ team: backfillTeam });
+          await db.runTransaction(async (tx) => {
+            const ref = db.collection("members").doc(memberId);
+            const snap = await tx.get(ref);
+            if (!snap.exists) return;
+            const currentTeam = (snap.data() && snap.data().team) || "";
+            if (!shouldBackfillMemberTeam(currentTeam, backfillTeam)) return;
+            tx.update(ref, { team: backfillTeam });
+          });
           console.log(`[POST] members.team backfill: ${memberId} → ${backfillTeam}`);
         } catch (backfillErr) {
           console.error("[POST] members.team backfill failed", backfillErr.message || backfillErr);
