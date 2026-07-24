@@ -32,6 +32,8 @@
     { value: "T4", label: "4팀" },
     { value: "T5", label: "5팀" }
   ];
+  /** 팀 미지정 회원 선택 후 팀 모달에서 프로필 완성할 때 사용 */
+  let pendingProfilePick = null;
   const KIOSK_INITIAL_BUCKETS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ", "A-Z", "0-9"];
   const KIOSK_IDLE_TIMEOUT_MS = 30_000;
   const HANGUL_INITIALS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
@@ -1162,6 +1164,38 @@
     return f ? f.label : code;
   }
 
+  /** 명단 team → 유효 코드. 없거나 잘못되면 "" (S로 추정하지 않음) */
+  function normalizeRosterTeam(team) {
+    const code = String(team || "").trim().toUpperCase();
+    if (TEAM_OPTIONS.some((t) => t.value === code)) return code;
+    return "";
+  }
+
+  async function persistMemberTeam(memberId, team) {
+    const id = String(memberId || "").trim();
+    const code = normalizeRosterTeam(team);
+    if (!id || !code) return;
+    try {
+      const res = await fetch(RACE_LOG_API + "?action=update-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, team: code }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "update-member failed");
+      if (Array.isArray(membersCache)) {
+        const row = membersCache.find((m) => m && m.id === id);
+        if (row) row.team = code;
+      }
+      if (kioskState && Array.isArray(kioskState.members)) {
+        const row = kioskState.members.find((m) => m && m.id === id);
+        if (row) row.team = code;
+      }
+    } catch (e) {
+      console.error("persistMemberTeam", e);
+    }
+  }
+
   function meetingTypeLabel(code) {
     const map = { TUE: "화요일 정모", THU: "목요일 정모", SAT: "토요일 정모", ETC: "기타" };
     return map[code] || String(code || "");
@@ -1656,7 +1690,12 @@
       row.addEventListener("click", () => {
         const id = decodeURIComponent(row.getAttribute("data-id"));
         const nickname = row.getAttribute("data-nick");
-        const team = row.getAttribute("data-team") || "S";
+        const team = normalizeRosterTeam(row.getAttribute("data-team"));
+        if (!team) {
+          pendingProfilePick = { nickname: nickname, memberId: id };
+          openTeamChangeModal();
+          return;
+        }
         saveProfile({ nickname, memberId: id, team });
         showView("dashboard");
         renderDashboard();
@@ -2545,6 +2584,10 @@
       return;
     }
     if (postSucceeded) {
+      if (member && member.id && member.team) {
+        const local = kioskState.members.find((item) => item && item.id === member.id);
+        if (local && !local.team) local.team = member.team;
+      }
       try {
         await reloadKioskRoster("checkin_success");
       } catch (reloadErr) {
@@ -2889,8 +2932,15 @@
   }
   function openTeamChangeModal() {
     const sel = document.getElementById("teamSelect");
-    sel.innerHTML = TEAM_OPTIONS.map((t) => '<option value="' + t.value + '">' + t.label + "</option>").join("");
-    sel.value = myProfile && myProfile.team ? myProfile.team : "S";
+    if (pendingProfilePick) {
+      sel.innerHTML =
+        '<option value="">팀 선택</option>' +
+        TEAM_OPTIONS.map((t) => '<option value="' + t.value + '">' + t.label + "</option>").join("");
+      sel.value = "";
+    } else {
+      sel.innerHTML = TEAM_OPTIONS.map((t) => '<option value="' + t.value + '">' + t.label + "</option>").join("");
+      sel.value = myProfile && myProfile.team ? myProfile.team : "S";
+    }
     elTeamModal.classList.remove("hidden");
   }
 
@@ -3074,9 +3124,15 @@
     if (sheet && !sheet.classList.contains("hidden")) closeTeamMemberSheet();
   });
 
-  document.getElementById("teamCancelBtn").addEventListener("click", () => elTeamModal.classList.add("hidden"));
+  document.getElementById("teamCancelBtn").addEventListener("click", () => {
+    pendingProfilePick = null;
+    elTeamModal.classList.add("hidden");
+  });
   elTeamModal.addEventListener("click", (e) => {
-    if (e.target === elTeamModal) elTeamModal.classList.add("hidden");
+    if (e.target === elTeamModal) {
+      pendingProfilePick = null;
+      elTeamModal.classList.add("hidden");
+    }
   });
 
   elDashSessionRow.addEventListener("click", () => {
@@ -3089,9 +3145,28 @@
   });
 
   document.getElementById("teamSaveBtn").addEventListener("click", () => {
-    if (!myProfile) return;
     const v = document.getElementById("teamSelect").value;
+    if (pendingProfilePick) {
+      if (!normalizeRosterTeam(v)) {
+        alert("팀을 선택해 주세요.");
+        return;
+      }
+      const profile = {
+        nickname: pendingProfilePick.nickname,
+        memberId: pendingProfilePick.memberId,
+        team: v,
+      };
+      pendingProfilePick = null;
+      saveProfile(profile);
+      persistMemberTeam(profile.memberId, v).catch(() => {});
+      elTeamModal.classList.add("hidden");
+      showView("dashboard");
+      renderDashboard();
+      return;
+    }
+    if (!myProfile) return;
     saveProfile({ ...myProfile, team: v });
+    persistMemberTeam(myProfile.memberId, v).catch(() => {});
     elTeamModal.classList.add("hidden");
     renderDashboard();
   });
