@@ -1,12 +1,11 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-16T13:53:08.360Z",
+  "preparedAt": "2026-07-21T01:13:24.601Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "3bpbfd2xvP2CvSQ1ZLpS",
     "wjwN15DBGn92tkBJ0T87",
     "MmR7m0LglvP6bGPObgPT",
-    "10V9SmKhpV5BzslmVMCH",
     "ImfSPbeUehwFugtLm2h7",
     "HWaFJdM7eqZr0otCh5Io",
     "MwBIbathhDm49MTTHdt9",
@@ -17,9 +16,7 @@
     "qwg7NcRh6JZKgNx6Oa42",
     "bwbmczyQSVP4pszUVynj",
     "ahIELIUhht6tHdvXwhog",
-    "uOwb6j670xShAlkV90aW",
     "6jxiTO9riQZEd0cX4lDz",
-    "gfOXdCuOCT42SX9TFDPl",
     "cyI32PXmEOfW1CgB4dvJ",
     "IckSJifTTojBdKGczBZ5",
     "nlDwEdOGeMJsvFDWkiPN",
@@ -29,7 +26,6 @@
     "N6xHYPvzh6qUnbT16qy0",
     "JVE4boek9Hfkh6fddWBY",
     "mpB9dVRVq7qxJkE4H8Yk",
-    "yb5pAeavML9TeKHrXmCr",
     "ljOx7wRT1y5Ipz28esE3",
     "lzIJ1yD9ywUOlQAQrkzp",
     "xa4ZQvcJ033XWL675T3S",
@@ -43,7 +39,7 @@
     "Ktzst6dm5nmtWkM4eTad",
     "H6RdETtfMu6uUokvAKRk",
     "aWZdokx4j9voiB076Bdq",
-    "1bgLC92UQS8F9sPwPIxz",
+    "1W9DlQzKvXr0jTrsMhdL",
     "gw9qdf1yxXQYONMYNPxU"
   ],
   "members": [
@@ -66,11 +62,6 @@
       "memberId": "MmR7m0LglvP6bGPObgPT",
       "nickname": "나이스",
       "realName": "이동현"
-    },
-    {
-      "memberId": "10V9SmKhpV5BzslmVMCH",
-      "nickname": "날러",
-      "realName": "이기수"
     },
     {
       "memberId": "ImfSPbeUehwFugtLm2h7",
@@ -123,19 +114,9 @@
       "realName": "한남규"
     },
     {
-      "memberId": "uOwb6j670xShAlkV90aW",
-      "nickname": "보하",
-      "realName": "장경숙"
-    },
-    {
       "memberId": "6jxiTO9riQZEd0cX4lDz",
       "nickname": "복겸",
       "realName": "김보겸"
-    },
-    {
-      "memberId": "gfOXdCuOCT42SX9TFDPl",
-      "nickname": "불꽃십자인대",
-      "realName": "김성운"
     },
     {
       "memberId": "cyI32PXmEOfW1CgB4dvJ",
@@ -181,11 +162,6 @@
       "memberId": "mpB9dVRVq7qxJkE4H8Yk",
       "nickname": "완주",
       "realName": "박은정"
-    },
-    {
-      "memberId": "yb5pAeavML9TeKHrXmCr",
-      "nickname": "우상향",
-      "realName": "김형진"
     },
     {
       "memberId": "ljOx7wRT1y5Ipz28esE3",
@@ -253,9 +229,9 @@
       "realName": "김정찬"
     },
     {
-      "memberId": "1bgLC92UQS8F9sPwPIxz",
-      "nickname": "James",
-      "realName": "김형석"
+      "memberId": "1W9DlQzKvXr0jTrsMhdL",
+      "nickname": "Josh",
+      "realName": "조상현"
     },
     {
       "memberId": "gw9qdf1yxXQYONMYNPxU",
