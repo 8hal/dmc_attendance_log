@@ -144,6 +144,15 @@
           <div class="add-form">
             <input type="text" id="addNickname" placeholder="닉네임 *" style="flex:2;min-width:100px" />
             <input type="text" id="addRealName" placeholder="실명 *" style="flex:2;min-width:100px" />
+            <select id="addTeam" style="width:90px">
+              <option value="">팀</option>
+              <option value="S">S팀</option>
+              <option value="T1">1팀</option>
+              <option value="T2">2팀</option>
+              <option value="T3">3팀</option>
+              <option value="T4">4팀</option>
+              <option value="T5">5팀</option>
+            </select>
             <select id="addGender" style="width:80px">
               <option value="">성별</option>
               <option value="M">남</option>
@@ -168,6 +177,7 @@
                 <tr>
                   <th>닉네임</th>
                   <th>실명</th>
+                  <th>팀</th>
                   <th>성별</th>
                   <th style="width:100px"></th>
                 </tr>
@@ -215,6 +225,6 @@
 
   <div class="toast" id="toast" role="status"></div>
   <script src="assets/meeting-training.js?v=20260719c"></script>
-  <script src="attendance-admin.js?v=20260719c" defer></script>
+  <script src="attendance-admin.js?v=20260724a" defer></script>
 </body>
 </html>

@@ -20,6 +20,11 @@ const {
 } = require("./lib/canonicalEventId");
 const { normalizeRaceDistance } = require("./lib/raceDistance");
 const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
+const {
+  normalizeMemberTeam,
+  parseMemberTeamUpdate,
+  shouldBackfillMemberTeam,
+} = require("./lib/member-team");
 const { handleChunbaekRequest } = require("./lib/chunbaek-handlers");
 const {
   resolveDefaultMeeting,
@@ -580,6 +585,7 @@ async function handlePost(req, res) {
     const nicknameStored =
       nicknameRaw.toUpperCase() === "TEST" ? makeTestNickname() : nicknameRaw;
 
+    let memberStoredTeam = "";
     if (!isGuest && memberId) {
       const mdoc = await db.collection("members").doc(memberId).get();
       if (!mdoc.exists) {
@@ -592,6 +598,7 @@ async function handlePost(req, res) {
         });
         return res.status(400).json({ ok: false, error: "MEMBER_NOT_FOUND", message: "회원 정보를 찾을 수 없습니다" });
       }
+      memberStoredTeam = (mdoc.data() && mdoc.data().team) || "";
     }
 
     const nicknameKey = nicknameStored.toLowerCase();
@@ -658,6 +665,26 @@ async function handlePost(req, res) {
       timestamp: FieldValue.serverTimestamp(),
       ts: now.getTime(),
     });
+
+    // 정회원 팀이 비어 있으면 체크인 팀으로 1회 백필 (키오스크/개인 선택 반영)
+    if (!isGuest && memberId && shouldBackfillMemberTeam(memberStoredTeam, teamCode)) {
+      const backfillTeam = normalizeMemberTeam(teamCode);
+      if (backfillTeam) {
+        try {
+          await db.runTransaction(async (tx) => {
+            const ref = db.collection("members").doc(memberId);
+            const snap = await tx.get(ref);
+            if (!snap.exists) return;
+            const currentTeam = (snap.data() && snap.data().team) || "";
+            if (!shouldBackfillMemberTeam(currentTeam, backfillTeam)) return;
+            tx.update(ref, { team: backfillTeam });
+          });
+          console.log(`[POST] members.team backfill: ${memberId} → ${backfillTeam}`);
+        } catch (backfillErr) {
+          console.error("[POST] members.team backfill failed", backfillErr.message || backfillErr);
+        }
+      }
+    }
 
     // Google Sheets에 백업 (비동기, fire-and-forget)
     appendToSheets({
@@ -1856,21 +1883,29 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
     // ─── 회원 관리 API ─────────────────────────────────
     if (action === "add-member" && req.method === "POST") {
-      const { nickname, realName, gender } = req.body || {};
+      const { nickname, realName, gender, team } = req.body || {};
       if (!nickname || !realName) {
         return res.status(400).json({ ok: false, error: "nickname and realName required" });
+      }
+      let teamValue = "";
+      if (team !== undefined && team !== null && String(team).trim() !== "") {
+        const parsed = parseMemberTeamUpdate(team);
+        if (!parsed.ok) {
+          return res.status(400).json({ ok: false, error: parsed.error });
+        }
+        teamValue = parsed.team;
       }
       const dup = await db.collection("members").where("nickname", "==", nickname).get();
       if (!dup.empty) {
         return res.status(409).json({ ok: false, error: `닉네임 '${nickname}' 이미 존재합니다` });
       }
       const ref = db.collection("members").doc();
-      await ref.set({ nickname, realName, gender: gender || "", hidden: false, team: "" });
-      return res.json({ ok: true, id: ref.id, nickname, realName });
+      await ref.set({ nickname, realName, gender: gender || "", hidden: false, team: teamValue });
+      return res.json({ ok: true, id: ref.id, nickname, realName, team: teamValue });
     }
 
     if (action === "update-member" && req.method === "POST") {
-      const { id, nickname, realName, gender, hidden } = req.body || {};
+      const { id, nickname, realName, gender, hidden, team } = req.body || {};
       if (!id) return res.status(400).json({ ok: false, error: "id required" });
       const ref = db.collection("members").doc(id);
       const doc = await ref.get();
@@ -1880,6 +1915,13 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       if (realName !== undefined) updates.realName = realName;
       if (gender !== undefined) updates.gender = gender;
       if (hidden !== undefined) updates.hidden = !!hidden;
+      if (team !== undefined) {
+        const parsed = parseMemberTeamUpdate(team);
+        if (!parsed.ok) {
+          return res.status(400).json({ ok: false, error: parsed.error });
+        }
+        updates.team = parsed.team;
+      }
       if (hidden === false && isAlreadyAnonymized(doc.data())) {
         return res.status(400).json({
           ok: false,

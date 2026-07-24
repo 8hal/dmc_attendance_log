@@ -18,6 +18,15 @@
   const AUTH_KEY = "dmc_attendance_admin_auth";
   const LEGACY_AUTH_KEY = "dmc_admin_auth";
   const TABS = ["attendance", "members", "training"];
+  const TEAM_OPTIONS = [
+    { value: "", label: "미정" },
+    { value: "S", label: "S팀" },
+    { value: "T1", label: "1팀" },
+    { value: "T2", label: "2팀" },
+    { value: "T3", label: "3팀" },
+    { value: "T4", label: "4팀" },
+    { value: "T5", label: "5팀" }
+  ];
   const MEETING_LABEL = {
     TUE: "화요일 정모",
     THU: "목요일 정모",
@@ -61,6 +70,28 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function teamLabel(code) {
+    const c = String(code || "").trim().toUpperCase();
+    const found = TEAM_OPTIONS.find(function (t) {
+      return t.value === c;
+    });
+    return found ? found.label : c || "미정";
+  }
+
+  function teamSelectHtml(selected, id) {
+    const cur = String(selected || "").trim().toUpperCase();
+    return (
+      '<select id="' +
+      id +
+      '">' +
+      TEAM_OPTIONS.map(function (t) {
+        const sel = t.value === cur || (!cur && t.value === "") ? " selected" : "";
+        return '<option value="' + t.value + '"' + sel + ">" + t.label + "</option>";
+      }).join("") +
+      "</select>"
+    );
   }
 
   function parseHash() {
@@ -356,7 +387,7 @@
     const tbody = document.getElementById("memberBody");
     if (!filtered.length) {
       tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center;color:var(--dmc-color-text-muted);padding:24px">검색 결과가 없습니다</td></tr>';
+        '<tr><td colspan="5" style="text-align:center;color:var(--dmc-color-text-muted);padding:24px">검색 결과가 없습니다</td></tr>';
       return;
     }
 
@@ -371,6 +402,9 @@
             '<td><input id="editReal" value="' +
             esc(m.realName) +
             '" /></td>' +
+            "<td>" +
+            teamSelectHtml(m.team, "editTeam") +
+            "</td>" +
             '<td><select id="editGender">' +
             '<option value=""' +
             (!m.gender ? " selected" : "") +
@@ -433,6 +467,9 @@
           esc(m.realName) +
           "</td>" +
           "<td>" +
+          esc(teamLabel(m.team)) +
+          "</td>" +
+          "<td>" +
           genderBadge +
           "</td>" +
           "<td>" +
@@ -447,6 +484,8 @@
     const nickname = document.getElementById("editNick").value.trim();
     const realName = document.getElementById("editReal").value.trim();
     const gender = document.getElementById("editGender").value;
+    const teamEl = document.getElementById("editTeam");
+    const team = teamEl ? teamEl.value : "";
     if (!nickname || !realName) {
       showToast("닉네임과 실명은 필수입니다", true);
       return;
@@ -455,7 +494,13 @@
       const res = await fetch(RACE_API + "?action=update-member", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id, nickname: nickname, realName: realName, gender: gender })
+        body: JSON.stringify({
+          id: id,
+          nickname: nickname,
+          realName: realName,
+          gender: gender,
+          team: team,
+        })
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
@@ -471,6 +516,8 @@
     const nickname = document.getElementById("addNickname").value.trim();
     const realName = document.getElementById("addRealName").value.trim();
     const gender = document.getElementById("addGender").value;
+    const teamEl = document.getElementById("addTeam");
+    const team = teamEl ? teamEl.value : "";
     if (!nickname || !realName) {
       showToast("닉네임과 실명은 필수입니다", true);
       return;
@@ -478,16 +525,19 @@
     const btn = document.getElementById("addBtn");
     btn.disabled = true;
     try {
+      const body = { nickname: nickname, realName: realName, gender: gender };
+      if (team) body.team = team;
       const res = await fetch(RACE_API + "?action=add-member", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname: nickname, realName: realName, gender: gender })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
       document.getElementById("addNickname").value = "";
       document.getElementById("addRealName").value = "";
       document.getElementById("addGender").value = "";
+      if (teamEl) teamEl.value = "";
       showToast(nickname + " 추가 완료");
       await loadMembers();
     } catch (e) {
