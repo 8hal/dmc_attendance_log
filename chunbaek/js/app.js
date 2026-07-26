@@ -1826,10 +1826,12 @@
     reasonEl.value = "";
     setExceptionPreviewText("사유와 기간을 입력하면 예외 요청 일수를 미리 보여드립니다.");
     modal.hidden = false;
+    _modalPush(closeExceptionRequestModal);
     reasonEl.focus();
   }
 
   function closeExceptionRequestModal() {
+    _modalRemoveFromStack(closeExceptionRequestModal);
     state.exceptionPreviewLoadId += 1;
     const modal = document.getElementById("exception-request-modal");
     if (modal) modal.hidden = true;
