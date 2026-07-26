@@ -1220,6 +1220,13 @@ body {
   border-top: 1px solid var(--border-light);
 }
 
+/* 나 탭 하단 — 다른 회원으로 전환 (기존 홈「다른 사람으로」) */
+.me-switch-user {
+  display: block;
+  width: 100%;
+  margin: 32px 0 8px;
+}
+
 .me-exception-actions {
   display: flex;
   gap: 10px;
