@@ -12,6 +12,7 @@ const {
   slotsEligibleForSelfClear,
   buildSlotExceptionPatch,
 } = require("./chunbaek-exception-requests");
+const { notifyExceptionRequestCreated } = require("./chunbaek-exception-email");
 const {
   loadSeasonConfig,
   loadAllSlots,
@@ -469,6 +470,15 @@ async function handleRequestException(req, res, db) {
     }
     throw err;
   }
+
+  // 운영진 알림 — 실패해도 상신 성공 응답은 유지
+  notifyExceptionRequestCreated({
+    nickname: member.data.nickname || "",
+    reason: parsed.reason,
+    startDate: parsed.startDate,
+    endDate: parsed.endDate,
+    requestId,
+  });
 
   return res.json({ ok: true, requestId, preview });
 }
