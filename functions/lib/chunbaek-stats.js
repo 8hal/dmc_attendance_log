@@ -275,6 +275,22 @@ function findTodaySlot(slots, today, config = {}) {
 function findWeekForDate(slots, today, config = {}) {
   const slot = findTodaySlot(slots, today, config);
   if (slot) return slot.week;
+
+  // 슬롯을 찾지 못한 경우: startDate 기반으로 날짜 계산
+  // (예: 새 주차 슬롯이 아직 없을 때 날짜 기반으로 정확한 주차 반환)
+  const start = effectiveSeasonStart(config, slots);
+  if (start && today >= start) {
+    const [sy, sm, sd] = start.split("-").map(Number);
+    const [ty, tm, td] = today.split("-").map(Number);
+    const offset = Math.round(
+      (Date.UTC(ty, tm - 1, td) - Date.UTC(sy, sm - 1, sd)) / MS_PER_DAY,
+    );
+    if (offset >= 0 && offset < 100) {
+      return Math.ceil((offset + 1) / 7);
+    }
+  }
+
+  // 최후 fallback: 슬롯의 date 필드 기반
   let week = 1;
   for (const s of slots) {
     if (s.date <= today) week = s.week;
