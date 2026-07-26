@@ -708,30 +708,6 @@ async function saveTraining() {
   }
 }
 
-async function runImport() {
-  if (PREVIEW) {
-    showToast("CSV import 완료 (목업)");
-    return;
-  }
-  if (isProcessing) return;
-  isProcessing = true;
-  try {
-    const csv = document.getElementById("import-csv").value;
-    const result = await adminPost("admin-import-slots", { mode: "replace", csv });
-    showToast(`${result.imported}건 import 완료`);
-    if (result.warnings?.length) {
-      const w = result.warnings[0];
-      const msg = typeof w === "string" ? w : (w.message || JSON.stringify(w));
-      showToast(msg, true);
-    }
-  } catch (err) {
-    console.error(err);
-    showToast(err.message || "import 실패", true);
-  } finally {
-    isProcessing = false;
-  }
-}
-
 async function reviewExceptionRequest(requestId, decision) {
   if (!requestId) return;
   if (decision !== "approve" && decision !== "reject") return;
@@ -822,7 +798,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-save-training").addEventListener("click", saveTraining);
-  document.getElementById("btn-import").addEventListener("click", runImport);
 
   document.querySelectorAll("[data-modal-action]").forEach((btn) => {
     btn.addEventListener("click", () => {
