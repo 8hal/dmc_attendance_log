@@ -23,6 +23,37 @@
     exceptionPreviewLoadId: 0,
   };
 
+  // ── 모달 스택 (안드로이드 뒤로 가기 지원) ──────────────────────────────────
+  // 팝업이 열릴 때 history.pushState로 히스토리 항목을 추가하고 스택에 closeFn 등록.
+  // popstate(뒤로 가기) 시 스택 최상단 closeFn 실행 → 팝업 닫힘.
+  // X 버튼 등 직접 닫기 시에는 _modalRemoveFromStack으로 스택·히스토리 양쪽 정리.
+  const _modalStack = [];
+  let _skipNextPopstate = false;
+
+  function _modalPush(closeFn) {
+    history.pushState({ modal: true }, "");
+    _modalStack.push(closeFn);
+  }
+
+  function _modalRemoveFromStack(closeFn) {
+    const idx = _modalStack.lastIndexOf(closeFn);
+    if (idx >= 0) {
+      _modalStack.splice(idx, 1);
+      _skipNextPopstate = true;
+      history.back();
+    }
+  }
+
+  window.addEventListener("popstate", () => {
+    if (_skipNextPopstate) {
+      _skipNextPopstate = false;
+      return;
+    }
+    if (_modalStack.length > 0) {
+      _modalStack.pop()();
+    }
+  });
+
   const VIEWS = {
     welcome: "view-welcome",
     pick: "view-pick",
@@ -1287,9 +1318,11 @@
     }
 
     document.getElementById("timeline-modal").hidden = false;
+    _modalPush(closeTrainingModal);
   }
 
   function closeTrainingModal() {
+    _modalRemoveFromStack(closeTrainingModal);
     clearTimelinePhotoPicker();
     state.timelineSlot = null;
     document.getElementById("timeline-modal").hidden = true;
@@ -1512,11 +1545,13 @@
       ? urls.map((_, i) => `<span class="photo-lightbox-dot${i === _lb.idx ? " active" : ""}"></span>`).join("")
       : "";
     lb.hidden = false;
+    _modalPush(closeLightbox);
     document.body.style.overflow = "hidden";
     _lbGoto(_lb.idx, false);
   }
 
   function closeLightbox() {
+    _modalRemoveFromStack(closeLightbox);
     document.getElementById("photo-lightbox").hidden = true;
     document.body.style.overflow = "";
   }
@@ -1556,6 +1591,7 @@
   }
 
   function closeTeamProfileModal() {
+    _modalRemoveFromStack(closeTeamProfileModal);
     const modal = document.getElementById("team-profile-modal");
     const feedList = document.getElementById("team-profile-feed-list");
     if (feedList) feedList.innerHTML = "";
@@ -1632,6 +1668,7 @@
     if (feedEl) feedEl.hidden = false;
     if (feedList) feedList.innerHTML = '<p class="section-sub">불러오는 중…</p>';
     document.getElementById("team-profile-modal").hidden = false;
+    _modalPush(closeTeamProfileModal);
 
     apiGet("team-member-attendance", { memberId }, true)
       .then((data) => paintTeamProfileFeed(data.entries || []))
@@ -1791,10 +1828,12 @@
     reasonEl.value = "";
     setExceptionPreviewText("사유와 기간을 입력하면 예외 요청 일수를 미리 보여드립니다.");
     modal.hidden = false;
+    _modalPush(closeExceptionRequestModal);
     reasonEl.focus();
   }
 
   function closeExceptionRequestModal() {
+    _modalRemoveFromStack(closeExceptionRequestModal);
     state.exceptionPreviewLoadId += 1;
     const modal = document.getElementById("exception-request-modal");
     if (modal) modal.hidden = true;
