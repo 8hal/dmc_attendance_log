@@ -23,6 +23,37 @@
     exceptionPreviewLoadId: 0,
   };
 
+  // ── 모달 스택 (안드로이드 뒤로 가기 지원) ──────────────────────────────────
+  // 팝업이 열릴 때 history.pushState로 히스토리 항목을 추가하고 스택에 closeFn 등록.
+  // popstate(뒤로 가기) 시 스택 최상단 closeFn 실행 → 팝업 닫힘.
+  // X 버튼 등 직접 닫기 시에는 _modalRemoveFromStack으로 스택·히스토리 양쪽 정리.
+  const _modalStack = [];
+  let _skipNextPopstate = false;
+
+  function _modalPush(closeFn) {
+    history.pushState({ modal: true }, "");
+    _modalStack.push(closeFn);
+  }
+
+  function _modalRemoveFromStack(closeFn) {
+    const idx = _modalStack.lastIndexOf(closeFn);
+    if (idx >= 0) {
+      _modalStack.splice(idx, 1);
+      _skipNextPopstate = true;
+      history.back();
+    }
+  }
+
+  window.addEventListener("popstate", () => {
+    if (_skipNextPopstate) {
+      _skipNextPopstate = false;
+      return;
+    }
+    if (_modalStack.length > 0) {
+      _modalStack.pop()();
+    }
+  });
+
   const VIEWS = {
     welcome: "view-welcome",
     pick: "view-pick",
