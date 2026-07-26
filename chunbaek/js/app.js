@@ -1589,6 +1589,7 @@
   }
 
   function closeTeamProfileModal() {
+    _modalRemoveFromStack(closeTeamProfileModal);
     const modal = document.getElementById("team-profile-modal");
     const feedList = document.getElementById("team-profile-feed-list");
     if (feedList) feedList.innerHTML = "";
@@ -1665,6 +1666,7 @@
     if (feedEl) feedEl.hidden = false;
     if (feedList) feedList.innerHTML = '<p class="section-sub">불러오는 중…</p>';
     document.getElementById("team-profile-modal").hidden = false;
+    _modalPush(closeTeamProfileModal);
 
     apiGet("team-member-attendance", { memberId }, true)
       .then((data) => paintTeamProfileFeed(data.entries || []))
