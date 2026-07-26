@@ -285,7 +285,10 @@
       <!-- 사진 라이트박스 -->
       <div class="photo-lightbox" id="photo-lightbox" hidden aria-modal="true" role="dialog" aria-label="사진 보기">
         <button type="button" class="photo-lightbox-close" id="photo-lightbox-close" aria-label="닫기">×</button>
-        <div class="photo-lightbox-track" id="photo-lightbox-track"></div>
+        <!-- viewport(overflow)와 track(transform)을 분리해야 2장째 이후가 보임 -->
+        <div class="photo-lightbox-viewport">
+          <div class="photo-lightbox-track" id="photo-lightbox-track"></div>
+        </div>
         <div class="photo-lightbox-dots" id="photo-lightbox-dots"></div>
       </div>
 

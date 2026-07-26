@@ -1561,7 +1561,8 @@
     const slides = track.querySelectorAll(".photo-lightbox-slide");
     if (!slides.length) return;
     track.style.transition = animate ? "transform 0.25s ease" : "none";
-    track.style.transform = `translateX(${-idx * slides[0].offsetWidth}px)`;
+    // % 기준은 track 자신의 border box(= viewport 너비). px/offsetWidth보다 레이아웃 타이밍에 안전.
+    track.style.transform = `translateX(-${idx * 100}%)`;
     document.querySelectorAll("#photo-lightbox-dots .photo-lightbox-dot").forEach((d, i) => {
       d.classList.toggle("active", i === idx);
     });
