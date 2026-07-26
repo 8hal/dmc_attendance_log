@@ -1545,11 +1545,13 @@
       ? urls.map((_, i) => `<span class="photo-lightbox-dot${i === _lb.idx ? " active" : ""}"></span>`).join("")
       : "";
     lb.hidden = false;
+    _modalPush(closeLightbox);
     document.body.style.overflow = "hidden";
     _lbGoto(_lb.idx, false);
   }
 
   function closeLightbox() {
+    _modalRemoveFromStack(closeLightbox);
     document.getElementById("photo-lightbox").hidden = true;
     document.body.style.overflow = "";
   }
