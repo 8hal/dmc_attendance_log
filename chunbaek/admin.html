@@ -19,8 +19,7 @@
       <option value="auth">⓪ 비밀번호</option>
       <option value="grid" selected>① 출석 그리드</option>
       <option value="training">② 훈련 입력</option>
-      <option value="import">③ 일괄 import</option>
-      <option value="exceptions">④ 예외 요청</option>
+      <option value="exceptions">③ 예외 요청</option>
     </select>
   </div>
 
@@ -53,7 +52,6 @@
       <nav class="admin-sidebar" aria-label="운영 메뉴">
         <button type="button" class="admin-nav-btn active" data-panel="grid">출석 그리드</button>
         <button type="button" class="admin-nav-btn" data-panel="training">훈련 입력</button>
-        <button type="button" class="admin-nav-btn" data-panel="import">일괄 import</button>
         <button type="button" class="admin-nav-btn" data-panel="exceptions">
           예외 요청 <span class="admin-nav-badge" id="exceptions-pending-badge" hidden></span>
         </button>
@@ -115,25 +113,6 @@
             <button type="button" class="admin-btn admin-btn-primary" id="btn-save-training">저장</button>
           </div>
           <div class="training-list" id="training-list"></div>
-        </section>
-
-        <!-- 일괄 import -->
-        <section class="admin-panel" id="panel-import">
-          <div class="admin-toolbar">
-            <h2>100슬롯 일괄 import</h2>
-          </div>
-          <div class="card import-box" style="padding:20px">
-            <p class="import-hint">
-              시즌 시작 전 <strong>날짜·주차 골격</strong>을 한 번에 넣을 때 사용합니다.<br />
-              시즌 중 훈련 내용은 <strong>훈련 입력</strong> 탭에서 주차별로 등록하세요.
-            </p>
-            <textarea id="import-csv" aria-label="CSV">dayIndex,date,week,trainingTitle,trainingContent,isProgramOff
-1,2026-04-01,1,5km 이지런,,false
-2,2026-04-02,1,인터벌,5×1km (r:90s),false
-3,2026-04-03,1,휴무,,true
-</textarea>
-            <button type="button" class="admin-btn admin-btn-primary" id="btn-import">import (replace)</button>
-          </div>
         </section>
 
         <!-- 예외 요청 -->

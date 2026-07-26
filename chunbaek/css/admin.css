@@ -345,24 +345,6 @@ body.admin-body {
   background: #fff5f5;
 }
 
-/* ── import ── */
-.import-box textarea {
-  width: 100%;
-  min-height: 200px;
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-.import-hint {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
 /* ── 예외 요청 ── */
 .exceptions-list {
   display: flex;
