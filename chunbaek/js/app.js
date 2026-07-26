@@ -9,6 +9,7 @@
     selectedNickname: "",
     isProcessing: false,
     profile: null,
+    profileDate: null,
     todaySlot: null,
     profileFormMode: "create",
     teamMembers: [],
@@ -79,8 +80,8 @@
       const todayKst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
       // today 캐시는 날짜가 바뀌면 무효
       if (key === CACHE_KEYS.today && date !== todayKst) return null;
-      // profile 캐시는 1시간 TTL
-      if (key === CACHE_KEYS.profile && Date.now() - savedAt > 60 * 60 * 1000) return null;
+      // profile 캐시는 1시간 TTL + 날짜가 바뀌면 무효 (날짜 경계에서 이전 날 stats가 표시되는 문제 방지)
+      if (key === CACHE_KEYS.profile && (Date.now() - savedAt > 60 * 60 * 1000 || date !== todayKst)) return null;
       return data;
     } catch { return null; }
   }
@@ -715,6 +716,7 @@
   // loadToday()의 캐시 경로와 신선 경로 모두 이 함수를 공유한다.
   function renderTodayData(prof, slotRes) {
     state.profile = prof;
+    state.profileDate = kstTodayIso();
 
     if (slotRes.beforeSeason) {
       updateSaturdayNotice(null);
@@ -785,8 +787,9 @@
     }
 
     try {
-      // state.profile에 stats가 있을 때만 재사용 (link-device 직후 최소 프로필 제외)
-      const profilePromise = (state.profile && state.profile.stats)
+      // state.profile에 stats가 있고 오늘 날짜 기준으로 로드된 경우에만 재사용
+      // (link-device 직후 최소 프로필 제외, 날짜 경계 후 stale stats 방지)
+      const profilePromise = (state.profile && state.profile.stats && state.profileDate === kstTodayIso())
         ? Promise.resolve(state.profile)
         : apiGet("my-profile", {}, true);
       const [prof, slotRes] = await Promise.all([
