@@ -1318,9 +1318,11 @@
     }
 
     document.getElementById("timeline-modal").hidden = false;
+    _modalPush(closeTrainingModal);
   }
 
   function closeTrainingModal() {
+    _modalRemoveFromStack(closeTrainingModal);
     clearTimelinePhotoPicker();
     state.timelineSlot = null;
     document.getElementById("timeline-modal").hidden = true;
