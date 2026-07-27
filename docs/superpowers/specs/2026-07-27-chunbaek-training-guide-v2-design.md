@@ -147,7 +147,7 @@ chunbaek/guide/
 - Functions/Firestore/SW 변경 없음 (SW에 guide 캐시 추가는 비범위).
 - 기존 v1 `guide-nav` 멀티페이지 API는 v2 섹션 앵커용으로 **교체**.
 - 테스트 스모크:
-  - `index.html` + `#intro-usage` … `#ch-16` · `#app-a` … · `#refs` 앵커 존재
+  - `index.html` + `#intro-usage` … `#ch-16` · `#app-a` … `#app-c` · `#checklist` · `#refs` 앵커 존재
   - 필수 SVG id 4개 존재
   - `.guide-story--raw` 최소 1개 + 카톡 원문 마커(예: `ㅡ`)
   - **금지:** 표 헤더에 `완주형`/`향상형`/`기록형`/`상급형`이 **연속 열으로** 등장하는 패턴  

@@ -69,7 +69,7 @@ app-a, app-b, app-c, checklist, refs
 ```
 
 - `#toc`는 HTML 목차만. **`GUIDE_SECTIONS`에 넣지 않는다.**
-- `#checklist`는 스펙 IA 요약에 없었으나 DOCX H1「대회 준비 체크리스트」이므로 섹션으로 둔다.
+- `#checklist`는 DOCX H1「대회 준비 체크리스트」이며 스펙 IA §3에 포함.
 - `intro-usage`, `intro-diary`: `isIntro: true` → `positionLabel` null. **본문 카운트에서 제외** (bodyTotal = non-intro = 21).
 - 본문(`ch-*`·`app-*`·`checklist`·`refs`): position `1 / 21` … `21 / 21`.
 
