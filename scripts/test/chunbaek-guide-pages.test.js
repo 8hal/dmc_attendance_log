@@ -4,11 +4,45 @@ const fs = require("fs");
 const path = require("path");
 
 const DIR = path.join(__dirname, "../../chunbaek/guide");
-const { GUIDE_SECTIONS } = require(path.join(DIR, "guide-nav.js"));
 
-const GUIDE_STORY_REQUIRED = new Set(["long-run", "quality", "taper-race"]);
+const V2_SECTION_IDS = [
+  "intro-usage",
+  "intro-diary",
+  "ch-1",
+  "ch-2",
+  "ch-3",
+  "ch-4",
+  "ch-5",
+  "ch-6",
+  "ch-7",
+  "ch-8",
+  "ch-9",
+  "ch-10",
+  "ch-11",
+  "ch-12",
+  "ch-13",
+  "ch-14",
+  "ch-15",
+  "ch-16",
+  "app-a",
+  "app-b",
+  "app-c",
+  "checklist",
+  "refs",
+  "toc",
+];
 
-describe("chunbaek guide pages", () => {
+const SVG_IDS = [
+  "diagram-100day-timeline",
+  "diagram-week-framework",
+  "diagram-decision-flow",
+  "diagram-race-abc",
+];
+
+const FORBIDDEN_LEVEL_HEADER =
+  /<th[^>]*>\s*완주형[\s\S]*?<th[^>]*>\s*향상형[\s\S]*?<th[^>]*>\s*기록형[\s\S]*?<th[^>]*>\s*상급형/;
+
+describe("chunbaek guide pages v2", () => {
   it("single-page index exists with shell hooks", () => {
     const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
     assert.match(html, /data-guide-page="index.html"/);
@@ -18,31 +52,33 @@ describe("chunbaek guide pages", () => {
     assert.match(html, /kakao-banner/);
     assert.match(html, /\/chunbaek\/#\/today/);
     assert.doesNotMatch(html, /초안 작성 중/);
-    assert.match(html, /세 구간|서브3/);
-    const tocCount = (html.match(/toc-card/g) || []).length;
-    assert.ok(tocCount >= 7, `expected >= 7 toc-card, got ${tocCount}`);
   });
 
-  for (const section of GUIDE_SECTIONS.filter((s) => !s.isIntro)) {
-    it(`section #${section.id} has body markers`, () => {
-      const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
-      assert.match(html, new RegExp(`id="${section.id}"`));
-      assert.match(html, new RegExp(`data-guide-section="${section.id}"`));
-      // band notes somewhere in file; also section-local check via slice
-      const start = html.indexOf(`data-guide-section="${section.id}"`);
-      assert.ok(start >= 0);
-      const end = html.indexOf("data-guide-section=", start + 10);
-      const slice = end > start ? html.slice(start, end) : html.slice(start);
-      assert.match(slice, /band-notes|band-note/);
-      assert.match(slice, /data-guide-prev/);
-      assert.match(slice, /data-guide-next/);
-      assert.match(slice, /data-guide-toc/);
-      assert.match(slice, /data-guide-position/);
-      if (GUIDE_STORY_REQUIRED.has(section.id)) {
-        assert.match(slice, /guide-story/);
-      }
-    });
-  }
+  it("has all v2 section anchors including toc", () => {
+    const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
+    for (const id of V2_SECTION_IDS) {
+      assert.match(html, new RegExp(`id="${id}"`), `missing #${id}`);
+    }
+  });
+
+  it("has four required SVG diagram ids", () => {
+    const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
+    for (const id of SVG_IDS) {
+      assert.match(html, new RegExp(`id="${id}"`), `missing SVG #${id}`);
+    }
+  });
+
+  it("includes at least one raw diary story with kakao markers", () => {
+    const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
+    const rawCount = (html.match(/guide-story--raw/g) || []).length;
+    assert.ok(rawCount >= 1, `expected >= 1 .guide-story--raw, got ${rawCount}`);
+    assert.match(html, /ㅡ|ㅋㅋ|ㅠ/, "expected kakao raw marker (ㅡ or ㅋㅋ/ㅠ)");
+  });
+
+  it("does not use forbidden four-level table headers", () => {
+    const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
+    assert.doesNotMatch(html, FORBIDDEN_LEVEL_HEADER);
+  });
 
   it("old multi-page topic files are removed", () => {
     for (const name of [
