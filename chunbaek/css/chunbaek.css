@@ -1550,3 +1550,12 @@ body {
   font-size: 18px;
   line-height: 1;
 }
+
+.me-guide-link-wrap { margin: 12px 0 16px; }
+.me-guide-link {
+  color: var(--brand-orange);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+.me-guide-link:hover { text-decoration: underline; }

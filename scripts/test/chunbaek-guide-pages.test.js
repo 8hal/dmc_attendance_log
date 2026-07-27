@@ -50,4 +50,16 @@ describe("chunbaek guide pages", () => {
       }
     });
   }
+
+  it("me tab links to static guide hub not onboarding hash", () => {
+    const html = fs.readFileSync(
+      path.join(__dirname, "../../chunbaek/index.html"),
+      "utf8",
+    );
+    assert.match(html, /href="\/chunbaek\/guide\/"/);
+    assert.doesNotMatch(
+      html,
+      /me-guide-link[^>]*href="\/chunbaek\/#\/guide"/,
+    );
+  });
 });
