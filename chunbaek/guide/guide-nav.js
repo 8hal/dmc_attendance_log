@@ -67,8 +67,9 @@ function applyGuideNav(doc = document) {
 
   bind("[data-guide-prev]", nav.prev);
   bind("[data-guide-next]", nav.next);
-  const toc = doc.querySelector("[data-guide-toc]");
-  if (toc) toc.setAttribute("href", nav.tocHref);
+  doc.querySelectorAll("[data-guide-toc]").forEach((toc) => {
+    toc.setAttribute("href", nav.tocHref);
+  });
 }
 
 if (typeof module !== "undefined" && module.exports) {
