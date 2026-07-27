@@ -68,25 +68,47 @@ ch-1 … ch-16,
 app-a, app-b, app-c, checklist, refs
 ```
 
-`toc`는 nav prev/next 대상에서 제외하거나 intro 다음에 목차만 링크. `resolveGuideNav`는 `isIntro`/`isToc`로 허브 처리: `intro-usage`, `intro-diary`는 허브형(position 없음), `ch-*`·`app-*`·`checklist`·`refs`만 N/M.
+- `#toc`는 HTML 목차만. **`GUIDE_SECTIONS`에 넣지 않는다.**
+- `#checklist`는 스펙 IA 요약에 없었으나 DOCX H1「대회 준비 체크리스트」이므로 섹션으로 둔다.
+- `intro-usage`, `intro-diary`: `isIntro: true` → `positionLabel` null. **본문 카운트에서 제외** (bodyTotal = non-intro = 21).
+- 본문(`ch-*`·`app-*`·`checklist`·`refs`): position `1 / 21` … `21 / 21`.
 
-권장 `GUIDE_SECTIONS` 순서:
+**`resolveGuideNav` 필수 동작 (v1 `GUIDE_SECTIONS[1]` 하드코딩 금지):**
+1. `idx`로 현재 항목을 찾고, prev/next는 **`GUIDE_SECTIONS[idx ± 1]`** (없으면 null).
+2. **예외:** 첫 본문 `ch-1`의 `prev`는 항상 `{ href: "#toc", label: "목차" }` (직전 intro로 링크하지 않음).
+3. `intro-diary.next` → `#ch-1` (목차로 보내지 않음; 스크롤은 사용자가 toc를 누름).
+4. `intro-usage.next` → `#intro-diary`.
+5. `applyGuideNav`: `isIntro`인 섹션은 nav bind 스킵 (`id === "intro"` 단일이 아니라 `resolveGuideNav(id).isHub` 또는 섹션의 isIntro).
+
+권장 `GUIDE_SECTIONS` (DOCX H1 제목 고정):
 
 ```js
 [
   { id: "intro-usage", title: "이 가이드의 사용법", isIntro: true },
   { id: "intro-diary", title: "일지 사례를 읽는 방법", isIntro: true },
   { id: "ch-1", title: "1. 이 가이드의 대상과 목표" },
-  // … ch-2 … ch-16
-  { id: "app-a", title: "부록 A. 14주 예시" },
+  { id: "ch-2", title: "2. 시작 전 현재 상태 진단" },
+  { id: "ch-3", title: "3. 나만의 훈련 페이스 정하기" },
+  { id: "ch-4", title: "4. 100일 전체 훈련 구조" },
+  { id: "ch-5", title: "5. 일주일 훈련 구성법" },
+  { id: "ch-6", title: "6. 핵심 훈련 사용설명서" },
+  { id: "ch-7", title: "7. 장거리 훈련을 완성하는 과정" },
+  { id: "ch-8", title: "8. 여름철 100일 훈련 운영법" },
+  { id: "ch-9", title: "9. 통증·피로·부상에 대응하는 법" },
+  { id: "ch-10", title: "10. 실패한 훈련을 다루는 방법" },
+  { id: "ch-11", title: "11. 체중과 영양 관리" },
+  { id: "ch-12", title: "12. 기록과 컨디션을 해석하는 법" },
+  { id: "ch-13", title: "13. 중간 점검 대회의 활용" },
+  { id: "ch-14", title: "14. 마지막 3주와 테이퍼링" },
+  { id: "ch-15", title: "15. 레이스 전략" },
+  { id: "ch-16", title: "16. 대회 후 평가와 다음 목표" },
+  { id: "app-a", title: "부록 A. 수준별 14주 예시" },
   { id: "app-b", title: "부록 B. 훈련 변경 의사결정표" },
   { id: "app-c", title: "부록 C. 주간 계획표" },
   { id: "checklist", title: "대회 준비 체크리스트" },
   { id: "refs", title: "참고 자료" },
 ]
 ```
-
-목차 `#toc`는 HTML에만 두고 `GUIDE_SECTIONS`에 넣지 않는다 (nav 카운트 왜곡 방지).
 
 ---
 
@@ -98,15 +120,26 @@ app-a, app-b, app-c, checklist, refs
 
 - [ ] **Step 1: nav 테스트를 v2 섹션 목록에 맞게 재작성**
 
-`GUIDE_SECTIONS`에 `intro-usage`, `intro-diary`, `ch-1`…`ch-16`, `app-a`…`app-c`, `checklist`, `refs`가 있고, `ch-1`의 prev가 `#toc` 또는 `intro-diary`, `refs` next가 null인지 assert.
-
-예시 핵심 assert:
+필수 assert (모호함 금지):
 
 ```js
+assert.equal(GUIDE_SECTIONS.length, 23); // 2 intro + 21 body
 assert.equal(GUIDE_SECTIONS[0].id, "intro-usage");
-assert.equal(GUIDE_SECTIONS.find((s) => s.id === "ch-9").title.includes("통증"), true);
-const nav = resolveGuideNav("ch-1");
-assert.match(nav.positionLabel, /^\d+ \/ \d+$/);
+assert.equal(GUIDE_SECTIONS[1].id, "intro-diary");
+assert.equal(GUIDE_SECTIONS.filter((s) => !s.isIntro).length, 21);
+
+assert.equal(resolveGuideNav("intro-usage").next.href, "#intro-diary");
+assert.equal(resolveGuideNav("intro-diary").next.href, "#ch-1");
+assert.equal(resolveGuideNav("intro-diary").positionLabel, null);
+
+const ch1 = resolveGuideNav("ch-1");
+assert.equal(ch1.prev.href, "#toc");
+assert.equal(ch1.prev.label, "목차");
+assert.equal(ch1.positionLabel, "1 / 21");
+assert.equal(ch1.next.href, "#ch-2");
+
+assert.equal(resolveGuideNav("ch-9").positionLabel, "9 / 21");
+assert.equal(resolveGuideNav("refs").positionLabel, "21 / 21");
 assert.equal(resolveGuideNav("refs").next, null);
 ```
 
@@ -143,12 +176,13 @@ git commit -m "test: rewrite chunbaek guide smoke for v2 IA"
 **Files:**
 - Modify: `chunbaek/guide/guide-nav.js`
 
-- [ ] **Step 1: `GUIDE_SECTIONS`를 위 목록으로 교체**
+- [ ] **Step 1: `GUIDE_SECTIONS`를 위 고정 목록으로 교체하고 `resolveGuideNav` 재작성**
 
-`isIntro: true`는 `intro-usage`, `intro-diary`만. `resolveGuideNav`:
-- intro: `positionLabel` null, prev null (또는 diary→usage), next는 다음 섹션
-- 본문: position = 본문 인덱스 / 본문 총수 (`isIntro` 제외)
-- ch-1 prev href = `#toc`, label `목차` (스펙 IA와 일치)
+위 「필수 동작」1–5를 그대로 구현한다. 특히:
+- `next`/`prev`에 `GUIDE_SECTIONS[1]` 하드코딩 금지 → `idx ± 1`
+- `ch-1.prev`만 `#toc`
+- `topicTotal` / position 분모 = `GUIDE_SECTIONS.filter(s => !s.isIntro).length` (=21)
+- `applyGuideNav`에서 intro 섹션 스킵 시 `id === "intro"` 비교 삭제
 
 `GUIDE_PAGES` deprecated 맵은 유지하되 `file`은 전부 `index.html` + `id`.
 
