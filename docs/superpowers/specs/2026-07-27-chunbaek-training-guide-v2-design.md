@@ -1,9 +1,15 @@
 # 춘백 100일 훈련 가이드 v2 디자인
 
 > 작성일: 2026-07-27  
-> 상태: 브레인스토밍 합의 반영 (구현 전)  
+> 상태: 사용자 승인 · 구현 플랜 `docs/superpowers/plans/2026-07-27-chunbaek-training-guide-v2.md`  
 > 전제: v1 웹 가이드(`/chunbaek/guide/`)는 **같은 브랜치에서 삭제·교체**. 내용·문체의 SSOT는 handoff **DOCX**.  
-> 관련: `2026_마라톤_100일_수준별_훈련_가이드` (DOCX/PDF), 카톡 일지 `KakaoTalk_Chat_2026-07-26-11-55-31.txt`
+> **이 문서가 웹 가이드 접근의 SSOT.** 이전 문서  
+> `docs/superpowers/specs/2026-07-27-chunbaek-training-guide-wiki-design.md` 및  
+> `docs/superpowers/plans/2026-07-27-chunbaek-training-guide-wiki.md` 는 **superseded (폐기)**.  
+> 관련 원천 (레포 외부 — 구현 전 경로 확보 필수):  
+> - handoff ZIP / `final/2026_마라톤_100일_수준별_훈련_가이드.docx`  
+> - `source/KakaoTalk_Chat_2026-07-26-11-55-31.txt`  
+> - 작업 예: `/tmp/marathon-guide-handoff/마라톤_100일_가이드_handoff/` (없으면 사용자에게 경로 확인)
 
 ## 0. v1과의 관계
 
@@ -13,9 +19,11 @@
 | 문체 | 해설·메타 표현 혼재 | DOCX 「이다/한다」 |
 | 사례 | 윤문·재서술 | **카톡 원문 그대로** |
 | 수준 | 세 구간 메모 위주 | **공통 표** + 세 구간 짧은 메모 + 그림 |
-| 구조 | 요약 7주제 (한때 멀티페이지) | DOCX **거의 전부** 단일 롱스크롤 |
+| 구조 | 요약 7주제 단일 페이지(현 브랜치 상태) | DOCX **거의 전부** 단일 롱스크롤 |
 
 앱 나 탭 → `/chunbaek/guide/` 링크는 유지한다.
+
+**페이지 크롬 (기존 춘백 가이드 셸 유지):** `tokens.css`, 브랜드 오렌지 헤더, 카카오 UA 배너, `theme-color #ff3214`, 하단 CTA → `/chunbaek/#/today`. 본문만 v2 규칙으로 교체한다.
 
 ## 1. 목표
 
@@ -69,9 +77,9 @@
 | `.guide-callout` | 원칙·경고·해석 규칙 |
 | `.guide-story--raw` | 카톡 **원문 그대로** (줄바꿈·ㅡ·ㅋㅋ 유지). 길면 `<details>` |
 | `.guide-note` | 원문 아래 해석 1~2문장 |
-| `.band-notes` / `[data-band]` | 서브3 / 싱글 / 330+ 짧은 메모 |
-| `.guide-diagram` | 인라인 SVG |
-| `.figure-slot` | `figures/이름.ext` + 캡션. 파일 없으면 숨김 또는 “이미지 자리” 플레이스홀더 |
+| `.band-notes` / `[data-band]` | 값: `sub3` \| `single` \| `330` — 서브3 / 싱글 / 330+ 짧은 메모 |
+| `.guide-diagram` | 인라인 SVG — 필수 id는 §6 |
+| `.figure-slot` | `figures/` 이미지 + 캡션. **파일 없으면 플레이스홀더 문구를 보여 준다** (숨기지 않음). 사용자가 이미지를 넣으면 `img`로 교체 |
 
 ## 5. 표 변환 규칙
 
@@ -85,16 +93,17 @@
 
 ## 6. 다이어그램 (기본 4 + 슬롯)
 
-**구현이 넣는 인라인 SVG**
-1. **100일 5단계 타임라인** (DOCX 4장)
-2. **주간 틀** — 화·목·토 공통 목적 (DOCX 5장, 수준 열 없음)
-3. **통증·실패 의사결정** — 부록 B 요약 플로
-4. **레이스 A·B·C** (DOCX 15장)
+**구현이 넣는 인라인 SVG (필수 id)**
+1. `#diagram-100day-timeline` — 100일 5단계 타임라인 (DOCX 4장 근처)
+2. `#diagram-week-framework` — 주간 틀 화·목·토 공통 목적 (DOCX 5장 근처)
+3. `#diagram-decision-flow` — 통증·실패 의사결정 (부록 B 요약). **DOM 위치: `#ch-9` 끝.** `#ch-10`에서는 같은 그림으로 앵커 링크만 (`#diagram-decision-flow`)
+4. `#diagram-race-abc` — 레이스 A·B·C (DOCX 15장 근처)
 
 **사용자가 넣을 수 있는 슬롯 예**
 - 장거리/보급/코스 사진, 외부 인포그래픽  
 - 파일: `chunbaek/guide/figures/`  
-- 마크업: `<figure class="figure-slot"><img src="figures/..." alt="..."><figcaption>...</figcaption></figure>`
+- 마크업: `<figure class="figure-slot" data-figure="optional-name"><div class="figure-slot__placeholder">이미지 자리 — figures/에 파일을 넣으세요</div><figcaption>...</figcaption></figure>`  
+  (이미지 추가 시 placeholder를 `<img>`로 교체)
 
 ## 7. 카톡 원문 규칙
 
@@ -117,8 +126,8 @@
 | 6 핵심 훈련 | 훈련 종류 표 (수준 열 제거/공통화) | — |
 | 7 장거리 | 상한·형태 표 공통화 + 원문 사례 | figure-slot 가능 |
 | 8 여름 | 상황·변경 표 | — |
-| 9 통증 | 등급·행동 표 | **SVG 의사결정(일부)** |
-| 10 실패 | 놓친 훈련→행동 표 | **SVG 의사결정(일부)** |
+| 9 통증 | 등급·행동 표 | **`#diagram-decision-flow` (여기 배치)** |
+| 10 실패 | 놓친 훈련→행동 표 | 위 다이어그램으로 링크 |
 | 11~13 | 영양·지표·중간대회 표 | figure-slot 가능 |
 | 14~15 테이퍼·레이스 | 테이퍼·구간 표 | **SVG A/B/C** |
 | 16·부록·참고 | 체크리스트·의사결정·주간 계획 | 부록 B → SVG와 연결 |
@@ -137,7 +146,13 @@ chunbaek/guide/
 
 - Functions/Firestore/SW 변경 없음 (SW에 guide 캐시 추가는 비범위).
 - 기존 v1 `guide-nav` 멀티페이지 API는 v2 섹션 앵커용으로 **교체**.
-- 테스트: 단일 `index.html` 존재, 장 앵커·필수 SVG id·원문 블록·4수준 문자열 부재(`완주형` 등) 스모크.
+- 테스트 스모크:
+  - `index.html` + `#intro-usage` … `#ch-16` · `#app-a` … · `#refs` 앵커 존재
+  - 필수 SVG id 4개 존재
+  - `.guide-story--raw` 최소 1개 + 카톡 원문 마커(예: `ㅡ`)
+  - **금지:** 표 헤더에 `완주형`/`향상형`/`기록형`/`상급형`이 **연속 열으로** 등장하는 패턴  
+    (본문에서 “쓰지 않는다”고 언급하는 문장은 허용)
+  - 나 탭 → `/chunbaek/guide/` (온보딩 `#/guide` 아님)
 
 ## 10. 구현 순서 (플랜용 스케치)
 
