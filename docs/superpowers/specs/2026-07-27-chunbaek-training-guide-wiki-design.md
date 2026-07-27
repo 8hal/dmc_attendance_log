@@ -1,7 +1,9 @@
 # 춘백 100일 훈련 가이드 위키 디자인
 
+> **Superseded** by `docs/superpowers/specs/2026-07-27-chunbaek-training-guide-v2-design.md` and plan `docs/superpowers/plans/2026-07-27-chunbaek-training-guide-v2.md`. Do not implement from this doc.
+
 > 작성일: 2026-07-27  
-> 상태: 스펙 리뷰 통과 (구현 플랜 전 사용자 확인 대기)  
+> 상태: **폐기 (superseded by v2)**  
 > 관련: handoff ZIP `2026_마라톤_100일_가이드_handoff` (레포 외 첨부), `_docs/design/chunbaek-kakao-guide-page.md`, `chunbaek/exception-guide.html`  
 > 주의: 앱 온보딩 해시 `#/guide`(출석 규칙) ≠ 본 위키 `/chunbaek/guide/`
 

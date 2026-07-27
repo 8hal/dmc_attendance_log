@@ -1,5 +1,7 @@
 # 춘백 100일 훈련 가이드 위키 Implementation Plan
 
+> **Superseded** by `docs/superpowers/plans/2026-07-27-chunbaek-training-guide-v2.md`. Do not implement from this doc.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 카톡 공유·발췌독이 가능한 `/chunbaek/guide/` 정적 멀티페이지 위키(허브+7주제, 이전/목차/다음)를 추가하고, 춘백 앱 나 탭에서 허브로 링크한다.
