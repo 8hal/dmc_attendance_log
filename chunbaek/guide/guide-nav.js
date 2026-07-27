@@ -1,83 +1,106 @@
 // chunbaek/guide/guide-nav.js
 "use strict";
 
-const GUIDE_PAGES = [
-  { file: "index.html", title: "읽는 법 · 세 구간", isHub: true },
-  { file: "week.html", title: "우리 주가 돌아가는 방식" },
-  { file: "long-run.html", title: "장거리" },
-  { file: "quality.html", title: "품질주" },
-  { file: "summer.html", title: "여름철" },
-  { file: "pain.html", title: "통증·피로" },
-  { file: "missed.html", title: "놓친 날·실패한 날" },
-  { file: "taper-race.html", title: "마지막 구간·대회 주" },
+/** Single-page section order (SSOT). */
+const GUIDE_SECTIONS = [
+  { id: "intro", title: "이 가이드를 읽는 법", isIntro: true },
+  { id: "week", title: "우리 주가 돌아가는 방식" },
+  { id: "long-run", title: "장거리" },
+  { id: "quality", title: "품질주" },
+  { id: "summer", title: "여름철" },
+  { id: "pain", title: "통증·피로" },
+  { id: "missed", title: "놓친 날·실패한 날" },
+  { id: "taper-race", title: "마지막 구간·대회 주" },
 ];
 
-function resolveGuideNav(currentFile) {
-  const idx = GUIDE_PAGES.findIndex((p) => p.file === currentFile);
-  if (idx < 0) throw new Error(`unknown guide page: ${currentFile}`);
-  const cur = GUIDE_PAGES[idx];
-  const topicTotal = GUIDE_PAGES.length - 1;
+/** @deprecated Use GUIDE_SECTIONS. Kept for older test names during transition. */
+const GUIDE_PAGES = GUIDE_SECTIONS.map((s) => ({
+  file: s.isIntro ? "index.html" : `${s.id}.html`,
+  title: s.title,
+  isHub: !!s.isIntro,
+  id: s.id,
+}));
 
-  if (cur.isHub) {
+function resolveGuideNav(sectionId) {
+  const idx = GUIDE_SECTIONS.findIndex((s) => s.id === sectionId);
+  if (idx < 0) throw new Error(`unknown guide page: ${sectionId}`);
+  const cur = GUIDE_SECTIONS[idx];
+  const topicTotal = GUIDE_SECTIONS.length - 1;
+
+  if (cur.isIntro) {
     return {
       isHub: true,
       positionLabel: null,
       prev: null,
-      next: { href: GUIDE_PAGES[1].file, label: GUIDE_PAGES[1].title },
-      tocHref: "index.html",
+      next: { href: `#${GUIDE_SECTIONS[1].id}`, label: GUIDE_SECTIONS[1].title },
+      tocHref: "#toc",
       page: cur,
     };
   }
 
-  const prevPage = GUIDE_PAGES[idx - 1];
-  const nextPage = GUIDE_PAGES[idx + 1] || null;
+  const prev = GUIDE_SECTIONS[idx - 1];
+  const next = GUIDE_SECTIONS[idx + 1] || null;
   return {
     isHub: false,
     positionLabel: `${idx} / ${topicTotal}`,
     prev: {
-      href: prevPage.file,
-      label: prevPage.isHub ? "목차" : prevPage.title,
+      href: prev.isIntro ? "#toc" : `#${prev.id}`,
+      label: prev.isIntro ? "목차" : prev.title,
     },
-    next: nextPage
-      ? { href: nextPage.file, label: nextPage.title }
-      : null,
-    tocHref: "index.html",
+    next: next ? { href: `#${next.id}`, label: next.title } : null,
+    tocHref: "#toc",
     page: cur,
   };
 }
 
 function applyGuideNav(doc = document) {
-  const file = (doc.body && doc.body.dataset.guidePage) || "";
-  const nav = resolveGuideNav(file);
-  const pos = doc.querySelector("[data-guide-position]");
-  if (pos) pos.textContent = nav.positionLabel || "";
-
-  const bind = (sel, link) => {
-    const el = doc.querySelector(sel);
-    if (!el) return;
-    if (!link) {
-      el.hidden = true;
+  const sections = [...doc.querySelectorAll("[data-guide-section]")];
+  sections.forEach((section) => {
+    const id = section.getAttribute("data-guide-section");
+    if (!id || id === "intro") return;
+    let nav;
+    try {
+      nav = resolveGuideNav(id);
+    } catch (_) {
       return;
     }
-    el.hidden = false;
-    el.setAttribute("href", link.href);
-    const label = el.querySelector("[data-guide-nav-label]");
-    if (label) label.textContent = link.label;
-  };
+    const pos = section.querySelector("[data-guide-position]");
+    if (pos) pos.textContent = nav.positionLabel || "";
 
-  bind("[data-guide-prev]", nav.prev);
-  bind("[data-guide-next]", nav.next);
-  doc.querySelectorAll("[data-guide-toc]").forEach((toc) => {
-    toc.setAttribute("href", nav.tocHref);
+    const bind = (sel, link) => {
+      const el = section.querySelector(sel);
+      if (!el) return;
+      if (!link) {
+        el.hidden = true;
+        return;
+      }
+      el.hidden = false;
+      el.setAttribute("href", link.href);
+      const label = el.querySelector("[data-guide-nav-label]");
+      if (label) label.textContent = link.label;
+    };
+
+    bind("[data-guide-prev]", nav.prev);
+    bind("[data-guide-next]", nav.next);
+    section.querySelectorAll("[data-guide-toc]").forEach((toc) => {
+      toc.setAttribute("href", nav.tocHref);
+    });
   });
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { GUIDE_PAGES, resolveGuideNav, applyGuideNav };
+  module.exports = {
+    GUIDE_SECTIONS,
+    GUIDE_PAGES,
+    resolveGuideNav,
+    applyGuideNav,
+  };
 }
 
 if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", () => {
-    if (document.body && document.body.dataset.guidePage) applyGuideNav();
+    if (document.body && document.body.dataset.guidePage === "index.html") {
+      applyGuideNav();
+    }
   });
 }
