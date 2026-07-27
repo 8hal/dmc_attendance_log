@@ -1,8 +1,9 @@
 # 춘백 100일 훈련 가이드 위키 디자인
 
 > 작성일: 2026-07-27  
-> 상태: 초안 (브레인스토밍 합의 반영)  
-> 관련: handoff `2026_마라톤_100일_수준별_훈련_가이드`, `_docs/design/chunbaek-kakao-guide-page.md`, `chunbaek/exception-guide.html`
+> 상태: 스펙 리뷰 통과 (구현 플랜 전 사용자 확인 대기)  
+> 관련: handoff ZIP `2026_마라톤_100일_가이드_handoff` (레포 외 첨부), `_docs/design/chunbaek-kakao-guide-page.md`, `chunbaek/exception-guide.html`  
+> 주의: 앱 온보딩 해시 `#/guide`(출석 규칙) ≠ 본 위키 `/chunbaek/guide/`
 
 ## 1. 문제와 목표
 
@@ -87,7 +88,8 @@
 
 - 위키 허브·각 글(또는 허브만 — 구현 시 허브 필수, 글은 하단 보조 CTA 허용)에서 **CTA 하나**: `춘백 앱으로` → `/chunbaek/#/today` (시즌 중 기본 홈). 프로필 미완이면 앱 기존 온보딩 동작에 맡긴다.
 - 앱 `#/me`(나 탭)에 **훈련 가이드** 텍스트 링크 1개 → `/chunbaek/guide/`  
-  (홈에 두면 출석 CTA와 경쟁하므로 v1은 나 탭)
+  (홈에 두면 출석 CTA와 경쟁하므로 v1은 나 탭)  
+- **혼동 금지:** 온보딩 뷰 `#/guide`는 「100일 출석 규칙」 화면이다. 나 탭 링크는 반드시 정적 위키 `/chunbaek/guide/`로 간다.
 
 ## 4. 페이지 골격 · 시각
 
@@ -166,11 +168,11 @@ chunbaek/guide/
   missed.html
   taper-race.html
   guide.css          # 위키 전용 (tokens 위 확장: 본문, 네비, 구간 포인트)
-  guide-nav.js       # 선택: 순서 배열·이전/다음 링크 주입 (복제 실수 방지)
+  guide-nav.js       # 필수: 순서 배열 SSOT · 이전/다음/목차 링크 주입
 ```
 
 - 스타일: `../css/tokens.css` + `guide.css`
-- 네비 순서 SSOT는 `guide-nav.js`의 배열 한곳 (또는 각 HTML에 동일 링크를 수동 — v1은 **JS 주입 권장**으로 링크 깨짐 방지)
+- 네비 순서 SSOT는 **`guide-nav.js` 단일 배열** (HTML에 prev/next를 손으로 복제하지 않음)
 - 신규 Cloud Functions / Firestore 스키마 **없음** (정적 호스팅만)
 - PWA SW 캐시 목록에 guide 경로를 넣을지는 구현 계획에서 결정. 넣지 않아도 동작; 넣으면 오프라인 읽기 가능하나 v1 필수는 아님
 
@@ -207,9 +209,10 @@ chunbaek/guide/
 
 ## 9. 열린 결정 (플랜에서 확정해도 됨)
 
-- 앱 CTA 해시: 기본 `#/today` (본 스펙 권장). `#/me`만 쓸지는 플랜 시 한 줄 확인.
+- 위키 → 앱 CTA 해시: 기본 **`#/today`**. (`exception-guide.html`은 `#/me` — 목적 화면이 다르므로 동일할 필요 없음)
 - Service Worker에 guide 캐시 포함 여부: 기본 **미포함**(YAGNI).
-- 원고 1차 작성 언어/분량: 주제당 화면 스크롤 약 1.5~3화면(모바일) 목표.
+- 원고 1차 분량: 주제당 모바일 스크롤 약 1.5~3화면.
+- 원고 원천: 세션 첨부 handoff ZIP의 DOCX/일지/스크립트 (레포에 없을 수 있음 — 구현 전 작업 공간에 확보).
 
 ## 10. 참고
 
