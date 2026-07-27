@@ -80,6 +80,14 @@ describe("chunbaek guide pages v2", () => {
     assert.doesNotMatch(html, FORBIDDEN_LEVEL_HEADER);
   });
 
+  it("does not stack four-level distance prescriptions in prose", () => {
+    const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
+    assert.doesNotMatch(
+      html,
+      /완주형:\s*[\s\S]{0,160}?향상형:\s*[\s\S]{0,160}?기록형:\s*[\s\S]{0,160}?상급형:/,
+    );
+  });
+
   it("old multi-page topic files are removed", () => {
     for (const name of [
       "week.html",

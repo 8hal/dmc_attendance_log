@@ -449,6 +449,35 @@ def transform_table(rows: list[list[str]]) -> str:
     return render_table(rows)
 
 
+def collapse_level_prose(parts: list[str]) -> list[str]:
+    """Merge consecutive <p>완주형:…</p>…상급형:…</p> into common prose + band-notes."""
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        chunk = []
+        j = i
+        while j < len(parts):
+            m = re.match(r"^<p>(완주형|향상형|기록형|상급형):\s*(.*?)</p>$", parts[j])
+            if not m:
+                break
+            chunk.append((m.group(1), m.group(2)))
+            j += 1
+        if len(chunk) >= 3 and {c[0] for c in chunk} >= set(LEVELS[:3]):
+            vals = [c[1] for c in chunk]
+            common = (
+                f"<p>수준별 처방 문장은 웹에서 공통 범위로 합친다. "
+                f"대략 {esc(vals[0])} … {esc(vals[-1])} 사이에서 "
+                f"최근 장거리·회복·목표 구간에 맞게 고른다.</p>"
+            )
+            out.append(common)
+            out.append(band_notes_default())
+            i = j
+            continue
+        out.append(parts[i])
+        i += 1
+    return out
+
+
 def collect_sections(doc: Document) -> dict[str, list[str]]:
     sections: dict[str, list[str]] = {k: [] for k in SECTION_TITLES}
     current: str | None = None
@@ -487,6 +516,8 @@ def collect_sections(doc: Document) -> dict[str, list[str]]:
             rows = table_rows(obj)
             sections[current].append(transform_table(rows))
 
+    for sid in sections:
+        sections[sid] = collapse_level_prose(sections[sid])
     return sections
 
 
