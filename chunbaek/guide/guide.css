@@ -137,4 +137,15 @@ body {
 }
 .toc-card strong { display:block; font-size:14px; font-weight:800; }
 .toc-card span { font-size:12px; color: var(--text-secondary); }
+
+/* single-page anchors */
+[data-guide-section],
+#toc,
+#intro {
+  scroll-margin-top: 12px;
+}
+.guide-prose.section + .guide-prose.section,
+.section + .guide-prose.section {
+  margin-top: 28px;
+}
 .muted { color: var(--text-secondary); }
