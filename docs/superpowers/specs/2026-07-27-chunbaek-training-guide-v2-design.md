@@ -1,7 +1,8 @@
 # 춘백 100일 훈련 가이드 v2 디자인
 
 > 작성일: 2026-07-27  
-> 상태: 구현 완료 (스모크 테스트 통과) · 플랜 `docs/superpowers/plans/2026-07-27-chunbaek-training-guide-v2.md`  
+> 상태: **부분 superseded by** `2026-07-28-chunbaek-training-guide-v3-cleanup-design.md`  
+> (v3: band-notes·장 네비 폐기, 목차 단순화, 원문 앞 배치. 내용 이관·문체·4수준 금지는 유지)  
 > 전제: v1 웹 가이드(`/chunbaek/guide/`)는 **같은 브랜치에서 삭제·교체**. 내용·문체의 SSOT는 handoff **DOCX**.  
 > **이 문서가 웹 가이드 접근의 SSOT.** 이전 문서  
 > `docs/superpowers/specs/2026-07-27-chunbaek-training-guide-wiki-design.md` 및  

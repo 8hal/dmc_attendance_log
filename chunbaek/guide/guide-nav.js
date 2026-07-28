@@ -1,7 +1,7 @@
 // chunbaek/guide/guide-nav.js
 "use strict";
 
-/** Single-page section order (SSOT). */
+/** Single-page section order (SSOT for TOC). */
 const GUIDE_SECTIONS = [
   { id: "intro-usage", title: "이 가이드의 사용법", isIntro: true },
   { id: "intro-diary", title: "일지 사례를 읽는 방법", isIntro: true },
@@ -28,7 +28,7 @@ const GUIDE_SECTIONS = [
   { id: "refs", title: "참고 자료" },
 ];
 
-/** @deprecated Use GUIDE_SECTIONS. Kept for older test names during transition. */
+/** @deprecated Kept for older imports. */
 const GUIDE_PAGES = GUIDE_SECTIONS.map((s) => ({
   file: "index.html",
   title: s.title,
@@ -36,99 +36,9 @@ const GUIDE_PAGES = GUIDE_SECTIONS.map((s) => ({
   id: s.id,
 }));
 
-function resolveGuideNav(sectionId) {
-  const idx = GUIDE_SECTIONS.findIndex((s) => s.id === sectionId);
-  if (idx < 0) throw new Error(`unknown guide page: ${sectionId}`);
-  const cur = GUIDE_SECTIONS[idx];
-  const bodySections = GUIDE_SECTIONS.filter((s) => !s.isIntro);
-  const bodyTotal = bodySections.length;
-
-  const prevSec = idx > 0 ? GUIDE_SECTIONS[idx - 1] : null;
-  const nextSec = GUIDE_SECTIONS[idx + 1] || null;
-
-  if (cur.isIntro) {
-    return {
-      isHub: true,
-      positionLabel: null,
-      prev: prevSec
-        ? { href: `#${prevSec.id}`, label: prevSec.title }
-        : null,
-      next: nextSec
-        ? { href: `#${nextSec.id}`, label: nextSec.title }
-        : null,
-      tocHref: "#toc",
-      page: cur,
-    };
-  }
-
-  const bodyIndex = bodySections.findIndex((s) => s.id === sectionId) + 1;
-  // First body chapter always links prev to TOC (not previous intro section).
-  const prev =
-    cur.id === "ch-1"
-      ? { href: "#toc", label: "목차" }
-      : { href: `#${prevSec.id}`, label: prevSec.title };
-
-  return {
-    isHub: false,
-    positionLabel: `${bodyIndex} / ${bodyTotal}`,
-    prev,
-    next: nextSec ? { href: `#${nextSec.id}`, label: nextSec.title } : null,
-    tocHref: "#toc",
-    page: cur,
-  };
-}
-
-function applyGuideNav(doc = document) {
-  const sections = [...doc.querySelectorAll("[data-guide-section]")];
-  sections.forEach((section) => {
-    const id = section.getAttribute("data-guide-section");
-    if (!id) return;
-    let nav;
-    try {
-      nav = resolveGuideNav(id);
-    } catch (_) {
-      return;
-    }
-    // Skip any intro section (isIntro), not only a hard-coded id.
-    if (nav.page.isIntro) return;
-
-    const pos = section.querySelector("[data-guide-position]");
-    if (pos) pos.textContent = nav.positionLabel || "";
-
-    const bind = (sel, link) => {
-      const el = section.querySelector(sel);
-      if (!el) return;
-      if (!link) {
-        el.hidden = true;
-        return;
-      }
-      el.hidden = false;
-      el.setAttribute("href", link.href);
-      const label = el.querySelector("[data-guide-nav-label]");
-      if (label) label.textContent = link.label;
-    };
-
-    bind("[data-guide-prev]", nav.prev);
-    bind("[data-guide-next]", nav.next);
-    section.querySelectorAll("[data-guide-toc]").forEach((toc) => {
-      toc.setAttribute("href", nav.tocHref);
-    });
-  });
-}
-
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     GUIDE_SECTIONS,
     GUIDE_PAGES,
-    resolveGuideNav,
-    applyGuideNav,
   };
-}
-
-if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", () => {
-    if (document.body && document.body.dataset.guidePage === "index.html") {
-      applyGuideNav();
-    }
-  });
 }

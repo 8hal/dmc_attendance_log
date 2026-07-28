@@ -210,7 +210,7 @@ def collapse_level_rows(rows: list[list[str]]) -> tuple[list[list[str]] | None, 
     new = [["항목", "공통 범위"]] + [[h, c] for h, c in cols]
     note = (
         "기존 수준별 행 표는 웹에서 공통 범위로 합쳤다. "
-        "차이는 아래 구간 메모와 현재 장거리·회복 상태를 함께 본다."
+        "최근 장거리·회복 상태를 함께 본다."
     )
     return new, note
 
@@ -254,22 +254,8 @@ def render_callout(text: str) -> str:
 
 
 def band_notes_default() -> str:
-    return """
-<div class="band-notes">
-  <div class="band-note" data-band="sub3">
-    <p class="band-note__label">서브3</p>
-    <p>같은 목적 안에서 강도·거리를 더 세밀하게 조율한다. 줄일 때는 이유를 남긴다.</p>
-  </div>
-  <div class="band-note" data-band="single">
-    <p class="band-note__label">싱글</p>
-    <p>기록과 지속을 함께 본다. 몸이 무거우면 그날의 해석을 바꾸는 편이 나을 때가 많다.</p>
-  </div>
-  <div class="band-note" data-band="330">
-    <p class="band-note__label">330+ · 첫풀</p>
-    <p>빠지지 않고 다음 화·목·토로 넘기는 것이 우선이다. 페이스보다 요일 리듬이 앞선다.</p>
-  </div>
-</div>
-""".strip()
+    return ""  # v3: no band grouping
+
 
 
 def svg_timeline() -> str:
@@ -427,8 +413,7 @@ def map_h1(text: str) -> str | None:
 def transform_table(rows: list[list[str]]) -> str:
     if is_diary_or_boundary_callout(rows):
         return (
-            '<p class="muted">DOCX 윤문 사례는 웹에서 생략한다. '
-            "같은 장면은 아래·관련 장의 카톡 원문으로 읽는다.</p>"
+            ""  # v3: skip notice at most once via inject_extras
         )
     if is_single_callout(rows):
         return render_callout(rows[0][0])
@@ -554,6 +539,25 @@ def inject_extras(sections: dict[str, list[str]], kakao_blocks: dict) -> None:
             break
     if not any("guide-story--raw" in x for x in sections.get("intro-diary", [])):
         raise SystemExit("no kakao raw story available for intro-diary")
+    if not any("DOCX 윤문" in x for xs in sections.values() for x in xs):
+        sections["intro-diary"].insert(0, '<p class="muted">DOCX 윤문 사례는 웹에서 생략한다. 같은 장면은 관련 장의 카톡 원문으로 읽는다.</p>')
+    
+    # v3: story-first within story chapters
+    for sid in ("intro-diary", "ch-7", "ch-8", "ch-9", "ch-10", "ch-15"):
+        parts = sections.get(sid) or []
+        stories = [p for p in parts if "guide-story--raw" in p or (p.startswith('<p class="guide-note">') and False)]
+        # keep story+following note together already in same string via raw_story()
+        stories = [p for p in parts if "guide-story--raw" in p]
+        rest = [p for p in parts if p not in stories]
+        # intro paras that are plain <p> without class stay after h2 in build; here only list body parts
+        # pull leading plain <p> from rest
+        intro = []
+        while rest and rest[0].startswith("<p>") and "guide-note" not in rest[0]:
+            intro.append(rest.pop(0))
+            if len(intro) >= 2:
+                break
+        sections[sid] = intro + stories + rest
+
     sections["intro-diary"].append(
         '<figure class="figure-slot" data-figure="optional">'
         '<div class="figure-slot__placeholder">이미지 자리 — figures/에 파일을 넣으세요</div>'
@@ -564,27 +568,13 @@ def inject_extras(sections: dict[str, list[str]], kakao_blocks: dict) -> None:
     sections["app-a"].insert(
         0,
         '<p class="muted">부록 A의 수준별 거리 열은 웹에서 공통 14주 골격으로만 옮긴다. '
-        "실제 장거리 상한은 최근 경험과 구간 메모를 따른다.</p>",
+        "실제 장거리 상한은 최근 장거리 경험과 회복을 따른다.</p>",
     )
 
 
 def nav_hooks(is_intro: bool) -> tuple[str, str]:
-    if is_intro:
-        return "", ""
-    top = """
-        <div class="guide-topnav">
-          <a data-guide-toc href="#toc">목차</a>
-          <span data-guide-position></span>
-        </div>
-""".rstrip()
-    bottom = """
-        <nav class="guide-bottomnav" aria-label="가이드 이동">
-          <a data-guide-prev href="#"><span data-guide-nav-label></span></a>
-          <a data-guide-toc href="#toc">목차</a>
-          <a data-guide-next href="#"><span data-guide-nav-label></span></a>
-        </nav>
-""".rstrip()
-    return top, bottom
+    return "", ""  # v3: no chapter chrome
+
 
 
 def render_toc() -> str:
@@ -592,7 +582,7 @@ def render_toc() -> str:
     for sid in BODY_ORDER:
         if sid in ("intro-usage", "intro-diary", "toc"):
             continue
-        links.append(f'        <a class="toc-card" href="#{sid}"><strong>{esc(SECTION_TITLES[sid])}</strong></a>')
+        links.append(f'        <a href="#{sid}">{esc(SECTION_TITLES[sid])}</a>')
     return (
         '      <section class="section" id="toc">\n'
         "        <h2>목차</h2>\n"
