@@ -140,9 +140,9 @@
         <h2 class="section-title">100일, 이렇게 출석해요</h2>
         <div class="card">
           <div class="guide-item"><span class="guide-icon">📍</span><span>매일 <strong>[춘백 홈]</strong>에서 <strong>[출석하기]</strong> 한 번</span></div>
-          <div class="guide-item"><span class="guide-icon">📅</span><span>주 3회 이상 출석 목표</span></div>
+          <div class="guide-item"><span class="guide-icon">📅</span><span>주 3점 이상 출석 목표 (출석 1점 · 예외 0.5점)</span></div>
           <div class="guide-item"><span class="guide-icon">⚠️</span><span>부상·출장·경조사는 <strong>[나]</strong> 탭에서 <strong>출석 예외 요청</strong>을 해 주세요. 운영 승인 후 예외 처리됩니다.</span></div>
-          <div class="guide-item"><span class="guide-icon">☕</span><span>주 3회 미달 시 패널티 (커피·간식)</span></div>
+          <div class="guide-item"><span class="guide-icon">☕</span><span>주 3점 미달 시 패널티 (커피·간식)</span></div>
         </div>
         <button type="button" class="btn btn-primary" id="btn-guide-done">100일 시작하기</button>
       </section>
@@ -179,6 +179,14 @@
             <p class="before-season-desc" id="after-season-desc">수고하셨습니다. 시즌 출석 기록은 내 100일·나 탭에서 확인할 수 있습니다.</p>
           </div>
           <p class="program-off-msg" id="program-off-msg" hidden>오늘은 프로그램 휴무일입니다</p>
+          <div class="score-notice" id="score-notice" hidden>
+            <div class="score-notice-body">
+              <strong>출석 점수 제도가 도입됐습니다</strong>
+              <p>예외 처리된 날이 0.5점으로 주간 목표에 반영됩니다.</p>
+              <a href="/chunbaek/exception-guide.html" id="score-notice-link">자세히 보기</a>
+            </div>
+            <button type="button" class="score-notice-close" id="score-notice-close" aria-label="닫기">✕</button>
+          </div>
           <div id="today-active" hidden>
           <div class="today-slot-card">
             <div class="today-day" id="today-day">—</div>
@@ -196,7 +204,7 @@
           <p class="today-attend-hint">메모·사진은 <strong>내 100일</strong>에서 남길 수 있어요.</p>
           <div class="week-summary" id="week-bar" aria-label="이번 주 출석 현황">
             <span class="week-summary-label">이번 주 출석</span>
-            <span class="week-summary-count" id="week-bar-count">2 / 3회</span>
+            <span class="week-summary-count" id="week-bar-count">출석 2회  2.0 / 3점</span>
           </div>
           </div>
         </div>

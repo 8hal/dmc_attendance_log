@@ -29,6 +29,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 0,
         seasonAttendRate: 0,
         weekAttendCount: 0,
+        weekExceptionCount: 0,
+        weekScore: 0,
         weekTarget: 3,
         inBetaWeek: true,
       },
@@ -62,6 +64,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 3,
         seasonAttendRate: 100,
         weekAttendCount: 3,
+        weekExceptionCount: 0,
+        weekScore: 3,
         weekTarget: 3,
         inBetaWeek: true,
       },
@@ -95,6 +99,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 1,
         seasonAttendRate: 100,
         weekAttendCount: 1,
+        weekExceptionCount: 0,
+        weekScore: 1,
         weekTarget: 3,
         inBetaWeek: true,
       },
@@ -120,6 +126,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 0,
         seasonAttendRate: 0,
         weekAttendCount: 0,
+        weekExceptionCount: 0,
+        weekScore: 0,
         weekTarget: 3,
         inBetaWeek: false,
       },
@@ -144,6 +152,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 28,
         seasonAttendRate: 68,
         weekAttendCount: 2,
+        weekExceptionCount: 0,
+        weekScore: 2,
         weekTarget: 3,
         inBetaWeek: false,
       },
@@ -202,6 +212,8 @@ const MOCK = {
       seasonAttendCount: 28,
       seasonAttendRate: 68,
       weekAttendCount: 2,
+      weekExceptionCount: 2,
+      weekScore: 3,
       weekTarget: 3,
     },
   },
@@ -218,7 +230,7 @@ const MOCK = {
     {
       week: 7,
       range: "4/7 ~ 4/13",
-      attendSummary: "2/3회",
+      attendSummary: "출석 2회 · 예외 2회  3.0 / 3점",
       dots: "●●○○○",
       slots: [
         {
@@ -309,7 +321,7 @@ const MOCK = {
     {
       week: 6,
       range: "3/31 ~ 4/6",
-      attendSummary: "3/3회",
+      attendSummary: "출석 3회  3.0 / 3점",
       dots: "●●●○○",
       slots: [],
       collapsed: true,
@@ -583,6 +595,9 @@ function mockPost(action, body) {
       }
       scenario.profile.stats.seasonAttendCount = (scenario.profile.stats.seasonAttendCount || 0) + 1;
       scenario.profile.stats.weekAttendCount = (scenario.profile.stats.weekAttendCount || 0) + 1;
+      const attend = scenario.profile.stats.weekAttendCount || 0;
+      const exc = scenario.profile.stats.weekExceptionCount || 0;
+      scenario.profile.stats.weekScore = attend + exc * 0.5;
     }
     return Promise.resolve({
       ok: true,

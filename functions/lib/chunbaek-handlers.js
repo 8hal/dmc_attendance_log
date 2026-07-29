@@ -72,6 +72,8 @@ function emptyStats() {
     seasonAttendRate: 0,
     seasonDayIndex: 0,
     weekAttendCount: 0,
+    weekExceptionCount: 0,
+    weekScore: 0,
     weekTarget: 3,
     weekTargetMet: false,
   };
@@ -883,13 +885,16 @@ async function handleTeamSummary(req, res, db) {
         ? p.s3.goalBodyWeightKg
         : null,
       goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
-      bar: weekBar(stats.weekAttendCount, stats.weekTarget),
+      bar: weekBar(Math.floor(stats.weekScore || 0), stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       weekPhotoCount: slots
         .filter((s) => s.week === currentWeek && !s.isProgramOff)
         .filter((s) => normalizePhotoUrls(getAttendance(attendanceMap, s)).length > 0)
         .length,
-      week: `${stats.weekAttendCount}/${stats.weekTarget}`,
+      week: `${Number(stats.weekScore || 0).toFixed(1)}/${stats.weekTarget}`,
+      weekAttendCount: stats.weekAttendCount,
+      weekExceptionCount: stats.weekExceptionCount || 0,
+      weekScore: stats.weekScore || 0,
       weekTarget: stats.weekTarget,
       met: stats.weekTargetMet,
       seasonAttendCount: stats.seasonAttendCount,
