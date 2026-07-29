@@ -654,7 +654,6 @@
     const attendSuffix = s.inBetaWeek ? " (0주차 체험)" : "";
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%${attendSuffix}`;
-    const weekEl = document.getElementById("week-bar");
     paintWeekBar(s);
     maybeShowScoreNotice();
   }

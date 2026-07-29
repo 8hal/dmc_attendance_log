@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ff3214" />
-  <meta name="description" content="춘백 S3 출석 예외 요청 안내 — 부상·휴가·출장 시 나 탭에서 상신" />
-  <title>출석 예외 요청 안내 — 춘백 S3</title>
+  <meta name="description" content="춘백 S3 출석 점수 안내 — 출석 1점, 예외 0.5점, 주 3점 목표" />
+  <title>출석 점수 안내 — 춘백 S3</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="stylesheet" href="css/tokens.css" />
@@ -89,33 +89,42 @@
     .section p:last-child { margin-bottom: 0; }
     .muted { color: var(--text-secondary); }
 
-    .steps { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
-    .step {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      background: var(--surface-muted);
-      border-radius: 12px;
-      padding: 12px 14px;
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
     }
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--brand-orange);
-      color: #fff;
-      font-size: 13px;
+    .score-table th,
+    .score-table td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border-default, #e8e4df);
+    }
+    .score-table th {
       font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      color: var(--text-secondary);
+      font-size: 12px;
     }
-    .step strong { font-weight: 800; }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-table td:last-child {
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
 
     .bullets { margin: 0; padding-left: 1.2em; }
     .bullets li { margin: 0 0 8px; }
     .bullets li:last-child { margin-bottom: 0; }
+
+    .example {
+      margin: 0;
+      padding: 12px 14px;
+      background: var(--surface-muted);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .example + .example { margin-top: 8px; }
 
     .btn {
       display: inline-flex;
@@ -135,9 +144,14 @@
       color: #fff;
       width: 100%;
     }
-    .cta {
-      margin: 20px 16px 0;
+    .btn-ghost {
+      background: transparent;
+      color: var(--brand-orange);
+      border: 1.5px solid var(--brand-orange);
+      width: 100%;
+      margin-top: 10px;
     }
+    .cta { margin: 20px 16px 0; }
     .foot {
       margin: 24px 16px 0;
       font-size: 12px;
@@ -150,8 +164,8 @@
   <div class="page">
     <header class="header">
       <p class="header-eyebrow">춘백 S3</p>
-      <h1>출석 예외<br />이렇게 요청해요</h1>
-      <p>부상·휴가·출장 등으로 훈련이 어려울 때,<br />단톡 대신 앱에서 기간을 올려 주세요.</p>
+      <h1>출석 점수<br />이렇게 계산해요</h1>
+      <p>주간 목표는 <strong>3점</strong>입니다.<br />홈의 「이번 주 출석」에서 확인할 수 있어요.</p>
     </header>
 
     <div class="kakao-banner" id="kakao-banner">
@@ -160,40 +174,48 @@
     </div>
 
     <section class="section">
-      <h2>요청 방법</h2>
-      <ol class="steps">
-        <li class="step">
-          <span class="step-num">1</span>
-          <div><strong>춘백 앱</strong>을 열고 아래 <strong>나</strong> 탭으로 이동합니다.</div>
-        </li>
-        <li class="step">
-          <span class="step-num">2</span>
-          <div><strong>출석 예외</strong>에서 <strong>예외 요청</strong>을 누릅니다.</div>
-        </li>
-        <li class="step">
-          <span class="step-num">3</span>
-          <div>사유와 기간을 적고 <strong>상신하기</strong>를 누릅니다.</div>
-        </li>
-        <li class="step">
-          <span class="step-num">4</span>
-          <div>운영진이 확인하면 <strong>승인됨</strong>으로 바뀝니다.</div>
-        </li>
-      </ol>
+      <h2>점수 기준</h2>
+      <table class="score-table">
+        <thead>
+          <tr><th>상태</th><th>점수</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>출석</td><td>1점</td></tr>
+          <tr><td>예외 (승인됨)</td><td>0.5점</td></tr>
+          <tr><td>미출석</td><td>0점</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:12px">주간 목표: <strong>3점 이상</strong></p>
+    </section>
+
+    <section class="section">
+      <h2>예시</h2>
+      <p class="example">출석 3회 = 3.0점 → 달성</p>
+      <p class="example">출석 2회 + 예외 2일 = 3.0점 → 달성</p>
+      <p class="example">출석 2회 + 예외 1일 = 2.5점 → 미달</p>
+    </section>
+
+    <section class="section">
+      <h2>홈에 보이는 안내</h2>
+      <ul class="bullets">
+        <li><strong>확정 점수</strong>는 오늘까지 지나온 날만 반영합니다.</li>
+        <li>아직 안 온 날의 예외는 점수에 바로 넣지 않고, 필요할 때 <strong>「예외 반영 시 달성 예정」</strong>으로 알려 드립니다.</li>
+        <li>점수가 부족하면 <strong>「출석 N회 더 필요」</strong>로 이번 주 계획을 잡을 수 있습니다.</li>
+      </ul>
     </section>
 
     <section class="section">
       <h2>알아두면 좋아요</h2>
       <ul class="bullets">
-        <li>최근 <strong>7일(오늘 포함)</strong>부터 앞으로, 한 번에 최대 <strong>14일</strong>까지 요청할 수 있습니다.</li>
-        <li>승인 대기 중에는 <strong>새 요청을 하나 더 올릴 수 없습니다.</strong> 잘못 올렸다면 운영진에게 반려를 요청해 주세요.</li>
-        <li>예외 기간 중 회복되면 <strong>나 → 조기 복귀</strong>로 오늘 이후 예외를 바로 해제할 수 있습니다.</li>
-        <li>승인된 날은 <strong>내 100일</strong>에 「예외」로 보입니다.</li>
-        <li>예외가 주간 점수에 어떻게 반영되는지는 <a href="/chunbaek/score-guide.html">출석 점수 안내</a>를 보세요.</li>
+        <li>예외는 사전 요청 후 운영 승인이 필요합니다.</li>
+        <li>예외 요청 방법은 <a href="/chunbaek/exception-guide.html">예외 요청 안내</a>를 참고하세요.</li>
+        <li>시즌 출석률(횟수)과 주간 출석 점수는 다른 지표입니다.</li>
       </ul>
     </section>
 
     <div class="cta">
-      <a class="btn btn-primary" href="/chunbaek/#/me">춘백 앱 열기</a>
+      <a class="btn btn-primary" href="/chunbaek/">춘백 홈으로</a>
+      <a class="btn btn-ghost" href="/chunbaek/exception-guide.html">예외 요청 안내</a>
     </div>
     <p class="foot">동마클 · 춘백 S3</p>
   </div>
