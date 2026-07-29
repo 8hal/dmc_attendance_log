@@ -230,7 +230,7 @@ const MOCK = {
     {
       week: 7,
       range: "4/7 ~ 4/13",
-      attendSummary: "출석 2회 · 예외 2회  3.0 / 3점",
+      attendSummary: "3.0 / 3점",
       dots: "●●○○○",
       slots: [
         {
@@ -321,7 +321,7 @@ const MOCK = {
     {
       week: 6,
       range: "3/31 ~ 4/6",
-      attendSummary: "출석 3회  3.0 / 3점",
+      attendSummary: "3.0 / 3점",
       dots: "●●●○○",
       slots: [],
       collapsed: true,

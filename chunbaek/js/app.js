@@ -129,14 +129,9 @@
 
   function formatWeekScoreLine(s) {
     const attend = s.weekAttendCount || 0;
-    const exc = s.weekExceptionCount || 0;
     const score = Number(s.weekScore != null ? s.weekScore : attend);
     const target = s.weekTarget || 3;
-    const scoreStr = score.toFixed(1);
-    if (exc > 0) {
-      return `출석 ${attend}회 · 예외 ${exc}회  ${scoreStr} / ${target}점`;
-    }
-    return `출석 ${attend}회  ${scoreStr} / ${target}점`;
+    return `${score.toFixed(1)} / ${target}점`;
   }
 
   function isWeekScoreMet(s) {
