@@ -454,6 +454,8 @@ async function handleAdminGrid(req, res, db) {
       nickname: p.data.nickname || "",
       profileComplete,
       weekAttendCount: weekStats.weekAttendCount,
+      weekExceptionCount: weekStats.weekExceptionCount,
+      weekScore: weekStats.weekScore,
       weekTarget: weekStats.weekTarget,
       weekTargetMet: weekStats.weekTargetMet,
       cells,
