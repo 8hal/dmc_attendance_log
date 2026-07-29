@@ -213,7 +213,10 @@ curl -s "$HOST/attendance-admin.js" > "$TMP_DIR/attendance-admin.js"
 assert_contains "attendance-admin.js: meeting-training save" "meeting-training" "$TMP_DIR/attendance-admin.js"
 
 curl -s "$HOST/index.html" > "$TMP_DIR/index.html"
-assert_contains "index.html: my.html 링크" "my.html" "$TMP_DIR/index.html"
+assert_contains "index.html: v2 리다이렉트" "attendance-v2.html" "$TMP_DIR/index.html"
+assert_contains "index.html: location.replace" "location.replace" "$TMP_DIR/index.html"
+curl -s "$HOST/index-legacy.html" > "$TMP_DIR/index-legacy.html"
+assert_contains "index-legacy.html: my.html 링크" "my.html" "$TMP_DIR/index-legacy.html"
 
 curl -s "$HOST/attendance-v2.html" > "$TMP_DIR/attendance-v2.html"
 curl -s "$HOST/attendance-v2.js" > "$TMP_DIR/attendance-v2.js"
