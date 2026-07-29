@@ -316,14 +316,15 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
-    if (slot.date > today) continue;
+    // 목표(cap)는 주 전체 훈련일 기준 — 주말 예외를 미리 반영해도 목표가 줄어들지 않게
     trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
     if (att?.exception) {
+      // 승인된 예외는 미래 날짜여도 이번 주 점수에 즉시 반영 (안심 UX)
       weekExceptionCount += 1;
       continue;
     }
-    if (att?.attended) weekAttendCount += 1;
+    if (slot.date <= today && att?.attended) weekAttendCount += 1;
   }
 
   const weekScore = weekAttendCount + weekExceptionCount * 0.5;
@@ -400,14 +401,14 @@ function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, to
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
-    if (today && slot.date > today) continue;
     trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
     if (att?.exception) {
       weekExceptionCount += 1;
       continue;
     }
-    if (att?.attended) weekAttendCount += 1;
+    const attendEligible = !today || slot.date <= today;
+    if (attendEligible && att?.attended) weekAttendCount += 1;
   }
 
   const weekScore = weekAttendCount + weekExceptionCount * 0.5;

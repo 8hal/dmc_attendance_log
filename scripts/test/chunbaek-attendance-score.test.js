@@ -85,15 +85,30 @@ describe("computeWeekStats — 출석 점수", () => {
     assert.equal(r.weekScore, 2.5);
   });
 
-  it("미래 예외는 weekScore에 미포함 (date > today)", () => {
+  it("승인된 미래 예외는 weekScore에 즉시 포함 (주말 예외 안심)", () => {
+    // 화요일(07-21) 기준: 월·화 출석 + 토·일 예외 승인 → 이미 3.0점 달성
     const map = attMap({
       1: { attended: true },
       2: { attended: true },
-      7: { exception: true }, // 2026-07-26, today=07-25면 미래
+      6: { exception: true },
+      7: { exception: true },
     });
-    const r = computeWeekStats(slots, map, 1, "2026-07-25", 3);
-    assert.equal(r.weekExceptionCount, 0);
-    assert.equal(r.weekScore, 2);
+    const r = computeWeekStats(slots, map, 1, "2026-07-21", 3);
+    assert.equal(r.weekAttendCount, 2);
+    assert.equal(r.weekExceptionCount, 2);
+    assert.equal(r.weekScore, 3);
+    assert.equal(r.weekTarget, 3);
+    assert.equal(r.weekTargetMet, true);
+  });
+
+  it("미래 미출석 예정일은 점수에 넣지 않음 (예외만 선반영)", () => {
+    const map = attMap({
+      1: { attended: true },
+      2: { attended: true },
+      7: { exception: true },
+    });
+    const r = computeWeekStats(slots, map, 1, "2026-07-21", 3);
+    assert.equal(r.weekScore, 2.5);
     assert.equal(r.weekTargetMet, false);
   });
 

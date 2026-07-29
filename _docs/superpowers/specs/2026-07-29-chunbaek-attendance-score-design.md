@@ -71,9 +71,10 @@ weekTarget   = min(weeklyTarget(=3.0), maxScore)                // 훈련일이 
 예외 슬롯을 1.0점 대상에 포함하면 이중 계산이 되므로, 반드시 분리 계산한다.
 
 **날짜 경계 처리:**
-- `weekScore` 집계 시 출석(`attended: true`)는 `slot.date <= today`인 슬롯만 카운팅 (기존 가드 유지).
-- 예외(`exception: true`)도 동일하게 `slot.date <= today`인 슬롯만 카운팅. 미래 예외 슬롯은 `weekScore`에 포함하지 않는다.
-- `maxScore`(cap 계산용) 역시 `slot.date <= today` 기준으로 계산한다.
+- 출석(`attended: true`): `slot.date <= today`인 슬롯만 카운팅 (미래 출석은 불가).
+- **예외(`exception: true`): 해당 주 안이면 미래 날짜여도 즉시 0.5점 반영.**  
+  → 주말에 예외가 잡혀 있어도, 주중에 이미 「이번 주 목표 달성」 여부를 확인할 수 있다.
+- `maxScore` / `weekTarget` cap: **주 전체** 훈련일 기준 (`date` 필터 없음). 예외를 미리 넣어도 목표가 줄어 조기 달성되는 구멍을 막는다.
 
 **`weekBar` 소수 처리:**
 - `weekBar` 함수에 `weekScore`(소수)를 전달할 때는 `Math.floor(weekScore)`로 변환해서 전달한다.
