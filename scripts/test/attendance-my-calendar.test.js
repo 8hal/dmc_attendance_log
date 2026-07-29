@@ -4,6 +4,7 @@ const path = require("path");
 
 const {
   buildMyAttendCalendarCells,
+  buildAttendCalendarHtml,
   attendedDateKeySet,
   isProfileCheckedInSession,
 } = require(path.join(__dirname, "../../assets/attendance-my-calendar.js"));
@@ -57,5 +58,33 @@ describe("attendance-my-calendar helpers", () => {
       false
     );
     assert.equal(isProfileCheckedInSession(items, "SAT", null), false);
+  });
+
+  it("buildAttendCalendarHtml uses shared cal-grid/cal-day classes", () => {
+    const html = buildAttendCalendarHtml({
+      monthKey: "2026-07",
+      attendedDateKeys: ["2026/07/07"],
+      todayKey: "2026/07/19",
+    });
+    assert.match(html, /class="cal-grid"/);
+    assert.match(html, /class="cal-dow"/);
+    assert.match(html, /class="cal-day attend"/);
+    assert.match(html, /class="cal-day today-ring"/);
+    assert.match(html, /class="cal-day muted"/);
+    assert.doesNotMatch(html, /mini-cal/);
+  });
+
+  it("buildAttendCalendarHtml marks just-checkin day with sublabel", () => {
+    const html = buildAttendCalendarHtml({
+      monthKey: "2026-07",
+      attendedDateKeys: ["2026/07/18"],
+      todayKey: "2026/07/18",
+      justCheckedInKey: "2026/07/18",
+      showTitle: true,
+    });
+    assert.match(html, /attend-cal-title/);
+    assert.match(html, /2026년 7월/);
+    assert.match(html, /cal-day attend today-ring just-checkin/);
+    assert.match(html, /cal-day-sub">방금</);
   });
 });

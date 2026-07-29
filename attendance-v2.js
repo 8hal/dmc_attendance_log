@@ -245,31 +245,26 @@
         '<p class="success-stats-line" style="margin:0;">모임 날짜를 알 수 없어 달력을 표시하지 못했습니다.</p>';
       return;
     }
-    const year = p.y;
-    const month = p.mo;
-    const pad = firstOfMonthSundayPadKst(year, month);
-    const dim = daysInMonthCivil(year, month);
-    const dows = ["일", "월", "화", "수", "목", "금", "토"];
-    function keyForDay(dd) {
-      return year + "/" + String(month).padStart(2, "0") + "/" + String(dd).padStart(2, "0");
+    const helper =
+      typeof globalThis !== "undefined" && globalThis.DmcAttendanceMyCalendar
+        ? globalThis.DmcAttendanceMyCalendar
+        : null;
+    if (!helper || typeof helper.buildAttendCalendarHtml !== "function") {
+      elSuccessPanelCal.innerHTML =
+        '<p class="success-stats-line" style="margin:0;">달력 헬퍼 로드 실패</p>';
+      return;
     }
-    let html = '<div class="mini-cal"><p class="mini-cal-title">' + year + "년 " + month + "월</p>";
-    html += '<div class="mini-cal-dows">';
-    for (let i = 0; i < 7; i++) html += "<span>" + dows[i] + "</span>";
-    html += '</div><div class="mini-cal-grid">';
-    for (let u = 0; u < pad; u++) html += '<div class="mini-cal-cell mini-cal-pad"></div>';
-    for (let d = 1; d <= dim; d++) {
-      const dk = keyForDay(d);
-      const isJust = dk === lastSuccessMeetingDateKey;
-      const inMonth = lastSuccessCalendarAttendedKeys.has(dk);
-      let cls = "mini-cal-cell";
-      if (isJust) cls += " mini-cal-checkin mini-cal-checkin-animate";
-      else if (inMonth) cls += " mini-cal-month-hit";
-      html += "<div class=\"" + cls + "\">" + d + (isJust ? '<span class="mini-cal-sub">방금</span>' : "") + "</div>";
-    }
-    html += "</div>";
-    html += '</div>';
-    elSuccessPanelCal.innerHTML = html;
+    const monthKey = p.y + "-" + String(p.mo).padStart(2, "0");
+    const gridHtml = helper.buildAttendCalendarHtml({
+      monthKey: monthKey,
+      attendedDateKeys: Array.from(lastSuccessCalendarAttendedKeys || []),
+      todayKey: kstTodayDateKeySlash(),
+      justCheckedInKey: lastSuccessMeetingDateKey,
+      showTitle: true,
+      ariaLabel: "이번 달 출석 달력",
+    });
+    elSuccessPanelCal.innerHTML =
+      '<div class="attend-log-card my-attend-cal-card success-cal-card">' + gridHtml + "</div>";
   }
 
   function paintSuccessViews() {
@@ -588,38 +583,18 @@
       typeof globalThis !== "undefined" && globalThis.DmcAttendanceMyCalendar
         ? globalThis.DmcAttendanceMyCalendar
         : null;
-    if (!helper) {
+    if (!helper || typeof helper.buildAttendCalendarHtml !== "function") {
       calGrid.innerHTML =
         '<div class="cal-dow" style="grid-column:1/-1;padding:16px">달력 헬퍼 로드 실패</div>';
       return;
     }
     const attended = helper.attendedDateKeySet(memberItems || []);
-    const cells = helper.buildMyAttendCalendarCells({
+    calGrid.innerHTML = helper.buildAttendCalendarHtml({
       monthKey: myAttendMonthKey || currentMonthKeyKst(),
       attendedDateKeys: Array.from(attended),
       todayKey: kstTodayDateKeySlash(),
+      cellsOnly: true,
     });
-    const dows = ["일", "월", "화", "수", "목", "금", "토"];
-    let html = dows.map((d) => '<div class="cal-dow">' + d + "</div>").join("");
-    cells.forEach((c) => {
-      if (c.kind === "pad") {
-        html += '<div class="cal-day muted" aria-hidden="true"></div>';
-        return;
-      }
-      let cls = "cal-day";
-      if (c.attend) cls += " attend";
-      if (c.today) cls += " today-ring";
-      const title = c.attend ? "출석" : c.today ? "오늘" : "";
-      html +=
-        '<div class="' +
-        cls +
-        '"' +
-        (title ? ' title="' + title + '"' : "") +
-        ">" +
-        c.day +
-        "</div>";
-    });
-    calGrid.innerHTML = html;
   }
 
   function setCheckinButtonDone(done) {
@@ -725,22 +700,25 @@
   }
 
   function renderAttendDotsHtml(meetingDateKeys, attendedDateKeys) {
-    if (!teamMonthHelper || typeof teamMonthHelper.buildMeetingDots !== "function") {
+    if (!teamMonthHelper || typeof teamMonthHelper.buildMeetingDotItems !== "function") {
       return "";
     }
-    const dots = teamMonthHelper.buildMeetingDots({
+    const items = teamMonthHelper.buildMeetingDotItems({
       meetingDateKeys: meetingDateKeys,
       attendedDateKeys: attendedDateKeys,
       todayKey: kstTodayDateKeySlash(),
     });
     return (
-      '<span class="attend-dots" role="img" aria-label="정모 출석 도트">' +
-      dots
-        .map(function (d) {
-          const label = attendDotLabel(d.dateKey, d.state);
+      '<span class="attend-dots" role="img" aria-label="정모 출석 도트 (주 구분선 포함)">' +
+      items
+        .map(function (it) {
+          if (it.kind === "week-divider") {
+            return '<span class="attend-week-divider" aria-hidden="true"></span>';
+          }
+          const label = attendDotLabel(it.dateKey, it.state);
           return (
             '<span class="attend-dot" data-state="' +
-            escapeHtml(d.state) +
+            escapeHtml(it.state) +
             '" title="' +
             escapeHtml(label) +
             '" aria-label="' +
@@ -750,6 +728,29 @@
         })
         .join("") +
       "</span>"
+    );
+  }
+
+  function renderTeamMemberSheetCalendarHtml(meetingDateKeys, attendedDateKeys) {
+    const helper =
+      typeof globalThis !== "undefined" && globalThis.DmcAttendanceMyCalendar
+        ? globalThis.DmcAttendanceMyCalendar
+        : null;
+    if (!helper || typeof helper.buildAttendCalendarHtml !== "function") {
+      return '<p class="hint my-attend-hint">달력 헬퍼 로드 실패</p>';
+    }
+    const monthKey = teamAttendMonthKey || currentMonthKeyKst();
+    return (
+      '<div class="attend-log-card my-attend-cal-card team-member-sheet-cal">' +
+      helper.buildAttendCalendarHtml({
+        monthKey: monthKey,
+        attendedDateKeys: attendedDateKeys || [],
+        todayKey: kstTodayDateKeySlash(),
+        showTitle: true,
+        ariaLabel: "이번 달 출석 달력",
+      }) +
+      '<p class="hint my-attend-hint" style="margin:8px 16px 12px">초록 = 출석일 · 파란 링 = 오늘</p>' +
+      "</div>"
     );
   }
 
@@ -1024,17 +1025,7 @@
       pb.hidden = true;
       pb.innerHTML = "";
     }
-    body.innerHTML =
-      renderAttendDotsHtml(meetingDateKeys, dates) +
-      '<ul class="team-member-date-list">' +
-      (dates.length
-        ? dates
-            .map(function (dk) {
-              return "<li>" + escapeHtml(formatShortAttendDate(dk)) + "</li>";
-            })
-            .join("")
-        : '<li class="muted">이번 달 출석 없음</li>') +
-      "</ul>";
+    body.innerHTML = renderTeamMemberSheetCalendarHtml(meetingDateKeys, dates);
 
     sheet.classList.remove("hidden");
     loadTeamMemberSheetPb(nickname, memberId).catch(function () {});

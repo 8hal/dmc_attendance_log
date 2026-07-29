@@ -155,6 +155,63 @@
     });
   }
 
+  /** KST 달력 기준 해당 일의 주 시작(일요일) dateKey */
+  function sundayWeekKey(dateKey) {
+    const key = normalizeDateKey(dateKey);
+    const m = key && key.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+    if (!m) return "";
+    const noonKst = new Date(m[1] + "-" + m[2] + "-" + m[3] + "T12:00:00+09:00");
+    if (isNaN(noonKst.getTime())) return "";
+    const wEn = new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      timeZone: "Asia/Seoul",
+    }).format(noonKst);
+    const map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const dow = map[wEn];
+    if (dow === undefined) return "";
+    const sun = new Date(noonKst.getTime() - dow * 24 * 60 * 60 * 1000);
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(sun);
+    const y = parts.find(function (p) {
+      return p.type === "year";
+    });
+    const mo = parts.find(function (p) {
+      return p.type === "month";
+    });
+    const d = parts.find(function (p) {
+      return p.type === "day";
+    });
+    if (!y || !mo || !d) return "";
+    return y.value + "/" + mo.value + "/" + d.value;
+  }
+
+  /**
+   * 도트 + 주(일요일 주) 경계 구분선 토큰.
+   * @returns {Array<{kind:'dot', dateKey:string, state:string}|{kind:'week-divider'}>}
+   */
+  function buildMeetingDotItems(opts) {
+    const dots = buildMeetingDots(opts);
+    const items = [];
+    let prevWeek = "";
+    dots.forEach(function (dot, i) {
+      const wk = sundayWeekKey(dot.dateKey);
+      if (i > 0 && wk && prevWeek && wk !== prevWeek) {
+        items.push({ kind: "week-divider" });
+      }
+      items.push({
+        kind: "dot",
+        dateKey: dot.dateKey,
+        state: dot.state,
+      });
+      prevWeek = wk || prevWeek;
+    });
+    return items;
+  }
+
   function memberMonthAttendRate(count, meetingDateCount) {
     const c = Number(count) || 0;
     const d = Number(meetingDateCount) || 0;
@@ -169,6 +226,8 @@
     isRegularMeetingType: isRegularMeetingType,
     aggregateTeamMonth: aggregateTeamMonth,
     buildMeetingDots: buildMeetingDots,
+    buildMeetingDotItems: buildMeetingDotItems,
+    sundayWeekKey: sundayWeekKey,
     memberMonthAttendRate: memberMonthAttendRate,
   };
 });
