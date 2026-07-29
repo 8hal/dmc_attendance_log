@@ -39,6 +39,8 @@ const WEEKS = {
       m8: { 36: "attend", 37: "attend", 39: "miss", 40: "attend", 41: "attend", 42: "miss" },
     },
     weekCounts: { m1: 3, m2: 2, m3: 2, m4: 0, m5: 5, m6: 4, m7: 3, m8: 3 },
+    weekScores: { m1: 3, m2: 2, m3: 2.5, m4: 0, m5: 5, m6: 4, m7: 3, m8: 3 },
+    weekExceptionCounts: { m3: 1 },
   },
 };
 
@@ -161,7 +163,10 @@ function normalizeGridFromApi(data) {
       id: m.memberId,
       nickname: m.nickname,
       weekCount: m.weekAttendCount,
+      weekExceptionCount: m.weekExceptionCount || 0,
+      weekScore: m.weekScore != null ? m.weekScore : m.weekAttendCount,
       weekTarget: m.weekTarget,
+      weekTargetMet: m.weekTargetMet,
       profileComplete: m.profileComplete,
       cells,
       cellPhotos,
@@ -201,14 +206,30 @@ function viewGrid() {
     return {
       range: data.range,
       slots: data.slots,
-      members: MEMBERS.map((m) => ({
-        id: m.id,
-        nickname: m.nickname,
-        weekCount: data.weekCounts[m.id] || 0,
-        weekTarget: 3,
-        cells: data.cells[m.id] || {},
-      })),
-      underTargetCount: MEMBERS.filter((m) => (data.weekCounts[m.id] || 0) < 3).length,
+      members: MEMBERS.map((m) => {
+        const weekTarget = 3;
+        const weekCount = data.weekCounts[m.id] || 0;
+        const weekExceptionCount = (data.weekExceptionCounts && data.weekExceptionCounts[m.id]) || 0;
+        const weekScore = data.weekScores != null && data.weekScores[m.id] != null
+          ? data.weekScores[m.id]
+          : weekCount;
+        return {
+          id: m.id,
+          nickname: m.nickname,
+          weekCount,
+          weekExceptionCount,
+          weekScore,
+          weekTarget,
+          cells: data.cells[m.id] || {},
+        };
+      }),
+      underTargetCount: MEMBERS.filter((m) => {
+        const weekTarget = 3;
+        const weekScore = data.weekScores != null && data.weekScores[m.id] != null
+          ? data.weekScores[m.id]
+          : (data.weekCounts[m.id] || 0);
+        return weekTarget > 0 && weekScore < weekTarget;
+      }).length,
     };
   }
   if (!gridApiData) {
@@ -254,9 +275,10 @@ function renderGrid() {
   tbody.innerHTML = "";
 
   data.members.forEach((m) => {
-    const count = m.weekCount ?? 0;
+    const score = m.weekScore != null ? Number(m.weekScore) : Number(m.weekCount ?? 0);
     const target = m.weekTarget ?? 3;
-    const under = count < target;
+    const exceptionCount = m.weekExceptionCount || 0;
+    const under = target > 0 && score < target;
     if (filterUnderTarget && !under) return;
 
     const tr = document.createElement("tr");
@@ -271,7 +293,9 @@ function renderGrid() {
     });
     missCount += rowMiss;
 
-    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${count}/${target}</small></td>`;
+    const scoreLabel = `${score.toFixed(1)}/${target}`;
+    const exceptionLabel = exceptionCount > 0 ? `<br><small style="color:var(--text-muted);font-weight:500">예외 ${exceptionCount}</small>` : "";
+    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${scoreLabel}</small>${exceptionLabel}</td>`;
     allSlots.forEach((slot) => {
       const td = document.createElement("td");
       td.className = "cell";
@@ -299,7 +323,7 @@ function renderGrid() {
   document.getElementById("grid-week-title").textContent = weekOptionLabel(currentWeek);
   document.getElementById("grid-range").textContent = data.range;
   document.getElementById("grid-miss-chip").textContent = `미출석 셀 ${missCount}개`;
-  document.getElementById("grid-under-chip").textContent = `주 3회 미달 ${data.underTargetCount}명`;
+  document.getElementById("grid-under-chip").textContent = `주 3점 미달 ${data.underTargetCount}명`;
 
   const head = document.getElementById("grid-head-row");
   head.innerHTML = "<th>회원</th>";
