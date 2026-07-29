@@ -513,6 +513,17 @@ body.kiosk-mode .tab-bar {
   box-shadow: var(--dmc-shadow-1, 0 1px 2px rgba(15, 23, 42, 0.08));
 }
 
+/* 내 출석 · 출석 완료 화면 공유 달력 (SSOT) */
+.attend-cal-title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  padding: 12px 14px 0;
+  color: var(--dmc-color-text);
+  letter-spacing: 0;
+}
+
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -531,8 +542,10 @@ body.kiosk-mode .tab-bar {
 .cal-day {
   aspect-ratio: 1;
   border-radius: 10px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-size: 13px;
   font-weight: 600;
   color: var(--dmc-color-text-secondary);
@@ -550,12 +563,44 @@ body.kiosk-mode .tab-bar {
   color: var(--dmc-blue-11, #1d4ed8);
 }
 
+.cal-day.attend.today-ring {
+  color: var(--dmc-green-11, #166534);
+}
+
 .cal-day.muted {
   opacity: 0.35;
 }
 
+.cal-day-sub {
+  font-size: 8px;
+  font-weight: 700;
+  opacity: 0.9;
+  margin-top: 1px;
+  line-height: 1;
+}
+
+@keyframes attend-cal-pop {
+  0% { transform: scale(0.9); }
+  55% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.cal-day.just-checkin {
+  animation: attend-cal-pop 0.48s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-day.just-checkin {
+    animation: none;
+  }
+}
+
 .my-attend-cal-card {
   margin-bottom: 8px;
+}
+
+.success-cal-card {
+  margin-top: 14px;
 }
 
 .primary.dash-checkin.dash-checkin-done,

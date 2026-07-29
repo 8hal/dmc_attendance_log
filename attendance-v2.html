@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/dmc_logo.png" />
   <link rel="manifest" href="manifest.attendance-kiosk.webmanifest" />
   <link rel="stylesheet" href="assets/design-tokens.css?v=20260717-shell" />
-  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260722b" />
+  <link rel="stylesheet" href="assets/attendance-shell.css?v=20260729a" />
   <style>
     body {
       margin: 0;
@@ -389,17 +389,6 @@
       text-align: center;
       line-height: 1.4;
     }
-    @keyframes success-cal-pop {
-      0% { transform: scale(0.9); }
-      55% { transform: scale(1.08); }
-      100% { transform: scale(1); }
-    }
-    .mini-cal-checkin-animate {
-      animation: success-cal-pop 0.48s cubic-bezier(0.34, 1.45, 0.64, 1) both;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .mini-cal-checkin-animate { animation: none; }
-    }
     .success-streak-tag {
       display: inline-block;
       margin: 0 1px;
@@ -426,75 +415,6 @@
     .success-line {
       margin: 8px 0 0 0;
       font-size: 15px;
-    }
-    .mini-cal {
-      border: 1px solid var(--dmc-color-border);
-      border-radius: 12px;
-      padding: 12px 10px 10px;
-      background: linear-gradient(180deg, var(--dmc-surface-base) 0%, var(--dmc-color-bg) 100%);
-    }
-    .mini-cal-title {
-      text-align: center;
-      font-size: 15px;
-      font-weight: 800;
-      margin: 0 0 10px;
-      color: var(--dmc-color-text);
-      letter-spacing: 0;
-    }
-    .mini-cal-dows {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      margin-bottom: 6px;
-    }
-    .mini-cal-dows span {
-      text-align: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--dmc-color-text-muted);
-    }
-    .mini-cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-    }
-    .mini-cal-cell {
-      aspect-ratio: 1;
-      max-height: 42px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--dmc-color-text-secondary);
-    }
-    .mini-cal-cell.mini-cal-pad { visibility: hidden; }
-    .mini-cal-cell.mini-cal-checkin {
-      background: var(--dmc-button-fill-bg);
-      color: var(--dmc-button-fill-text);
-      font-weight: 800;
-      box-shadow: var(--dmc-shadow-accent);
-    }
-    .mini-cal-cell.mini-cal-month-hit {
-      background: var(--dmc-color-primary-soft);
-      color: var(--dmc-color-primary);
-      font-weight: 700;
-      border: 1px solid var(--dmc-color-primary-border-strong);
-    }
-    .mini-cal-sub {
-      font-size: 8px;
-      font-weight: 700;
-      opacity: 0.9;
-      margin-top: 1px;
-    }
-    .mini-cal-legend {
-      margin: 10px 0 0;
-      font-size: 11px;
-      color: var(--dmc-color-text-muted);
-      text-align: center;
-      line-height: 1.4;
     }
     .success-stats-line {
       margin: 14px 0 0;
@@ -1810,7 +1730,7 @@
   <script src="assets/attendance-team-month.js?v=20260719i"></script>
   <script src="assets/attendance-meeting-type.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719e"></script>
-  <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
-  <script src="attendance-v2.js?v=20260724a" defer></script>
+  <script src="assets/attendance-my-calendar.js?v=20260729a"></script>
+  <script src="attendance-v2.js?v=20260729b" defer></script>
 </body>
 </html>

@@ -74,6 +74,70 @@
     return set;
   }
 
+  /**
+   * 내 출석·출석 완료 화면이 공유하는 cal-grid 마크업.
+   * @param {{
+   *   monthKey: string,
+   *   attendedDateKeys?: string[],
+   *   todayKey?: string,
+   *   justCheckedInKey?: string,
+   *   showTitle?: boolean,
+   *   ariaLabel?: string,
+   *   cellsOnly?: boolean,
+   * }} opts
+   */
+  function buildAttendCalendarHtml(opts) {
+    const o = opts || {};
+    const cells = buildMyAttendCalendarCells(o);
+    const justKey = String(o.justCheckedInKey || "").trim();
+    const dows = ["일", "월", "화", "수", "목", "금", "토"];
+    let body = dows
+      .map(function (d) {
+        return '<div class="cal-dow">' + d + "</div>";
+      })
+      .join("");
+    cells.forEach(function (c) {
+      if (c.kind === "pad") {
+        body += '<div class="cal-day muted" aria-hidden="true"></div>';
+        return;
+      }
+      const isJust = justKey && c.dateKey === justKey;
+      let cls = "cal-day";
+      if (c.attend || isJust) cls += " attend";
+      if (c.today) cls += " today-ring";
+      if (isJust) cls += " just-checkin";
+      const title = isJust ? "방금 출석" : c.attend ? "출석" : c.today ? "오늘" : "";
+      const sub = isJust ? '<span class="cal-day-sub">방금</span>' : "";
+      body +=
+        '<div class="' +
+        cls +
+        '"' +
+        (title ? ' title="' + title + '"' : "") +
+        ">" +
+        c.day +
+        sub +
+        "</div>";
+    });
+    if (o.cellsOnly) return body;
+    let html = "";
+    if (o.showTitle) {
+      const m = String(o.monthKey || "").match(/^(\d{4})-(\d{2})$/);
+      if (m) {
+        html +=
+          '<p class="attend-cal-title">' +
+          Number(m[1]) +
+          "년 " +
+          Number(m[2]) +
+          "월</p>";
+      }
+    }
+    const aria = o.ariaLabel
+      ? ' aria-label="' + String(o.ariaLabel).replace(/"/g, "&quot;") + '"'
+      : "";
+    html += '<div class="cal-grid"' + aria + ">" + body + "</div>";
+    return html;
+  }
+
   function isProfileCheckedInSession(items, meetingType, profile) {
     if (!profile || typeof profile !== "object") return false;
     const mt = String(meetingType || "")
@@ -109,6 +173,7 @@
 
   return {
     buildMyAttendCalendarCells,
+    buildAttendCalendarHtml,
     attendedDateKeySet,
     isProfileCheckedInSession,
     daysInMonthCivil,
