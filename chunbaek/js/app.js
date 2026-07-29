@@ -140,6 +140,25 @@
     return target > 0 && score >= target;
   }
 
+  function paintWeekBar(s) {
+    const weekEl = document.getElementById("week-bar");
+    const countEl = document.getElementById("week-bar-count");
+    const hintEl = document.getElementById("week-bar-hint");
+    if (!weekEl || !countEl) return;
+    countEl.textContent = formatWeekScoreLine(s);
+    weekEl.classList.toggle("met", isWeekScoreMet(s));
+    const hint = (s && s.weekHint) ? String(s.weekHint) : "";
+    if (hintEl) {
+      if (hint) {
+        hintEl.textContent = ` ·  ${hint}`;
+        hintEl.hidden = false;
+      } else {
+        hintEl.textContent = "";
+        hintEl.hidden = true;
+      }
+    }
+  }
+
   const SCORE_NOTICE_KEY = "chunbaek_score_notice_v1";
 
   function dismissScoreNotice() {
@@ -636,8 +655,7 @@
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%${attendSuffix}`;
     const weekEl = document.getElementById("week-bar");
-    document.getElementById("week-bar-count").textContent = formatWeekScoreLine(s);
-    weekEl.classList.toggle("met", isWeekScoreMet(s));
+    paintWeekBar(s);
     maybeShowScoreNotice();
   }
 
@@ -1017,9 +1035,7 @@
     document.getElementById("today-day").textContent = "42일차 · 4월 11일 (토)";
     document.getElementById("today-training").textContent = "📋 동마클 토요일 훈련";
     updateSaturdayNotice(MOCK.todaySlot.date);
-    const weekEl = document.getElementById("week-bar");
-    document.getElementById("week-bar-count").textContent = formatWeekScoreLine(s);
-    weekEl.classList.toggle("met", isWeekScoreMet(s));
+    paintWeekBar(s);
   }
 
   async function onAttend() {
@@ -1038,11 +1054,7 @@
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
       const s = (state.profile && state.profile.stats) || {};
       showToast(`${dayNum}일차 출석 완료 · ${formatWeekScoreLine(s)}`);
-      const weekEl = document.getElementById("week-bar");
-      if (weekEl) {
-        document.getElementById("week-bar-count").textContent = formatWeekScoreLine(s);
-        weekEl.classList.toggle("met", isWeekScoreMet(s));
-      }
+      paintWeekBar(s);
       clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
       await loadToday();
     } catch (e) {

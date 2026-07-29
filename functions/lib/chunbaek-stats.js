@@ -308,17 +308,33 @@ function defaultWeekForAdmin(config, slots, today) {
   return findWeekForDate(slots, today, config);
 }
 
+function computeWeekScoreHint({ weekScore, weekTarget, weekTargetMet, futureExceptionCount }) {
+  if (weekTargetMet || !(weekTarget > 0)) return null;
+  const futureExc = Number(futureExceptionCount) || 0;
+  const projected = Number(weekScore) + futureExc * 0.5;
+  if (projected >= weekTarget && futureExc > 0) {
+    return "예외 반영 시 달성 예정";
+  }
+  const need = Math.ceil(weekTarget - projected - 1e-9);
+  if (need > 0) return `출석 ${need}회 더 필요`;
+  return null;
+}
+
 function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig) {
   let weekAttendCount = 0;
   let weekExceptionCount = 0;
+  let futureExceptionCount = 0;
   let trainingCount = 0;
 
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
-    if (slot.date > today) continue;
-    trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
+    if (slot.date > today) {
+      if (att?.exception) futureExceptionCount += 1;
+      continue;
+    }
+    trainingCount += 1;
     if (att?.exception) {
       weekExceptionCount += 1;
       continue;
@@ -330,12 +346,20 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
   const maxScore = trainingCount - weekExceptionCount * 0.5;
   const weekTarget = Math.min(weeklyTargetConfig, maxScore);
   const weekTargetMet = weekTarget > 0 && weekScore >= weekTarget;
-  return {
-    weekAttendCount,
-    weekExceptionCount,
+  const weekHint = computeWeekScoreHint({
     weekScore,
     weekTarget,
     weekTargetMet,
+    futureExceptionCount,
+  });
+  return {
+    weekAttendCount,
+    weekExceptionCount,
+    futureExceptionCount,
+    weekScore,
+    weekTarget,
+    weekTargetMet,
+    weekHint,
     countableSlotsInWeek: trainingCount - weekExceptionCount,
   };
 }
@@ -384,9 +408,11 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonAttendRate,
     weekAttendCount: weekStats.weekAttendCount,
     weekExceptionCount: weekStats.weekExceptionCount,
+    futureExceptionCount: weekStats.futureExceptionCount,
     weekScore: weekStats.weekScore,
     weekTarget: weekStats.weekTarget,
     weekTargetMet: weekStats.weekTargetMet,
+    weekHint: weekStats.weekHint,
     inBetaWeek,
     currentWeek,
   };
@@ -690,6 +716,7 @@ module.exports = {
   computeMemberStats,
   computeWeekStats,
   computeWeekStatsFull,
+  computeWeekScoreHint,
   formatWeekScoreSummary,
   buildTimelineWeeks,
   formatGoalTime,
