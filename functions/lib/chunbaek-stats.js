@@ -310,20 +310,34 @@ function defaultWeekForAdmin(config, slots, today) {
 
 function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig) {
   let weekAttendCount = 0;
-  let countableSlotsInWeek = 0;
+  let weekExceptionCount = 0;
+  let trainingCount = 0;
 
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
+    if (slot.date > today) continue;
+    trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
-    if (att?.exception) continue;
-    countableSlotsInWeek += 1;
-    if (slot.date <= today && att?.attended) weekAttendCount += 1;
+    if (att?.exception) {
+      weekExceptionCount += 1;
+      continue;
+    }
+    if (att?.attended) weekAttendCount += 1;
   }
 
-  const weekTarget = Math.min(weeklyTargetConfig, countableSlotsInWeek);
-  const weekTargetMet = weekTarget > 0 && weekAttendCount >= weekTarget;
-  return { weekAttendCount, weekTarget, weekTargetMet, countableSlotsInWeek };
+  const weekScore = weekAttendCount + weekExceptionCount * 0.5;
+  const maxScore = trainingCount - weekExceptionCount * 0.5;
+  const weekTarget = Math.min(weeklyTargetConfig, maxScore);
+  const weekTargetMet = weekTarget > 0 && weekScore >= weekTarget;
+  return {
+    weekAttendCount,
+    weekExceptionCount,
+    weekScore,
+    weekTarget,
+    weekTargetMet,
+    countableSlotsInWeek: trainingCount - weekExceptionCount,
+  };
 }
 
 function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
@@ -369,6 +383,8 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonAttendCount,
     seasonAttendRate,
     weekAttendCount: weekStats.weekAttendCount,
+    weekExceptionCount: weekStats.weekExceptionCount,
+    weekScore: weekStats.weekScore,
     weekTarget: weekStats.weekTarget,
     weekTargetMet: weekStats.weekTargetMet,
     inBetaWeek,
@@ -376,19 +392,44 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
   };
 }
 
-function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig) {
-  let attendCount = 0;
-  let countable = 0;
+function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, today) {
+  let weekAttendCount = 0;
+  let weekExceptionCount = 0;
+  let trainingCount = 0;
+
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
+    if (today && slot.date > today) continue;
+    trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
-    if (att?.exception) continue;
-    countable += 1;
-    if (att?.attended) attendCount += 1;
+    if (att?.exception) {
+      weekExceptionCount += 1;
+      continue;
+    }
+    if (att?.attended) weekAttendCount += 1;
   }
-  const target = Math.min(weeklyTargetConfig, countable);
-  return { attendCount, target };
+
+  const weekScore = weekAttendCount + weekExceptionCount * 0.5;
+  const maxScore = trainingCount - weekExceptionCount * 0.5;
+  const weekTarget = Math.min(weeklyTargetConfig, maxScore);
+  return {
+    attendCount: weekAttendCount,
+    exceptionCount: weekExceptionCount,
+    weekScore,
+    target: weekTarget,
+  };
+}
+
+function formatWeekScoreSummary({ attendCount, exceptionCount, weekScore, target }) {
+  const scoreStr = Number(weekScore).toFixed(1);
+  const targetStr = Number(target) === Math.floor(target)
+    ? String(Math.floor(target))
+    : Number(target).toFixed(1);
+  if (exceptionCount > 0) {
+    return `출석 ${attendCount}회 · 예외 ${exceptionCount}회  ${scoreStr} / ${targetStr}점`;
+  }
+  return `출석 ${attendCount}회  ${scoreStr} / ${targetStr}점`;
 }
 
 function formatIsoRange(startDate, endDate) {
@@ -448,17 +489,22 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
     .map(([week, weekSlots]) => {
       weekSlots.sort((a, b) => a.dayIndex - b.dayIndex);
       const dates = weekSlots.map((s) => s.date);
-      const { attendCount, target } = computeWeekStatsFull(
+      const { attendCount, exceptionCount, weekScore, target } = computeWeekStatsFull(
         slots,
         attendanceMap,
         week,
         weeklyTargetConfig,
+        today,
       );
       return {
         week,
         weekLabel: weekLabel(week),
         range: formatIsoRange(dates[0], dates[dates.length - 1]),
-        attendSummary: `${attendCount}/${target}회`,
+        attendSummary: formatWeekScoreSummary({ attendCount, exceptionCount, weekScore, target }),
+        attendCount,
+        exceptionCount,
+        weekScore,
+        target,
         dots: weekDots(slots, attendanceMap, week, today),
         collapsed: week < currentWeek,
         slots: weekSlots.map((slot) => {
@@ -508,9 +554,9 @@ function rateBar(rate) {
 }
 
 /** 팀 탭 이번 주 진행 — PRD §7.3 (최대 3칸, 출석 횟수 기준) */
-function weekBar(attendCount, target = 3) {
-  const slots = 3;
-  const filled = Math.min(slots, Math.max(0, attendCount));
+function weekBar(scoreOrCount, target = 3) {
+  const slots = Math.max(1, Math.ceil(Number(target) || 3));
+  const filled = Math.min(slots, Math.max(0, Math.floor(Number(scoreOrCount) || 0)));
   return `${"█".repeat(filled)}${"░".repeat(slots - filled)}`;
 }
 
@@ -646,6 +692,8 @@ module.exports = {
   findTodaySlot,
   computeMemberStats,
   computeWeekStats,
+  computeWeekStatsFull,
+  formatWeekScoreSummary,
   buildTimelineWeeks,
   formatGoalTime,
   rateBar,
