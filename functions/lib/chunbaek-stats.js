@@ -421,15 +421,12 @@ function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, to
   };
 }
 
-function formatWeekScoreSummary({ attendCount, exceptionCount, weekScore, target }) {
+function formatWeekScoreSummary({ weekScore, target }) {
   const scoreStr = Number(weekScore).toFixed(1);
   const targetStr = Number(target) === Math.floor(target)
     ? String(Math.floor(target))
     : Number(target).toFixed(1);
-  if (exceptionCount > 0) {
-    return `출석 ${attendCount}회 · 예외 ${exceptionCount}회  ${scoreStr} / ${targetStr}점`;
-  }
-  return `출석 ${attendCount}회  ${scoreStr} / ${targetStr}점`;
+  return `${scoreStr} / ${targetStr}점`;
 }
 
 function formatIsoRange(startDate, endDate) {

@@ -112,7 +112,7 @@ describe("computeWeekStats — 출석 점수", () => {
 });
 
 describe("computeWeekStatsFull + formatWeekScoreSummary", () => {
-  it("attendSummary에 예외 포함", () => {
+  it("attendSummary는 점수만 표시", () => {
     const slots = week7Slots();
     const map = attMap({
       1: { attended: true },
@@ -124,8 +124,7 @@ describe("computeWeekStatsFull + formatWeekScoreSummary", () => {
     assert.equal(r.weekScore, 3);
     assert.equal(r.exceptionCount, 2);
     assert.equal(r.attendCount, 2);
-    assert.match(formatWeekScoreSummary(r), /출석 2회 · 예외 2회/);
-    assert.match(formatWeekScoreSummary(r), /3\.0/);
+    assert.equal(formatWeekScoreSummary(r), "3.0 / 3점");
   });
 });
 

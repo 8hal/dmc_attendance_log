@@ -277,7 +277,6 @@ function renderGrid() {
   data.members.forEach((m) => {
     const score = m.weekScore != null ? Number(m.weekScore) : Number(m.weekCount ?? 0);
     const target = m.weekTarget ?? 3;
-    const exceptionCount = m.weekExceptionCount || 0;
     const under = target > 0 && score < target;
     if (filterUnderTarget && !under) return;
 
@@ -293,9 +292,8 @@ function renderGrid() {
     });
     missCount += rowMiss;
 
-    const scoreLabel = `${score.toFixed(1)}/${target}`;
-    const exceptionLabel = exceptionCount > 0 ? `<br><small style="color:var(--text-muted);font-weight:500">예외 ${exceptionCount}</small>` : "";
-    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${scoreLabel}</small>${exceptionLabel}</td>`;
+    const scoreLabel = `${score.toFixed(1)}/${target}점`;
+    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${scoreLabel}</small></td>`;
     allSlots.forEach((slot) => {
       const td = document.createElement("td");
       td.className = "cell";
