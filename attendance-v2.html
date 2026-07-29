@@ -1506,13 +1506,13 @@
           </div>
           <div class="summary-stats" id="myAttendStats" aria-live="polite">불러오는 중…</div>
           <div class="view-toggle" role="tablist" aria-label="보기 방식">
-            <button type="button" class="view-toggle-btn active" id="myViewList" data-mode="list" role="tab" aria-selected="true">목록</button>
-            <button type="button" class="view-toggle-btn" id="myViewCal" data-mode="cal" role="tab" aria-selected="false">달력</button>
+            <button type="button" class="view-toggle-btn" id="myViewList" data-mode="list" role="tab" aria-selected="false">목록</button>
+            <button type="button" class="view-toggle-btn active" id="myViewCal" data-mode="cal" role="tab" aria-selected="true">달력</button>
           </div>
-          <div class="attend-log-card" id="myAttendListPanel">
+          <div class="attend-log-card" id="myAttendListPanel" hidden>
             <ul class="attend-log" id="myAttendList" aria-label="이번 달 출석 목록"></ul>
           </div>
-          <div class="attend-log-card my-attend-cal-card" id="myAttendCalPanel" hidden>
+          <div class="attend-log-card my-attend-cal-card" id="myAttendCalPanel">
             <div class="cal-grid" id="myAttendCalGrid" aria-label="이번 달 출석 달력"></div>
             <p class="hint my-attend-hint" style="margin:8px 16px 12px">초록 = 출석일 · 파란 링 = 오늘</p>
           </div>
@@ -1811,6 +1811,6 @@
   <script src="assets/attendance-meeting-type.js?v=20260719"></script>
   <script src="assets/attendance-today-roster.js?v=20260719e"></script>
   <script src="assets/attendance-my-calendar.js?v=20260719g"></script>
-  <script src="attendance-v2.js?v=20260724a" defer></script>
+  <script src="attendance-v2.js?v=20260729a" defer></script>
 </body>
 </html>

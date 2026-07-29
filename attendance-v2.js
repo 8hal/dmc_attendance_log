@@ -13,7 +13,7 @@
   const LS_PROFILE = "dmc_attendance_v2_profile";
   const CHECKIN_BTN_LABEL = "출석 체크";
   const CHECKIN_DONE_LABEL = "출석 완료";
-  let myAttendViewMode = "list";
+  let myAttendViewMode = "cal";
   let checkinAlreadyDone = false;
   const SUCCESS_CHEERS_MEMBER = [
     "정모 출석이 기록에 반영되었어요.",
