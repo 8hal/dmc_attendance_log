@@ -700,22 +700,25 @@
   }
 
   function renderAttendDotsHtml(meetingDateKeys, attendedDateKeys) {
-    if (!teamMonthHelper || typeof teamMonthHelper.buildMeetingDots !== "function") {
+    if (!teamMonthHelper || typeof teamMonthHelper.buildMeetingDotItems !== "function") {
       return "";
     }
-    const dots = teamMonthHelper.buildMeetingDots({
+    const items = teamMonthHelper.buildMeetingDotItems({
       meetingDateKeys: meetingDateKeys,
       attendedDateKeys: attendedDateKeys,
       todayKey: kstTodayDateKeySlash(),
     });
     return (
-      '<span class="attend-dots" role="img" aria-label="정모 출석 도트">' +
-      dots
-        .map(function (d) {
-          const label = attendDotLabel(d.dateKey, d.state);
+      '<span class="attend-dots" role="img" aria-label="정모 출석 도트 (주 구분선 포함)">' +
+      items
+        .map(function (it) {
+          if (it.kind === "week-divider") {
+            return '<span class="attend-week-divider" aria-hidden="true"></span>';
+          }
+          const label = attendDotLabel(it.dateKey, it.state);
           return (
             '<span class="attend-dot" data-state="' +
-            escapeHtml(d.state) +
+            escapeHtml(it.state) +
             '" title="' +
             escapeHtml(label) +
             '" aria-label="' +
@@ -725,6 +728,29 @@
         })
         .join("") +
       "</span>"
+    );
+  }
+
+  function renderTeamMemberSheetCalendarHtml(meetingDateKeys, attendedDateKeys) {
+    const helper =
+      typeof globalThis !== "undefined" && globalThis.DmcAttendanceMyCalendar
+        ? globalThis.DmcAttendanceMyCalendar
+        : null;
+    if (!helper || typeof helper.buildAttendCalendarHtml !== "function") {
+      return '<p class="hint my-attend-hint">달력 헬퍼 로드 실패</p>';
+    }
+    const monthKey = teamAttendMonthKey || currentMonthKeyKst();
+    return (
+      '<div class="attend-log-card my-attend-cal-card team-member-sheet-cal">' +
+      helper.buildAttendCalendarHtml({
+        monthKey: monthKey,
+        attendedDateKeys: attendedDateKeys || [],
+        todayKey: kstTodayDateKeySlash(),
+        showTitle: true,
+        ariaLabel: "이번 달 출석 달력",
+      }) +
+      '<p class="hint my-attend-hint" style="margin:8px 16px 12px">초록 = 출석일 · 파란 링 = 오늘</p>' +
+      "</div>"
     );
   }
 
@@ -999,17 +1025,7 @@
       pb.hidden = true;
       pb.innerHTML = "";
     }
-    body.innerHTML =
-      renderAttendDotsHtml(meetingDateKeys, dates) +
-      '<ul class="team-member-date-list">' +
-      (dates.length
-        ? dates
-            .map(function (dk) {
-              return "<li>" + escapeHtml(formatShortAttendDate(dk)) + "</li>";
-            })
-            .join("")
-        : '<li class="muted">이번 달 출석 없음</li>') +
-      "</ul>";
+    body.innerHTML = renderTeamMemberSheetCalendarHtml(meetingDateKeys, dates);
 
     sheet.classList.remove("hidden");
     loadTeamMemberSheetPb(nickname, memberId).catch(function () {});

@@ -668,6 +668,7 @@ button.primary.dash-checkin-done {
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 6px;
+  align-items: center;
 }
 
 .attend-dot {
@@ -676,6 +677,16 @@ button.primary.dash-checkin-done {
   border-radius: 999px;
   flex-shrink: 0;
   box-sizing: border-box;
+}
+
+.attend-week-divider {
+  width: 1px;
+  height: 12px;
+  margin: 0 3px;
+  flex-shrink: 0;
+  background: var(--dmc-color-border, #cbd5e1);
+  border-radius: 1px;
+  align-self: center;
 }
 
 .attend-dot[data-state="attended"] {
@@ -692,6 +703,18 @@ button.primary.dash-checkin-done {
   background: var(--dmc-slate-4, #e2e8f0);
   border: 1px solid transparent;
   opacity: 0.55;
+}
+
+.team-member-sheet-cal {
+  margin-top: 4px;
+}
+
+.team-member-sheet-stats {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dmc-color-text-secondary);
+  text-align: center;
 }
 
 .member-row[role="button"] {

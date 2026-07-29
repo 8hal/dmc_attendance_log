@@ -7,6 +7,8 @@ const {
   isRegularMeetingType,
   aggregateTeamMonth,
   buildMeetingDots,
+  buildMeetingDotItems,
+  sundayWeekKey,
   memberMonthAttendRate,
 } = require(path.join(__dirname, "../../assets/attendance-team-month.js"));
 
@@ -93,6 +95,43 @@ describe("buildMeetingDots", () => {
       todayKey: "2026/07/20",
     });
     assert.equal(dots[0].state, "attended");
+  });
+});
+
+describe("sundayWeekKey + buildMeetingDotItems", () => {
+  it("sundayWeekKey returns Sunday of that week (KST)", () => {
+    // 2026/07/02 Thu → week starts Sun 2026/06/28
+    assert.equal(sundayWeekKey("2026/07/02"), "2026/06/28");
+    assert.equal(sundayWeekKey("2026/07/04"), "2026/06/28");
+    // 2026/07/07 Tue → week starts Sun 2026/07/05
+    assert.equal(sundayWeekKey("2026/07/07"), "2026/07/05");
+  });
+
+  it("inserts week-divider between Sunday-week groups", () => {
+    const items = buildMeetingDotItems({
+      meetingDateKeys: [
+        "2026/07/02", // Thu
+        "2026/07/04", // Sat — same week
+        "2026/07/07", // Tue — next week
+        "2026/07/09",
+        "2026/07/11",
+      ],
+      attendedDateKeys: ["2026/07/02", "2026/07/07"],
+      todayKey: "2026/07/20",
+    });
+    const kinds = items.map((it) => it.kind);
+    assert.deepEqual(kinds, [
+      "dot",
+      "dot",
+      "week-divider",
+      "dot",
+      "dot",
+      "dot",
+    ]);
+    assert.equal(items[0].dateKey, "2026/07/02");
+    assert.equal(items[0].state, "attended");
+    assert.equal(items[2].kind, "week-divider");
+    assert.equal(items[3].dateKey, "2026/07/07");
   });
 });
 
