@@ -95,10 +95,11 @@ function week7Slots() {
 }
 
 function attMap(entries) {
-  // entries: { [dayIndex]: { attended?, exception? } }
-  const map = new Map();
+  // getAttendance는 Map이 아니라 plain object bracket lookup 사용
+  // (attendanceMap[key] || attendanceMap[slot.id])
+  const map = {};
   for (const [k, v] of Object.entries(entries)) {
-    map.set(String(k), v);
+    map[String(k)] = v;
   }
   return map;
 }
@@ -332,7 +333,21 @@ return {
 };
 ```
 
-- [ ] **Step 5: `module.exports`에 `formatWeekScoreSummary` 추가**
+- [ ] **Step 5: `module.exports`에 `formatWeekScoreSummary` **및** `computeWeekStatsFull` 추가**
+
+현재 `computeWeekStatsFull`은 내부 전용(export 없음). 테스트·재사용을 위해 둘 다 export:
+
+```js
+module.exports = {
+  ...
+  computeWeekStats,
+  computeWeekStatsFull,
+  formatWeekScoreSummary,
+  buildTimelineWeeks,
+  weekBar,
+  ...
+};
+```
 
 - [ ] **Step 6: 테스트 Green 확인**
 
@@ -469,15 +484,22 @@ weekEl.classList.toggle("met", isWeekScoreMet(s));
 <dt>이번 주</dt><dd>${formatWeekScoreLine(s)}</dd>
 ```
 
-- [ ] **Step 4: 팀 탭 라벨**
+- [ ] **Step 4: 팀 탭 라벨 (스펙 §9 미결 → 이번 플랜에서 확정)**
 
-- `이번 주 3회` → `이번 주 3점`
-- 멤버 행은 API `week`/`met`/`bar`를 그대로 사용 (서버에서 점수 기반으로 내려옴)
+- 요약 라벨: `이번 주 3회` → `이번 주 3점`
+- 멤버 행 레이아웃은 **변경하지 않음** — API `week` / `met` / `bar`를 그대로 사용 (서버가 점수 기반으로 내려줌). 별도 예외 분리 UI는 YAGNI.
 
-- [ ] **Step 5: 출석 토스트**
+- [ ] **Step 5: 출석 토스트 (`onAttend`)**
+
+`onAttend` 성공 후 `attendResult.stats`(또는 `state.profile.stats`)를 사용:
 
 ```js
+if (attendResult.stats && state.profile) {
+  state.profile.stats = attendResult.stats;
+}
+const s = (state.profile && state.profile.stats) || {};
 showToast(`${dayNum}일차 출석 완료 · ${formatWeekScoreLine(s)}`);
+// week-bar도 formatWeekScoreLine(s) / isWeekScoreMet(s)로 갱신
 ```
 
 - [ ] **Step 6: 홈 1회성 배너**
@@ -489,7 +511,7 @@ showToast(`${dayNum}일차 출석 완료 · ${formatWeekScoreLine(s)}`);
   <div class="score-notice-body">
     <strong>출석 점수 제도가 도입됐습니다</strong>
     <p>예외 처리된 날이 0.5점으로 주간 목표에 반영됩니다.</p>
-    <a href="/chunbaek/exception-guide.html">자세히 보기</a>
+    <a href="/chunbaek/exception-guide.html" id="score-notice-link">자세히 보기</a>
   </div>
   <button type="button" class="score-notice-close" id="score-notice-close" aria-label="닫기">✕</button>
 </div>
@@ -499,6 +521,11 @@ showToast(`${dayNum}일차 출석 완료 · ${formatWeekScoreLine(s)}`);
 
 ```js
 const SCORE_NOTICE_KEY = "chunbaek_score_notice_v1";
+function dismissScoreNotice() {
+  localStorage.setItem(SCORE_NOTICE_KEY, "1");
+  const el = document.getElementById("score-notice");
+  if (el) el.hidden = true;
+}
 function maybeShowScoreNotice() {
   const el = document.getElementById("score-notice");
   if (!el) return;
@@ -508,8 +535,10 @@ function maybeShowScoreNotice() {
   }
   el.hidden = false;
 }
-// close / 자세히 보기 클릭 시 localStorage.setItem(SCORE_NOTICE_KEY, "1"); el.hidden = true;
 ```
+
+**호출 위치 (필수):** 홈 페인트 경로 — `renderToday` / 프로필 로드 후 헤더 갱신하는 함수 끝에서 `maybeShowScoreNotice()` 호출.  
+`init`에서 `#score-notice-close`·`#score-notice-link`에 `dismissScoreNotice` 바인딩 (링크는 dismiss 후 네비게이션 허용).
 
 스타일은 기존 `saturday-notice` / 카드 톤을 재사용 (새 디자인 시스템 만들지 말 것).
 
@@ -647,7 +676,15 @@ node --test scripts/test/chunbaek-attendance-score.test.js \
 
 Expected: PASS
 
-- [ ] **Step 2: (가능하면) 에뮬 스모크**
+- [ ] **Step 2: stats 검증 스크립트 (있으면)**
+
+```bash
+node scripts/verify-chunbaek-stats.js
+```
+
+Expected: PASS (또는 스크립트가 `weekScore`를 아직 모르면 Task 2 이후 기대값만 맞춰 최소 수정)
+
+- [ ] **Step 3: (가능하면) 에뮬 스모크**
 
 Functions `node_modules`가 있으면:
 
@@ -660,7 +697,7 @@ Functions `node_modules`가 있으면:
 # 5) 홈 배너 1회 닫기 → 새로고침 후 미표시
 ```
 
-- [ ] **Step 3: 완료 전 자가 점검**
+- [ ] **Step 4: 완료 전 자가 점검**
 
 - [ ] 예외 2+출석 2 = 달성
 - [ ] 예외 1+출석 2 = 미달
@@ -669,7 +706,7 @@ Functions `node_modules`가 있으면:
 - [ ] 안내 페이지·홈 배너
 - [ ] `weekAttendCount` 하위 호환 유지
 
-- [ ] **Step 4: 최종 커밋 확인 + push**
+- [ ] **Step 5: 최종 커밋 확인 + push**
 
 ```bash
 git status
