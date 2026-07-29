@@ -243,7 +243,6 @@ body.kiosk-mode .tab-bar {
 }
 
 .more-item-sub {
-  padding-left: 28px;
   background: var(--dmc-surface-muted, var(--dmc-slate-2, #f8fafc));
 }
 
