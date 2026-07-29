@@ -85,16 +85,30 @@ describe("computeWeekStats — 출석 점수", () => {
     assert.equal(r.weekScore, 2.5);
   });
 
-  it("미래 예외는 weekScore에 미포함 (date > today)", () => {
+  it("미래 예외는 점수 미포함, 힌트는 달성 예정", () => {
     const map = attMap({
       1: { attended: true },
       2: { attended: true },
-      7: { exception: true }, // 2026-07-26, today=07-25면 미래
+      6: { exception: true },
+      7: { exception: true },
     });
-    const r = computeWeekStats(slots, map, 1, "2026-07-25", 3);
-    assert.equal(r.weekExceptionCount, 0);
+    // 화~금까지 경과(슬롯1~5) → target 3, score 2.0, 미래 예외 2 → 달성 예정
+    const r = computeWeekStats(slots, map, 1, "2026-07-24", 3);
     assert.equal(r.weekScore, 2);
+    assert.equal(r.futureExceptionCount, 2);
     assert.equal(r.weekTargetMet, false);
+    assert.equal(r.weekHint, "예외 반영 시 달성 예정");
+  });
+
+  it("미달이면 출석 N회 더 필요 힌트", () => {
+    const map = attMap({
+      1: { attended: true },
+      7: { exception: true },
+    });
+    const r = computeWeekStats(slots, map, 1, "2026-07-24", 3);
+    assert.equal(r.weekScore, 1);
+    assert.equal(r.futureExceptionCount, 1);
+    assert.equal(r.weekHint, "출석 2회 더 필요");
   });
 
   it("훈련일 적은 주 — maxScore cap (훈련 2일·예외 0 → target 2)", () => {

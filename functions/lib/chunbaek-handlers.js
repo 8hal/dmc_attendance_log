@@ -73,9 +73,11 @@ function emptyStats() {
     seasonDayIndex: 0,
     weekAttendCount: 0,
     weekExceptionCount: 0,
+    futureExceptionCount: 0,
     weekScore: 0,
     weekTarget: 3,
     weekTargetMet: false,
+    weekHint: null,
   };
 }
 

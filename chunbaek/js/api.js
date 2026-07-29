@@ -215,6 +215,9 @@ const MOCK = {
       weekExceptionCount: 2,
       weekScore: 3,
       weekTarget: 3,
+      weekTargetMet: true,
+      weekHint: null,
+      futureExceptionCount: 0,
     },
   },
   todaySlot: {
