@@ -537,7 +537,7 @@ function maybeShowScoreNotice() {
 }
 ```
 
-**호출 위치 (필수):** 홈 페인트 경로 — `renderToday` / 프로필 로드 후 헤더 갱신하는 함수 끝에서 `maybeShowScoreNotice()` 호출.  
+**호출 위치 (필수):** 홈 페인트 경로 — stats 헤더를 그리는 함수(현재 `paintStatsHeader` / 홈 week-bar 갱신 ~607 근처) **끝에서** `maybeShowScoreNotice()` 호출. `renderToday`만 적고 넘기지 말 것.  
 `init`에서 `#score-notice-close`·`#score-notice-link`에 `dismissScoreNotice` 바인딩 (링크는 dismiss 후 네비게이션 허용).
 
 스타일은 기존 `saturday-notice` / 카드 톤을 재사용 (새 디자인 시스템 만들지 말 것).
