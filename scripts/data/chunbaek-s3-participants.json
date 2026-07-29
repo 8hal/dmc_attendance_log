@@ -1,6 +1,6 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-21T01:13:24.601Z",
+  "preparedAt": "2026-07-29T00:18:09.231Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "3bpbfd2xvP2CvSQ1ZLpS",
@@ -37,6 +37,7 @@
     "GVN74bAlivec7ma070JJ",
     "p0ZBT4LqEYpFfnu9zhNo",
     "Ktzst6dm5nmtWkM4eTad",
+    "iND3IoohoJJu6yZnWCRr",
     "H6RdETtfMu6uUokvAKRk",
     "aWZdokx4j9voiB076Bdq",
     "1W9DlQzKvXr0jTrsMhdL",
@@ -217,6 +218,11 @@
       "memberId": "Ktzst6dm5nmtWkM4eTad",
       "nickname": "케이",
       "realName": "김은영"
+    },
+    {
+      "memberId": "iND3IoohoJJu6yZnWCRr",
+      "nickname": "하우스",
+      "realName": "강동원"
     },
     {
       "memberId": "H6RdETtfMu6uUokvAKRk",
