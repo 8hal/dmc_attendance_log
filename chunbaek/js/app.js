@@ -127,6 +127,42 @@
       .replace(/"/g, "&quot;");
   }
 
+  function formatWeekScoreLine(s) {
+    const attend = s.weekAttendCount || 0;
+    const exc = s.weekExceptionCount || 0;
+    const score = Number(s.weekScore != null ? s.weekScore : attend);
+    const target = s.weekTarget || 3;
+    const scoreStr = score.toFixed(1);
+    if (exc > 0) {
+      return `출석 ${attend}회 · 예외 ${exc}회  ${scoreStr} / ${target}점`;
+    }
+    return `출석 ${attend}회  ${scoreStr} / ${target}점`;
+  }
+
+  function isWeekScoreMet(s) {
+    const score = Number(s.weekScore != null ? s.weekScore : s.weekAttendCount || 0);
+    const target = Number(s.weekTarget || 3);
+    return target > 0 && score >= target;
+  }
+
+  const SCORE_NOTICE_KEY = "chunbaek_score_notice_v1";
+
+  function dismissScoreNotice() {
+    localStorage.setItem(SCORE_NOTICE_KEY, "1");
+    const el = document.getElementById("score-notice");
+    if (el) el.hidden = true;
+  }
+
+  function maybeShowScoreNotice() {
+    const el = document.getElementById("score-notice");
+    if (!el) return;
+    if (localStorage.getItem(SCORE_NOTICE_KEY)) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+  }
+
   function showToast(msg, isError) {
     const el = document.getElementById("toast");
     el.textContent = msg;
@@ -605,10 +641,9 @@
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%${attendSuffix}`;
     const weekEl = document.getElementById("week-bar");
-    const weekCount = s.weekAttendCount || 0;
-    const weekTarget = s.weekTarget || 3;
-    document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
-    weekEl.classList.toggle("met", weekTarget > 0 && weekCount >= weekTarget);
+    document.getElementById("week-bar-count").textContent = formatWeekScoreLine(s);
+    weekEl.classList.toggle("met", isWeekScoreMet(s));
+    maybeShowScoreNotice();
   }
 
   function setElementVisible(el, visible) {
@@ -988,8 +1023,8 @@
     document.getElementById("today-training").textContent = "📋 동마클 토요일 훈련";
     updateSaturdayNotice(MOCK.todaySlot.date);
     const weekEl = document.getElementById("week-bar");
-    document.getElementById("week-bar-count").textContent = `${s.weekAttendCount} / ${s.weekTarget}회`;
-    weekEl.classList.toggle("met", s.weekAttendCount >= s.weekTarget);
+    document.getElementById("week-bar-count").textContent = formatWeekScoreLine(s);
+    weekEl.classList.toggle("met", isWeekScoreMet(s));
   }
 
   async function onAttend() {
@@ -1006,7 +1041,13 @@
         state.profile.stats = attendResult.stats;
       }
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
-      showToast(`${dayNum}일차 출석 완료`);
+      const s = (state.profile && state.profile.stats) || {};
+      showToast(`${dayNum}일차 출석 완료 · ${formatWeekScoreLine(s)}`);
+      const weekEl = document.getElementById("week-bar");
+      if (weekEl) {
+        document.getElementById("week-bar-count").textContent = formatWeekScoreLine(s);
+        weekEl.classList.toggle("met", isWeekScoreMet(s));
+      }
       clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
       await loadToday();
     } catch (e) {
@@ -1729,7 +1770,7 @@
         <div class="team-summary-caption">팀 평균</div>
       </div>
       <div class="team-summary-stat">
-        <div class="team-summary-label">이번 주 3회</div>
+        <div class="team-summary-label">이번 주 3점</div>
         <div class="team-summary-value team-summary-value--attend">${weekMet}<span class="team-summary-value-unit">명</span></div>
         <div class="team-summary-caption">달성 · ${count}명 중</div>
         <div class="team-summary-bar" role="presentation" aria-hidden="true">
@@ -1958,7 +1999,7 @@
       <dt>목표 몸무게</dt><dd>${formatBodyWeightKg(p.goalBodyWeightKg)}${p.goalBodyWeightPrivate ? " (팀 비공개)" : ""}</dd>
       <dt>각오</dt><dd class="profile-intro">${p.resolutionText ? escapeHtml(p.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${s.seasonAttendCount || 0}회 (출석률 ${s.seasonAttendRate || 0}%)</dd>
-      <dt>이번 주</dt><dd>${s.weekAttendCount || 0}/${s.weekTarget || 3}회</dd>
+      <dt>이번 주</dt><dd>${formatWeekScoreLine(s)}</dd>
     `;
     void loadMeExceptionPanel();
   }
@@ -1999,6 +2040,16 @@
     syncGoalRaceNote();
     document.getElementById("btn-guide-done").addEventListener("click", () => showView("today"));
     document.getElementById("btn-attend").addEventListener("click", onAttend);
+    const scoreNoticeClose = document.getElementById("score-notice-close");
+    if (scoreNoticeClose) {
+      scoreNoticeClose.addEventListener("click", dismissScoreNotice);
+    }
+    const scoreNoticeLink = document.getElementById("score-notice-link");
+    if (scoreNoticeLink) {
+      scoreNoticeLink.addEventListener("click", () => {
+        dismissScoreNotice();
+      });
+    }
     document.getElementById("btn-switch-user").addEventListener("click", () => {
       setToken(null);
       state.profile = null;
