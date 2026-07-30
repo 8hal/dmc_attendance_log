@@ -700,6 +700,36 @@ async function handleAdminImportSlots(req, res, db) {
   });
 }
 
+async function handleAdminMemberDirectory(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  if (!adminGate(req, res)) return undefined;
+
+  const snap = await db.collection("members").get();
+  const members = [];
+  snap.forEach((doc) => {
+    const d = doc.data();
+    if (d.hidden) return;
+    const s3 = d.chunbaekS3 || {};
+    members.push({
+      memberId: doc.id,
+      nickname: d.nickname || "",
+      realName: d.realName || "",
+      participant: !!s3.participant,
+      profileComplete: !!s3.profileComplete,
+    });
+  });
+  members.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+
+  return res.json({
+    ok: true,
+    members,
+    participantCount: members.filter((m) => m.participant).length,
+    totalCount: members.length,
+  });
+}
+
 async function handleAdminSetParticipant(req, res, db) {
   if (!adminGate(req, res)) return;
   const body = req.body || {};
@@ -750,6 +780,7 @@ const ADMIN_ACTIONS = new Set([
   "admin-week-slots",
   "admin-save-week-slots",
   "admin-import-slots",
+  "admin-member-directory",
   "admin-set-participant",
 ]);
 
@@ -779,6 +810,10 @@ async function handleAdminRequest(req, res, db, action) {
     await handleAdminImportSlots(req, res, db);
     return true;
   }
+  if (action === "admin-member-directory") {
+    await handleAdminMemberDirectory(req, res, db);
+    return true;
+  }
   if (action === "admin-set-participant") {
     await handleAdminSetParticipant(req, res, db);
     return true;
@@ -795,5 +830,6 @@ module.exports = {
   handleAdminWeekSlots,
   handleAdminSaveWeekSlots,
   handleAdminImportSlots,
+  handleAdminMemberDirectory,
   handleAdminSetParticipant,
 };
