@@ -98,6 +98,15 @@ let modalContext = null;
 let isProcessing = false;
 let gridApiData = null;
 let trainingApiData = null;
+let rosterDirectoryData = null;
+
+const ROSTER_MOCK = [
+  { memberId: "m1", nickname: "김러너", realName: "김테스트", participant: true, profileComplete: true },
+  { memberId: "m2", nickname: "이페이스", realName: "이테스트", participant: true, profileComplete: false },
+  { memberId: "m5", nickname: "게살볶음밥", realName: "문광명", participant: true, profileComplete: true },
+  { memberId: "m9", nickname: "디모", realName: "김성한", participant: false, profileComplete: false },
+  { memberId: "m10", nickname: "하우스", realName: "강동원", participant: false, profileComplete: false },
+];
 
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -644,8 +653,138 @@ async function switchPanel(panel) {
     p.classList.toggle("active", p.id === `panel-${panel}`);
   });
   if (panel === "grid") await refreshGrid();
+  if (panel === "roster") await refreshRosterDirectory();
   if (panel === "training") await refreshTraining();
   if (panel === "exceptions") await refreshExceptionRequests();
+}
+
+function rosterMemberLabel(m) {
+  const nick = m.nickname || "?";
+  const real = m.realName || "";
+  return real ? `${nick} (${real})` : nick;
+}
+
+function matchesRosterQuery(m, q) {
+  if (!q) return true;
+  const hay = `${m.nickname || ""}${m.realName || ""}`.toLowerCase();
+  return hay.includes(q);
+}
+
+function renderRosterDirectory() {
+  const container = document.getElementById("roster-sections");
+  const summary = document.getElementById("roster-summary");
+  const members = rosterDirectoryData?.members || [];
+  const q = (document.getElementById("roster-search")?.value || "").trim().toLowerCase();
+
+  const participants = members.filter((m) => m.participant && matchesRosterQuery(m, q));
+  const available = members.filter((m) => !m.participant && matchesRosterQuery(m, q));
+  const participantCount = members.filter((m) => m.participant).length;
+
+  if (summary) {
+    summary.textContent = `참가 ${participantCount}명 · 정회원 ${members.length}명`;
+  }
+
+  if (!members.length) {
+    container.innerHTML = '<p class="roster-empty">명단을 불러오지 못했습니다</p>';
+    return;
+  }
+
+  if (!participants.length && !available.length) {
+    container.innerHTML = '<p class="roster-empty">검색 결과가 없습니다</p>';
+    return;
+  }
+
+  const rowHtml = (m, action) => {
+    const badge = m.participant
+      ? (m.profileComplete ? '<span class="roster-badge done">가입됨</span>' : '<span class="roster-badge pending">미가입</span>')
+      : "";
+    const btnClass = action === "add" ? "admin-btn-primary" : "admin-btn-secondary roster-btn-exclude";
+    const btnLabel = action === "add" ? "추가" : "제외";
+    return `
+      <li class="roster-row" data-member-id="${escapeAttr(m.memberId)}">
+        <div class="roster-row-main">
+          <span class="roster-row-name">${escapeHtml(m.nickname)}</span>
+          ${m.realName ? `<span class="roster-row-real">${escapeHtml(m.realName)}</span>` : ""}
+          ${badge}
+        </div>
+        <button type="button" class="admin-btn ${btnClass} roster-action-btn" data-action="${action}" data-member-id="${escapeAttr(m.memberId)}" data-label="${escapeAttr(rosterMemberLabel(m))}" ${isProcessing ? "disabled" : ""}>${btnLabel}</button>
+      </li>
+    `;
+  };
+
+  let html = "";
+  if (participants.length) {
+    html += `<div class="roster-section"><h3 class="roster-section-title">참가 중 <span>${participants.length}</span></h3><ul class="roster-list">${participants.map((m) => rowHtml(m, "remove")).join("")}</ul></div>`;
+  }
+  if (available.length) {
+    html += `<div class="roster-section"><h3 class="roster-section-title">추가 가능 <span>${available.length}</span></h3><ul class="roster-list">${available.map((m) => rowHtml(m, "add")).join("")}</ul></div>`;
+  }
+  container.innerHTML = html;
+
+  container.querySelectorAll(".roster-action-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const add = btn.dataset.action === "add";
+      setParticipant(btn.dataset.memberId, add, btn.dataset.label);
+    });
+  });
+}
+
+async function refreshRosterDirectory() {
+  const container = document.getElementById("roster-sections");
+  if (container) {
+    container.innerHTML = '<p class="roster-loading">명단을 불러오는 중…</p>';
+  }
+  try {
+    if (PREVIEW) {
+      rosterDirectoryData = { members: ROSTER_MOCK, participantCount: 3, totalCount: ROSTER_MOCK.length };
+    } else {
+      rosterDirectoryData = await adminGet("admin-member-directory");
+    }
+    renderRosterDirectory();
+  } catch (err) {
+    console.error(err);
+    if (container) {
+      container.innerHTML = `<p class="roster-empty">${escapeHtml(err.message || "불러오기 실패")}</p>`;
+    }
+    showToast(err.message || "명단 불러오기 실패", true);
+  }
+}
+
+async function setParticipant(memberId, participant, label) {
+  if (!memberId || isProcessing) return;
+
+  if (!participant) {
+    const ok = window.confirm(
+      `「${label}」님을 춘백 참가자에서 제외합니다.\n\n앱 명단과 출석 그리드에서 사라지며, 기존 출석 데이터는 유지됩니다.`
+    );
+    if (!ok) return;
+  }
+
+  if (PREVIEW) {
+    rosterDirectoryData.members = rosterDirectoryData.members.map((m) => (
+      m.memberId === memberId ? { ...m, participant, profileComplete: participant ? m.profileComplete : false } : m
+    ));
+    renderRosterDirectory();
+    showToast(participant ? `${label} 추가됨 (목업)` : `${label} 제외됨 (목업)`);
+    return;
+  }
+
+  isProcessing = true;
+  renderRosterDirectory();
+  try {
+    await adminPost("admin-set-participant", { memberId, participant });
+    showToast(participant ? `${label} 참가자로 추가됨` : `${label} 제외됨`);
+    await refreshRosterDirectory();
+    if (currentPanel === "grid" && gridApiData) {
+      await refreshGrid();
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "저장 실패", true);
+    await refreshRosterDirectory();
+  } finally {
+    isProcessing = false;
+  }
 }
 
 async function tryAuth() {
@@ -820,6 +959,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-save-training").addEventListener("click", saveTraining);
+  document.getElementById("btn-roster-refresh").addEventListener("click", refreshRosterDirectory);
+  document.getElementById("roster-search").addEventListener("input", renderRosterDirectory);
 
   document.querySelectorAll("[data-modal-action]").forEach((btn) => {
     btn.addEventListener("click", () => {

@@ -235,6 +235,31 @@ async function apiPost(action, body, token) {
   assert.ok(Array.isArray(grid.data.members));
   assert.ok(grid.data.members.length >= 2);
 
+  const directory = await apiGet("admin-member-directory", { adminPw: ADMIN_PW });
+  assert.equal(directory.status, 200);
+  assert.equal(directory.data.ok, true);
+  assert.ok(Array.isArray(directory.data.members));
+  assert.ok(directory.data.members.length >= 2);
+  assert.ok(typeof directory.data.participantCount === "number");
+
+  const setParticipant = await apiPost("admin-set-participant", {
+    adminPw: ADMIN_PW,
+    memberId: "chunbaek_seed_b",
+    participant: true,
+  });
+  assert.equal(setParticipant.status, 200);
+  assert.equal(setParticipant.data.ok, true);
+  assert.equal(setParticipant.data.participant, true);
+
+  const unsetParticipant = await apiPost("admin-set-participant", {
+    adminPw: ADMIN_PW,
+    memberId: "chunbaek_seed_b",
+    participant: false,
+  });
+  assert.equal(unsetParticipant.status, 200);
+  assert.equal(unsetParticipant.data.ok, true);
+  assert.equal(unsetParticipant.data.participant, false);
+
   const setAtt = await apiPost("admin-set-attendance", {
     adminPw: ADMIN_PW,
     memberId: "chunbaek_seed_a",
