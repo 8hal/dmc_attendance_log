@@ -9,13 +9,51 @@
     selectedNickname: "",
     isProcessing: false,
     profile: null,
+    profileDate: null,
     todaySlot: null,
     profileFormMode: "create",
     teamMembers: [],
+    timelineWeeks: [],
     timelineSlot: null,
     timelinePhotoRequired: false,
     timelinePhotos: [],
+    exceptionRequests: [],
+    hasFutureExceptions: false,
+    futureExceptionCount: null,
+    exceptionPanelLoadId: 0,
+    exceptionPreviewLoadId: 0,
   };
+
+  // ── 모달 스택 (안드로이드 뒤로 가기 지원) ──────────────────────────────────
+  // 팝업이 열릴 때 history.pushState로 히스토리 항목을 추가하고 스택에 closeFn 등록.
+  // popstate(뒤로 가기) 시 스택 최상단 closeFn 실행 → 팝업 닫힘.
+  // X 버튼 등 직접 닫기 시에는 _modalRemoveFromStack으로 스택·히스토리 양쪽 정리.
+  const _modalStack = [];
+  let _skipNextPopstate = false;
+
+  function _modalPush(closeFn) {
+    history.pushState({ modal: true }, "");
+    _modalStack.push(closeFn);
+  }
+
+  function _modalRemoveFromStack(closeFn) {
+    const idx = _modalStack.lastIndexOf(closeFn);
+    if (idx >= 0) {
+      _modalStack.splice(idx, 1);
+      _skipNextPopstate = true;
+      history.back();
+    }
+  }
+
+  window.addEventListener("popstate", () => {
+    if (_skipNextPopstate) {
+      _skipNextPopstate = false;
+      return;
+    }
+    if (_modalStack.length > 0) {
+      _modalStack.pop()();
+    }
+  });
 
   const VIEWS = {
     welcome: "view-welcome",
@@ -42,8 +80,8 @@
       const todayKst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
       // today 캐시는 날짜가 바뀌면 무효
       if (key === CACHE_KEYS.today && date !== todayKst) return null;
-      // profile 캐시는 1시간 TTL
-      if (key === CACHE_KEYS.profile && Date.now() - savedAt > 60 * 60 * 1000) return null;
+      // profile 캐시는 1시간 TTL + 날짜가 바뀌면 무효 (날짜 경계에서 이전 날 stats가 표시되는 문제 방지)
+      if (key === CACHE_KEYS.profile && (Date.now() - savedAt > 60 * 60 * 1000 || date !== todayKst)) return null;
       return data;
     } catch { return null; }
   }
@@ -57,6 +95,20 @@
 
   function clearTodayCache() {
     try { sessionStorage.removeItem(CACHE_KEYS.today); } catch {}
+  }
+
+  function resetSessionViewState() {
+    state.todaySlot = null;
+    state.teamMembers = [];
+    state.timelineWeeks = [];
+    state.timelineSlot = null;
+    state.timelinePhotoRequired = false;
+    state.timelinePhotos = [];
+    state.exceptionRequests = [];
+    state.hasFutureExceptions = false;
+    state.futureExceptionCount = null;
+    state.exceptionPanelLoadId += 1;
+    state.exceptionPreviewLoadId += 1;
   }
 
   function clearAllCache() {
@@ -73,6 +125,56 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function formatWeekScoreLine(s) {
+    const attend = s.weekAttendCount || 0;
+    const score = Number(s.weekScore != null ? s.weekScore : attend);
+    const target = s.weekTarget || 3;
+    return `${score.toFixed(1)} / ${target}점`;
+  }
+
+  function isWeekScoreMet(s) {
+    const score = Number(s.weekScore != null ? s.weekScore : s.weekAttendCount || 0);
+    const target = Number(s.weekTarget || 3);
+    return target > 0 && score >= target;
+  }
+
+  function paintWeekBar(s) {
+    const weekEl = document.getElementById("week-bar");
+    const countEl = document.getElementById("week-bar-count");
+    const hintEl = document.getElementById("week-bar-hint");
+    if (!weekEl || !countEl) return;
+    countEl.textContent = formatWeekScoreLine(s);
+    weekEl.classList.toggle("met", isWeekScoreMet(s));
+    const hint = (s && s.weekHint) ? String(s.weekHint) : "";
+    if (hintEl) {
+      if (hint) {
+        hintEl.textContent = ` ·  ${hint}`;
+        hintEl.hidden = false;
+      } else {
+        hintEl.textContent = "";
+        hintEl.hidden = true;
+      }
+    }
+  }
+
+  const SCORE_NOTICE_KEY = "chunbaek_score_notice_v1";
+
+  function dismissScoreNotice() {
+    localStorage.setItem(SCORE_NOTICE_KEY, "1");
+    const el = document.getElementById("score-notice");
+    if (el) el.hidden = true;
+  }
+
+  function maybeShowScoreNotice() {
+    const el = document.getElementById("score-notice");
+    if (!el) return;
+    if (localStorage.getItem(SCORE_NOTICE_KEY)) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
   }
 
   function showToast(msg, isError) {
@@ -126,6 +228,7 @@
       if (e.status === 401 || e.status === 403) {
         setToken(null);
         state.profile = null;
+        resetSessionViewState();
         clearAllCache();
       }
     }
@@ -459,6 +562,71 @@
     return `${m}/${d}(${dow})`;
   }
 
+  function formatShortDateTime(iso) {
+    if (!iso) return "";
+    const text = String(iso).slice(0, 16);
+    if (!text.includes("T")) return text;
+    const [date, time] = text.split("T");
+    const [, m, d] = date.split("-");
+    return `${Number(m)}/${Number(d)} ${time}`;
+  }
+
+  function formatExceptionDateRange(startDate, endDate) {
+    if (!startDate && !endDate) return "기간 미정";
+    if (!endDate || startDate === endDate) return formatIsoDateKo(startDate);
+    return `${formatIsoDateKo(startDate)} ~ ${formatIsoDateKo(endDate)}`;
+  }
+
+  function exceptionStatusLabel(status) {
+    if (status === "pending") return "승인 대기";
+    if (status === "approved") return "승인됨";
+    if (status === "rejected") return "반려";
+    return "상태 미상";
+  }
+
+  function exceptionPreviewSummary(preview) {
+    const applicable = Array.isArray(preview?.appliedSlotIds)
+      ? preview.appliedSlotIds.length
+      : Array.isArray(preview?.applicableSlotIds)
+        ? preview.applicableSlotIds.length
+        : Array.isArray(preview?.preview?.appliedSlotIds)
+          ? preview.preview.appliedSlotIds.length
+          : Array.isArray(preview?.preview?.applicableSlotIds)
+            ? preview.preview.applicableSlotIds.length
+            : 0;
+    return `예외 요청 일수 ${applicable}일`;
+  }
+
+  function normalizeExceptionError(error) {
+    const msg = error?.message || "오류가 발생했습니다";
+    if (msg === "pending request exists") return "이미 승인 대기 중인 예외 요청이 있습니다";
+    if (msg === "no future exceptions") return "해제할 미래 예외가 없습니다";
+    return msg;
+  }
+
+  function setExceptionPreviewText(message, isError = false) {
+    const previewEl = document.getElementById("exception-preview");
+    if (!previewEl) return;
+    previewEl.textContent = message || "";
+    previewEl.classList.toggle("hint-error", !!isError);
+  }
+
+  function readExceptionFormFromDom() {
+    return {
+      reason: (document.getElementById("exception-reason")?.value || "").trim(),
+      startDate: document.getElementById("exception-start")?.value || "",
+      endDate: document.getElementById("exception-end")?.value || "",
+    };
+  }
+
+  function validateExceptionForm(form) {
+    if (!form.reason) return "사유를 입력해 주세요";
+    if (!form.startDate) return "시작일을 선택해 주세요";
+    if (!form.endDate) return "종료일을 선택해 주세요";
+    if (form.endDate < form.startDate) return "종료일은 시작일 이후로 선택해 주세요";
+    return "";
+  }
+
   function daysUntilKst(isoDate) {
     if (!isoDate) return null;
     const today = new Date();
@@ -486,11 +654,8 @@
     const attendSuffix = s.inBetaWeek ? " (0주차 체험)" : "";
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%${attendSuffix}`;
-    const weekEl = document.getElementById("week-bar");
-    const weekCount = s.weekAttendCount || 0;
-    const weekTarget = s.weekTarget || 3;
-    document.getElementById("week-bar-count").textContent = `${weekCount} / ${weekTarget}회`;
-    weekEl.classList.toggle("met", weekTarget > 0 && weekCount >= weekTarget);
+    paintWeekBar(s);
+    maybeShowScoreNotice();
   }
 
   function setElementVisible(el, visible) {
@@ -598,6 +763,7 @@
   // loadToday()의 캐시 경로와 신선 경로 모두 이 함수를 공유한다.
   function renderTodayData(prof, slotRes) {
     state.profile = prof;
+    state.profileDate = kstTodayIso();
 
     if (slotRes.beforeSeason) {
       updateSaturdayNotice(null);
@@ -668,8 +834,9 @@
     }
 
     try {
-      // state.profile에 stats가 있을 때만 재사용 (link-device 직후 최소 프로필 제외)
-      const profilePromise = (state.profile && state.profile.stats)
+      // state.profile에 stats가 있고 오늘 날짜 기준으로 로드된 경우에만 재사용
+      // (link-device 직후 최소 프로필 제외, 날짜 경계 후 stale stats 방지)
+      const profilePromise = (state.profile && state.profile.stats && state.profileDate === kstTodayIso())
         ? Promise.resolve(state.profile)
         : apiGet("my-profile", {}, true);
       const [prof, slotRes] = await Promise.all([
@@ -687,6 +854,7 @@
       if (e.status === 401 || e.status === 403) {
         setToken(null);
         state.profile = null;
+        resetSessionViewState();
         clearAllCache();
         showView("welcome");
         return;
@@ -718,6 +886,71 @@
       if (sec != null) return new Date(sec * 1000).toISOString().slice(0, 10);
     }
     return "";
+  }
+
+  function updateExceptionEndDateConstraints() {
+    const startEl = document.getElementById("exception-start");
+    const endEl = document.getElementById("exception-end");
+    if (!startEl || !endEl) return;
+    const startDate = startEl.value || kstTodayIso();
+    endEl.min = startDate;
+    endEl.max = addDaysIso(startDate, 14);
+    if (!endEl.value || endEl.value < startDate) {
+      endEl.value = startDate;
+      return;
+    }
+    if (endEl.value > endEl.max) {
+      endEl.value = endEl.max;
+    }
+  }
+
+  function collectFutureExceptionSlotIds() {
+    const today = kstTodayIso();
+    const slotIds = new Set();
+    const todayDate = normalizeClientDate(state.todaySlot?.date);
+    if (state.todaySlot?.exception && todayDate && todayDate >= today) {
+      slotIds.add(Number(state.todaySlot.slotId ?? state.todaySlot.dayIndex));
+    }
+    for (const week of state.timelineWeeks || []) {
+      for (const slot of week.slots || []) {
+        const slotDate = normalizeClientDate(slot?.date);
+        if (!slot?.exception || !slotDate || slotDate < today) continue;
+        slotIds.add(Number(slot.slotId ?? slot.dayIndex));
+      }
+    }
+    return [...slotIds].filter(Number.isFinite);
+  }
+
+  function countApprovedFutureExceptionDays() {
+    const today = kstTodayIso();
+    return (state.exceptionRequests || []).reduce((count, request) => {
+      if (request.status !== "approved") return count;
+      if (!request.endDate || request.endDate < today) return count;
+      const applied = Array.isArray(request.appliedSlotIds) ? request.appliedSlotIds.length : 0;
+      return count + applied;
+    }, 0);
+  }
+
+  function resolveFutureExceptionCount() {
+    if (useMock()) {
+      if (Number.isFinite(MOCK.futureExceptionCount)) return MOCK.futureExceptionCount;
+      return MOCK.hasFutureExceptions ? 1 : 0;
+    }
+    const slotIds = collectFutureExceptionSlotIds();
+    if (slotIds.length) return slotIds.length;
+    if (Number.isFinite(state.futureExceptionCount) && state.futureExceptionCount > 0) {
+      return state.futureExceptionCount;
+    }
+    return countApprovedFutureExceptionDays();
+  }
+
+  function updateEarlyReturnButtonVisibility() {
+    const btn = document.getElementById("btn-early-return");
+    if (!btn) return;
+    const count = resolveFutureExceptionCount();
+    state.futureExceptionCount = count;
+    state.hasFutureExceptions = count > 0;
+    btn.hidden = !state.hasFutureExceptions;
   }
 
   function betaStartFromSlotRes(slotRes) {
@@ -801,9 +1034,7 @@
     document.getElementById("today-day").textContent = "42일차 · 4월 11일 (토)";
     document.getElementById("today-training").textContent = "📋 동마클 토요일 훈련";
     updateSaturdayNotice(MOCK.todaySlot.date);
-    const weekEl = document.getElementById("week-bar");
-    document.getElementById("week-bar-count").textContent = `${s.weekAttendCount} / ${s.weekTarget}회`;
-    weekEl.classList.toggle("met", s.weekAttendCount >= s.weekTarget);
+    paintWeekBar(s);
   }
 
   async function onAttend() {
@@ -812,12 +1043,17 @@
     const btn = document.getElementById("btn-attend");
     btn.disabled = true;
     try {
-      await apiPost("save-attendance", {
+      const attendResult = await apiPost("save-attendance", {
         slotId: state.todaySlot.dayIndex ?? state.todaySlot.slotId,
         attended: true,
       }, true);
+      if (attendResult.stats && state.profile) {
+        state.profile.stats = attendResult.stats;
+      }
       const dayNum = state.todaySlot.displayDayIndex ?? state.todaySlot.dayIndex;
-      showToast(`${dayNum}일차 출석 완료`);
+      const s = (state.profile && state.profile.stats) || {};
+      showToast(`${dayNum}일차 출석 완료 · ${formatWeekScoreLine(s)}`);
+      paintWeekBar(s);
       clearTodayCache(); // 출석 후 캐시 무효화 → 갱신된 상태를 강제 fetch
       await loadToday();
     } catch (e) {
@@ -1132,9 +1368,11 @@
     }
 
     document.getElementById("timeline-modal").hidden = false;
+    _modalPush(closeTrainingModal);
   }
 
   function closeTrainingModal() {
+    _modalRemoveFromStack(closeTrainingModal);
     clearTimelinePhotoPicker();
     state.timelineSlot = null;
     document.getElementById("timeline-modal").hidden = true;
@@ -1197,6 +1435,7 @@
   function weekDotsToHtml(dots) {
     return String(dots || "").split("").map((ch) => {
       if (ch === "●") return '<span class="week-pill week-pill--done"></span>';
+      if (ch === "◉") return '<span class="week-pill week-pill--exception"></span>';
       if (ch === "○") return '<span class="week-pill week-pill--open"></span>';
       if (ch === "·") return '<span class="week-pill week-pill--future"></span>';
       return "";
@@ -1207,7 +1446,10 @@
     return (slots || [])
       .filter((s) => s.status !== "off")
       .map((s) => {
-        if (s.status === "attend" || s.status === "exception") {
+        if (s.status === "exception") {
+          return '<span class="week-pill week-pill--exception"></span>';
+        }
+        if (s.status === "attend") {
           return '<span class="week-pill week-pill--done"></span>';
         }
         if (s.status === "today" || s.status === "miss") {
@@ -1284,9 +1526,11 @@
   }
 
   function paintTimeline(weeks) {
+    state.timelineWeeks = weeks || [];
     const container = document.getElementById("timeline-weeks");
     if (!weeks.length) {
       container.innerHTML = '<p class="section-sub">아직 표시할 주차가 없습니다.</p>';
+      updateEarlyReturnButtonVisibility();
       return;
     }
     container.innerHTML = weeks.map((w) => {
@@ -1331,6 +1575,7 @@
     });
 
     bindTimelineEvents();
+    updateEarlyReturnButtonVisibility();
   }
 
   // ── 사진 라이트박스 ──
@@ -1350,11 +1595,13 @@
       ? urls.map((_, i) => `<span class="photo-lightbox-dot${i === _lb.idx ? " active" : ""}"></span>`).join("")
       : "";
     lb.hidden = false;
+    _modalPush(closeLightbox);
     document.body.style.overflow = "hidden";
     _lbGoto(_lb.idx, false);
   }
 
   function closeLightbox() {
+    _modalRemoveFromStack(closeLightbox);
     document.getElementById("photo-lightbox").hidden = true;
     document.body.style.overflow = "";
   }
@@ -1364,7 +1611,8 @@
     const slides = track.querySelectorAll(".photo-lightbox-slide");
     if (!slides.length) return;
     track.style.transition = animate ? "transform 0.25s ease" : "none";
-    track.style.transform = `translateX(${-idx * slides[0].offsetWidth}px)`;
+    // % 기준은 track 자신의 border box(= viewport 너비). px/offsetWidth보다 레이아웃 타이밍에 안전.
+    track.style.transform = `translateX(-${idx * 100}%)`;
     document.querySelectorAll("#photo-lightbox-dots .photo-lightbox-dot").forEach((d, i) => {
       d.classList.toggle("active", i === idx);
     });
@@ -1394,6 +1642,7 @@
   }
 
   function closeTeamProfileModal() {
+    _modalRemoveFromStack(closeTeamProfileModal);
     const modal = document.getElementById("team-profile-modal");
     const feedList = document.getElementById("team-profile-feed-list");
     if (feedList) feedList.innerHTML = "";
@@ -1421,12 +1670,14 @@
     feedList.innerHTML = entries.map((e) => {
       const photos = (e.photoUrls || []).slice(0, TIMELINE_PHOTO_MAX);
       const dateLabel = formatFeedDate(e.date);
-      const dayLabel = e.displayDayIndex ?? e.slotId;
+      const dayLabel =
+        e.dayLabel ||
+        `${e.displayDayIndex ?? e.slotId}일차`;
       const groupIdx = allPhotoGroups.length;
       if (photos.length) allPhotoGroups.push(photos);
       return `
         <article class="team-profile-feed-item">
-          <div class="team-profile-feed-meta">${dayLabel}일차${dateLabel ? ` · ${dateLabel}` : ""} · ${escapeHtml(e.title || "—")}</div>
+          <div class="team-profile-feed-meta">${escapeHtml(dayLabel)}${dateLabel ? ` · ${dateLabel}` : ""} · ${escapeHtml(e.title || "—")}</div>
           ${e.note ? `<p class="team-profile-feed-note">${escapeHtml(e.note)}</p>` : ""}
           ${photos.length ? `<div class="timeline-photo-grid team-profile-feed-photos" data-photo-group="${groupIdx}">${photos.map((url, i) => `<div class="timeline-photo-thumb lb-thumb" data-photo-idx="${i}" style="cursor:pointer"><img src="${escapeAttr(url)}" alt="출석 사진 ${i + 1}" loading="lazy" /></div>`).join("")}</div>` : ""}
         </article>`;
@@ -1468,6 +1719,7 @@
     if (feedEl) feedEl.hidden = false;
     if (feedList) feedList.innerHTML = '<p class="section-sub">불러오는 중…</p>';
     document.getElementById("team-profile-modal").hidden = false;
+    _modalPush(closeTeamProfileModal);
 
     apiGet("team-member-attendance", { memberId }, true)
       .then((data) => paintTeamProfileFeed(data.entries || []))
@@ -1524,7 +1776,7 @@
         <div class="team-summary-caption">팀 평균</div>
       </div>
       <div class="team-summary-stat">
-        <div class="team-summary-label">이번 주 3회</div>
+        <div class="team-summary-label">이번 주 3점</div>
         <div class="team-summary-value team-summary-value--attend">${weekMet}<span class="team-summary-value-unit">명</span></div>
         <div class="team-summary-caption">달성 · ${count}명 중</div>
         <div class="team-summary-bar" role="presentation" aria-hidden="true">
@@ -1551,6 +1803,191 @@
     bindTeamListEvents();
   }
 
+  function renderExceptionRequestList(requests) {
+    const list = document.getElementById("me-exception-list");
+    if (!list) return;
+    if (!requests.length) {
+      list.innerHTML = '<li class="me-exception-empty">아직 상신한 예외 요청이 없습니다.</li>';
+      return;
+    }
+    list.innerHTML = requests.map((request) => {
+      const status = request.status || "";
+      const note = (request.reviewNote || "").trim();
+      return `
+        <li class="me-exception-item">
+          <div class="me-exception-item-head">
+            <strong class="me-exception-item-period">${escapeHtml(formatExceptionDateRange(request.startDate, request.endDate))}</strong>
+            <span class="me-exception-status me-exception-status--${escapeHtml(status || "unknown")}">${escapeHtml(exceptionStatusLabel(status))}</span>
+          </div>
+          <div class="me-exception-item-reason">${escapeHtml(request.reason || "사유 없음")}</div>
+          ${note ? `<div class="me-exception-item-note">${escapeHtml(note)}</div>` : ""}
+        </li>
+      `;
+    }).join("");
+  }
+
+  async function loadMeExceptionPanel() {
+    const section = document.getElementById("me-exception-section");
+    const list = document.getElementById("me-exception-list");
+    const p = state.profile || MOCK.profile;
+    if (!section || !list) return;
+    if (!p?.profileComplete) {
+      section.hidden = true;
+      state.exceptionRequests = [];
+      state.hasFutureExceptions = false;
+      state.futureExceptionCount = null;
+      list.innerHTML = "";
+      return;
+    }
+
+    section.hidden = false;
+    list.innerHTML = '<li class="me-exception-empty">불러오는 중…</li>';
+    const loadId = state.exceptionPanelLoadId + 1;
+    state.exceptionPanelLoadId = loadId;
+    try {
+      const data = await apiGet("my-exception-requests", {}, true);
+      if (loadId !== state.exceptionPanelLoadId) return;
+      state.exceptionRequests = Array.isArray(data.requests) ? data.requests : [];
+      state.futureExceptionCount = resolveFutureExceptionCount();
+      renderExceptionRequestList(state.exceptionRequests);
+    } catch (e) {
+      if (loadId !== state.exceptionPanelLoadId) return;
+      console.error("[chunbaek] loadMeExceptionPanel failed", e);
+      state.exceptionRequests = [];
+      renderExceptionRequestList([]);
+      showToast(normalizeExceptionError(e), true);
+    }
+    updateEarlyReturnButtonVisibility();
+  }
+
+  function openExceptionRequestModal() {
+    if (state.isProcessing) {
+      showToast("처리 중입니다. 잠시 후 다시 시도해 주세요", true);
+      return;
+    }
+    const modal = document.getElementById("exception-request-modal");
+    const reasonEl = document.getElementById("exception-reason");
+    const startEl = document.getElementById("exception-start");
+    const endEl = document.getElementById("exception-end");
+    if (!modal || !reasonEl || !startEl || !endEl) return;
+
+    const today = kstTodayIso();
+    startEl.min = addDaysIso(today, -6);
+    startEl.value = today;
+    endEl.value = today;
+    updateExceptionEndDateConstraints();
+    reasonEl.value = "";
+    setExceptionPreviewText("사유와 기간을 입력하면 예외 요청 일수를 미리 보여드립니다.");
+    modal.hidden = false;
+    _modalPush(closeExceptionRequestModal);
+    reasonEl.focus();
+  }
+
+  function closeExceptionRequestModal() {
+    _modalRemoveFromStack(closeExceptionRequestModal);
+    state.exceptionPreviewLoadId += 1;
+    const modal = document.getElementById("exception-request-modal");
+    if (modal) modal.hidden = true;
+  }
+
+  async function refreshExceptionPreview() {
+    const form = readExceptionFormFromDom();
+    updateExceptionEndDateConstraints();
+    if (!form.reason || !form.startDate || !form.endDate) {
+      setExceptionPreviewText("사유와 기간을 입력하면 예외 요청 일수를 미리 보여드립니다.");
+      return;
+    }
+    const error = validateExceptionForm(form);
+    if (error) {
+      setExceptionPreviewText(error, true);
+      return;
+    }
+    const loadId = state.exceptionPreviewLoadId + 1;
+    state.exceptionPreviewLoadId = loadId;
+    setExceptionPreviewText("예외 요청 일수를 확인하는 중…");
+    try {
+      const data = await apiPost("request-exception", { ...form, dryRun: true }, true);
+      if (loadId !== state.exceptionPreviewLoadId) return;
+      setExceptionPreviewText(exceptionPreviewSummary(data.preview));
+    } catch (e) {
+      if (loadId !== state.exceptionPreviewLoadId) return;
+      setExceptionPreviewText(normalizeExceptionError(e), true);
+    }
+  }
+
+  async function submitExceptionRequest() {
+    if (state.isProcessing) return;
+    const form = readExceptionFormFromDom();
+    const error = validateExceptionForm(form);
+    if (error) {
+      setExceptionPreviewText(error, true);
+      showToast(error, true);
+      return;
+    }
+    if (!window.confirm("이 기간으로 출석 예외를 상신할까요?")) return;
+
+    state.isProcessing = true;
+    const submitBtn = document.getElementById("exception-request-submit");
+    const submitLabel = submitBtn?.textContent || "";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "상신 중…";
+    }
+    try {
+      await apiPost("request-exception", form, true);
+      closeExceptionRequestModal();
+      showToast("예외 요청이 상신되었습니다");
+      await loadMeExceptionPanel();
+    } catch (e) {
+      const msg = normalizeExceptionError(e);
+      setExceptionPreviewText(msg, true);
+      showToast(msg, true);
+    } finally {
+      state.isProcessing = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitLabel;
+      }
+    }
+  }
+
+  async function onEarlyReturn() {
+    if (state.isProcessing) return;
+    const count = resolveFutureExceptionCount();
+    const prompt = count > 0
+      ? `오늘 이후 예외 ${count}일을 해제하고 다시 출석할까요?`
+      : "오늘 이후 예외를 해제하고 다시 출석할까요?";
+    if (!window.confirm(prompt)) return;
+
+    state.isProcessing = true;
+    const btn = document.getElementById("btn-early-return");
+    if (btn) btn.disabled = true;
+    try {
+      const data = await apiPost("self-clear-future-exceptions", {}, true);
+      const clearedCount = Array.isArray(data.clearedSlotIds) ? data.clearedSlotIds.length : 0;
+      state.futureExceptionCount = 0;
+      state.hasFutureExceptions = false;
+      if (useMock()) {
+        MOCK.futureExceptionCount = 0;
+        MOCK.hasFutureExceptions = false;
+      }
+      updateEarlyReturnButtonVisibility();
+      showToast(clearedCount ? `${clearedCount}일의 예외가 해제되었습니다` : "예외가 해제되었습니다");
+      await loadMeExceptionPanel();
+    } catch (e) {
+      const msg = normalizeExceptionError(e);
+      if (msg === "해제할 미래 예외가 없습니다") {
+        state.futureExceptionCount = 0;
+        state.hasFutureExceptions = false;
+        updateEarlyReturnButtonVisibility();
+      }
+      showToast(msg, true);
+    } finally {
+      state.isProcessing = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function renderMe() {
     const p = state.profile || MOCK.profile;
     const s = p.stats || MOCK.profile.stats;
@@ -1568,8 +2005,9 @@
       <dt>목표 몸무게</dt><dd>${formatBodyWeightKg(p.goalBodyWeightKg)}${p.goalBodyWeightPrivate ? " (팀 비공개)" : ""}</dd>
       <dt>각오</dt><dd class="profile-intro">${p.resolutionText ? escapeHtml(p.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${s.seasonAttendCount || 0}회 (출석률 ${s.seasonAttendRate || 0}%)</dd>
-      <dt>이번 주</dt><dd>${s.weekAttendCount || 0}/${s.weekTarget || 3}회</dd>
+      <dt>이번 주</dt><dd>${formatWeekScoreLine(s)}</dd>
     `;
+    void loadMeExceptionPanel();
   }
 
   function goHome() {
@@ -1596,6 +2034,8 @@
     document.getElementById("btn-create-profile").addEventListener("click", onProfileSubmit);
     document.getElementById("btn-edit-profile").addEventListener("click", openProfileEdit);
     document.getElementById("btn-profile-cancel").addEventListener("click", () => showView("me"));
+    document.getElementById("btn-request-exception").addEventListener("click", openExceptionRequestModal);
+    document.getElementById("btn-early-return").addEventListener("click", onEarlyReturn);
     document.querySelectorAll('input[name="goal-race"]').forEach((el) => {
       el.addEventListener("change", syncGoalRaceNote);
     });
@@ -1606,9 +2046,20 @@
     syncGoalRaceNote();
     document.getElementById("btn-guide-done").addEventListener("click", () => showView("today"));
     document.getElementById("btn-attend").addEventListener("click", onAttend);
+    const scoreNoticeClose = document.getElementById("score-notice-close");
+    if (scoreNoticeClose) {
+      scoreNoticeClose.addEventListener("click", dismissScoreNotice);
+    }
+    const scoreNoticeLink = document.getElementById("score-notice-link");
+    if (scoreNoticeLink) {
+      scoreNoticeLink.addEventListener("click", () => {
+        dismissScoreNotice();
+      });
+    }
     document.getElementById("btn-switch-user").addEventListener("click", () => {
       setToken(null);
       state.profile = null;
+      resetSessionViewState();
       clearAllCache(); // 다음 사용자가 이전 사용자 데이터를 보지 않도록
       showView("welcome");
     });
@@ -1625,6 +2076,20 @@
       if (!btn) return;
       removeTimelinePhotoAt(Number(btn.dataset.photoRemove));
     });
+
+    document.getElementById("exception-request-close").addEventListener("click", closeExceptionRequestModal);
+    document.getElementById("exception-request-modal").addEventListener("click", (e) => {
+      if (e.target.id === "exception-request-modal") closeExceptionRequestModal();
+    });
+    document.getElementById("exception-request-submit").addEventListener("click", submitExceptionRequest);
+    document.getElementById("exception-reason").addEventListener("input", () => {
+      refreshExceptionPreview();
+    });
+    document.getElementById("exception-start").addEventListener("change", () => {
+      updateExceptionEndDateConstraints();
+      refreshExceptionPreview();
+    });
+    document.getElementById("exception-end").addEventListener("change", refreshExceptionPreview);
 
     document.getElementById("team-profile-close").addEventListener("click", closeTeamProfileModal);
     document.getElementById("team-profile-modal").addEventListener("click", (e) => {

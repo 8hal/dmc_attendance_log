@@ -48,9 +48,39 @@ function displayDayIndex(slot) {
   return slot.dayIndex;
 }
 
+/**
+ * 팀 프로필 피드 정렬 — displayDayIndex(베타1·시즌1 충돌)가 아니라 날짜 내림차순.
+ * @param {Array<{ date?: string, slotId?: number }>} entries
+ */
+function sortTeamMemberAttendanceEntries(entries) {
+  return [...(Array.isArray(entries) ? entries : [])].sort((a, b) => {
+    const da = String((a && a.date) || "");
+    const db = String((b && b.date) || "");
+    if (db !== da) return db.localeCompare(da);
+    return (Number(b && b.slotId) || 0) - (Number(a && a.slotId) || 0);
+  });
+}
+
+/**
+ * @param {{ displayDayIndex?: number, slotId?: number, week?: number }} entry
+ * @returns {string}
+ */
+function formatTeamFeedDayLabel(entry) {
+  const n = entry && (entry.displayDayIndex ?? entry.slotId);
+  const week = entry && entry.week;
+  const slotId = Number(entry && entry.slotId);
+  const isBeta =
+    week === BETA_WEEK ||
+    (Number.isFinite(slotId) &&
+      slotId >= BETA_DAY_INDEX_BASE &&
+      slotId < BETA_DAY_INDEX_BASE + BETA_DAY_COUNT);
+  if (isBeta) return `베타 ${n}일차`;
+  return `${n}일차`;
+}
+
 /** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
 function statsSlotsForToday(slots, today, config) {
-  const seasonStart = config?.startDate || seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const seasonStart = effectiveSeasonStart(config, slots);
   if (seasonStart && today < seasonStart) {
     return slots.filter(isBetaSlot);
   }
@@ -171,10 +201,33 @@ async function loadMemberAttendance(db, memberId) {
   return map;
 }
 
-function resolveSlotDate(slot, config = {}, slots = [], today = "") {
-  const direct = normalizeSlotDate(slot?.date);
-  if (direct) return direct;
-  const di = slot?.dayIndex ?? Number(slot?.id);
+function deriveSeasonDate(config, dayIndex) {
+  const start = config?.startDate;
+  const di = Number(dayIndex);
+  if (!start || !Number.isFinite(di) || di < 1 || di > 100) return null;
+  return addDaysIso(start, di - 1);
+}
+
+function deriveSeasonWeek(dayIndex) {
+  const di = Number(dayIndex);
+  if (!Number.isFinite(di) || di < 1) return null;
+  return Math.ceil(di / 7);
+}
+
+function effectiveSeasonStart(config, slots = []) {
+  if (config?.startDate) return config.startDate;
+  return seasonBounds(seasonSlotsOnly(slots)).startDate;
+}
+
+function effectiveSeasonEnd(config, slots = []) {
+  if (config?.endDate) return config.endDate;
+  const start = effectiveSeasonStart(config, slots);
+  if (start) return addDaysIso(start, 99);
+  return seasonBounds(seasonSlotsOnly(slots)).endDate;
+}
+
+function deriveSlotDate(slot, config = {}, slots = []) {
+  const di = Number(slot?.dayIndex ?? slot?.id);
   if (isBetaSlot(slot) && Number.isFinite(di) && di >= BETA_DAY_INDEX_BASE) {
     const bounds = betaWeekBounds(config, slots);
     if (bounds) {
@@ -184,23 +237,60 @@ function resolveSlotDate(slot, config = {}, slots = [], today = "") {
       }
     }
   }
+  if (Number.isFinite(di) && di >= 1 && di <= 100) {
+    const derived = deriveSeasonDate(config, di);
+    if (derived) return derived;
+  }
+  return normalizeSlotDate(slot?.date) || "";
+}
+
+function resolveSlotDate(slot, config = {}, slots = [], today = "") {
+  const derived = deriveSlotDate(slot, config, slots);
+  if (derived) return derived;
   if (today && isDateInBetaWeek(config, slots, today)) return today;
   return "";
 }
 
 function findTodaySlot(slots, today, config = {}) {
-  const byDate = slots.find((s) => normalizeSlotDate(s.date) === today);
-  if (byDate) return byDate;
+  const start = effectiveSeasonStart(config, slots);
+  if (start && today >= start) {
+    const [sy, sm, sd] = start.split("-").map(Number);
+    const [ty, tm, td] = today.split("-").map(Number);
+    const offset = Math.round(
+      (Date.UTC(ty, tm - 1, td) - Date.UTC(sy, sm - 1, sd)) / MS_PER_DAY,
+    );
+    if (offset >= 0 && offset < 100) {
+      const di = offset + 1;
+      const hit = slots.find((s) => Number(s.dayIndex ?? s.id) === di);
+      if (hit) return hit;
+    }
+  }
   const betaIdx = betaDayIndexForDate(config, slots, today);
   if (betaIdx != null) {
-    return slots.find((s) => (s.dayIndex ?? Number(s.id)) === betaIdx) || null;
+    return slots.find((s) => Number(s.dayIndex ?? s.id) === betaIdx) || null;
   }
-  return null;
+  return slots.find((s) => normalizeSlotDate(s.date) === today) || null;
 }
 
 function findWeekForDate(slots, today, config = {}) {
   const slot = findTodaySlot(slots, today, config);
   if (slot) return slot.week;
+
+  // 슬롯을 찾지 못한 경우: startDate 기반으로 날짜 계산
+  // (예: 새 주차 슬롯이 아직 없을 때 날짜 기반으로 정확한 주차 반환)
+  const start = effectiveSeasonStart(config, slots);
+  if (start && today >= start) {
+    const [sy, sm, sd] = start.split("-").map(Number);
+    const [ty, tm, td] = today.split("-").map(Number);
+    const offset = Math.round(
+      (Date.UTC(ty, tm - 1, td) - Date.UTC(sy, sm - 1, sd)) / MS_PER_DAY,
+    );
+    if (offset >= 0 && offset < 100) {
+      return Math.ceil((offset + 1) / 7);
+    }
+  }
+
+  // 최후 fallback: 슬롯의 date 필드 기반
   let week = 1;
   for (const s of slots) {
     if (s.date <= today) week = s.week;
@@ -210,30 +300,68 @@ function findWeekForDate(slots, today, config = {}) {
 
 function defaultWeekForAdmin(config, slots, today) {
   if (isDateInBetaWeek(config, slots, today)) return BETA_WEEK;
-  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const seasonStart = effectiveSeasonStart(config, slots);
   if (seasonStart && today < seasonStart) {
     const bounds = betaWeekBounds(config, slots);
     if (bounds) return BETA_WEEK;
   }
-  return findWeekForDate(slots, today);
+  return findWeekForDate(slots, today, config);
+}
+
+function computeWeekScoreHint({ weekScore, weekTarget, weekTargetMet, futureExceptionCount }) {
+  if (weekTargetMet || !(weekTarget > 0)) return null;
+  const futureExc = Number(futureExceptionCount) || 0;
+  const projected = Number(weekScore) + futureExc * 0.5;
+  if (projected >= weekTarget && futureExc > 0) {
+    return "예외 반영 시 달성 예정";
+  }
+  const need = Math.ceil(weekTarget - projected - 1e-9);
+  if (need > 0) return `출석 ${need}회 더 필요`;
+  return null;
 }
 
 function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig) {
   let weekAttendCount = 0;
-  let countableSlotsInWeek = 0;
+  let weekExceptionCount = 0;
+  let futureExceptionCount = 0;
+  let trainingCount = 0;
 
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
     const att = getAttendance(attendanceMap, slot);
-    if (att?.exception) continue;
-    countableSlotsInWeek += 1;
-    if (slot.date <= today && att?.attended) weekAttendCount += 1;
+    if (slot.date > today) {
+      if (att?.exception) futureExceptionCount += 1;
+      continue;
+    }
+    trainingCount += 1;
+    if (att?.exception) {
+      weekExceptionCount += 1;
+      continue;
+    }
+    if (att?.attended) weekAttendCount += 1;
   }
 
-  const weekTarget = Math.min(weeklyTargetConfig, countableSlotsInWeek);
-  const weekTargetMet = weekTarget > 0 && weekAttendCount >= weekTarget;
-  return { weekAttendCount, weekTarget, weekTargetMet, countableSlotsInWeek };
+  const weekScore = weekAttendCount + weekExceptionCount * 0.5;
+  const maxScore = trainingCount - weekExceptionCount * 0.5;
+  const weekTarget = Math.min(weeklyTargetConfig, maxScore);
+  const weekTargetMet = weekTarget > 0 && weekScore >= weekTarget;
+  const weekHint = computeWeekScoreHint({
+    weekScore,
+    weekTarget,
+    weekTargetMet,
+    futureExceptionCount,
+  });
+  return {
+    weekAttendCount,
+    weekExceptionCount,
+    futureExceptionCount,
+    weekScore,
+    weekTarget,
+    weekTargetMet,
+    weekHint,
+    countableSlotsInWeek: trainingCount - weekExceptionCount,
+  };
 }
 
 function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
@@ -279,26 +407,52 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonAttendCount,
     seasonAttendRate,
     weekAttendCount: weekStats.weekAttendCount,
+    weekExceptionCount: weekStats.weekExceptionCount,
+    futureExceptionCount: weekStats.futureExceptionCount,
+    weekScore: weekStats.weekScore,
     weekTarget: weekStats.weekTarget,
     weekTargetMet: weekStats.weekTargetMet,
+    weekHint: weekStats.weekHint,
     inBetaWeek,
     currentWeek,
   };
 }
 
-function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig) {
-  let attendCount = 0;
-  let countable = 0;
+function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, today) {
+  let weekAttendCount = 0;
+  let weekExceptionCount = 0;
+  let trainingCount = 0;
+
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
+    if (today && slot.date > today) continue;
+    trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
-    if (att?.exception) continue;
-    countable += 1;
-    if (att?.attended) attendCount += 1;
+    if (att?.exception) {
+      weekExceptionCount += 1;
+      continue;
+    }
+    if (att?.attended) weekAttendCount += 1;
   }
-  const target = Math.min(weeklyTargetConfig, countable);
-  return { attendCount, target };
+
+  const weekScore = weekAttendCount + weekExceptionCount * 0.5;
+  const maxScore = trainingCount - weekExceptionCount * 0.5;
+  const weekTarget = Math.min(weeklyTargetConfig, maxScore);
+  return {
+    attendCount: weekAttendCount,
+    exceptionCount: weekExceptionCount,
+    weekScore,
+    target: weekTarget,
+  };
+}
+
+function formatWeekScoreSummary({ weekScore, target }) {
+  const scoreStr = Number(weekScore).toFixed(1);
+  const targetStr = Number(target) === Math.floor(target)
+    ? String(Math.floor(target))
+    : Number(target).toFixed(1);
+  return `${scoreStr} / ${targetStr}점`;
 }
 
 function formatIsoRange(startDate, endDate) {
@@ -325,7 +479,8 @@ function weekDots(slots, attendanceMap, week, today) {
     .sort((a, b) => a.dayIndex - b.dayIndex);
   return training.map((slot) => {
     const status = slotStatus(slot, attendanceMap, today);
-    if (status === "attend" || status === "exception") return "●";
+    if (status === "exception") return "◉";
+    if (status === "attend") return "●";
     if (status === "today" || status === "miss") return "○";
     return "·";
   }).join("");
@@ -343,9 +498,9 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
     weekMap.get(slot.week).push(slot);
   }
 
-  const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+  const seasonStart = effectiveSeasonStart(config, slots);
   const showBetaInTimeline = !!(seasonStart && today < seasonStart);
-  const currentWeek = findWeekForDate(slots, today);
+  const currentWeek = findWeekForDate(slots, today, config);
 
   const weeks = [...weekMap.entries()]
     .filter(([week]) => {
@@ -357,17 +512,22 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
     .map(([week, weekSlots]) => {
       weekSlots.sort((a, b) => a.dayIndex - b.dayIndex);
       const dates = weekSlots.map((s) => s.date);
-      const { attendCount, target } = computeWeekStatsFull(
+      const { attendCount, exceptionCount, weekScore, target } = computeWeekStatsFull(
         slots,
         attendanceMap,
         week,
         weeklyTargetConfig,
+        today,
       );
       return {
         week,
         weekLabel: weekLabel(week),
         range: formatIsoRange(dates[0], dates[dates.length - 1]),
-        attendSummary: `${attendCount}/${target}회`,
+        attendSummary: formatWeekScoreSummary({ attendCount, exceptionCount, weekScore, target }),
+        attendCount,
+        exceptionCount,
+        weekScore,
+        target,
         dots: weekDots(slots, attendanceMap, week, today),
         collapsed: week < currentWeek,
         slots: weekSlots.map((slot) => {
@@ -417,9 +577,9 @@ function rateBar(rate) {
 }
 
 /** 팀 탭 이번 주 진행 — PRD §7.3 (최대 3칸, 출석 횟수 기준) */
-function weekBar(attendCount, target = 3) {
-  const slots = 3;
-  const filled = Math.min(slots, Math.max(0, attendCount));
+function weekBar(scoreOrCount, target = 3) {
+  const slots = Math.max(1, Math.ceil(Number(target) || 3));
+  const filled = Math.min(slots, Math.max(0, Math.floor(Number(scoreOrCount) || 0)));
   return `${"█".repeat(filled)}${"░".repeat(slots - filled)}`;
 }
 
@@ -460,12 +620,12 @@ function slotPayloadFromSlot(slot, attendanceMap, config = {}, slots = [], today
 }
 
 function todaySlotPayload(slots, attendanceMap, today, config = {}) {
-  const seasonOnly = seasonSlotsOnly(slots);
-  const bounds = seasonBounds(seasonOnly.length ? seasonOnly : slots);
-  const { startDate, endDate } = bounds;
+  const startDate = effectiveSeasonStart(config, slots);
+  const endDate = effectiveSeasonEnd(config, slots);
   const betaBounds = betaWeekBounds(config, slots);
   const meta = {
-    ...seasonMeta(bounds),
+    startDate,
+    endDate,
     betaWeekStartDate: betaBounds?.startDate || null,
     betaWeekEndDate: betaBounds?.endDate || null,
     photoRequired: !!config.photoRequired,
@@ -539,6 +699,8 @@ module.exports = {
   seasonSlotsOnly,
   seasonBounds,
   displayDayIndex,
+  sortTeamMemberAttendanceEntries,
+  formatTeamFeedDayLabel,
   statsSlotsForToday,
   betaWeekBounds,
   betaWeekBoundsFromConfig,
@@ -553,6 +715,9 @@ module.exports = {
   findTodaySlot,
   computeMemberStats,
   computeWeekStats,
+  computeWeekStatsFull,
+  computeWeekScoreHint,
+  formatWeekScoreSummary,
   buildTimelineWeeks,
   formatGoalTime,
   rateBar,
@@ -562,6 +727,12 @@ module.exports = {
   todaySlotPayload,
   getSlotKey,
   getAttendance,
+  deriveSeasonDate,
+  deriveSeasonWeek,
+  effectiveSeasonStart,
+  effectiveSeasonEnd,
+  deriveSlotDate,
+  resolveSlotDate,
   slotStatus,
   slotTrainingTitle,
   slotTrainingContent,

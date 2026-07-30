@@ -77,6 +77,8 @@
   --pill-size: 10px;
   --pill-done-bg: var(--attend-fg);
   --pill-done-ring: var(--attend-bg);
+  --pill-exception-bg: var(--exception-fg);
+  --pill-exception-ring: var(--exception-bg);
   --pill-open-bg: var(--brand-white);
   --pill-open-ring: var(--brand-orange);
   --pill-future-bg: var(--border-default);

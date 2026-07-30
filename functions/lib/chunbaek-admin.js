@@ -19,9 +19,18 @@ const {
   seasonSlotsOnly,
   betaWeekBounds,
   betaDayIndexForDate,
+  deriveSlotDate,
+  deriveSeasonDate,
+  deriveSeasonWeek,
   BETA_WEEK,
   normalizePhotoUrls,
 } = require("./chunbaek-stats");
+const {
+  previewExceptionApplication,
+  formatRequestExceptionNote,
+  buildSlotExceptionPatch,
+  trainingSlotsInDateRange,
+} = require("./chunbaek-exception-requests");
 
 const MS_PER_DAY = 86400000;
 const TITLE_MAX = 80;
@@ -29,6 +38,73 @@ const CONTENT_MAX = 500;
 const EXCEPTION_NOTE_MAX = 200;
 const NOTE_MAX = 500;
 const PHOTO_URL_MAX = 2000;
+const ADMIN_EXCEPTION_REQUEST_LIMIT_DEFAULT = 50;
+const ADMIN_EXCEPTION_REQUEST_LIMIT_MAX = 50;
+const ADMIN_EXCEPTION_REQUEST_STATUSES = new Set(["pending", "approved", "rejected"]);
+
+/** Pure fields for chunbaek_slots write. Existing docs omit date/week (SSOT: no overwrite). */
+function slotWriteFieldsFromRow({ existing, dayIndex, week, row, config, slots }) {
+  const isProgramOff = !!row.isProgramOff;
+  const trainingTitle = String(row.trainingTitle || "").slice(0, TITLE_MAX).trim();
+  const trainingContent = String(row.trainingContent || "").slice(0, CONTENT_MAX);
+  const base = {
+    dayIndex,
+    trainingTitle: isProgramOff ? (trainingTitle || "휴무") : trainingTitle,
+    trainingContent: isProgramOff ? "" : trainingContent,
+    isProgramOff,
+  };
+  if (existing) {
+    return base;
+  }
+  return {
+    ...base,
+    date: deriveSlotDate({ dayIndex, week }, config, slots),
+    week: week === BETA_WEEK ? BETA_WEEK : deriveSeasonWeek(dayIndex),
+  };
+}
+
+/** Correct import row date/week from dayIndex + season config (SSOT). */
+function correctImportRow(row, config) {
+  const di = Number(row.dayIndex);
+  const warnings = [];
+  let date = row.date;
+  let week = Number(row.week);
+  const isBeta = week === 0 || di >= 901;
+  if (isBeta) {
+    const expectedDate = deriveSlotDate({ dayIndex: di, week: 0 }, config, []);
+    if (expectedDate && date !== expectedDate) {
+      warnings.push({ dayIndex: di, field: "date", from: date, to: expectedDate });
+      date = expectedDate;
+    }
+    if (week !== 0) {
+      warnings.push({ dayIndex: di, field: "week", from: week, to: 0 });
+      week = 0;
+    }
+  } else {
+    const expectedDate = deriveSeasonDate(config, di);
+    const expectedWeek = deriveSeasonWeek(di);
+    if (expectedDate && date !== expectedDate) {
+      warnings.push({ dayIndex: di, field: "date", from: date, to: expectedDate });
+      date = expectedDate;
+    }
+    if (expectedWeek != null && week !== expectedWeek) {
+      warnings.push({ dayIndex: di, field: "week", from: week, to: expectedWeek });
+      week = expectedWeek;
+    }
+  }
+  return { row: { ...row, date, week }, warnings };
+}
+
+function timestampToIso(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._seconds != null) {
+    return new Date(value._seconds * 1000).toISOString();
+  }
+  return null;
+}
 
 function requireAdmin(req) {
   const adminPw = req.method === "GET"
@@ -60,6 +136,36 @@ function parseWeekParam(value, defaultWeek) {
   const week = Number(value);
   if (!Number.isFinite(week) || week < 0) return null;
   return Math.floor(week);
+}
+
+function parseAdminExceptionRequestLimit(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return ADMIN_EXCEPTION_REQUEST_LIMIT_DEFAULT;
+  return Math.min(
+    ADMIN_EXCEPTION_REQUEST_LIMIT_MAX,
+    Math.max(1, parsed),
+  );
+}
+
+function parseAdminExceptionRequestStatusFilter(value) {
+  if (value === undefined || value === null) {
+    return { ok: true, status: "pending" };
+  }
+  const status = String(value).trim().toLowerCase();
+  if (!status) {
+    return { ok: true, status: "pending" };
+  }
+  if (!ADMIN_EXCEPTION_REQUEST_STATUSES.has(status)) {
+    return { ok: false, error: "invalid status" };
+  }
+  return { ok: true, status };
+}
+
+function createHttpError(status, error) {
+  const err = new Error(error);
+  err.status = status;
+  err.publicMessage = error;
+  return err;
 }
 
 function weekDatesFromStart(startDate, weekNum) {
@@ -348,6 +454,8 @@ async function handleAdminGrid(req, res, db) {
       nickname: p.data.nickname || "",
       profileComplete,
       weekAttendCount: weekStats.weekAttendCount,
+      weekExceptionCount: weekStats.weekExceptionCount,
+      weekScore: weekStats.weekScore,
       weekTarget: weekStats.weekTarget,
       weekTargetMet: weekStats.weekTargetMet,
       cells,
@@ -566,7 +674,6 @@ async function handleAdminSaveWeekSlots(req, res, db) {
     }
     const isProgramOff = !!row.isProgramOff;
     const trainingTitle = String(row.trainingTitle || "").slice(0, TITLE_MAX).trim();
-    const trainingContent = String(row.trainingContent || "").slice(0, CONTENT_MAX);
 
     if (!isProgramOff && !trainingTitle) {
       return res.status(400).json({ ok: false, error: "trainingTitle required" });
@@ -597,13 +704,9 @@ async function handleAdminSaveWeekSlots(req, res, db) {
     }
 
     const docRef = db.collection("chunbaek_slots").doc(String(dayIndex));
+    const patch = slotWriteFieldsFromRow({ existing, dayIndex, week, row, config, slots });
     batch.set(docRef, {
-      dayIndex,
-      date,
-      week,
-      trainingTitle: isProgramOff ? (trainingTitle || "휴무") : trainingTitle,
-      trainingContent: isProgramOff ? "" : trainingContent,
-      isProgramOff,
+      ...patch,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     saved += 1;
@@ -643,24 +746,30 @@ async function handleAdminImportSlots(req, res, db) {
     return res.status(400).json({ ok: false, error: "rows or csv required" });
   }
 
+  const config = await loadSeasonConfig(db);
+
   const seenDayIndex = new Set();
   const normalized = [];
+  const correctionWarnings = [];
   for (const row of rows) {
     const err = validateImportRow(row, seenDayIndex);
     if (err) return res.status(400).json({ ok: false, error: err });
-    normalized.push({
+    const base = {
       dayIndex: Number(row.dayIndex),
       date: row.date,
       week: Number(row.week),
       trainingTitle: String(row.trainingTitle || "").slice(0, TITLE_MAX),
       trainingContent: String(row.trainingContent || "").slice(0, CONTENT_MAX),
       isProgramOff: !!row.isProgramOff,
-    });
+    };
+    const corrected = correctImportRow(base, config);
+    normalized.push(corrected.row);
+    correctionWarnings.push(...corrected.warnings);
   }
 
   const attendanceSnap = await db.collection("chunbaek_attendance").limit(1).get();
   const attendanceExists = !attendanceSnap.empty;
-  const warnings = [];
+  const warnings = [...correctionWarnings];
 
   if (mode === "replace") {
     if (attendanceExists) {
@@ -773,6 +882,221 @@ async function handleAdminSetParticipant(req, res, db) {
   });
 }
 
+async function handleAdminListExceptionRequests(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  if (!adminGate(req, res)) return undefined;
+
+  const statusFilter = parseAdminExceptionRequestStatusFilter(req.query.status);
+  if (!statusFilter.ok) {
+    return res.status(400).json({ ok: false, error: statusFilter.error });
+  }
+  const limit = parseAdminExceptionRequestLimit(req.query.limit);
+
+  // status equality only — avoids composite index (type+status+createdAt).
+  // Filter type + sort/limit in memory; pending queue volume is small.
+  const [config, slots, snap] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+    db.collection("chunbaek_exception_requests")
+      .where("status", "==", statusFilter.status)
+      .get(),
+  ]);
+
+  const docs = snap.docs
+    .filter((doc) => {
+      const data = doc.data() || {};
+      return (data.type || "") === "exception";
+    })
+    .sort((a, b) => {
+      const createdMs = (doc) => {
+        const v = (doc.data() || {}).createdAt;
+        if (!v) return 0;
+        if (typeof v.toMillis === "function") return v.toMillis();
+        if (typeof v.toDate === "function") return v.toDate().getTime();
+        const parsed = Date.parse(String(v));
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+      return createdMs(b) - createdMs(a);
+    })
+    .slice(0, limit);
+  const memberIds = [...new Set(
+    docs
+      .map((doc) => String((doc.data() || {}).memberId || "").trim())
+      .filter(Boolean),
+  )];
+  const attendanceByMemberId = new Map();
+  await Promise.all(memberIds.map(async (memberId) => {
+    attendanceByMemberId.set(memberId, await loadMemberAttendance(db, memberId));
+  }));
+
+  const requests = docs.map((doc) => {
+    const data = doc.data() || {};
+    const memberId = String(data.memberId || "").trim();
+    const preview = previewExceptionApplication({
+      slots,
+      attendanceMap: attendanceByMemberId.get(memberId) || {},
+      config,
+      startDate: data.startDate,
+      endDate: data.endDate,
+    });
+    return {
+      requestId: doc.id,
+      ...data,
+      createdAt: timestampToIso(data.createdAt),
+      updatedAt: timestampToIso(data.updatedAt),
+      reviewedAt: timestampToIso(data.reviewedAt),
+      preview,
+    };
+  });
+
+  return res.json({ ok: true, requests });
+}
+
+async function handleAdminReviewExceptionRequest(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  if (!adminGate(req, res)) return undefined;
+
+  const body = req.body || {};
+  const requestId = String(body.requestId || "").trim();
+  const decision = String(body.decision || "").trim().toLowerCase();
+  const reviewNote = String(body.reviewNote || "").slice(0, NOTE_MAX);
+
+  if (!requestId) {
+    return res.status(400).json({ ok: false, error: "requestId required" });
+  }
+  if (decision !== "approve" && decision !== "reject") {
+    return res.status(400).json({ ok: false, error: "invalid decision" });
+  }
+
+  const ref = db.collection("chunbaek_exception_requests").doc(requestId);
+  const [slots, config] = decision === "approve"
+    ? await Promise.all([
+      loadAllSlots(db),
+      loadSeasonConfig(db),
+    ])
+    : [null, null];
+
+  try {
+    const result = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw createHttpError(404, "request not found");
+      }
+
+      const request = snap.data() || {};
+      if (request.type !== "exception") {
+        throw createHttpError(400, "invalid request type");
+      }
+      if (request.status !== "pending") {
+        throw createHttpError(400, "already reviewed");
+      }
+      const memberId = String(request.memberId || "").trim();
+      const lockRef = memberId
+        ? db.collection("chunbaek_exception_locks").doc(memberId)
+        : null;
+
+      if (decision === "reject") {
+        tx.update(ref, {
+          status: "rejected",
+          reviewedBy: "admin",
+          reviewedAt: FieldValue.serverTimestamp(),
+          reviewNote,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        if (lockRef) {
+          tx.set(lockRef, {
+            pendingRequestId: null,
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+        }
+        return { requestId, status: "rejected" };
+      }
+
+      const appliedSlotIds = [];
+      const skippedSlotIds = [];
+      const exceptionNote = formatRequestExceptionNote(request.reason);
+      const targetSlots = trainingSlotsInDateRange({
+        slots,
+        config,
+        startDate: request.startDate,
+        endDate: request.endDate,
+      });
+
+      // Firestore transactions: all reads before all writes.
+      const attendanceReads = [];
+      for (const slot of targetSlots) {
+        const slotId = slot.dayIndex ?? Number(slot.id);
+        const attRef = db.collection("chunbaek_attendance").doc(`${request.memberId}_${getSlotKey(slot)}`);
+        const attSnap = await tx.get(attRef);
+        attendanceReads.push({
+          slot,
+          slotId,
+          attRef,
+          attendance: attSnap.exists ? (attSnap.data() || {}) : null,
+        });
+      }
+
+      for (const row of attendanceReads) {
+        if (row.attendance?.attended) {
+          skippedSlotIds.push(row.slotId);
+          continue;
+        }
+        if (row.attendance?.exception) continue;
+
+        const patch = buildSlotExceptionPatch({
+          memberId: request.memberId,
+          slot: row.slot,
+          exception: true,
+          exceptionNote,
+          updatedBy: "admin",
+        });
+        tx.set(row.attRef, {
+          ...patch,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        appliedSlotIds.push(row.slotId);
+      }
+
+      tx.update(ref, {
+        status: "approved",
+        appliedSlotIds,
+        skippedSlotIds,
+        reviewedBy: "admin",
+        reviewedAt: FieldValue.serverTimestamp(),
+        reviewNote,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      if (lockRef) {
+        tx.set(lockRef, {
+          pendingRequestId: null,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+
+      return {
+        requestId,
+        status: "approved",
+        appliedSlotIds,
+        skippedSlotIds,
+      };
+    });
+
+    return res.json({
+      ok: true,
+      ...result,
+    });
+  } catch (err) {
+    if (err && Number.isInteger(err.status) && err.publicMessage) {
+      return res.status(err.status).json({ ok: false, error: err.publicMessage });
+    }
+    throw err;
+  }
+}
+
 const ADMIN_ACTIONS = new Set([
   "verify-admin",
   "admin-grid",
@@ -782,6 +1106,8 @@ const ADMIN_ACTIONS = new Set([
   "admin-import-slots",
   "admin-member-directory",
   "admin-set-participant",
+  "admin-list-exception-requests",
+  "admin-review-exception-request",
 ]);
 
 async function handleAdminRequest(req, res, db, action) {
@@ -818,6 +1144,14 @@ async function handleAdminRequest(req, res, db, action) {
     await handleAdminSetParticipant(req, res, db);
     return true;
   }
+  if (action === "admin-list-exception-requests") {
+    await handleAdminListExceptionRequests(req, res, db);
+    return true;
+  }
+  if (action === "admin-review-exception-request") {
+    await handleAdminReviewExceptionRequest(req, res, db);
+    return true;
+  }
   return false;
 }
 
@@ -832,4 +1166,8 @@ module.exports = {
   handleAdminImportSlots,
   handleAdminMemberDirectory,
   handleAdminSetParticipant,
+  handleAdminListExceptionRequests,
+  handleAdminReviewExceptionRequest,
+  slotWriteFieldsFromRow,
+  correctImportRow,
 };

@@ -17,7 +17,6 @@ const SCREENS = [
   { id: "01-auth", panel: "auth", label: "⓪ 비밀번호" },
   { id: "02-grid", panel: "grid", label: "① 출석 그리드" },
   { id: "03-training", panel: "training", label: "② 훈련 입력" },
-  { id: "04-import", panel: "import", label: "③ 일괄 import" },
   { id: "05-cell-modal", panel: "grid-modal", label: "셀 모달" },
 ];
 
@@ -78,8 +77,6 @@ function startServer() {
         document.querySelector('[data-panel="grid"]').click();
       } else if (panel === "training") {
         document.querySelector('[data-panel="training"]').click();
-      } else if (panel === "import") {
-        document.querySelector('[data-panel="import"]').click();
       }
       if (panel === "grid-modal") {
         const cell = document.querySelector("#grid-body td.cell-attend, #grid-body td.cell");

@@ -1,6 +1,17 @@
-# GitHub Actions — 춘백 Firebase 배포
+# GitHub Actions — Firebase 모바일 배포
 
 모바일(GitHub 앱)에서 **Run workflow**로 Hosting / Functions 배포.
+
+워크플로 2개:
+
+| Actions 이름 | 용도 |
+|--------------|------|
+| **Deploy Chunbaek (Firebase)** | 춘백 FE/API 핫픽스 |
+| **Deploy DMC Attendance (Firebase)** | 출석 Hosting / attendance(+race) API |
+
+시크릿·서비스 계정은 **공통**입니다.
+
+---
 
 ## 1. 시크릿 등록 (최초 1회, 맥·PC)
 
@@ -16,8 +27,12 @@
 | 배포 대상 | 역할 |
 |-----------|------|
 | Hosting만 | `Firebase Hosting Admin` |
-| Functions `chunbaek` | 위 + `Cloud Functions Developer`, `Service Account User` |
-| 둘 다 | `Firebase Admin` (운영 단순화용, 권장) |
+| HTTPS Functions (`chunbaek`, `attendance`, `race`) | 위 + `Cloud Functions Developer`, `Service Account User` |
+| **Functions 전체** (`functions-all`, 스케줄 잡 포함) | 위 + **`Cloud Scheduler Admin`** (`roles/cloudscheduler.admin`) |
+| 운영 단순화 | `Firebase Admin` + `Cloud Scheduler Admin` |
+
+> **2026-07-19 장애:** `functions`(전체) 배포 시 스케줄 함수에 `cloudscheduler.jobs.update` 403 → 워크플로가 실패하고 Hosting이 스킵됨.  
+> 출석 모바일 배포 기본값은 **스케줄 없는** `functions-attendance` / `hosting-and-attendance` 입니다.
 
 ### 1-2. GitHub Secrets
 
@@ -27,37 +42,53 @@ Repo → **Settings** → **Secrets and variables** → **Actions** → **New re
 |------|--------|
 | `FIREBASE_SERVICE_ACCOUNT_DMC_ATTENDANCE` | 다운로드한 JSON **전체** (한 줄로 붙여넣기) |
 
+---
+
 ## 2. 워크플로 파일 반영
 
-`.github/workflows/deploy-chunbaek.yml`이 **main** 브랜치에 있어야 GitHub 앱에서 보입니다.
+아래 파일이 **default branch(main)** 에 있어야 GitHub 앱 Actions 목록에 최신 옵션이 보입니다.
 
-```bash
-# feature 브랜치 작업 후 main 머지 (또는 PR 머지)
-git checkout main
-git pull
-# PR 머지 후 확인
-```
+- `.github/workflows/deploy-chunbaek.yml`
+- `.github/workflows/deploy-dmc-attendance.yml`
 
-## 3. 모바일에서 배포
+---
+
+## 3. 모바일에서 배포 — 출석 (DMC Attendance)
 
 1. GitHub 앱 → `8hal/dmc_attendance_log` repo
 2. **Actions** 탭
-3. 왼쪽 **Deploy Chunbaek (Firebase)** 선택
-4. **Run workflow** (우측 상단)
-5. Branch: 배포할 브랜치 선택 (보통 `main` 또는 feature 브랜치)
+3. 왼쪽 **Deploy DMC Attendance (Firebase)** 선택
+4. **Run workflow**
+5. Branch: 보통 `main` (워크플로 수정 직후면 해당 브랜치)
 6. **deploy_target** 선택:
-   - `hosting` — FE만 (세션 복원·프로필 수정 등)
-   - `functions-chunbaek` — API만
-   - `hosting-and-chunbaek` — 둘 다 (Functions 먼저, Hosting 다음 순서)
-7. **Run workflow** 실행
-8. 실행 중 job 클릭 → 초록 체크 확인
 
-## 4. 배포 후 확인 (모바일 브라우저)
+| 값 | 의미 | 권장 |
+|----|------|------|
+| `hosting` | FE만 | UI만 올릴 때 |
+| `functions-attendance` | `attendance`만 | API만 |
+| `functions-attendance-race` | `attendance` + `race` | 허브 회원 API까지 |
+| `hosting-and-attendance` | attendance → Hosting | **출석 앱 일반 배포** |
+| `functions-all` | Functions **전부**(스케줄 포함) | Scheduler Admin IAM 있을 때만 |
 
-1. https://dmc-attendance.web.app/chunbaek/ 시크릿/일반 탭
-2. 로그인 → 홈
-3. **새로고침** 후에도 홈 유지 (세션 복원)
-4. 나 탭 → 프로필 수정
+7. 실행 → 초록 체크
+
+### 배포 후 확인
+
+1. https://dmc-attendance.web.app/attendance-v2.html
+2. Functions 포함 시: 출석 체크인 / 운영 허브
+
+설계: `_docs/superpowers/specs/2026-07-19-mobile-firebase-deploy-design.md`
+
+---
+
+## 4. 모바일에서 배포 — 춘백만
+
+1. **Deploy Chunbaek (Firebase)**
+2. `hosting` / `functions-chunbaek` / `hosting-and-chunbaek`
+
+확인: https://dmc-attendance.web.app/chunbaek/
+
+---
 
 ## 5. 로컬 배포와의 관계
 
@@ -67,14 +98,19 @@ git pull
 | 인증 | `firebase login` | 서비스 계정 JSON 시크릿 |
 | AI 실행 | ❌ 금지 | ✅ 워크플로 설정만 (사람이 Run) |
 
-로컬 규칙( pre-deploy-test, 백업 )은 **수동 배포** 시 그대로 적용.  
-Actions는 **춘백 FE/API 핫픽스**용으로, Functions 전체·스키마 변경 시에는 로컬 `pre-deploy-test.sh` 후 배포 권장.
+로컬 규칙(pre-deploy-test, 백업)은 **수동 배포** 시 그대로.  
+Actions는 **모바일 핫픽스**용. 스키마·스케줄 함수 변경은 로컬 또는 `functions-all`(+ Scheduler IAM).
+
+Hosting은 체크아웃한 **커밋 HEAD** 기준입니다 (미푸시 로컬 수정 미포함).
+
+---
 
 ## 6. 문제 해결
 
 | 증상 | 조치 |
 |------|------|
-| Actions 탭에 워크플로 없음 | `deploy-chunbaek.yml`이 default branch에 있는지 확인 |
-| `credentials_json` / auth 실패 | 시크릿 이름·JSON 형식 확인 |
-| Hosting 403/권한 오류 | 서비스 계정에 Hosting Admin 추가 |
-| Functions 배포 실패 | `functions` 폴더 `npm ci` 로그, Cloud Functions Developer 역할 확인 |
+| Actions에 워크플로/옵션 없음 | YAML이 **main**에 있는지, 앱 새로고침 |
+| `cloudscheduler.jobs.update` 403 | `functions-all` 말고 `functions-attendance` 사용. 또는 SA에 Cloud Scheduler Admin 부여 |
+| `credentials_json` 실패 | 시크릿 이름·JSON 확인 |
+| Hosting 403 | Hosting Admin |
+| attendance smoke 실패 | Functions 전파 대기 후 재실행 |

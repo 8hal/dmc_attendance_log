@@ -163,6 +163,24 @@ body {
   margin: 0 0 16px;
 }
 
+.section-subtitle {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.hint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.hint-error {
+  color: var(--chun-orange-dark);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -506,6 +524,20 @@ body {
   font-weight: 800;
   color: var(--chun-orange);
 }
+.week-summary-right {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0;
+  text-align: right;
+  max-width: 70%;
+}
+.week-summary-hint {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-muted);
+}
 .week-summary.met .week-summary-count {
   color: var(--green);
 }
@@ -531,6 +563,52 @@ body {
   text-decoration: none;
 }
 .saturday-notice-link:hover { text-decoration: underline; }
+
+.score-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--accent-light);
+  border: 1px solid var(--chun-cyan);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.score-notice[hidden] { display: none; }
+.score-notice-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.score-notice-body strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+.score-notice-body p {
+  margin: 0;
+  color: var(--text);
+}
+.score-notice-body a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--chun-orange);
+  text-decoration: none;
+}
+.score-notice-body a:hover { text-decoration: underline; }
+.score-notice-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
 
 .program-off-msg {
   text-align: center;
@@ -636,6 +714,10 @@ body {
 .week-pill--done {
   background: var(--pill-done-bg);
   box-shadow: 0 0 0 2px var(--pill-done-ring);
+}
+.week-pill--exception {
+  background: var(--pill-exception-bg);
+  box-shadow: 0 0 0 2px var(--pill-exception-ring);
 }
 .week-pill--open {
   background: var(--pill-open-bg);
@@ -1192,6 +1274,123 @@ body {
 .profile-dl dt { color: var(--text-muted); }
 .profile-dl dd { margin: 0; font-weight: 700; }
 
+.me-exception-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+/* 나 탭 하단 — 다른 회원으로 전환 (기존 홈「다른 사람으로」) */
+.me-switch-user {
+  display: block;
+  width: 100%;
+  margin: 32px 0 8px;
+}
+
+.me-exception-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.me-exception-actions .btn {
+  margin: 0;
+}
+
+.me-exception-actions .btn-ghost {
+  width: auto;
+  min-width: 112px;
+}
+
+.me-exception-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.me-exception-item,
+.me-exception-empty {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  padding: 12px 14px;
+}
+
+.me-exception-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.me-exception-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.me-exception-item-period {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.me-exception-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.me-exception-status--pending {
+  background: rgba(255, 178, 73, 0.18);
+  color: #9a5a00;
+}
+
+.me-exception-status--approved {
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+
+.me-exception-status--rejected {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+.me-exception-item-reason {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.me-exception-item-meta,
+.me-exception-item-summary,
+.me-exception-item-note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.me-exception-item-summary {
+  color: var(--text);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.me-exception-item-note {
+  margin-top: 4px;
+}
+
 /* ── 토스트 ── */
 .toast {
   position: fixed;
@@ -1288,15 +1487,21 @@ body {
   z-index: 2;
   line-height: 1;
 }
+/* overflow는 viewport에, transform은 track에 — 같은 요소에 두면
+   2장째 translateX 시 클리핑 박스 자체가 화면 밖으로 나감 */
+.photo-lightbox-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
 .photo-lightbox-track {
   display: flex;
   width: 100%;
   height: 100%;
-  overflow: hidden;
   align-items: center;
 }
 .photo-lightbox-slide {
-  flex-shrink: 0;
+  flex: 0 0 100%;
   width: 100%;
   height: 100%;
   display: flex;
@@ -1412,3 +1617,12 @@ body {
   font-size: 18px;
   line-height: 1;
 }
+
+.me-guide-link-wrap { margin: 12px 0 16px; }
+.me-guide-link {
+  color: var(--brand-orange);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+.me-guide-link:hover { text-decoration: underline; }

@@ -122,3 +122,4 @@ scripts/test-name-param-search.js
 scripts/verify-dmc-members-gunsan.js
 scripts/verify-search-ohmyrace-fix.js
 gorunning-matcher.html
+scripts/dev/__pycache__/

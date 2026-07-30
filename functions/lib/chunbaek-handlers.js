@@ -7,6 +7,13 @@ const crypto = require("crypto");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
 const {
+  validateExceptionRequestInput,
+  previewExceptionApplication,
+  slotsEligibleForSelfClear,
+  buildSlotExceptionPatch,
+} = require("./chunbaek-exception-requests");
+const { notifyExceptionRequestCreated } = require("./chunbaek-exception-email");
+const {
   loadSeasonConfig,
   loadAllSlots,
   loadMemberAttendance,
@@ -22,12 +29,14 @@ const {
   getSlotKey,
   isBetaSlot,
   isDateInBetaWeek,
-  seasonSlotsOnly,
-  seasonBounds,
+  effectiveSeasonStart,
+  effectiveSeasonEnd,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
   getAttendance,
   displayDayIndex,
+  sortTeamMemberAttendanceEntries,
+  formatTeamFeedDayLabel,
   slotTrainingTitle,
 } = require("./chunbaek-stats");
 
@@ -63,8 +72,12 @@ function emptyStats() {
     seasonAttendRate: 0,
     seasonDayIndex: 0,
     weekAttendCount: 0,
+    weekExceptionCount: 0,
+    futureExceptionCount: 0,
+    weekScore: 0,
     weekTarget: 3,
     weekTargetMet: false,
+    weekHint: null,
   };
 }
 
@@ -142,6 +155,17 @@ function memberProfilePayload(memberId, data, s3, stats) {
 function findSlotById(slots, slotId) {
   const idStr = String(slotId);
   return slots.find((s) => getSlotKey(s) === idStr || String(s.id) === idStr) || null;
+}
+
+function timestampToIso(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._seconds != null) {
+    return new Date(value._seconds * 1000).toISOString();
+  }
+  return null;
 }
 
 function parseOptionalBodyWeightKg(value) {
@@ -355,6 +379,206 @@ async function handleMyProfile(req, res, db) {
   ));
 }
 
+async function handleRequestException(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const member = await loadParticipantMember(db, auth.memberId);
+  if (!member) {
+    return res.status(404).json({ ok: false, error: "participant not found" });
+  }
+
+  const body = req.body || {};
+  const [config, slots, attendanceMap] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+    loadMemberAttendance(db, auth.memberId),
+  ]);
+  const todayKst = todayKstDate();
+  const seasonEndDate = effectiveSeasonEnd(config, slots);
+  const parsed = validateExceptionRequestInput({
+    reason: body.reason,
+    startDate: body.startDate,
+    endDate: body.endDate,
+    todayKst,
+    seasonEndDate,
+  });
+  if (!parsed.ok) {
+    return res.status(400).json({ ok: false, error: parsed.error });
+  }
+
+  const preview = previewExceptionApplication({
+    slots,
+    attendanceMap,
+    config,
+    startDate: parsed.startDate,
+    endDate: parsed.endDate,
+  });
+  if (body.dryRun === true) {
+    return res.json({ ok: true, preview });
+  }
+
+  const requestId = crypto.randomUUID();
+  const lockRef = db.collection("chunbaek_exception_locks").doc(auth.memberId);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const lockSnap = await tx.get(lockRef);
+      const pendingRequestId = lockSnap.exists
+        ? String((lockSnap.data() || {}).pendingRequestId || "").trim()
+        : "";
+      if (pendingRequestId) {
+        const pendingRef = db.collection("chunbaek_exception_requests").doc(pendingRequestId);
+        const pendingRequestSnap = await tx.get(pendingRef);
+        const pendingRequest = pendingRequestSnap.exists ? (pendingRequestSnap.data() || {}) : null;
+        if (
+          pendingRequest
+          && pendingRequest.memberId === auth.memberId
+          && pendingRequest.type === "exception"
+          && pendingRequest.status === "pending"
+        ) {
+          const err = new Error("pending request exists");
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      tx.set(db.collection("chunbaek_exception_requests").doc(requestId), {
+        seasonId: CHUNBAEK_SEASON_ID,
+        type: "exception",
+        memberId: auth.memberId,
+        nickname: member.data.nickname || "",
+        reason: parsed.reason,
+        startDate: parsed.startDate,
+        endDate: parsed.endDate,
+        status: "pending",
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewNote: "",
+        appliedSlotIds: [],
+        skippedSlotIds: [],
+      });
+      tx.set(lockRef, {
+        pendingRequestId: requestId,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    });
+  } catch (err) {
+    if (err && err.status === 400 && err.message === "pending request exists") {
+      return res.status(400).json({ ok: false, error: "pending request exists" });
+    }
+    throw err;
+  }
+
+  // 운영진 알림 — 실패해도 상신 성공 응답은 유지
+  notifyExceptionRequestCreated({
+    nickname: member.data.nickname || "",
+    reason: parsed.reason,
+    startDate: parsed.startDate,
+    endDate: parsed.endDate,
+    requestId,
+  });
+
+  return res.json({ ok: true, requestId, preview });
+}
+
+async function handleMyExceptionRequests(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  // memberId equality only — avoids composite index (memberId + createdAt).
+  // Sort/limit in memory; per-member volume is small.
+  const snap = await db.collection("chunbaek_exception_requests")
+    .where("memberId", "==", auth.memberId)
+    .get();
+
+  const requests = snap.docs
+    .map((doc) => {
+      const data = doc.data() || {};
+      return {
+        requestId: doc.id,
+        seasonId: data.seasonId || "",
+        type: data.type || "",
+        memberId: data.memberId || "",
+        nickname: data.nickname || "",
+        reason: data.reason || "",
+        startDate: data.startDate || "",
+        endDate: data.endDate || "",
+        status: data.status || "",
+        createdAt: timestampToIso(data.createdAt),
+        updatedAt: timestampToIso(data.updatedAt),
+        reviewedBy: data.reviewedBy || null,
+        reviewedAt: timestampToIso(data.reviewedAt),
+        reviewNote: data.reviewNote || "",
+        appliedSlotIds: Array.isArray(data.appliedSlotIds) ? data.appliedSlotIds : [],
+        skippedSlotIds: Array.isArray(data.skippedSlotIds) ? data.skippedSlotIds : [],
+        _createdAtMs: (() => {
+          const v = data.createdAt;
+          if (!v) return 0;
+          if (typeof v.toMillis === "function") return v.toMillis();
+          if (typeof v.toDate === "function") return v.toDate().getTime();
+          const parsed = Date.parse(String(v));
+          return Number.isFinite(parsed) ? parsed : 0;
+        })(),
+      };
+    })
+    .sort((a, b) => b._createdAtMs - a._createdAtMs)
+    .slice(0, 20)
+    .map(({ _createdAtMs, ...row }) => row);
+
+  return res.json({ ok: true, requests });
+}
+
+async function handleSelfClearFutureExceptions(req, res, db) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "POST only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const [slots, attendanceMap, config] = await Promise.all([
+    loadAllSlots(db),
+    loadMemberAttendance(db, auth.memberId),
+    loadSeasonConfig(db),
+  ]);
+  const clearableSlots = slotsEligibleForSelfClear({
+    slots,
+    attendanceMap,
+    config,
+    todayKst: todayKstDate(),
+  });
+  if (!clearableSlots.length) {
+    return res.status(400).json({ ok: false, error: "no future exceptions" });
+  }
+
+  const clearedSlotIds = [];
+  for (const slot of clearableSlots) {
+    const docId = `${auth.memberId}_${getSlotKey(slot)}`;
+    const patch = buildSlotExceptionPatch({
+      memberId: auth.memberId,
+      slot,
+      exception: false,
+      exceptionNote: "",
+      updatedBy: auth.memberId,
+    });
+    await db.collection("chunbaek_attendance").doc(docId).set({
+      ...patch,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    clearedSlotIds.push(slot.dayIndex ?? Number(slot.id));
+  }
+
+  return res.json({ ok: true, clearedSlotIds });
+}
+
 async function handleTodaySlot(req, res, db) {
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false, error: "GET only" });
@@ -416,7 +640,7 @@ async function handleSaveAttendance(req, res, db) {
       return res.status(403).json({ ok: false, error: "beta week ended" });
     }
   } else {
-    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    const seasonStart = effectiveSeasonStart(config, slots);
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
@@ -579,7 +803,7 @@ async function handleUploadAttendancePhoto(req, res, db) {
       return res.status(403).json({ ok: false, error: "beta week ended" });
     }
   } else {
-    const seasonStart = seasonBounds(seasonSlotsOnly(slots)).startDate;
+    const seasonStart = effectiveSeasonStart(config, slots);
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
@@ -663,13 +887,16 @@ async function handleTeamSummary(req, res, db) {
         ? p.s3.goalBodyWeightKg
         : null,
       goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
-      bar: weekBar(stats.weekAttendCount, stats.weekTarget),
+      bar: weekBar(Math.floor(stats.weekScore || 0), stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       weekPhotoCount: slots
         .filter((s) => s.week === currentWeek && !s.isProgramOff)
         .filter((s) => normalizePhotoUrls(getAttendance(attendanceMap, s)).length > 0)
         .length,
-      week: `${stats.weekAttendCount}/${stats.weekTarget}`,
+      week: `${Number(stats.weekScore || 0).toFixed(1)}/${stats.weekTarget}`,
+      weekAttendCount: stats.weekAttendCount,
+      weekExceptionCount: stats.weekExceptionCount || 0,
+      weekScore: stats.weekScore || 0,
       weekTarget: stats.weekTarget,
       met: stats.weekTargetMet,
       seasonAttendCount: stats.seasonAttendCount,
@@ -725,22 +952,31 @@ async function handleTeamMemberAttendance(req, res, db) {
     const note = String(att.note || "").trim().slice(0, 500);
     const photoUrls = normalizePhotoUrls(att);
     if (!note && !photoUrls.length) continue;
+    const slotId = slot.dayIndex ?? Number(slot.id);
+    const display = displayDayIndex(slot);
+    const week = slot.week ?? null;
     entries.push({
-      slotId: slot.dayIndex ?? Number(slot.id),
-      displayDayIndex: displayDayIndex(slot),
+      slotId,
+      displayDayIndex: display,
+      week,
       date: slot.date || "",
       title: slotTrainingTitle(slot) || "—",
       note,
       photoUrls,
+      dayLabel: formatTeamFeedDayLabel({
+        displayDayIndex: display,
+        slotId,
+        week,
+      }),
     });
   }
 
-  entries.sort((a, b) => (b.displayDayIndex ?? 0) - (a.displayDayIndex ?? 0));
+  const sorted = sortTeamMemberAttendanceEntries(entries);
 
   return res.json({
     ok: true,
     memberId,
-    entries: entries.slice(0, TEAM_MEMBER_ATTENDANCE_MAX),
+    entries: sorted.slice(0, TEAM_MEMBER_ATTENDANCE_MAX),
   });
 }
 
@@ -765,6 +1001,15 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "my-profile") {
     return handleMyProfile(req, res, db);
+  }
+  if (action === "request-exception") {
+    return handleRequestException(req, res, db);
+  }
+  if (action === "my-exception-requests") {
+    return handleMyExceptionRequests(req, res, db);
+  }
+  if (action === "self-clear-future-exceptions") {
+    return handleSelfClearFutureExceptions(req, res, db);
   }
   if (action === "today-slot") {
     return handleTodaySlot(req, res, db);

@@ -20,7 +20,7 @@
       <option value="grid" selected>① 출석 그리드</option>
       <option value="roster">④ 참가자 명단</option>
       <option value="training">② 훈련 입력</option>
-      <option value="import">③ 일괄 import</option>
+      <option value="exceptions">③ 예외 요청</option>
     </select>
   </div>
 
@@ -54,7 +54,9 @@
         <button type="button" class="admin-nav-btn active" data-panel="grid">출석 그리드</button>
         <button type="button" class="admin-nav-btn" data-panel="roster">참가자 명단</button>
         <button type="button" class="admin-nav-btn" data-panel="training">훈련 입력</button>
-        <button type="button" class="admin-nav-btn" data-panel="import">일괄 import</button>
+        <button type="button" class="admin-nav-btn" data-panel="exceptions">
+          예외 요청 <span class="admin-nav-badge" id="exceptions-pending-badge" hidden></span>
+        </button>
         <div class="admin-sidebar-foot">
           URL 비공개<br />
           단톡에 공유하지 마세요
@@ -76,9 +78,9 @@
             </select>
             <label class="admin-chip">
               <input type="checkbox" id="filter-under" />
-              주 3회 미달만
+              주 3점 미달만
             </label>
-            <span class="admin-chip warn" id="grid-under-chip">주 3회 미달 3명</span>
+            <span class="admin-chip warn" id="grid-under-chip">주 3점 미달 3명</span>
             <span class="admin-chip danger" id="grid-miss-chip">미출석 셀 12개</span>
             <div class="admin-toolbar-spacer"></div>
             <button type="button" class="admin-btn admin-btn-secondary">CSV↓</button>
@@ -133,23 +135,15 @@
           <div class="training-list" id="training-list"></div>
         </section>
 
-        <!-- 일괄 import -->
-        <section class="admin-panel" id="panel-import">
+        <!-- 예외 요청 -->
+        <section class="admin-panel" id="panel-exceptions">
           <div class="admin-toolbar">
-            <h2>100슬롯 일괄 import</h2>
+            <div>
+              <h2>예외 요청</h2>
+              <div class="admin-toolbar-sub">승인 대기 목록</div>
+            </div>
           </div>
-          <div class="card import-box" style="padding:20px">
-            <p class="import-hint">
-              시즌 시작 전 <strong>날짜·주차 골격</strong>을 한 번에 넣을 때 사용합니다.<br />
-              시즌 중 훈련 내용은 <strong>훈련 입력</strong> 탭에서 주차별로 등록하세요.
-            </p>
-            <textarea id="import-csv" aria-label="CSV">dayIndex,date,week,trainingTitle,trainingContent,isProgramOff
-1,2026-04-01,1,5km 이지런,,false
-2,2026-04-02,1,인터벌,5×1km (r:90s),false
-3,2026-04-03,1,휴무,,true
-</textarea>
-            <button type="button" class="admin-btn admin-btn-primary" id="btn-import">import (replace)</button>
-          </div>
+          <div class="exceptions-list" id="exceptions-list"></div>
         </section>
       </main>
     </div>

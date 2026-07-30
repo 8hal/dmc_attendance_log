@@ -93,7 +93,7 @@ const timelineBeta = buildTimelineWeeks(slots, attendanceMap, config, "2026-07-1
 assert.equal(timelineBeta.length, 1);
 assert.equal(timelineBeta[0].week, 0);
 assert.equal(timelineBeta[0].weekLabel, "0주차");
-assert.equal(timelineBeta[0].attendSummary, "1/3회");
+assert.equal(timelineBeta[0].attendSummary, "1.0 / 3점");
 
 const timelineSeason = buildTimelineWeeks(slots, attendanceMap, config, "2026-07-21");
 assert.ok(timelineSeason.every((w) => w.week > 0));

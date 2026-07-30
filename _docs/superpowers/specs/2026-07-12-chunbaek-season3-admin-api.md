@@ -431,6 +431,10 @@ GET ?action=admin-week-slots&week=7&adminPw=...
 
 **용도:** 매주(또는 해당 주 시작 전) 훈련 내용 입력·수정. **실운영에서 가장 자주 쓰는 API.**
 
+> **SSOT (2026-07-23):** `date`/`week`는 `dayIndex`(+ season config)에서 서버가 파생한다.  
+> 기존 슬롯 저장 시 클라이언트가 보낸 `date`/`week`로 **덮어쓰지 않는다** (title/content/off만 갱신).  
+> 신규 슬롯만 서버 파생 `date`/`week`를 기록한다. 상세: `docs/superpowers/specs/2026-07-23-chunbaek-slot-date-ssot-design.md`
+
 ```
 POST ?action=admin-save-week-slots
 Body: {
@@ -468,7 +472,7 @@ Body: {
 #### 3.4.1 저장 규칙
 
 - `dayIndex`별 **upsert** (`chunbaek_slots/{dayIndex}`).
-- `week`·`date`는 요청 값으로 덮어씀 (주차 재배치는 운영진 책임).
+- `week`·`date`: 기존 슬롯은 유지(요청값 무시). 신규 슬롯만 서버가 `dayIndex`에서 파생해 기록.
 - `isProgramOff: true`이면 `trainingTitle`·`trainingContent` 비워도 됨 (UI는 「휴무」 표시).
 - 이미 `chunbaek_attendance`가 있는 슬롯의 `isProgramOff`를 `true`로 바꾸려 하면 → `409` + `attendance exists` (출석 데이터와 충돌).
 - `trainingTitle`·`trainingContent` 변경은 **항상 허용** (`hasAttendance` 있어도 OK).

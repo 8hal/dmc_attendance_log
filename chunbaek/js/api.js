@@ -29,6 +29,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 0,
         seasonAttendRate: 0,
         weekAttendCount: 0,
+        weekExceptionCount: 0,
+        weekScore: 0,
         weekTarget: 3,
         inBetaWeek: true,
       },
@@ -62,6 +64,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 3,
         seasonAttendRate: 100,
         weekAttendCount: 3,
+        weekExceptionCount: 0,
+        weekScore: 3,
         weekTarget: 3,
         inBetaWeek: true,
       },
@@ -95,6 +99,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 1,
         seasonAttendRate: 100,
         weekAttendCount: 1,
+        weekExceptionCount: 0,
+        weekScore: 1,
         weekTarget: 3,
         inBetaWeek: true,
       },
@@ -120,6 +126,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 0,
         seasonAttendRate: 0,
         weekAttendCount: 0,
+        weekExceptionCount: 0,
+        weekScore: 0,
         weekTarget: 3,
         inBetaWeek: false,
       },
@@ -144,6 +152,8 @@ const PREVIEW_SCENARIOS = {
         seasonAttendCount: 28,
         seasonAttendRate: 68,
         weekAttendCount: 2,
+        weekExceptionCount: 0,
+        weekScore: 2,
         weekTarget: 3,
         inBetaWeek: false,
       },
@@ -202,7 +212,12 @@ const MOCK = {
       seasonAttendCount: 28,
       seasonAttendRate: 68,
       weekAttendCount: 2,
+      weekExceptionCount: 2,
+      weekScore: 3,
       weekTarget: 3,
+      weekTargetMet: true,
+      weekHint: null,
+      futureExceptionCount: 0,
     },
   },
   todaySlot: {
@@ -218,7 +233,7 @@ const MOCK = {
     {
       week: 7,
       range: "4/7 ~ 4/13",
-      attendSummary: "2/3회",
+      attendSummary: "3.0 / 3점",
       dots: "●●○○○",
       slots: [
         {
@@ -309,7 +324,7 @@ const MOCK = {
     {
       week: 6,
       range: "3/31 ~ 4/6",
-      attendSummary: "3/3회",
+      attendSummary: "3.0 / 3점",
       dots: "●●●○○",
       slots: [],
       collapsed: true,
@@ -333,7 +348,7 @@ const MOCK = {
         goalRaceLabel: "춘천 마라톤",
         resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
         bar: "███",
-        weekDots: "●●●○○",
+        weekDots: "◉●●○○",
         weekPhotoCount: 2,
         week: "3/3",
         weekTarget: 3,
@@ -363,6 +378,9 @@ const MOCK = {
       },
     ],
   },
+  exceptionRequests: [],
+  hasFutureExceptions: true,
+  futureExceptionCount: 1,
 };
 
 function getToken() {
@@ -472,6 +490,9 @@ function mockGet(action, params = {}) {
   if (action === "my-timeline") {
     return Promise.resolve({ ok: true, photoRequired: false, weeks: MOCK.timeline });
   }
+  if (action === "my-exception-requests") {
+    return Promise.resolve({ ok: true, requests: MOCK.exceptionRequests || [] });
+  }
   if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
   if (action === "team-member-attendance") {
     const entries = [];
@@ -483,17 +504,28 @@ function mockGet(action, params = {}) {
           ? slot.photoUrls.filter(Boolean)
           : (slot.photoUrl ? [slot.photoUrl] : []);
         if (!note && !photoUrls.length) continue;
+        const slotId = slot.slotId ?? slot.dayIndex;
+        const display = slot.displayDayIndex ?? slot.dayIndex;
+        const weekNum = slot.week ?? week.week ?? null;
+        const isBeta = weekNum === 0 || (Number(slotId) >= 901 && Number(slotId) < 908);
         entries.push({
-          slotId: slot.slotId ?? slot.dayIndex,
-          displayDayIndex: slot.displayDayIndex ?? slot.dayIndex,
+          slotId,
+          displayDayIndex: display,
+          week: weekNum,
           date: slot.date || "",
           title: slot.title || "—",
           note,
           photoUrls,
+          dayLabel: isBeta ? `베타 ${display}일차` : `${display}일차`,
         });
       }
     }
-    entries.sort((a, b) => (b.displayDayIndex ?? 0) - (a.displayDayIndex ?? 0));
+    entries.sort((a, b) => {
+      const da = String(a.date || "");
+      const db = String(b.date || "");
+      if (db !== da) return db.localeCompare(da);
+      return (Number(b.slotId) || 0) - (Number(a.slotId) || 0);
+    });
     return Promise.resolve({
       ok: true,
       memberId: params.memberId || "mock_a",
@@ -511,6 +543,13 @@ function findMockTimelineSlot(slotId) {
     }
   }
   return null;
+}
+
+function mockExceptionPreview() {
+  return {
+    applicableSlotIds: [1, 2],
+    skippedSlotIds: [],
+  };
 }
 
 function mockPost(action, body) {
@@ -559,6 +598,9 @@ function mockPost(action, body) {
       }
       scenario.profile.stats.seasonAttendCount = (scenario.profile.stats.seasonAttendCount || 0) + 1;
       scenario.profile.stats.weekAttendCount = (scenario.profile.stats.weekAttendCount || 0) + 1;
+      const attend = scenario.profile.stats.weekAttendCount || 0;
+      const exc = scenario.profile.stats.weekExceptionCount || 0;
+      scenario.profile.stats.weekScore = attend + exc * 0.5;
     }
     return Promise.resolve({
       ok: true,
@@ -591,6 +633,44 @@ function mockPost(action, body) {
           : "춘천 마라톤",
     });
     return Promise.resolve({ ok: true, ...MOCK.profile });
+  }
+  if (action === "request-exception") {
+    const preview = mockExceptionPreview();
+    if (body?.dryRun) {
+      return Promise.resolve({ ok: true, preview });
+    }
+    if ((MOCK.exceptionRequests || []).some((request) => request.status === "pending")) {
+      const err = new Error("pending request exists");
+      err.status = 400;
+      return Promise.reject(err);
+    }
+    const requestId = `mock_req_${Date.now()}`;
+    const now = new Date().toISOString();
+    const request = {
+      requestId,
+      seasonId: "chunbaek-s3",
+      type: "exception",
+      memberId: MOCK.profile.memberId || "m2",
+      nickname: MOCK.profile.nickname || "김러너",
+      reason: String(body?.reason || ""),
+      startDate: String(body?.startDate || ""),
+      endDate: String(body?.endDate || ""),
+      status: "pending",
+      createdAt: now,
+      updatedAt: now,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNote: "",
+      appliedSlotIds: [],
+      skippedSlotIds: [],
+    };
+    MOCK.exceptionRequests.unshift(request);
+    return Promise.resolve({ ok: true, requestId, preview });
+  }
+  if (action === "self-clear-future-exceptions") {
+    MOCK.futureExceptionCount = 0;
+    MOCK.hasFutureExceptions = false;
+    return Promise.resolve({ ok: true, clearedSlotIds: [1] });
   }
   return Promise.reject(new Error(`preview: unknown action ${action}`));
 }
