@@ -1,6 +1,6 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-30T03:44:16.051Z",
+  "preparedAt": "2026-07-30T03:46:01.047Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "3bpbfd2xvP2CvSQ1ZLpS",
@@ -41,6 +41,7 @@
     "iND3IoohoJJu6yZnWCRr",
     "H6RdETtfMu6uUokvAKRk",
     "aWZdokx4j9voiB076Bdq",
+    "A3uyy7fr30mNr03QdLxB",
     "1W9DlQzKvXr0jTrsMhdL",
     "gw9qdf1yxXQYONMYNPxU"
   ],
@@ -239,6 +240,11 @@
       "memberId": "aWZdokx4j9voiB076Bdq",
       "nickname": "BigC",
       "realName": "김정찬"
+    },
+    {
+      "memberId": "A3uyy7fr30mNr03QdLxB",
+      "nickname": "Clint",
+      "realName": "이봉건"
     },
     {
       "memberId": "1W9DlQzKvXr0jTrsMhdL",
