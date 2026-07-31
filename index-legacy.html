@@ -1,0 +1,1264 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>출석 체크 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --color-primary: #2563EB;
+      --color-primary-hover: #1D4ED8;
+      --color-primary-light: #DBEAFE;
+      --color-bg: #F8FAFC;
+      --color-card: #FFFFFF;
+      --color-text: #0F172A;
+      --color-text-secondary: #64748B;
+      --color-text-muted: #94A3B8;
+      --color-border: #E2E8F0;
+      --color-border-light: #F1F5F9;
+      --color-success: #059669;
+      --color-error: #DC2626;
+      --color-open-beta: #0F766E;
+      --color-open-beta-bg: #CCFBF1;
+      --color-open-beta-surface: #F0FDFA;
+    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; background: var(--color-bg); color: var(--color-text); }
+    .open-beta-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(20, 184, 166, 0.35);
+      background: linear-gradient(135deg, var(--color-open-beta-surface) 0%, var(--color-card) 55%);
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.45;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+    }
+    .open-beta-strip-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--color-open-beta);
+      background: var(--color-open-beta-bg);
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 118, 110, 0.2);
+      flex-shrink: 0;
+    }
+    .open-beta-strip-text { flex: 1 1 200px; min-width: 0; }
+    a.open-beta-strip-link {
+      display: inline-block;
+      width: auto;
+      padding: 8px 14px;
+      margin: 0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      background: var(--color-open-beta);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(15, 118, 110, 0.25);
+    }
+    a.open-beta-strip-link:hover { filter: brightness(1.06); }
+    /* 스테이징 워터마크 */
+    body.staging-env::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 80px,
+        rgba(255, 100, 100, 0.03) 80px,
+        rgba(255, 100, 100, 0.03) 160px
+      );
+      background-size: 200% 200%;
+    }
+    body.staging-env::after {
+      content: "STAGING";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 120px;
+      font-weight: 900;
+      color: rgba(255, 50, 50, 0.06);
+      pointer-events: none;
+      z-index: 9998;
+      white-space: nowrap;
+      letter-spacing: 20px;
+    }
+    .wrap { max-width:520px; margin:0 auto; padding:16px; }
+    .card { background: var(--color-card); border-radius:14px; padding:14px; box-shadow:0 2px 12px rgba(15,23,42,0.08); margin-bottom:12px; }
+    h1 { font-size:18px; margin:0 0 10px 0; }
+    .brand { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .brand img { width:32px; height:32px; border-radius:8px; }
+    .brand h1 { margin:0; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .card-head h1 { margin:0; }
+    .sort-btn { width:auto; padding:6px 10px; border-radius:999px; border:1px solid var(--color-border); background: var(--color-card); font-size:12px; cursor:pointer; color: var(--color-text-secondary); transition: all 0.15s; }
+    .sort-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .sort-btn.active { background: var(--color-primary); color:#fff; border-color: var(--color-primary); }
+    .row { margin:10px 0; }
+    label { display:block; font-size:12px; color: var(--color-text-secondary); margin-bottom:6px; font-weight: 500; }
+    input, select { width:100%; padding:12px; border-radius:10px; border:1px solid var(--color-border); font-size:14px; background: var(--color-card); box-sizing:border-box; color: var(--color-text); transition: border-color 0.15s, box-shadow 0.15s; }
+    input:focus, select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    input[readonly] { background: var(--color-border-light); }
+    button { width:100%; padding:12px; border:0; border-radius:10px; font-size:15px; cursor:pointer; }
+    button.primary { background: var(--color-primary); color:#fff; }
+    button.primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    button.primary:disabled { background: var(--color-border); color: var(--color-text-muted); cursor:not-allowed; }
+    /* 출석 체크 버튼 강조 */
+    button.submit-main {
+      height: 60px;
+      font-size: 17px;
+      font-weight: 600;
+      border-radius: 16px;
+      margin-top: 14px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button.submit-main:not(:disabled):active {
+      transform: scale(0.98);
+    }
+    /* 상세 설정 아코디언 */
+    .accordion { margin-top: 16px; }
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--color-border-light);
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: var(--color-border); }
+    .accordion-summary {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+    .accordion-summary strong {
+      color: var(--color-text);
+      font-weight: 500;
+    }
+    .accordion-chevron {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      transition: transform 0.2s;
+    }
+    .accordion.open .accordion-chevron {
+      transform: rotate(180deg);
+    }
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease-out, padding 0.25s ease-out;
+      padding: 0 4px;
+    }
+    .accordion.open .accordion-body {
+      max-height: 200px;
+      padding: 12px 4px 4px 4px;
+    }
+    button.loading { position:relative; }
+    button.loading::after {
+      content:"";
+      width:14px;
+      height:14px;
+      border:2px solid rgba(255,255,255,0.6);
+      border-top-color:#fff;
+      border-radius:50%;
+      display:inline-block;
+      margin-left:8px;
+      vertical-align:-2px;
+      animation:spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .msg { font-size:13px; margin-top:10px; color: var(--color-text); }
+    .msg.success { color: var(--color-success); }
+    .msg.error { color: var(--color-error); }
+    .toast {
+      position:fixed;
+      left:50%;
+      top:18px;
+      transform:translateX(-50%);
+      background: var(--color-primary);
+      color:#fff;
+      padding:12px 18px;
+      border-radius:12px;
+      box-shadow:0 10px 25px rgba(37,99,235,0.3);
+      font-size:13px;
+      font-weight: 500;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 0.25s ease, transform 0.25s ease;
+      z-index:1000;
+      max-width:90%;
+      text-align:center;
+    }
+    .toast.show {
+      opacity:1;
+      transform:translateX(-50%) translateY(6px);
+    }
+    .meta { font-size:12px; color: var(--color-text-secondary); }
+    .guide { margin:8px 0; padding:10px 12px; background: var(--color-primary-light); border:1px solid rgba(37,99,235,0.2); border-radius:10px; color: var(--color-primary-hover); font-size:12px; }
+    .list { margin-top:10px; }
+    .item { padding:10px 0; border-top:1px solid var(--color-border-light); }
+    .item:first-child { border-top:0; }
+    .item-head { display:flex; align-items:center; justify-content:flex-start; gap:8px; flex-wrap:wrap; cursor:pointer; transition: opacity 0.15s; }
+    .item-head:hover { opacity: 0.7; }
+    .more { margin-top:10px; }
+    .more button { width:100%; padding:10px; border-radius:10px; border:1px solid var(--color-border); background: var(--color-card); cursor:pointer; font-size:14px; color: var(--color-text-secondary); transition: all 0.15s; }
+    .more button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .nick { font-size:14px; color: var(--color-text); }
+    .sub { font-size:12px; color: var(--color-text-muted); margin-top:4px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; border:1px solid transparent; }
+    .form-anchor { scroll-margin-top: 12px; }
+    .nav-bar { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+    .nav-bar a { font-size: 13px; color: var(--color-primary); text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--color-primary); transition: all 0.15s; }
+    .nav-bar a:hover { background: var(--color-primary); color: #fff; }
+    .skeleton { position:relative; overflow:hidden; background: var(--color-border); border-radius:8px; }
+    .skeleton::after {
+      content:"";
+      position:absolute;
+      top:0;
+      left:-60%;
+      width:60%;
+      height:100%;
+      background:linear-gradient(90deg, rgba(226,232,240,0), rgba(255,255,255,0.8), rgba(226,232,240,0));
+      animation:shimmer 1.2s infinite;
+    }
+    .skeleton-line { height:12px; margin:6px 0; }
+    .skeleton-line.sm { height:10px; width:60%; }
+    .skeleton-line.md { height:12px; width:80%; }
+    .skeleton-line.lg { height:14px; width:90%; }
+    @keyframes shimmer { to { transform: translateX(160%); } }
+    /* 자동완성 드롭다운 */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin: 4px 0 0 0;
+      padding: 0;
+      list-style: none;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.12);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .autocomplete-list.show { display: block; }
+    .autocomplete-list li {
+      padding: 12px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--color-text);
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .autocomplete-list li:last-child { border-bottom: none; }
+    .autocomplete-list li:hover,
+    .autocomplete-list li.active {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .autocomplete-list li mark {
+      background: transparent;
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="nav-bar">
+      <a href="my.html">📊 내 기록</a>
+      <a href="races.html">🏅 대회 기록</a>
+    </div>
+    <div class="open-beta-strip" role="region" aria-label="공개 베타 새 출석 안내">
+      <span class="open-beta-strip-badge">공개 베타</span>
+      <span class="open-beta-strip-text">명단에서 본인만 고르면 되는 새 출석 화면입니다. 기존 QR·닉네임 입력 방식은 그대로 이어집니다.</span>
+      <a class="open-beta-strip-link" href="attendance-v2.html">새 출석 열기</a>
+    </div>
+    <div class="card form-anchor" id="formCard">
+      <div class="brand">
+        <img alt="동탄마라톤클럽 로고" src="assets/dmc_logo.png" />
+        <h1 id="titleText">출석 체크</h1>
+      </div>
+
+      <div class="row">
+        <label>닉네임</label>
+        <div class="autocomplete-wrap">
+          <input id="nickname" type="text" placeholder="예: 게살볶음밥" autocomplete="off" />
+          <ul id="nicknameList" class="autocomplete-list"></ul>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>소속팀</label>
+        <select id="team"></select>
+      </div>
+
+      <button id="submitBtn" class="primary submit-main" disabled>출석 체크 하기</button>
+      <div id="msg" class="msg" aria-live="polite"></div>
+
+      <div class="accordion" id="detailAccordion">
+        <div class="accordion-header" id="accordionToggle">
+          <span class="accordion-summary" id="accordionSummary">
+            <strong>상세 설정</strong> · <span id="summaryDate">2026.01.13</span> · <span id="summaryMeeting">화요일 정모</span>
+          </span>
+          <span class="accordion-chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div class="row">
+            <label>날짜</label>
+            <input id="today" type="date" />
+          </div>
+          <div class="row">
+            <label>정모 유형</label>
+            <select id="meetingType"></select>
+          </div>
+        </div>
+      </div>
+      <div class="meta" id="meta"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h1>오늘 출석 현황</h1>
+        <button id="sortToggle" class="sort-btn" type="button">팀 정렬</button>
+      </div>
+      <div class="meta" id="todayCount"></div>
+      <div class="guide" id="historyGuide" style="display:none;">닉네임을 선택하면 이번달 출석 기록을 볼 수 있어요.</div>
+      <div class="list" id="list"></div>
+      <div class="more" id="moreWrap" style="display:none;">
+        <button id="moreBtn">더보기</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // Firebase Cloud Functions URL
+  const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.startsWith("192.168.") || location.hostname.startsWith("172.");
+  const IS_STAGING = location.hostname.includes("dmc-attendance-staging");
+  const PROD_URL = "https://asia-northeast3-dmc-attendance.cloudfunctions.net/attendance";
+  const STAGING_URL = "https://asia-northeast3-dmc-attendance-staging.cloudfunctions.net/attendance";
+  const LOCAL_URL = `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/attendance`;
+  const BASE_URL = IS_LOCAL ? LOCAL_URL : (IS_STAGING ? STAGING_URL : PROD_URL);
+  const RACE_LOG_API = IS_LOCAL
+    ? `http://${location.hostname}:5001/dmc-attendance/asia-northeast3/race`
+    : "https://race-nszximpvtq-du.a.run.app";
+  
+  // 스테이징 환경 표시
+  if (IS_STAGING) {
+    document.body.classList.add("staging-env");
+  }
+  const GA_MEASUREMENT_ID = "G-TN57D4SNM1";
+
+  const TEAM_OPTIONS = [
+    { value: "S", label: "S팀" },
+    { value: "T1", label: "1팀" },
+    { value: "T2", label: "2팀" },
+    { value: "T3", label: "3팀" },
+    { value: "T4", label: "4팀" },
+    { value: "T5", label: "5팀" }
+  ];
+  const TEAM_LABEL_BY_VALUE = Object.fromEntries(
+    TEAM_OPTIONS.map(item => [item.value, item.label])
+  );
+  const TEAM_VALUE_BY_LABEL = Object.fromEntries(
+    TEAM_OPTIONS.map(item => [item.label, item.value])
+  );
+  const TEAM_COLORS = {
+    "S팀": { bg: "#ffe8d9", text: "#8a3d00", border: "#ffd0b3" },
+    "1팀": { bg: "#e6f1ff", text: "#124e8a", border: "#c7ddff" },
+    "2팀": { bg: "#e9f7ee", text: "#1f6b3a", border: "#cfeedd" },
+    "3팀": { bg: "#f3e8ff", text: "#5a2b8a", border: "#e2d1ff" },
+    "4팀": { bg: "#fff5cc", text: "#7a5b00", border: "#ffe8a3" },
+    "5팀": { bg: "#ffe7f1", text: "#8a2353", border: "#ffd0e2" }
+  };
+
+  const MEETING_TYPES = [
+    { value: "TUE", label: "화요일 정모" },
+    { value: "THU", label: "목요일 정모" },
+    { value: "SAT", label: "토요일 정모" },
+    { value: "ETC", label: "기타" }
+  ];
+  const MEETING_LABEL_BY_VALUE = Object.fromEntries(
+    MEETING_TYPES.map(item => [item.value, item.label])
+  );
+
+  const LS_NICK = "marathon_att_nickname";
+  const LS_TEAM = "marathon_att_team";
+  const LS_STATUS_PREFIX = "marathon_att_status:";
+  const LS_NICKNAMES = "marathon_att_nicknames_cache";
+
+  const elNick = document.getElementById("nickname");
+  const elTeam = document.getElementById("team");
+  const elToday = document.getElementById("today");
+  const elMeeting = document.getElementById("meetingType");
+  const elBtn = document.getElementById("submitBtn");
+  const SUBMIT_LABEL_DEFAULT = "출석 체크 하기";
+  const SUBMIT_LABEL_LOADING = "출석 전송 중";
+  const elMsg = document.getElementById("msg");
+  const elMeta = document.getElementById("meta");
+  const elCount = document.getElementById("todayCount");
+  const elList = document.getElementById("list");
+  const elMoreWrap = document.getElementById("moreWrap");
+  const elGuide = document.getElementById("historyGuide");
+  const elTitleText = document.getElementById("titleText");
+  const elToast = document.getElementById("toast");
+  const elSortToggle = document.getElementById("sortToggle");
+  const elAccordion = document.getElementById("detailAccordion");
+  const elAccordionToggle = document.getElementById("accordionToggle");
+  const elSummaryDate = document.getElementById("summaryDate");
+  const elSummaryMeeting = document.getElementById("summaryMeeting");
+  const elNicknameList = document.getElementById("nicknameList");
+  let todayNickSet = new Set();
+  let todayItems = [];
+  let todayItemsRaw = [];
+  let listShownCount = 0;
+  let lastValidDateKey = "";
+  let meetingTypeAuto = true;
+  let submitStartMs = null;
+  let sortMode = "recent";
+  const pageEnterMs = performance.now();
+  const latencyLogsEnabled = true;
+
+  function logLatency(label, payload) {
+    if (!latencyLogsEnabled) return;
+    const now = new Date().toISOString();
+    console.log(`[latency] ${label} @${now}`, payload);
+  }
+
+  function initAnalytics() {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag === "function") return;
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag("js", new Date());
+    gtag("config", GA_MEASUREMENT_ID, { send_page_view: true });
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
+    document.head.appendChild(script);
+  }
+
+  function trackEvent(name, params) {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag !== "function") return;
+    window.gtag("event", name, params || {});
+  }
+
+  function getListPageSize() {
+    return window.matchMedia("(max-width: 480px)").matches ? 6 : 20;
+  }
+
+  function setMsg(t, type) {
+    elMsg.textContent = t || "";
+    elMsg.classList.remove("success", "error");
+    if (type) elMsg.classList.add(type);
+  }
+
+  function showToast(message) {
+    if (!message) return;
+    elToast.textContent = message;
+    elToast.classList.add("show");
+    window.clearTimeout(showToast._timer);
+    showToast._timer = window.setTimeout(() => {
+      elToast.classList.remove("show");
+    }, 2000);
+  }
+
+  function getCachedStatus_(dateKey) {
+    if (!dateKey) return null;
+    try {
+      const raw = localStorage.getItem(`${LS_STATUS_PREFIX}${dateKey}`);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.status) return null;
+      return parsed.status;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedStatus_(dateKey, status) {
+    if (!dateKey || !status) return;
+    try {
+      const payload = { savedAt: Date.now(), status };
+      localStorage.setItem(`${LS_STATUS_PREFIX}${dateKey}`, JSON.stringify(payload));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  function kstTodayYYYYMMDD() {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "numeric", month: "2-digit", day: "2-digit"
+    });
+    return fmt.format(new Date()).replace(/-/g, "/"); // yyyy/mm/dd (API expects slashes)
+  }
+
+  function kstTodayKoreanLabel() {
+    const fmt = new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      month: "long",
+      day: "numeric"
+    });
+    return fmt.format(new Date()); // 1월 4일
+  }
+
+  function isValidDateKey_(value) {
+    return /^\d{4}\/\d{2}\/\d{2}$/.test(String(value || "").trim());
+  }
+
+  function dateKeyToInputValue_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    return dateKey.replace(/\//g, "-");
+  }
+
+  function inputValueToDateKey_(value) {
+    const s = String(value || "").trim();
+    if (!s) return "";
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(s)) return s;
+    const dash = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dash) return `${dash[1]}/${dash[2]}/${dash[3]}`;
+    const dots = s.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})$/);
+    if (dots) {
+      const mm = String(Number(dots[2])).padStart(2, "0");
+      const dd = String(Number(dots[3])).padStart(2, "0");
+      return `${dots[1]}/${mm}/${dd}`;
+    }
+    return "";
+  }
+
+  function setActiveDateKey_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return;
+    lastValidDateKey = dateKey;
+    elToday.value = dateKeyToInputValue_(dateKey);
+  }
+
+  function getActiveDateKey_() {
+    const current = inputValueToDateKey_(elToday.value);
+    if (current) return current;
+    return lastValidDateKey;
+  }
+
+  function dateKeyToKoreanLabel_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    const m = dateKey.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+    if (!m) return "";
+    const utcDate = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+    const fmt = new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      month: "long",
+      day: "numeric"
+    });
+    return fmt.format(utcDate);
+  }
+
+  function kstDow(dateObj) {
+    const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" });
+    return fmt.format(dateObj || new Date()); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+  }
+
+  function dateKeyToKstWeekday_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    const parts = dateKey.split("/");
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+    if (!y || !m || !d) return "";
+    const utcDate = new Date(Date.UTC(y, m - 1, d));
+    return kstDow(utcDate);
+  }
+
+  function inferMeetingTypeByDateKey_(dateKey) {
+    const w = dateKey ? dateKeyToKstWeekday_(dateKey) : kstDow();
+    if (w === "Tue") return "TUE";
+    if (w === "Thu") return "THU";
+    if (w === "Sat") return "SAT";
+    return "ETC";
+  }
+
+  // 요일 기반 기본 날짜/정모 유형 계산
+  // 월: 토요정모(2일전), 화: 화요정모(당일), 수: 화요정모(1일전)
+  // 목: 목요정모(당일), 금: 목요정모(1일전), 토: 토요정모(당일), 일: 토요정모(1일전)
+  function getDefaultDateAndMeetingType() {
+    // 스테이징에서 ?testDate=2026-01-20 형식으로 테스트 가능
+    const urlParams = new URLSearchParams(window.location.search);
+    const testDateParam = urlParams.get('testDate');
+    let now = new Date();
+    
+    if ((IS_LOCAL || IS_STAGING) && testDateParam) {
+      const parsed = new Date(testDateParam + 'T10:00:00+09:00');
+      if (!isNaN(parsed.getTime())) {
+        now = parsed;
+        console.log('[TEST MODE] 테스트 날짜:', testDateParam);
+      }
+    }
+    const kstFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      weekday: "short"
+    });
+    const dow = kstFormatter.format(now); // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+
+    // 날짜 오프셋 (0=당일, -1=어제, -2=그저께)
+    let dayOffset = 0;
+    let meetingType = "SAT";
+
+    switch (dow) {
+      case "Mon":
+        dayOffset = -2; // 토요일
+        meetingType = "SAT";
+        break;
+      case "Tue":
+        dayOffset = 0; // 당일
+        meetingType = "TUE";
+        break;
+      case "Wed":
+        dayOffset = -1; // 화요일
+        meetingType = "TUE";
+        break;
+      case "Thu":
+        dayOffset = 0; // 당일
+        meetingType = "THU";
+        break;
+      case "Fri":
+        dayOffset = -1; // 목요일
+        meetingType = "THU";
+        break;
+      case "Sat":
+        dayOffset = 0; // 당일
+        meetingType = "SAT";
+        break;
+      case "Sun":
+        dayOffset = -1; // 토요일
+        meetingType = "SAT";
+        break;
+    }
+
+    // KST 기준 날짜 계산
+    const kstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    kstDate.setDate(kstDate.getDate() + dayOffset);
+    
+    const year = kstDate.getFullYear();
+    const month = String(kstDate.getMonth() + 1).padStart(2, "0");
+    const day = String(kstDate.getDate()).padStart(2, "0");
+    const dateKey = `${year}/${month}/${day}`;
+
+    return { dateKey, meetingType };
+  }
+
+  function loadProfile() {
+    const n = localStorage.getItem(LS_NICK) || "";
+    const t = localStorage.getItem(LS_TEAM) || "";
+    if (n) elNick.value = n;
+    if (t) elTeam.value = TEAM_VALUE_BY_LABEL[t] || t;
+    toggleSubmit();
+  }
+
+  function saveProfile() {
+    localStorage.setItem(LS_NICK, (elNick.value || "").trim());
+    localStorage.setItem(LS_TEAM, (elTeam.value || "").trim());
+  }
+
+  // 닉네임 자동완성 캐시 관리
+  function loadNicknameCache() {
+    try {
+      const raw = localStorage.getItem(LS_NICKNAMES);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveNicknameCache(nicknames) {
+    try {
+      // 최대 500개까지만 저장
+      const limited = nicknames.slice(0, 500);
+      localStorage.setItem(LS_NICKNAMES, JSON.stringify(limited));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  function mergeNicknameCache(newNicknames) {
+    const existing = new Set(loadNicknameCache());
+    newNicknames.forEach(nick => existing.add(nick));
+    // 가나다순 정렬
+    const sorted = [...existing].sort((a, b) => a.localeCompare(b, 'ko'));
+    saveNicknameCache(sorted);
+    return sorted;
+  }
+
+  let nicknameListCache = [];
+  let autocompleteActiveIndex = -1;
+
+  function updateNicknameDatalist(nicknames) {
+    nicknameListCache = nicknames || loadNicknameCache();
+  }
+
+  function showAutocomplete(query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q || nicknameListCache.length === 0) {
+      hideAutocomplete();
+      return;
+    }
+    
+    const filtered = nicknameListCache.filter(nick => 
+      nick.toLowerCase().includes(q)
+    ).slice(0, 10);
+    
+    if (filtered.length === 0) {
+      hideAutocomplete();
+      return;
+    }
+    
+    elNicknameList.innerHTML = filtered.map(nick => {
+      const idx = nick.toLowerCase().indexOf(q);
+      const highlighted = idx >= 0
+        ? escapeHtml(nick.slice(0, idx)) + '<mark>' + escapeHtml(nick.slice(idx, idx + q.length)) + '</mark>' + escapeHtml(nick.slice(idx + q.length))
+        : escapeHtml(nick);
+      return `<li data-value="${escapeHtml(nick)}">${highlighted}</li>`;
+    }).join("");
+    
+    elNicknameList.classList.add("show");
+    autocompleteActiveIndex = -1;
+  }
+
+  function hideAutocomplete() {
+    elNicknameList.classList.remove("show");
+    elNicknameList.innerHTML = "";
+    autocompleteActiveIndex = -1;
+  }
+
+  function selectAutocompleteItem(value) {
+    elNick.value = value;
+    hideAutocomplete();
+    toggleSubmit();
+  }
+
+  async function fetchNicknames() {
+    try {
+      const res = await fetch(`${BASE_URL}?action=nicknames`);
+      const json = await res.json();
+      if (json.ok && Array.isArray(json.nicknames)) {
+        saveNicknameCache(json.nicknames);
+        updateNicknameDatalist(json.nicknames);
+        return json.nicknames;
+      }
+    } catch (e) {
+      console.warn("[fetchNicknames] error:", e);
+    }
+    return [];
+  }
+
+  function toggleSubmit() {
+    const hasNick = !!(elNick.value || "").trim();
+    const hasValidDate = !!inputValueToDateKey_(elToday.value);
+    elBtn.disabled = !hasNick || !hasValidDate;
+  }
+
+  function setSubmitLoading(isLoading) {
+    elBtn.classList.toggle("loading", isLoading);
+    const hasNick = !!(elNick.value || "").trim();
+    const hasValidDate = !!inputValueToDateKey_(elToday.value);
+    elBtn.disabled = isLoading || !hasNick || !hasValidDate;
+    elBtn.textContent = isLoading ? SUBMIT_LABEL_LOADING : SUBMIT_LABEL_DEFAULT;
+    elNick.disabled = isLoading;
+    elTeam.disabled = isLoading;
+    elToday.disabled = isLoading;
+    elMeeting.disabled = isLoading;
+  }
+
+  function updateTitle() {
+    const dateLabel = dateKeyToKoreanLabel_(getActiveDateKey_()) || kstTodayKoreanLabel();
+    const meetingLabel = MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value || "";
+    elTitleText.textContent = `${dateLabel} ${meetingLabel} 출석 체크`.trim();
+  }
+
+  function dateKeyToSummaryFormat_(dateKey) {
+    if (!isValidDateKey_(dateKey)) return "";
+    const parts = dateKey.split("/");
+    return `${parts[0]}.${String(Number(parts[1])).padStart(2, "0")}.${String(Number(parts[2])).padStart(2, "0")}`;
+  }
+
+  function updateAccordionSummary() {
+    const dateKey = getActiveDateKey_();
+    const dateStr = dateKeyToSummaryFormat_(dateKey) || dateKeyToSummaryFormat_(kstTodayYYYYMMDD());
+    const meetingLabel = MEETING_LABEL_BY_VALUE[elMeeting.value] || elMeeting.value || "";
+    elSummaryDate.textContent = dateStr;
+    elSummaryMeeting.textContent = meetingLabel;
+  }
+
+  function toggleAccordion(forceState) {
+    if (typeof forceState === "boolean") {
+      elAccordion.classList.toggle("open", forceState);
+    } else {
+      elAccordion.classList.toggle("open");
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[m]));
+  }
+
+  function renderList(items) {
+    if (items.length) {
+      elGuide.style.display = "block";
+    } else {
+      elGuide.style.display = "none";
+    }
+    if (!items.length) {
+      elList.innerHTML = `<div class="meta">아직 출석자가 없습니다.</div>`;
+      elMoreWrap.style.display = "none";
+      return;
+    }
+    elList.innerHTML = items.map(it => {
+      const nick = escapeHtml(it.nickname);
+      const nickParam = encodeURIComponent(it.nickname || "");
+      const teamLabel = escapeHtml(it.teamLabel || it.team || "");
+      const teamStyle = TEAM_COLORS[it.teamLabel] || { bg: "#f1f3f5", text: "#444", border: "#e3e6ea" };
+      const mtLabel = escapeHtml(it.meetingTypeLabel || it.meetingType || "");
+      const ts = escapeHtml(it.timeText || it.timestamp || "");
+      const monthKey = (getActiveDateKey_() || "").slice(0, 7).replace(/\//g, "-");
+      return `
+        <div class="item">
+          <div class="item-head" onclick="openHistory(decodeURIComponent('${nickParam}'), '${monthKey}')">
+            <div class="nick">${nick}${teamLabel ? `<span class="pill" style="background:${teamStyle.bg};color:${teamStyle.text};border-color:${teamStyle.border};">${teamLabel}</span>` : ""}</div>
+          </div>
+          <div class="sub">${mtLabel} · ${ts}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderListSkeleton(count) {
+    const items = Array.from({ length: count }, () => (
+      `<div class="item">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line sm"></div>
+      </div>`
+    )).join("");
+    elCount.innerHTML = `<span class="skeleton skeleton-line md"></span>`;
+    elList.innerHTML = items;
+    elGuide.style.display = "none";
+    elMoreWrap.style.display = "none";
+  }
+
+  function renderPagedList() {
+    if (!todayItems.length) {
+      renderList([]);
+      return;
+    }
+    const slice = todayItems.slice(0, listShownCount);
+    renderList(slice);
+    elMoreWrap.style.display = listShownCount < todayItems.length ? "block" : "none";
+  }
+
+  function getSortedItems_() {
+    if (!todayItemsRaw.length) return [];
+    if (sortMode === "recent") return todayItemsRaw.slice();
+    const teamOrder = new Map(TEAM_OPTIONS.map((t, idx) => [t.label, idx]));
+    return todayItemsRaw.slice().sort((a, b) => {
+      const aLabel = a.teamLabel || TEAM_LABEL_BY_VALUE[a.team] || a.team || "";
+      const bLabel = b.teamLabel || TEAM_LABEL_BY_VALUE[b.team] || b.team || "";
+      const aOrder = teamOrder.has(aLabel) ? teamOrder.get(aLabel) : 999;
+      const bOrder = teamOrder.has(bLabel) ? teamOrder.get(bLabel) : 999;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return (a.__idx ?? 0) - (b.__idx ?? 0);
+    });
+  }
+
+  function updateSortUi_() {
+    const isTeam = sortMode === "team";
+    elSortToggle.textContent = isTeam ? "최근순" : "팀 정렬";
+    elSortToggle.classList.toggle("active", isTeam);
+  }
+
+  function applyStatus(status, fallbackDate) {
+    const items = status?.items || [];
+    todayItemsRaw = items.map((it, idx) => ({ ...it, __idx: idx }));
+    todayItems = getSortedItems_();
+    listShownCount = Math.min(getListPageSize(), todayItems.length);
+    todayNickSet = new Set(items.map(it => String(it.nickname || "").trim().toLowerCase()));
+    elCount.textContent = `${status?.date || fallbackDate} 출석 인원: ${items.length}명`;
+    renderPagedList();
+    
+    // 닉네임 캐시에 추가 (TEST 닉네임 제외)
+    const newNicknames = items
+      .map(it => String(it.nickname || "").trim())
+      .filter(nick => nick && !nick.toUpperCase().startsWith("TEST"));
+    if (newNicknames.length > 0) {
+      mergeNicknameCache(newNicknames);
+      updateNicknameDatalist();
+    }
+  }
+
+  function openHistory(nickname, monthKey) {
+    const targetMonth = monthKey && monthKey.length >= 7 ? monthKey : (getActiveDateKey_() || "").slice(0, 7).replace(/\//g, "-");
+    const url = `history.html?nickname=${encodeURIComponent(nickname)}&month=${encodeURIComponent(targetMonth)}`;
+    window.location.href = url;
+  }
+
+
+  async function refreshTodayList() {
+    const today = getActiveDateKey_();
+    if (!today) {
+      elCount.textContent = "날짜를 선택해 주세요.";
+      elList.innerHTML = "";
+      elMoreWrap.style.display = "none";
+      return { ok: false, error: "invalid date" };
+    }
+    const cached = getCachedStatus_(today);
+    if (cached) {
+      applyStatus(cached, today);
+    } else {
+      renderListSkeleton(getListPageSize());
+    }
+    const url = `${BASE_URL}?action=status&date=${encodeURIComponent(today)}`;
+    const fetchStart = performance.now();
+
+    try {
+      const res = await fetch(url);
+      const networkMs = Math.round(performance.now() - fetchStart);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "status fetch failed");
+      applyStatus(json, today);
+      setCachedStatus_(today, json);
+      trackEvent("attendance_status_fetch_success", { date_key: today });
+      logLatency("status_fetch", {
+        date_key: today,
+        network_ms: networkMs,
+        count: json.items?.length ?? 0,
+        base_url: BASE_URL
+      });
+      return { ok: true, items: json.items || [] };
+    } catch (e) {
+      elCount.textContent = "목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+      elList.innerHTML = "";
+      elMoreWrap.style.display = "none";
+      trackEvent("attendance_status_fetch_error", { date_key: today });
+      logLatency("status_fetch_error", {
+        date_key: today,
+        network_ms: Math.round(performance.now() - fetchStart),
+        error: String(e && e.message ? e.message : e)
+      });
+      return { ok: false, error: e };
+    }
+  }
+
+  async function submitAttendance() {
+    const nickname = (elNick.value || "").trim();
+    const team = (elTeam.value || "").trim();
+    const date = inputValueToDateKey_(elToday.value);
+    const meetingType = (elMeeting.value || "").trim();
+
+    if (!date) {
+      setMsg("날짜를 선택해 주세요.", "error");
+      trackEvent("attendance_submit_error", { error_type: "invalid_date" });
+      return;
+    }
+
+    if (!nickname) {
+      setMsg("닉네임을 입력해 주세요.", "error");
+      trackEvent("attendance_submit_error", { error_type: "missing_nickname" });
+      return;
+    }
+
+    const nickKey = nickname.toLowerCase();
+    if (todayNickSet.has(nickKey)) {
+      setMsg("이미 오늘 출석이 등록되어 있습니다.", "error");
+      trackEvent("attendance_submit_error", { error_type: "duplicate", date_key: date });
+      return;
+    }
+
+    saveProfile();
+    setSubmitLoading(true);
+    setMsg("처리 중...");
+
+    submitStartMs = performance.now();
+    trackEvent("attendance_submit_attempt", {
+      date_key: date,
+      meeting_type: meetingType,
+      team: team || null
+    });
+
+    const params = new URLSearchParams();
+    params.append("nickname", nickname);
+    params.append("team", team);
+    params.append("meetingType", meetingType);
+    params.append("meetingDate", date);
+
+    try {
+      const networkStart = performance.now();
+      const res = await fetch(BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: params
+      });
+      const networkMs = Math.round(performance.now() - networkStart);
+      const json = await res.json();
+      if (!json.ok) {
+        if (json.error === "ALREADY_CHECKED_IN") {
+          await refreshTodayList();
+          setMsg("이미 출석된 기록이 있습니다.", "error");
+          trackEvent("attendance_submit_error", {
+            error_type: "already_checked_in_server",
+            date_key: date,
+          });
+          fetch(RACE_LOG_API + "?action=log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: "attendance_checkin_error",
+              data: {
+                logSource: "client",
+                page: "attendance-legacy",
+                mode: "legacy",
+                error: "ALREADY_CHECKED_IN",
+                meetingDate: date,
+                meetingType,
+                nickname,
+                entrySource: "legacy",
+              },
+            }),
+          }).catch(() => {});
+          setSubmitLoading(false);
+          return;
+        }
+        throw new Error(json.error || "submit failed");
+      }
+      const nowMs = performance.now();
+      const durationMs = submitStartMs !== null ? Math.round(nowMs - submitStartMs) : null;
+      const pageToSubmitMs = Math.round(nowMs - pageEnterMs);
+      if (json.status) {
+        applyStatus(json.status, date);
+        setCachedStatus_(date, json.status);
+        setMsg("");
+        showToast(`✅ ${nickname}님 출석 완료되었습니다! 오늘도 화이팅!`);
+        trackEvent("attendance_submit_success", {
+          date_key: date,
+          meeting_type: meetingType,
+          team: team || null,
+          duration_ms: durationMs,
+          network_ms: networkMs,
+          page_to_submit_ms: pageToSubmitMs
+        });
+      } else {
+        setMsg("");
+        showToast(`✅ ${nickname}님 출석 완료되었습니다! 오늘도 화이팅!`);
+        refreshTodayList();
+        trackEvent("attendance_submit_success", {
+          date_key: date,
+          meeting_type: meetingType,
+          team: team || null,
+          duration_ms: durationMs,
+          network_ms: networkMs,
+          page_to_submit_ms: pageToSubmitMs
+        });
+      }
+      logLatency("submit_success", {
+        date_key: date,
+        meeting_type: meetingType,
+        team,
+        duration_ms: durationMs,
+        network_ms: networkMs,
+        page_to_submit_ms: pageToSubmitMs,
+        base_url: BASE_URL
+      });
+      setSubmitLoading(false);
+    } catch (e) {
+      setMsg("출석 처리에 실패했습니다. 네트워크 상태를 확인해 주세요.", "error");
+      trackEvent("attendance_submit_error", { error_type: "network_or_server", date_key: date });
+      logLatency("submit_error", {
+        date_key: date,
+        meeting_type: meetingType,
+        team,
+        duration_ms: submitStartMs ? Math.round(performance.now() - submitStartMs) : null,
+        error: String(e && e.message ? e.message : e),
+        base_url: BASE_URL
+      });
+      setSubmitLoading(false);
+    }
+  }
+
+  function populateTeamOptions() {
+    elTeam.innerHTML = TEAM_OPTIONS.map(team => (
+      `<option value="${escapeHtml(team.value)}">${escapeHtml(team.label)}</option>`
+    )).join("");
+  }
+
+  function populateMeetingOptions() {
+    elMeeting.innerHTML = MEETING_TYPES.map(item => (
+      `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`
+    )).join("");
+  }
+
+  /** URL `?date=YYYY-MM-DD` 또는 `YYYY/MM/DD` 가 있으면 해당 모임일로 연다(v2 등에서 명단 링크용). */
+  function getBootstrapDateAndMeeting_() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const raw = (urlParams.get("date") || "").trim();
+    if (raw) {
+      const dateKey = inputValueToDateKey_(raw);
+      if (dateKey) {
+        return { dateKey, meetingType: inferMeetingTypeByDateKey_(dateKey) };
+      }
+    }
+    return getDefaultDateAndMeetingType();
+  }
+
+  function bootstrap() {
+    initAnalytics();
+    populateTeamOptions();
+    loadProfile();
+    updateNicknameDatalist();  // 캐시된 닉네임 목록 즉시 로드
+    fetchNicknames();  // 서버에서 최신 목록 병렬 호출 (백그라운드)
+    
+    // 요일 기반 기본 날짜·정모 유형 (또는 URL date=)
+    const defaults = getBootstrapDateAndMeeting_();
+    setActiveDateKey_(defaults.dateKey);
+    populateMeetingOptions();
+    elMeeting.value = defaults.meetingType;
+    
+    // 페이지 타이틀 동적 설정 (예: "1월 18일 토요일 정모 출석 체크 - 동탄 마라톤 클럽")
+    const meetingLabel = MEETING_TYPES.find(m => m.value === defaults.meetingType)?.label || '기타';
+    const [, titleMonth, titleDay] = defaults.dateKey.split('/');
+    document.title = `${Number(titleMonth)}월 ${Number(titleDay)}일 ${meetingLabel} 출석 체크 - 동탄 마라톤 클럽`;
+    
+    elMeta.textContent = "";
+    updateTitle();
+    updateAccordionSummary();
+    updateSortUi_();
+    refreshTodayList();
+    toggleSubmit();
+    trackEvent("attendance_view", {
+      date_key: defaults.dateKey,
+      meeting_type: elMeeting.value,
+      meeting_type_auto: meetingTypeAuto
+    });
+  }
+
+  document.getElementById("moreBtn").addEventListener("click", () => {
+    listShownCount = Math.min(listShownCount + 20, todayItems.length);
+    renderPagedList();
+  });
+
+  elSortToggle.addEventListener("click", () => {
+    sortMode = sortMode === "recent" ? "team" : "recent";
+    todayItems = getSortedItems_();
+    listShownCount = Math.min(getListPageSize(), todayItems.length);
+    updateSortUi_();
+    renderPagedList();
+  });
+
+  elAccordionToggle.addEventListener("click", () => toggleAccordion());
+
+  // 닉네임 자동완성 이벤트
+  elNick.addEventListener("input", () => {
+    toggleSubmit();
+    showAutocomplete(elNick.value);
+  });
+  
+  elNick.addEventListener("focus", () => {
+    if (elNick.value.trim()) {
+      showAutocomplete(elNick.value);
+    }
+  });
+  
+  elNicknameList.addEventListener("click", (e) => {
+    const li = e.target.closest("li");
+    if (li && li.dataset.value) {
+      selectAutocompleteItem(li.dataset.value);
+    }
+  });
+  
+  // 키보드 네비게이션
+  elNick.addEventListener("keydown", (e) => {
+    const items = elNicknameList.querySelectorAll("li");
+    if (!items.length || !elNicknameList.classList.contains("show")) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      autocompleteActiveIndex = Math.min(autocompleteActiveIndex + 1, items.length - 1);
+      items.forEach((li, i) => li.classList.toggle("active", i === autocompleteActiveIndex));
+      items[autocompleteActiveIndex]?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      autocompleteActiveIndex = Math.max(autocompleteActiveIndex - 1, 0);
+      items.forEach((li, i) => li.classList.toggle("active", i === autocompleteActiveIndex));
+      items[autocompleteActiveIndex]?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter" && autocompleteActiveIndex >= 0) {
+      e.preventDefault();
+      const selected = items[autocompleteActiveIndex];
+      if (selected?.dataset.value) {
+        selectAutocompleteItem(selected.dataset.value);
+      }
+    } else if (e.key === "Escape") {
+      hideAutocomplete();
+    }
+  });
+  
+  // 외부 클릭 시 닫기
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".autocomplete-wrap")) {
+      hideAutocomplete();
+    }
+  });
+  elToday.addEventListener("change", () => {
+    const dateKey = inputValueToDateKey_(elToday.value);
+    if (!dateKey) {
+      setMsg("날짜를 선택해 주세요.", "error");
+      toggleSubmit();
+      return;
+    }
+    setActiveDateKey_(dateKey);
+    if (meetingTypeAuto) {
+      elMeeting.value = inferMeetingTypeByDateKey_(dateKey);
+      elMeta.textContent = "";
+    }
+    setMsg("");
+    toggleSubmit();
+    updateTitle();
+    updateAccordionSummary();
+    refreshTodayList();
+    trackEvent("attendance_date_change", {
+      date_key: dateKey,
+      meeting_type: elMeeting.value,
+      meeting_type_auto: meetingTypeAuto
+    });
+  });
+  elMeeting.addEventListener("change", () => {
+    meetingTypeAuto = false;
+    updateTitle();
+    updateAccordionSummary();
+    trackEvent("attendance_meeting_type_change", {
+      meeting_type: elMeeting.value
+    });
+  });
+  elBtn.addEventListener("click", submitAttendance);
+  bootstrap();
+</script>
+</body>
+</html>
