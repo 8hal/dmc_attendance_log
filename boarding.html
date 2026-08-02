@@ -364,6 +364,16 @@
       탑승 정보를 불러오는 중...
     </div>
 
+    <div id="errorScreen" class="hidden">
+      <div class="card">
+        <div class="closed-box">
+          <div class="closed-icon">⚠️</div>
+          <div class="closed-title" id="errorTitle">오류</div>
+          <p class="closed-msg" id="errorMessage"></p>
+        </div>
+      </div>
+    </div>
+
     <div id="closedScreen" class="hidden">
       <div class="card">
         <div class="closed-box">
@@ -443,17 +453,19 @@
   </div>
 
   <script>
-    // 환경 자동 감지: localhost면 에뮬레이터, 아니면 프로덕션 (my-bib.html과 동일)
-    const API_BASE = window.location.hostname === 'localhost'
-      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
-      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+    // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (group-detail / api-patterns)
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
 
     const STEP = {
       LOADING: 1,
-      CLOSED: 2,
-      LIST: 3,
-      CONFIRM: 4,
-      DONE: 5
+      ERROR: 2,
+      CLOSED: 3,
+      LIST: 4,
+      CONFIRM: 5,
+      DONE: 6
     };
 
     const LEG_LABEL = {
@@ -472,8 +484,10 @@
     let currentLeg = "outbound";
     let currentRow = null;
     let isProcessing = false;
+    let isComposing = false;
 
     const loadingScreen = document.getElementById("loadingScreen");
+    const errorScreen = document.getElementById("errorScreen");
     const closedScreen = document.getElementById("closedScreen");
     const listScreen = document.getElementById("listScreen");
     const confirmScreen = document.getElementById("confirmScreen");
@@ -495,16 +509,25 @@
     function showScreen(step) {
       currentStep = step;
       loadingScreen.classList.add("hidden");
+      errorScreen.classList.add("hidden");
       closedScreen.classList.add("hidden");
       listScreen.classList.add("hidden");
       confirmScreen.classList.add("hidden");
       doneScreen.classList.add("hidden");
 
       if (step === STEP.LOADING) loadingScreen.classList.remove("hidden");
+      else if (step === STEP.ERROR) errorScreen.classList.remove("hidden");
       else if (step === STEP.CLOSED) closedScreen.classList.remove("hidden");
       else if (step === STEP.LIST) listScreen.classList.remove("hidden");
       else if (step === STEP.CONFIRM) confirmScreen.classList.remove("hidden");
       else if (step === STEP.DONE) doneScreen.classList.remove("hidden");
+    }
+
+    function showErrorScreen(title, message) {
+      document.getElementById("errorTitle").textContent = title;
+      document.getElementById("errorMessage").textContent = message;
+      eventInfo.textContent = title;
+      showScreen(STEP.ERROR);
     }
 
     function showError(message) {
@@ -659,15 +682,16 @@
     async function loadStatus() {
       const urlParams = new URLSearchParams(window.location.search);
       eventId = urlParams.get("eventId");
+      updateBibLinks();
 
       if (!eventId) {
-        eventInfo.textContent = "잘못된 접근";
-        alert("잘못된 접근입니다. 링크를 확인해주세요.");
-        updateBibLinks();
+        showErrorScreen(
+          "잘못된 접근",
+          "대회 링크가 올바르지 않습니다. eventId가 포함된 링크로 다시 접속해주세요."
+        );
         return;
       }
 
-      updateBibLinks();
       showScreen(STEP.LOADING);
 
       try {
@@ -677,7 +701,10 @@
         const data = await res.json();
 
         if (!data.ok) {
-          alert(data.error || "탑승 정보를 불러올 수 없습니다.");
+          showErrorScreen(
+            "불러오기 실패",
+            data.error || "탑승 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."
+          );
           return;
         }
 
@@ -709,7 +736,10 @@
         showScreen(STEP.LIST);
       } catch (error) {
         console.error("loadStatus error:", error);
-        alert("네트워크 오류가 발생했습니다.");
+        showErrorScreen(
+          "네트워크 오류",
+          "네트워크 오류가 발생했습니다. 연결을 확인한 뒤 새로고침해주세요."
+        );
       }
     }
 
@@ -778,7 +808,15 @@
     backBtn.addEventListener("click", goToList);
     doneBackBtn.addEventListener("click", goToList);
 
+    searchInput.addEventListener("compositionstart", () => {
+      isComposing = true;
+    });
+    searchInput.addEventListener("compositionend", (e) => {
+      isComposing = false;
+      renderParticipantList(e.target.value);
+    });
     searchInput.addEventListener("input", (e) => {
+      if (isComposing) return;
       renderParticipantList(e.target.value);
     });
 
