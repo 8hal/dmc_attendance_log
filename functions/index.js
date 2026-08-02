@@ -3765,6 +3765,86 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.json({ ok: true, enabled: result.enabled, legs: result.legs });
       }
 
+      if (sub === "self-board" && req.method === "POST") {
+        const body = req.body || {};
+        const eventId = String(body.eventId || "").trim();
+        const nickname = String(body.nickname || "").trim();
+        const leg = String(body.leg || "").trim();
+
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (!nickname) {
+          return res.status(400).json({ ok: false, error: "nickname required" });
+        }
+        if (leg !== "outbound" && leg !== "return") {
+          return res.status(400).json({
+            ok: false,
+            error: "leg must be outbound|return",
+          });
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            const bb = data.busBoarding;
+            if (!busBoardingLib.assertEnabled(bb)) {
+              return { notEnabled: true };
+            }
+
+            const roster = Array.isArray(bb.roster) ? bb.roster.slice() : [];
+            const idx = busBoardingLib.findRosterIndexByNickname(roster, nickname);
+            if (idx < 0) {
+              return { notOnRoster: true };
+            }
+
+            const applied = busBoardingLib.applySelfBoard(
+              roster[idx],
+              leg,
+              new Date().toISOString()
+            );
+            if (!applied.ok) {
+              return { notRequired: true };
+            }
+
+            tx.update(ref, { busBoarding: { ...bb, roster } });
+            return { already: !!applied.already };
+          });
+        } catch (error) {
+          console.error("bus-boarding self-board error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        if (result.notEnabled) {
+          return res.status(403).json({
+            ok: false,
+            error: "bus boarding not enabled",
+          });
+        }
+        if (result.notOnRoster) {
+          return res.status(403).json({ ok: false, error: "not on roster" });
+        }
+        if (result.notRequired) {
+          return res.status(400).json({
+            ok: false,
+            error: "leg not required",
+          });
+        }
+
+        const payload = { ok: true };
+        if (result.already) payload.already = true;
+        return res.json(payload);
+      }
+
       return res.status(400).json({ ok: false, error: "unknown subAction" });
     }
 
