@@ -55,7 +55,7 @@
 - 지인 로스터 추가/제외, 비고(`note`) — 총무만 열람·수정
 - 탑승 → 배번(`my-bib`) 연결
 - 공개 결과 보드 (취합된 기록 읽기)
-- `group-detail` 진입점 (버스 활성 시)
+- `group-detail` 진입점 (총무는 항상; 참가자·활성 뱃지는 `enabled`일 때)
 
 ### 3.2 Out of scope (1차·비전 공통)
 
@@ -212,9 +212,12 @@
 4. `POST settings { enabled: true, legs: ["outbound","return"] }` → 문서에 `busBoarding` 생성/갱신.
 5. 이후 CSV import · 명단 편집 · QR 노출.
 6. 참가자 `boarding.html`은 `enabled === true` 일 때만 체크 가능. 꺼져 있으면 “아직 열리지 않음” 안내.
-7. Admin 화면은 `enabled`와 무관하게 **항상** 열리며, 꺼진 상태에서는 활성화·settings만 가능하다 (대리 체크/self와 혼동 금지).
+7. Admin 화면은 `enabled`와 무관하게 **항상** 열린다.
 
-`enabled: false`로 되돌리면 참가자 체크는 막고, admin은 명단 조회·재활성화만 허용한다 (기존 boarded 데이터는 삭제하지 않음).
+`enabled !== true` (필드 없음 포함)일 때 admin 허용 범위는 다음에 **고정**한다.
+- 허용: `settings`(활성화/재활성화), 명단 **조회**(GET status admin), 비고 읽기
+- 금지: `self-board`와 동일하게 참가자 체크 불가; admin의 `admin-board` / `roster-upsert` / `roster-remove` / `import` 도 거부 (먼저 enable 필요)
+- 기존 `roster`·`boarded` 데이터는 `enabled: false`로 돌려도 **삭제하지 않음**
 
 ### 6.1 CSV import
 
@@ -265,9 +268,10 @@
 ### 8.2 `boarding-admin.html`
 
 1. 관리자 비밀번호.
-2. 상단: 구간 탭, `탑승 n / 필요 m`, 미탑승 목록 강조.
-3. 행: 닉네임, 실명, 지인 여부, rideType, boarded 토글, 비고.
-4. 액션: CSV import, 명단 추가, 링크/QR 복사.
+2. `enabled !== true` 이면 **활성화 패널**(대회명 + ‘버스 탑승 시작’ / legs 확인)만 강조. enable 전에는 import·대리체크 UI 비활성.
+3. enable 후 상단: 구간 탭, `탑승 n / 필요 m`, 미탑승 목록 강조.
+4. 행: 닉네임, 실명, 지인 여부, rideType, boarded 토글, 비고.
+5. 액션: CSV import, 명단 추가, 링크/QR 복사, (선택) 버스 기능 끄기.
 
 ### 8.3 QR
 
@@ -291,20 +295,23 @@
 
 ## 10. 테스트 시나리오 (Phase 1 최소)
 
-1. 왕복 회원: outbound self-board → admin에 반영 → return self-board.
-2. 편도(outbound_only): return 체크 시도 → 실패.
-3. 지인 추가 후 셀프 체크 → admin 카운트 증가.
-4. admin 대리 체크/취소.
-5. CSV import 후 boarded 유지(머지).
-6. 비고: admin GET에만 존재, 참가자 GET에 없음.
-7. admin 미인증 상태의 roster-upsert 거부.
+1. 부트스트랩: `busBoarding` 없음 → admin `settings`로 생성·enable → import → 참가자 outbound 체크 성공.
+2. `enabled: false` 후 참가자 self-board 거부, admin import/admin-board 거부, GET 명단·재활성화는 가능.
+3. 왕복 회원: outbound self-board → admin에 반영 → return self-board.
+4. 편도(outbound_only): return 체크 시도 → 실패.
+5. 지인 추가 후 셀프 체크 → admin 카운트 증가.
+6. admin 대리 체크/취소.
+7. CSV import 후 boarded 유지(머지).
+8. 비고: admin GET에만 존재, 참가자 GET에 없음.
+9. admin 미인증 상태의 roster-upsert 거부.
 
 ---
 
 ## 11. `group-detail` / FE 리팩터 방침
 
 - 전면 리팩터는 하지 않는다.
-- `busBoarding.enabled`일 때 진입 버튼·뱃지 정도만 추가.
+- ‘버스 탑승’ **진입 버튼은 총무 화면에서 항상** 둔다 (미활성이어도 `boarding-admin`으로 가 부트스트랩).
+- `enabled === true` 일 때만 ‘운영 중’ 뱃지·요약(탑승 n/m)을 붙인다.
 - 버스 도메인 UI는 신규 HTML로 분리해 `group-detail` 비대화를 피한다.
 - 구식 패턴이 탑승 기능 연결을 막을 때만 해당 연결부를 수정한다.
 
@@ -318,7 +325,14 @@
 2. CSV 헤더 별칭 목록(네이버 폼 export 실제 컬럼명).
 3. 닉네임 매칭 정규화: Phase 1 계획에서 **`my-bib` / `update-bib`와 동일 규칙으로 맞춘다** (별도 규칙 신설 금지).
 4. Phase 3 결과 보드에 넣을 필드 목록(기록·순위·거리 등) — Phase 3 계획 때 상세화.
-5. roster 배열 갱신은 **트랜잭션(또는 동등한 원자적 갱신)** 으로 한다. 새벽 동시 `self-board` 시 lost update 방지 (`update-bib`와 동일 위험).
+---
+
+## 12.1 Phase 1 필수 제약 (계획 체크리스트)
+
+- roster 배열 갱신은 **트랜잭션(또는 동등한 원자적 갱신)**. 새벽 동시 `self-board` lost update 방지 (`update-bib`와 동일 위험).
+- 닉네임 정규화는 `my-bib` / `update-bib`와 동일.
+- import는 머지 전용.
+- 서버에서 총무 API admin 검증.
 
 ---
 
