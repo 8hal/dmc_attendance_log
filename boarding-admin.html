@@ -563,10 +563,11 @@
   </div>
 
   <script>
-    // 환경 자동 감지: localhost면 에뮬레이터, 아니면 프로덕션 (my-bib / boarding.html과 동일)
-    const API_BASE = window.location.hostname === "localhost"
-      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
-      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+    // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (boarding.html / group-detail과 동일)
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
 
     const AUTH_KEY = "dmc_boarding_admin_auth";
     const POLL_MS = 4000;
@@ -1011,17 +1012,19 @@
       mainWrap.classList.remove("hidden");
     }
 
-    // attendance-admin checkAuth: 플래그 있으면 셸 표시, pw는 필요 시 prompt
+    // 세션 플래그만으로는 셸을 열지 않음 — pw를 확보한 뒤에만 revealShell
     function checkAuth() {
       if (!isAuthedFlag()) return false;
-      revealShell();
       if (!adminPwCache) {
         const pw = window.prompt("관리자 비밀번호");
-        if (pw) adminPwCache = pw;
+        if (!pw) {
+          sessionStorage.removeItem(AUTH_KEY);
+          return false;
+        }
+        adminPwCache = pw;
       }
-      if (adminPwCache) {
-        loadStatus().then(startPoll);
-      }
+      revealShell();
+      loadStatus().then(startPoll);
       return true;
     }
 
@@ -1082,14 +1085,22 @@
     }
 
     async function toggleBoard(rosterId, boarded) {
-      if (isProcessing) return;
+      // change 이벤트로 체크박스가 이미 뒤집힌 상태 — 조기 return 전 roster로 복원
+      if (isProcessing) {
+        renderRoster(searchInput.value);
+        return;
+      }
       if (enabled !== true) {
         showToast("버스 탑승이 꺼져 있습니다", true);
+        renderRoster(searchInput.value);
         await loadStatus({ silent: true });
         return;
       }
       const pw = requirePw();
-      if (!pw || !eventId) return;
+      if (!pw || !eventId) {
+        renderRoster(searchInput.value);
+        return;
+      }
       isProcessing = true;
       try {
         const { data } = await postBus({
@@ -1277,15 +1288,17 @@
         return { rows: [], error: "버스 탑승 여부(탑승) 열이 없습니다" };
       }
 
+      // note/비고 열이 있을 때만 row.note 포함 — 없으면 생략해 mergeRosterImport가 기존 note 유지
+      const hasNoteColumn = fields.includes("note");
       const rows = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = splitLine(lines[i]);
-        const row = { nickname: "", realName: "", rideTypeLabel: "", note: null };
+        const row = { nickname: "", realName: "", rideTypeLabel: "" };
         fields.forEach((key, idx) => {
           if (!key || key === "_lunch") return;
           const val = cols[idx] != null ? String(cols[idx]).trim() : "";
           if (key === "note") {
-            row.note = val === "" ? null : val;
+            if (hasNoteColumn) row.note = val === "" ? null : val;
           } else {
             row[key] = val;
           }

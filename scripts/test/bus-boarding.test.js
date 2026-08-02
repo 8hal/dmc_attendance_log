@@ -148,6 +148,32 @@ describe("mergeRosterImport", () => {
     assert.equal(roster[0].realName, "이원기");
   });
 
+  it("re-import without note key preserves existing note", () => {
+    const existing = [
+      {
+        rosterId: "r1",
+        nickname: "라우펜더만",
+        realName: "이원기",
+        rideType: "roundtrip",
+        isGuest: false,
+        memberId: "m1",
+        note: "머지후비고",
+        legs: {
+          outbound: { required: true, boarded: true, boardedAt: "t", boardedBy: "admin" },
+          return: { required: true, boarded: true, boardedAt: "t", boardedBy: "admin" },
+        },
+      },
+    ];
+    const row = { nickname: "라우펜더만", realName: "이원기", rideTypeLabel: "왕복" };
+    assert.equal(Object.prototype.hasOwnProperty.call(row, "note"), false);
+    const { roster, report } = mergeRosterImport(existing, [row], {
+      memberIdByNickname: new Map([["라우펜더만", "m1"]]),
+    });
+    assert.equal(report.merged, 1);
+    assert.equal(roster[0].note, "머지후비고");
+    assert.equal(roster[0].legs.outbound.boarded, true);
+  });
+
   it("clears note when CSV explicitly sends null", () => {
     const existing = [
       {
