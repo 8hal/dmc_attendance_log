@@ -13,17 +13,20 @@ function rideTypeToLegRequired(rideType) {
   }
 }
 
+const VALID_RIDE_TYPES = new Set(["roundtrip", "outbound_only", "return_only"]);
+
 function parseRideTypeLabel(label) {
   const s = String(label || "").trim();
   if (!s) return null;
   if (s === "왕복") return "roundtrip";
   if (s === "개별 이동") return "excluded";
-  if (/철원\s*(->|→)\s*동탄/.test(s) || /(->|→)\s*동탄/.test(s)) {
-    return "return_only";
-  }
-  if (/동탄\s*(->|→)\s*철원/.test(s)) {
-    return "outbound_only";
-  }
+
+  const arrowCount = (s.match(/->|→/g) || []).length;
+  if (arrowCount > 1) return null;
+
+  if (/동탄\s*(->|→)\s*철원/.test(s)) return "outbound_only";
+  if (/철원\s*(->|→)\s*동탄/.test(s)) return "return_only";
+
   return null;
 }
 
@@ -51,6 +54,9 @@ function newRosterId() {
 }
 
 function buildRosterEntry({ nickname, realName, rideType, note, memberId, rosterId, existingLegs }) {
+  if (!VALID_RIDE_TYPES.has(rideType)) {
+    throw new Error(`invalid rideType: ${rideType}`);
+  }
   const nick = String(nickname).trim();
   const mid = memberId ?? null;
   return {
@@ -66,10 +72,9 @@ function buildRosterEntry({ nickname, realName, rideType, note, memberId, roster
 }
 
 function emptyBusBoarding(options = {}) {
-  const legs = options.legs || ["outbound", "return"];
   return {
     enabled: false,
-    legs,
+    legs: [...(options.legs || ["outbound", "return"])],
     importMeta: {
       importedAt: null,
       rowCount: 0,
@@ -166,11 +171,17 @@ function mergeRosterImport(existing, rows, options = {}) {
 
     if (idx >= 0) {
       const prev = roster[idx];
+      const realName = Object.prototype.hasOwnProperty.call(row, "realName")
+        ? row.realName
+        : prev.realName;
+      const note = Object.prototype.hasOwnProperty.call(row, "note")
+        ? row.note
+        : prev.note;
       roster[idx] = buildRosterEntry({
         nickname: nick,
-        realName: row.realName,
+        realName,
         rideType: parsed,
-        note: row.note,
+        note,
         memberId: memberId ?? prev.memberId,
         rosterId: prev.rosterId,
         existingLegs: prev.legs,
