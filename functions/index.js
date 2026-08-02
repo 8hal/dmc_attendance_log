@@ -3662,67 +3662,90 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       ).trim() || (req.method === "GET" ? "status" : "");
 
       if (sub === "status") {
-        const eventId = String(
-          req.query.eventId || (req.body && req.body.eventId) || ""
-        ).trim();
-        if (!eventId) {
-          return res.status(400).json({ ok: false, error: "eventId required" });
-        }
-
-        const pw = req.query.pw || (req.body && req.body.pw);
-        let isAdmin = false;
-        if (pw) {
-          const auth = verifyAdminPassword(pw);
-          if (!auth.ok) {
-            return res.status(401).json({ ok: false, error: "invalid password" });
+        // Admin: POST subAction=status + body { pw, eventId } (do not put pw in query).
+        // GET without body.pw → public view only.
+        try {
+          const eventId = String(
+            req.query.eventId || (req.body && req.body.eventId) || ""
+          ).trim();
+          if (!eventId) {
+            return res.status(400).json({ ok: false, error: "eventId required" });
           }
-          isAdmin = true;
-        }
 
-        const eventDoc = await db.collection("race_events").doc(eventId).get();
-        if (!eventDoc.exists) {
-          return res.status(404).json({ ok: false, error: "event not found" });
-        }
+          const pw = (req.body && req.body.pw) || null;
+          let isAdmin = false;
+          if (pw) {
+            const auth = verifyAdminPassword(pw);
+            if (!auth.ok) {
+              return res.status(401).json({ ok: false, error: "invalid password" });
+            }
+            isAdmin = true;
+          }
 
-        const event = eventDoc.data() || {};
-        const eventName = event.eventName || event.primaryName || "";
-        const bb = event.busBoarding;
+          const eventDoc = await db.collection("race_events").doc(eventId).get();
+          if (!eventDoc.exists) {
+            return res.status(404).json({ ok: false, error: "event not found" });
+          }
 
-        if (!bb) {
+          const event = eventDoc.data() || {};
+          const eventName = event.eventName || event.primaryName || "";
+          const bb = event.busBoarding;
+          const emptySummary = {
+            outbound: { required: 0, boarded: 0 },
+            return: { required: 0, boarded: 0 },
+          };
+
+          if (!bb) {
+            return res.json({
+              ok: true,
+              enabled: false,
+              legs: ["outbound", "return"],
+              roster: [],
+              eventName,
+              importMeta: null,
+              summary: emptySummary,
+            });
+          }
+
+          const enabled = bb.enabled === true;
+          const legs = Array.isArray(bb.legs) && bb.legs.length
+            ? bb.legs
+            : ["outbound", "return"];
+          const roster = Array.isArray(bb.roster) ? bb.roster : [];
+
+          // Public (non-admin) must not see roster until boarding is enabled.
+          let responseRoster;
+          let summary;
+          if (isAdmin) {
+            responseRoster = roster;
+            summary = {
+              outbound: busBoardingLib.summarizeLeg(roster, "outbound"),
+              return: busBoardingLib.summarizeLeg(roster, "return"),
+            };
+          } else if (!enabled) {
+            responseRoster = [];
+            summary = emptySummary;
+          } else {
+            responseRoster = busBoardingLib.toPublicRoster(roster);
+            summary = {
+              outbound: busBoardingLib.summarizeLeg(roster, "outbound"),
+              return: busBoardingLib.summarizeLeg(roster, "return"),
+            };
+          }
+
           return res.json({
             ok: true,
-            enabled: false,
-            legs: ["outbound", "return"],
-            roster: [],
+            enabled,
+            legs,
+            roster: responseRoster,
             eventName,
-            importMeta: null,
-            summary: {
-              outbound: { required: 0, boarded: 0 },
-              return: { required: 0, boarded: 0 },
-            },
+            importMeta: bb.importMeta || null,
+            summary,
           });
+        } catch (error) {
+          console.error("bus-boarding status error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
         }
-
-        const roster = Array.isArray(bb.roster) ? bb.roster : [];
-        const publicOrAdminRoster = isAdmin
-          ? roster
-          : busBoardingLib.toPublicRoster(roster);
-        const legs = Array.isArray(bb.legs) && bb.legs.length
-          ? bb.legs
-          : ["outbound", "return"];
-
-        return res.json({
-          ok: true,
-          enabled: bb.enabled === true,
-          legs,
-          roster: publicOrAdminRoster,
-          eventName,
-          importMeta: bb.importMeta || null,
-          summary: {
-            outbound: busBoardingLib.summarizeLeg(roster, "outbound"),
-            return: busBoardingLib.summarizeLeg(roster, "return"),
-          },
-        });
       }
 
       if (sub === "settings" && req.method === "POST") {
@@ -3743,6 +3766,25 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const legsProvided = Array.isArray(body.legs);
         if (body.legs != null && !legsProvided) {
           return res.status(400).json({ ok: false, error: "legs must be an array" });
+        }
+        if (legsProvided) {
+          const VALID_LEGS = new Set(["outbound", "return"]);
+          if (body.legs.length === 0) {
+            return res.status(400).json({ ok: false, error: "legs must be non-empty" });
+          }
+          const seen = new Set();
+          for (const leg of body.legs) {
+            if (!VALID_LEGS.has(leg)) {
+              return res.status(400).json({
+                ok: false,
+                error: "legs must be outbound|return",
+              });
+            }
+            if (seen.has(leg)) {
+              return res.status(400).json({ ok: false, error: "legs must be unique" });
+            }
+            seen.add(leg);
+          }
         }
 
         const ref = db.collection("race_events").doc(eventId);
