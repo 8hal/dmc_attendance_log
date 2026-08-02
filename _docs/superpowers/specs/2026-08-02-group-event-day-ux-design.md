@@ -55,7 +55,7 @@
 - 지인 로스터 추가/제외, 비고(`note`) — 총무만 열람·수정
 - 탑승 → 배번(`my-bib`) 연결
 - 공개 결과 보드 (취합된 기록 읽기)
-- `group-detail` 진입점 (총무는 항상; 참가자·활성 뱃지는 `enabled`일 때)
+- `group-detail` 총무 진입점(항상) 및 `enabled` 시 운영 중 뱃지
 
 ### 3.2 Out of scope (1차·비전 공통)
 
@@ -194,7 +194,7 @@
 
 | Method | subAction (가칭) | 권한 | 설명 |
 |--------|------------------|------|------|
-| GET | `status` | 공개(최소) / admin(전체+note) | roster + leg 상태. 쿼리로 admin 여부 구분하지 말고, admin 인증 시에만 note·상세 포함 |
+| GET | `status` | 공개(최소) / admin(전체+note) | roster + leg 상태. admin 인증 시에만 note·상세 포함. `busBoarding` 없으면 `{ enabled: false, roster: [] }` 형태로 성공 응답(404 아님) — admin 활성화 패널용 |
 | POST | `self-board` | 공개 | `{ eventId, nickname, leg }` |
 | POST | `admin-board` | admin | `{ eventId, rosterId, leg, boarded: true\|false }` |
 | POST | `roster-upsert` | admin | 단건 추가/수정(지인·비고·rideType 등) |
@@ -233,6 +233,7 @@
 - 개별 이동 행: 제외 + import 리포트에 기록.
 - 동일 닉네임 중복: import 실패 항목으로 돌려 총무가 확인 (자동 덮어쓰기 금지가 기본).
 - import 모드(Phase 1): **머지 전용** — 닉네임을 키로 하고, 기존 `boarded` / `boardedAt` / `boardedBy` 는 유지한다. 전체 교체는 제공하지 않는다 (당일 체크 유실 방지).
+- CSV에 **없는** 기존 roster 행은 **삭제하지 않고 유지**한다. 제외는 `roster-remove`로만 한다.
 - `memberId`: 닉네임으로 `members` 조회해 있으면 채우고 `isGuest=false`, 없으면 `isGuest=true`.
 
 ### 6.2 실시간
