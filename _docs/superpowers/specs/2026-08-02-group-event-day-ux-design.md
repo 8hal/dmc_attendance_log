@@ -169,8 +169,8 @@
 
 | 화면 | URL (가칭) | Phase | 역할 |
 |------|------------|-------|------|
-| 탑승 현황 | `boarding-admin.html?eventId=` | 1 | `verify-admin` 후: 구간 탭, 탑승/미탑승 카운트, 미탑승 강조, 대리 체크·취소, 명단 추가/제외, 비고 편집, CSV import, 참가자용 QR·링크 복사, 버스 enable |
-| 진입점 | `group-detail.html` | 1 | `busBoarding.enabled`일 때 ‘버스 탑승’ → 총무 화면 |
+| 탑승 현황 | `boarding-admin.html?eventId=` | 1 | `verify-admin` 후: 구간 탭, 탑승/미탑승 카운트, 미탑승 강조, 대리 체크·취소, 명단 추가/제외, 비고 편집, CSV import, 참가자용 QR·링크 복사, **버스 최초 활성화·설정** |
+| 진입점 | `group-detail.html` | 1 | 항상 ‘버스 탑승’ 진입 가능(총무/운영 맥락). `enabled`이면 현황으로, 아니면 설정(활성화) 안내 후 같은 admin 화면으로 |
 
 ### 5.3 권한 요약
 
@@ -200,7 +200,21 @@
 | POST | `roster-upsert` | admin | 단건 추가/수정(지인·비고·rideType 등) |
 | POST | `roster-remove` | admin | `{ eventId, rosterId }` |
 | POST | `import` | admin | CSV 파싱 결과 rows → roster 반영 정책(아래) |
-| POST | `settings` | admin | `enabled`, `legs` 등 |
+| POST | `settings` | admin | `enabled`, `legs` 등. **최초 호출 시 `busBoarding` 객체가 없으면 생성** |
+
+### 6.0 버스 기능 부트스트랩 (Phase 1 필수)
+
+모순 없이 아래 순서만 허용한다.
+
+1. 총무가 `group-detail` → ‘버스 탑승’ 또는 `boarding-admin.html?eventId=` 직접 진입.
+2. `verify-admin` 성공.
+3. `busBoarding`가 없거나 `enabled !== true` 이면 admin 화면에 **활성화 패널**만 우선 표시 (참가자 URL은 아직 무의미).
+4. `POST settings { enabled: true, legs: ["outbound","return"] }` → 문서에 `busBoarding` 생성/갱신.
+5. 이후 CSV import · 명단 편집 · QR 노출.
+6. 참가자 `boarding.html`은 `enabled === true` 일 때만 체크 가능. 꺼져 있으면 “아직 열리지 않음” 안내.
+7. Admin 화면은 `enabled`와 무관하게 **항상** 열리며, 꺼진 상태에서는 활성화·settings만 가능하다 (대리 체크/self와 혼동 금지).
+
+`enabled: false`로 되돌리면 참가자 체크는 막고, admin은 명단 조회·재활성화만 허용한다 (기존 boarded 데이터는 삭제하지 않음).
 
 ### 6.1 CSV import
 
@@ -215,7 +229,7 @@
 
 - 개별 이동 행: 제외 + import 리포트에 기록.
 - 동일 닉네임 중복: import 실패 항목으로 돌려 총무가 확인 (자동 덮어쓰기 금지가 기본).
-- import 모드(Phase 1 기본): **전체 교체** vs **머지** 중 하나를 구현 계획에서 고르되, 스펙 기본은 **머지(닉네임 키, 기존 boarded 상태 유지)**. 실수로 당일 체크가 날아가는 것을 막기 위함.
+- import 모드(Phase 1): **머지 전용** — 닉네임을 키로 하고, 기존 `boarded` / `boardedAt` / `boardedBy` 는 유지한다. 전체 교체는 제공하지 않는다 (당일 체크 유실 방지).
 - `memberId`: 닉네임으로 `members` 조회해 있으면 채우고 `isGuest=false`, 없으면 `isGuest=true`.
 
 ### 6.2 실시간
@@ -270,7 +284,7 @@
 | required=false 구간 체크 | 4xx |
 | 중복 self-board | 200 + 이미 완료 |
 | admin 없이 admin API | 401/403 |
-| `busBoarding.enabled` false | 참가자/총무 화면 비활성 안내 |
+| `busBoarding` 없음 또는 `enabled` false | 참가자: “아직 열리지 않음”. 총무: 활성화 패널 (화면 자체는 열림) |
 | CSV 형식 오류 | 행 단위 에러 리포트 |
 
 ---
@@ -302,8 +316,9 @@
 
 1. API action 이름 최종 (`bus-boarding` vs `group-events` subAction).
 2. CSV 헤더 별칭 목록(네이버 폼 export 실제 컬럼명).
-3. 닉네임 매칭 정규화(공백·대소문자) 규칙 — `my-bib`와 동일하게 맞출지.
+3. 닉네임 매칭 정규화: Phase 1 계획에서 **`my-bib` / `update-bib`와 동일 규칙으로 맞춘다** (별도 규칙 신설 금지).
 4. Phase 3 결과 보드에 넣을 필드 목록(기록·순위·거리 등) — Phase 3 계획 때 상세화.
+5. roster 배열 갱신은 **트랜잭션(또는 동등한 원자적 갱신)** 으로 한다. 새벽 동시 `self-board` 시 lost update 방지 (`update-bib`와 동일 위험).
 
 ---
 
