@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>버스 탑승 체크 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+    .wrap { max-width: 500px; margin: 0 auto; }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .header-subtitle {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0 0 12px;
+    }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .nav-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-links a:hover { text-decoration: underline; }
+    .nav-links .muted {
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(15,23,42,0.07);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+
+    .leg-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .leg-tab {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-sub);
+      transition: all 0.15s;
+    }
+    .leg-tab.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #EFF6FF;
+    }
+
+    .search-box { margin-bottom: 12px; }
+    .search-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .participant-list {
+      max-height: 450px;
+      overflow-y: auto;
+    }
+    .participant-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .participant-item:hover:not(.disabled) {
+      border-color: var(--primary);
+      background: #F1F5F9;
+    }
+    .participant-item.disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      background: var(--bg);
+    }
+    .participant-info { flex: 1; min-width: 0; }
+    .participant-nickname {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .participant-realname {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .guest-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--amber-light);
+      color: var(--amber);
+    }
+    .board-status {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .board-status.boarded {
+      background: var(--green-light);
+      color: var(--green);
+    }
+    .board-status.pending {
+      background: #EFF6FF;
+      color: var(--primary);
+    }
+    .board-status.na {
+      background: var(--border);
+      color: var(--text-sub);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-board {
+      padding: 18px;
+      font-size: 18px;
+      margin-top: 8px;
+    }
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+      margin-top: 12px;
+    }
+    .btn-secondary:hover { background: #CBD5E1; }
+
+    .info-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .info-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .info-list {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin: 0;
+      padding-left: 20px;
+    }
+    .info-list li { margin-bottom: 4px; }
+
+    .closed-box {
+      text-align: center;
+      padding: 32px 16px;
+    }
+    .closed-icon { font-size: 48px; margin-bottom: 12px; }
+    .closed-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .closed-msg {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .success-box { text-align: center; padding: 16px 0; }
+    .success-icon { font-size: 56px; margin-bottom: 12px; }
+    .success-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .success-message {
+      font-size: 15px;
+      color: var(--text-sub);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .detail-row {
+      margin-bottom: 14px;
+    }
+    .detail-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+    .detail-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .error-box {
+      background: var(--red-light);
+      border: 2px solid var(--red);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: var(--red);
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      animation: slideDown 0.3s ease-out;
+    }
+    .toast.error { background: var(--red); }
+    @keyframes slideDown {
+      from {
+        transform: translateX(-50%) translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-sub);
+    }
+    .hidden { display: none; }
+
+    .footer-nav {
+      text-align: center;
+      margin-top: 8px;
+      padding: 12px 0 4px;
+      font-size: 14px;
+    }
+    .footer-nav a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .footer-nav a:hover { text-decoration: underline; }
+    .footer-nav .muted {
+      color: var(--text-sub);
+      margin-top: 6px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .header-title { font-size: 20px; }
+      .card { padding: 20px; }
+      .btn-board { font-size: 17px; padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="header-icon">🚌</div>
+      <h1 class="header-title">버스 탑승 체크</h1>
+      <p class="header-subtitle" id="eventInfo">로딩 중...</p>
+      <div class="nav-links" id="headerNav">
+        <a id="headerBibLink" href="#">배번 입력</a>
+        <span class="muted">결과 보드 · 준비 중</span>
+      </div>
+    </div>
+
+    <div id="loadingScreen" class="loading">
+      탑승 정보를 불러오는 중...
+    </div>
+
+    <div id="closedScreen" class="hidden">
+      <div class="card">
+        <div class="closed-box">
+          <div class="closed-icon">🔒</div>
+          <div class="closed-title">아직 열리지 않음</div>
+          <p class="closed-msg">
+            버스 탑승 체크가 아직 시작되지 않았습니다.<br>
+            운영진 안내에 따라 잠시 후 다시 열어주세요.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="listScreen" class="hidden">
+      <div class="card">
+        <h2 class="card-title">탑승 명단</h2>
+        <div class="leg-tabs" role="tablist">
+          <button type="button" class="leg-tab active" id="tabOutbound" data-leg="outbound">가는 편</button>
+          <button type="button" class="leg-tab" id="tabReturn" data-leg="return">오는 편</button>
+        </div>
+        <div class="info-box">
+          <div class="info-title">안내</div>
+          <ul class="info-list">
+            <li>닉네임을 선택한 뒤 <strong>탑승 완료</strong>를 눌러주세요</li>
+            <li>해당 구간에 탑승하지 않는 분은 선택할 수 없습니다</li>
+          </ul>
+        </div>
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="닉네임·실명 검색..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="participant-list" id="participantList"></div>
+      </div>
+    </div>
+
+    <div id="confirmScreen" class="hidden">
+      <div class="card">
+        <h2 class="card-title"><span id="confirmNickname"></span>님</h2>
+        <div id="confirmError" class="error-box hidden"></div>
+        <div class="detail-row">
+          <div class="detail-label">실명</div>
+          <div class="detail-value" id="confirmRealName"></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">구간</div>
+          <div class="detail-value" id="confirmLeg"></div>
+        </div>
+        <div class="detail-row" id="confirmGuestRow">
+          <div class="detail-label">구분</div>
+          <div class="detail-value">지인</div>
+        </div>
+        <button class="btn btn-primary btn-board" id="boardBtn">탑승 완료</button>
+        <button class="btn btn-secondary" id="backBtn">목록으로 가기</button>
+      </div>
+    </div>
+
+    <div id="doneScreen" class="hidden">
+      <div class="card">
+        <div class="success-box">
+          <div class="success-icon" id="doneIcon">✅</div>
+          <div class="success-title" id="doneTitle">탑승 완료</div>
+          <p class="success-message" id="doneMessage"></p>
+        </div>
+        <button class="btn btn-secondary" id="doneBackBtn">목록으로 가기</button>
+      </div>
+    </div>
+
+    <div class="footer-nav" id="footerNav">
+      <a id="footerBibLink" href="#">배번 입력으로 이동</a>
+      <div class="muted">결과 보드 · 준비 중</div>
+    </div>
+  </div>
+
+  <script>
+    // 환경 자동 감지: localhost면 에뮬레이터, 아니면 프로덕션 (my-bib.html과 동일)
+    const API_BASE = window.location.hostname === 'localhost'
+      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
+      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+
+    const STEP = {
+      LOADING: 1,
+      CLOSED: 2,
+      LIST: 3,
+      CONFIRM: 4,
+      DONE: 5
+    };
+
+    const LEG_LABEL = {
+      outbound: "가는 편",
+      return: "오는 편"
+    };
+
+    const STORAGE_KEY_BOARDING = "dmc_boarding_nickname";
+    const STORAGE_KEY_MY_BIB = "dmc_bib_nickname";
+    const STORAGE_KEY_ATTENDANCE = "marathon_att_nickname";
+
+    let currentStep = STEP.LOADING;
+    let eventId = null;
+    let eventName = "";
+    let roster = [];
+    let currentLeg = "outbound";
+    let currentRow = null;
+    let isProcessing = false;
+
+    const loadingScreen = document.getElementById("loadingScreen");
+    const closedScreen = document.getElementById("closedScreen");
+    const listScreen = document.getElementById("listScreen");
+    const confirmScreen = document.getElementById("confirmScreen");
+    const doneScreen = document.getElementById("doneScreen");
+    const eventInfo = document.getElementById("eventInfo");
+    const searchInput = document.getElementById("searchInput");
+    const participantList = document.getElementById("participantList");
+    const confirmError = document.getElementById("confirmError");
+    const confirmNickname = document.getElementById("confirmNickname");
+    const confirmRealName = document.getElementById("confirmRealName");
+    const confirmLeg = document.getElementById("confirmLeg");
+    const confirmGuestRow = document.getElementById("confirmGuestRow");
+    const boardBtn = document.getElementById("boardBtn");
+    const backBtn = document.getElementById("backBtn");
+    const doneBackBtn = document.getElementById("doneBackBtn");
+    const tabOutbound = document.getElementById("tabOutbound");
+    const tabReturn = document.getElementById("tabReturn");
+
+    function showScreen(step) {
+      currentStep = step;
+      loadingScreen.classList.add("hidden");
+      closedScreen.classList.add("hidden");
+      listScreen.classList.add("hidden");
+      confirmScreen.classList.add("hidden");
+      doneScreen.classList.add("hidden");
+
+      if (step === STEP.LOADING) loadingScreen.classList.remove("hidden");
+      else if (step === STEP.CLOSED) closedScreen.classList.remove("hidden");
+      else if (step === STEP.LIST) listScreen.classList.remove("hidden");
+      else if (step === STEP.CONFIRM) confirmScreen.classList.remove("hidden");
+      else if (step === STEP.DONE) doneScreen.classList.remove("hidden");
+    }
+
+    function showError(message) {
+      confirmError.textContent = message;
+      confirmError.classList.remove("hidden");
+    }
+
+    function hideError() {
+      confirmError.classList.add("hidden");
+    }
+
+    function showToast(message, isError) {
+      const toast = document.createElement("div");
+      toast.className = "toast" + (isError ? " error" : "");
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function updateBibLinks() {
+      const href = eventId
+        ? `my-bib.html?eventId=${encodeURIComponent(eventId)}`
+        : "my-bib.html";
+      document.getElementById("headerBibLink").href = href;
+      document.getElementById("footerBibLink").href = href;
+    }
+
+    function setLeg(leg) {
+      currentLeg = leg;
+      tabOutbound.classList.toggle("active", leg === "outbound");
+      tabReturn.classList.toggle("active", leg === "return");
+      renderParticipantList(searchInput.value);
+    }
+
+    function legState(row) {
+      return (row.legs && row.legs[currentLeg]) || null;
+    }
+
+    function isRequired(row) {
+      const st = legState(row);
+      return !!(st && st.required);
+    }
+
+    function isBoarded(row) {
+      const st = legState(row);
+      return !!(st && st.boarded);
+    }
+
+    function renderParticipantList(filterText) {
+      participantList.innerHTML = "";
+      const q = String(filterText || "").trim().toLowerCase();
+
+      const filtered = roster.filter((p) => {
+        if (!q) return true;
+        const nick = String(p.nickname || "").toLowerCase();
+        const real = String(p.realName || "").toLowerCase();
+        return nick.includes(q) || real.includes(q);
+      });
+
+      if (filtered.length === 0) {
+        participantList.innerHTML =
+          '<div style="text-align: center; padding: 20px; color: var(--text-sub);">검색 결과가 없습니다</div>';
+        return;
+      }
+
+      filtered.forEach((row) => {
+        const required = isRequired(row);
+        const boarded = isBoarded(row);
+        const item = document.createElement("div");
+        item.className = "participant-item" + (required ? "" : " disabled");
+
+        let statusHtml;
+        if (!required) {
+          statusHtml = '<span class="board-status na">해당없음</span>';
+        } else if (boarded) {
+          statusHtml = '<span class="board-status boarded">탑승완료</span>';
+        } else {
+          statusHtml = '<span class="board-status pending">대기</span>';
+        }
+
+        const guestBadge = row.isGuest
+          ? '<span class="guest-badge">지인</span>'
+          : "";
+        const realName = row.realName
+          ? `<div class="participant-realname">${escapeHtml(row.realName)}</div>`
+          : "";
+
+        item.innerHTML = `
+          <div class="participant-info">
+            <div class="participant-nickname">
+              ${escapeHtml(row.nickname)}
+              ${guestBadge}
+            </div>
+            ${realName}
+          </div>
+          ${statusHtml}
+        `;
+
+        if (required) {
+          item.addEventListener("click", () => selectParticipant(row));
+        }
+
+        participantList.appendChild(item);
+      });
+    }
+
+    function selectParticipant(row) {
+      if (!isRequired(row)) return;
+
+      currentRow = row;
+      localStorage.setItem(STORAGE_KEY_BOARDING, row.nickname);
+      localStorage.setItem(STORAGE_KEY_ATTENDANCE, row.nickname);
+      localStorage.setItem(STORAGE_KEY_MY_BIB, row.nickname);
+
+      confirmNickname.textContent = row.nickname;
+      confirmRealName.textContent = row.realName || "—";
+      confirmLeg.textContent = LEG_LABEL[currentLeg] || currentLeg;
+      confirmGuestRow.classList.toggle("hidden", !row.isGuest);
+      hideError();
+      boardBtn.disabled = false;
+      boardBtn.textContent = "탑승 완료";
+
+      if (isBoarded(row)) {
+        showDoneScreen(true);
+        return;
+      }
+
+      showScreen(STEP.CONFIRM);
+    }
+
+    function showDoneScreen(already) {
+      const nick = currentRow ? currentRow.nickname : "";
+      const legLabel = LEG_LABEL[currentLeg] || currentLeg;
+      document.getElementById("doneIcon").textContent = already ? "👍" : "✅";
+      document.getElementById("doneTitle").textContent = already
+        ? "이미 탑승 완료"
+        : "탑승 완료";
+      document.getElementById("doneMessage").innerHTML = already
+        ? `<strong>${escapeHtml(nick)}</strong>님은 이미<br>${escapeHtml(legLabel)} 탑승이 체크되어 있습니다.`
+        : `<strong>${escapeHtml(nick)}</strong>님의<br>${escapeHtml(legLabel)} 탑승이 기록되었습니다.`;
+      showScreen(STEP.DONE);
+    }
+
+    async function loadStatus() {
+      const urlParams = new URLSearchParams(window.location.search);
+      eventId = urlParams.get("eventId");
+
+      if (!eventId) {
+        eventInfo.textContent = "잘못된 접근";
+        alert("잘못된 접근입니다. 링크를 확인해주세요.");
+        updateBibLinks();
+        return;
+      }
+
+      updateBibLinks();
+      showScreen(STEP.LOADING);
+
+      try {
+        const res = await fetch(
+          `${API_BASE}?action=bus-boarding&subAction=status&eventId=${encodeURIComponent(eventId)}`
+        );
+        const data = await res.json();
+
+        if (!data.ok) {
+          alert(data.error || "탑승 정보를 불러올 수 없습니다.");
+          return;
+        }
+
+        eventName = data.eventName || "단체 대회";
+        eventInfo.textContent = eventName;
+
+        if (data.enabled !== true) {
+          showScreen(STEP.CLOSED);
+          return;
+        }
+
+        roster = Array.isArray(data.roster) ? data.roster : [];
+        currentLeg = "outbound";
+        setLeg(currentLeg);
+
+        const savedNickname =
+          localStorage.getItem(STORAGE_KEY_BOARDING) ||
+          localStorage.getItem(STORAGE_KEY_ATTENDANCE) ||
+          localStorage.getItem(STORAGE_KEY_MY_BIB);
+
+        if (savedNickname) {
+          const match = roster.find((p) => p.nickname === savedNickname);
+          if (match && isRequired(match)) {
+            selectParticipant(match);
+            return;
+          }
+        }
+
+        showScreen(STEP.LIST);
+      } catch (error) {
+        console.error("loadStatus error:", error);
+        alert("네트워크 오류가 발생했습니다.");
+      }
+    }
+
+    async function selfBoard() {
+      if (isProcessing || !currentRow || !eventId) return;
+
+      hideError();
+      isProcessing = true;
+      boardBtn.disabled = true;
+      boardBtn.textContent = "처리 중...";
+
+      try {
+        const res = await fetch(`${API_BASE}?action=bus-boarding`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "self-board",
+            eventId: eventId,
+            nickname: currentRow.nickname,
+            leg: currentLeg
+          })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error || "탑승 체크 실패");
+        }
+
+        if (currentRow.legs && currentRow.legs[currentLeg]) {
+          currentRow.legs[currentLeg].boarded = true;
+        }
+
+        showToast(data.already ? "이미 탑승 완료된 상태입니다" : "✅ 탑승 완료");
+        showDoneScreen(!!data.already);
+      } catch (error) {
+        console.error("selfBoard error:", error);
+        showError(error.message || "네트워크 오류가 발생했습니다");
+        boardBtn.disabled = false;
+        boardBtn.textContent = "탑승 완료";
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    function goToList() {
+      hideError();
+      renderParticipantList(searchInput.value);
+      showScreen(STEP.LIST);
+    }
+
+    tabOutbound.addEventListener("click", () => {
+      if (currentLeg !== "outbound") setLeg("outbound");
+      if (currentStep === STEP.CONFIRM || currentStep === STEP.DONE) {
+        goToList();
+      }
+    });
+    tabReturn.addEventListener("click", () => {
+      if (currentLeg !== "return") setLeg("return");
+      if (currentStep === STEP.CONFIRM || currentStep === STEP.DONE) {
+        goToList();
+      }
+    });
+
+    boardBtn.addEventListener("click", selfBoard);
+    backBtn.addEventListener("click", goToList);
+    doneBackBtn.addEventListener("click", goToList);
+
+    searchInput.addEventListener("input", (e) => {
+      renderParticipantList(e.target.value);
+    });
+
+    loadStatus();
+  </script>
+</body>
+</html>
