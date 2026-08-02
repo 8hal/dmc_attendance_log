@@ -43,6 +43,7 @@ const {
   assertSaveRows,
   REGULAR_TYPES: TRAINING_TYPES,
 } = require("./lib/meeting-training");
+const busBoardingLib = require("./lib/bus-boarding");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -3591,6 +3592,138 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           error: "server error" 
         });
       }
+    }
+
+    // 버스 탑승 (action=bus-boarding)
+    // - settings / status: 항상 허용 (status는 공개·admin; settings로 enable)
+    // - import / admin-board / roster-* / self-board: enabled === true 아니면
+    //   403 { ok: false, error: "bus boarding not enabled" } (Tasks 4–6)
+    if (action === "bus-boarding") {
+      const sub = String(
+        req.query.subAction || (req.body && req.body.subAction) || ""
+      ).trim() || (req.method === "GET" ? "status" : "");
+
+      if (sub === "status") {
+        const eventId = String(
+          req.query.eventId || (req.body && req.body.eventId) || ""
+        ).trim();
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+
+        const pw = req.query.pw || (req.body && req.body.pw);
+        let isAdmin = false;
+        if (pw) {
+          const auth = verifyAdminPassword(pw);
+          if (!auth.ok) {
+            return res.status(401).json({ ok: false, error: "invalid password" });
+          }
+          isAdmin = true;
+        }
+
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        const event = eventDoc.data() || {};
+        const eventName = event.eventName || event.primaryName || "";
+        const bb = event.busBoarding;
+
+        if (!bb) {
+          return res.json({
+            ok: true,
+            enabled: false,
+            legs: ["outbound", "return"],
+            roster: [],
+            eventName,
+            importMeta: null,
+            summary: {
+              outbound: { required: 0, boarded: 0 },
+              return: { required: 0, boarded: 0 },
+            },
+          });
+        }
+
+        const roster = Array.isArray(bb.roster) ? bb.roster : [];
+        const publicOrAdminRoster = isAdmin
+          ? roster
+          : busBoardingLib.toPublicRoster(roster);
+        const legs = Array.isArray(bb.legs) && bb.legs.length
+          ? bb.legs
+          : ["outbound", "return"];
+
+        return res.json({
+          ok: true,
+          enabled: bb.enabled === true,
+          legs,
+          roster: publicOrAdminRoster,
+          eventName,
+          importMeta: bb.importMeta || null,
+          summary: {
+            outbound: busBoardingLib.summarizeLeg(roster, "outbound"),
+            return: busBoardingLib.summarizeLeg(roster, "return"),
+          },
+        });
+      }
+
+      if (sub === "settings" && req.method === "POST") {
+        const body = req.body || {};
+        const auth = verifyAdminPassword(body.pw);
+        if (!auth.ok) {
+          return res.status(401).json({ ok: false, error: "invalid password" });
+        }
+
+        const eventId = String(body.eventId || "").trim();
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (typeof body.enabled !== "boolean") {
+          return res.status(400).json({ ok: false, error: "enabled (boolean) required" });
+        }
+
+        const legsProvided = Array.isArray(body.legs);
+        if (body.legs != null && !legsProvided) {
+          return res.status(400).json({ ok: false, error: "legs must be an array" });
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            let bb;
+            if (!data.busBoarding) {
+              bb = busBoardingLib.emptyBusBoarding(
+                legsProvided ? { legs: body.legs } : {}
+              );
+            } else {
+              bb = { ...data.busBoarding };
+              if (legsProvided) {
+                bb.legs = [...body.legs];
+              }
+            }
+            bb.enabled = body.enabled;
+            tx.update(ref, { busBoarding: bb });
+            return { enabled: bb.enabled, legs: bb.legs };
+          });
+        } catch (error) {
+          console.error("bus-boarding settings error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        return res.json({ ok: true, enabled: result.enabled, legs: result.legs });
+      }
+
+      return res.status(400).json({ ok: false, error: "unknown subAction" });
     }
 
     if (action === "fix-phantom-jobs" && req.method === "POST") {
