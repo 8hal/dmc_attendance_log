@@ -5,6 +5,7 @@ const path = require("path");
 const {
   rideTypeToLegRequired,
   parseRideTypeLabel,
+  buildRosterEntry,
   mergeRosterImport,
   toPublicRoster,
   findRosterIndexByNickname,
@@ -41,6 +42,10 @@ describe("parseRideTypeLabel", () => {
   it("철원->동탄(편도)", () =>
     assert.equal(parseRideTypeLabel("철원->동탄(편도)"), "return_only"));
   it("개별 이동", () => assert.equal(parseRideTypeLabel("개별 이동"), "excluded"));
+  it("ambiguous multi-hop label is not return_only", () => {
+    assert.notEqual(parseRideTypeLabel("서울->동탄->철원"), "return_only");
+    assert.equal(parseRideTypeLabel("서울->동탄->철원"), null);
+  });
 });
 
 describe("mergeRosterImport", () => {
@@ -116,6 +121,71 @@ describe("mergeRosterImport", () => {
     ], { memberIdByNickname: new Map() });
     assert.equal(roster.length, 0);
     assert.ok(report.errors.some((e) => /헬기|rideType|매핑/i.test(String(e.reason || e))));
+  });
+
+  it("preserves note and realName when omitted from CSV row", () => {
+    const existing = [
+      {
+        rosterId: "r1",
+        nickname: "라우펜더만",
+        realName: "이원기",
+        rideType: "roundtrip",
+        isGuest: false,
+        memberId: "m1",
+        note: "keep this",
+        legs: {
+          outbound: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+          return: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+        },
+      },
+    ];
+    const { roster } = mergeRosterImport(
+      existing,
+      [{ nickname: "라우펜더만", rideTypeLabel: "왕복" }],
+      { memberIdByNickname: new Map([["라우펜더만", "m1"]]) }
+    );
+    assert.equal(roster[0].note, "keep this");
+    assert.equal(roster[0].realName, "이원기");
+  });
+
+  it("clears note when CSV explicitly sends null", () => {
+    const existing = [
+      {
+        rosterId: "r1",
+        nickname: "라우펜더만",
+        realName: "이원기",
+        rideType: "roundtrip",
+        isGuest: false,
+        memberId: "m1",
+        note: "old note",
+        legs: {
+          outbound: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+          return: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+        },
+      },
+    ];
+    const { roster } = mergeRosterImport(
+      existing,
+      [{ nickname: "라우펜더만", realName: "이원기", rideTypeLabel: "왕복", note: null }],
+      { memberIdByNickname: new Map([["라우펜더만", "m1"]]) }
+    );
+    assert.equal(roster[0].note, null);
+  });
+});
+
+describe("buildRosterEntry", () => {
+  it("throws on invalid rideType", () => {
+    assert.throws(
+      () =>
+        buildRosterEntry({
+          nickname: "a",
+          realName: "b",
+          rideType: "invalid",
+          note: null,
+          memberId: null,
+        }),
+      /invalid rideType/
+    );
   });
 });
 
@@ -222,9 +292,16 @@ describe("emptyBusBoarding", () => {
     const legs = ["outbound", "return"];
     const bb = emptyBusBoarding({ legs });
     assert.equal(bb.enabled, false);
-    assert.deepEqual(bb.legs, legs);
+    assert.deepEqual(bb.legs, ["outbound", "return"]);
     assert.deepEqual(bb.roster, []);
     assert.ok(bb.importMeta);
+  });
+
+  it("returns a copy of legs array", () => {
+    const legs = ["outbound", "return"];
+    const bb = emptyBusBoarding({ legs });
+    legs.push("extra");
+    assert.deepEqual(bb.legs, ["outbound", "return"]);
   });
 });
 
