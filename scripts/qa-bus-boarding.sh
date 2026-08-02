@@ -7,7 +7,8 @@
 #
 # 커버: settings enable, import(왕복/편도/개별/dup), self-board,
 #       outbound_only return 거부, admin-board, guest upsert,
-#       merge boarded 유지, public/admin note, 401, disable→403→재활성화
+#       merge boarded 유지, re-import note 생략 시 유지, public/admin note,
+#       401, disable→403→public empty roster→재활성화
 
 set -u
 
@@ -268,6 +269,27 @@ r=next(x for x in d["roster"] if x["nickname"]=="라우펜더만"); print(r["leg
 assert_eq "8c: 라우펜더만 outbound boarded 유지" "True" "$laufen_out"
 assert_eq "8d: 라우펜더만 return boarded 유지" "True" "$laufen_ret"
 
+# 재import 시 note 키 생략 → 기존 note 유지 (CSV에 비고 열 없을 때와 동일)
+merge_omit_note_body=$(cat <<EOF
+{
+  "subAction": "import",
+  "pw": "$ADMIN_PW",
+  "eventId": "$EVENT_ID",
+  "sourceLabel": "qa-merge-omit-note",
+  "rows": [
+    {"nickname": "라우펜더만", "realName": "라우펜더만", "rideTypeLabel": "왕복"}
+  ]
+}
+EOF
+)
+merge_omit_resp=$(curl_post "$API?action=bus-boarding" "$merge_omit_note_body")
+assert_contains "8e: merge omit-note import ok" '"ok":true' "$merge_omit_resp"
+st_omit=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"status\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\"}")
+omit_note=$(json_get "$st_omit" '
+r=next(x for x in d["roster"] if x["nickname"]=="라우펜더만"); print(r.get("note"))')
+assert_eq "8f: re-import without note key preserves note" "머지후비고" "$omit_note"
+
 # ────────────────────────────────────────────────────────────────────
 # 9. public status에 note 없음 / admin status에 note 있음
 # ────────────────────────────────────────────────────────────────────
@@ -331,6 +353,14 @@ assert_eq "11f: disabled admin status roster 유지" "$before_count" "$disabled_
 disabled_laufen=$(json_get "$disabled_st" '
 r=next(x for x in d["roster"] if x["nickname"]=="라우펜더만"); print(r["legs"]["outbound"]["boarded"], r["legs"]["return"]["boarded"])')
 assert_eq "11g: disabled boarded 유지" "$before_laufen" "$disabled_laufen"
+
+# public status while disabled → empty roster (no leak)
+public_disabled=$(curl_get "$API?action=bus-boarding&subAction=status&eventId=$EVENT_ID")
+assert_contains "11g2: public disabled status ok" '"ok":true' "$public_disabled"
+public_dis_enabled=$(json_get "$public_disabled" 'print(d.get("enabled"))')
+public_dis_roster=$(json_get "$public_disabled" 'print(len(d.get("roster",[])))')
+assert_eq "11g3: public disabled enabled false" "False" "$public_dis_enabled"
+assert_eq "11g4: public disabled roster empty" "0" "$public_dis_roster"
 
 re_enable=$(curl_post "$API?action=bus-boarding" \
   "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"enabled\":true}")
