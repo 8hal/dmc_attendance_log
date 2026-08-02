@@ -318,8 +318,29 @@
       display: flex;
       gap: 8px;
       align-items: center;
+      flex-wrap: wrap;
     }
-    .note-row .field-input { flex: 1; padding: 8px 10px; font-size: 13px; }
+    .note-row .field-input { flex: 1; min-width: 120px; padding: 8px 10px; font-size: 13px; }
+    .roster-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .disabled-banner {
+      background: var(--amber-light);
+      color: #92400E;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .ops-muted[disabled],
+    .ops-writable:disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
     .status-pill {
       font-size: 12px;
       font-weight: 700;
@@ -462,6 +483,9 @@
           <h2 class="card-title">현황</h2>
           <button type="button" class="btn btn-sm btn-secondary" id="refreshBtn">새로고침</button>
         </div>
+        <div id="disabledBanner" class="disabled-banner hidden">
+          버스 탑승이 꺼져 있습니다. 명단·비고는 조회만 가능합니다. 상단에서 다시 시작하세요.
+        </div>
         <div class="leg-tabs" role="tablist">
           <button type="button" class="leg-tab active" id="tabOutbound" data-leg="outbound">가는 편</button>
           <button type="button" class="leg-tab" id="tabReturn" data-leg="return">오는 편</button>
@@ -480,9 +504,9 @@
         <div class="roster-list" id="rosterList" style="margin-top:12px"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="csvCard">
         <h2 class="card-title">CSV 명단 가져오기</h2>
-        <input type="file" id="csvInput" accept=".csv,text/csv,text/plain" />
+        <input type="file" id="csvInput" class="ops-writable" accept=".csv,text/csv,text/plain" />
         <p class="hint">
           헤더: 닉네임, 이름/실명, 버스 탑승 여부, 비고 (중식 열은 무시).<br>
           왕복 · 동탄→철원 · 철원→동탄 · 개별 이동
@@ -490,22 +514,22 @@
         <div class="import-report" id="importReport"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="guestCard">
         <h2 class="card-title">지인 추가</h2>
         <div class="field-row">
           <div>
             <label class="field-label" for="guestNickname">닉네임</label>
-            <input type="text" id="guestNickname" class="field-input" autocomplete="off" />
+            <input type="text" id="guestNickname" class="field-input ops-writable" autocomplete="off" />
           </div>
           <div>
             <label class="field-label" for="guestRealName">실명</label>
-            <input type="text" id="guestRealName" class="field-input" autocomplete="off" />
+            <input type="text" id="guestRealName" class="field-input ops-writable" autocomplete="off" />
           </div>
         </div>
         <div class="field-row">
           <div>
             <label class="field-label" for="guestRideType">탑승</label>
-            <select id="guestRideType" class="field-select">
+            <select id="guestRideType" class="field-select ops-writable">
               <option value="roundtrip">왕복</option>
               <option value="outbound_only">가는 편만</option>
               <option value="return_only">오는 편만</option>
@@ -513,10 +537,10 @@
           </div>
           <div>
             <label class="field-label" for="guestNote">비고</label>
-            <input type="text" id="guestNote" class="field-input" autocomplete="off" />
+            <input type="text" id="guestNote" class="field-input ops-writable" autocomplete="off" />
           </div>
         </div>
-        <button type="button" class="btn btn-primary btn-block" id="guestAddBtn">지인 추가</button>
+        <button type="button" class="btn btn-primary btn-block ops-writable" id="guestAddBtn">지인 추가</button>
       </div>
 
       <div class="card">
@@ -528,7 +552,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="disableCard">
         <h2 class="card-title">버스 기능</h2>
         <p class="hint" style="margin-top:0;margin-bottom:12px">
           끄면 참가자 체크·CSV·대리 체크가 막힙니다. 명단·탑승 기록은 유지됩니다.
@@ -599,10 +623,43 @@
 
     function requirePw() {
       if (adminPwCache) return adminPwCache;
-      const pw = window.prompt("운영진 비밀번호를 다시 입력하세요");
+      const pw = window.prompt("관리자 비밀번호");
       if (!pw) return null;
       adminPwCache = pw;
       return pw;
+    }
+
+    function isNoteInputFocused() {
+      const ae = document.activeElement;
+      return !!(
+        ae &&
+        rosterList.contains(ae) &&
+        ae.classList &&
+        ae.classList.contains("note-input")
+      );
+    }
+
+    function collectNoteDrafts() {
+      const drafts = {};
+      rosterList.querySelectorAll(".note-input").forEach((input) => {
+        const id = input.getAttribute("data-roster-id");
+        if (id) drafts[id] = input.value;
+      });
+      return drafts;
+    }
+
+    function setWritableUi(canWrite) {
+      document.querySelectorAll(".ops-writable").forEach((el) => {
+        el.disabled = !canWrite;
+      });
+      const banner = document.getElementById("disabledBanner");
+      if (banner) banner.classList.toggle("hidden", canWrite);
+      const disableCard = document.getElementById("disableCard");
+      if (disableCard) disableCard.classList.toggle("hidden", !canWrite);
+      const csvCard = document.getElementById("csvCard");
+      if (csvCard) csvCard.classList.toggle("hidden", !canWrite);
+      const guestCard = document.getElementById("guestCard");
+      if (guestCard) guestCard.classList.toggle("hidden", !canWrite);
     }
 
     function participantUrl() {
@@ -668,7 +725,17 @@
         pending > 0 ? `미탑승 ${pending}명` : required > 0 ? "전원 탑승" : "";
     }
 
-    function renderRoster(filterText) {
+    function renderRoster(filterText, opts) {
+      const skipIfNoteFocused = opts && opts.skipIfNoteFocused;
+      if (skipIfNoteFocused && isNoteInputFocused()) return;
+
+      const drafts = collectNoteDrafts();
+      const focusedId = isNoteInputFocused()
+        ? document.activeElement.getAttribute("data-roster-id")
+        : null;
+      const focusedSelStart = focusedId ? document.activeElement.selectionStart : null;
+      const focusedSelEnd = focusedId ? document.activeElement.selectionEnd : null;
+
       rosterList.innerHTML = "";
       const q = String(filterText || "").trim().toLowerCase();
 
@@ -698,6 +765,8 @@
         return;
       }
 
+      const canWrite = enabled === true;
+
       rows.forEach((row) => {
         const required = isRequired(row);
         const boarded = isBoarded(row);
@@ -722,7 +791,14 @@
           : "";
         const rideBadge =
           `<span class="ride-badge">${escapeHtml(RIDE_LABEL[row.rideType] || row.rideType || "—")}</span>`;
-        const noteVal = row.note == null ? "" : String(row.note);
+        const serverNote = row.note == null ? "" : String(row.note);
+        const noteVal =
+          Object.prototype.hasOwnProperty.call(drafts, row.rosterId)
+            ? drafts[row.rosterId]
+            : serverNote;
+        const toggleDisabled = !canWrite || !required ? "disabled" : "";
+        const noteDisabled = canWrite ? "" : "disabled";
+        const removeDisabled = canWrite ? "" : "disabled";
 
         el.innerHTML = `
           <div class="roster-top">
@@ -735,16 +811,25 @@
               </div>
               <div class="roster-real">${escapeHtml(row.realName || "—")}</div>
             </div>
-            <label class="toggle-wrap">
-              <input
-                type="checkbox"
-                class="board-toggle"
+            <div class="roster-actions">
+              <label class="toggle-wrap">
+                <input
+                  type="checkbox"
+                  class="board-toggle"
+                  data-roster-id="${escapeHtml(row.rosterId)}"
+                  ${boarded ? "checked" : ""}
+                  ${toggleDisabled}
+                />
+                탑승
+              </label>
+              <button
+                type="button"
+                class="btn btn-sm btn-danger roster-remove"
                 data-roster-id="${escapeHtml(row.rosterId)}"
-                ${boarded ? "checked" : ""}
-                ${required ? "" : "disabled"}
-              />
-              탑승
-            </label>
+                data-nickname="${escapeHtml(row.nickname)}"
+                ${removeDisabled}
+              >제외</button>
+            </div>
           </div>
           <div class="note-row">
             <input
@@ -754,16 +839,33 @@
               value="${escapeHtml(noteVal)}"
               placeholder="비고"
               autocomplete="off"
+              ${noteDisabled}
             />
             <button
               type="button"
               class="btn btn-sm btn-secondary note-save"
               data-roster-id="${escapeHtml(row.rosterId)}"
+              ${noteDisabled}
             >저장</button>
           </div>
         `;
         rosterList.appendChild(el);
       });
+
+      if (focusedId) {
+        const inputs = rosterList.querySelectorAll(".note-input");
+        for (let i = 0; i < inputs.length; i++) {
+          if (inputs[i].getAttribute("data-roster-id") === focusedId) {
+            inputs[i].focus();
+            try {
+              if (focusedSelStart != null && focusedSelEnd != null) {
+                inputs[i].setSelectionRange(focusedSelStart, focusedSelEnd);
+              }
+            } catch (_) { /* ignore */ }
+            break;
+          }
+        }
+      }
     }
 
     function showPanels() {
@@ -775,15 +877,17 @@
         missingEvent.classList.remove("hidden");
         return;
       }
+
+      // enabled=false: 활성화 패널 + 명단 조회(읽기) 동시 표시
       if (enabled !== true) {
         activatePanel.classList.remove("hidden");
-        opsPanel.classList.add("hidden");
       } else {
         activatePanel.classList.add("hidden");
-        opsPanel.classList.remove("hidden");
-        renderSummary();
-        renderRoster(searchInput.value);
       }
+      opsPanel.classList.remove("hidden");
+      setWritableUi(enabled === true);
+      renderSummary();
+      renderRoster(searchInput.value, { skipIfNoteFocused: true });
     }
 
     function applyStatusData(data) {
@@ -907,6 +1011,20 @@
       mainWrap.classList.remove("hidden");
     }
 
+    // attendance-admin checkAuth: 플래그 있으면 셸 표시, pw는 필요 시 prompt
+    function checkAuth() {
+      if (!isAuthedFlag()) return false;
+      revealShell();
+      if (!adminPwCache) {
+        const pw = window.prompt("관리자 비밀번호");
+        if (pw) adminPwCache = pw;
+      }
+      if (adminPwCache) {
+        loadStatus().then(startPoll);
+      }
+      return true;
+    }
+
     async function enableBoarding() {
       if (isProcessing) return;
       const pw = requirePw();
@@ -964,8 +1082,15 @@
     }
 
     async function toggleBoard(rosterId, boarded) {
+      if (isProcessing) return;
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        await loadStatus({ silent: true });
+        return;
+      }
       const pw = requirePw();
       if (!pw || !eventId) return;
+      isProcessing = true;
       try {
         const { data } = await postBus({
           subAction: "admin-board",
@@ -982,10 +1107,45 @@
         console.error("toggleBoard:", err);
         showToast(err.message || "탑승 변경 실패", true);
         await loadStatus({ silent: true });
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function removeRoster(rosterId, nickname) {
+      if (isProcessing) return;
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        return;
+      }
+      const label = nickname || "이 사람";
+      if (!confirm("'" + label + "'을(를) 명단에서 제외할까요?")) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      try {
+        const { data } = await postBus({
+          subAction: "roster-remove",
+          pw,
+          eventId,
+          rosterId
+        });
+        if (!data.ok) throw new Error(data.error || "명단 제외 실패");
+        showToast("명단에서 제외했습니다");
+        await loadStatus({ silent: true });
+      } catch (err) {
+        console.error("removeRoster:", err);
+        showToast(err.message || "명단 제외 실패", true);
+      } finally {
+        isProcessing = false;
       }
     }
 
     async function saveNote(rosterId, note) {
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        return;
+      }
       const pw = requirePw();
       if (!pw || !eventId) return;
       const row = roster.find((r) => r.rosterId === rosterId);
@@ -1232,6 +1392,13 @@
     });
 
     rosterList.addEventListener("click", (e) => {
+      const removeBtn = e.target.closest(".roster-remove");
+      if (removeBtn) {
+        const id = removeBtn.getAttribute("data-roster-id");
+        const nick = removeBtn.getAttribute("data-nickname") || "";
+        removeRoster(id, nick);
+        return;
+      }
       const btn = e.target.closest(".note-save");
       if (!btn) return;
       const id = btn.getAttribute("data-roster-id");
@@ -1241,7 +1408,7 @@
       saveNote(id, note === "" ? null : note);
     });
 
-    // Init
+    // Init — attendance-admin checkAuth 패턴
     (function init() {
       const params = new URLSearchParams(window.location.search);
       eventId = params.get("eventId");
@@ -1251,19 +1418,10 @@
         document.getElementById("eventInfo").textContent = "잘못된 접근";
       }
 
-      // attendance-admin 패턴: sessionStorage에는 인증 플래그만.
-      // pw는 메모리(adminPwCache) — 새로고침 시 재입력 필요.
-      if (isAuthedFlag() && adminPwCache) {
-        revealShell();
-        loadStatus().then(startPoll);
-      } else if (isAuthedFlag() && !adminPwCache) {
-        // 세션 플래그만 있고 pw 없음 → 로그인 폼 유지
-        authOverlay.classList.remove("hidden");
-        document.getElementById("authPw").focus();
-      } else {
-        authOverlay.classList.remove("hidden");
-        document.getElementById("authPw").focus();
-      }
+      if (checkAuth()) return;
+
+      authOverlay.classList.remove("hidden");
+      document.getElementById("authPw").focus();
     })();
   </script>
 </body>
