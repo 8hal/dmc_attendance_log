@@ -439,7 +439,7 @@ git commit -m "feat(api): bus-boarding admin roster mutations"
 
 `{ pw, eventId, rows, sourceLabel? }` — admin + enabled.  
 `memberIdByNickname`: 해당 이벤트 전 `members` 스냅(또는 nickname in 배치)으로 Map 구성.  
-머지 후 `importMeta` 갱신. 트랜잭션.
+**트랜잭션 RMW:** tx 안에서 `busBoarding` 읽기 → `mergeRosterImport` → `importMeta` 갱신 → write (Task 4와 동일 패턴, stale merge 금지).
 
 응답: `{ ok, report, summary }`.
 
@@ -469,13 +469,13 @@ git commit -m "feat(api): bus-boarding CSV row import (merge)"
 2. import 왕복+편도+개별(제외) + CSV 내 닉네임 중복은 errors  
 3. self-board outbound  
 4. roundtrip return self-board 성공  
-5. return_only가 outbound self-board 거부  
+5. outbound_only가 return self-board 거부 (required=false 구간)  
 6. admin-board toggle  
 7. roster-upsert 지인 → 그 닉네임 self-board 성공  
 8. import 머지 시 boarded 유지  
 9. public status에 note 없음 / admin status에 note 있음  
 10. pw 없이 admin-board → 401  
-11. enabled false → self-board 403; roster는 유지; settings로 재활성화 후 동일 roster·boarded 확인  
+11. enabled false → self-board·admin-board·import 403; roster는 유지; settings로 재활성화 후 동일 roster·boarded 확인  
 
 Admin pw: `dmc2008` (에뮬 기본).
 

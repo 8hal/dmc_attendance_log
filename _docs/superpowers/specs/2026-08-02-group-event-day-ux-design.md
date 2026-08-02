@@ -1,7 +1,7 @@
 # 단체 대회 당일 UX — 버스 탑승 · 배번 · 결과 보드
 
 날짜: 2026-08-02  
-상태: **초안** (브레인스토밍 합의 반영)  
+상태: **계획 준비 완료** (브레인스토밍 합의 + 허브 FE·모듈 독립 피드백 반영)  
 관련:
 - `_docs/superpowers/specs/2026-04-18-self-service-bib-input-design.md` (배번 셀프입력)
 - `_docs/superpowers/specs/2026-04-06-group-event-pipeline-prd.md` (단체 대회 파이프라인)
@@ -317,6 +317,7 @@ Phase 1에서도 `group-detail`에 **최소 허브 카드**는 넣어, 리팩터
 7. CSV import 후 boarded 유지(머지).
 8. 비고: admin GET에만 존재, 참가자 GET에 없음.
 9. admin 미인증 상태의 roster-upsert 거부.
+10. 버스 없음/`enabled: false` 이어도 `group-detail` 허브에 배번 카드·링크가 보이고, 배번 이용이 버스에 막히지 않음.
 
 ---
 
