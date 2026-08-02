@@ -130,6 +130,23 @@ describe("toPublicRoster", () => {
 });
 
 describe("applySelfBoard", () => {
+  it("first-time success mutates row", () => {
+    const row = {
+      nickname: "a",
+      legs: {
+        outbound: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+        return: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+      },
+    };
+    const isoNow = "2026-08-02T00:00:00.000Z";
+    const r = applySelfBoard(row, "outbound", isoNow);
+    assert.equal(r.ok, true);
+    assert.notEqual(r.already, true);
+    assert.equal(row.legs.outbound.boarded, true);
+    assert.equal(row.legs.outbound.boardedBy, "self");
+    assert.equal(row.legs.outbound.boardedAt, isoNow);
+  });
+
   it("idempotent when already boarded", () => {
     const row = {
       nickname: "a",
@@ -141,7 +158,9 @@ describe("applySelfBoard", () => {
     const r = applySelfBoard(row, "outbound", "2026-08-02T00:00:00.000Z");
     assert.equal(r.ok, true);
     assert.equal(r.already, true);
+    assert.equal(row.legs.outbound.boardedAt, "t");
   });
+
   it("rejects when not required", () => {
     const row = {
       nickname: "a",
@@ -152,5 +171,77 @@ describe("applySelfBoard", () => {
     };
     const r = applySelfBoard(row, "outbound", "2026-08-02T00:00:00.000Z");
     assert.equal(r.ok, false);
+  });
+});
+
+describe("applyAdminBoard", () => {
+  it("sets boarded true with boardedBy admin", () => {
+    const row = {
+      nickname: "a",
+      legs: {
+        outbound: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+        return: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+      },
+    };
+    const isoNow = "2026-08-02T01:00:00.000Z";
+    const r = applyAdminBoard(row, "outbound", true, isoNow);
+    assert.equal(r.ok, true);
+    assert.equal(row.legs.outbound.boarded, true);
+    assert.equal(row.legs.outbound.boardedBy, "admin");
+    assert.equal(row.legs.outbound.boardedAt, isoNow);
+  });
+
+  it("sets boarded false and clears boardedBy", () => {
+    const row = {
+      nickname: "a",
+      legs: {
+        outbound: { required: true, boarded: true, boardedAt: "t", boardedBy: "self" },
+        return: { required: true, boarded: false, boardedAt: null, boardedBy: null },
+      },
+    };
+    const r = applyAdminBoard(row, "outbound", false, "2026-08-02T02:00:00.000Z");
+    assert.equal(r.ok, true);
+    assert.equal(row.legs.outbound.boarded, false);
+    assert.equal(row.legs.outbound.boardedBy, null);
+    assert.equal(row.legs.outbound.boardedAt, null);
+  });
+});
+
+describe("findRosterIndexByNickname", () => {
+  it("trim match exact ===", () => {
+    const roster = [{ nickname: "라우펜더만" }, { nickname: "김테스트" }];
+    assert.equal(findRosterIndexByNickname(roster, "라우펜더만"), 0);
+    assert.equal(findRosterIndexByNickname(roster, "  김테스트  "), 1);
+    assert.equal(findRosterIndexByNickname(roster, "없음"), -1);
+    assert.equal(findRosterIndexByNickname(roster, "라우"), -1);
+  });
+});
+
+describe("emptyBusBoarding", () => {
+  it("returns disabled shape with legs and empty roster", () => {
+    const legs = ["outbound", "return"];
+    const bb = emptyBusBoarding({ legs });
+    assert.equal(bb.enabled, false);
+    assert.deepEqual(bb.legs, legs);
+    assert.deepEqual(bb.roster, []);
+    assert.ok(bb.importMeta);
+  });
+});
+
+describe("mergeRosterImport mixed batch", () => {
+  it("duplicate nick in batch does not reject valid rows", () => {
+    const { roster, report } = mergeRosterImport(
+      [],
+      [
+        { nickname: "동일", realName: "김일", rideTypeLabel: "왕복", note: null },
+        { nickname: "동일", realName: "김이", rideTypeLabel: "왕복", note: null },
+        { nickname: "유일", realName: "박유일", rideTypeLabel: "왕복", note: null },
+      ],
+      { memberIdByNickname: new Map() }
+    );
+    assert.equal(roster.length, 1);
+    assert.equal(roster[0].nickname, "유일");
+    assert.ok(report.errors.length >= 1);
+    assert.equal(report.added, 1);
   });
 });
