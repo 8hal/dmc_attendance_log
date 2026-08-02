@@ -111,6 +111,15 @@ describe("computeWeekStats — 출석 점수", () => {
     assert.equal(r.weekHint, "출석 2회 더 필요");
   });
 
+  it("주 첫날(월요일) 출석 0 → 출석 3회 더 필요 (weekTarget이 1로 cap되면 안 됨)", () => {
+    // 오늘 = 월요일 (주의 첫 번째 날, 아직 출석 없음)
+    const r = computeWeekStats(slots, {}, 1, "2026-07-20", 3);
+    assert.equal(r.weekScore, 0);
+    assert.equal(r.weekAttendCount, 0);
+    assert.equal(r.weekTarget, 3);
+    assert.equal(r.weekHint, "출석 3회 더 필요");
+  });
+
   it("훈련일 적은 주 — maxScore cap (훈련 2일·예외 0 → target 2)", () => {
     const short = [
       { id: "1", dayIndex: 1, date: "2026-07-20", week: 1, isProgramOff: false },
