@@ -425,10 +425,12 @@ function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, to
   let weekAttendCount = 0;
   let weekExceptionCount = 0;
   let trainingCount = 0;
+  let totalWeekTrainingCount = 0;
 
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
+    totalWeekTrainingCount += 1;
     if (today && slot.date > today) continue;
     trainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
@@ -440,7 +442,8 @@ function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, to
   }
 
   const weekScore = weekAttendCount + weekExceptionCount * 0.5;
-  const maxScore = trainingCount - weekExceptionCount * 0.5;
+  // maxScore는 이번 주 전체 훈련 가능 날 수 기준으로 계산 (주 초반 cap 오류 방지)
+  const maxScore = totalWeekTrainingCount - weekExceptionCount * 0.5;
   const weekTarget = Math.min(weeklyTargetConfig, maxScore);
   return {
     attendCount: weekAttendCount,

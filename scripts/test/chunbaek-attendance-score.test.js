@@ -149,6 +149,15 @@ describe("computeWeekStatsFull + formatWeekScoreSummary", () => {
     assert.equal(r.attendCount, 2);
     assert.equal(formatWeekScoreSummary(r), "3.0 / 3점");
   });
+
+  it("주 첫날(월요일) today 기준 — target 3으로 표시 (1로 cap되면 안 됨)", () => {
+    const slots = week7Slots();
+    const map = attMap({ 1: { attended: true } });
+    const r = computeWeekStatsFull(slots, map, 1, 3, "2026-07-20");
+    assert.equal(r.weekScore, 1);
+    assert.equal(r.target, 3);
+    assert.equal(formatWeekScoreSummary(r), "1.0 / 3점");
+  });
 });
 
 describe("weekBar", () => {
