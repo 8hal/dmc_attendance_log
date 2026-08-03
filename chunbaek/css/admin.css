@@ -733,8 +733,14 @@ body.admin-body {
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 320px;
   background: var(--surface);
+}
+@media (min-width: 769px) {
+  .roster-list {
+    max-height: 400px;
+  }
 }
 .roster-row {
   display: flex;
