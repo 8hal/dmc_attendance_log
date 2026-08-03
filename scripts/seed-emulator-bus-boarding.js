@@ -41,7 +41,7 @@ const EVENT_ID = "evt_bus_qa";
     {
       id: "bus_qa_member_laufen",
       nickname: "라우펜더만",
-      realName: "라우펜더만",
+      realName: "이원기",
       gender: "M",
       hidden: false,
       team: "DMC",
@@ -49,7 +49,7 @@ const EVENT_ID = "evt_bus_qa";
     {
       id: "bus_qa_member_tester",
       nickname: "테스터",
-      realName: "테스터",
+      realName: "김테스터",
       gender: "F",
       hidden: false,
       team: "DMC",
