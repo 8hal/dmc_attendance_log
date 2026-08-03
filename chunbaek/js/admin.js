@@ -750,12 +750,35 @@ async function refreshRosterDirectory() {
   }
 }
 
+function showConfirmModal(title, body) {
+  return new Promise((resolve) => {
+    document.getElementById("confirm-modal-title").textContent = title;
+    document.getElementById("confirm-modal-body").textContent = body;
+    const modal = document.getElementById("confirm-modal");
+    modal.classList.add("show");
+
+    function cleanup(result) {
+      modal.classList.remove("show");
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      resolve(result);
+    }
+    const okBtn = document.getElementById("confirm-modal-ok");
+    const cancelBtn = document.getElementById("confirm-modal-cancel");
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+  });
+}
+
 async function setParticipant(memberId, participant, label) {
   if (!memberId || isProcessing) return;
 
   if (!participant) {
-    const ok = window.confirm(
-      `「${label}」님을 춘백 참가자에서 제외합니다.\n\n앱 명단과 출석 그리드에서 사라지며, 기존 출석 데이터는 유지됩니다.`
+    const ok = await showConfirmModal(
+      "참가자 제외",
+      `「${label}」님을 춘백 참가자에서 제외합니다. 앱 명단과 출석 그리드에서 사라지며, 기존 출석 데이터는 유지됩니다.`
     );
     if (!ok) return;
   }
