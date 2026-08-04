@@ -32,6 +32,10 @@ const {
   normalizeMeetingDateKey,
 } = require("./lib/attendance-active-session");
 const {
+  kstTodayKey,
+  computeClubStreakFromDateSet,
+} = require("./lib/attendance-streak");
+const {
   trainingDocId,
   normalizeTrainingRow,
   resolveWeekMeetingDates,
@@ -321,68 +325,6 @@ function formatTimestampForSheets(date) {
   return formatted.replace(/\. (오전|오후)/, " $1");
 }
 
-function kstTodayKey() {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: DEFAULT_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  return formatter.format(now).replace(/-/g, "/");
-}
-
-/** KST 기준 전날 dateKey (YYYY/MM/DD) */
-function prevCalendarDayKst(dateKey) {
-  if (!isValidDateKey(dateKey)) return "";
-  const [y, m, d] = dateKey.split("/").map((x) => parseInt(x, 10));
-  const inst = Date.UTC(y, m - 1, d, 3, 0, 0) - 86400000;
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: DEFAULT_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-    .format(new Date(inst))
-    .replace(/-/g, "/");
-}
-
-/** 화·목·토 정모일(KST 달력) 여부 */
-function isRegularClubMeetingDateKey(dateKey) {
-  if (!isValidDateKey(dateKey)) return false;
-  const [y, m, d] = dateKey.split("/").map((x) => parseInt(x, 10));
-  const inst = Date.UTC(y, m - 1, d, 3, 0, 0);
-  const wd = new Intl.DateTimeFormat("en-US", { timeZone: DEFAULT_TZ, weekday: "short" }).format(new Date(inst));
-  return wd === "Tue" || wd === "Thu" || wd === "Sat";
-}
-
-/** dateKey 이전의 가장 가까운 화/목/토 정모일 (없으면 null) */
-function prevRegularClubMeetingDateKey(dateKey) {
-  let cur = dateKey;
-  for (let i = 0; i < 14; i++) {
-    cur = prevCalendarDayKst(cur);
-    if (!cur) return null;
-    if (isRegularClubMeetingDateKey(cur)) return cur;
-  }
-  return null;
-}
-
-/**
- * 화/목/토 출석 기록만으로 연속 정모 출석(역방향: 가장 최근 정모일부터).
- */
-function computeClubStreakFromDateSet(attendedDateSet) {
-  const today = kstTodayKey();
-  const onOrBefore = [...attendedDateSet].filter((d) => d <= today).sort((a, b) => b.localeCompare(a));
-  if (!onOrBefore.length) return 0;
-  let cur = onOrBefore[0];
-  if (!attendedDateSet.has(cur)) return 0;
-  let streak = 0;
-  while (cur && attendedDateSet.has(cur)) {
-    streak++;
-    cur = prevRegularClubMeetingDateKey(cur);
-  }
-  return streak;
-}
 
 async function getMembersForAttendanceV2() {
   const snap = await db.collection("members").get();
