@@ -63,6 +63,12 @@ function kstPlusDaysYmd(days) {
     participants: [
       { memberId: "seed_eh_member_1", realName: "김시드", nickname: "시드원", bib: "" },
       { memberId: "seed_eh_member_2", realName: "이시드", nickname: "시드투", bib: "" },
+      {
+        memberId: "seed_eh_member_gesal",
+        realName: "게살볶음밥",
+        nickname: "게살볶음밥",
+        bib: "",
+      },
     ],
     groupScrapeStatus: "pending",
     createdAt: new Date().toISOString(),
