@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <title>단체 대회 - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg);
+      color: var(--dmc-color-text);
+      font-family: var(--dmc-font-family);
+      padding: var(--dmc-space-5);
+      padding-bottom: calc(var(--dmc-space-5) + env(safe-area-inset-bottom, 0px));
+    }
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .header {
+      margin-bottom: var(--dmc-space-5);
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 6px;
+    }
+    .header p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--dmc-color-text-secondary);
+      line-height: 1.45;
+    }
+    .status {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--dmc-color-text-secondary);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .status-title {
+      display: block;
+      color: var(--dmc-color-text);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--dmc-radius-md);
+      background: var(--dmc-color-primary);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--dmc-color-primary-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--dmc-color-primary);
+      border: 1px solid var(--dmc-color-primary-border);
+    }
+    .btn-secondary:hover {
+      background: var(--dmc-color-primary-surface);
+    }
+    .event-rows {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .event-row {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 16px;
+      border: 1px solid var(--dmc-color-border, var(--dmc-slate-4));
+      border-radius: var(--dmc-list-row-radius, var(--dmc-radius-card));
+      background: var(--dmc-color-surface, var(--dmc-slate-1));
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      font: inherit;
+      box-shadow: var(--dmc-shadow-sm, none);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .event-row:hover,
+    .event-row:focus-visible {
+      background: var(--dmc-list-row-touch-bg, var(--dmc-color-primary-surface));
+      border-color: var(--dmc-list-row-border-strong, var(--dmc-color-primary-border));
+      outline: none;
+    }
+    .event-name {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .event-date {
+      display: block;
+      font-size: 13px;
+      color: var(--dmc-color-text-secondary);
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <h1>단체 대회</h1>
+      <p>다가오는 동마클 단체 대회를 선택하세요.</p>
+    </header>
+
+    <div id="loading" class="status" aria-live="polite">불러오는 중…</div>
+
+    <div id="error" class="status hidden" role="alert">
+      <span class="status-title" id="errorMessage">목록을 불러오지 못했어요</span>
+      <button type="button" class="btn" id="retryBtn">다시 시도</button>
+    </div>
+
+    <div id="empty" class="status hidden">
+      <span class="status-title">예정된 단체 대회가 없어요</span>
+      <a class="btn btn-secondary" href="attendance-v2.html">출석으로 돌아가기</a>
+    </div>
+
+    <ul id="list" class="event-rows hidden" aria-label="예정 단체 대회"></ul>
+  </div>
+
+  <script src="assets/event-upcoming.js"></script>
+  <script>
+    // 환경 자동 감지: localhost / 127.0.0.1 이면 에뮬레이터, 아니면 프로덕션
+    const host = window.location.hostname;
+    const API_BASE = (host === "localhost" || host === "127.0.0.1")
+      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
+      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+
+    const loadingEl = document.getElementById("loading");
+    const errorEl = document.getElementById("error");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const emptyEl = document.getElementById("empty");
+    const listEl = document.getElementById("list");
+    const retryBtn = document.getElementById("retryBtn");
+
+    function showOnly(el) {
+      loadingEl.classList.add("hidden");
+      errorEl.classList.add("hidden");
+      emptyEl.classList.add("hidden");
+      listEl.classList.add("hidden");
+      el.classList.remove("hidden");
+    }
+
+    function goHome(eventId) {
+      location.replace("event-home.html?eventId=" + encodeURIComponent(eventId));
+    }
+
+    function renderList(upcoming) {
+      listEl.innerHTML = "";
+      upcoming.forEach(function (ev) {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.className = "event-row";
+        a.href = "event-home.html?eventId=" + encodeURIComponent(ev.id);
+        a.innerHTML =
+          '<span class="event-name"></span><span class="event-date"></span>';
+        a.querySelector(".event-name").textContent = ev.displayName;
+        a.querySelector(".event-date").textContent = ev.eventDate;
+        li.appendChild(a);
+        listEl.appendChild(li);
+      });
+      showOnly(listEl);
+    }
+
+    async function loadUpcoming() {
+      showOnly(loadingEl);
+      try {
+        const res = await fetch(API_BASE + "?action=group-events");
+        const data = await res.json();
+        if (!data.ok) {
+          throw new Error(data.error || "목록을 불러오지 못했어요");
+        }
+        const upcoming = EventUpcoming.filterUpcomingGroupEvents(data.groupEvents);
+        if (upcoming.length === 0) {
+          showOnly(emptyEl);
+          return;
+        }
+        if (upcoming.length === 1) {
+          goHome(upcoming[0].id);
+          return;
+        }
+        renderList(upcoming);
+      } catch (err) {
+        console.error(err);
+        errorMessageEl.textContent =
+          (err && err.message) || "목록을 불러오지 못했어요";
+        showOnly(errorEl);
+      }
+    }
+
+    retryBtn.addEventListener("click", function () {
+      loadUpcoming();
+    });
+
+    loadUpcoming();
+  </script>
+</body>
+</html>
