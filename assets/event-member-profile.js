@@ -47,8 +47,9 @@
   function matchInList(list, identity) {
     if (!list || !identity) return null;
 
-    if (identity.memberId) {
-      const byId = list.find((m) => m && m.memberId === identity.memberId);
+    if (identity.memberId != null && identity.memberId !== "") {
+      const mid = String(identity.memberId);
+      const byId = list.find((m) => m && m.memberId != null && String(m.memberId) === mid);
       if (byId) return byId;
     }
 

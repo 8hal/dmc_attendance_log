@@ -61,6 +61,11 @@ describe("event-member-profile", () => {
     assert.equal(matchInList(list, { nickname: "없음", memberId: null }), null);
   });
 
+  it("matchInList coerces memberId to string", () => {
+    const list = [{ nickname: "알파", memberId: "42" }];
+    assert.equal(matchInList(list, { nickname: "x", memberId: 42 }).nickname, "알파");
+  });
+
   it("syncNicknames writes ATT, BOARDING, and BIB keys", () => {
     const ls = storage({});
     syncNicknames(ls, "알파");

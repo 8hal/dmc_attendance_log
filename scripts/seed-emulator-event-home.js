@@ -61,8 +61,8 @@ function kstPlusDaysYmd(days) {
       { time: "14:00", label: "버스 복귀 집결" },
     ],
     participants: [
-      { memberId: "seed_eh_member_1", realName: "김시드", nickname: "시드원" },
-      { memberId: "seed_eh_member_2", realName: "이시드", nickname: "시드투" },
+      { memberId: "seed_eh_member_1", realName: "김시드", nickname: "시드원", bib: "" },
+      { memberId: "seed_eh_member_2", realName: "이시드", nickname: "시드투", bib: "" },
     ],
     groupScrapeStatus: "pending",
     createdAt: new Date().toISOString(),

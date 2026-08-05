@@ -344,9 +344,10 @@
   
   <script src="assets/event-member-profile.js"></script>
   <script>
-    // 환경 자동 감지: localhost면 에뮬레이터, 아니면 프로덕션
-    const API_BASE = window.location.hostname === 'localhost'
-      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
+    // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터
+    const _host = window.location.hostname;
+    const API_BASE = (_host === 'localhost' || _host === '127.0.0.1')
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
       : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
 
     // 상태
@@ -503,12 +504,19 @@
         );
 
         if (participant) {
-          // 바로 입력 화면으로
           selectParticipant(participant);
+          showToast(`${participant.nickname}님으로 이어서 배번 입력`);
           return;
         }
-        
-        renderParticipantList();
+
+        // 저장된 닉이 명단에 없으면 검색창에 넣어 고르기 쉽게
+        if (identity.nickname) {
+          searchInput.value = identity.nickname;
+          renderParticipantList(identity.nickname);
+          showToast(`저장된 닉「${identity.nickname}」이 이 대회 명단에 없어요. 직접 골라 주세요.`);
+        } else {
+          renderParticipantList();
+        }
         showScreen(STEP.LIST);
         
       } catch (error) {
