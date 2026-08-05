@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <title>대회 홈 - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg);
+      color: var(--dmc-color-text);
+      font-family: var(--dmc-font-family);
+      padding: var(--dmc-space-5);
+      padding-bottom: calc(var(--dmc-space-5) + env(safe-area-inset-bottom, 0px));
+    }
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .status {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--dmc-color-text-secondary);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .status-title {
+      display: block;
+      color: var(--dmc-color-text);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--dmc-radius-md);
+      background: var(--dmc-color-primary);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--dmc-color-primary-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--dmc-color-primary);
+      border: 1px solid var(--dmc-color-primary-border);
+    }
+    .btn-secondary:hover {
+      background: var(--dmc-color-primary-surface);
+    }
+    .summary {
+      margin-bottom: var(--dmc-space-5);
+    }
+    .summary-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      line-height: 1.3;
+    }
+    .summary-meta {
+      margin: 0;
+      font-size: 14px;
+      color: var(--dmc-color-text-secondary);
+      line-height: 1.45;
+    }
+    .nick-chip {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--dmc-color-primary-surface);
+      color: var(--dmc-color-primary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .launchers {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: var(--dmc-space-5);
+    }
+    .launcher {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      min-height: 64px;
+      padding: 16px 18px;
+      border: 1px solid var(--dmc-color-border, var(--dmc-slate-4));
+      border-radius: var(--dmc-list-row-radius, var(--dmc-radius-card));
+      background: var(--dmc-color-surface, var(--dmc-slate-1));
+      color: inherit;
+      text-decoration: none;
+      font: inherit;
+      box-shadow: var(--dmc-shadow-sm, none);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .launcher:hover,
+    .launcher:focus-visible {
+      background: var(--dmc-list-row-touch-bg, var(--dmc-color-primary-surface));
+      border-color: var(--dmc-list-row-border-strong, var(--dmc-color-primary-border));
+      outline: none;
+    }
+    .launcher-label {
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .launcher-badge {
+      flex-shrink: 0;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--dmc-color-primary-surface);
+      color: var(--dmc-color-primary);
+    }
+    .launcher-badge.warn {
+      background: var(--dmc-amber-4, #fef3c7);
+      color: var(--dmc-amber-11, #92400e);
+    }
+    .launcher-badge.ok {
+      background: var(--dmc-green-4, #d1fae5);
+      color: var(--dmc-green-11, #065f46);
+    }
+    .launcher-badge.muted {
+      background: var(--dmc-slate-3, #f1f5f9);
+      color: var(--dmc-color-text-secondary);
+    }
+    .launcher.is-disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .timeline-section {
+      margin-bottom: var(--dmc-space-5);
+    }
+    .timeline-details {
+      border: 1px solid var(--dmc-color-border, var(--dmc-slate-4));
+      border-radius: var(--dmc-radius-card, var(--dmc-radius-md));
+      background: var(--dmc-color-surface, var(--dmc-slate-1));
+      padding: 0 16px;
+    }
+    .timeline-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 0;
+      font-size: 15px;
+      font-weight: 600;
+      user-select: none;
+    }
+    .timeline-details > summary::-webkit-details-marker { display: none; }
+    .timeline-details > summary::after {
+      content: "▾";
+      float: right;
+      color: var(--dmc-color-text-secondary);
+      font-weight: 400;
+    }
+    .timeline-details[open] > summary::after { content: "▴"; }
+    .timeline-list {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 16px;
+      border-top: 1px solid var(--dmc-color-border, var(--dmc-slate-4));
+    }
+    .timeline-row {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0 0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .timeline-time {
+      flex-shrink: 0;
+      min-width: 52px;
+      font-weight: 600;
+      color: var(--dmc-color-primary);
+    }
+    .timeline-label {
+      color: var(--dmc-color-text);
+    }
+    .footer {
+      text-align: center;
+      padding-top: 8px;
+    }
+    .footer a {
+      color: var(--dmc-color-text-secondary);
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .footer a:hover { color: var(--dmc-color-primary); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="loading" class="status" aria-live="polite">불러오는 중…</div>
+
+    <div id="error" class="status hidden" role="alert">
+      <span class="status-title" id="errorMessage">대회를 찾을 수 없어요</span>
+      <button type="button" class="btn hidden" id="retryBtn">다시 시도</button>
+      <a class="btn btn-secondary" id="errorAttendanceLink" href="attendance-v2.html">출석으로 돌아가기</a>
+    </div>
+
+    <div id="home" class="hidden">
+      <header id="summary" class="summary">
+        <h1 class="summary-title" id="eventTitle">대회</h1>
+        <p class="summary-meta" id="eventMeta"></p>
+        <span id="nickChip" class="nick-chip hidden"></span>
+      </header>
+
+      <nav id="launchers" class="launchers" aria-label="대회 바로가기">
+        <a id="busLauncher" class="launcher hidden" href="#">
+          <span class="launcher-label">버스 탑승</span>
+          <span id="busBadge" class="launcher-badge hidden"></span>
+        </a>
+        <a id="bibLauncher" class="launcher" href="#">
+          <span class="launcher-label">배번 입력</span>
+          <span id="bibBadge" class="launcher-badge hidden"></span>
+        </a>
+        <a id="resultsLauncher" class="launcher is-disabled" href="#" aria-disabled="true" tabindex="-1">
+          <span class="launcher-label">결과 보기</span>
+          <span id="resultsBadge" class="launcher-badge muted"></span>
+        </a>
+      </nav>
+
+      <section id="timeline" class="timeline-section hidden">
+        <details class="timeline-details">
+          <summary>당일 일정</summary>
+          <ul id="timelineList" class="timeline-list"></ul>
+        </details>
+      </section>
+
+      <footer class="footer">
+        <a href="attendance-v2.html">출석으로 돌아가기</a>
+      </footer>
+    </div>
+  </div>
+
+  <script src="assets/event-member-profile.js"></script>
+  <script src="assets/event-home-badges.js"></script>
+  <script>
+    // 환경 자동 감지: localhost / 127.0.0.1 이면 에뮬레이터, 아니면 프로덕션
+    const host = window.location.hostname;
+    const API_BASE = (host === "localhost" || host === "127.0.0.1")
+      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
+      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+
+    const RESULTS_BOARD_READY = false;
+
+    const loadingEl = document.getElementById("loading");
+    const errorEl = document.getElementById("error");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const retryBtn = document.getElementById("retryBtn");
+    const errorAttendanceLink = document.getElementById("errorAttendanceLink");
+    const homeEl = document.getElementById("home");
+
+    const eventTitleEl = document.getElementById("eventTitle");
+    const eventMetaEl = document.getElementById("eventMeta");
+    const nickChipEl = document.getElementById("nickChip");
+
+    const busLauncher = document.getElementById("busLauncher");
+    const busBadge = document.getElementById("busBadge");
+    const bibLauncher = document.getElementById("bibLauncher");
+    const bibBadge = document.getElementById("bibBadge");
+    const resultsLauncher = document.getElementById("resultsLauncher");
+    const resultsBadge = document.getElementById("resultsBadge");
+
+    const timelineSection = document.getElementById("timeline");
+    const timelineList = document.getElementById("timelineList");
+
+    const eventId = new URLSearchParams(location.search).get("eventId");
+
+    function showOnly(el) {
+      loadingEl.classList.add("hidden");
+      errorEl.classList.add("hidden");
+      homeEl.classList.add("hidden");
+      el.classList.remove("hidden");
+    }
+
+    function setBibHref() {
+      if (!eventId) return;
+      bibLauncher.href =
+        "my-bib.html?eventId=" + encodeURIComponent(eventId);
+    }
+
+    function showError(message, opts) {
+      opts = opts || {};
+      errorMessageEl.textContent = message;
+      if (opts.retry) {
+        retryBtn.classList.remove("hidden");
+        errorAttendanceLink.classList.add("hidden");
+      } else {
+        retryBtn.classList.add("hidden");
+        errorAttendanceLink.classList.remove("hidden");
+      }
+      showOnly(errorEl);
+    }
+
+    function showRetry(message) {
+      showError(message || "다시 시도", { retry: true });
+    }
+
+    function setBadge(el, label) {
+      if (!label) {
+        el.classList.add("hidden");
+        el.textContent = "";
+        return;
+      }
+      el.textContent = label;
+      el.classList.remove("hidden", "warn", "ok", "muted");
+      if (label === "미탑승" || label === "미입력") {
+        el.classList.add("warn");
+      } else if (label === "완료" || label === "입력됨") {
+        el.classList.add("ok");
+      } else {
+        el.classList.add("muted");
+      }
+    }
+
+    function renderResultsLauncher() {
+      const state = EventHomeBadges.resultsLauncherState(RESULTS_BOARD_READY);
+      if (state.enabled) {
+        resultsLauncher.classList.remove("is-disabled");
+        resultsLauncher.removeAttribute("aria-disabled");
+        resultsLauncher.removeAttribute("tabindex");
+        setBadge(resultsBadge, state.label);
+      } else {
+        resultsLauncher.classList.add("is-disabled");
+        resultsLauncher.setAttribute("aria-disabled", "true");
+        resultsLauncher.setAttribute("tabindex", "-1");
+        resultsLauncher.removeAttribute("href");
+        setBadge(resultsBadge, state.label || "준비 중");
+      }
+    }
+
+    function renderTimeline(event) {
+      const tl = Array.isArray(event.dayTimeline) ? event.dayTimeline : [];
+      if (!tl.length) {
+        timelineSection.classList.add("hidden");
+        timelineList.innerHTML = "";
+        return;
+      }
+      timelineList.innerHTML = "";
+      tl.forEach(function (row) {
+        const li = document.createElement("li");
+        li.className = "timeline-row";
+        const timeEl = document.createElement("span");
+        timeEl.className = "timeline-time";
+        timeEl.textContent = row && row.time != null ? String(row.time) : "";
+        const labelEl = document.createElement("span");
+        labelEl.className = "timeline-label";
+        labelEl.textContent = row && row.label != null ? String(row.label) : "";
+        li.appendChild(timeEl);
+        li.appendChild(labelEl);
+        timelineList.appendChild(li);
+      });
+      timelineSection.classList.remove("hidden");
+    }
+
+    async function applyBusLauncher(event, identity) {
+      if (!EventHomeBadges.busLauncherVisible(event.busBoarding)) {
+        busLauncher.classList.add("hidden");
+        setBadge(busBadge, null);
+        return;
+      }
+
+      busLauncher.href =
+        "boarding.html?eventId=" + encodeURIComponent(eventId);
+      busLauncher.classList.remove("hidden");
+      setBadge(busBadge, null);
+
+      try {
+        const res = await fetch(
+          API_BASE +
+            "?action=bus-boarding&subAction=status&eventId=" +
+            encodeURIComponent(eventId)
+        );
+        const data = await res.json();
+        if (!data || !data.ok || !Array.isArray(data.roster)) return;
+        const row = EventMemberProfile.matchInList(data.roster, identity);
+        setBadge(busBadge, EventHomeBadges.busBadgeLabel(row));
+      } catch (_err) {
+        // status 실패 시 뱃지 없이 링크만 유지
+      }
+    }
+
+    function renderHome(event) {
+      const title = event.eventName || event.primaryName || "대회";
+      eventTitleEl.textContent = title;
+      document.title = title + " - 동탄 마라톤 클럽";
+
+      const metaParts = [];
+      if (event.eventDate) metaParts.push(event.eventDate);
+      if (event.location) metaParts.push(event.location);
+      eventMetaEl.textContent = metaParts.join(" · ");
+
+      const identity = EventMemberProfile.readSavedIdentity(localStorage);
+      if (identity.nickname) {
+        nickChipEl.textContent = identity.nickname + "님";
+        nickChipEl.classList.remove("hidden");
+      } else {
+        nickChipEl.classList.add("hidden");
+        nickChipEl.textContent = "";
+      }
+
+      const participant = EventMemberProfile.matchInList(
+        event.participants || [],
+        identity
+      );
+      setBadge(bibBadge, EventHomeBadges.bibBadgeLabel(participant));
+
+      setBibHref();
+      renderResultsLauncher();
+      renderTimeline(event);
+      showOnly(homeEl);
+
+      applyBusLauncher(event, identity);
+    }
+
+    async function loadHome() {
+      setBibHref();
+      renderResultsLauncher();
+
+      if (!eventId) {
+        showError("대회를 찾을 수 없어요");
+        return;
+      }
+
+      showOnly(loadingEl);
+
+      try {
+        const res = await fetch(
+          API_BASE +
+            "?action=group-events&subAction=detail&eventId=" +
+            encodeURIComponent(eventId)
+        );
+        const data = await res.json();
+        if (!data.ok || !data.event || data.event.isGroupEvent !== true) {
+          showError("대회를 찾을 수 없어요");
+          return;
+        }
+        renderHome(data.event);
+      } catch (err) {
+        console.error(err);
+        setBibHref();
+        showRetry("다시 시도");
+      }
+    }
+
+    retryBtn.addEventListener("click", function () {
+      loadHome();
+    });
+
+    loadHome();
+  </script>
+</body>
+</html>
