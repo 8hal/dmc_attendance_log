@@ -114,6 +114,7 @@
 | `createdAt` | ISO 문자열 등 |
 | `isGroupEvent` | `boolean` — 단체 대회 여부. 필드 없음이면 일반 대회로 취급 |
 | `participants` | 배열. 요소: `{ memberId: string, realName: string, nickname: string }` — 참가자 목록 |
+| `dayTimeline` | `{ time: string, label: string }[]` (optional) — 회원 홈 접이식 당일 일정. 없으면 섹션 숨김 |
 | `groupSource` | `object` 또는 `null` — 단체 기록 소스(오너 입력). `{ source: string, sourceId: string }`. `source`는 `race_results.source`와 동일 범주(`smartchip`, `myresult`, `spct`, `marazone`, `ohmyrace`, `manual` 중 하나) |
 | `groupScrapeStatus` | 문자열 — 단체용 스크랩 상태. 아래 표 참조 |
 | `groupScrapeJobId` | `string` 또는 `null` — 스크랩 완료 후 대응 `scrape_jobs` 문서 ID |
