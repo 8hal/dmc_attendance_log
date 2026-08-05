@@ -131,6 +131,14 @@ Factory 내부에 `kstTodayYmd` / `filterUpcomingGroupEvents`를 두고 `return 
 
 `filterUpcomingGroupEvents(groupEvents, todayYmd)`: 두 번째 인자가 없으면 `todayYmd = kstTodayYmd()` 로 기본값. 호출부는 `filterUpcomingGroupEvents(data.groupEvents)` 만으로 충분.
 
+`kstTodayYmd(now)` 구현 예 (KST 달력일):
+
+```javascript
+function kstTodayYmd(now) {
+  return (now || new Date()).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+}
+```
+
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
@@ -404,7 +412,8 @@ if (!eventId) {
     const data = await res.json();
     if (!data.ok || !data.event) {
       showError("대회를 찾을 수 없어요");
-    } else if (data.event.isGroupEvent === false) {
+    } else if (data.event.isGroupEvent !== true) {
+      // missing isGroupEvent ≡ 비단체 (data-dictionary) — 동일 에러
       showError("대회를 찾을 수 없어요");
     } else {
       renderHome(data.event);
