@@ -3,8 +3,8 @@
 날짜: 2026-08-05  
 상태: **브레인스토밍 합의** (회원 축만)  
 관련:
-- `_docs/superpowers/specs/2026-08-02-group-event-day-ux-design.md` (당일 UX 비전 · 버스/배번/결과)
-- `_docs/superpowers/plans/2026-08-02-group-event-bus-boarding-phase1.md` (버스 Phase 1)
+- `_docs/superpowers/specs/2026-08-02-group-event-day-ux-design.md` (당일 UX 비전 · 버스/배번/결과) — **회원 허브 URL·IA의 SSOT는 본 문서(`event-home`)**. 08-02의 `group-detail` 허브/미결 `group-day` 문구는 운영·비전 맥락으로만 보고, 회원 입구는 본 문서를 따른다.
+- `_docs/superpowers/plans/2026-08-02-group-event-bus-boarding-phase1.md` (버스 Phase 1) — 구현 브랜치에 존재할 수 있음. **본 기능의 선행 의존**은 §7.4.
 - `_docs/superpowers/specs/2026-04-18-self-service-bib-input-design.md` (배번)
 - `_docs/superpowers/specs/2026-07-17-attendance-shell-redesign-design.md` (출석 셸 · 더보기)
 
@@ -75,8 +75,10 @@
 1. **단톡/카페 고정 링크** → `event-home.html?eventId={id}`
 2. **현장 QR** → 홈 또는 하위 딥링크 (`boarding.html?eventId=&leg=outbound` 등). 하위여도 §5 사전 닉 적용
 3. **출석 더보기 → 「단체 대회」**
-   - 다가오는/당일 `isGroupEvent` **1건** → 바로 해당 `event-home`
-   - 0건 또는 여러 건 → 짧은은 **회원용 목록**(이름·날짜·id만) → 홈
+   - **후보 집합:** `isGroupEvent === true` 이고 `eventDate >= today(KST)` (당일 포함, **미래·당일만**. 과거 대회는 목록에 넣지 않음). 상한 일수 제한 없음(건수가 적다는 전제).
+   - 후보 **1건** → 중간 목록 없이 바로 해당 `event-home`
+   - 후보 **2건 이상** → 짧은 **회원용 목록 페이지**(신규 얇은 HTML 또는 `event-home` 쿼리 모드 중 구현 계획에서 택1; 이름·날짜·id만) → 탭 시 홈
+   - 후보 **0건** → 목록 페이지를 열되 **빈 상태**: “예정된 단체 대회가 없어요” + 출석 앱으로 돌아가기. (과거 대회 브라우징 없음)
    - 운영 `group.html`은 더보기에서 연결하지 않음
 
 ---
@@ -119,7 +121,7 @@
 
 | 런처 | 이동 | 상태 |
 |------|------|------|
-| 버스 탑승 | `boarding.html?eventId=` (+ optional `leg`) | `busBoarding.enabled`가 아니면 **숨김**. on이면 내 구간 미탑승/완료 뱃지(매칭 시) |
+| 버스 탑승 | `boarding.html?eventId=` (+ optional `leg`) | `busBoarding.enabled`가 아니면 **숨김**. on이고 프로필 매칭 시 뱃지: **다음 미탑승 필수 구간**이 있으면 “미탑승”, 필수 구간이 모두 boarded면 “완료” (왕복이면 outbound→return 순으로 “다음” 판정) |
 | 배번 입력 | `my-bib.html?eventId=` | 버스와 무관하게 노출. 내 배번 유무 뱃지(participants + 프로필 매칭 시) |
 | 결과 보기 | 결과 보드 URL | 미구현이면 **비활성 + “준비 중”** |
 
@@ -158,12 +160,21 @@
 | 더보기 1건/목록 | 기존 group-events 목록 read 재사용, 또는 이름·날짜·id만 노출하는 **얇은 public list** |
 
 신규 API가 필요하면 `_docs/justification/` + 사용자 승인 후 (프로젝트 new-api 규칙).  
-큰 쓰기 API·운영 API는 회원 홈 범위에 넣지 않는다.
+큰 쓰기 API·운영 API는 회원 홈 범위에 넣지 않는다.  
+기존 `group-events` 목록이 운영용 풀 페이로드면, 더보기/회원 목록은 **이름·날짜·id만** 쓰거나 얇은 public list를 검토한다(계획 단계).
 
 ### 7.3 모듈 독립 (기존 비전 유지)
 
 - 버스 off여도 배번·결과 런처 정책은 §6.2.
 - 배번·결과는 버스 탑승 여부에 종속되지 않음.
+
+### 7.4 버스 Phase 1 의존
+
+`boarding.html` · `action=bus-boarding` · `busBoarding` 필드는 **버스 Phase 1** 산출물이다. `main`에 없을 수 있다.
+
+계획·구현 시:
+1. **권장:** 버스 Phase 1이 머지된 베이스에서 `event-home`을 구현한다.
+2. **병행 시 그레이스풀 디그레이드:** `bus-boarding`/`boarding.html`/detail의 `busBoarding`이 없으면 버스 런처를 숨기고, 배번·요약·일정·더보기 진입은 동작시킨다. 버스 API를 회원 홈 범위에서 재구현하지 않는다.
 
 ---
 
@@ -173,7 +184,8 @@
 |------|-----|
 | `eventId` 없음 / 문서 없음 | “대회를 찾을 수 없어요” + 출석 앱 링크 |
 | 단체 대회가 아님 | 동일(상세 이유 최소화) |
-| 버스 off | 버스 런처 숨김 |
+| 버스 off / 버스 Phase 1 미존재 | 버스 런처 숨김 (§7.4) |
+| 더보기 후보 0건 | “예정된 단체 대회가 없어요” + 출석으로 |
 | 결과 미구현 | 결과 런처 비활성 + “준비 중” |
 | 프로필 ↔ 명단 불일치 | 홈은 표시. 하위 진입 시 닉 선택 폴백 |
 | API 실패 | 인라인/토스트 “다시 시도”. 가능하면 런처 딥링크는 유지 |
@@ -211,4 +223,5 @@
 | 데이터 | `race_events`만 · 장기 Event는 한 절 |
 | 신원 | 출석 localStorage 프로필 사전 닉 (서버 토큰 X) |
 | 일정 | 접이식 타임라인 (A) · `dayTimeline` 선택 필드 |
-| 더보기 | 1건이면 홈 직행, 아니면 짧은 회원용 목록 |
+| 더보기 | `eventDate >= today(KST)` 후보: 1건→홈, 2+→목록, 0→빈 안내 |
+| 버스 의존 | Phase 1 권장 선행 · 없으면 버스 런처만 숨김 |
