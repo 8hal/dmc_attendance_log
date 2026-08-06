@@ -219,6 +219,56 @@
       font-size: 11px; font-weight: 700; color: #047857;
       background: #ecfdf5; padding: 4px 8px; border-radius: 999px;
     }
+    .toolbar {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      background: var(--card);
+      color: #94a3b8;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .fchip {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: #475569;
+    }
+    .fchip.on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .sort-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .sort-row select, .sort-fake {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+    }
   </style>
 </head>
 <body>
@@ -397,7 +447,7 @@
     </section>
 
     <section class="frame" id="kf4">
-      <p class="frame-label">Keyframe 4 · 명단·결과 · 취합 전</p>
+      <p class="frame-label">Keyframe 4 · 명단·결과 · 검색·필터·정렬</p>
       <div class="phone">
         <div class="brand">
           <div class="brand-row">
@@ -407,7 +457,20 @@
           <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
         </div>
         <div class="body">
-          <div class="group-head">하프 · 같이 뛸 수 있어요</div>
+          <div class="toolbar">
+            <div class="search">닉네임 검색…</div>
+            <div class="chips">
+              <span class="fchip">전체</span>
+              <span class="fchip on">하프</span>
+              <span class="fchip">풀</span>
+              <span class="fchip">10K</span>
+            </div>
+            <div class="sort-row">
+              <span>정렬</span>
+              <span class="sort-fake">목표 시간 ↑</span>
+            </div>
+          </div>
+          <div class="group-head">하프 · 목표 빠른 순</div>
           <div class="row me">
             <div>
               <div class="nick">게살볶음밥 <span style="font-size:11px;color:#2563eb;">나</span></div>
@@ -422,15 +485,7 @@
             </div>
             <div class="right"><span class="goal">기록 취합 전</span></div>
           </div>
-          <div class="group-head">풀</div>
-          <div class="row">
-            <div>
-              <div class="nick">시드투</div>
-              <div class="sub">목표 없음</div>
-            </div>
-            <div class="right"><span class="goal">기록 취합 전</span></div>
-          </div>
-          <p class="hint">실명·배번 숫자는 안 보여요. 취합되면 오른쪽이 기록으로 바뀝니다.</p>
+          <p class="hint">필터=종목 · 검색=닉 · 정렬=목표시간(초 환산). 목표 없음은 맨 아래. 취합 후엔 「기록 순」으로 바꾸면 됨.</p>
         </div>
         <nav class="tabs">
           <div class="tab"><span class="tab-icon">🏠</span>홈</div>
