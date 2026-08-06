@@ -1,0 +1,51 @@
+[
+  {
+    "order": 1,
+    "id": "s-bus",
+    "file": "01-bus-boarding_A-버스-당일시작.png",
+    "width": 440,
+    "height": 676.859375
+  },
+  {
+    "order": 2,
+    "id": "s-buslist",
+    "file": "02-bus-boarded-list_B-탑승완료목록.png",
+    "width": 440,
+    "height": 634.125
+  },
+  {
+    "order": 3,
+    "id": "s-home0",
+    "file": "03-home-before-bib_C-홈-배번전.png",
+    "width": 400,
+    "height": 695.9375
+  },
+  {
+    "order": 4,
+    "id": "s-bib",
+    "file": "04-bib-entry_D-배번입력.png",
+    "width": 400,
+    "height": 769.28125
+  },
+  {
+    "order": 5,
+    "id": "s-home1",
+    "file": "05-home-after-bib_E-홈-배번후.png",
+    "width": 400,
+    "height": 609.921875
+  },
+  {
+    "order": 6,
+    "id": "s-roster",
+    "file": "06-roster-before-results_F-명단결과-취합전.png",
+    "width": 400,
+    "height": 753.5625
+  },
+  {
+    "order": 7,
+    "id": "s-done",
+    "file": "07-roster-after-results_G-명단결과-취합후.png",
+    "width": 400,
+    "height": 647.484375
+  }
+]
