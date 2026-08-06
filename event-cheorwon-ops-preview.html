@@ -302,18 +302,99 @@
 
     <h2>3. 화면 미리보기 (철원 예시)</h2>
     <nav class="toc" aria-label="화면 바로가기">
+      <a href="#s-bus">버스</a>
+      <a href="#s-buslist">탑승 목록</a>
       <a href="#s-home0">홈·배번 전</a>
       <a href="#s-bib">배번 입력</a>
       <a href="#s-home1">홈·배번 후</a>
-      <a href="#s-bus">버스</a>
-      <a href="#s-buslist">탑승 목록</a>
       <a href="#s-roster">명단·결과</a>
       <a href="#s-done">취합 후</a>
     </nav>
 
-    <!-- HOME BEFORE -->
+    <div class="phones-2">
+      <!-- BUS -->
+      <div class="phone-wrap" id="s-bus">
+          <p class="frame-label">화면 A · 버스 (당일 시작)</p>
+          <div class="phone">
+            <div class="brand">
+              <div class="brand-row">
+                <span class="brand-title">동마클 단체 대회</span>
+                <a class="brand-list" href="#">목록</a>
+              </div>
+              <div class="brand-sub">철원 DMZ · 가는 버스</div>
+            </div>
+            <div class="body">
+              <div class="stat-row">
+                <a class="stat" href="#s-buslist"><b>31</b><span>탑승 완료 · 보기</span></a>
+                <a class="stat" href="#s-buslist"><b>5</b><span>미탑승 · 보기</span></a>
+              </div>
+              <div class="bus-card">
+                <div style="font-weight:800;margin-bottom:4px;">게살볶음밥 · 가는 버스</div>
+                <div class="hint" style="margin:0;">왕복 · 아직 체크 전</div>
+                <div class="btn-bus primary">가는 버스 탑승 완료</div>
+                <div class="btn-bus ghost">다른 닉으로 체크</div>
+              </div>
+              <div class="bus-card">
+                <div style="font-weight:800;margin-bottom:4px;">오는 버스</div>
+                <div class="hint" style="margin:0;">복귀 때 체크해요</div>
+                <div class="btn-bus ghost">오는 버스 탑승</div>
+              </div>
+            </div>
+            <nav class="tabs">
+              <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+              <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+              <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+            </nav>
+          </div>
+        </div>
+      <!-- BUS LIST -->
+      <div class="phone-wrap" id="s-buslist">
+          <p class="frame-label">화면 B · 탑승 완료 목록</p>
+          <div class="phone">
+            <div class="brand">
+              <div class="brand-row">
+                <span class="brand-title">동마클 단체 대회</span>
+                <a class="brand-list" href="#s-bus">닫기</a>
+              </div>
+              <div class="brand-sub">가는 버스 · 탑승 완료 31명</div>
+            </div>
+            <div class="body">
+              <div class="bus-card" style="padding-top:6px;padding-bottom:6px;">
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">러너킴</div><div class="sub">왕복 · 04:48</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">새벽버스</div><div class="sub">왕복 · 04:51</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">철원가자</div><div class="sub">편도(가는) · 04:55</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">동탄치타</div><div class="sub">왕복 · 04:57</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">…</div><div class="sub">스크롤</div></div>
+                  <span class="sub">+27</span>
+                </div>
+              </div>
+              <p class="hint">회원에게는 닉·탑승 여부만. 실명·비고는 총무 화면.</p>
+            </div>
+            <nav class="tabs">
+              <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+              <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+              <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+            </nav>
+          </div>
+        </div>
+    </div>
+
+    <!-- HOME BEFORE (탑승 후) -->
     <div class="phone-wrap" id="s-home0">
-      <p class="frame-label">화면 A · 홈 (아직 배번 입력 전)</p>
+      <p class="frame-label">화면 C · 홈 (탑승 후·배번 입력 전)</p>
       <div class="phone">
         <div class="brand">
           <div class="brand-row">
@@ -344,7 +425,7 @@
 
     <!-- BIB DETAIL -->
     <div class="phone-wrap" id="s-bib">
-      <p class="frame-label">화면 B · 배번 입력 (상세)</p>
+      <p class="frame-label">화면 D · 배번 입력 (이동 중)</p>
       <div class="phone">
         <div class="brand">
           <div class="brand-row">
@@ -379,7 +460,7 @@
 
     <!-- HOME AFTER -->
     <div class="phone-wrap" id="s-home1">
-      <p class="frame-label">화면 C · 홈 (배번 입력 후)</p>
+      <p class="frame-label">화면 E · 홈 (배번 입력 후)</p>
       <div class="phone">
         <div class="brand">
           <div class="brand-row">
@@ -411,88 +492,6 @@
           <div class="tab"><span class="tab-icon">🚌</span>버스</div>
           <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
         </nav>
-      </div>
-    </div>
-
-    <div class="phones-2">
-      <!-- BUS -->
-      <div class="phone-wrap" id="s-bus">
-        <p class="frame-label">화면 D · 버스</p>
-        <div class="phone">
-          <div class="brand">
-            <div class="brand-row">
-              <span class="brand-title">동마클 단체 대회</span>
-              <a class="brand-list" href="#">목록</a>
-            </div>
-            <div class="brand-sub">철원 DMZ · 가는 버스</div>
-          </div>
-          <div class="body">
-            <div class="stat-row">
-              <a class="stat" href="#s-buslist"><b>31</b><span>탑승 완료 · 보기</span></a>
-              <a class="stat" href="#s-buslist"><b>5</b><span>미탑승 · 보기</span></a>
-            </div>
-            <div class="bus-card">
-              <div style="font-weight:800;margin-bottom:4px;">게살볶음밥 · 가는 버스</div>
-              <div class="hint" style="margin:0;">왕복 · 아직 체크 전</div>
-              <div class="btn-bus primary">가는 버스 탑승 완료</div>
-              <div class="btn-bus ghost">다른 닉으로 체크</div>
-            </div>
-            <div class="bus-card">
-              <div style="font-weight:800;margin-bottom:4px;">오는 버스</div>
-              <div class="hint" style="margin:0;">복귀 때 체크해요</div>
-              <div class="btn-bus ghost">오는 버스 탑승</div>
-            </div>
-          </div>
-          <nav class="tabs">
-            <div class="tab"><span class="tab-icon">🏠</span>홈</div>
-            <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
-            <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
-          </nav>
-        </div>
-      </div>
-
-      <!-- BUS LIST -->
-      <div class="phone-wrap" id="s-buslist">
-        <p class="frame-label">화면 E · 탑승 완료 목록</p>
-        <div class="phone">
-          <div class="brand">
-            <div class="brand-row">
-              <span class="brand-title">동마클 단체 대회</span>
-              <a class="brand-list" href="#s-bus">닫기</a>
-            </div>
-            <div class="brand-sub">가는 버스 · 탑승 완료 31명</div>
-          </div>
-          <div class="body">
-            <div class="bus-card" style="padding-top:6px;padding-bottom:6px;">
-              <div class="list-row">
-                <div><div class="nick" style="font-size:14px;">러너킴</div><div class="sub">왕복 · 04:48</div></div>
-                <span class="pill-ok">완료</span>
-              </div>
-              <div class="list-row">
-                <div><div class="nick" style="font-size:14px;">새벽버스</div><div class="sub">왕복 · 04:51</div></div>
-                <span class="pill-ok">완료</span>
-              </div>
-              <div class="list-row">
-                <div><div class="nick" style="font-size:14px;">철원가자</div><div class="sub">편도(가는) · 04:55</div></div>
-                <span class="pill-ok">완료</span>
-              </div>
-              <div class="list-row">
-                <div><div class="nick" style="font-size:14px;">동탄치타</div><div class="sub">왕복 · 04:57</div></div>
-                <span class="pill-ok">완료</span>
-              </div>
-              <div class="list-row">
-                <div><div class="nick" style="font-size:14px;">…</div><div class="sub">스크롤</div></div>
-                <span class="sub">+27</span>
-              </div>
-            </div>
-            <p class="hint">회원에게는 닉·탑승 여부만. 실명·비고는 총무 화면.</p>
-          </div>
-          <nav class="tabs">
-            <div class="tab"><span class="tab-icon">🏠</span>홈</div>
-            <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
-            <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
-          </nav>
-        </div>
       </div>
     </div>
 
