@@ -67,6 +67,7 @@ function kstPlusDaysYmd(days) {
         memberId: "seed_eh_member_gesal",
         realName: "게살볶음밥",
         nickname: "게살볶음밥",
+        distance: "half",
         bib: "",
       },
     ],
