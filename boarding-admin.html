@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>버스 탑승 현황 (총무) - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.2);
+    }
+    .auth-card h1 {
+      font-size: 20px;
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+    .auth-card p {
+      margin: 0 0 16px;
+      color: var(--text-sub);
+      font-size: 14px;
+    }
+    .auth-error {
+      display: none;
+      color: var(--red);
+      font-size: 13px;
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+
+    .header {
+      margin-bottom: 16px;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+    .header-subtitle {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: var(--text);
+    }
+    .header-meta {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .nav-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-links a:hover { text-decoration: underline; }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 14px;
+    }
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .card-title-row .card-title { margin: 0; }
+
+    .leg-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .leg-tab {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-sub);
+    }
+    .leg-tab.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #EFF6FF;
+    }
+
+    .summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .summary-count {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .summary-count .need { color: var(--text-sub); font-weight: 600; font-size: 15px; }
+    .summary-hint {
+      font-size: 13px;
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    .search-input, .field-input, .field-select, .auth-card input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .search-input:focus, .field-input:focus, .field-select:focus,
+    .auth-card input[type="password"]:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .field-row.full { grid-template-columns: 1fr; }
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .btn {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover:not(:disabled) { background: #CBD5E1; }
+    .btn-danger {
+      background: var(--red-light);
+      color: var(--red);
+      border: 1px solid #FECACA;
+    }
+    .btn-danger:hover:not(:disabled) { background: #FECACA; }
+    .btn-sm {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .btn-block { width: 100%; }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .activate-box {
+      text-align: center;
+      padding: 28px 12px 8px;
+    }
+    .activate-icon { font-size: 44px; margin-bottom: 10px; }
+    .activate-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .activate-msg {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 0 0 20px;
+      line-height: 1.5;
+    }
+
+    .roster-list { max-height: 60vh; overflow-y: auto; }
+    .roster-row {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: var(--card);
+    }
+    .roster-row.not-boarded {
+      border-color: #FBBF24;
+      background: #FFFBEB;
+    }
+    .roster-row.boarded {
+      border-color: #A7F3D0;
+      background: #F0FDF4;
+    }
+    .roster-row.na {
+      opacity: 0.65;
+      background: var(--bg);
+    }
+    .roster-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .roster-name {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .roster-real {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+    .guest-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--amber-light);
+      color: var(--amber);
+    }
+    .ride-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #EFF6FF;
+      color: var(--primary);
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .toggle-wrap input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--green);
+    }
+    .note-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .note-row .field-input { flex: 1; min-width: 120px; padding: 8px 10px; font-size: 13px; }
+    .roster-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .disabled-banner {
+      background: var(--amber-light);
+      color: #92400E;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .ops-muted[disabled],
+    .ops-writable:disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .status-pill {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .status-pill.pending { background: #FEF3C7; color: #B45309; }
+    .status-pill.done { background: var(--green-light); color: var(--green); }
+    .status-pill.skip { background: var(--border); color: var(--text-sub); }
+
+    .qr-box {
+      text-align: center;
+    }
+    .qr-box img {
+      width: 200px;
+      height: 200px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+    }
+    .link-box {
+      word-break: break-all;
+      font-size: 13px;
+      background: var(--bg);
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      color: var(--text-sub);
+    }
+
+    .import-report {
+      font-size: 13px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--bg);
+      white-space: pre-wrap;
+      display: none;
+    }
+    .import-report.show { display: block; }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin: 8px 0 0;
+      line-height: 1.4;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-sub);
+    }
+    .hidden { display: none !important; }
+    .poll-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 6px;
+    }
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 3000;
+      max-width: 90vw;
+    }
+    .toast.error { background: var(--red); }
+
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .field-row { grid-template-columns: 1fr; }
+      .card { padding: 16px; }
+      .header-title { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <h1>버스 탑승 현황</h1>
+      <p>총무용 · 운영진 비밀번호를 입력하세요</p>
+      <div class="auth-error" id="authError">비밀번호가 올바르지 않습니다</div>
+      <input type="password" id="authPw" placeholder="비밀번호" autocomplete="current-password" />
+      <div class="btn-row" style="margin-top:12px">
+        <button type="button" class="btn btn-primary btn-block" id="authBtn">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap hidden" id="mainWrap">
+    <div class="header">
+      <h1 class="header-title">🚌 버스 탑승 현황</h1>
+      <p class="header-subtitle" id="eventInfo">—</p>
+      <div class="header-meta">
+        <span class="poll-dot" id="pollDot" title="자동 갱신"></span>
+        <span id="roleLabel">총무</span>
+        · <span id="pollHint">4초마다 갱신</span>
+      </div>
+      <div class="nav-links">
+        <a id="linkBoarding" href="#">참가자 탑승</a>
+        <a id="linkBib" href="#">배번 입력</a>
+        <a id="linkGroup" href="group.html">단체 대회</a>
+      </div>
+    </div>
+
+    <div id="missingEvent" class="card hidden">
+      <div class="activate-box">
+        <div class="activate-title">잘못된 접근</div>
+        <p class="activate-msg">URL에 <code>?eventId=</code> 가 필요합니다.</p>
+      </div>
+    </div>
+
+    <div id="loadingScreen" class="loading">현황을 불러오는 중…</div>
+
+    <div id="activatePanel" class="card hidden">
+      <div class="activate-box">
+        <div class="activate-icon">🚌</div>
+        <div class="activate-title">버스 탑승 시작</div>
+        <p class="activate-msg">
+          아직 버스 탑승 체크가 열려 있지 않습니다.<br>
+          시작하면 참가자가 QR/링크로 셀프 체크할 수 있습니다.
+        </p>
+        <button type="button" class="btn btn-primary btn-block" id="enableBtn">버스 탑승 시작</button>
+        <p class="hint">기본 구간: 가는 편 · 오는 편</p>
+      </div>
+    </div>
+
+    <div id="opsPanel" class="hidden">
+      <div class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">현황</h2>
+          <button type="button" class="btn btn-sm btn-secondary" id="refreshBtn">새로고침</button>
+        </div>
+        <div id="disabledBanner" class="disabled-banner hidden">
+          버스 탑승이 꺼져 있습니다. 명단·비고는 조회만 가능합니다. 상단에서 다시 시작하세요.
+        </div>
+        <div class="leg-tabs" role="tablist">
+          <button type="button" class="leg-tab active" id="tabOutbound" data-leg="outbound">가는 편</button>
+          <button type="button" class="leg-tab" id="tabReturn" data-leg="return">오는 편</button>
+        </div>
+        <div class="summary-bar">
+          <div class="summary-count" id="summaryCount">탑승 0 / 필요 0</div>
+          <div class="summary-hint" id="summaryHint"></div>
+        </div>
+        <input
+          type="search"
+          id="searchInput"
+          class="search-input"
+          placeholder="닉네임·실명·비고 검색…"
+          autocomplete="off"
+        />
+        <div class="roster-list" id="rosterList" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card" id="csvCard">
+        <h2 class="card-title">CSV 명단 가져오기</h2>
+        <input type="file" id="csvInput" class="ops-writable" accept=".csv,text/csv,text/plain" />
+        <p class="hint">
+          헤더: 닉네임, 이름/실명, 버스 탑승 여부, 비고 (중식 열은 무시).<br>
+          왕복 · 동탄→철원 · 철원→동탄 · 개별 이동
+        </p>
+        <div class="import-report" id="importReport"></div>
+      </div>
+
+      <div class="card" id="guestCard">
+        <h2 class="card-title">지인 추가</h2>
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="guestNickname">닉네임</label>
+            <input type="text" id="guestNickname" class="field-input ops-writable" autocomplete="off" />
+          </div>
+          <div>
+            <label class="field-label" for="guestRealName">실명</label>
+            <input type="text" id="guestRealName" class="field-input ops-writable" autocomplete="off" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="guestRideType">탑승</label>
+            <select id="guestRideType" class="field-select ops-writable">
+              <option value="roundtrip">왕복</option>
+              <option value="outbound_only">가는 편만</option>
+              <option value="return_only">오는 편만</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="guestNote">비고</label>
+            <input type="text" id="guestNote" class="field-input ops-writable" autocomplete="off" />
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary btn-block ops-writable" id="guestAddBtn">지인 추가</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">참가자 링크 · QR</h2>
+        <div class="qr-box">
+          <img id="qrImg" alt="참가자 탑승 QR" width="200" height="200" />
+          <div class="link-box" id="participantLinkText"></div>
+          <button type="button" class="btn btn-primary btn-block" id="copyLinkBtn">링크 복사</button>
+        </div>
+      </div>
+
+      <div class="card" id="disableCard">
+        <h2 class="card-title">버스 기능</h2>
+        <p class="hint" style="margin-top:0;margin-bottom:12px">
+          끄면 참가자 체크·CSV·대리 체크가 막힙니다. 명단·탑승 기록은 유지됩니다.
+        </p>
+        <button type="button" class="btn btn-danger btn-block" id="disableBtn">버스 탑승 끄기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (boarding.html / group-detail과 동일)
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    const AUTH_KEY = "dmc_boarding_admin_auth";
+    const POLL_MS = 4000;
+    const LEG_LABEL = { outbound: "가는 편", return: "오는 편" };
+    const RIDE_LABEL = {
+      roundtrip: "왕복",
+      outbound_only: "가는 편만",
+      return_only: "오는 편만"
+    };
+
+    let adminPwCache = "";
+    let adminRole = "";
+    let eventId = null;
+    let eventName = "";
+    let enabled = false;
+    let roster = [];
+    let summary = {
+      outbound: { required: 0, boarded: 0 },
+      return: { required: 0, boarded: 0 }
+    };
+    let currentLeg = "outbound";
+    let pollTimer = null;
+    let isProcessing = false;
+    let composing = false;
+
+    const authOverlay = document.getElementById("authOverlay");
+    const mainWrap = document.getElementById("mainWrap");
+    const loadingScreen = document.getElementById("loadingScreen");
+    const activatePanel = document.getElementById("activatePanel");
+    const opsPanel = document.getElementById("opsPanel");
+    const missingEvent = document.getElementById("missingEvent");
+    const rosterList = document.getElementById("rosterList");
+    const searchInput = document.getElementById("searchInput");
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showToast(message, isError) {
+      const toast = document.createElement("div");
+      toast.className = "toast" + (isError ? " error" : "");
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), isError ? 4000 : 2500);
+    }
+
+    function isAuthedFlag() {
+      return sessionStorage.getItem(AUTH_KEY) === "ok";
+    }
+
+    function requirePw() {
+      if (adminPwCache) return adminPwCache;
+      const pw = window.prompt("관리자 비밀번호");
+      if (!pw) return null;
+      adminPwCache = pw;
+      return pw;
+    }
+
+    function isNoteInputFocused() {
+      const ae = document.activeElement;
+      return !!(
+        ae &&
+        rosterList.contains(ae) &&
+        ae.classList &&
+        ae.classList.contains("note-input")
+      );
+    }
+
+    function collectNoteDrafts() {
+      const drafts = {};
+      rosterList.querySelectorAll(".note-input").forEach((input) => {
+        const id = input.getAttribute("data-roster-id");
+        if (id) drafts[id] = input.value;
+      });
+      return drafts;
+    }
+
+    function setWritableUi(canWrite) {
+      document.querySelectorAll(".ops-writable").forEach((el) => {
+        el.disabled = !canWrite;
+      });
+      const banner = document.getElementById("disabledBanner");
+      if (banner) banner.classList.toggle("hidden", canWrite);
+      const disableCard = document.getElementById("disableCard");
+      if (disableCard) disableCard.classList.toggle("hidden", !canWrite);
+      const csvCard = document.getElementById("csvCard");
+      if (csvCard) csvCard.classList.toggle("hidden", !canWrite);
+      const guestCard = document.getElementById("guestCard");
+      if (guestCard) guestCard.classList.toggle("hidden", !canWrite);
+    }
+
+    function participantUrl() {
+      if (!eventId) return "";
+      const u = new URL("boarding.html", window.location.href);
+      u.searchParams.set("eventId", eventId);
+      return u.href;
+    }
+
+    function updateLinks() {
+      const boardingHref = eventId
+        ? `boarding.html?eventId=${encodeURIComponent(eventId)}`
+        : "boarding.html";
+      const bibHref = eventId
+        ? `my-bib.html?eventId=${encodeURIComponent(eventId)}`
+        : "my-bib.html";
+      document.getElementById("linkBoarding").href = boardingHref;
+      document.getElementById("linkBib").href = bibHref;
+
+      const abs = participantUrl();
+      document.getElementById("participantLinkText").textContent = abs || "—";
+      const qr = document.getElementById("qrImg");
+      if (abs) {
+        qr.src =
+          "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+          encodeURIComponent(abs);
+        qr.alt = "참가자 탑승 QR";
+      } else {
+        qr.removeAttribute("src");
+      }
+    }
+
+    function setLeg(leg) {
+      currentLeg = leg;
+      document.getElementById("tabOutbound").classList.toggle("active", leg === "outbound");
+      document.getElementById("tabReturn").classList.toggle("active", leg === "return");
+      renderSummary();
+      renderRoster(searchInput.value);
+    }
+
+    function legState(row) {
+      return (row.legs && row.legs[currentLeg]) || null;
+    }
+
+    function isRequired(row) {
+      const st = legState(row);
+      return !!(st && st.required);
+    }
+
+    function isBoarded(row) {
+      const st = legState(row);
+      return !!(st && st.boarded);
+    }
+
+    function renderSummary() {
+      const s = summary[currentLeg] || { required: 0, boarded: 0 };
+      const boarded = s.boarded || 0;
+      const required = s.required || 0;
+      const pending = Math.max(0, required - boarded);
+      document.getElementById("summaryCount").innerHTML =
+        `탑승 ${boarded} <span class="need">/ 필요 ${required}</span>`;
+      document.getElementById("summaryHint").textContent =
+        pending > 0 ? `미탑승 ${pending}명` : required > 0 ? "전원 탑승" : "";
+    }
+
+    function renderRoster(filterText, opts) {
+      const skipIfNoteFocused = opts && opts.skipIfNoteFocused;
+      if (skipIfNoteFocused && isNoteInputFocused()) return;
+
+      const drafts = collectNoteDrafts();
+      const focusedId = isNoteInputFocused()
+        ? document.activeElement.getAttribute("data-roster-id")
+        : null;
+      const focusedSelStart = focusedId ? document.activeElement.selectionStart : null;
+      const focusedSelEnd = focusedId ? document.activeElement.selectionEnd : null;
+
+      rosterList.innerHTML = "";
+      const q = String(filterText || "").trim().toLowerCase();
+
+      let rows = roster.slice();
+      if (q) {
+        rows = rows.filter((p) => {
+          const nick = String(p.nickname || "").toLowerCase();
+          const real = String(p.realName || "").toLowerCase();
+          const note = String(p.note || "").toLowerCase();
+          return nick.includes(q) || real.includes(q) || note.includes(q);
+        });
+      }
+
+      rows.sort((a, b) => {
+        const ar = isRequired(a);
+        const br = isRequired(b);
+        if (ar !== br) return ar ? -1 : 1;
+        const ab = isBoarded(a);
+        const bb = isBoarded(b);
+        if (ar && br && ab !== bb) return ab ? 1 : -1;
+        return String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko");
+      });
+
+      if (rows.length === 0) {
+        rosterList.innerHTML =
+          '<div style="text-align:center;padding:20px;color:var(--text-sub);">명단이 없습니다</div>';
+        return;
+      }
+
+      const canWrite = enabled === true;
+
+      rows.forEach((row) => {
+        const required = isRequired(row);
+        const boarded = isBoarded(row);
+        const el = document.createElement("div");
+        let rowClass = "roster-row";
+        if (!required) rowClass += " na";
+        else if (boarded) rowClass += " boarded";
+        else rowClass += " not-boarded";
+        el.className = rowClass;
+
+        let statusHtml;
+        if (!required) {
+          statusHtml = '<span class="status-pill skip">해당없음</span>';
+        } else if (boarded) {
+          statusHtml = '<span class="status-pill done">탑승</span>';
+        } else {
+          statusHtml = '<span class="status-pill pending">미탑승</span>';
+        }
+
+        const guestBadge = row.isGuest
+          ? '<span class="guest-badge">지인</span>'
+          : "";
+        const rideBadge =
+          `<span class="ride-badge">${escapeHtml(RIDE_LABEL[row.rideType] || row.rideType || "—")}</span>`;
+        const serverNote = row.note == null ? "" : String(row.note);
+        const noteVal =
+          Object.prototype.hasOwnProperty.call(drafts, row.rosterId)
+            ? drafts[row.rosterId]
+            : serverNote;
+        const toggleDisabled = !canWrite || !required ? "disabled" : "";
+        const noteDisabled = canWrite ? "" : "disabled";
+        const removeDisabled = canWrite ? "" : "disabled";
+
+        el.innerHTML = `
+          <div class="roster-top">
+            <div>
+              <div class="roster-name">
+                ${escapeHtml(row.nickname)}
+                ${guestBadge}
+                ${rideBadge}
+                ${statusHtml}
+              </div>
+              <div class="roster-real">${escapeHtml(row.realName || "—")}</div>
+            </div>
+            <div class="roster-actions">
+              <label class="toggle-wrap">
+                <input
+                  type="checkbox"
+                  class="board-toggle"
+                  data-roster-id="${escapeHtml(row.rosterId)}"
+                  ${boarded ? "checked" : ""}
+                  ${toggleDisabled}
+                />
+                탑승
+              </label>
+              <button
+                type="button"
+                class="btn btn-sm btn-danger roster-remove"
+                data-roster-id="${escapeHtml(row.rosterId)}"
+                data-nickname="${escapeHtml(row.nickname)}"
+                ${removeDisabled}
+              >제외</button>
+            </div>
+          </div>
+          <div class="note-row">
+            <input
+              type="text"
+              class="field-input note-input"
+              data-roster-id="${escapeHtml(row.rosterId)}"
+              value="${escapeHtml(noteVal)}"
+              placeholder="비고"
+              autocomplete="off"
+              ${noteDisabled}
+            />
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary note-save"
+              data-roster-id="${escapeHtml(row.rosterId)}"
+              ${noteDisabled}
+            >저장</button>
+          </div>
+        `;
+        rosterList.appendChild(el);
+      });
+
+      if (focusedId) {
+        const inputs = rosterList.querySelectorAll(".note-input");
+        for (let i = 0; i < inputs.length; i++) {
+          if (inputs[i].getAttribute("data-roster-id") === focusedId) {
+            inputs[i].focus();
+            try {
+              if (focusedSelStart != null && focusedSelEnd != null) {
+                inputs[i].setSelectionRange(focusedSelStart, focusedSelEnd);
+              }
+            } catch (_) { /* ignore */ }
+            break;
+          }
+        }
+      }
+    }
+
+    function showPanels() {
+      loadingScreen.classList.add("hidden");
+      missingEvent.classList.add("hidden");
+      if (!eventId) {
+        activatePanel.classList.add("hidden");
+        opsPanel.classList.add("hidden");
+        missingEvent.classList.remove("hidden");
+        return;
+      }
+
+      // enabled=false: 활성화 패널 + 명단 조회(읽기) 동시 표시
+      if (enabled !== true) {
+        activatePanel.classList.remove("hidden");
+      } else {
+        activatePanel.classList.add("hidden");
+      }
+      opsPanel.classList.remove("hidden");
+      setWritableUi(enabled === true);
+      renderSummary();
+      renderRoster(searchInput.value, { skipIfNoteFocused: true });
+    }
+
+    function applyStatusData(data) {
+      eventName = data.eventName || "단체 대회";
+      document.getElementById("eventInfo").textContent = eventName;
+      enabled = data.enabled === true;
+      roster = Array.isArray(data.roster) ? data.roster : [];
+      summary = data.summary || {
+        outbound: { required: 0, boarded: 0 },
+        return: { required: 0, boarded: 0 }
+      };
+      updateLinks();
+      showPanels();
+    }
+
+    async function postBus(body) {
+      const res = await fetch(`${API_BASE}?action=bus-boarding`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({ ok: false, error: "invalid response" }));
+      return { res, data };
+    }
+
+    async function loadStatus(opts) {
+      const silent = opts && opts.silent;
+      if (!eventId || !adminPwCache) return;
+
+      if (!silent) {
+        loadingScreen.classList.remove("hidden");
+        activatePanel.classList.add("hidden");
+        opsPanel.classList.add("hidden");
+      }
+
+      try {
+        const { data } = await postBus({
+          subAction: "status",
+          eventId: eventId,
+          pw: adminPwCache
+        });
+
+        if (!data.ok) {
+          if (data.error === "invalid password") {
+            adminPwCache = "";
+            sessionStorage.removeItem(AUTH_KEY);
+            authOverlay.classList.remove("hidden");
+            mainWrap.classList.add("hidden");
+            stopPoll();
+            showToast("비밀번호가 만료되었습니다. 다시 로그인하세요.", true);
+            return;
+          }
+          throw new Error(data.error || "현황을 불러오지 못했습니다");
+        }
+
+        applyStatusData(data);
+        document.getElementById("pollDot").style.background = "var(--green)";
+      } catch (err) {
+        console.error("loadStatus error:", err);
+        document.getElementById("pollDot").style.background = "var(--red)";
+        if (!silent) {
+          loadingScreen.classList.add("hidden");
+          showToast(err.message || "네트워크 오류", true);
+        }
+      }
+    }
+
+    function startPoll() {
+      stopPoll();
+      pollTimer = setInterval(() => {
+        if (document.hidden) return;
+        if (!adminPwCache || !eventId) return;
+        loadStatus({ silent: true });
+      }, POLL_MS);
+    }
+
+    function stopPoll() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    async function tryAuth() {
+      const pw = document.getElementById("authPw").value;
+      const btn = document.getElementById("authBtn");
+      const errEl = document.getElementById("authError");
+      btn.disabled = true;
+      btn.textContent = "확인 중…";
+      try {
+        const res = await fetch(`${API_BASE}?action=verify-admin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pw })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          sessionStorage.setItem(AUTH_KEY, "ok");
+          adminRole = data.role || "operator";
+          adminPwCache = pw;
+          document.getElementById("roleLabel").textContent = adminRole;
+          errEl.style.display = "none";
+          document.getElementById("authPw").value = "";
+          revealShell();
+          await loadStatus();
+          startPoll();
+        } else {
+          errEl.style.display = "block";
+          document.getElementById("authPw").value = "";
+          document.getElementById("authPw").focus();
+        }
+      } catch (_) {
+        errEl.style.display = "block";
+      }
+      btn.disabled = false;
+      btn.textContent = "확인";
+    }
+
+    function revealShell() {
+      authOverlay.classList.add("hidden");
+      mainWrap.classList.remove("hidden");
+    }
+
+    // 세션 플래그만으로는 셸을 열지 않음 — pw를 확보한 뒤에만 revealShell
+    function checkAuth() {
+      if (!isAuthedFlag()) return false;
+      if (!adminPwCache) {
+        const pw = window.prompt("관리자 비밀번호");
+        if (!pw) {
+          sessionStorage.removeItem(AUTH_KEY);
+          return false;
+        }
+        adminPwCache = pw;
+      }
+      revealShell();
+      loadStatus().then(startPoll);
+      return true;
+    }
+
+    async function enableBoarding() {
+      if (isProcessing) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      const btn = document.getElementById("enableBtn");
+      btn.disabled = true;
+      btn.textContent = "시작 중…";
+      try {
+        const { data } = await postBus({
+          subAction: "settings",
+          pw,
+          eventId,
+          enabled: true,
+          legs: ["outbound", "return"]
+        });
+        if (!data.ok) throw new Error(data.error || "활성화 실패");
+        showToast("버스 탑승을 시작했습니다");
+        await loadStatus();
+      } catch (err) {
+        console.error("enableBoarding:", err);
+        showToast(err.message || "활성화 실패", true);
+      } finally {
+        isProcessing = false;
+        btn.disabled = false;
+        btn.textContent = "버스 탑승 시작";
+      }
+    }
+
+    async function disableBoarding() {
+      if (isProcessing) return;
+      if (!confirm("버스 탑승을 끌까요? 명단은 유지됩니다.")) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      const btn = document.getElementById("disableBtn");
+      btn.disabled = true;
+      try {
+        const { data } = await postBus({
+          subAction: "settings",
+          pw,
+          eventId,
+          enabled: false
+        });
+        if (!data.ok) throw new Error(data.error || "비활성화 실패");
+        showToast("버스 탑승을 껐습니다");
+        await loadStatus();
+      } catch (err) {
+        console.error("disableBoarding:", err);
+        showToast(err.message || "비활성화 실패", true);
+      } finally {
+        isProcessing = false;
+        btn.disabled = false;
+      }
+    }
+
+    async function toggleBoard(rosterId, boarded) {
+      // change 이벤트로 체크박스가 이미 뒤집힌 상태 — 조기 return 전 roster로 복원
+      if (isProcessing) {
+        renderRoster(searchInput.value);
+        return;
+      }
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        renderRoster(searchInput.value);
+        await loadStatus({ silent: true });
+        return;
+      }
+      const pw = requirePw();
+      if (!pw || !eventId) {
+        renderRoster(searchInput.value);
+        return;
+      }
+      isProcessing = true;
+      try {
+        const { data } = await postBus({
+          subAction: "admin-board",
+          pw,
+          eventId,
+          rosterId,
+          leg: currentLeg,
+          boarded: !!boarded
+        });
+        if (!data.ok) throw new Error(data.error || "탑승 변경 실패");
+        showToast(boarded ? "탑승 체크" : "탑승 취소");
+        await loadStatus({ silent: true });
+      } catch (err) {
+        console.error("toggleBoard:", err);
+        showToast(err.message || "탑승 변경 실패", true);
+        await loadStatus({ silent: true });
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function removeRoster(rosterId, nickname) {
+      if (isProcessing) return;
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        return;
+      }
+      const label = nickname || "이 사람";
+      if (!confirm("'" + label + "'을(를) 명단에서 제외할까요?")) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      try {
+        const { data } = await postBus({
+          subAction: "roster-remove",
+          pw,
+          eventId,
+          rosterId
+        });
+        if (!data.ok) throw new Error(data.error || "명단 제외 실패");
+        showToast("명단에서 제외했습니다");
+        await loadStatus({ silent: true });
+      } catch (err) {
+        console.error("removeRoster:", err);
+        showToast(err.message || "명단 제외 실패", true);
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function saveNote(rosterId, note) {
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        return;
+      }
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      const row = roster.find((r) => r.rosterId === rosterId);
+      if (!row) {
+        showToast("명단을 찾을 수 없습니다", true);
+        return;
+      }
+      try {
+        const { data } = await postBus({
+          subAction: "roster-upsert",
+          pw,
+          eventId,
+          rosterId: row.rosterId,
+          nickname: row.nickname,
+          realName: row.realName || "",
+          rideType: row.rideType,
+          note: note
+        });
+        if (!data.ok) throw new Error(data.error || "비고 저장 실패");
+        showToast("비고 저장됨");
+        await loadStatus({ silent: true });
+      } catch (err) {
+        console.error("saveNote:", err);
+        showToast(err.message || "비고 저장 실패", true);
+      }
+    }
+
+    async function addGuest() {
+      if (isProcessing) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      const nickname = document.getElementById("guestNickname").value.trim();
+      const realName = document.getElementById("guestRealName").value.trim();
+      const rideType = document.getElementById("guestRideType").value;
+      const note = document.getElementById("guestNote").value.trim();
+      if (!nickname) {
+        showToast("닉네임을 입력하세요", true);
+        return;
+      }
+      isProcessing = true;
+      const btn = document.getElementById("guestAddBtn");
+      btn.disabled = true;
+      try {
+        const body = {
+          subAction: "roster-upsert",
+          pw,
+          eventId,
+          nickname,
+          realName,
+          rideType,
+          isGuest: true
+        };
+        if (note) body.note = note;
+        const { data } = await postBus(body);
+        if (!data.ok) throw new Error(data.error || "지인 추가 실패");
+        showToast("지인을 추가했습니다");
+        document.getElementById("guestNickname").value = "";
+        document.getElementById("guestRealName").value = "";
+        document.getElementById("guestNote").value = "";
+        await loadStatus({ silent: true });
+      } catch (err) {
+        console.error("addGuest:", err);
+        showToast(err.message || "지인 추가 실패", true);
+      } finally {
+        isProcessing = false;
+        btn.disabled = false;
+      }
+    }
+
+    function normalizeHeader(h) {
+      return String(h || "")
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .toLowerCase();
+    }
+
+    function mapCsvHeader(h) {
+      const n = normalizeHeader(h);
+      if (n === "닉네임" || n === "nickname") return "nickname";
+      if (n === "이름" || n === "실명" || n === "name" || n === "realname") return "realName";
+      if (
+        n === "버스 탑승 여부" ||
+        n === "탑승" ||
+        n === "ridetype" ||
+        n === "ride type"
+      ) {
+        return "rideTypeLabel";
+      }
+      if (n === "비고" || n === "note") return "note";
+      if (n === "중식" || n.includes("중식")) return "_lunch";
+      return null;
+    }
+
+    function parseCsvText(text) {
+      const raw = String(text || "").replace(/^\uFEFF/, "");
+      const lines = raw.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+      if (lines.length < 2) return { rows: [], error: "CSV 행이 부족합니다" };
+
+      function splitLine(line) {
+        const out = [];
+        let cur = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if ((ch === "," || ch === "\t") && !inQuotes) {
+            out.push(cur);
+            cur = "";
+          } else {
+            cur += ch;
+          }
+        }
+        out.push(cur);
+        return out;
+      }
+
+      const headers = splitLine(lines[0]);
+      const fields = headers.map(mapCsvHeader);
+      if (!fields.includes("nickname")) {
+        return { rows: [], error: "닉네임 열이 없습니다" };
+      }
+      if (!fields.includes("rideTypeLabel")) {
+        return { rows: [], error: "버스 탑승 여부(탑승) 열이 없습니다" };
+      }
+
+      // note/비고 열이 있을 때만 row.note 포함 — 없으면 생략해 mergeRosterImport가 기존 note 유지
+      const hasNoteColumn = fields.includes("note");
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = splitLine(lines[i]);
+        const row = { nickname: "", realName: "", rideTypeLabel: "" };
+        fields.forEach((key, idx) => {
+          if (!key || key === "_lunch") return;
+          const val = cols[idx] != null ? String(cols[idx]).trim() : "";
+          if (key === "note") {
+            if (hasNoteColumn) row.note = val === "" ? null : val;
+          } else {
+            row[key] = val;
+          }
+        });
+        if (!row.nickname && !row.rideTypeLabel) continue;
+        rows.push(row);
+      }
+      return { rows, error: null };
+    }
+
+    async function handleCsvFile(file) {
+      if (!file || !eventId) return;
+      const pw = requirePw();
+      if (!pw) return;
+      const reportEl = document.getElementById("importReport");
+      try {
+        const text = await file.text();
+        const parsed = parseCsvText(text);
+        if (parsed.error) {
+          reportEl.textContent = parsed.error;
+          reportEl.classList.add("show");
+          showToast(parsed.error, true);
+          return;
+        }
+        const { data } = await postBus({
+          subAction: "import",
+          pw,
+          eventId,
+          rows: parsed.rows,
+          sourceLabel: file.name || "csv"
+        });
+        if (!data.ok) throw new Error(data.error || "import 실패");
+
+        const r = data.report || {};
+        const lines = [
+          `추가 ${r.added || 0} · 병합 ${r.merged || 0} · 제외 ${r.excluded || 0}`,
+          (r.errors && r.errors.length)
+            ? `오류 ${r.errors.length}건:\n` +
+              r.errors
+                .slice(0, 12)
+                .map((e) => `- ${e.nickname || "(빈 닉)"}: ${e.reason}`)
+                .join("\n")
+            : "오류 없음"
+        ];
+        reportEl.textContent = lines.join("\n");
+        reportEl.classList.add("show");
+        showToast("CSV 가져오기 완료");
+        await loadStatus({ silent: true });
+      } catch (err) {
+        console.error("handleCsvFile:", err);
+        reportEl.textContent = err.message || "import 실패";
+        reportEl.classList.add("show");
+        showToast(err.message || "CSV 실패", true);
+      } finally {
+        document.getElementById("csvInput").value = "";
+      }
+    }
+
+    async function copyParticipantLink() {
+      const abs = participantUrl();
+      if (!abs) return;
+      try {
+        await navigator.clipboard.writeText(abs);
+        showToast("링크를 복사했습니다");
+      } catch (_) {
+        window.prompt("링크를 복사하세요", abs);
+      }
+    }
+
+    // —— Bindings ——
+    document.getElementById("authBtn").addEventListener("click", tryAuth);
+    document.getElementById("authPw").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryAuth();
+    });
+
+    document.getElementById("tabOutbound").addEventListener("click", () => setLeg("outbound"));
+    document.getElementById("tabReturn").addEventListener("click", () => setLeg("return"));
+    document.getElementById("enableBtn").addEventListener("click", enableBoarding);
+    document.getElementById("disableBtn").addEventListener("click", disableBoarding);
+    document.getElementById("guestAddBtn").addEventListener("click", addGuest);
+    document.getElementById("copyLinkBtn").addEventListener("click", copyParticipantLink);
+    document.getElementById("refreshBtn").addEventListener("click", () => loadStatus());
+    document.getElementById("csvInput").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) handleCsvFile(f);
+    });
+
+    searchInput.addEventListener("compositionstart", () => { composing = true; });
+    searchInput.addEventListener("compositionend", (e) => {
+      composing = false;
+      renderRoster(e.target.value);
+    });
+    searchInput.addEventListener("input", (e) => {
+      if (composing) return;
+      renderRoster(e.target.value);
+    });
+
+    rosterList.addEventListener("change", (e) => {
+      const t = e.target;
+      if (t && t.classList.contains("board-toggle")) {
+        const id = t.getAttribute("data-roster-id");
+        toggleBoard(id, t.checked);
+      }
+    });
+
+    rosterList.addEventListener("click", (e) => {
+      const removeBtn = e.target.closest(".roster-remove");
+      if (removeBtn) {
+        const id = removeBtn.getAttribute("data-roster-id");
+        const nick = removeBtn.getAttribute("data-nickname") || "";
+        removeRoster(id, nick);
+        return;
+      }
+      const btn = e.target.closest(".note-save");
+      if (!btn) return;
+      const id = btn.getAttribute("data-roster-id");
+      const rowEl = btn.closest(".roster-row");
+      const input = rowEl && rowEl.querySelector(".note-input");
+      const note = input ? input.value.trim() : "";
+      saveNote(id, note === "" ? null : note);
+    });
+
+    // Init — attendance-admin checkAuth 패턴
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      eventId = params.get("eventId");
+      updateLinks();
+
+      if (!eventId) {
+        document.getElementById("eventInfo").textContent = "잘못된 접근";
+      }
+
+      if (checkAuth()) return;
+
+      authOverlay.classList.remove("hidden");
+      document.getElementById("authPw").focus();
+    })();
+  </script>
+</body>
+</html>
