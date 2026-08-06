@@ -148,6 +148,58 @@
       color: var(--muted);
       line-height: 1.5;
     }
+    .bus-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .bus-card h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+    }
+    .bus-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .bus-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-bus {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      text-align: center;
+    }
+    .btn-bus.primary { background: var(--blue); color: #fff; }
+    .btn-bus.done { background: #ecfdf5; color: #047857; }
+    .btn-bus.ghost {
+      background: #f8fafc;
+      color: #334155;
+      border: 1px solid var(--line);
+    }
+    .stat-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat b { display: block; font-size: 18px; color: var(--blue); }
+    .stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -231,7 +283,47 @@
     </section>
 
     <section class="frame" id="kf3">
-      <p class="frame-label">Keyframe 3 · 명단·결과 · 취합 전</p>
+      <p class="frame-label">Keyframe 3 · 버스 (가는 편 · 셀프 체크)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
+        </div>
+        <div class="body">
+          <div class="stat-row">
+            <div class="stat"><b>28</b><span>탑승 완료</span></div>
+            <div class="stat"><b>4</b><span>미탑승</span></div>
+          </div>
+          <div class="bus-card">
+            <h3>게살볶음밥 · 가는 버스</h3>
+            <p>왕복 · 아직 탑승 체크 전이에요. 현장 QR/이 탭에서 완료할 수 있어요.</p>
+            <div class="bus-actions">
+              <div class="btn-bus primary">가는 버스 탑승 완료</div>
+              <div class="btn-bus ghost">다른 닉으로 체크</div>
+            </div>
+          </div>
+          <div class="bus-card">
+            <h3>오는 버스</h3>
+            <p>복귀 때 여기서 체크해요. (가는 편 완료 후 활성화되는 식으로도 가능)</p>
+            <div class="bus-actions">
+              <div class="btn-bus ghost">오는 버스 탑승 (아직 아님)</div>
+            </div>
+          </div>
+          <p class="hint">버스 off인 대회는 이 탭 자체가 숨겨져요. 총무 대리 체크는 운영 화면.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf4">
+      <p class="frame-label">Keyframe 4 · 명단·결과 · 취합 전</p>
       <div class="phone">
         <div class="brand">
           <div class="brand-row">
@@ -274,8 +366,8 @@
       </div>
     </section>
 
-    <section class="frame" id="kf4">
-      <p class="frame-label">Keyframe 4 · 명단·결과 · 취합 후</p>
+    <section class="frame" id="kf5">
+      <p class="frame-label">Keyframe 5 · 명단·결과 · 취합 후</p>
       <div class="phone">
         <div class="brand">
           <div class="brand-row">
