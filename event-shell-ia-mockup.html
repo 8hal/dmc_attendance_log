@@ -197,9 +197,28 @@
       border-radius: 12px;
       padding: 10px;
       text-align: center;
+      text-decoration: none;
+      color: inherit;
+      display: block;
     }
+    .stat:active, .stat.pressed { border-color: #93c5fd; background: #f8fbff; }
     .stat b { display: block; font-size: 18px; color: var(--blue); }
     .stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .sheet-bar {
+      width: 36px; height: 4px; border-radius: 999px;
+      background: #cbd5e1; margin: 0 auto 12px;
+    }
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;
+    }
+    .list-row:last-child { border-bottom: 0; }
+    .list-nick { font-weight: 700; }
+    .list-meta { font-size: 12px; color: var(--muted); }
+    .pill-ok {
+      font-size: 11px; font-weight: 700; color: #047857;
+      background: #ecfdf5; padding: 4px 8px; border-radius: 999px;
+    }
   </style>
 </head>
 <body>
@@ -295,8 +314,8 @@
         </div>
         <div class="body">
           <div class="stat-row">
-            <div class="stat"><b>28</b><span>탑승 완료</span></div>
-            <div class="stat"><b>4</b><span>미탑승</span></div>
+            <a class="stat pressed" href="#kf3b"><b>28</b><span>탑승 완료 · 눌러 보기</span></a>
+            <a class="stat" href="#kf3b"><b>4</b><span>미탑승 · 눌러 보기</span></a>
           </div>
           <div class="bus-card">
             <h3>게살볶음밥 · 가는 버스</h3>
@@ -313,7 +332,61 @@
               <div class="btn-bus ghost">오는 버스 탑승 (아직 아님)</div>
             </div>
           </div>
-          <p class="hint">버스 off인 대회는 이 탭 자체가 숨겨져요. 총무 대리 체크는 운영 화면.</p>
+          <p class="hint">숫자 카드를 누르면 해당 명단이 열려요. 버스 off인 대회는 탭 숨김. 총무 대리 체크는 운영 화면.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf3b">
+      <p class="frame-label">Keyframe 3b · 버스 · 탑승 완료 목록 (시트)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#kf3">닫기</a>
+          </div>
+          <div class="brand-sub">가는 버스 · 탑승 완료 28명</div>
+        </div>
+        <div class="body">
+          <div class="sheet-bar" aria-hidden="true"></div>
+          <div class="section-title">탑승 완료</div>
+          <div class="bus-card" style="padding-top: 4px; padding-bottom: 4px;">
+            <div class="list-row">
+              <div>
+                <div class="list-nick">시드원</div>
+                <div class="list-meta">왕복 · 05:42 체크</div>
+              </div>
+              <span class="pill-ok">완료</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <div class="list-nick">시드투</div>
+                <div class="list-meta">왕복 · 05:44 체크</div>
+              </div>
+              <span class="pill-ok">완료</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <div class="list-nick">알파</div>
+                <div class="list-meta">편도(가는) · 05:51 체크</div>
+              </div>
+              <span class="pill-ok">완료</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <div class="list-nick">…</div>
+                <div class="list-meta">스크롤로 나머지</div>
+              </div>
+              <span class="list-meta">+25</span>
+            </div>
+          </div>
+          <p class="hint">회원용: 닉·탑승 여부만. 실명·비고는 운영 화면에만. 「미탑승」카드도 같은 시트·필터.</p>
+          <a class="btn-bus ghost" href="#kf3" style="display:block;text-decoration:none;">버스로 돌아가기</a>
         </div>
         <nav class="tabs">
           <div class="tab"><span class="tab-icon">🏠</span>홈</div>
