@@ -19,6 +19,7 @@ const {
   normalizeEventDateForId,
 } = require("./lib/canonicalEventId");
 const { normalizeRaceDistance } = require("./lib/raceDistance");
+const { applyBibParticipantPatch } = require("./lib/target-time");
 const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
 const {
   normalizeMemberTeam,
@@ -3519,7 +3520,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "update-bib") {
-      const { eventId, nickname, bib } = req.body;
+      const { eventId, nickname, bib, distance, targetTime } = req.body;
       
       // 1. 필수 파라미터 검증
       if (!eventId) {
@@ -3571,8 +3572,20 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           });
         }
         
-        // 5. 배번 업데이트
-        event.participants[participantIndex].bib = trimmedBib;
+        // 5. 배번 (+ 선택 종목·목표 시간) 업데이트
+        const patch = { bib: trimmedBib };
+        if (distance !== undefined) patch.distance = distance;
+        if (targetTime !== undefined) patch.targetTime = targetTime;
+
+        const applied = applyBibParticipantPatch(
+          event.participants[participantIndex],
+          patch,
+          { normalizeRaceDistance }
+        );
+        if (!applied.ok) {
+          return res.status(400).json({ ok: false, error: applied.error });
+        }
+        event.participants[participantIndex] = applied.participant;
         
         await db.collection("race_events").doc(eventId).update({
           participants: event.participants
@@ -3581,7 +3594,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         // 6. 성공 응답
         return res.json({ 
           ok: true, 
-          message: "배번이 저장되었습니다" 
+          message: "배번이 저장되었습니다",
+          participant: applied.participant,
         });
         
       } catch (error) {

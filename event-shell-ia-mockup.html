@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>동마클 단체 대회 · IA 키프레임 목업</title>
+  <style>
+    :root {
+      --bg: #e8eef5;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background:
+        radial-gradient(900px 400px at 10% -10%, #c7d7f5 0%, transparent 55%),
+        radial-gradient(700px 360px at 100% 0%, #dbeafe 0%, transparent 50%),
+        var(--bg);
+      color: var(--ink);
+      padding: 24px 16px 64px;
+    }
+    .page { max-width: 440px; margin: 0 auto; }
+    h1 {
+      font-size: 22px;
+      letter-spacing: -0.03em;
+      margin: 0 0 8px;
+    }
+    .lead {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0 0 18px;
+    }
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .toc a {
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+    .frame {
+      margin-bottom: 36px;
+      scroll-margin-top: 16px;
+    }
+    .frame-label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+    .phone {
+      background: #f1f5f9;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    }
+    .brand {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px 16px 10px;
+    }
+    .brand-row { display: flex; justify-content: space-between; align-items: center; }
+    .brand-title { font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+    .brand-list { font-size: 13px; color: #94a3b8; text-decoration: none; }
+    .brand-sub { margin-top: 4px; font-size: 12px; color: #94a3b8; }
+    .body { padding: 14px 14px 72px; min-height: 420px; }
+    .cta {
+      display: block; width: 100%; border: 0; border-radius: 14px;
+      background: var(--blue); color: #fff; font-weight: 700; font-size: 16px;
+      padding: 16px; text-align: center; margin-bottom: 14px;
+    }
+    .banner {
+      background: var(--card); border-radius: 14px; padding: 14px 16px;
+      border: 1px solid var(--line); margin-bottom: 14px;
+    }
+    .banner-kicker { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .banner-name { font-weight: 700; font-size: 17px; }
+    .banner-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px;
+      background: var(--blue-soft); color: #1d4ed8;
+    }
+    .chip.muted { background: #f1f5f9; color: #475569; }
+    .section-title {
+      font-size: 13px; font-weight: 700; color: #334155; margin: 4px 0 8px;
+    }
+    .timeline {
+      background: var(--card); border-radius: 14px; border: 1px solid var(--line);
+      padding: 12px 14px; margin-bottom: 8px;
+    }
+    .tl-row {
+      display: flex; gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9; font-size: 14px;
+    }
+    .tl-row:last-child { border-bottom: 0; }
+    .tl-time { width: 48px; font-weight: 700; color: var(--blue); flex-shrink: 0; }
+    .tl-label { color: #334155; }
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      background: var(--card); border-top: 1px solid var(--line);
+    }
+    .tab {
+      text-align: center; padding: 10px 4px 12px; font-size: 11px;
+      color: #94a3b8; font-weight: 600;
+    }
+    .tab.active { color: var(--blue); }
+    .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+    .group-head {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      margin: 14px 0 6px; padding-left: 2px;
+    }
+    .row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px;
+    }
+    .row.me { border-color: #93c5fd; background: #f8fbff; }
+    .nick { font-weight: 700; font-size: 15px; }
+    .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .right { text-align: right; font-size: 13px; font-weight: 600; }
+    .right .goal { color: var(--muted); font-weight: 500; font-size: 11px; }
+    .hint { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
+    .foot {
+      margin-top: 8px;
+      padding: 16px;
+      background: rgba(255,255,255,0.7);
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .bus-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .bus-card h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+    }
+    .bus-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .bus-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-bus {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      text-align: center;
+    }
+    .btn-bus.primary { background: var(--blue); color: #fff; }
+    .btn-bus.done { background: #ecfdf5; color: #047857; }
+    .btn-bus.ghost {
+      background: #f8fafc;
+      color: #334155;
+      border: 1px solid var(--line);
+    }
+    .stat-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .stat:active, .stat.pressed { border-color: #93c5fd; background: #f8fbff; }
+    .stat b { display: block; font-size: 18px; color: var(--blue); }
+    .stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .sheet-bar {
+      width: 36px; height: 4px; border-radius: 999px;
+      background: #cbd5e1; margin: 0 auto 12px;
+    }
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;
+    }
+    .list-row:last-child { border-bottom: 0; }
+    .list-nick { font-weight: 700; }
+    .list-meta { font-size: 12px; color: var(--muted); }
+    .pill-ok {
+      font-size: 11px; font-weight: 700; color: #047857;
+      background: #ecfdf5; padding: 4px 8px; border-radius: 999px;
+    }
+    .pill-pb {
+      font-size: 11px; font-weight: 800; color: #b45309;
+      background: #fffbeb; padding: 3px 7px; border-radius: 999px;
+      border: 1px solid #fcd34d;
+      margin-left: 6px;
+    }
+    .toolbar {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      background: var(--card);
+      color: #94a3b8;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .fchip {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: #475569;
+    }
+    .fchip.on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .sort-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .sort-row select, .sort-fake {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>동마클 단체 대회 · IA 키프레임</h1>
+    <p class="lead">
+      정적 HTML 목업입니다. Visual Companion 서버 없이 Hosting/파일로 보면 됩니다.<br />
+      탭: <strong>홈 / 버스 / 명단·결과</strong> · 배번은 홈 CTA·배너 · 실명·배번 숫자는 명단 비공개
+    </p>
+    <nav class="toc" aria-label="키프레임">
+      <a href="#kf1">1 홈·배번 전</a>
+      <a href="#kf2">2 홈·배번 후</a>
+      <a href="#kf3">3 버스</a>
+      <a href="#kf3b">3b 탑승 목록</a>
+      <a href="#kf4">4 명단·결과</a>
+      <a href="#kf5">5 취합 후</a>
+    </nav>
+
+    <section class="frame" id="kf1">
+      <p class="frame-label">Keyframe 1 · 홈 · 배번 전</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#toc">목록</a>
+          </div>
+          <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
+        </div>
+        <div class="body">
+          <div class="cta">배번·종목 입력하고 명단에 올라가기</div>
+          <div class="section-title">당일 일정</div>
+          <div class="timeline">
+            <div class="tl-row"><span class="tl-time">05:30</span><span class="tl-label">버스 출발 (동탄)</span></div>
+            <div class="tl-row"><span class="tl-time">07:00</span><span class="tl-label">대회장 도착 · 짐 보관</span></div>
+            <div class="tl-row"><span class="tl-time">08:00</span><span class="tl-label">풀 출발</span></div>
+            <div class="tl-row"><span class="tl-time">14:00</span><span class="tl-label">버스 복귀 집결</span></div>
+          </div>
+          <p class="hint">명단·목표는 「명단·결과」탭에서 봐요.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf2">
+      <p class="frame-label">Keyframe 2 · 홈 · 배번 후 (내 배너)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
+        </div>
+        <div class="body">
+          <div class="banner">
+            <div class="banner-kicker">내 참가 · 탭해서 수정</div>
+            <div class="banner-name">게살볶음밥</div>
+            <div class="banner-meta">
+              <span class="chip">하프</span>
+              <span class="chip muted">#1234</span>
+              <span class="chip muted">목표 1:45:00</span>
+            </div>
+          </div>
+          <div class="section-title">당일 일정</div>
+          <div class="timeline">
+            <div class="tl-row"><span class="tl-time">05:30</span><span class="tl-label">버스 출발 (동탄)</span></div>
+            <div class="tl-row"><span class="tl-time">07:00</span><span class="tl-label">대회장 도착 · 짐 보관</span></div>
+            <div class="tl-row"><span class="tl-time">08:00</span><span class="tl-label">풀 출발</span></div>
+            <div class="tl-row"><span class="tl-time">14:00</span><span class="tl-label">버스 복귀 집결</span></div>
+          </div>
+        </div>
+        <nav class="tabs">
+          <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf3">
+      <p class="frame-label">Keyframe 3 · 버스 (가는 편 · 셀프 체크)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
+        </div>
+        <div class="body">
+          <div class="stat-row">
+            <a class="stat pressed" href="#kf3b"><b>28</b><span>탑승 완료 · 눌러 보기</span></a>
+            <a class="stat" href="#kf3b"><b>4</b><span>미탑승 · 눌러 보기</span></a>
+          </div>
+          <div class="bus-card">
+            <h3>게살볶음밥 · 가는 버스</h3>
+            <p>왕복 · 아직 탑승 체크 전이에요. 현장 QR/이 탭에서 완료할 수 있어요.</p>
+            <div class="bus-actions">
+              <div class="btn-bus primary">가는 버스 탑승 완료</div>
+              <div class="btn-bus ghost">다른 닉으로 체크</div>
+            </div>
+          </div>
+          <div class="bus-card">
+            <h3>오는 버스</h3>
+            <p>복귀 때 여기서 체크해요. (가는 편 완료 후 활성화되는 식으로도 가능)</p>
+            <div class="bus-actions">
+              <div class="btn-bus ghost">오는 버스 탑승 (아직 아님)</div>
+            </div>
+          </div>
+          <p class="hint">숫자 카드를 누르면 해당 명단이 열려요. 버스 off인 대회는 탭 숨김. 총무 대리 체크는 운영 화면.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf3b">
+      <p class="frame-label">Keyframe 3b · 버스 · 탑승 완료 목록 (시트)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#kf3">닫기</a>
+          </div>
+          <div class="brand-sub">가는 버스 · 탑승 완료 28명</div>
+        </div>
+        <div class="body">
+          <div class="sheet-bar" aria-hidden="true"></div>
+          <div class="section-title">탑승 완료</div>
+          <div class="bus-card" style="padding-top: 4px; padding-bottom: 4px;">
+            <div class="list-row">
+              <div>
+                <div class="list-nick">시드원</div>
+                <div class="list-meta">왕복 · 05:42 체크</div>
+              </div>
+              <span class="pill-ok">완료</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <div class="list-nick">시드투</div>
+                <div class="list-meta">왕복 · 05:44 체크</div>
+              </div>
+              <span class="pill-ok">완료</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <div class="list-nick">알파</div>
+                <div class="list-meta">편도(가는) · 05:51 체크</div>
+              </div>
+              <span class="pill-ok">완료</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <div class="list-nick">…</div>
+                <div class="list-meta">스크롤로 나머지</div>
+              </div>
+              <span class="list-meta">+25</span>
+            </div>
+          </div>
+          <p class="hint">회원용: 닉·탑승 여부만. 실명·비고는 운영 화면에만. 「미탑승」카드도 같은 시트·필터.</p>
+          <a class="btn-bus ghost" href="#kf3" style="display:block;text-decoration:none;">버스로 돌아가기</a>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf4">
+      <p class="frame-label">Keyframe 4 · 명단·결과 · 검색·필터·정렬</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
+        </div>
+        <div class="body">
+          <div class="toolbar">
+            <div class="search">닉네임 검색…</div>
+            <div class="chips">
+              <span class="fchip">전체</span>
+              <span class="fchip on">하프</span>
+              <span class="fchip">풀</span>
+              <span class="fchip">10K</span>
+            </div>
+            <div class="sort-row">
+              <span>정렬</span>
+              <span class="sort-fake">목표 시간 ↑</span>
+            </div>
+          </div>
+          <div class="group-head">하프 · 목표 빠른 순</div>
+          <div class="row me">
+            <div>
+              <div class="nick">게살볶음밥 <span style="font-size:11px;color:#2563eb;">나</span></div>
+              <div class="sub">목표 1:45:00</div>
+            </div>
+            <div class="right"><span class="goal">기록 취합 전</span></div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">시드원</div>
+              <div class="sub">목표 1:50:00</div>
+            </div>
+            <div class="right"><span class="goal">기록 취합 전</span></div>
+          </div>
+          <p class="hint">필터=종목 · 검색=닉 · 정렬=목표시간(초 환산). 목표 없음은 맨 아래. 취합 후엔 「기록 순」으로 바꾸면 됨.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab active"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="frame" id="kf5">
+      <p class="frame-label">Keyframe 5 · 명단·결과 · 취합 후 (PB는 본인 표시)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">에뮬 단체 대회 · 2026-08-13</div>
+        </div>
+        <div class="body">
+          <div class="group-head">하프 · 기록 순</div>
+          <div class="row me">
+            <div>
+              <div class="nick">게살볶음밥 <span class="pill-pb">PB</span></div>
+              <div class="sub">목표 1:45:00</div>
+            </div>
+            <div class="right">1:42:18<br /><span class="goal">탭 → 상세 · 원문은 있을 때만</span></div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">시드원</div>
+              <div class="sub">목표 1:50:00</div>
+            </div>
+            <div class="right">1:48:02</div>
+          </div>
+          <p class="hint">PB는 자동 판정 없음 · 취합 후 홈에서 본인이 표시. 목표 대비 문구는 쓰지 않음.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab active"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </section>
+
+    <div class="foot">
+      파일: <code>event-shell-ia-mockup.html</code><br />
+      에뮬 Hosting: <code>http://localhost:5000/event-shell-ia-mockup.html</code><br />
+      괜찮으면 이 키프레임 기준으로 셸 구현 들어가면 됩니다.
+    </div>
+  </div>
+</body>
+</html>

@@ -306,15 +306,42 @@
         <h2 class="card-title">✅ <span id="confirmedNickname"></span>님</h2>
         <div id="inputError" class="error-box hidden"></div>
         <div class="form-group">
-          <label class="form-label">종목</label>
-          <div id="distanceInfo" style="font-size: 15px; font-weight: 600;"></div>
+          <label class="form-label">실명</label>
+          <div id="realNameInfo" style="font-size: 15px; font-weight: 600;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="distanceSelect">종목</label>
+          <select id="distanceSelect" class="form-input">
+            <option value="">선택</option>
+            <option value="full">풀</option>
+            <option value="half">하프</option>
+            <option value="10K">10K</option>
+            <option value="5K">5K</option>
+            <option value="3K">3K</option>
+            <option value="30K">30K</option>
+            <option value="32K">32K</option>
+            <option value="ultra">울트라</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="targetTimeInput">목표 시간 <span style="font-weight:400;color:var(--text-sub);">(선택)</span></label>
+          <input
+            type="text"
+            id="targetTimeInput"
+            class="form-input"
+            placeholder="예: 1:45:00 또는 55:30"
+            autocomplete="off"
+          />
+          <p style="margin:6px 0 0;font-size:12px;color:var(--text-sub);line-height:1.4;">
+            결과 보드에 같이 보여 줄 수 있어요. 안 적어도 괜찮아요.
+          </p>
         </div>
         <div class="form-group">
           <label class="form-label">현재 배번</label>
           <div id="currentBib" style="font-size: 15px; font-weight: 600; color: var(--text-sub);"></div>
         </div>
         <div class="form-group">
-          <label class="form-label" for="bibInput">배번 번호</label>
+          <label class="form-label" for="bibInput">배번 번호 <span style="color:#c00;">*</span></label>
           <input 
             type="text" 
             id="bibInput" 
@@ -342,10 +369,12 @@
     </div>
   </div>
   
+  <script src="assets/event-member-profile.js"></script>
   <script>
-    // 환경 자동 감지: localhost면 에뮬레이터, 아니면 프로덕션
-    const API_BASE = window.location.hostname === 'localhost'
-      ? "http://localhost:5001/dmc-attendance/asia-northeast3/race"
+    // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터
+    const _host = window.location.hostname;
+    const API_BASE = (_host === 'localhost' || _host === '127.0.0.1')
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
       : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
 
     // 상태
@@ -368,16 +397,14 @@
     const participantList = document.getElementById('participantList');
     const inputError = document.getElementById('inputError');
     const confirmedNickname = document.getElementById('confirmedNickname');
-    const distanceInfo = document.getElementById('distanceInfo');
+    const realNameInfo = document.getElementById('realNameInfo');
+    const distanceSelect = document.getElementById('distanceSelect');
+    const targetTimeInput = document.getElementById('targetTimeInput');
     const currentBib = document.getElementById('currentBib');
     const bibInput = document.getElementById('bibInput');
     const saveBtn = document.getElementById('saveBtn');
     const backBtn = document.getElementById('backBtn');
     
-    // 로컬 스토리지 키
-    const STORAGE_KEY_MY_BIB = 'dmc_bib_nickname';
-    const STORAGE_KEY_ATTENDANCE = 'marathon_att_nickname'; // 출석 페이지와 공유
-
     function showScreen(step) {
       currentStep = step;
       
@@ -456,22 +483,22 @@
       });
     }
     
+    function fillInputForm(participant) {
+      confirmedNickname.textContent = participant.nickname;
+      realNameInfo.textContent = participant.realName || '—';
+      const dist = participant.distance || '';
+      const hasOpt = Array.from(distanceSelect.options).some((o) => o.value === dist);
+      distanceSelect.value = hasOpt ? dist : '';
+      targetTimeInput.value = participant.targetTime || '';
+      currentBib.textContent = participant.bib || '미입력';
+      bibInput.value = participant.bib || '';
+    }
+
     function selectParticipant(participant) {
       currentParticipant = participant;
       
-      // 로컬 스토리지에 저장 (두 곳에)
-      localStorage.setItem(STORAGE_KEY_MY_BIB, participant.nickname);
-      localStorage.setItem(STORAGE_KEY_ATTENDANCE, participant.nickname);
-      
-      confirmedNickname.textContent = participant.nickname;
-      distanceInfo.textContent = formatDistance(participant.distance);
-      currentBib.textContent = participant.bib || '미입력';
-      
-      if (participant.bib) {
-        bibInput.value = participant.bib;
-      } else {
-        bibInput.value = '';
-      }
+      EventMemberProfile.syncNicknames(localStorage, participant.nickname);
+      fillInputForm(participant);
       
       showScreen(STEP.INPUT);
       hideError('inputError');
@@ -501,23 +528,26 @@
         currentEvent = data.event;
         eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
         
-        // 로컬 스토리지에서 저장된 닉네임 확인 (출석 페이지 우선, 배번 페이지 차선)
-        const savedNickname = localStorage.getItem(STORAGE_KEY_ATTENDANCE) 
-                           || localStorage.getItem(STORAGE_KEY_MY_BIB);
-        
-        if (savedNickname) {
-          const participant = currentEvent.participants.find(
-            p => p.nickname === savedNickname
-          );
-          
-          if (participant) {
-            // 바로 입력 화면으로
-            selectParticipant(participant);
-            return;
-          }
+        const identity = EventMemberProfile.readSavedIdentity(localStorage);
+        const participant = EventMemberProfile.matchInList(
+          currentEvent.participants || [],
+          identity
+        );
+
+        if (participant) {
+          selectParticipant(participant);
+          showToast(`${participant.nickname}님으로 이어서 배번 입력`);
+          return;
         }
-        
-        renderParticipantList();
+
+        // 저장된 닉이 명단에 없으면 검색창에 넣어 고르기 쉽게
+        if (identity.nickname) {
+          searchInput.value = identity.nickname;
+          renderParticipantList(identity.nickname);
+          showToast(`저장된 닉「${identity.nickname}」이 이 대회 명단에 없어요. 직접 골라 주세요.`);
+        } else {
+          renderParticipantList();
+        }
         showScreen(STEP.LIST);
         
       } catch (error) {
@@ -545,15 +575,7 @@
       
       hideError('authError');
       currentParticipant = participant;
-      
-      confirmedNickname.textContent = participant.nickname;
-      distanceInfo.textContent = formatDistance(participant.distance);
-      currentBib.textContent = participant.bib || '미입력';
-      
-      if (participant.bib) {
-        bibInput.value = participant.bib;
-      }
-      
+      fillInputForm(participant);
       showScreen(STEP.INPUT);
     }
 
@@ -580,15 +602,20 @@
       saveBtn.textContent = '저장 중...';
       
       try {
+        const body = {
+          subAction: 'update-bib',
+          eventId: currentEvent.id,
+          nickname: currentParticipant.nickname,
+          bib: bib,
+          targetTime: targetTimeInput.value.trim(),
+        };
+        const distVal = distanceSelect.value;
+        if (distVal) body.distance = distVal;
+
         const res = await fetch(`${API_BASE}?action=group-events`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subAction: 'update-bib',
-            eventId: currentEvent.id,
-            nickname: currentParticipant.nickname,
-            bib: bib
-          })
+          body: JSON.stringify(body)
         });
         
         const data = await res.json();
@@ -598,8 +625,17 @@
         }
         
         // 로컬 데이터 업데이트
-        currentParticipant.bib = bib;
-        
+        if (data.participant) {
+          currentParticipant = data.participant;
+          const idx = (currentEvent.participants || []).findIndex(
+            (p) => p.nickname === currentParticipant.nickname
+          );
+          if (idx >= 0) currentEvent.participants[idx] = currentParticipant;
+        } else {
+          currentParticipant.bib = bib;
+        }
+        EventMemberProfile.syncNicknames(localStorage, currentParticipant.nickname);
+
         // 토스트 표시 후 목록으로 복귀
         showToast('✅ 저장 완료');
         

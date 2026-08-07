@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>동마클 단체 대회 앱 미리보기 · 철원 DMZ 예시</title>
+  <style>
+    :root {
+      --bg: #e7eef6;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --card: #fff;
+      --line: #e2e8f0;
+      --blue: #1d4ed8;
+      --blue-soft: #eff6ff;
+      --brand: #0b1f3a;
+      --accent: #c2410c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1000px 480px at 0% -10%, #bfdbfe 0%, transparent 55%),
+        radial-gradient(800px 400px at 100% 0%, #fed7aa 0%, transparent 45%),
+        var(--bg);
+      padding: 28px 16px 80px;
+      line-height: 1.55;
+    }
+    .page { max-width: 720px; margin: 0 auto; }
+    .hero {
+      background: linear-gradient(145deg, #0b1f3a 0%, #1e3a5f 60%, #334155 100%);
+      color: #f8fafc;
+      border-radius: 20px;
+      padding: 28px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    }
+    .hero .eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #93c5fd; margin: 0 0 8px;
+    }
+    .hero h1 {
+      margin: 0 0 10px; font-size: 26px; letter-spacing: -0.03em; line-height: 1.25;
+    }
+    .hero p { margin: 0; color: #cbd5e1; font-size: 15px; }
+    .badge {
+      display: inline-block; margin-top: 14px;
+      background: rgba(251, 146, 60, 0.2); color: #fdba74;
+      border: 1px solid rgba(251, 146, 60, 0.45);
+      font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px;
+    }
+    h2 {
+      font-size: 20px; letter-spacing: -0.02em; margin: 36px 0 12px;
+    }
+    h3 { font-size: 16px; margin: 20px 0 8px; }
+    .card {
+      background: rgba(255,255,255,0.88);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px 18px;
+      margin-bottom: 14px;
+    }
+    .card p { margin: 0 0 10px; color: #334155; font-size: 15px; }
+    .card p:last-child { margin-bottom: 0; }
+    ul.plain { margin: 0; padding-left: 1.15em; color: #334155; }
+    ul.plain li { margin: 6px 0; }
+    .flow {
+      display: grid;
+      gap: 10px;
+    }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .num {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--blue); color: #fff;
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 15px;
+    }
+    .flow-step strong { display: block; margin-bottom: 4px; }
+    .flow-step span { font-size: 14px; color: var(--muted); }
+    .toc {
+      display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px;
+    }
+    .toc a {
+      text-decoration: none; font-size: 13px; font-weight: 700;
+      color: var(--blue); background: #fff; border: 1px solid var(--line);
+      border-radius: 999px; padding: 8px 12px;
+    }
+    .phone-wrap { max-width: 400px; margin: 16px auto 28px; }
+    .frame-label {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted); margin: 0 0 10px;
+    }
+    .phone {
+      background: #f1f5f9; border-radius: 22px; overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
+    }
+    .brand {
+      background: var(--brand); color: #f8fafc; padding: 12px 16px 10px;
+    }
+    .brand-row { display: flex; justify-content: space-between; align-items: center; }
+    .brand-title { font-weight: 700; font-size: 16px; }
+    .brand-list { font-size: 13px; color: #94a3b8; text-decoration: none; }
+    .brand-sub { margin-top: 4px; font-size: 12px; color: #94a3b8; }
+    .body { padding: 14px 14px 72px; min-height: 440px; }
+    .cta {
+      display: block; width: 100%; border: 0; border-radius: 14px;
+      background: var(--blue); color: #fff; font-weight: 700; font-size: 15px;
+      padding: 15px; text-align: center; margin-bottom: 12px;
+    }
+    .banner {
+      background: #fff; border-radius: 14px; padding: 14px 16px;
+      border: 1px solid var(--line); margin-bottom: 12px;
+    }
+    .banner-kicker { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .banner-name { font-weight: 700; font-size: 17px; }
+    .banner-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px;
+      background: var(--blue-soft); color: #1d4ed8;
+    }
+    .chip.muted { background: #f1f5f9; color: #475569; }
+    .section-title { font-size: 13px; font-weight: 700; color: #334155; margin: 4px 0 8px; }
+    .timeline, .bus-card, .form-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--line);
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .tl-row {
+      display: flex; gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9; font-size: 14px;
+    }
+    .tl-row:last-child { border-bottom: 0; }
+    .tl-time { width: 48px; font-weight: 700; color: var(--blue); flex-shrink: 0; }
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      background: #fff; border-top: 1px solid var(--line);
+    }
+    .tab {
+      text-align: center; padding: 10px 4px 12px; font-size: 11px;
+      color: #94a3b8; font-weight: 600;
+    }
+    .tab.active { color: var(--blue); }
+    .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+    .stat-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .stat {
+      flex: 1; background: #fff; border: 1px solid var(--line);
+      border-radius: 12px; padding: 10px; text-align: center;
+      text-decoration: none; color: inherit;
+    }
+    .stat b { display: block; font-size: 18px; color: var(--blue); }
+    .stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .btn-bus {
+      border: 0; border-radius: 12px; padding: 13px; font-weight: 700;
+      font-size: 14px; text-align: center; margin-top: 8px;
+    }
+    .btn-bus.primary { background: var(--blue); color: #fff; }
+    .btn-bus.ghost {
+      background: #f8fafc; color: #334155; border: 1px solid var(--line);
+    }
+    .group-head {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      margin: 12px 0 6px;
+    }
+    .row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      padding: 11px 13px; margin-bottom: 8px;
+    }
+    .row.me { border-color: #93c5fd; background: #f8fbff; }
+    .nick { font-weight: 700; font-size: 15px; }
+    .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .right { text-align: right; font-size: 13px; font-weight: 600; }
+    .right .goal { color: var(--muted); font-weight: 500; font-size: 11px; }
+    .hint { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.4; }
+    .toolbar { display: grid; gap: 8px; margin-bottom: 10px; }
+    .search {
+      border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px;
+      font-size: 14px; background: #fff; color: #94a3b8;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .fchip {
+      font-size: 12px; font-weight: 700; padding: 7px 10px; border-radius: 999px;
+      border: 1px solid var(--line); background: #fff; color: #475569;
+    }
+    .fchip.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .sort-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--muted); font-weight: 600;
+    }
+    .sort-fake {
+      border: 1px solid var(--line); background: #fff; border-radius: 10px;
+      padding: 6px 10px; font-size: 12px; font-weight: 700; color: var(--ink);
+    }
+    .pill-pb {
+      font-size: 11px; font-weight: 800; color: #b45309;
+      background: #fffbeb; padding: 3px 7px; border-radius: 999px;
+      border: 1px solid #fcd34d; margin-left: 6px;
+    }
+    .pill-ok {
+      font-size: 11px; font-weight: 700; color: #047857;
+      background: #ecfdf5; padding: 4px 8px; border-radius: 999px;
+    }
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;
+    }
+    .list-row:last-child { border-bottom: 0; }
+    .form-label {
+      font-size: 12px; font-weight: 700; color: var(--muted); margin: 10px 0 4px;
+    }
+    .form-value {
+      font-size: 15px; font-weight: 700; padding: 10px 12px;
+      background: #f8fafc; border-radius: 10px; border: 1px solid var(--line);
+    }
+    .form-input {
+      font-size: 15px; padding: 11px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: #fff; color: #94a3b8;
+    }
+    .footer-note {
+      margin-top: 40px; padding: 16px; border-radius: 14px;
+      background: rgba(255,255,255,0.75); border: 1px dashed #cbd5e1;
+      font-size: 13px; color: var(--muted);
+    }
+    @media (min-width: 800px) {
+      .phones-2 {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;
+      }
+      .phones-2 .phone-wrap { margin: 0; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">운영진 미리보기 · 더미 화면</p>
+      <h1>동마클 단체 대회 앱<br />철원 DMZ 마라톤 예시</h1>
+      <p>
+        아직 배포 전 설계 목업입니다. 실제 서비스 URL이 아닙니다.<br />
+        예시 대회·참가자는 이해를 돕기 위한 <strong>가상 데이터</strong>입니다.
+      </p>
+      <span class="badge">예시 대회일: 2026-04-12 (가상)</span>
+    </header>
+
+    <h2>1. 왜 이 앱이 필요한가</h2>
+    <div class="card">
+      <ul class="plain">
+        <li>멀리 가는 단체 대회는 버스 탑승 확인이 새벽에도 필요합니다.</li>
+        <li>배번을 미리 받아 두면, 대회 후 기록을 훨씬 정확하게 모을 수 있습니다.</li>
+        <li>같은 종목·비슷한 목표 시간의 회원을 앱에서 찾아 같이 뛸 수 있습니다.</li>
+      </ul>
+    </div>
+
+    <h2>2. 회원 입장 UX 흐름 (당일 기준)</h2>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="num">1</div>
+        <div>
+          <strong>새벽에 버스 탭에서 탑승 체크</strong>
+          <span>단톡·카페 링크(또는 QR)로 들어와 「가는 버스 탑승 완료」. 숫자 카드를 누르면 탑승·미탑승 목록을 볼 수 있어요.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="num">2</div>
+        <div>
+          <strong>버스에 탄 뒤 배번·종목을 입력한다</strong>
+          <span>이동 중에 홈에서 배번을 넣으면 참가 명단에 올라갑니다. 목표 시간은 선택.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="num">3</div>
+        <div>
+          <strong>명단·결과에서 같이 뛸 사람을 찾는다</strong>
+          <span>같은 종목·비슷한 목표 시간. 실명·배번 숫자는 남에게 안 보여요.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="num">4</div>
+        <div>
+          <strong>같이 뛰고, 오는 버스에서 탑승 체크</strong>
+          <span>복귀 때 「오는 버스」도 체크합니다.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="num">5</div>
+        <div>
+          <strong>돌아오는 길에 명단·결과에서 기록을 확인한다</strong>
+          <span>운영이 기록을 모으면 같은 목록에 기록이 붙습니다. PB는 본인이 홈에서 표시할 수 있어요.</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>3. 화면 미리보기 (철원 예시)</h2>
+    <nav class="toc" aria-label="화면 바로가기">
+      <a href="#s-bus">버스</a>
+      <a href="#s-buslist">탑승 목록</a>
+      <a href="#s-home0">홈·배번 전</a>
+      <a href="#s-bib">배번 입력</a>
+      <a href="#s-home1">홈·배번 후</a>
+      <a href="#s-roster">명단·결과</a>
+      <a href="#s-done">취합 후</a>
+    </nav>
+
+    <div class="phones-2">
+      <!-- BUS -->
+      <div class="phone-wrap" id="s-bus">
+          <p class="frame-label">화면 A · 버스 (당일 시작)</p>
+          <div class="phone">
+            <div class="brand">
+              <div class="brand-row">
+                <span class="brand-title">동마클 단체 대회</span>
+                <a class="brand-list" href="#">목록</a>
+              </div>
+              <div class="brand-sub">철원 DMZ · 가는 버스</div>
+            </div>
+            <div class="body">
+              <div class="stat-row">
+                <a class="stat" href="#s-buslist"><b>31</b><span>탑승 완료 · 보기</span></a>
+                <a class="stat" href="#s-buslist"><b>5</b><span>미탑승 · 보기</span></a>
+              </div>
+              <div class="bus-card">
+                <div style="font-weight:800;margin-bottom:4px;">게살볶음밥 · 가는 버스</div>
+                <div class="hint" style="margin:0;">왕복 · 아직 체크 전</div>
+                <div class="btn-bus primary">가는 버스 탑승 완료</div>
+                <div class="btn-bus ghost">다른 닉으로 체크</div>
+              </div>
+              <div class="bus-card">
+                <div style="font-weight:800;margin-bottom:4px;">오는 버스</div>
+                <div class="hint" style="margin:0;">복귀 때 체크해요</div>
+                <div class="btn-bus ghost">오는 버스 탑승</div>
+              </div>
+            </div>
+            <nav class="tabs">
+              <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+              <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+              <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+            </nav>
+          </div>
+        </div>
+      <!-- BUS LIST -->
+      <div class="phone-wrap" id="s-buslist">
+          <p class="frame-label">화면 B · 탑승 완료 목록</p>
+          <div class="phone">
+            <div class="brand">
+              <div class="brand-row">
+                <span class="brand-title">동마클 단체 대회</span>
+                <a class="brand-list" href="#s-bus">닫기</a>
+              </div>
+              <div class="brand-sub">가는 버스 · 탑승 완료 31명</div>
+            </div>
+            <div class="body">
+              <div class="bus-card" style="padding-top:6px;padding-bottom:6px;">
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">러너킴</div><div class="sub">왕복 · 04:48</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">새벽버스</div><div class="sub">왕복 · 04:51</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">철원가자</div><div class="sub">편도(가는) · 04:55</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">동탄치타</div><div class="sub">왕복 · 04:57</div></div>
+                  <span class="pill-ok">완료</span>
+                </div>
+                <div class="list-row">
+                  <div><div class="nick" style="font-size:14px;">…</div><div class="sub">스크롤</div></div>
+                  <span class="sub">+27</span>
+                </div>
+              </div>
+              <p class="hint">회원에게는 닉·탑승 여부만. 실명·비고는 총무 화면.</p>
+            </div>
+            <nav class="tabs">
+              <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+              <div class="tab active"><span class="tab-icon">🚌</span>버스</div>
+              <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+            </nav>
+          </div>
+        </div>
+    </div>
+
+    <!-- HOME BEFORE (탑승 후) -->
+    <div class="phone-wrap" id="s-home0">
+      <p class="frame-label">화면 C · 홈 (탑승 후·배번 입력 전)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">2026 철원 DMZ 국제평화마라톤 · 4/12</div>
+        </div>
+        <div class="body">
+          <div class="banner">
+            <div class="banner-kicker">출석앱 닉 · 선택됨</div>
+            <div class="banner-name">게살볶음밥</div>
+          </div>
+          <div class="cta">배번, 종목 입력하기</div>
+          <div class="section-title">당일 일정 (예시)</div>
+          <div class="timeline">
+            <div class="tl-row"><span class="tl-time">04:40</span><span class="tl-label">동탄 집결 · 버스 탑승 시작</span></div>
+            <div class="tl-row"><span class="tl-time">05:00</span><span class="tl-label">버스 출발</span></div>
+            <div class="tl-row"><span class="tl-time">07:20</span><span class="tl-label">철원 대회장 도착 · 짐 보관</span></div>
+            <div class="tl-row"><span class="tl-time">08:30</span><span class="tl-label">풀 / 하프 출발 (코스별)</span></div>
+            <div class="tl-row"><span class="tl-time">14:00</span><span class="tl-label">복귀 버스 집결</span></div>
+          </div>
+          <p class="hint">일정 시각은 이해를 위한 예시입니다. 실제 공지와 다를 수 있어요.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- BIB DETAIL -->
+    <div class="phone-wrap" id="s-bib">
+      <p class="frame-label">화면 D · 배번 입력 (이동 중)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#s-home0">닫기</a>
+          </div>
+          <div class="brand-sub">철원 DMZ · 배번 입력</div>
+        </div>
+        <div class="body">
+          <div class="form-card">
+            <div style="font-size:17px;font-weight:800;margin-bottom:4px;">✅ 게살볶음밥님</div>
+            <p class="hint" style="margin-top:0;">출석앱 닉으로 이어졌어요.</p>
+            <div class="form-label">실명 (본인만 보임)</div>
+            <div class="form-value">김○○</div>
+            <div class="form-label">종목</div>
+            <div class="form-value">하프 ▾</div>
+            <div class="form-label">목표 시간 (선택)</div>
+            <div class="form-input">1:45:00</div>
+            <div class="form-label">배번 번호 *</div>
+            <div class="form-input">4821</div>
+            <div class="cta" style="margin-top:14px;margin-bottom:0;">저장하고 명단에 올리기</div>
+          </div>
+          <p class="hint">버스에 탄 뒤·이동 중에 입력해도 됩니다. 목표 시간은 같이 뛸 사람을 찾을 때 참고용이에요.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- HOME AFTER -->
+    <div class="phone-wrap" id="s-home1">
+      <p class="frame-label">화면 E · 홈 (배번 입력 후)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">2026 철원 DMZ 국제평화마라톤 · 4/12</div>
+        </div>
+        <div class="body">
+          <div class="banner">
+            <div class="banner-kicker">내 참가 · 누르면 수정</div>
+            <div class="banner-name">게살볶음밥</div>
+            <div class="banner-meta">
+              <span class="chip">하프</span>
+              <span class="chip muted">#4821</span>
+              <span class="chip muted">목표 1:45:00</span>
+            </div>
+          </div>
+          <div class="section-title">당일 일정</div>
+          <div class="timeline">
+            <div class="tl-row"><span class="tl-time">04:40</span><span class="tl-label">동탄 집결 · 버스 탑승</span></div>
+            <div class="tl-row"><span class="tl-time">05:00</span><span class="tl-label">버스 출발</span></div>
+            <div class="tl-row"><span class="tl-time">08:30</span><span class="tl-label">하프 출발</span></div>
+            <div class="tl-row"><span class="tl-time">14:00</span><span class="tl-label">복귀 버스 집결</span></div>
+          </div>
+        </div>
+        <nav class="tabs">
+          <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ROSTER -->
+    <div class="phone-wrap" id="s-roster">
+      <p class="frame-label">화면 F · 명단·결과 (기록 취합 전)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">철원 DMZ · 참가 명단</div>
+        </div>
+        <div class="body">
+          <div class="toolbar">
+            <div class="search">닉네임 검색…</div>
+            <div class="chips">
+              <span class="fchip">전체</span>
+              <span class="fchip on">하프</span>
+              <span class="fchip">풀</span>
+              <span class="fchip">10K</span>
+            </div>
+            <div class="sort-row"><span>정렬</span><span class="sort-fake">목표 시간 ↑</span></div>
+          </div>
+          <div class="group-head">하프 · 같이 뛸 수 있어요</div>
+          <div class="row me">
+            <div>
+              <div class="nick">게살볶음밥 <span style="font-size:11px;color:#2563eb;">나</span></div>
+              <div class="sub">목표 1:45:00</div>
+            </div>
+            <div class="right"><span class="goal">기록 취합 전</span></div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">러너킴</div>
+              <div class="sub">목표 1:42:00</div>
+            </div>
+            <div class="right"><span class="goal">기록 취합 전</span></div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">동탄치타</div>
+              <div class="sub">목표 1:50:00</div>
+            </div>
+            <div class="right"><span class="goal">기록 취합 전</span></div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">철원가자</div>
+              <div class="sub">목표 1:55:00</div>
+            </div>
+            <div class="right"><span class="goal">기록 취합 전</span></div>
+          </div>
+          <p class="hint">실명·배번 숫자는 안 보여요. 종목 필터·닉 검색·목표시간 정렬 가능.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab active"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- AFTER RESULTS -->
+    <div class="phone-wrap" id="s-done">
+      <p class="frame-label">화면 G · 명단·결과 (기록 취합 후)</p>
+      <div class="phone">
+        <div class="brand">
+          <div class="brand-row">
+            <span class="brand-title">동마클 단체 대회</span>
+            <a class="brand-list" href="#">목록</a>
+          </div>
+          <div class="brand-sub">철원 DMZ · 기록</div>
+        </div>
+        <div class="body">
+          <div class="sort-row" style="margin-bottom:10px;"><span>하프 · 정렬</span><span class="sort-fake">기록 순</span></div>
+          <div class="row me">
+            <div>
+              <div class="nick">게살볶음밥 <span class="pill-pb">PB</span></div>
+              <div class="sub">목표 1:45:00</div>
+            </div>
+            <div class="right">1:42:18<br /><span class="goal">탭 → 상세</span></div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">러너킴</div>
+              <div class="sub">목표 1:42:00</div>
+            </div>
+            <div class="right">1:43:05</div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">동탄치타</div>
+              <div class="sub">목표 1:50:00</div>
+            </div>
+            <div class="right">1:47:40</div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="nick">철원가자</div>
+              <div class="sub">목표 1:55:00</div>
+            </div>
+            <div class="right">1:52:11</div>
+          </div>
+          <p class="hint">PB는 자동 판정이 아니라, 기록 나온 뒤 홈에서 본인이 표시합니다. 외부 기록 사이트 연결은 가능한 대회부터 단계적으로.</p>
+        </div>
+        <nav class="tabs">
+          <div class="tab"><span class="tab-icon">🏠</span>홈</div>
+          <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+          <div class="tab active"><span class="tab-icon">📋</span>명단·결과</div>
+        </nav>
+      </div>
+    </div>
+
+    <h2>4. 한 줄 요약 (운영진용)</h2>
+    <div class="card">
+      <ul class="plain">
+        <li><strong>당일 회원 흐름:</strong> 버스 탑승 → (이동 중) 배번 입력 → 같이 뛸 사람 찾기 → 같이 뛰기 → 복귀 버스·결과 확인</li>
+        <li><strong>앱 탭:</strong> 홈 · 버스 · 명단·결과</li>
+        <li><strong>카페 설문:</strong> 누가 나가나 / 버스·중식 — 기존처럼</li>
+        <li><strong>앱 시작점(현재 합의):</strong> 당일 <strong>버스 탑승</strong> (배번은 탑승 후·이동 중)</li>
+      </ul>
+    </div>
+
+    <div class="footer-note">
+      파일: <code>event-cheorwon-ops-preview.html</code><br />
+      로컬: <code>http://localhost:5000/event-cheorwon-ops-preview.html</code><br />
+      일정·인원·기록 숫자는 모두 가상 예시입니다. 실제 철원 공지와 맞춰 고칠 수 있습니다.
+    </div>
+  </div>
+</body>
+</html>
