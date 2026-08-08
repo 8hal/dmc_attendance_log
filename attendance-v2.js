@@ -803,16 +803,22 @@
         teamFilter: teamAttendFilter,
       });
 
+      const todayKeyForSummary = kstTodayDateKeySlash();
+      const pastMeetingCount = dateKeys.filter(function (dk) {
+        return dk <= todayKeyForSummary;
+      }).length;
+      const totalAttendances = agg.rows.reduce(function (sum, r) {
+        return sum + (r.count || 0);
+      }, 0);
+      const maxPossible = pastMeetingCount * agg.roster;
+      const teamAttendRate =
+        maxPossible > 0 ? Math.round((totalAttendances / maxPossible) * 100) : 0;
       summaryEl.innerHTML =
         "<div>이번 달 정모<br /><strong>" +
-        dateKeys.length +
+        pastMeetingCount +
         "회</strong></div>" +
-        '<div style="text-align:right">출석한 인원<br /><strong>' +
-        agg.attended +
-        " / " +
-        agg.roster +
-        " · " +
-        agg.rate +
+        '<div style="text-align:right">출석률<br /><strong>' +
+        teamAttendRate +
         "%</strong></div>";
 
       const membersById = {};
