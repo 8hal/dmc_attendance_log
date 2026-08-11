@@ -204,7 +204,7 @@ git commit -m "feat(chunbaek): update-profile goalRaceDate 저장·삭제 처리
 <p class="section-sub" id="goal-race-date-hint" hidden>기타 대회 날짜 (D-day 표시에 사용됩니다)</p>
 ```
 
-- [ ] **Step 2: `syncGoalRaceNote` → `syncGoalRaceFields`로 확장**
+- [ ] **Step 2: `syncGoalRaceNote` 함수 내부 확장 (함수 이름은 그대로 유지)**
 
 `chunbaek/js/app.js:335-339` 기존 코드:
 ```js
@@ -299,7 +299,7 @@ git commit -m "feat(chunbaek): 프로필 폼에 기타 대회 날짜 입력 필�
 
 - [ ] **Step 1: D-day 카드 HTML 삽입**
 
-`chunbaek/index.html:210` `</div>` 바로 앞 줄에 삽입:
+`chunbaek/index.html:211` `</div>` 바로 앞 줄에 삽입 (`#week-bar` 닫힘 태그 다음, `#today-active` 닫힘 태그 직전):
 ```html
           <!-- 마라톤 D-day 카드 -->
           <div class="marathon-dday-card" id="marathon-dday-card" hidden>
@@ -454,8 +454,8 @@ function renderMarathonDday(prof) {
   // 날짜가 있을 때 D-day 계산
   const days = daysUntilKst(goalRaceDate);
 
-  // 대회 후: 숨김
-  if (days < 0) {
+  // null(유효하지 않은 날짜) 또는 대회 후: 숨김
+  if (days === null || days < 0) {
     card.hidden = true;
     nudge.hidden = true;
     return;
@@ -472,8 +472,14 @@ function renderMarathonDday(prof) {
   document.getElementById("marathon-dday-date").textContent = formatRaceDateKo(goalRaceDate);
 
   if (days === 0) {
+    // D-0: 스펙 상 별도 축하 메시지 레이아웃이 있으나,
+    // 카드 내에서 텍스트·배경색 변경으로 처리 (HTML 구조 단순화).
+    document.getElementById("marathon-dday-name").textContent = `🎉 오늘이 ${label} 당일이에요!`;
+    document.getElementById("marathon-dday-date").textContent = "완주를 응원합니다!";
     document.getElementById("marathon-dday-count").textContent = "D-DAY";
     card.style.background = "linear-gradient(135deg, #fce4ec 0%, #f48fb1 100%)";
+    card.hidden = false;
+    return;
   } else {
     document.getElementById("marathon-dday-count").textContent = `D-${days}`;
     card.style.background = "";
