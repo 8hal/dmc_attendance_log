@@ -3,220 +3,293 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>D-day 카드 미리보기</title>
+  <title>D-day 위젯 컬러 테마 안</title>
   <style>
+    :root {
+      --brand-orange: #ff3214;
+      --brand-orange-dark: #e02a10;
+      --brand-cyan: #70d1f4;
+      --brand-cyan-dark: #4db8e0;
+      --brand-black: #000000;
+      --brand-white: #ffffff;
+      --primary-light: #ffe8e3;
+      --accent-light: #e8f7fd;
+      --surface-muted: #f5f2ef;
+      --text: #1a1a1a;
+      --text-muted: #5c5c5c;
+      --border: #e8e4e0;
+      --card: #ffffff;
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
       background: #111;
       color: #fff;
-      padding: 24px 16px 48px;
+      padding: 24px 16px 56px;
     }
-    h1 {
-      max-width: 390px;
-      margin: 0 auto 8px;
-      font-size: 18px;
-    }
+    h1 { max-width: 420px; margin: 0 auto 6px; font-size: 18px; }
     .lead {
-      max-width: 390px;
-      margin: 0 auto 20px;
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.5;
+      max-width: 420px; margin: 0 auto 20px;
+      color: #aaa; font-size: 13px; line-height: 1.5;
     }
     .phone {
       max-width: 390px;
       margin: 0 auto 28px;
+      background: var(--card);
       border-radius: 16px;
-      padding: 16px;
-      /* 홈 흰 배경 + 위쪽에 사진톤 그라데이션 → 글래스 효과가 보이게 */
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.92) 0%, #fff 55%),
-        radial-gradient(120% 80% at 20% 0%, #70d1f4 0%, transparent 50%),
-        radial-gradient(100% 70% at 90% 10%, #ff3214 0%, transparent 45%),
-        #f5f2ef;
+      padding: 14px 14px 18px;
       box-shadow: 0 12px 40px rgba(0,0,0,.35);
-      color: #1a1a1a;
+      color: var(--text);
     }
-    .label {
+    .theme-title {
       font-size: 12px;
-      font-weight: 700;
-      color: #5c5c5c;
-      margin: 0 0 8px;
+      font-weight: 800;
+      margin: 0 0 4px;
+      color: var(--text);
     }
-    .block { margin-bottom: 22px; }
-
+    .theme-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin: 0 0 12px;
+      line-height: 1.4;
+    }
     .week-summary {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #f5f2ef;
-      border: 1px solid #e8e4e0;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px 14px;
       font-size: 14px;
+      margin-bottom: 10px;
     }
-    .week-summary-label { color: #5c5c5c; font-weight: 600; }
-    .week-summary-count { font-weight: 800; color: #ff3214; }
+    .week-summary-label { color: var(--text-muted); font-weight: 600; }
+    .week-summary-count { font-weight: 800; color: var(--brand-orange); }
 
-    .marathon-dday-card {
+    /* 공통 위젯 구조 */
+    .dday {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      background: rgba(28, 28, 30, 0.48);
-      backdrop-filter: blur(22px) saturate(1.25);
-      -webkit-backdrop-filter: blur(22px) saturate(1.25);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 22px;
       padding: 14px 16px;
-      margin-top: 12px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
-    }
-    .marathon-dday-nudge {
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 10px;
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.82);
-      background: rgba(28, 28, 30, 0.36);
-    }
-    .marathon-dday-main {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
       gap: 12px;
+      backdrop-filter: blur(22px) saturate(1.2);
+      -webkit-backdrop-filter: blur(22px) saturate(1.2);
     }
-    .marathon-dday-info {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 0;
+    .dday-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dday-name { font-weight: 700; font-size: 14px; letter-spacing: -0.02em; }
+    .dday-date { font-size: 11px; font-weight: 600; }
+    .dday-countdown {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      flex-shrink: 0; min-width: 56px;
     }
-    .marathon-dday-name {
-      font-weight: 700;
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.96);
-      letter-spacing: -0.02em;
+    .dday-count {
+      font-size: 28px; font-weight: 800;
+      letter-spacing: -1.5px; line-height: 1;
     }
-    .marathon-dday-date {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.62);
-    }
-    .marathon-dday-countdown {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      min-width: 56px;
-    }
-    .marathon-dday-count {
-      font-size: 28px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -1.5px;
-      line-height: 1;
-    }
-    .marathon-dday-count-label {
-      margin-top: 3px;
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.65);
-    }
-    .marathon-dday-card.is-dday {
-      background: rgba(28, 28, 30, 0.55);
-      border-color: rgba(112, 209, 244, 0.35);
-    }
-    .marathon-dday-card.is-dday .marathon-dday-main {
-      justify-content: center;
-      gap: 16px;
-      text-align: center;
-    }
-    .marathon-dday-card.is-dday .marathon-dday-info { align-items: center; }
-    .marathon-dday-nudge-btn {
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 999px;
-      padding: 7px 14px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #fff;
-    }
+    .dday-label { margin-top: 3px; font-size: 10px; font-weight: 600; }
 
-    .scene {
-      max-width: 390px;
-      margin: 0 auto 28px;
-      border-radius: 16px;
-      padding: 28px 16px;
-      background:
-        linear-gradient(160deg, rgba(0,0,0,.25), rgba(0,0,0,.45)),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23ff7a59'/%3E%3Cstop offset='.5' stop-color='%2370d1f4'/%3E%3Cstop offset='1' stop-color='%232a3a5c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='300' fill='url(%23g)'/%3E%3C/svg%3E")
-        center/cover;
+    /* A. Glass Dark — 잠금화면형 */
+    .theme-a .dday {
+      background: rgba(0, 0, 0, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+      color: var(--brand-white);
     }
-    .scene .label { color: rgba(255,255,255,.8); }
+    .theme-a .dday-name { color: rgba(255,255,255,.96); }
+    .theme-a .dday-date,
+    .theme-a .dday-label { color: rgba(255,255,255,.62); }
+    .theme-a .dday-count { color: var(--brand-white); }
+
+    /* B. Glass Orange — 브랜드 오렌지 틴트 */
+    .theme-b .dday {
+      background: rgba(255, 50, 20, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 8px 24px rgba(255, 50, 20, 0.18);
+      color: var(--brand-white);
+    }
+    .theme-b .dday-name { color: var(--brand-white); }
+    .theme-b .dday-date,
+    .theme-b .dday-label { color: rgba(255,255,255,.75); }
+    .theme-b .dday-count { color: var(--brand-white); }
+
+    /* C. Glass Cyan — 브랜드 시안 틴트 */
+    .theme-c .dday {
+      background: rgba(77, 184, 224, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 8px 24px rgba(112, 209, 244, 0.22);
+      color: var(--brand-black);
+    }
+    .theme-c .dday-name { color: var(--brand-black); }
+    .theme-c .dday-date,
+    .theme-c .dday-label { color: rgba(0,0,0,.55); }
+    .theme-c .dday-count { color: var(--brand-black); }
+
+    /* D. Soft Light — 흰 홈에 융화 */
+    .theme-d .dday {
+      background: rgba(245, 242, 239, 0.88);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      color: var(--text);
+    }
+    .theme-d .dday-name { color: var(--text); }
+    .theme-d .dday-date,
+    .theme-d .dday-label { color: var(--text-muted); }
+    .theme-d .dday-count { color: var(--brand-orange); }
+
+    /* E. Soft Brand Wash — primary-light */
+    .theme-e .dday {
+      background: rgba(255, 232, 227, 0.92);
+      border: 1px solid rgba(255, 50, 20, 0.18);
+      box-shadow: 0 4px 16px rgba(255, 50, 20, 0.06);
+      color: var(--text);
+    }
+    .theme-e .dday-name { color: var(--brand-orange-dark); }
+    .theme-e .dday-date,
+    .theme-e .dday-label { color: var(--text-muted); }
+    .theme-e .dday-count { color: var(--brand-orange); }
+
+    /* F. Ink + Orange accent — 블랙 바 + 오렌지 숫자 */
+    .theme-f .dday {
+      background: rgba(0, 0, 0, 0.88);
+      border: 1px solid rgba(255, 50, 20, 0.35);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+      color: var(--brand-white);
+    }
+    .theme-f .dday-name { color: var(--brand-white); }
+    .theme-f .dday-date,
+    .theme-f .dday-label { color: rgba(255,255,255,.55); }
+    .theme-f .dday-count { color: var(--brand-orange); }
   </style>
 </head>
 <body>
-  <h1>D-day 투명 위젯 미리보기</h1>
-  <p class="lead">잠금화면형 글래스 위젯. 큰 숫자 + 「일 남음」. HTML만 열면 됩니다.</p>
+  <h1>D-day 위젯 컬러 테마 안</h1>
+  <p class="lead">
+    디자인 토큰(brand-orange / brand-cyan / black / white / surface-muted / primary-light)만 사용.
+    구조는 동일하고 색만 다릅니다. 선호하는 안 번호(A~F)를 알려주세요.
+  </p>
 
-  <div class="phone">
-    <div class="block">
-      <div class="label">홈(흰 배경)에서의 모습</div>
-      <div class="week-summary">
-        <span class="week-summary-label">이번 주 출석</span>
-        <span class="week-summary-count">2.0 / 3점</span>
-      </div>
-      <div class="marathon-dday-card">
-        <div class="marathon-dday-main">
-          <div class="marathon-dday-info">
-            <span class="marathon-dday-name">경주 마라톤</span>
-            <span class="marathon-dday-date">2026. 10. 17 (토)</span>
-          </div>
-          <div class="marathon-dday-countdown">
-            <span class="marathon-dday-count">66</span>
-            <span class="marathon-dday-count-label">일 남음</span>
-          </div>
-        </div>
-      </div>
+  <!-- A -->
+  <div class="phone theme-a">
+    <p class="theme-title">A. Glass Dark</p>
+    <p class="theme-desc">잠금화면형. black 48% + 흰 텍스트. 위젯감 가장 강함.</p>
+    <div class="week-summary">
+      <span class="week-summary-label">이번 주 출석</span>
+      <span class="week-summary-count">2.0 / 3점</span>
     </div>
-
-    <div class="block">
-      <div class="label">D-0 당일</div>
-      <div class="marathon-dday-card is-dday">
-        <div class="marathon-dday-main">
-          <div class="marathon-dday-info">
-            <span class="marathon-dday-name">🎉 오늘이 JTBC 서울마라톤 당일이에요!</span>
-            <span class="marathon-dday-date">완주를 응원합니다!</span>
-          </div>
-          <div class="marathon-dday-countdown">
-            <span class="marathon-dday-count">D-DAY</span>
-            <span class="marathon-dday-count-label">오늘</span>
-          </div>
-        </div>
+    <div class="dday">
+      <div class="dday-info">
+        <span class="dday-name">경주 마라톤</span>
+        <span class="dday-date">2026. 10. 17 (토)</span>
+      </div>
+      <div class="dday-countdown">
+        <span class="dday-count">66</span>
+        <span class="dday-label">일 남음</span>
       </div>
     </div>
   </div>
 
-  <div class="scene">
-    <div class="label">참고 — 사진 배경 위에서의 글래스 느낌</div>
-    <div class="marathon-dday-card">
-      <div class="marathon-dday-main">
-        <div class="marathon-dday-info">
-          <span class="marathon-dday-name">경주 마라톤</span>
-          <span class="marathon-dday-date">2026. 10. 17 (토)</span>
-        </div>
-        <div class="marathon-dday-countdown">
-          <span class="marathon-dday-count">66</span>
-          <span class="marathon-dday-count-label">일 남음</span>
-        </div>
+  <!-- B -->
+  <div class="phone theme-b">
+    <p class="theme-title">B. Glass Orange</p>
+    <p class="theme-desc">brand-orange 반투명. 춘백 브랜드가 가장 강하게 드러남.</p>
+    <div class="week-summary">
+      <span class="week-summary-label">이번 주 출석</span>
+      <span class="week-summary-count">2.0 / 3점</span>
+    </div>
+    <div class="dday">
+      <div class="dday-info">
+        <span class="dday-name">경주 마라톤</span>
+        <span class="dday-date">2026. 10. 17 (토)</span>
+      </div>
+      <div class="dday-countdown">
+        <span class="dday-count">66</span>
+        <span class="dday-label">일 남음</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="phone theme-c">
+    <p class="theme-title">C. Glass Cyan</p>
+    <p class="theme-desc">brand-cyan / cyan-dark. 출석·오늘 슬롯 액센트와 톤 맞춤.</p>
+    <div class="week-summary">
+      <span class="week-summary-label">이번 주 출석</span>
+      <span class="week-summary-count">2.0 / 3점</span>
+    </div>
+    <div class="dday">
+      <div class="dday-info">
+        <span class="dday-name">경주 마라톤</span>
+        <span class="dday-date">2026. 10. 17 (토)</span>
+      </div>
+      <div class="dday-countdown">
+        <span class="dday-count">66</span>
+        <span class="dday-label">일 남음</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- D -->
+  <div class="phone theme-d">
+    <p class="theme-title">D. Soft Light</p>
+    <p class="theme-desc">surface-muted 글래스. 흰 홈에 가장 자연스럽게 녹아듦.</p>
+    <div class="week-summary">
+      <span class="week-summary-label">이번 주 출석</span>
+      <span class="week-summary-count">2.0 / 3점</span>
+    </div>
+    <div class="dday">
+      <div class="dday-info">
+        <span class="dday-name">경주 마라톤</span>
+        <span class="dday-date">2026. 10. 17 (토)</span>
+      </div>
+      <div class="dday-countdown">
+        <span class="dday-count">66</span>
+        <span class="dday-label">일 남음</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- E -->
+  <div class="phone theme-e">
+    <p class="theme-title">E. Soft Brand Wash</p>
+    <p class="theme-desc">primary-light 워시 + orange 숫자. 라이트 UI + 브랜드 포인트.</p>
+    <div class="week-summary">
+      <span class="week-summary-label">이번 주 출석</span>
+      <span class="week-summary-count">2.0 / 3점</span>
+    </div>
+    <div class="dday">
+      <div class="dday-info">
+        <span class="dday-name">경주 마라톤</span>
+        <span class="dday-date">2026. 10. 17 (토)</span>
+      </div>
+      <div class="dday-countdown">
+        <span class="dday-count">66</span>
+        <span class="dday-label">일 남음</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- F -->
+  <div class="phone theme-f">
+    <p class="theme-title">F. Ink + Orange</p>
+    <p class="theme-desc">거의 불투명 black 바 + brand-orange 숫자. 대비·가독성 최우선.</p>
+    <div class="week-summary">
+      <span class="week-summary-label">이번 주 출석</span>
+      <span class="week-summary-count">2.0 / 3점</span>
+    </div>
+    <div class="dday">
+      <div class="dday-info">
+        <span class="dday-name">경주 마라톤</span>
+        <span class="dday-date">2026. 10. 17 (토)</span>
+      </div>
+      <div class="dday-countdown">
+        <span class="dday-count">66</span>
+        <span class="dday-label">일 남음</span>
       </div>
     </div>
   </div>
