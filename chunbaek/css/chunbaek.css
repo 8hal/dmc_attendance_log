@@ -1638,12 +1638,13 @@ body {
   margin-top: 12px;
 }
 .marathon-dday-nudge {
-  background: #f5f5f5;
+  background: var(--border-light);
   flex-direction: column;
   align-items: flex-start;
+  justify-content: flex-start;
   gap: 10px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-muted);
 }
 .marathon-dday-main {
   display: flex;
@@ -1672,12 +1673,12 @@ body {
   letter-spacing: -1px;
 }
 .marathon-dday-nudge-btn {
-  background: #e0e0e0;
+  background: var(--border-light);
   border: none;
   border-radius: 8px;
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  color: #333;
+  color: var(--text);
 }
