@@ -1628,7 +1628,7 @@ body {
 .me-guide-link:hover { text-decoration: underline; }
 
 /* Marathon D-day — F 정사각 + 훈련주기 색 아크
-   90~60 화이트(베이스) → 50~40 시안(빌드) → 30 검정(집중)
+   90~60 화이트(베이스) → 50 시안(빌드) → 40~30 검정(집중)
    → 20 진한 주황(피크) → 10 차분(테이퍼) → 0/D-DAY 시안+주황(비검정) */
 .marathon-dday-card {
   --dday-bg: rgba(0, 0, 0, 0.88);
@@ -1697,14 +1697,14 @@ body {
   --dday-name: var(--text);
   --dday-meta: var(--text-muted);
 }
-/* 40s : Cyan glass — 빌드 */
+/* 40s : Ink — 집중 진입 */
 .marathon-dday-card[data-decade="4"] {
-  --dday-bg: rgba(77, 184, 224, 0.9);
-  --dday-border: rgba(255, 255, 255, 0.3);
-  --dday-count: var(--chun-black);
-  --dday-name: rgba(0, 0, 0, 0.88);
-  --dday-meta: rgba(0, 0, 0, 0.5);
-  box-shadow: 0 8px 24px rgba(112, 209, 244, 0.2);
+  --dday-bg: rgba(0, 0, 0, 0.88);
+  --dday-border: rgba(255, 255, 255, 0.16);
+  --dday-count: #fff;
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
 }
 /* 30s : Ink — 집중 */
 .marathon-dday-card[data-decade="3"] {

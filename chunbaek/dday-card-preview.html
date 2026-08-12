@@ -111,12 +111,12 @@
       --dday-meta: var(--text-muted);
     }
     .marathon-dday-card[data-decade="4"] {
-      --dday-bg: rgba(77, 184, 224, 0.9);
-      --dday-border: rgba(255, 255, 255, 0.3);
-      --dday-count: var(--chun-black);
-      --dday-name: rgba(0, 0, 0, 0.88);
-      --dday-meta: rgba(0, 0, 0, 0.5);
-      box-shadow: 0 8px 24px rgba(112, 209, 244, 0.2);
+      --dday-bg: rgba(0, 0, 0, 0.88);
+      --dday-border: rgba(255, 255, 255, 0.16);
+      --dday-count: #fff;
+      --dday-name: #fff;
+      --dday-meta: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
     }
     .marathon-dday-card[data-decade="3"] {
       --dday-bg: rgba(0, 0, 0, 0.9);
@@ -214,7 +214,7 @@
 </head>
 <body>
   <h1>색 아크 미리보기 (베이스 확장)</h1>
-  <p class="lead">베이스 90~60 · 빌드 50~40 · 집중 30 · 피크 20 · 테이퍼 10 · D-DAY 시안+주황(화이트)</p>
+  <p class="lead">베이스 90~60 · 빌드 50 · 집중 40~30 · 피크 20 · 테이퍼 10 · D-DAY 시안+주황(화이트)</p>
   <p class="arc">화이트 → 시안 → 검정 → 진한 주황 → 차분 → (D-DAY 시안+주황)</p>
 
   <div class="grid" id="grid"></div>
@@ -226,8 +226,8 @@
       { decade: 7, days: 75, title: "70s · 베이스 · cool soft (지금)" },
       { decade: 6, days: 66, title: "60s · 베이스 · cyan hint" },
       { decade: 5, days: 55, title: "50s · 빌드 · cyan soft" },
-      { decade: 4, days: 44, title: "40s · 빌드 · cyan glass" },
-      { decade: 3, days: 33, title: "30s · 집중 · ink" },
+      { decade: 4, days: 44, title: "40s · 집중 · ink" },
+      { decade: 3, days: 33, title: "30s · 집중 · deep ink" },
       { decade: 2, days: 22, title: "20s · 피크 · deep orange" },
       { decade: 1, days: 15, title: "10s · 테이퍼 · calm soft" },
       { decade: 0, days: 7, title: "0~9 · 직전 · cyan soft" },
