@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>D-day 색 아크 — 화이트→시안→검정→주황</title>
+  <title>D-day 색 아크 — 베이스 확장</title>
   <style>
     :root {
       --chun-orange: #ff3214;
@@ -89,13 +89,28 @@
       --dday-meta: var(--text-muted);
     }
     .marathon-dday-card[data-decade="7"] {
+      --dday-bg: rgba(242, 246, 248, 0.96);
+      --dday-border: rgba(220, 228, 232, 0.95);
+      --dday-count: var(--text);
+      --dday-name: var(--text);
+      --dday-meta: var(--text-muted);
+    }
+    .marathon-dday-card[data-decade="6"] {
+      --dday-bg: rgba(236, 246, 250, 0.96);
+      --dday-border: rgba(176, 220, 236, 0.7);
+      --dday-count: var(--text);
+      --dday-name: var(--text);
+      --dday-meta: var(--text-muted);
+      box-shadow: 0 6px 18px rgba(112, 209, 244, 0.08);
+    }
+    .marathon-dday-card[data-decade="5"] {
       --dday-bg: rgba(232, 247, 253, 0.95);
       --dday-border: rgba(112, 209, 244, 0.45);
       --dday-count: var(--chun-cyan-dark);
       --dday-name: var(--text);
       --dday-meta: var(--text-muted);
     }
-    .marathon-dday-card[data-decade="6"] {
+    .marathon-dday-card[data-decade="4"] {
       --dday-bg: rgba(77, 184, 224, 0.9);
       --dday-border: rgba(255, 255, 255, 0.3);
       --dday-count: var(--chun-black);
@@ -103,35 +118,21 @@
       --dday-meta: rgba(0, 0, 0, 0.5);
       box-shadow: 0 8px 24px rgba(112, 209, 244, 0.2);
     }
-    .marathon-dday-card[data-decade="5"] {
-      --dday-bg: rgba(0, 0, 0, 0.88);
-      --dday-border: rgba(255, 255, 255, 0.16);
+    .marathon-dday-card[data-decade="3"] {
+      --dday-bg: rgba(0, 0, 0, 0.9);
+      --dday-border: rgba(255, 255, 255, 0.14);
       --dday-count: #fff;
       --dday-name: #fff;
       --dday-meta: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
     }
-    .marathon-dday-card[data-decade="4"] {
-      --dday-bg: rgba(0, 0, 0, 0.92);
-      --dday-border: rgba(255, 255, 255, 0.12);
-      --dday-count: #fff;
-      --dday-name: #fff;
-      --dday-meta: rgba(255, 255, 255, 0.5);
-    }
-    .marathon-dday-card[data-decade="3"] {
+    .marathon-dday-card[data-decade="2"] {
       --dday-bg: rgba(0, 0, 0, 0.9);
       --dday-border: rgba(255, 50, 20, 0.4);
       --dday-count: var(--chun-orange);
       --dday-name: #fff;
       --dday-meta: rgba(255, 255, 255, 0.55);
       box-shadow: 0 8px 28px rgba(255, 50, 20, 0.18);
-    }
-    .marathon-dday-card[data-decade="2"] {
-      --dday-bg: rgba(255, 50, 20, 0.86);
-      --dday-border: rgba(255, 255, 255, 0.24);
-      --dday-count: #fff;
-      --dday-name: #fff;
-      --dday-meta: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 8px 28px rgba(255, 50, 20, 0.26);
     }
     .marathon-dday-card[data-decade="1"] {
       --dday-bg: rgba(224, 42, 16, 0.94);
@@ -204,9 +205,9 @@
   </style>
 </head>
 <body>
-  <h1>색 아크 미리보기</h1>
-  <p class="lead">훈련 주기 비유: 베이스 → 빌드 → 집중 → 피크 → 레이스</p>
-  <p class="arc">화이트 → 시안 → 검정 → 주황 → (D-DAY 시안)</p>
+  <h1>색 아크 미리보기 (베이스 확장)</h1>
+  <p class="lead">베이스 90~60 · 빌드 50~40 · 집중 30 · 피크 20~10 · 레이스 0</p>
+  <p class="arc">화이트(넓게) → 시안 → 검정 → 주황 → (D-DAY 시안)</p>
 
   <div class="grid" id="grid"></div>
 
@@ -214,12 +215,12 @@
     const samples = [
       { decade: 9, days: 95, title: "90+ · 베이스 · 화이트" },
       { decade: 8, days: 82, title: "80s · 베이스 · soft light" },
-      { decade: 7, days: 71, title: "70s · 빌드 · cyan soft" },
-      { decade: 6, days: 66, title: "60s · 빌드 · cyan glass" },
-      { decade: 5, days: 55, title: "50s · 집중 · ink" },
-      { decade: 4, days: 44, title: "40s · 집중 · deep ink" },
-      { decade: 3, days: 33, title: "30s · 피크 · ink+orange" },
-      { decade: 2, days: 22, title: "20s · 피크 · orange" },
+      { decade: 7, days: 75, title: "70s · 베이스 · cool soft (지금)" },
+      { decade: 6, days: 66, title: "60s · 베이스 · cyan hint" },
+      { decade: 5, days: 55, title: "50s · 빌드 · cyan soft" },
+      { decade: 4, days: 44, title: "40s · 빌드 · cyan glass" },
+      { decade: 3, days: 33, title: "30s · 집중 · ink" },
+      { decade: 2, days: 22, title: "20s · 피크 · ink+orange" },
       { decade: 1, days: 15, title: "10s · 피크 · hot orange" },
       { decade: 0, days: 7, title: "0~9 · 직전 · cyan spark" },
       { decade: 0, days: 0, title: "D-DAY · 레이스", isDday: true },
