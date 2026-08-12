@@ -47,6 +47,10 @@ const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
 const GOAL_RACE_NOTE_MAX = 80;
 const CHUNBAEK_SEASON_ID = "chunbaek-s3";
+const SEASON_RACE_DATES = {
+  chuncheon: "2026-10-26",
+  jtbc:      "2026-11-01",
+};
 const PHOTO_UPLOAD_MAX_BYTES = 2 * 1024 * 1024;
 
 function parseGoalRace(body) {
@@ -147,6 +151,7 @@ function memberProfilePayload(memberId, data, s3, stats) {
     goalRace: s3.goalRace ?? null,
     goalRaceNote: s3.goalRaceNote ?? null,
     goalRaceLabel: formatGoalRaceLabel(s3.goalRace, s3.goalRaceNote),
+    goalRaceDate: SEASON_RACE_DATES[s3.goalRace] ?? (s3.goalRaceDate || null),
     profileComplete: !!s3.profileComplete,
     stats: stats || emptyStats(),
   };
