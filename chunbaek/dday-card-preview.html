@@ -8,7 +8,6 @@
     :root {
       --chun-orange: #ff3214;
       --chun-orange-dark: #e02a10;
-      --chun-cyan: #70d1f4;
       --accent-light: #e8f7fd;
       --card: #ffffff;
       --text: #1a1a1a;
@@ -58,7 +57,6 @@
       align-items: center;
       justify-content: space-between;
       background: var(--border-light);
-      color: var(--text);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px 14px;
@@ -67,26 +65,23 @@
     .week-summary-label { color: var(--text-muted); font-weight: 600; }
     .week-summary-count { font-weight: 800; color: var(--chun-orange); }
 
+    /* 신규: 기존 풀폭·좌우 배치 + 토큰 색 */
     .marathon-dday-card {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      width: fit-content;
-      max-width: 100%;
+      width: 100%;
       background: var(--border-light);
-      color: var(--text);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 14px 16px;
       margin-top: 12px;
     }
     .marathon-dday-nudge {
-      display: flex;
-      width: 100%;
       flex-direction: column;
-      align-items: flex-start;
-      justify-content: flex-start;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       gap: 10px;
       font-size: 14px;
       color: var(--text-muted);
@@ -95,7 +90,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      width: 100%;
     }
     .marathon-dday-info {
       display: flex;
@@ -105,15 +100,15 @@
     }
     .marathon-dday-name {
       font-weight: 700;
-      font-size: 14px;
-      color: var(--text);
+      font-size: 15px;
+      color: var(--chun-orange-dark);
     }
     .marathon-dday-date {
       font-size: 12px;
       color: var(--text-muted);
     }
     .marathon-dday-count {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--chun-orange);
       letter-spacing: -1px;
@@ -122,6 +117,14 @@
     .marathon-dday-card.is-dday {
       background: var(--accent-light);
       border-color: var(--chun-orange);
+    }
+    .marathon-dday-card.is-dday .marathon-dday-main {
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+    }
+    .marathon-dday-card.is-dday .marathon-dday-info {
+      align-items: center;
     }
     .marathon-dday-nudge-btn {
       background: var(--card);
@@ -133,6 +136,7 @@
       color: var(--text);
     }
 
+    /* 이전: 그라데이션 */
     .old-dday {
       display: flex;
       align-items: center;
@@ -150,16 +154,16 @@
 </head>
 <body>
   <h1>마라톤 D-day 카드 미리보기</h1>
-  <p class="lead">배포 전 확인용 정적 파일입니다. 이 HTML만 열면 됩니다.</p>
+  <p class="lead">기존 풀폭·좌우 배치 유지, 색만 디자인 토큰 적용. 이 HTML만 열면 됩니다.</p>
 
   <div class="phone">
     <div class="block">
-      <div class="label">홈 배치 (주간 점수 + 신규 D-day)</div>
+      <div class="label">신규 (토큰 색)</div>
       <div class="week-summary">
         <span class="week-summary-label">이번 주 출석</span>
         <span class="week-summary-count">2.0 / 3점</span>
       </div>
-      <div class="marathon-dday-card" aria-label="마라톤 D-day">
+      <div class="marathon-dday-card">
         <div class="marathon-dday-main">
           <div class="marathon-dday-info">
             <span class="marathon-dday-name">경주 마라톤</span>
@@ -172,7 +176,7 @@
 
     <div class="block">
       <div class="label">D-0 당일</div>
-      <div class="marathon-dday-card is-dday" aria-label="마라톤 D-day">
+      <div class="marathon-dday-card is-dday">
         <div class="marathon-dday-main">
           <div class="marathon-dday-info">
             <span class="marathon-dday-name">🎉 오늘이 JTBC 서울마라톤 당일이에요!</span>
@@ -184,7 +188,7 @@
     </div>
 
     <div class="block">
-      <div class="label">기타 + 날짜 미입력 (유도)</div>
+      <div class="label">기타 + 날짜 미입력 (가운데 정렬)</div>
       <div class="marathon-dday-card marathon-dday-nudge">
         <span>📅 <strong>기타 대회 날짜</strong>를 프로필에 입력하면 D-day를 볼 수 있어요</span>
         <button type="button" class="marathon-dday-nudge-btn">프로필에서 입력하기</button>
@@ -194,7 +198,7 @@
 
   <div class="phone">
     <div class="block">
-      <div class="label">비교 — 이전(그라데이션·풀폭)</div>
+      <div class="label">비교 — 이전(그라데이션)</div>
       <div class="week-summary">
         <span class="week-summary-label">이번 주 출석</span>
         <span class="week-summary-count">2.0 / 3점</span>
