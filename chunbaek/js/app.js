@@ -813,7 +813,7 @@
       : (goalRace === "chuncheon" ? "춘천마라톤" : "JTBC 서울마라톤");
 
     if (days === 0) {
-      document.getElementById("marathon-dday-name").textContent = `🎉 오늘이 ${label} 당일이에요!`;
+      document.getElementById("marathon-dday-name").textContent = label;
       document.getElementById("marathon-dday-date").textContent = "완주를 응원합니다!";
       document.getElementById("marathon-dday-count").textContent = "D-DAY";
       document.getElementById("marathon-dday-count-label").textContent = "오늘";
