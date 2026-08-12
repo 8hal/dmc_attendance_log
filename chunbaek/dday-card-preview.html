@@ -127,28 +127,35 @@
       box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
     }
     .marathon-dday-card[data-decade="2"] {
-      --dday-bg: rgba(0, 0, 0, 0.9);
-      --dday-border: rgba(255, 50, 20, 0.4);
-      --dday-count: var(--chun-orange);
-      --dday-name: #fff;
-      --dday-meta: rgba(255, 255, 255, 0.55);
-      box-shadow: 0 8px 28px rgba(255, 50, 20, 0.18);
-    }
-    .marathon-dday-card[data-decade="1"] {
-      --dday-bg: rgba(224, 42, 16, 0.94);
-      --dday-border: rgba(255, 255, 255, 0.28);
+      --dday-bg: rgba(224, 42, 16, 0.9);
+      --dday-border: rgba(255, 255, 255, 0.22);
       --dday-count: #fff;
       --dday-name: #fff;
-      --dday-meta: rgba(255, 255, 255, 0.78);
-      box-shadow: 0 10px 30px rgba(255, 50, 20, 0.32);
+      --dday-meta: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 8px 28px rgba(224, 42, 16, 0.28);
+    }
+    .marathon-dday-card[data-decade="1"] {
+      --dday-bg: rgba(196, 32, 10, 0.96);
+      --dday-border: rgba(255, 180, 160, 0.35);
+      --dday-count: #fff;
+      --dday-name: #fff;
+      --dday-meta: rgba(255, 232, 227, 0.82);
+      box-shadow: 0 10px 32px rgba(196, 32, 10, 0.38);
     }
     .marathon-dday-card[data-decade="0"] {
       --dday-bg: rgba(0, 0, 0, 0.92);
-      --dday-border: rgba(112, 209, 244, 0.55);
+      --dday-border: rgba(255, 50, 20, 0.55);
       --dday-count: var(--chun-cyan);
       --dday-name: #fff;
-      --dday-meta: rgba(112, 209, 244, 0.75);
-      box-shadow: 0 8px 28px rgba(112, 209, 244, 0.22);
+      --dday-meta: rgba(255, 50, 20, 0.85);
+      box-shadow: 0 8px 28px rgba(255, 50, 20, 0.22);
+    }
+    .marathon-dday-card.is-dday {
+      --dday-bg: rgba(0, 0, 0, 0.92);
+      --dday-border: rgba(255, 50, 20, 0.55);
+      --dday-count: var(--chun-cyan);
+      --dday-name: #fff;
+      --dday-meta: rgba(255, 50, 20, 0.9);
     }
     .marathon-dday-card.is-dday .marathon-dday-count {
       font-size: 18px;
@@ -206,8 +213,8 @@
 </head>
 <body>
   <h1>색 아크 미리보기 (베이스 확장)</h1>
-  <p class="lead">베이스 90~60 · 빌드 50~40 · 집중 30 · 피크 20~10 · 레이스 0</p>
-  <p class="arc">화이트(넓게) → 시안 → 검정 → 주황 → (D-DAY 시안)</p>
+  <p class="lead">베이스 90~60 · 빌드 50~40 · 집중 30 · 피크 20~10(진한 주황) · D-DAY 시안+주황</p>
+  <p class="arc">화이트(넓게) → 시안 → 검정 → 진한 주황 → (D-DAY 시안+주황)</p>
 
   <div class="grid" id="grid"></div>
 
@@ -220,10 +227,10 @@
       { decade: 5, days: 55, title: "50s · 빌드 · cyan soft" },
       { decade: 4, days: 44, title: "40s · 빌드 · cyan glass" },
       { decade: 3, days: 33, title: "30s · 집중 · ink" },
-      { decade: 2, days: 22, title: "20s · 피크 · ink+orange" },
-      { decade: 1, days: 15, title: "10s · 피크 · hot orange" },
-      { decade: 0, days: 7, title: "0~9 · 직전 · cyan spark" },
-      { decade: 0, days: 0, title: "D-DAY · 레이스", isDday: true },
+      { decade: 2, days: 22, title: "20s · 피크 · deep orange" },
+      { decade: 1, days: 15, title: "10s · 피크 · deepest orange" },
+      { decade: 0, days: 7, title: "0~9 · 직전 · cyan+orange" },
+      { decade: 0, days: 0, title: "D-DAY · 시안+주황", isDday: true },
     ];
 
     const grid = document.getElementById("grid");

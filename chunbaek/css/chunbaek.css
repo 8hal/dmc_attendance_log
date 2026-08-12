@@ -1629,7 +1629,7 @@ body {
 
 /* Marathon D-day — F 정사각 + 훈련주기 색 아크
    90~60 화이트(베이스, 넓게) → 50~40 시안(빌드) → 30 검정(집중)
-   → 20~10 주황(피크) → 0/D-DAY 시안 스파크 */
+   → 20~10 진한 주황(피크) → 0/D-DAY 시안+주황 */
 .marathon-dday-card {
   --dday-bg: rgba(0, 0, 0, 0.88);
   --dday-border: rgba(255, 50, 20, 0.35);
@@ -1715,32 +1715,32 @@ body {
   --dday-meta: rgba(255, 255, 255, 0.55);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
 }
-/* 20s : Ink + Orange spark — 피크 진입 */
+/* 20s : Deep orange — 피크 */
 .marathon-dday-card[data-decade="2"] {
-  --dday-bg: rgba(0, 0, 0, 0.9);
-  --dday-border: rgba(255, 50, 20, 0.4);
-  --dday-count: var(--chun-orange);
-  --dday-name: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.18);
-}
-/* 10s : Hot orange — 피크 */
-.marathon-dday-card[data-decade="1"] {
-  --dday-bg: rgba(224, 42, 16, 0.94);
-  --dday-border: rgba(255, 255, 255, 0.28);
+  --dday-bg: rgba(224, 42, 16, 0.9);
+  --dday-border: rgba(255, 255, 255, 0.22);
   --dday-count: #fff;
   --dday-name: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 10px 30px rgba(255, 50, 20, 0.32);
+  --dday-meta: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 8px 28px rgba(224, 42, 16, 0.28);
 }
-/* 0~9 : Cyan spark — 레이스 직전 */
+/* 10s : Deepest orange — 피크 막판 */
+.marathon-dday-card[data-decade="1"] {
+  --dday-bg: rgba(196, 32, 10, 0.96);
+  --dday-border: rgba(255, 180, 160, 0.35);
+  --dday-count: #fff;
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 232, 227, 0.82);
+  box-shadow: 0 10px 32px rgba(196, 32, 10, 0.38);
+}
+/* 0~9 : Cyan + orange — 레이스 직전 */
 .marathon-dday-card[data-decade="0"] {
   --dday-bg: rgba(0, 0, 0, 0.92);
-  --dday-border: rgba(112, 209, 244, 0.55);
+  --dday-border: rgba(255, 50, 20, 0.55);
   --dday-count: var(--chun-cyan);
   --dday-name: #fff;
-  --dday-meta: rgba(112, 209, 244, 0.75);
-  box-shadow: 0 8px 28px rgba(112, 209, 244, 0.22);
+  --dday-meta: rgba(255, 50, 20, 0.85);
+  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.22);
 }
 
 .marathon-dday-nudge {
@@ -1818,10 +1818,10 @@ body {
 }
 .marathon-dday-card.is-dday {
   --dday-bg: rgba(0, 0, 0, 0.92);
-  --dday-border: rgba(112, 209, 244, 0.55);
+  --dday-border: rgba(255, 50, 20, 0.55);
   --dday-count: var(--chun-cyan);
   --dday-name: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.65);
+  --dday-meta: rgba(255, 50, 20, 0.9);
 }
 .marathon-dday-card.is-dday .marathon-dday-count {
   font-size: 20px;
