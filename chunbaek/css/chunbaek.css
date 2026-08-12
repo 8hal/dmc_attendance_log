@@ -1640,13 +1640,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(168px, 46vw);
+  width: min(148px, 42vw);
   aspect-ratio: 1 / 1;
-  margin: 14px auto 0;
-  padding: 14px 12px;
+  margin: 8px auto 0;
+  padding: 10px 8px;
   background: var(--dday-bg);
   border: 1px solid var(--dday-border);
-  border-radius: 22px;
+  border-radius: 18px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   color: #fff;
   text-align: center;
@@ -1751,9 +1751,9 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 16px;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.82);
   background: rgba(0, 0, 0, 0.72);
@@ -1767,22 +1767,22 @@ body {
   justify-content: center;
   width: 100%;
   height: 100%;
-  gap: 8px;
+  gap: 4px;
 }
 .marathon-dday-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
   width: 100%;
 }
 .marathon-dday-name {
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--dday-name);
   letter-spacing: -0.02em;
-  line-height: 1.25;
+  line-height: 1.2;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1790,7 +1790,7 @@ body {
   transition: color 0.35s ease;
 }
 .marathon-dday-date {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--dday-meta);
   transition: color 0.35s ease;
@@ -1802,7 +1802,7 @@ body {
   justify-content: center;
 }
 .marathon-dday-count {
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 800;
   color: var(--dday-count);
   letter-spacing: -2px;
@@ -1810,8 +1810,8 @@ body {
   transition: color 0.35s ease;
 }
 .marathon-dday-count-label {
-  margin-top: 4px;
-  font-size: 11px;
+  margin-top: 2px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--dday-meta);
   transition: color 0.35s ease;
@@ -1824,7 +1824,7 @@ body {
   --dday-meta: rgba(255, 255, 255, 0.65);
 }
 .marathon-dday-card.is-dday .marathon-dday-count {
-  font-size: 22px;
+  font-size: 20px;
   letter-spacing: -1px;
 }
 .marathon-dday-nudge-btn {
