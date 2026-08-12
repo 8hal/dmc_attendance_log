@@ -41,7 +41,7 @@
 - 카드 미리보기 (기존과 동일 구조)
 - 컬러 피커: `bg`, `border`, `count`, `name`, `meta`
 - `bg` / `border`: hex 피커 + 불투명도 슬라이더(0–100%) → `rgba`로 적용·내보내기
-- `count` / `name` / `meta`: hex (필요 시 alpha 동일 패턴 허용 가능, 1차는 hex면 충분)
+- `count` / `name` / `meta`: hex만 (alpha 없음, v1)
 
 상단 액션:
 
