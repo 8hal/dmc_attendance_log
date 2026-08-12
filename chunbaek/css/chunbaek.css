@@ -1682,3 +1682,8 @@ body {
   cursor: pointer;
   color: var(--text);
 }
+
+/* 날짜 입력 필드: 다크 테마에서도 캘린더 아이콘·자리 표시가 보이도록 라이트 모드 강제 */
+#goal-race-date {
+  color-scheme: light;
+}
