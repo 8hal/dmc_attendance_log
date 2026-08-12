@@ -333,13 +333,15 @@
   }
 
   function syncGoalRaceNote() {
-    const noteEl = document.getElementById("goal-race-note");
-    const dateEl = document.getElementById("goal-race-date");
-    const hintEl = document.getElementById("goal-race-date-hint");
+    const noteEl  = document.getElementById("goal-race-note");
+    const labelEl = document.getElementById("goal-race-date-label");
+    const dateEl  = document.getElementById("goal-race-date");
+    const hintEl  = document.getElementById("goal-race-date-hint");
     const isOther = selectedGoalRace() === "other";
-    if (noteEl) noteEl.hidden = !isOther;
-    if (dateEl) dateEl.hidden = !isOther;
-    if (hintEl) hintEl.hidden = !isOther;
+    if (noteEl)  noteEl.hidden  = !isOther;
+    if (labelEl) labelEl.hidden = !isOther;
+    if (dateEl)  dateEl.hidden  = !isOther;
+    if (hintEl)  hintEl.hidden  = !isOther;
   }
 
   function formatBodyWeightKg(kg) {
