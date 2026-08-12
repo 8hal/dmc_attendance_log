@@ -7,18 +7,21 @@
   <style>
     :root {
       --chun-orange: #ff3214;
-      --chun-orange-dark: #e02a10;
+      --chun-cyan: #70d1f4;
+      --primary-light: #ffe8e3;
       --accent-light: #e8f7fd;
       --card: #ffffff;
       --text: #1a1a1a;
       --text-muted: #5c5c5c;
       --border: #e8e4e0;
       --border-light: #f5f2ef;
+      --surface-muted: #f5f2ef;
+      --radius-card: 14px;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
       background: #111;
       color: var(--text);
       padding: 24px 16px 48px;
@@ -65,17 +68,19 @@
     .week-summary-label { color: var(--text-muted); font-weight: 600; }
     .week-summary-count { font-weight: 800; color: var(--chun-orange); }
 
-    /* 신규: 기존 풀폭·좌우 배치 + 토큰 색 */
     .marathon-dday-card {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      background: var(--border-light);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
+      background: var(--primary-light);
+      background: color-mix(in srgb, var(--primary-light) 40%, var(--card));
+      border: 1px solid color-mix(in srgb, var(--chun-orange) 16%, var(--border));
+      border-radius: var(--radius-card);
+      padding: 12px 14px 12px 12px;
       margin-top: 12px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      border-left: 3px solid var(--chun-orange);
     }
     .marathon-dday-nudge {
       flex-direction: column;
@@ -83,28 +88,36 @@
       justify-content: center;
       text-align: center;
       gap: 10px;
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-muted);
+      background: var(--surface-muted);
+      border-color: var(--border);
+      border-left-color: var(--border);
+      box-shadow: none;
     }
     .marathon-dday-main {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
+      gap: 12px;
     }
     .marathon-dday-info {
       display: flex;
       flex-direction: column;
       gap: 2px;
       min-width: 0;
+      padding-left: 4px;
     }
     .marathon-dday-name {
       font-weight: 700;
-      font-size: 15px;
-      color: var(--chun-orange-dark);
+      font-size: 14px;
+      color: var(--text);
+      letter-spacing: -0.02em;
     }
     .marathon-dday-date {
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--text-muted);
     }
     .marathon-dday-count {
@@ -113,10 +126,12 @@
       color: var(--chun-orange);
       letter-spacing: -1px;
       flex-shrink: 0;
+      line-height: 1;
     }
     .marathon-dday-card.is-dday {
       background: var(--accent-light);
-      border-color: var(--chun-orange);
+      border-color: color-mix(in srgb, var(--chun-cyan) 35%, var(--border));
+      border-left-color: var(--chun-cyan);
     }
     .marathon-dday-card.is-dday .marathon-dday-main {
       justify-content: center;
@@ -125,6 +140,7 @@
     }
     .marathon-dday-card.is-dday .marathon-dday-info {
       align-items: center;
+      padding-left: 0;
     }
     .marathon-dday-nudge-btn {
       background: var(--card);
@@ -136,7 +152,6 @@
       color: var(--text);
     }
 
-    /* 이전: 그라데이션 */
     .old-dday {
       display: flex;
       align-items: center;
@@ -154,11 +169,11 @@
 </head>
 <body>
   <h1>마라톤 D-day 카드 미리보기</h1>
-  <p class="lead">기존 풀폭·좌우 배치 유지, 색만 디자인 토큰 적용. 이 HTML만 열면 됩니다.</p>
+  <p class="lead">위젯형 · 배경 융화. 왼쪽 브랜드 액센트 + 옅은 오렌지 틴트. HTML만 열면 됩니다.</p>
 
   <div class="phone">
     <div class="block">
-      <div class="label">신규 (토큰 색)</div>
+      <div class="label">신규 (위젯형)</div>
       <div class="week-summary">
         <span class="week-summary-label">이번 주 출석</span>
         <span class="week-summary-count">2.0 / 3점</span>
@@ -188,7 +203,7 @@
     </div>
 
     <div class="block">
-      <div class="label">기타 + 날짜 미입력 (가운데 정렬)</div>
+      <div class="label">기타 + 날짜 미입력</div>
       <div class="marathon-dday-card marathon-dday-nudge">
         <span>📅 <strong>기타 대회 날짜</strong>를 프로필에 입력하면 D-day를 볼 수 있어요</span>
         <button type="button" class="marathon-dday-nudge-btn">프로필에서 입력하기</button>

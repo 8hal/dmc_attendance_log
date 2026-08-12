@@ -1627,18 +1627,22 @@ body {
 }
 .me-guide-link:hover { text-decoration: underline; }
 
-/* Marathon D-day card — 기존 풀폭·좌우 배치 + 디자인 토큰 색 */
+/* Marathon D-day card — 위젯형, 배경과 융화 */
 .marathon-dday-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: var(--border-light);
+  background: var(--primary-light);
+  background: color-mix(in srgb, var(--primary-light) 40%, var(--card));
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--chun-orange) 16%, var(--border));
+  border-radius: var(--radius-card);
+  padding: 12px 14px 12px 12px;
   margin-top: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-left: 3px solid var(--chun-orange);
 }
 .marathon-dday-nudge {
   flex-direction: column;
@@ -1646,28 +1650,36 @@ body {
   justify-content: center;
   text-align: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
+  background: var(--surface-muted);
+  border-color: var(--border);
+  border-left-color: var(--border);
+  box-shadow: none;
 }
 .marathon-dday-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  gap: 12px;
 }
 .marathon-dday-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  padding-left: 4px;
 }
 .marathon-dday-name {
   font-weight: 700;
-  font-size: 15px;
-  color: var(--chun-orange-dark);
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing: -0.02em;
 }
 .marathon-dday-date {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--text-muted);
 }
 .marathon-dday-count {
@@ -1676,10 +1688,12 @@ body {
   color: var(--chun-orange);
   letter-spacing: -1px;
   flex-shrink: 0;
+  line-height: 1;
 }
 .marathon-dday-card.is-dday {
   background: var(--accent-light);
-  border-color: var(--chun-orange);
+  border-color: color-mix(in srgb, var(--chun-cyan) 35%, var(--border));
+  border-left-color: var(--chun-cyan);
 }
 .marathon-dday-card.is-dday .marathon-dday-main {
   justify-content: center;
@@ -1688,6 +1702,7 @@ body {
 }
 .marathon-dday-card.is-dday .marathon-dday-info {
   align-items: center;
+  padding-left: 0;
 }
 .marathon-dday-nudge-btn {
   background: var(--card);
