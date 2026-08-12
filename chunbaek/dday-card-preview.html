@@ -135,27 +135,28 @@
       box-shadow: 0 8px 28px rgba(224, 42, 16, 0.28);
     }
     .marathon-dday-card[data-decade="1"] {
-      --dday-bg: rgba(196, 32, 10, 0.96);
-      --dday-border: rgba(255, 180, 160, 0.35);
-      --dday-count: #fff;
-      --dday-name: #fff;
-      --dday-meta: rgba(255, 232, 227, 0.82);
-      box-shadow: 0 10px 32px rgba(196, 32, 10, 0.38);
+      --dday-bg: rgba(245, 248, 250, 0.96);
+      --dday-border: rgba(200, 220, 228, 0.9);
+      --dday-count: var(--text);
+      --dday-name: var(--text);
+      --dday-meta: var(--text-muted);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
     }
     .marathon-dday-card[data-decade="0"] {
-      --dday-bg: rgba(0, 0, 0, 0.92);
-      --dday-border: rgba(255, 50, 20, 0.55);
-      --dday-count: var(--chun-cyan);
-      --dday-name: #fff;
-      --dday-meta: rgba(255, 50, 20, 0.85);
-      box-shadow: 0 8px 28px rgba(255, 50, 20, 0.22);
+      --dday-bg: rgba(232, 247, 253, 0.96);
+      --dday-border: rgba(112, 209, 244, 0.5);
+      --dday-count: var(--chun-cyan-dark);
+      --dday-name: var(--text);
+      --dday-meta: var(--chun-orange);
+      box-shadow: 0 6px 20px rgba(112, 209, 244, 0.14);
     }
     .marathon-dday-card.is-dday {
-      --dday-bg: rgba(0, 0, 0, 0.92);
-      --dday-border: rgba(255, 50, 20, 0.55);
-      --dday-count: var(--chun-cyan);
-      --dday-name: #fff;
-      --dday-meta: rgba(255, 50, 20, 0.9);
+      --dday-bg: rgba(255, 255, 255, 0.98);
+      --dday-border: rgba(255, 50, 20, 0.45);
+      --dday-count: var(--chun-cyan-dark);
+      --dday-name: var(--text);
+      --dday-meta: var(--chun-orange);
+      box-shadow: 0 8px 24px rgba(255, 50, 20, 0.12);
     }
     .marathon-dday-card.is-dday .marathon-dday-count {
       font-size: 18px;
@@ -213,8 +214,8 @@
 </head>
 <body>
   <h1>색 아크 미리보기 (베이스 확장)</h1>
-  <p class="lead">베이스 90~60 · 빌드 50~40 · 집중 30 · 피크 20~10(진한 주황) · D-DAY 시안+주황</p>
-  <p class="arc">화이트(넓게) → 시안 → 검정 → 진한 주황 → (D-DAY 시안+주황)</p>
+  <p class="lead">베이스 90~60 · 빌드 50~40 · 집중 30 · 피크 20 · 테이퍼 10 · D-DAY 시안+주황(화이트)</p>
+  <p class="arc">화이트 → 시안 → 검정 → 진한 주황 → 차분 → (D-DAY 시안+주황)</p>
 
   <div class="grid" id="grid"></div>
 
@@ -228,9 +229,9 @@
       { decade: 4, days: 44, title: "40s · 빌드 · cyan glass" },
       { decade: 3, days: 33, title: "30s · 집중 · ink" },
       { decade: 2, days: 22, title: "20s · 피크 · deep orange" },
-      { decade: 1, days: 15, title: "10s · 피크 · deepest orange" },
-      { decade: 0, days: 7, title: "0~9 · 직전 · cyan+orange" },
-      { decade: 0, days: 0, title: "D-DAY · 시안+주황", isDday: true },
+      { decade: 1, days: 15, title: "10s · 테이퍼 · calm soft" },
+      { decade: 0, days: 7, title: "0~9 · 직전 · cyan soft" },
+      { decade: 0, days: 0, title: "D-DAY · 시안+주황 (화이트)", isDday: true },
     ];
 
     const grid = document.getElementById("grid");
