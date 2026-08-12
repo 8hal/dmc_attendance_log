@@ -1627,7 +1627,9 @@ body {
 }
 .me-guide-link:hover { text-decoration: underline; }
 
-/* Marathon D-day — F안 정사각 위젯 + 10의자리별 테마 */
+/* Marathon D-day — F 정사각 + 훈련주기 색 아크
+   90~80 화이트(베이스) → 70~60 시안(빌드) → 50~40 검정(집중)
+   → 30~10 주황(피크) → 0/D-DAY 시안 스파크 */
 .marathon-dday-card {
   --dday-bg: rgba(0, 0, 0, 0.88);
   --dday-border: rgba(255, 50, 20, 0.35);
@@ -1645,89 +1647,99 @@ body {
   background: var(--dday-bg);
   border: 1px solid var(--dday-border);
   border-radius: 22px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   color: #fff;
   text-align: center;
   transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
-/* 90+ : Soft ink */
+/* 90+ : Soft white — 베이스 */
 .marathon-dday-card[data-decade="9"] {
-  --dday-bg: rgba(26, 26, 26, 0.78);
-  --dday-border: rgba(255, 255, 255, 0.14);
-  --dday-count: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.55);
+  --dday-bg: rgba(255, 255, 255, 0.94);
+  --dday-border: rgba(232, 228, 224, 0.95);
+  --dday-count: var(--text);
+  --dday-name: var(--text);
+  --dday-meta: var(--text-muted);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
-/* 80s : Cyan calm */
+/* 80s : Soft light + muted — 베이스 후반 */
 .marathon-dday-card[data-decade="8"] {
-  --dday-bg: rgba(77, 184, 224, 0.88);
-  --dday-border: rgba(255, 255, 255, 0.28);
+  --dday-bg: rgba(245, 242, 239, 0.96);
+  --dday-border: var(--border);
+  --dday-count: var(--text);
+  --dday-name: var(--text);
+  --dday-meta: var(--text-muted);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+/* 70s : Cyan soft — 빌드 */
+.marathon-dday-card[data-decade="7"] {
+  --dday-bg: rgba(232, 247, 253, 0.95);
+  --dday-border: rgba(112, 209, 244, 0.45);
+  --dday-count: var(--chun-cyan-dark);
+  --dday-name: var(--text);
+  --dday-meta: var(--text-muted);
+}
+/* 60s : Cyan glass — 빌드 */
+.marathon-dday-card[data-decade="6"] {
+  --dday-bg: rgba(77, 184, 224, 0.9);
+  --dday-border: rgba(255, 255, 255, 0.3);
   --dday-count: var(--chun-black);
   --dday-name: rgba(0, 0, 0, 0.88);
   --dday-meta: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(112, 209, 244, 0.2);
 }
-/* 70s : Soft brand wash on dark */
-.marathon-dday-card[data-decade="7"] {
-  --dday-bg: rgba(40, 18, 14, 0.92);
-  --dday-border: rgba(255, 232, 227, 0.28);
-  --dday-count: #ffe8e3;
-  --dday-name: rgba(255, 232, 227, 0.95);
-  --dday-meta: rgba(255, 232, 227, 0.55);
-}
-/* 60s : Ink + Orange (기본 F) */
-.marathon-dday-card[data-decade="6"] {
-  --dday-bg: rgba(0, 0, 0, 0.88);
-  --dday-border: rgba(255, 50, 20, 0.35);
-  --dday-count: var(--chun-orange);
-}
-/* 50s : Stronger orange glass */
+/* 50s : Ink — 집중 */
 .marathon-dday-card[data-decade="5"] {
-  --dday-bg: rgba(255, 50, 20, 0.82);
-  --dday-border: rgba(255, 255, 255, 0.22);
+  --dday-bg: rgba(0, 0, 0, 0.88);
+  --dday-border: rgba(255, 255, 255, 0.16);
   --dday-count: #fff;
   --dday-name: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.72);
+  --dday-meta: rgba(255, 255, 255, 0.55);
 }
-/* 40s : Orange dark heat */
+/* 40s : Deep ink — 집중 심화 */
 .marathon-dday-card[data-decade="4"] {
-  --dday-bg: rgba(224, 42, 16, 0.9);
-  --dday-border: rgba(255, 255, 255, 0.2);
+  --dday-bg: rgba(0, 0, 0, 0.92);
+  --dday-border: rgba(255, 255, 255, 0.12);
   --dday-count: #fff;
   --dday-name: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.7);
+  --dday-meta: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
 }
-/* 30s : Black + hot orange */
+/* 30s : Ink + Orange spark — 피크 진입 */
 .marathon-dday-card[data-decade="3"] {
-  --dday-bg: rgba(0, 0, 0, 0.92);
-  --dday-border: rgba(255, 50, 20, 0.55);
+  --dday-bg: rgba(0, 0, 0, 0.9);
+  --dday-border: rgba(255, 50, 20, 0.4);
   --dday-count: var(--chun-orange);
-  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.22);
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.18);
 }
-/* 20s : Urgent orange fill */
+/* 20s : Orange glass — 피크 */
 .marathon-dday-card[data-decade="2"] {
-  --dday-bg: rgba(255, 50, 20, 0.92);
-  --dday-border: rgba(255, 255, 255, 0.28);
+  --dday-bg: rgba(255, 50, 20, 0.86);
+  --dday-border: rgba(255, 255, 255, 0.24);
   --dday-count: #fff;
   --dday-name: #fff;
   --dday-meta: rgba(255, 255, 255, 0.75);
-  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.28);
+  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.26);
 }
-/* 10s : Final stretch — cyan spark + black */
+/* 10s : Hot orange — 피크 막판 */
 .marathon-dday-card[data-decade="1"] {
-  --dday-bg: rgba(0, 0, 0, 0.9);
-  --dday-border: rgba(112, 209, 244, 0.45);
-  --dday-count: var(--chun-cyan);
+  --dday-bg: rgba(224, 42, 16, 0.94);
+  --dday-border: rgba(255, 255, 255, 0.28);
+  --dday-count: #fff;
   --dday-name: #fff;
-  --dday-meta: rgba(112, 209, 244, 0.75);
+  --dday-meta: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 10px 30px rgba(255, 50, 20, 0.32);
 }
-/* 0~9 : Almost there */
+/* 0~9 : Cyan spark — 레이스 직전 */
 .marathon-dday-card[data-decade="0"] {
   --dday-bg: rgba(0, 0, 0, 0.92);
   --dday-border: rgba(112, 209, 244, 0.55);
   --dday-count: var(--chun-cyan);
   --dday-name: #fff;
-  --dday-meta: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 8px 28px rgba(112, 209, 244, 0.2);
+  --dday-meta: rgba(112, 209, 244, 0.75);
+  box-shadow: 0 8px 28px rgba(112, 209, 244, 0.22);
 }
 
 .marathon-dday-nudge {
