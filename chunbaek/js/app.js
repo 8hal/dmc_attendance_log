@@ -334,8 +334,12 @@
 
   function syncGoalRaceNote() {
     const noteEl = document.getElementById("goal-race-note");
-    if (!noteEl) return;
-    noteEl.hidden = selectedGoalRace() !== "other";
+    const dateEl = document.getElementById("goal-race-date");
+    const hintEl = document.getElementById("goal-race-date-hint");
+    const isOther = selectedGoalRace() === "other";
+    if (noteEl) noteEl.hidden = !isOther;
+    if (dateEl) dateEl.hidden = !isOther;
+    if (hintEl) hintEl.hidden = !isOther;
   }
 
   function formatBodyWeightKg(kg) {
@@ -425,6 +429,8 @@
       weightPrivate.checked = !!p.goalBodyWeightPrivate;
     }
     syncGoalWeightPrivate();
+    const dateEl = document.getElementById("goal-race-date");
+    if (dateEl) dateEl.value = p.goalRaceDate || "";
     syncGoalRaceNote();
   }
 
@@ -451,6 +457,8 @@
     }
     const resolutionText = (document.getElementById("resolution-text").value || "").trim();
     const goalRaceNote = (document.getElementById("goal-race-note").value || "").trim();
+    const goalRaceDateRaw = (document.getElementById("goal-race-date")?.value || "").trim();
+    const goalRaceDate = goalRace === "other" ? (goalRaceDateRaw || null) : null;
     const weightRaw = String(document.getElementById("goal-weight-kg")?.value || "").trim();
     let goalBodyWeightKg = null;
     let goalBodyWeightPrivate = false;
@@ -465,6 +473,7 @@
     return {
       goalRace,
       goalRaceNote: goalRace === "other" ? (goalRaceNote || null) : null,
+      goalRaceDate,
       goalMarathonNetTime,
       existingPbNetTime,
       resolutionText: resolutionText || null,
