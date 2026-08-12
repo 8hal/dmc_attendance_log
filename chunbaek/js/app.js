@@ -545,10 +545,12 @@
     try {
       const data = await apiPost("update-profile", form, true);
       state.profile = data;
+      writeCache(CACHE_KEYS.profile, data);
       showToast("프로필이 저장되었습니다");
       renderMe();
       paintStatsHeader(data);
-      showView("me");
+      renderMarathonDday(data);
+      showView("today");
     } catch (e) {
       showToast(e.message, true);
     } finally {
