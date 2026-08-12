@@ -1627,8 +1627,14 @@ body {
 }
 .me-guide-link:hover { text-decoration: underline; }
 
-/* Marathon D-day — F안: Ink + Orange, 정사각 위젯·중앙 배치 */
+/* Marathon D-day — F안 정사각 위젯 + 10의자리별 테마 */
 .marathon-dday-card {
+  --dday-bg: rgba(0, 0, 0, 0.88);
+  --dday-border: rgba(255, 50, 20, 0.35);
+  --dday-count: var(--chun-orange);
+  --dday-name: rgba(255, 255, 255, 0.92);
+  --dday-meta: rgba(255, 255, 255, 0.5);
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1636,13 +1642,94 @@ body {
   aspect-ratio: 1 / 1;
   margin: 14px auto 0;
   padding: 14px 12px;
-  background: rgba(0, 0, 0, 0.88);
-  border: 1px solid rgba(255, 50, 20, 0.35);
+  background: var(--dday-bg);
+  border: 1px solid var(--dday-border);
   border-radius: 22px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
   color: #fff;
   text-align: center;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
+
+/* 90+ : Soft ink */
+.marathon-dday-card[data-decade="9"] {
+  --dday-bg: rgba(26, 26, 26, 0.78);
+  --dday-border: rgba(255, 255, 255, 0.14);
+  --dday-count: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.55);
+}
+/* 80s : Cyan calm */
+.marathon-dday-card[data-decade="8"] {
+  --dday-bg: rgba(77, 184, 224, 0.88);
+  --dday-border: rgba(255, 255, 255, 0.28);
+  --dday-count: var(--chun-black);
+  --dday-name: rgba(0, 0, 0, 0.88);
+  --dday-meta: rgba(0, 0, 0, 0.5);
+}
+/* 70s : Soft brand wash on dark */
+.marathon-dday-card[data-decade="7"] {
+  --dday-bg: rgba(40, 18, 14, 0.92);
+  --dday-border: rgba(255, 232, 227, 0.28);
+  --dday-count: #ffe8e3;
+  --dday-name: rgba(255, 232, 227, 0.95);
+  --dday-meta: rgba(255, 232, 227, 0.55);
+}
+/* 60s : Ink + Orange (기본 F) */
+.marathon-dday-card[data-decade="6"] {
+  --dday-bg: rgba(0, 0, 0, 0.88);
+  --dday-border: rgba(255, 50, 20, 0.35);
+  --dday-count: var(--chun-orange);
+}
+/* 50s : Stronger orange glass */
+.marathon-dday-card[data-decade="5"] {
+  --dday-bg: rgba(255, 50, 20, 0.82);
+  --dday-border: rgba(255, 255, 255, 0.22);
+  --dday-count: #fff;
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.72);
+}
+/* 40s : Orange dark heat */
+.marathon-dday-card[data-decade="4"] {
+  --dday-bg: rgba(224, 42, 16, 0.9);
+  --dday-border: rgba(255, 255, 255, 0.2);
+  --dday-count: #fff;
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.7);
+}
+/* 30s : Black + hot orange */
+.marathon-dday-card[data-decade="3"] {
+  --dday-bg: rgba(0, 0, 0, 0.92);
+  --dday-border: rgba(255, 50, 20, 0.55);
+  --dday-count: var(--chun-orange);
+  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.22);
+}
+/* 20s : Urgent orange fill */
+.marathon-dday-card[data-decade="2"] {
+  --dday-bg: rgba(255, 50, 20, 0.92);
+  --dday-border: rgba(255, 255, 255, 0.28);
+  --dday-count: #fff;
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 8px 28px rgba(255, 50, 20, 0.28);
+}
+/* 10s : Final stretch — cyan spark + black */
+.marathon-dday-card[data-decade="1"] {
+  --dday-bg: rgba(0, 0, 0, 0.9);
+  --dday-border: rgba(112, 209, 244, 0.45);
+  --dday-count: var(--chun-cyan);
+  --dday-name: #fff;
+  --dday-meta: rgba(112, 209, 244, 0.75);
+}
+/* 0~9 : Almost there */
+.marathon-dday-card[data-decade="0"] {
+  --dday-bg: rgba(0, 0, 0, 0.92);
+  --dday-border: rgba(112, 209, 244, 0.55);
+  --dday-count: var(--chun-cyan);
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 28px rgba(112, 209, 244, 0.2);
+}
+
 .marathon-dday-nudge {
   width: 100%;
   max-width: 100%;
@@ -1680,18 +1767,20 @@ body {
 .marathon-dday-name {
   font-weight: 700;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--dday-name);
   letter-spacing: -0.02em;
   line-height: 1.25;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.35s ease;
 }
 .marathon-dday-date {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dday-meta);
+  transition: color 0.35s ease;
 }
 .marathon-dday-countdown {
   display: flex;
@@ -1702,23 +1791,28 @@ body {
 .marathon-dday-count {
   font-size: 40px;
   font-weight: 800;
-  color: var(--chun-orange);
+  color: var(--dday-count);
   letter-spacing: -2px;
   line-height: 1;
+  transition: color 0.35s ease;
 }
 .marathon-dday-count-label {
   margin-top: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--dday-meta);
+  transition: color 0.35s ease;
 }
 .marathon-dday-card.is-dday {
-  border-color: rgba(112, 209, 244, 0.4);
+  --dday-bg: rgba(0, 0, 0, 0.92);
+  --dday-border: rgba(112, 209, 244, 0.55);
+  --dday-count: var(--chun-cyan);
+  --dday-name: #fff;
+  --dday-meta: rgba(255, 255, 255, 0.65);
 }
 .marathon-dday-card.is-dday .marathon-dday-count {
   font-size: 22px;
   letter-spacing: -1px;
-  color: var(--chun-cyan);
 }
 .marathon-dday-nudge-btn {
   background: rgba(255, 255, 255, 0.12);
