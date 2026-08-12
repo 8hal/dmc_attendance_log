@@ -1627,22 +1627,21 @@ body {
 }
 .me-guide-link:hover { text-decoration: underline; }
 
-/* Marathon D-day card — 위젯형, 배경과 융화 */
+/* Marathon D-day — 잠금화면형 반투명 글래스 위젯 */
 .marathon-dday-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: var(--primary-light);
-  background: color-mix(in srgb, var(--primary-light) 40%, var(--card));
-  color: var(--text);
-  border: 1px solid var(--border);
-  border: 1px solid color-mix(in srgb, var(--chun-orange) 16%, var(--border));
-  border-radius: var(--radius-card);
-  padding: 12px 14px 12px 12px;
+  background: rgba(28, 28, 30, 0.48);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 14px 16px;
   margin-top: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  border-left: 3px solid var(--chun-orange);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
 }
 .marathon-dday-nudge {
   flex-direction: column;
@@ -1651,11 +1650,8 @@ body {
   text-align: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--text-muted);
-  background: var(--surface-muted);
-  border-color: var(--border);
-  border-left-color: var(--border);
-  box-shadow: none;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(28, 28, 30, 0.36);
 }
 .marathon-dday-main {
   display: flex;
@@ -1667,33 +1663,45 @@ body {
 .marathon-dday-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
-  padding-left: 4px;
 }
 .marathon-dday-name {
   font-weight: 700;
   font-size: 14px;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.96);
   letter-spacing: -0.02em;
 }
 .marathon-dday-date {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.62);
+}
+.marathon-dday-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 56px;
 }
 .marathon-dday-count {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 800;
-  color: var(--chun-orange);
-  letter-spacing: -1px;
-  flex-shrink: 0;
+  color: #fff;
+  letter-spacing: -1.5px;
   line-height: 1;
 }
+.marathon-dday-count-label {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: -0.02em;
+}
 .marathon-dday-card.is-dday {
-  background: var(--accent-light);
-  border-color: color-mix(in srgb, var(--chun-cyan) 35%, var(--border));
-  border-left-color: var(--chun-cyan);
+  background: rgba(28, 28, 30, 0.55);
+  border-color: rgba(112, 209, 244, 0.35);
 }
 .marathon-dday-card.is-dday .marathon-dday-main {
   justify-content: center;
@@ -1702,17 +1710,16 @@ body {
 }
 .marathon-dday-card.is-dday .marathon-dday-info {
   align-items: center;
-  padding-left: 0;
 }
 .marathon-dday-nudge-btn {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  color: var(--text);
+  color: #fff;
 }
 
 /* 날짜 입력 필드: 다크 테마에서도 캘린더 아이콘·자리 표시가 보이도록 라이트 모드 강제 */

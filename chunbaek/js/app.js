@@ -816,6 +816,7 @@
       document.getElementById("marathon-dday-name").textContent = `🎉 오늘이 ${label} 당일이에요!`;
       document.getElementById("marathon-dday-date").textContent = "완주를 응원합니다!";
       document.getElementById("marathon-dday-count").textContent = "D-DAY";
+      document.getElementById("marathon-dday-count-label").textContent = "오늘";
       card.classList.add("is-dday");
       card.hidden = false;
       return;
@@ -823,7 +824,8 @@
 
     document.getElementById("marathon-dday-name").textContent = label;
     document.getElementById("marathon-dday-date").textContent = formatRaceDateKo(goalRaceDate);
-    document.getElementById("marathon-dday-count").textContent = `D-${days}`;
+    document.getElementById("marathon-dday-count").textContent = String(days);
+    document.getElementById("marathon-dday-count-label").textContent = "일 남음";
     card.classList.remove("is-dday");
     card.hidden = false;
   }

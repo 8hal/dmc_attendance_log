@@ -5,39 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>D-day 카드 미리보기</title>
   <style>
-    :root {
-      --chun-orange: #ff3214;
-      --chun-cyan: #70d1f4;
-      --primary-light: #ffe8e3;
-      --accent-light: #e8f7fd;
-      --card: #ffffff;
-      --text: #1a1a1a;
-      --text-muted: #5c5c5c;
-      --border: #e8e4e0;
-      --border-light: #f5f2ef;
-      --surface-muted: #f5f2ef;
-      --radius-card: 14px;
-    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
       background: #111;
-      color: var(--text);
+      color: #fff;
       padding: 24px 16px 48px;
-    }
-    .phone {
-      max-width: 390px;
-      margin: 0 auto 28px;
-      background: var(--card);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.35);
     }
     h1 {
       max-width: 390px;
       margin: 0 auto 8px;
-      color: #fff;
       font-size: 18px;
     }
     .lead {
@@ -47,10 +25,24 @@
       font-size: 13px;
       line-height: 1.5;
     }
+    .phone {
+      max-width: 390px;
+      margin: 0 auto 28px;
+      border-radius: 16px;
+      padding: 16px;
+      /* 홈 흰 배경 + 위쪽에 사진톤 그라데이션 → 글래스 효과가 보이게 */
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.92) 0%, #fff 55%),
+        radial-gradient(120% 80% at 20% 0%, #70d1f4 0%, transparent 50%),
+        radial-gradient(100% 70% at 90% 10%, #ff3214 0%, transparent 45%),
+        #f5f2ef;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+      color: #1a1a1a;
+    }
     .label {
       font-size: 12px;
       font-weight: 700;
-      color: var(--text-muted);
+      color: #5c5c5c;
       margin: 0 0 8px;
     }
     .block { margin-bottom: 22px; }
@@ -59,28 +51,29 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--border-light);
-      border: 1px solid var(--border);
+      background: #f5f2ef;
+      border: 1px solid #e8e4e0;
       border-radius: 12px;
       padding: 12px 14px;
       font-size: 14px;
     }
-    .week-summary-label { color: var(--text-muted); font-weight: 600; }
-    .week-summary-count { font-weight: 800; color: var(--chun-orange); }
+    .week-summary-label { color: #5c5c5c; font-weight: 600; }
+    .week-summary-count { font-weight: 800; color: #ff3214; }
 
     .marathon-dday-card {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      background: var(--primary-light);
-      background: color-mix(in srgb, var(--primary-light) 40%, var(--card));
-      border: 1px solid color-mix(in srgb, var(--chun-orange) 16%, var(--border));
-      border-radius: var(--radius-card);
-      padding: 12px 14px 12px 12px;
+      background: rgba(28, 28, 30, 0.48);
+      backdrop-filter: blur(22px) saturate(1.25);
+      -webkit-backdrop-filter: blur(22px) saturate(1.25);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      padding: 14px 16px;
       margin-top: 12px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-      border-left: 3px solid var(--chun-orange);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
     }
     .marathon-dday-nudge {
       flex-direction: column;
@@ -89,11 +82,8 @@
       text-align: center;
       gap: 10px;
       font-size: 13px;
-      color: var(--text-muted);
-      background: var(--surface-muted);
-      border-color: var(--border);
-      border-left-color: var(--border);
-      box-shadow: none;
+      color: rgba(255, 255, 255, 0.82);
+      background: rgba(28, 28, 30, 0.36);
     }
     .marathon-dday-main {
       display: flex;
@@ -105,75 +95,81 @@
     .marathon-dday-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       min-width: 0;
-      padding-left: 4px;
     }
     .marathon-dday-name {
       font-weight: 700;
       font-size: 14px;
-      color: var(--text);
+      color: rgba(255, 255, 255, 0.96);
       letter-spacing: -0.02em;
     }
     .marathon-dday-date {
       font-size: 11px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.62);
+    }
+    .marathon-dday-countdown {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      min-width: 56px;
     }
     .marathon-dday-count {
-      font-size: 22px;
+      font-size: 28px;
       font-weight: 800;
-      color: var(--chun-orange);
-      letter-spacing: -1px;
-      flex-shrink: 0;
+      color: #fff;
+      letter-spacing: -1.5px;
       line-height: 1;
     }
+    .marathon-dday-count-label {
+      margin-top: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.65);
+    }
     .marathon-dday-card.is-dday {
-      background: var(--accent-light);
-      border-color: color-mix(in srgb, var(--chun-cyan) 35%, var(--border));
-      border-left-color: var(--chun-cyan);
+      background: rgba(28, 28, 30, 0.55);
+      border-color: rgba(112, 209, 244, 0.35);
     }
     .marathon-dday-card.is-dday .marathon-dday-main {
       justify-content: center;
       gap: 16px;
       text-align: center;
     }
-    .marathon-dday-card.is-dday .marathon-dday-info {
-      align-items: center;
-      padding-left: 0;
-    }
+    .marathon-dday-card.is-dday .marathon-dday-info { align-items: center; }
     .marathon-dday-nudge-btn {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
     }
 
-    .old-dday {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-top: 12px;
-      width: 100%;
+    .scene {
+      max-width: 390px;
+      margin: 0 auto 28px;
+      border-radius: 16px;
+      padding: 28px 16px;
+      background:
+        linear-gradient(160deg, rgba(0,0,0,.25), rgba(0,0,0,.45)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23ff7a59'/%3E%3Cstop offset='.5' stop-color='%2370d1f4'/%3E%3Cstop offset='1' stop-color='%232a3a5c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='300' fill='url(%23g)'/%3E%3C/svg%3E")
+        center/cover;
     }
-    .old-dday .name { font-weight: 700; font-size: 15px; color: #bf360c; }
-    .old-dday .date { font-size: 12px; color: #8d6e63; }
-    .old-dday .count { font-size: 22px; font-weight: 800; color: #e64a19; letter-spacing: -1px; }
+    .scene .label { color: rgba(255,255,255,.8); }
   </style>
 </head>
 <body>
-  <h1>마라톤 D-day 카드 미리보기</h1>
-  <p class="lead">위젯형 · 배경 융화. 왼쪽 브랜드 액센트 + 옅은 오렌지 틴트. HTML만 열면 됩니다.</p>
+  <h1>D-day 투명 위젯 미리보기</h1>
+  <p class="lead">잠금화면형 글래스 위젯. 큰 숫자 + 「일 남음」. HTML만 열면 됩니다.</p>
 
   <div class="phone">
     <div class="block">
-      <div class="label">신규 (위젯형)</div>
+      <div class="label">홈(흰 배경)에서의 모습</div>
       <div class="week-summary">
         <span class="week-summary-label">이번 주 출석</span>
         <span class="week-summary-count">2.0 / 3점</span>
@@ -184,7 +180,10 @@
             <span class="marathon-dday-name">경주 마라톤</span>
             <span class="marathon-dday-date">2026. 10. 17 (토)</span>
           </div>
-          <span class="marathon-dday-count">D-66</span>
+          <div class="marathon-dday-countdown">
+            <span class="marathon-dday-count">66</span>
+            <span class="marathon-dday-count-label">일 남음</span>
+          </div>
         </div>
       </div>
     </div>
@@ -197,33 +196,27 @@
             <span class="marathon-dday-name">🎉 오늘이 JTBC 서울마라톤 당일이에요!</span>
             <span class="marathon-dday-date">완주를 응원합니다!</span>
           </div>
-          <span class="marathon-dday-count">D-DAY</span>
+          <div class="marathon-dday-countdown">
+            <span class="marathon-dday-count">D-DAY</span>
+            <span class="marathon-dday-count-label">오늘</span>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="label">기타 + 날짜 미입력</div>
-      <div class="marathon-dday-card marathon-dday-nudge">
-        <span>📅 <strong>기타 대회 날짜</strong>를 프로필에 입력하면 D-day를 볼 수 있어요</span>
-        <button type="button" class="marathon-dday-nudge-btn">프로필에서 입력하기</button>
       </div>
     </div>
   </div>
 
-  <div class="phone">
-    <div class="block">
-      <div class="label">비교 — 이전(그라데이션)</div>
-      <div class="week-summary">
-        <span class="week-summary-label">이번 주 출석</span>
-        <span class="week-summary-count">2.0 / 3점</span>
-      </div>
-      <div class="old-dday">
-        <div>
-          <div class="name">경주 마라톤</div>
-          <div class="date">2026. 10. 17 (토)</div>
+  <div class="scene">
+    <div class="label">참고 — 사진 배경 위에서의 글래스 느낌</div>
+    <div class="marathon-dday-card">
+      <div class="marathon-dday-main">
+        <div class="marathon-dday-info">
+          <span class="marathon-dday-name">경주 마라톤</span>
+          <span class="marathon-dday-date">2026. 10. 17 (토)</span>
         </div>
-        <div class="count">D-66</div>
+        <div class="marathon-dday-countdown">
+          <span class="marathon-dday-count">66</span>
+          <span class="marathon-dday-count-label">일 남음</span>
+        </div>
       </div>
     </div>
   </div>
