@@ -4,8 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>D-day 카드 미리보기</title>
-  <link rel="stylesheet" href="css/tokens.css" />
   <style>
+    :root {
+      --chun-orange: #ff3214;
+      --chun-orange-dark: #e02a10;
+      --chun-cyan: #70d1f4;
+      --accent-light: #e8f7fd;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-muted: #5c5c5c;
+      --border: #e8e4e0;
+      --border-light: #f5f2ef;
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -43,7 +53,6 @@
     }
     .block { margin-bottom: 22px; }
 
-    /* 이번 주 출석 — 실제 홈과 동일 톤 */
     .week-summary {
       display: flex;
       align-items: center;
@@ -58,7 +67,6 @@
     .week-summary-label { color: var(--text-muted); font-weight: 600; }
     .week-summary-count { font-weight: 800; color: var(--chun-orange); }
 
-    /* 신규 D-day 카드 */
     .marathon-dday-card {
       display: inline-flex;
       align-items: center;
@@ -125,7 +133,6 @@
       color: var(--text);
     }
 
-    /* 이전(배포된) 스타일 비교용 */
     .old-dday {
       display: flex;
       align-items: center;
@@ -143,7 +150,7 @@
 </head>
 <body>
   <h1>마라톤 D-day 카드 미리보기</h1>
-  <p class="lead">배포 전 확인용 정적 파일입니다. 배포와 무관하며 <code>chunbaek/dday-card-preview.html</code>만 열면 됩니다.</p>
+  <p class="lead">배포 전 확인용 정적 파일입니다. 이 HTML만 열면 됩니다.</p>
 
   <div class="phone">
     <div class="block">
