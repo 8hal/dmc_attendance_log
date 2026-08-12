@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>D-day 카드 미리보기</title>
+  <link rel="stylesheet" href="css/tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: var(--text);
+      padding: 24px 16px 48px;
+    }
+    .phone {
+      max-width: 390px;
+      margin: 0 auto 28px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    h1 {
+      max-width: 390px;
+      margin: 0 auto 8px;
+      color: #fff;
+      font-size: 18px;
+    }
+    .lead {
+      max-width: 390px;
+      margin: 0 auto 20px;
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin: 0 0 8px;
+    }
+    .block { margin-bottom: 22px; }
+
+    /* 이번 주 출석 — 실제 홈과 동일 톤 */
+    .week-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--border-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+    .week-summary-label { color: var(--text-muted); font-weight: 600; }
+    .week-summary-count { font-weight: 800; color: var(--chun-orange); }
+
+    /* 신규 D-day 카드 */
+    .marathon-dday-card {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: fit-content;
+      max-width: 100%;
+      background: var(--border-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 12px;
+    }
+    .marathon-dday-nudge {
+      display: flex;
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .marathon-dday-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .marathon-dday-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .marathon-dday-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .marathon-dday-date {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .marathon-dday-count {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--chun-orange);
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+    .marathon-dday-card.is-dday {
+      background: var(--accent-light);
+      border-color: var(--chun-orange);
+    }
+    .marathon-dday-nudge-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* 이전(배포된) 스타일 비교용 */
+    .old-dday {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      width: 100%;
+    }
+    .old-dday .name { font-weight: 700; font-size: 15px; color: #bf360c; }
+    .old-dday .date { font-size: 12px; color: #8d6e63; }
+    .old-dday .count { font-size: 22px; font-weight: 800; color: #e64a19; letter-spacing: -1px; }
+  </style>
+</head>
+<body>
+  <h1>마라톤 D-day 카드 미리보기</h1>
+  <p class="lead">배포 전 확인용 정적 파일입니다. 배포와 무관하며 <code>chunbaek/dday-card-preview.html</code>만 열면 됩니다.</p>
+
+  <div class="phone">
+    <div class="block">
+      <div class="label">홈 배치 (주간 점수 + 신규 D-day)</div>
+      <div class="week-summary">
+        <span class="week-summary-label">이번 주 출석</span>
+        <span class="week-summary-count">2.0 / 3점</span>
+      </div>
+      <div class="marathon-dday-card" aria-label="마라톤 D-day">
+        <div class="marathon-dday-main">
+          <div class="marathon-dday-info">
+            <span class="marathon-dday-name">경주 마라톤</span>
+            <span class="marathon-dday-date">2026. 10. 17 (토)</span>
+          </div>
+          <span class="marathon-dday-count">D-66</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="label">D-0 당일</div>
+      <div class="marathon-dday-card is-dday" aria-label="마라톤 D-day">
+        <div class="marathon-dday-main">
+          <div class="marathon-dday-info">
+            <span class="marathon-dday-name">🎉 오늘이 JTBC 서울마라톤 당일이에요!</span>
+            <span class="marathon-dday-date">완주를 응원합니다!</span>
+          </div>
+          <span class="marathon-dday-count">D-DAY</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="label">기타 + 날짜 미입력 (유도)</div>
+      <div class="marathon-dday-card marathon-dday-nudge">
+        <span>📅 <strong>기타 대회 날짜</strong>를 프로필에 입력하면 D-day를 볼 수 있어요</span>
+        <button type="button" class="marathon-dday-nudge-btn">프로필에서 입력하기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="block">
+      <div class="label">비교 — 이전(그라데이션·풀폭)</div>
+      <div class="week-summary">
+        <span class="week-summary-label">이번 주 출석</span>
+        <span class="week-summary-count">2.0 / 3점</span>
+      </div>
+      <div class="old-dday">
+        <div>
+          <div class="name">경주 마라톤</div>
+          <div class="date">2026. 10. 17 (토)</div>
+        </div>
+        <div class="count">D-66</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
