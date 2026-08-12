@@ -47,6 +47,10 @@ const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
 const GOAL_RACE_NOTE_MAX = 80;
 const CHUNBAEK_SEASON_ID = "chunbaek-s3";
+const SEASON_RACE_DATES = {
+  chuncheon: "2026-10-26",
+  jtbc:      "2026-11-01",
+};
 const PHOTO_UPLOAD_MAX_BYTES = 2 * 1024 * 1024;
 
 function parseGoalRace(body) {
@@ -56,7 +60,27 @@ function parseGoalRace(body) {
   }
   const noteRaw = String(body.goalRaceNote || "").trim().slice(0, GOAL_RACE_NOTE_MAX);
   const goalRaceNote = goalRace === "other" ? (noteRaw || null) : null;
-  return { goalRace, goalRaceNote };
+
+  // goalRaceDate: "other"일 때만 파싱·저장
+  let goalRaceDate = null;
+  if (goalRace === "other" && body.goalRaceDate) {
+    const d = String(body.goalRaceDate).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      return { error: "goalRaceDate must be YYYY-MM-DD" };
+    }
+    const parsed = new Date(d);
+    if (isNaN(parsed.getTime())) {
+      return { error: "goalRaceDate is not a valid date" };
+    }
+    const tenYearsLater = new Date();
+    tenYearsLater.setFullYear(tenYearsLater.getFullYear() + 10);
+    if (parsed > tenYearsLater) {
+      return { error: "goalRaceDate is too far in the future" };
+    }
+    goalRaceDate = d;
+  }
+
+  return { goalRace, goalRaceNote, goalRaceDate };
 }
 
 function formatGoalRaceLabel(goalRace, goalRaceNote) {
@@ -147,6 +171,7 @@ function memberProfilePayload(memberId, data, s3, stats) {
     goalRace: s3.goalRace ?? null,
     goalRaceNote: s3.goalRaceNote ?? null,
     goalRaceLabel: formatGoalRaceLabel(s3.goalRace, s3.goalRaceNote),
+    goalRaceDate: SEASON_RACE_DATES[s3.goalRace] ?? (s3.goalRaceDate || null),
     profileComplete: !!s3.profileComplete,
     stats: stats || emptyStats(),
   };
@@ -206,6 +231,7 @@ function parseProfileFields(body) {
     resolutionText,
     goalRace: goalRaceParsed.goalRace,
     goalRaceNote: goalRaceParsed.goalRaceNote,
+    goalRaceDate: goalRaceParsed.goalRaceDate,
     goalBodyWeightKg,
     goalBodyWeightPrivate,
   };
@@ -221,6 +247,12 @@ function buildProfileUpdate(parsed) {
     update["chunbaekS3.goalRaceNote"] = parsed.goalRaceNote;
   } else {
     update["chunbaekS3.goalRaceNote"] = FieldValue.delete();
+  }
+  // goalRaceDate: other + 날짜 있을 때만 저장, 그 외엔 삭제 (stale 방지)
+  if (parsed.goalRace === "other" && parsed.goalRaceDate) {
+    update["chunbaekS3.goalRaceDate"] = parsed.goalRaceDate;
+  } else {
+    update["chunbaekS3.goalRaceDate"] = FieldValue.delete();
   }
   if (parsed.existingPbNetTime !== null) {
     update["chunbaekS3.existingPbNetTime"] = parsed.existingPbNetTime;

@@ -106,6 +106,8 @@
             <label class="goal-race-option"><input type="radio" name="goal-race" value="other" /> 기타</label>
           </div>
           <input type="text" class="input" id="goal-race-note" maxlength="80" placeholder="기타 대회명 (80자)" hidden />
+          <input type="date" class="input" id="goal-race-date" aria-label="기타 대회 날짜" hidden />
+          <p class="section-sub" id="goal-race-date-hint" hidden>기타 대회 날짜 (D-day 표시에 사용됩니다)</p>
           <div class="field-label">풀 코스 목표 기록 *</div>
           <div class="time-row">
             <input type="number" id="goal-h" min="2" max="7" value="4" aria-label="목표 시간" /> 시간
@@ -207,6 +209,21 @@
             <span class="week-summary-right">
               <span class="week-summary-count" id="week-bar-count">2.0 / 3점</span><span class="week-summary-hint" id="week-bar-hint" hidden></span>
             </span>
+          </div>
+          <!-- 마라톤 D-day 카드 -->
+          <div class="marathon-dday-card" id="marathon-dday-card" aria-label="마라톤 D-day" hidden>
+            <div class="marathon-dday-main">
+              <div class="marathon-dday-info">
+                <span class="marathon-dday-name" id="marathon-dday-name">—</span>
+                <span class="marathon-dday-date" id="marathon-dday-date"></span>
+              </div>
+              <span class="marathon-dday-count" id="marathon-dday-count">D-?</span>
+            </div>
+          </div>
+          <!-- 기타 대회 날짜 미입력 유도 카드 -->
+          <div class="marathon-dday-card marathon-dday-nudge" id="marathon-dday-nudge" hidden>
+            <span>📅 목표 대회 날짜를 입력하면 D-day를 볼 수 있어요</span>
+            <button type="button" class="marathon-dday-nudge-btn" id="btn-dday-nudge">입력하기</button>
           </div>
           </div>
         </div>

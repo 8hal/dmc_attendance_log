@@ -334,8 +334,12 @@
 
   function syncGoalRaceNote() {
     const noteEl = document.getElementById("goal-race-note");
-    if (!noteEl) return;
-    noteEl.hidden = selectedGoalRace() !== "other";
+    const dateEl = document.getElementById("goal-race-date");
+    const hintEl = document.getElementById("goal-race-date-hint");
+    const isOther = selectedGoalRace() === "other";
+    if (noteEl) noteEl.hidden = !isOther;
+    if (dateEl) dateEl.hidden = !isOther;
+    if (hintEl) hintEl.hidden = !isOther;
   }
 
   function formatBodyWeightKg(kg) {
@@ -425,6 +429,8 @@
       weightPrivate.checked = !!p.goalBodyWeightPrivate;
     }
     syncGoalWeightPrivate();
+    const dateEl = document.getElementById("goal-race-date");
+    if (dateEl) dateEl.value = p.goalRaceDate || "";
     syncGoalRaceNote();
   }
 
@@ -451,6 +457,8 @@
     }
     const resolutionText = (document.getElementById("resolution-text").value || "").trim();
     const goalRaceNote = (document.getElementById("goal-race-note").value || "").trim();
+    const goalRaceDateRaw = (document.getElementById("goal-race-date")?.value || "").trim();
+    const goalRaceDate = goalRace === "other" ? (goalRaceDateRaw || null) : null;
     const weightRaw = String(document.getElementById("goal-weight-kg")?.value || "").trim();
     let goalBodyWeightKg = null;
     let goalBodyWeightPrivate = false;
@@ -465,6 +473,7 @@
     return {
       goalRace,
       goalRaceNote: goalRace === "other" ? (goalRaceNote || null) : null,
+      goalRaceDate,
       goalMarathonNetTime,
       existingPbNetTime,
       resolutionText: resolutionText || null,
@@ -759,11 +768,68 @@
     if (active) active.hidden = isOff;
   }
 
+  function formatRaceDateKo(isoDate) {
+    if (!isoDate) return "";
+    const [y, m, d] = isoDate.split("-").map(Number);
+    const dow = ["일", "월", "화", "수", "목", "금", "토"][new Date(y, m - 1, d).getDay()];
+    return `${y}. ${String(m).padStart(2, "0")}. ${String(d).padStart(2, "0")} (${dow})`;
+  }
+
+  function renderMarathonDday(prof) {
+    const card  = document.getElementById("marathon-dday-card");
+    const nudge = document.getElementById("marathon-dday-nudge");
+    if (!card || !nudge) return;
+
+    const { goalRace, goalRaceDate, goalRaceNote } = prof || {};
+
+    if (!goalRace) {
+      card.hidden = true;
+      nudge.hidden = true;
+      return;
+    }
+
+    if (goalRace === "other" && !goalRaceDate) {
+      card.hidden = true;
+      nudge.hidden = false;
+      return;
+    }
+
+    const days = daysUntilKst(goalRaceDate);
+
+    if (days === null || days < 0) {
+      card.hidden = true;
+      nudge.hidden = true;
+      return;
+    }
+
+    nudge.hidden = true;
+
+    const label = goalRace === "other"
+      ? (goalRaceNote || "내 목표 대회")
+      : (goalRace === "chuncheon" ? "춘천마라톤" : "JTBC 서울마라톤");
+
+    if (days === 0) {
+      document.getElementById("marathon-dday-name").textContent = `🎉 오늘이 ${label} 당일이에요!`;
+      document.getElementById("marathon-dday-date").textContent = "완주를 응원합니다!";
+      document.getElementById("marathon-dday-count").textContent = "D-DAY";
+      card.style.background = "linear-gradient(135deg, #fce4ec 0%, #f48fb1 100%)";
+      card.hidden = false;
+      return;
+    }
+
+    document.getElementById("marathon-dday-name").textContent = label;
+    document.getElementById("marathon-dday-date").textContent = formatRaceDateKo(goalRaceDate);
+    document.getElementById("marathon-dday-count").textContent = `D-${days}`;
+    card.style.background = "";
+    card.hidden = false;
+  }
+
   // API 응답(prof, slotRes)으로 today 뷰 전체를 그린다.
   // loadToday()의 캐시 경로와 신선 경로 모두 이 함수를 공유한다.
   function renderTodayData(prof, slotRes) {
     state.profile = prof;
     state.profileDate = kstTodayIso();
+    renderMarathonDday(prof);
 
     if (slotRes.beforeSeason) {
       updateSaturdayNotice(null);
@@ -2046,6 +2112,9 @@
     syncGoalRaceNote();
     document.getElementById("btn-guide-done").addEventListener("click", () => showView("today"));
     document.getElementById("btn-attend").addEventListener("click", onAttend);
+    document.getElementById("btn-dday-nudge")?.addEventListener("click", () => {
+      openProfileEdit();
+    });
     const scoreNoticeClose = document.getElementById("score-notice-close");
     if (scoreNoticeClose) {
       scoreNoticeClose.addEventListener("click", dismissScoreNotice);

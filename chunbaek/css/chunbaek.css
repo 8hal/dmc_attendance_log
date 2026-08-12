@@ -1626,3 +1626,59 @@ body {
   text-decoration: none;
 }
 .me-guide-link:hover { text-decoration: underline; }
+
+/* Marathon D-day card */
+.marathon-dday-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.marathon-dday-nudge {
+  background: var(--border-light);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.marathon-dday-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.marathon-dday-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.marathon-dday-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #bf360c;
+}
+.marathon-dday-date {
+  font-size: 12px;
+  color: #8d6e63;
+}
+.marathon-dday-count {
+  font-size: 22px;
+  font-weight: 800;
+  color: #e64a19;
+  letter-spacing: -1px;
+}
+.marathon-dday-nudge-btn {
+  background: var(--border-light);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+}
