@@ -333,13 +333,15 @@
   }
 
   function syncGoalRaceNote() {
-    const noteEl = document.getElementById("goal-race-note");
-    const dateEl = document.getElementById("goal-race-date");
-    const hintEl = document.getElementById("goal-race-date-hint");
+    const noteEl  = document.getElementById("goal-race-note");
+    const labelEl = document.getElementById("goal-race-date-label");
+    const dateEl  = document.getElementById("goal-race-date");
+    const hintEl  = document.getElementById("goal-race-date-hint");
     const isOther = selectedGoalRace() === "other";
-    if (noteEl) noteEl.hidden = !isOther;
-    if (dateEl) dateEl.hidden = !isOther;
-    if (hintEl) hintEl.hidden = !isOther;
+    if (noteEl)  noteEl.hidden  = !isOther;
+    if (labelEl) labelEl.hidden = !isOther;
+    if (dateEl)  dateEl.hidden  = !isOther;
+    if (hintEl)  hintEl.hidden  = !isOther;
   }
 
   function formatBodyWeightKg(kg) {
@@ -545,10 +547,12 @@
     try {
       const data = await apiPost("update-profile", form, true);
       state.profile = data;
+      writeCache(CACHE_KEYS.profile, data);
       showToast("프로필이 저장되었습니다");
       renderMe();
       paintStatsHeader(data);
-      showView("me");
+      renderMarathonDday(data);
+      showView("today");
     } catch (e) {
       showToast(e.message, true);
     } finally {
