@@ -140,7 +140,7 @@
 ## 6. BE 방침
 
 - 거대 신규 운영 API를 만들지 않는다. **UI 통합** + **배번 스크랩 필터** + **참가자 컨펌**만 손댄다.
-- `boarding-admin` / `ops` / `group-detail` 기능은 `event-admin`(및 회원 컨펌)으로 **흡수**. 구 URL 딥링크는 유지·리다이렉트 가능.
+- `boarding-admin` / `ops` / `group-detail`의 **필요 기능**은 `event-admin`(및 회원 컨펌)에 모은다. 구 페이지 **폐기·리다이렉트는 선택**(베타 성공 조건 아님).
 - 버스 Phase 1(`bus-boarding`)이 아직 main에 없으면 **머지 또는 동시 착수**가 선행 의존.
 
 ---
@@ -173,6 +173,7 @@
 1. 참가자 컨펌 CTA를 **홈 / 명단·결과 / 둘 다** 중 어디에 둘지 (베타는 최소 하나).
 2. self-confirm API를 `group-events` subAction으로 둘지, 별도 action으로 둘지 (정당화 문서에서 확정).
 3. 스크랩 job 스키마에 배번 키·대기/컨펌 상태를 어떻게 표시할지 (기존 `scrape_jobs.results` 확장 vs 최소 필드).
+4. 컨펌 전 **대기 기록 읽기** 경로: `detail` 확장 vs scrape-job 공개 조회 vs self-confirm preview — 회원 화면에 기록/순위가 보이려면 계획에서 클라이언트 계약을 고정.
 
 ---
 
