@@ -1,6 +1,6 @@
 {
   "season": "chunbaek-s3",
-  "preparedAt": "2026-07-30T03:46:01.047Z",
+  "preparedAt": "2026-08-13T00:01:55.493Z",
   "memberIds": [
     "i3QaeZLziaN6WRNEHiup",
     "3bpbfd2xvP2CvSQ1ZLpS",
@@ -43,7 +43,8 @@
     "aWZdokx4j9voiB076Bdq",
     "A3uyy7fr30mNr03QdLxB",
     "1W9DlQzKvXr0jTrsMhdL",
-    "gw9qdf1yxXQYONMYNPxU"
+    "gw9qdf1yxXQYONMYNPxU",
+    "vdLraasJtgxXiJvyxfEJ"
   ],
   "members": [
     {
@@ -255,6 +256,11 @@
       "memberId": "gw9qdf1yxXQYONMYNPxU",
       "nickname": "PBK",
       "realName": "박병규"
+    },
+    {
+      "memberId": "vdLraasJtgxXiJvyxfEJ",
+      "nickname": "마라골프",
+      "realName": "이재삼"
     }
   ]
 }
