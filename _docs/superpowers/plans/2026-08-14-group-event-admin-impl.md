@@ -104,7 +104,7 @@ rg -n "subAction === \"scrape\"|bulk-confirm|confirm-one|update-bib|self-confirm
 
 - [ ] **Step 2:** 왜 bulk-confirm/confirm-one으로 대체 불가한지 (참가자 UX, 배번 키, 갭 제거) 작성
 - [ ] **Step 3:** 제안 subAction: `scrape`(동작 변경: bib 필터), `my-pending-result`, `self-confirm`
-- [ ] **Step 4:** 사용자 승인 대기 (구현 Task 3+ 금지 until 승인)
+- [ ] **Step 4:** 사용자 승인 대기 — **API를 건드리는 Task 4–5·FE Task 6–7은 승인 전 금지**. Task 3(순수 헬퍼)은 승인 전 진행 가능.
 - [ ] **Step 5: Commit** 정당화 문서
 
 ```bash
@@ -167,28 +167,49 @@ git commit -m "feat: 배번 스크랩 대상 선정 헬퍼"
 
 ---
 
-### Task 4: `triggerGroupScrape` / `scrape` / scraper bib-first
+### Task 4: `triggerGroupScrape` / `scrape` / scraper bib-first (group path only)
 
 **Files:**
 - Modify: `functions/index.js` (`triggerGroupScrape`, `subAction === "scrape"`)
-- Modify: `functions/lib/scraper.js` (`searchMember`, `scrapeEvent`)
+- Modify: `functions/lib/scraper.js` (`searchMember`, `scrapeEvent`) — **전역 파괴 금지**
 - Test: Task 3 단위 + Task 8 QA
 
-**철원 베타 계약 (smartchip 우선):**
-- `scrapeEvent` members 항목: `{ realName, nickname, gender, distance, bib }`
-- 조회 키: **`m.bib`가 있으면 bib로 `searchMember`/`nameorbibno`** (smartchip은 이미 bib 재검색 경로 존재 — `nameorbibno`에 bib 전달). 이름-only fallback **금지**
-- job `results[]`에 요청한 `bib`를 항상 보존 (매칭·self-confirm용)
-- 타 소스(ohmyrace 등): 기존 bib 파라미터가 있으면 사용, 없으면 해당 소스는 베타 비지원으로 400/스킵(계획 주석)
+**중요:** `scrapeEvent`는 개인/ops 이름 스크랩도 쓴다. bib-필수 로직을 **전역 기본값으로 바꾸지 말 것**.
 
-- [ ] **Step 1:** `scrape` 핸들러에서 `pickBibScrapeTargets(event.participants)` 사용. 대상 0명이면 400 `"배번 등록 참가자 없음"`
-- [ ] **Step 2:** `scrapeEvent` 루프를 `m.bib || m.realName`이 아니라 **bib 필수**로 변경 (`!m.bib`면 해당 멤버 skip — targets 단계에서 이미 걸러짐)
-- [ ] **Step 3:** smartchip `searchMember`/`return_data` 호출에 bib 문자열 전달; results에 `bib: m.bib` 기록
-- [ ] **Step 4:** `triggerGroupScrape`의 “members 실명 필수” 검증을 bib 경로에서 완화 (participant.realName은 race_results용으로 유지). 주석 1줄
+**Group path 계약:**
+```js
+// scrape 핸들러
+const targets = pickBibScrapeTargets(event.participants); // [{ realName, nickname, bib, distance, ... }]
+if (targets.length === 0) return 400 "배번 등록 참가자 없음";
+await triggerGroupScrape({ ..., scrapeTargets: targets, queryBy: "bib" });
+
+// triggerGroupScrape → scrapeEvent members:
+targets.map((t) => ({
+  realName: t.realName,
+  nickname: t.nickname,
+  gender: fromMembersOrEmpty,
+  distance: t.distance,
+  bib: String(t.bib).trim(),
+}))
+// members 실명 필수 검증: queryBy==="bib"이면 스킵/완화
+```
+
+**scrapeEvent:**
+- `m.bib`가 있으면 **bib로 조회** (smartchip `nameorbibno`=bib). 이름 fallback 없음
+- `m.bib` 없으면 **기존처럼 `m.realName` 조회** (개인/ops 경로 유지)
+- `results[]`에 요청 bib가 있으면 `bib` 필드 보존
+
+**철원 베타 소스:** smartchip 필수. 타 소스는 bib 파라미 지원 시에만.
+
+- [ ] **Step 1:** `scrape` → `pickBibScrapeTargets` → `triggerGroupScrape({ scrapeTargets, queryBy: "bib" })`
+- [ ] **Step 2:** `triggerGroupScrape`가 `scrapeTargets`의 bib를 `scrapeEvent` members에 전달
+- [ ] **Step 3:** `scrapeEvent`: bib 있으면 bib 조회, 없으면 기존 realName 조회
+- [ ] **Step 4:** job results에 요청 bib 보존; bib 경로에서 members 실명 맵 필수 완화
 - [ ] **Step 5: Commit**
 
 ```bash
 git add functions/index.js functions/lib/scraper.js
-git commit -m "feat: group scrape는 배번 조회·대상만"
+git commit -m "feat: group scrape는 배번 조회·대상만 (개인 스크랩 유지)"
 ```
 
 ---
@@ -217,7 +238,7 @@ git commit -m "feat: group scrape는 배번 조회·대상만"
 **race_results 키 (confirm-one과 동일):**
 - docId = `${safeName}_${safeDist}_${safeDate}` where safeName←realName, safeDist←normalizeRaceDistance(distance)
 - self-confirm 재호출 시 **그 docId만** delete/set (event 전체 bulk delete 금지)
-- row 필수: `canonicalEventId`, `memberRealName`, `memberNickname`, `distance`, `netTime`, `bib`, `status: "confirmed"`, `confirmSource: "participant"`, `confirmedAt`, `jobId`, `eventName`, `eventDate`, `source`, `sourceId`
+- row 필수: `canonicalEventId`, `memberRealName`, `memberNickname`, `distance`, `netTime`, `bib`, `status: "confirmed"`, `confirmSource: "personal"`, `confirmedAt`, `jobId`, `eventName`, `eventDate`, `source`, `sourceId`
 
 - [ ] **Step 1: Failing tests**
 
@@ -255,12 +276,14 @@ describe("self-confirm", () => {
       pending: { bib: "4821", netTime: "1:42:18", gunTime: "", overallRank: 10, gender: "M" },
     });
     assert.equal(row.status, "confirmed");
-    assert.equal(row.confirmSource, "participant");
+    assert.equal(row.confirmSource, "personal");
     assert.equal(row.bib, "4821");
     assert.equal(row.netTime, "1:42:18");
   });
 });
 ```
+
+> `confirmSource: "personal"` — 기존 카운터/필터와 맞춤 (신규 `"participant"` 문자열 도입 금지).
 
 - [ ] **Step 2: Implement lib → PASS**
 
