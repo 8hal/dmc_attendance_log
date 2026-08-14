@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>목업 · 단체 대회 운영 홈 + 참가자 컨펌</title>
+  <style>
+    :root {
+      --bg: #e7eef6; --ink: #0f172a; --muted: #64748b; --line: #dbe3ee;
+      --card: #fff; --blue: #1d4ed8; --blue-soft: #dbeafe;
+      --brand: #0b1f3a; --green: #059669; --green-soft: #d1fae5;
+      --amber: #d97706; --amber-soft: #fef3c7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: linear-gradient(180deg, #dce7f4 0%, var(--bg) 40%, #eef3f9 100%);
+      line-height: 1.45;
+    }
+    .page { max-width: 920px; margin: 0 auto; padding: 28px 18px 64px; }
+    .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--blue); text-transform: uppercase; margin: 0 0 8px; }
+    h1 { font-size: clamp(26px, 4vw, 34px); margin: 0 0 10px; line-height: 1.25; }
+    .lede { color: #334155; margin: 0 0 18px; font-size: 15px; }
+    .badge {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      padding: 4px 10px; border-radius: 999px; background: var(--amber-soft); color: #9a3412;
+    }
+    h2 { font-size: 18px; margin: 36px 0 12px; }
+    .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+    .toc a {
+      text-decoration: none; font-size: 13px; font-weight: 600;
+      padding: 8px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--blue);
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px; margin-bottom: 12px;
+    }
+    .plain { margin: 0; padding-left: 18px; }
+    .plain li { margin: 6px 0; color: #334155; font-size: 14px; }
+    .frame-label {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted); margin: 0 0 10px;
+    }
+    .admin-shell {
+      background: #f8fafc; border: 1px solid var(--line); border-radius: 16px;
+      overflow: hidden; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+      max-width: 480px;
+    }
+    .admin-top {
+      background: var(--brand); color: #f8fafc; padding: 14px 16px;
+    }
+    .admin-top .sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .admin-body { padding: 14px; }
+    .sec {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .sec h3 {
+      margin: 0 0 8px; font-size: 13px; font-weight: 800; color: #334155;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .sec h3 .num {
+      width: 22px; height: 22px; border-radius: 999px; background: var(--blue);
+      color: #fff; font-size: 12px; display: inline-flex; align-items: center; justify-content: center;
+      margin-right: 6px;
+    }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .toggle {
+      width: 46px; height: 26px; border-radius: 999px; background: var(--green);
+      position: relative; flex-shrink: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 3px; right: 3px;
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 10px; padding: 10px 12px; font-weight: 700; font-size: 13px;
+      background: var(--blue); color: #fff; width: 100%; margin-top: 8px;
+    }
+    .btn.ghost {
+      background: #fff; color: #334155; border: 1px solid var(--line);
+    }
+    .btn.sm { width: auto; padding: 6px 10px; font-size: 12px; margin-top: 0; }
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+    .stat {
+      background: var(--blue-soft); border-radius: 10px; padding: 10px; text-align: center; text-decoration: none; color: inherit;
+    }
+    .stat b { display: block; font-size: 22px; color: var(--blue); }
+    .stat span { font-size: 11px; color: #475569; }
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px;
+    }
+    .list-row:last-child { border-bottom: 0; }
+    .nick { font-weight: 700; }
+    .sub { font-size: 12px; color: var(--muted); }
+    .pill-ok { font-size: 11px; font-weight: 700; color: var(--green); background: var(--green-soft); padding: 2px 8px; border-radius: 999px; }
+    .pill-wait { font-size: 11px; font-weight: 700; color: var(--amber); background: var(--amber-soft); padding: 2px 8px; border-radius: 999px; }
+    .pill-off { font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; }
+    .hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+    .phones-2 { display: grid; gap: 20px; }
+    @media (min-width: 800px) {
+      .phones-2 { grid-template-columns: 1fr 1fr; align-items: start; }
+    }
+    .phone {
+      background: #f1f5f9; border-radius: 22px; overflow: hidden;
+      border: 1px solid var(--line); box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
+      max-width: 400px;
+    }
+    .brand { background: var(--brand); color: #f8fafc; padding: 12px 16px 10px; }
+    .brand-row { display: flex; justify-content: space-between; align-items: center; }
+    .brand-title { font-weight: 700; font-size: 16px; }
+    .brand-list { font-size: 13px; color: #94a3b8; text-decoration: none; }
+    .brand-sub { margin-top: 4px; font-size: 12px; color: #94a3b8; }
+    .body { padding: 14px 14px 72px; min-height: 420px; }
+    .banner {
+      background: #fff; border-radius: 14px; padding: 14px 16px;
+      border: 1px solid var(--line); margin-bottom: 12px;
+    }
+    .banner-kicker { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .banner-name { font-weight: 700; font-size: 17px; }
+    .banner-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px;
+      background: var(--blue-soft); color: #1d4ed8;
+    }
+    .chip.muted { background: #f1f5f9; color: #475569; }
+    .cta {
+      display: block; width: 100%; border: 0; border-radius: 14px;
+      background: var(--blue); color: #fff; font-weight: 700; font-size: 15px;
+      padding: 15px; text-align: center; margin-bottom: 12px;
+    }
+    .cta.green { background: var(--green); }
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      background: #fff; border-top: 1px solid var(--line);
+    }
+    .tab {
+      text-align: center; padding: 10px 4px; font-size: 11px; color: #64748b;
+    }
+    .tab.active { color: var(--blue); font-weight: 700; }
+    .tab-icon { display: block; font-size: 16px; margin-bottom: 2px; }
+    .footer-note {
+      margin-top: 40px; padding: 16px; border-radius: 14px;
+      background: rgba(255,255,255,0.75); border: 1px dashed #cbd5e1;
+      font-size: 13px; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <p class="eyebrow">목업 · 철원 베타</p>
+    <h1>운영 홈 + 참가자 컨펌</h1>
+    <p class="lede">
+      총무는 <strong>한 페이지</strong>에서 준비→버스→배번→스크랩.<br />
+      대회기록은 <strong>참가자가 컨펌</strong>해야 반영. 배번 없음 = 미참가.
+    </p>
+    <span class="badge">더미 화면 · API 없음</span>
+
+    <nav class="toc" aria-label="바로가기">
+      <a href="#flow">흐름</a>
+      <a href="#admin">총무 event-admin</a>
+      <a href="#member-pending">회원 · 컨펌 전</a>
+      <a href="#member-done">회원 · 컨펌 후</a>
+    </nav>
+
+    <h2 id="flow">역할 흐름</h2>
+    <div class="card">
+      <ul class="plain">
+        <li><strong>총무:</strong> 탑승 수동 ON · 대리 체크 · 배번 현황 · 배번 있는 사람만 스크랩</li>
+        <li><strong>참가자:</strong> 배번 입력 → (스크랩 후) 홈에서 내 기록 확인·컨펌</li>
+        <li><strong>없음:</strong> 이름 갭 UI · 총무 일괄 확정 주경로</li>
+      </ul>
+    </div>
+
+    <h2 id="admin">화면 A · 총무 운영 홈</h2>
+    <p class="frame-label">event-admin.html?eventId=…</p>
+    <div class="admin-shell">
+      <div class="admin-top">
+        <div class="row-between">
+          <strong>동마클 단체 대회 · 운영</strong>
+          <span style="font-size:12px;color:#94a3b8;">로그아웃</span>
+        </div>
+        <div class="sub">2026 철원 DMZ · 4/12 · evt_cheorwon_demo</div>
+      </div>
+      <div class="admin-body">
+        <div class="sec">
+          <h3><span><span class="num">1</span>준비</span></h3>
+          <div class="row-between">
+            <div>
+              <div style="font-weight:700;font-size:14px;">버스 탑승</div>
+              <div class="sub">수동 on/off · 지금은 켜짐</div>
+            </div>
+            <div class="toggle" title="ON"></div>
+          </div>
+          <button type="button" class="btn ghost">버스 명단 CSV 가져오기</button>
+          <button type="button" class="btn ghost">회원 앱 · 버스 QR/링크 복사</button>
+          <p class="hint">소스: smartchip / 2026xxxxx (설정됨)</p>
+        </div>
+
+        <div class="sec">
+          <h3><span><span class="num">2</span>버스 탑승</span> <span class="pill-ok">가는</span></h3>
+          <div class="stat-row">
+            <div class="stat"><b>31</b><span>탑승 완료</span></div>
+            <div class="stat"><b>5</b><span>미탑승</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="nick">새벽버스</div><div class="sub">왕복 · 미탑승</div></div>
+            <button type="button" class="btn sm">대리 체크</button>
+          </div>
+          <div class="list-row">
+            <div><div class="nick">게살볶음밥</div><div class="sub">왕복 · 04:48</div></div>
+            <span class="pill-ok">완료</span>
+          </div>
+          <button type="button" class="btn ghost">지인 추가 · 오는 버스 탭</button>
+        </div>
+
+        <div class="sec">
+          <h3><span><span class="num">3</span>배번 현황</span></h3>
+          <div class="stat-row">
+            <div class="stat"><b>28</b><span>배번 있음 · 스크랩 대상</span></div>
+            <div class="stat"><b>4</b><span>없음 · 미참가로 봄</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="nick">동탄치타</div><div class="sub">배번 미입력</div></div>
+            <span class="pill-off">대상 아님</span>
+          </div>
+          <p class="hint">갭(이름 매칭) 목록 없음. 독려만.</p>
+        </div>
+
+        <div class="sec">
+          <h3><span><span class="num">4</span>결과 가져오기</span></h3>
+          <p class="hint" style="margin-top:0;">배번 28명만 스크랩. 대회기록은 참가자 컨펌 후.</p>
+          <button type="button" class="btn">배번 28명 스크랩 실행</button>
+          <div class="stat-row" style="margin-top:10px;">
+            <div class="stat"><b>22</b><span>조회됨 · 컨펌 대기</span></div>
+            <div class="stat"><b>6</b><span>참가자 컨펌 완료</span></div>
+          </div>
+          <p class="hint">총무 일괄 확정 버튼 없음 (베타 주경로).</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>화면 B · 회원 컨펌</h2>
+    <div class="phones-2">
+      <div id="member-pending">
+        <p class="frame-label">홈 · 스크랩 후 · 컨펌 전</p>
+        <div class="phone">
+          <div class="brand">
+            <div class="brand-row">
+              <span class="brand-title">동마클 단체 대회</span>
+              <a class="brand-list" href="#">목록</a>
+            </div>
+            <div class="brand-sub">철원 DMZ · 4/12</div>
+          </div>
+          <div class="body">
+            <div class="banner">
+              <div class="banner-kicker">내 참가</div>
+              <div class="banner-name">게살볶음밥</div>
+              <div class="banner-meta">
+                <span class="chip">하프</span>
+                <span class="chip muted">#4821</span>
+              </div>
+            </div>
+            <div class="banner" style="border-color:#93c5fd;background:#eff6ff;">
+              <div class="banner-kicker">기록 준비됨</div>
+              <div style="font-size:22px;font-weight:800;margin:4px 0;">1:42:18</div>
+              <div class="sub">배번 4821 · 하프 · 순위 표시는 예시</div>
+            </div>
+            <div class="cta">내 기록 확인 · 컨펌</div>
+            <p class="hint">컨펌해야 대회기록·명단에 반영됩니다.</p>
+          </div>
+          <nav class="tabs">
+            <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+            <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+            <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+          </nav>
+        </div>
+      </div>
+
+      <div id="member-done">
+        <p class="frame-label">홈 · 컨펌 후</p>
+        <div class="phone">
+          <div class="brand">
+            <div class="brand-row">
+              <span class="brand-title">동마클 단체 대회</span>
+              <a class="brand-list" href="#">목록</a>
+            </div>
+            <div class="brand-sub">철원 DMZ · 4/12</div>
+          </div>
+          <div class="body">
+            <div class="banner">
+              <div class="banner-kicker">대회기록 반영됨</div>
+              <div class="banner-name">게살볶음밥</div>
+              <div class="banner-meta">
+                <span class="chip">하프</span>
+                <span class="chip muted">#4821</span>
+                <span class="chip" style="background:var(--green-soft);color:var(--green);">1:42:18</span>
+              </div>
+            </div>
+            <div class="cta green">컨펌 완료</div>
+            <p class="hint">명단·결과 탭에서도 동일 기록이 보입니다.</p>
+          </div>
+          <nav class="tabs">
+            <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
+            <div class="tab"><span class="tab-icon">🚌</span>버스</div>
+            <div class="tab"><span class="tab-icon">📋</span>명단·결과</div>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      파일: <code>event-admin-mockup.html</code><br />
+      계획: <code>_docs/superpowers/plans/2026-08-14-group-event-admin-impl.md</code><br />
+      스펙: <code>_docs/superpowers/specs/2026-08-13-group-event-admin-design.md</code>
+    </div>
+  </div>
+</body>
+</html>
