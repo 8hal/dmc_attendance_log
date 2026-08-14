@@ -120,6 +120,35 @@
 | `groupScrapeTriggeredAt` | `string` 또는 `null` — 스크랩 트리거 시각, ISO KST |
 | `promotedAt` | ISO KST 문자열 — 단체 대회로 승격된 시각 |
 | `gorunningId` | 문자열 — 고러닝 예정 대회 ID |
+| `busBoarding` | `object` 또는 생략 — 단체 대회 **버스 탑승** 모듈(optional). 버스 없는 대회는 필드 생략 또는 `enabled: false`. `participants[]`와 분리(배번·결과 vs 탑승 체크). 상세는 아래 |
+
+### race_events.busBoarding
+
+스펙: `_docs/superpowers/specs/2026-08-02-group-event-day-ux-design.md` §4.1.
+
+| 필드 | 의미 |
+|------|------|
+| `enabled` | `boolean` — 참가자 셀프체크·공개 탑승 화면 활성 여부 |
+| `legs` | `("outbound" \| "return")[]` — 운영 구간. 예: `["outbound","return"]` (가는/오는) |
+| `importMeta` | `{ importedAt, rowCount, sourceLabel }` — 최근 CSV import 메타. `importedAt`: Timestamp\|null, `rowCount`: number, `sourceLabel`: string\|null (예: `"철원설문_0809.csv"`) |
+| `roster` | 배열 — 탑승 명단. 지인(`isGuest`) 가능. `participants[]`와 별도 |
+
+#### `busBoarding.roster[]` 요소
+
+| 필드 | 의미 |
+|------|------|
+| `rosterId` | 문서 내 고유키 (uuid 등) |
+| `nickname` | 표시·셀프체크 키 |
+| `realName` | 실명 |
+| `memberId` | `string` \| `null` — 정회원이면 `members` id, 지인이면 null |
+| `isGuest` | `boolean` — 지인 여부 |
+| `rideType` | `"roundtrip"` \| `"outbound_only"` \| `"return_only"` — 설문 왕복/편도. → `legs.*.required` 매핑 |
+| `note` | `string` \| `null` — **비고. 총무(admin) API 응답에만 포함**, 참가자 공개 GET에는 미포함 |
+| `legs.outbound` / `legs.return` | `{ required, boarded, boardedAt, boardedBy }` — `required`/`boarded`: boolean; `boardedAt`: Timestamp\|null; `boardedBy`: `"self"` \| `"admin"` \| null |
+
+**`rideType` → `legs.*.required`:** `roundtrip` → outbound+return true; `outbound_only` → outbound만; `return_only` → return만. 개별 이동은 import 대상 아님.
+
+**`participants[]`와의 관계:** 배번·결과 확정은 `participants`, 버스 탑승은 `busBoarding.roster`. 지인은 roster에만 가능.
 
 ### race_events.groupScrapeStatus
 
