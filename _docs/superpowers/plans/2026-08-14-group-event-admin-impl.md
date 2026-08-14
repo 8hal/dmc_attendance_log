@@ -202,6 +202,7 @@ targets.map((t) => ({
 **철원 베타 소스:** smartchip 필수. 타 소스는 bib 파라미 지원 시에만.
 
 - [ ] **Step 1:** `scrape` → `pickBibScrapeTargets` → `triggerGroupScrape({ scrapeTargets, queryBy: "bib" })`
+- [ ] **Step 1b:** `groupEventAutoScrape` 스케줄러도 **동일하게** bib targets + `queryBy: "bib"`로 맞춤 (이름 전원 스크랩 금지 — 성공 기준 #3). 배번 0명이면 스크랩 스킵·로그
 - [ ] **Step 2:** `triggerGroupScrape`가 `scrapeTargets`의 bib를 `scrapeEvent` members에 전달
 - [ ] **Step 3:** `scrapeEvent`: bib 있으면 bib 조회, 없으면 기존 realName 조회
 - [ ] **Step 4:** job results에 요청 bib 보존; bib 경로에서 members 실명 맵 필수 완화
