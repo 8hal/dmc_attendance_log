@@ -1,0 +1,1808 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>단체 대회 운영 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --brand: #0b1f3a;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+      --blue-soft: #DBEAFE;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 0;
+      line-height: 1.45;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 0 0 48px; }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.2);
+    }
+    .auth-card h1 { font-size: 20px; margin: 0 0 8px; font-weight: 700; }
+    .auth-card p { margin: 0 0 16px; color: var(--text-sub); font-size: 14px; }
+    .auth-error {
+      display: none;
+      color: var(--red);
+      font-size: 13px;
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+
+    .admin-top {
+      background: var(--brand);
+      color: #f8fafc;
+      padding: 14px 16px;
+    }
+    .admin-top .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .admin-top .sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .logout-btn {
+      background: transparent;
+      border: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .logout-btn:hover { color: #e2e8f0; }
+
+    .admin-body { padding: 14px 14px 0; }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin: 0 0 12px;
+      font-size: 13px;
+    }
+    .nav-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-links a:hover { text-decoration: underline; }
+
+    .sec {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    .sec h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .sec h3 .left { display: flex; align-items: center; gap: 6px; }
+    .sec h3 .num {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .search-input, .field-input, .field-select,
+    .auth-card input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .search-input:focus, .field-input:focus, .field-select:focus,
+    .auth-card input[type="password"]:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .field-row.full { grid-template-columns: 1fr; }
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover:not(:disabled) { background: #CBD5E1; }
+    .btn-ghost {
+      background: #fff;
+      color: #334155;
+      border: 1px solid var(--border);
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn-ghost:hover:not(:disabled) { background: #F1F5F9; }
+    .btn-danger {
+      background: var(--red-light);
+      color: var(--red);
+      border: 1px solid #FECACA;
+    }
+    .btn-danger:hover:not(:disabled) { background: #FECACA; }
+    .btn-sm { padding: 8px 12px; font-size: 13px; }
+    .btn-block { width: 100%; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .stat {
+      background: var(--blue-soft);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat b { display: block; font-size: 22px; color: var(--primary); }
+    .stat span { font-size: 11px; color: #475569; }
+
+    .leg-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .leg-tab {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-sub);
+    }
+    .leg-tab.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #EFF6FF;
+    }
+
+    .summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .summary-count { font-size: 18px; font-weight: 700; }
+    .summary-count .need { color: var(--text-sub); font-weight: 600; font-size: 15px; }
+    .summary-hint { font-size: 13px; color: var(--amber); font-weight: 600; }
+
+    .roster-list { max-height: 50vh; overflow-y: auto; }
+    .roster-row {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: var(--card);
+    }
+    .roster-row.not-boarded { border-color: #FBBF24; background: #FFFBEB; }
+    .roster-row.boarded { border-color: #A7F3D0; background: #F0FDF4; }
+    .roster-row.na { opacity: 0.65; background: var(--bg); }
+    .roster-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .roster-name {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .roster-real { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+    .guest-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--amber-light);
+      color: var(--amber);
+    }
+    .ride-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #EFF6FF;
+      color: var(--primary);
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .toggle-wrap input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--green);
+    }
+    .note-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .note-row .field-input { flex: 1; min-width: 120px; padding: 8px 10px; font-size: 13px; }
+    .roster-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .status-pill {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .status-pill.pending { background: #FEF3C7; color: #B45309; }
+    .status-pill.done { background: var(--green-light); color: var(--green); }
+    .status-pill.skip { background: var(--border); color: var(--text-sub); }
+
+    .pill-ok {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-soft, var(--green-light));
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .pill-wait {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amber);
+      background: var(--amber-light);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .pill-off {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .list-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+    }
+    .list-row:last-child { border-bottom: 0; }
+    .nick { font-weight: 700; }
+    .sub { font-size: 12px; color: var(--text-sub); }
+
+    .disabled-banner {
+      background: var(--amber-light);
+      color: #92400E;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .owner-banner {
+      background: #EFF6FF;
+      color: #1e40af;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .ops-writable:disabled { opacity: 0.55; pointer-events: none; }
+
+    .qr-box { text-align: center; margin-top: 8px; }
+    .qr-box img {
+      width: 160px;
+      height: 160px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+    }
+    .link-box {
+      word-break: break-all;
+      font-size: 12px;
+      background: var(--bg);
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      color: var(--text-sub);
+      text-align: left;
+    }
+
+    .import-report {
+      font-size: 13px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--bg);
+      white-space: pre-wrap;
+      display: none;
+    }
+    .import-report.show { display: block; }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin: 8px 0 0;
+      line-height: 1.4;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-sub);
+    }
+    .hidden { display: none !important; }
+    .poll-meta {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .poll-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 6px;
+    }
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 3000;
+      max-width: 90vw;
+    }
+    .toast.error { background: var(--red); }
+
+    .activate-box { text-align: center; padding: 16px 8px 8px; }
+    .activate-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+    .activate-msg {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    .source-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .source-row select,
+    .source-row input {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .source-row input { flex: 1; min-width: 140px; }
+
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
+      .admin-body { padding: 12px 10px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-overlay" id="auth-overlay">
+    <div class="auth-card">
+      <h1>단체 대회 운영</h1>
+      <p>총무용 · 운영진 비밀번호를 입력하세요</p>
+      <div class="auth-error" id="auth-error">비밀번호가 올바르지 않습니다</div>
+      <input type="password" id="auth-pw" placeholder="비밀번호" autocomplete="current-password" />
+      <div class="btn-row" style="margin-top:12px">
+        <button type="button" class="btn btn-primary btn-block" id="auth-btn">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap hidden" id="main-wrap">
+    <div class="admin-top">
+      <div class="row-between">
+        <strong>동마클 단체 대회 · 운영</strong>
+        <button type="button" class="logout-btn" id="logout-btn">로그아웃</button>
+      </div>
+      <div class="sub" id="event-meta">—</div>
+      <div class="poll-meta">
+        <span class="poll-dot" id="poll-dot" title="자동 갱신"></span>
+        <span id="role-label">—</span>
+        · <span id="poll-hint">4초마다 갱신</span>
+      </div>
+    </div>
+
+    <div class="admin-body">
+      <div id="missing-event" class="sec hidden">
+        <div class="activate-box">
+          <div class="activate-title">잘못된 접근</div>
+          <p class="activate-msg">URL에 <code>?eventId=</code> 가 필요합니다.</p>
+        </div>
+      </div>
+
+      <div id="loading-screen" class="loading">불러오는 중…</div>
+
+      <div id="ops-root" class="hidden">
+        <div class="nav-links">
+          <a id="link-boarding" href="#">버스 (회원)</a>
+          <a id="link-bib" href="#">배번 입력</a>
+          <a href="group.html">단체 대회 목록</a>
+          <a id="link-boarding-admin" href="#">버스 전용 총무</a>
+        </div>
+
+        <!-- ① 준비 -->
+        <section class="sec" id="sec-prep">
+          <h3><span class="left"><span class="num">1</span>준비</span></h3>
+
+          <div class="row-between" style="margin-bottom:8px;">
+            <div>
+              <div style="font-weight:700;font-size:14px;">버스 탑승</div>
+              <div class="sub" id="bus-enabled-hint">수동 on/off</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="bus-toggle-btn">켜기</button>
+          </div>
+
+          <div id="activate-panel" class="hidden">
+            <div class="activate-box">
+              <div class="activate-title">버스 탑승 시작</div>
+              <p class="activate-msg">시작하면 참가자가 QR/링크로 셀프 체크할 수 있습니다.</p>
+              <button type="button" class="btn btn-primary btn-block" id="enable-btn">버스 탑승 시작</button>
+            </div>
+          </div>
+
+          <label class="field-label" for="csv-input">버스 명단 CSV</label>
+          <input type="file" id="csv-input" class="ops-writable" accept=".csv,text/csv,text/plain" />
+          <p class="hint">헤더: 닉네임, 이름/실명, 버스 탑승 여부, 비고</p>
+          <div class="import-report" id="import-report"></div>
+
+          <div class="qr-box">
+            <p class="hint" style="margin-top:0;text-align:left;">회원 · 버스 QR / 링크</p>
+            <img id="qr-img" alt="참가자 탑승 QR" width="160" height="160" />
+            <div class="link-box" id="participant-link-text"></div>
+            <button type="button" class="btn btn-ghost" id="copy-link-btn">버스 링크 복사</button>
+            <button type="button" class="btn btn-ghost" id="copy-bib-link-btn">배번 입력 링크 복사</button>
+          </div>
+
+          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px;">기록 소스 (groupSource)</div>
+            <div id="owner-scrape-hint" class="owner-banner hidden">
+              스크랩·소스 저장은 오너 비밀번호가 필요합니다. 현재 역할로는 조회만 가능합니다.
+            </div>
+            <div class="source-row">
+              <select id="source-select" class="owner-writable">
+                <option value="">소스 선택</option>
+                <option value="smartchip">smartchip</option>
+                <option value="ohmyrace">ohmyrace</option>
+                <option value="myresult">myresult</option>
+                <option value="spct">spct</option>
+                <option value="marazone">marazone</option>
+                <option value="manual">manual</option>
+              </select>
+              <input type="text" id="source-id-input" class="owner-writable" placeholder="sourceId" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary owner-writable" id="save-source-btn">저장</button>
+            </div>
+            <p class="hint" id="source-hint">배번 스크랩은 smartchip · ohmyrace만 지원합니다.</p>
+          </div>
+        </section>
+
+        <!-- ② 버스 -->
+        <section class="sec" id="sec-bus">
+          <h3>
+            <span class="left"><span class="num">2</span>버스 탑승</span>
+            <span class="pill-ok" id="bus-leg-pill">가는</span>
+          </h3>
+          <div id="disabled-banner" class="disabled-banner hidden">
+            버스 탑승이 꺼져 있습니다. 명단·비고는 조회만 가능합니다.
+          </div>
+          <div class="leg-tabs" role="tablist">
+            <button type="button" class="leg-tab active" id="tab-outbound" data-leg="outbound">가는 편</button>
+            <button type="button" class="leg-tab" id="tab-return" data-leg="return">오는 편</button>
+          </div>
+          <div class="summary-bar">
+            <div class="summary-count" id="summary-count">탑승 0 / 필요 0</div>
+            <div class="summary-hint" id="summary-hint"></div>
+          </div>
+          <input
+            type="search"
+            id="search-input"
+            class="search-input"
+            placeholder="닉네임·실명·비고 검색…"
+            autocomplete="off"
+          />
+          <div class="roster-list" id="roster-list" style="margin-top:12px"></div>
+
+          <div id="guest-card" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:8px;">지인 추가</div>
+            <div class="field-row">
+              <div>
+                <label class="field-label" for="guest-nickname">닉네임</label>
+                <input type="text" id="guest-nickname" class="field-input ops-writable" autocomplete="off" />
+              </div>
+              <div>
+                <label class="field-label" for="guest-real-name">실명</label>
+                <input type="text" id="guest-real-name" class="field-input ops-writable" autocomplete="off" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div>
+                <label class="field-label" for="guest-ride-type">탑승</label>
+                <select id="guest-ride-type" class="field-select ops-writable">
+                  <option value="roundtrip">왕복</option>
+                  <option value="outbound_only">가는 편만</option>
+                  <option value="return_only">오는 편만</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="guest-note">비고</label>
+                <input type="text" id="guest-note" class="field-input ops-writable" autocomplete="off" />
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary btn-block ops-writable" id="guest-add-btn">지인 추가</button>
+          </div>
+        </section>
+
+        <!-- ③ 배번 -->
+        <section class="sec" id="sec-bib">
+          <h3><span class="left"><span class="num">3</span>배번 현황</span></h3>
+          <div class="stat-row">
+            <div class="stat"><b id="bib-with-count">0</b><span>배번 있음 · 스크랩 대상</span></div>
+            <div class="stat"><b id="bib-without-count">0</b><span>없음 · 미참가로 봄</span></div>
+          </div>
+          <div id="bib-missing-list"></div>
+          <p class="hint">갭(이름 매칭) 목록 없음. 독려만.</p>
+        </section>
+
+        <!-- ④ 스크랩 -->
+        <section class="sec" id="sec-scrape">
+          <h3>
+            <span class="left"><span class="num">4</span>결과 가져오기</span>
+            <span id="scrape-status-pill" class="pill-off">—</span>
+          </h3>
+          <p class="hint" style="margin-top:0;" id="scrape-intro">배번 있는 참가자만 스크랩. 대회기록은 참가자 컨펌 후.</p>
+          <button type="button" class="btn btn-primary btn-block owner-writable" id="scrape-btn">스크랩 실행</button>
+          <div class="stat-row" style="margin-top:10px;">
+            <div class="stat"><b id="pending-count">0</b><span>조회됨 · 컨펌 대기</span></div>
+            <div class="stat"><b id="confirmed-count">0</b><span>참가자 컨펌 완료</span></div>
+          </div>
+          <p class="hint">총무 일괄 확정 버튼 없음 (베타 주경로).</p>
+          <button type="button" class="btn btn-ghost" id="refresh-all-btn">전체 새로고침</button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    const AUTH_KEY = "dmc_event_admin_auth";
+    const AUTH_PW_KEY = "dmc_event_admin_pw";
+    const AUTH_ROLE_KEY = "dmc_event_admin_role";
+    const POLL_MS = 4000;
+    const BIB_SCRAPE_SOURCES = ["smartchip", "ohmyrace"];
+    const LEG_LABEL = { outbound: "가는", return: "오는" };
+    const RIDE_LABEL = {
+      roundtrip: "왕복",
+      outbound_only: "가는 편만",
+      return_only: "오는 편만"
+    };
+
+    let adminPwCache = "";
+    let adminRole = "";
+    let eventId = null;
+    let eventName = "";
+    let eventDate = "";
+    let enabled = false;
+    let roster = [];
+    let summary = {
+      outbound: { required: 0, boarded: 0 },
+      return: { required: 0, boarded: 0 }
+    };
+    let currentLeg = "outbound";
+    let pollTimer = null;
+    let isProcessing = false;
+    let composing = false;
+    let eventDetail = null;
+    let gapRows = [];
+    let confirmedCount = 0;
+
+    const authOverlay = document.getElementById("auth-overlay");
+    const mainWrap = document.getElementById("main-wrap");
+    const loadingScreen = document.getElementById("loading-screen");
+    const opsRoot = document.getElementById("ops-root");
+    const missingEvent = document.getElementById("missing-event");
+    const rosterList = document.getElementById("roster-list");
+    const searchInput = document.getElementById("search-input");
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showToast(message, isError) {
+      const toast = document.createElement("div");
+      toast.className = "toast" + (isError ? " error" : "");
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), isError ? 4000 : 2500);
+    }
+
+    function isOwner() {
+      return adminRole === "owner";
+    }
+
+    function getOwnerPw() {
+      if (!isOwner()) return "";
+      return adminPwCache || sessionStorage.getItem(AUTH_PW_KEY) || "";
+    }
+
+    function requirePw() {
+      if (adminPwCache) return adminPwCache;
+      const stored = sessionStorage.getItem(AUTH_PW_KEY);
+      if (stored) {
+        adminPwCache = stored;
+        return adminPwCache;
+      }
+      const pw = window.prompt("관리자 비밀번호");
+      if (!pw) return null;
+      adminPwCache = pw;
+      sessionStorage.setItem(AUTH_PW_KEY, pw);
+      return pw;
+    }
+
+    function isAuthedFlag() {
+      return sessionStorage.getItem(AUTH_KEY) === "ok";
+    }
+
+    function participantUrl() {
+      if (!eventId) return "";
+      const u = new URL("boarding.html", window.location.href);
+      u.searchParams.set("eventId", eventId);
+      return u.href;
+    }
+
+    function bibUrl() {
+      if (!eventId) return "";
+      const u = new URL("my-bib.html", window.location.href);
+      u.searchParams.set("eventId", eventId);
+      return u.href;
+    }
+
+    function updateLinks() {
+      const boardingHref = eventId
+        ? `boarding.html?eventId=${encodeURIComponent(eventId)}`
+        : "boarding.html";
+      const bibHref = eventId
+        ? `my-bib.html?eventId=${encodeURIComponent(eventId)}`
+        : "my-bib.html";
+      const boardingAdminHref = eventId
+        ? `boarding-admin.html?eventId=${encodeURIComponent(eventId)}`
+        : "boarding-admin.html";
+      document.getElementById("link-boarding").href = boardingHref;
+      document.getElementById("link-bib").href = bibHref;
+      document.getElementById("link-boarding-admin").href = boardingAdminHref;
+
+      const abs = participantUrl();
+      document.getElementById("participant-link-text").textContent = abs || "—";
+      const qr = document.getElementById("qr-img");
+      if (abs) {
+        qr.src =
+          "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+          encodeURIComponent(abs);
+      } else {
+        qr.removeAttribute("src");
+      }
+    }
+
+    function setOwnerWritableUi() {
+      const canOwner = isOwner();
+      document.querySelectorAll(".owner-writable").forEach((el) => {
+        el.disabled = !canOwner;
+      });
+      document.getElementById("owner-scrape-hint").classList.toggle("hidden", canOwner);
+    }
+
+    function setWritableUi(canWrite) {
+      document.querySelectorAll(".ops-writable").forEach((el) => {
+        el.disabled = !canWrite;
+      });
+      document.getElementById("disabled-banner").classList.toggle("hidden", canWrite);
+      document.getElementById("guest-card").classList.toggle("hidden", !canWrite);
+      const toggleBtn = document.getElementById("bus-toggle-btn");
+      if (enabled === true) {
+        toggleBtn.textContent = "끄기";
+        toggleBtn.className = "btn btn-sm btn-danger";
+      } else {
+        toggleBtn.textContent = "켜기";
+        toggleBtn.className = "btn btn-sm btn-primary";
+      }
+      document.getElementById("bus-enabled-hint").textContent =
+        enabled === true ? "수동 on/off · 지금은 켜짐" : "수동 on/off · 지금은 꺼짐";
+    }
+
+    function isNoteInputFocused() {
+      const ae = document.activeElement;
+      return !!(
+        ae &&
+        rosterList.contains(ae) &&
+        ae.classList &&
+        ae.classList.contains("note-input")
+      );
+    }
+
+    function collectNoteDrafts() {
+      const drafts = {};
+      rosterList.querySelectorAll(".note-input").forEach((input) => {
+        const id = input.getAttribute("data-roster-id");
+        if (id) drafts[id] = input.value;
+      });
+      return drafts;
+    }
+
+    function setLeg(leg) {
+      currentLeg = leg;
+      document.getElementById("tab-outbound").classList.toggle("active", leg === "outbound");
+      document.getElementById("tab-return").classList.toggle("active", leg === "return");
+      document.getElementById("bus-leg-pill").textContent = LEG_LABEL[leg] || leg;
+      renderSummary();
+      renderRoster(searchInput.value);
+    }
+
+    function legState(row) {
+      return (row.legs && row.legs[currentLeg]) || null;
+    }
+
+    function isRequired(row) {
+      const st = legState(row);
+      return !!(st && st.required);
+    }
+
+    function isBoarded(row) {
+      const st = legState(row);
+      return !!(st && st.boarded);
+    }
+
+    function renderSummary() {
+      const s = summary[currentLeg] || { required: 0, boarded: 0 };
+      const boarded = s.boarded || 0;
+      const required = s.required || 0;
+      const pending = Math.max(0, required - boarded);
+      document.getElementById("summary-count").innerHTML =
+        `탑승 ${boarded} <span class="need">/ 필요 ${required}</span>`;
+      document.getElementById("summary-hint").textContent =
+        pending > 0 ? `미탑승 ${pending}명` : required > 0 ? "전원 탑승" : "";
+    }
+
+    function renderRoster(filterText, opts) {
+      const skipIfNoteFocused = opts && opts.skipIfNoteFocused;
+      if (skipIfNoteFocused && isNoteInputFocused()) return;
+
+      const drafts = collectNoteDrafts();
+      const focusedId = isNoteInputFocused()
+        ? document.activeElement.getAttribute("data-roster-id")
+        : null;
+      const focusedSelStart = focusedId ? document.activeElement.selectionStart : null;
+      const focusedSelEnd = focusedId ? document.activeElement.selectionEnd : null;
+
+      rosterList.innerHTML = "";
+      const q = String(filterText || "").trim().toLowerCase();
+
+      let rows = roster.slice();
+      if (q) {
+        rows = rows.filter((p) => {
+          const nick = String(p.nickname || "").toLowerCase();
+          const real = String(p.realName || "").toLowerCase();
+          const note = String(p.note || "").toLowerCase();
+          return nick.includes(q) || real.includes(q) || note.includes(q);
+        });
+      }
+
+      rows.sort((a, b) => {
+        const ar = isRequired(a);
+        const br = isRequired(b);
+        if (ar !== br) return ar ? -1 : 1;
+        const ab = isBoarded(a);
+        const bb = isBoarded(b);
+        if (ar && br && ab !== bb) return ab ? 1 : -1;
+        return String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko");
+      });
+
+      if (rows.length === 0) {
+        rosterList.innerHTML =
+          '<div style="text-align:center;padding:20px;color:var(--text-sub);">명단이 없습니다</div>';
+        return;
+      }
+
+      const canWrite = enabled === true;
+
+      rows.forEach((row) => {
+        const required = isRequired(row);
+        const boarded = isBoarded(row);
+        const el = document.createElement("div");
+        let rowClass = "roster-row";
+        if (!required) rowClass += " na";
+        else if (boarded) rowClass += " boarded";
+        else rowClass += " not-boarded";
+        el.className = rowClass;
+
+        let statusHtml;
+        if (!required) {
+          statusHtml = '<span class="status-pill skip">해당없음</span>';
+        } else if (boarded) {
+          statusHtml = '<span class="status-pill done">탑승</span>';
+        } else {
+          statusHtml = '<span class="status-pill pending">미탑승</span>';
+        }
+
+        const guestBadge = row.isGuest
+          ? '<span class="guest-badge">지인</span>'
+          : "";
+        const rideBadge =
+          `<span class="ride-badge">${escapeHtml(RIDE_LABEL[row.rideType] || row.rideType || "—")}</span>`;
+        const serverNote = row.note == null ? "" : String(row.note);
+        const noteVal =
+          Object.prototype.hasOwnProperty.call(drafts, row.rosterId)
+            ? drafts[row.rosterId]
+            : serverNote;
+        const toggleDisabled = !canWrite || !required ? "disabled" : "";
+        const noteDisabled = canWrite ? "" : "disabled";
+        const removeDisabled = canWrite ? "" : "disabled";
+
+        el.innerHTML = `
+          <div class="roster-top">
+            <div>
+              <div class="roster-name">
+                ${escapeHtml(row.nickname)}
+                ${guestBadge}
+                ${rideBadge}
+                ${statusHtml}
+              </div>
+              <div class="roster-real">${escapeHtml(row.realName || "—")}</div>
+            </div>
+            <div class="roster-actions">
+              <label class="toggle-wrap">
+                <input
+                  type="checkbox"
+                  class="board-toggle"
+                  data-roster-id="${escapeHtml(row.rosterId)}"
+                  ${boarded ? "checked" : ""}
+                  ${toggleDisabled}
+                />
+                탑승
+              </label>
+              <button
+                type="button"
+                class="btn btn-sm btn-danger roster-remove"
+                data-roster-id="${escapeHtml(row.rosterId)}"
+                data-nickname="${escapeHtml(row.nickname)}"
+                ${removeDisabled}
+              >제외</button>
+            </div>
+          </div>
+          <div class="note-row">
+            <input
+              type="text"
+              class="field-input note-input"
+              data-roster-id="${escapeHtml(row.rosterId)}"
+              value="${escapeHtml(noteVal)}"
+              placeholder="비고"
+              autocomplete="off"
+              ${noteDisabled}
+            />
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary note-save"
+              data-roster-id="${escapeHtml(row.rosterId)}"
+              ${noteDisabled}
+            >저장</button>
+          </div>
+        `;
+        rosterList.appendChild(el);
+      });
+
+      if (focusedId) {
+        const inputs = rosterList.querySelectorAll(".note-input");
+        for (let i = 0; i < inputs.length; i++) {
+          if (inputs[i].getAttribute("data-roster-id") === focusedId) {
+            inputs[i].focus();
+            try {
+              if (focusedSelStart != null && focusedSelEnd != null) {
+                inputs[i].setSelectionRange(focusedSelStart, focusedSelEnd);
+              }
+            } catch (_) { /* ignore */ }
+            break;
+          }
+        }
+      }
+    }
+
+    function renderBibSection() {
+      const parts = (eventDetail && eventDetail.participants) || [];
+      const withBib = parts.filter((p) => String(p.bib || "").trim() !== "");
+      const withoutBib = parts.filter((p) => String(p.bib || "").trim() === "");
+      document.getElementById("bib-with-count").textContent = String(withBib.length);
+      document.getElementById("bib-without-count").textContent = String(withoutBib.length);
+
+      const list = document.getElementById("bib-missing-list");
+      if (withoutBib.length === 0) {
+        list.innerHTML = '<p class="hint" style="margin:0;">미입력 없음</p>';
+      } else {
+        list.innerHTML = withoutBib
+          .slice(0, 40)
+          .map(
+            (p) => `
+          <div class="list-row">
+            <div>
+              <div class="nick">${escapeHtml(p.nickname || "—")}</div>
+              <div class="sub">배번 미입력</div>
+            </div>
+            <span class="pill-off">대상 아님</span>
+          </div>`
+          )
+          .join("");
+        if (withoutBib.length > 40) {
+          list.innerHTML += `<p class="hint">외 ${withoutBib.length - 40}명</p>`;
+        }
+      }
+
+      const scrapeBtn = document.getElementById("scrape-btn");
+      scrapeBtn.textContent =
+        withBib.length > 0
+          ? `배번 ${withBib.length}명 스크랩 실행`
+          : "스크랩 실행 (배번 없음)";
+    }
+
+    function renderScrapeSection() {
+      const status = (eventDetail && eventDetail.groupScrapeStatus) || "pending";
+      const pill = document.getElementById("scrape-status-pill");
+      const map = {
+        pending: ["대기중", "pill-wait"],
+        running: ["스크랩중", "pill-wait"],
+        done: ["완료", "pill-ok"],
+        partial_failure: ["부분실패", "pill-wait"],
+        failed: ["실패", "pill-off"]
+      };
+      const [label, cls] = map[status] || ["—", "pill-off"];
+      pill.className = cls;
+      pill.textContent = label;
+
+      const gs = eventDetail && eventDetail.groupSource;
+      const srcLine = gs && gs.source
+        ? `소스: ${gs.source} / ${gs.sourceId || ""}`
+        : "소스 미설정";
+      document.getElementById("scrape-intro").textContent =
+        `${srcLine}. 배번 있는 참가자만 스크랩. 대회기록은 참가자 컨펌 후.`;
+
+      const pending = gapRows.filter((g) => g.gapStatus === "ok").length;
+      document.getElementById("pending-count").textContent = String(pending);
+      document.getElementById("confirmed-count").textContent = String(confirmedCount || 0);
+
+      if (gs && gs.source) {
+        document.getElementById("source-select").value = gs.source;
+        document.getElementById("source-id-input").value = gs.sourceId || "";
+      }
+
+      const scrapeBtn = document.getElementById("scrape-btn");
+      const canScrape =
+        isOwner() &&
+        gs &&
+        gs.source &&
+        BIB_SCRAPE_SOURCES.includes(gs.source) &&
+        status !== "running";
+      scrapeBtn.disabled = !canScrape;
+    }
+
+    function showPanels() {
+      loadingScreen.classList.add("hidden");
+      missingEvent.classList.add("hidden");
+      if (!eventId) {
+        opsRoot.classList.add("hidden");
+        missingEvent.classList.remove("hidden");
+        return;
+      }
+
+      opsRoot.classList.remove("hidden");
+      document.getElementById("activate-panel").classList.toggle("hidden", enabled === true);
+      setWritableUi(enabled === true);
+      setOwnerWritableUi();
+      renderSummary();
+      renderRoster(searchInput.value, { skipIfNoteFocused: true });
+      renderBibSection();
+      renderScrapeSection();
+    }
+
+    function applyBusStatus(data) {
+      eventName = data.eventName || eventName || "단체 대회";
+      enabled = data.enabled === true;
+      roster = Array.isArray(data.roster) ? data.roster : [];
+      summary = data.summary || {
+        outbound: { required: 0, boarded: 0 },
+        return: { required: 0, boarded: 0 }
+      };
+      updateEventMeta();
+      updateLinks();
+    }
+
+    function updateEventMeta() {
+      const bits = [eventName || "단체 대회"];
+      if (eventDate) bits.push(eventDate);
+      if (eventId) bits.push(eventId);
+      document.getElementById("event-meta").textContent = bits.join(" · ");
+    }
+
+    async function postBus(body) {
+      const res = await fetch(`${API_BASE}?action=bus-boarding`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({ ok: false, error: "invalid response" }));
+      return { res, data };
+    }
+
+    async function loadBusStatus(opts) {
+      const silent = opts && opts.silent;
+      if (!eventId || !adminPwCache) return;
+
+      try {
+        const { data } = await postBus({
+          subAction: "status",
+          eventId: eventId,
+          pw: adminPwCache
+        });
+
+        if (!data.ok) {
+          if (data.error === "invalid password") {
+            clearSession();
+            showToast("비밀번호가 만료되었습니다. 다시 로그인하세요.", true);
+            return;
+          }
+          throw new Error(data.error || "버스 현황을 불러오지 못했습니다");
+        }
+
+        applyBusStatus(data);
+        document.getElementById("poll-dot").style.background = "var(--green)";
+        if (!silent) showPanels();
+        else {
+          setWritableUi(enabled === true);
+          renderSummary();
+          renderRoster(searchInput.value, { skipIfNoteFocused: true });
+        }
+      } catch (err) {
+        console.error("loadBusStatus error:", err);
+        document.getElementById("poll-dot").style.background = "var(--red)";
+        if (!silent) showToast(err.message || "네트워크 오류", true);
+      }
+    }
+
+    async function loadEventDetail(opts) {
+      const silent = opts && opts.silent;
+      if (!eventId) return;
+      try {
+        const res = await fetch(
+          `${API_BASE}?action=group-events&subAction=detail&eventId=${encodeURIComponent(eventId)}`
+        );
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "대회 정보를 불러오지 못했습니다");
+        eventDetail = data.event || null;
+        gapRows = Array.isArray(data.gap) ? data.gap : [];
+        confirmedCount = data.confirmedCount || 0;
+        if (eventDetail) {
+          eventName = eventDetail.eventName || eventName;
+          eventDate = eventDetail.eventDate || eventDate;
+          updateEventMeta();
+        }
+        if (!silent) {
+          renderBibSection();
+          renderScrapeSection();
+        } else {
+          renderBibSection();
+          renderScrapeSection();
+        }
+      } catch (err) {
+        console.error("loadEventDetail:", err);
+        if (!silent) showToast(err.message || "대회 정보 오류", true);
+      }
+    }
+
+    async function loadAll(opts) {
+      const silent = opts && opts.silent;
+      if (!silent) {
+        loadingScreen.classList.remove("hidden");
+        opsRoot.classList.add("hidden");
+      }
+      await Promise.all([loadBusStatus({ silent: true }), loadEventDetail({ silent: true })]);
+      if (!silent) showPanels();
+      else showPanels();
+    }
+
+    function startPoll() {
+      stopPoll();
+      pollTimer = setInterval(() => {
+        if (document.hidden) return;
+        if (!adminPwCache || !eventId) return;
+        loadBusStatus({ silent: true });
+        loadEventDetail({ silent: true });
+      }, POLL_MS);
+    }
+
+    function stopPoll() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    function clearSession() {
+      adminPwCache = "";
+      adminRole = "";
+      sessionStorage.removeItem(AUTH_KEY);
+      sessionStorage.removeItem(AUTH_PW_KEY);
+      sessionStorage.removeItem(AUTH_ROLE_KEY);
+      stopPoll();
+      authOverlay.classList.remove("hidden");
+      mainWrap.classList.add("hidden");
+    }
+
+    function revealShell() {
+      authOverlay.classList.add("hidden");
+      mainWrap.classList.remove("hidden");
+      document.getElementById("role-label").textContent =
+        adminRole === "owner" ? "오너" : adminRole === "operator" ? "운영진" : adminRole || "—";
+      setOwnerWritableUi();
+    }
+
+    async function tryAuth() {
+      const pw = document.getElementById("auth-pw").value;
+      const btn = document.getElementById("auth-btn");
+      const errEl = document.getElementById("auth-error");
+      btn.disabled = true;
+      btn.textContent = "확인 중…";
+      try {
+        const res = await fetch(`${API_BASE}?action=verify-admin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pw })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          adminRole = data.role || "operator";
+          adminPwCache = pw;
+          sessionStorage.setItem(AUTH_KEY, "ok");
+          sessionStorage.setItem(AUTH_PW_KEY, pw);
+          sessionStorage.setItem(AUTH_ROLE_KEY, adminRole);
+          errEl.style.display = "none";
+          document.getElementById("auth-pw").value = "";
+          revealShell();
+          await loadAll();
+          startPoll();
+        } else {
+          errEl.style.display = "block";
+          document.getElementById("auth-pw").value = "";
+          document.getElementById("auth-pw").focus();
+        }
+      } catch (_) {
+        errEl.style.display = "block";
+      }
+      btn.disabled = false;
+      btn.textContent = "확인";
+    }
+
+    function checkAuth() {
+      if (!isAuthedFlag()) return false;
+      adminRole = sessionStorage.getItem(AUTH_ROLE_KEY) || "";
+      adminPwCache = sessionStorage.getItem(AUTH_PW_KEY) || "";
+      if (!adminPwCache) {
+        const pw = window.prompt("관리자 비밀번호");
+        if (!pw) {
+          sessionStorage.removeItem(AUTH_KEY);
+          return false;
+        }
+        adminPwCache = pw;
+        sessionStorage.setItem(AUTH_PW_KEY, pw);
+      }
+      revealShell();
+      loadAll().then(startPoll);
+      return true;
+    }
+
+    async function enableBoarding() {
+      if (isProcessing) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      const btn = document.getElementById("enable-btn");
+      const toggleBtn = document.getElementById("bus-toggle-btn");
+      btn.disabled = true;
+      toggleBtn.disabled = true;
+      try {
+        const { data } = await postBus({
+          subAction: "settings",
+          pw,
+          eventId,
+          enabled: true,
+          legs: ["outbound", "return"]
+        });
+        if (!data.ok) throw new Error(data.error || "활성화 실패");
+        showToast("버스 탑승을 시작했습니다");
+        await loadBusStatus();
+        showPanels();
+      } catch (err) {
+        console.error("enableBoarding:", err);
+        showToast(err.message || "활성화 실패", true);
+      } finally {
+        isProcessing = false;
+        btn.disabled = false;
+        toggleBtn.disabled = false;
+      }
+    }
+
+    async function disableBoarding() {
+      if (isProcessing) return;
+      if (!confirm("버스 탑승을 끌까요? 명단은 유지됩니다.")) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      try {
+        const { data } = await postBus({
+          subAction: "settings",
+          pw,
+          eventId,
+          enabled: false
+        });
+        if (!data.ok) throw new Error(data.error || "비활성화 실패");
+        showToast("버스 탑승을 껐습니다");
+        await loadBusStatus();
+        showPanels();
+      } catch (err) {
+        console.error("disableBoarding:", err);
+        showToast(err.message || "비활성화 실패", true);
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function toggleBusEnabled() {
+      if (enabled === true) await disableBoarding();
+      else await enableBoarding();
+    }
+
+    async function toggleBoard(rosterId, boarded) {
+      if (isProcessing) {
+        renderRoster(searchInput.value);
+        return;
+      }
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        renderRoster(searchInput.value);
+        await loadBusStatus({ silent: true });
+        return;
+      }
+      const pw = requirePw();
+      if (!pw || !eventId) {
+        renderRoster(searchInput.value);
+        return;
+      }
+      isProcessing = true;
+      try {
+        const { data } = await postBus({
+          subAction: "admin-board",
+          pw,
+          eventId,
+          rosterId,
+          leg: currentLeg,
+          boarded: !!boarded
+        });
+        if (!data.ok) throw new Error(data.error || "탑승 변경 실패");
+        showToast(boarded ? "탑승 체크" : "탑승 취소");
+        await loadBusStatus({ silent: true });
+      } catch (err) {
+        console.error("toggleBoard:", err);
+        showToast(err.message || "탑승 변경 실패", true);
+        await loadBusStatus({ silent: true });
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function removeRoster(rosterId, nickname) {
+      if (isProcessing) return;
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        return;
+      }
+      const label = nickname || "이 사람";
+      if (!confirm("'" + label + "'을(를) 명단에서 제외할까요?")) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      isProcessing = true;
+      try {
+        const { data } = await postBus({
+          subAction: "roster-remove",
+          pw,
+          eventId,
+          rosterId
+        });
+        if (!data.ok) throw new Error(data.error || "명단 제외 실패");
+        showToast("명단에서 제외했습니다");
+        await loadBusStatus({ silent: true });
+      } catch (err) {
+        console.error("removeRoster:", err);
+        showToast(err.message || "명단 제외 실패", true);
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function saveNote(rosterId, note) {
+      if (enabled !== true) {
+        showToast("버스 탑승이 꺼져 있습니다", true);
+        return;
+      }
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      const row = roster.find((r) => r.rosterId === rosterId);
+      if (!row) {
+        showToast("명단을 찾을 수 없습니다", true);
+        return;
+      }
+      try {
+        const { data } = await postBus({
+          subAction: "roster-upsert",
+          pw,
+          eventId,
+          rosterId: row.rosterId,
+          nickname: row.nickname,
+          realName: row.realName || "",
+          rideType: row.rideType,
+          note: note
+        });
+        if (!data.ok) throw new Error(data.error || "비고 저장 실패");
+        showToast("비고 저장됨");
+        await loadBusStatus({ silent: true });
+      } catch (err) {
+        console.error("saveNote:", err);
+        showToast(err.message || "비고 저장 실패", true);
+      }
+    }
+
+    async function addGuest() {
+      if (isProcessing) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      const nickname = document.getElementById("guest-nickname").value.trim();
+      const realName = document.getElementById("guest-real-name").value.trim();
+      const rideType = document.getElementById("guest-ride-type").value;
+      const note = document.getElementById("guest-note").value.trim();
+      if (!nickname) {
+        showToast("닉네임을 입력하세요", true);
+        return;
+      }
+      isProcessing = true;
+      const btn = document.getElementById("guest-add-btn");
+      btn.disabled = true;
+      try {
+        const body = {
+          subAction: "roster-upsert",
+          pw,
+          eventId,
+          nickname,
+          realName,
+          rideType,
+          isGuest: true
+        };
+        if (note) body.note = note;
+        const { data } = await postBus(body);
+        if (!data.ok) throw new Error(data.error || "지인 추가 실패");
+        showToast("지인을 추가했습니다");
+        document.getElementById("guest-nickname").value = "";
+        document.getElementById("guest-real-name").value = "";
+        document.getElementById("guest-note").value = "";
+        await loadBusStatus({ silent: true });
+      } catch (err) {
+        console.error("addGuest:", err);
+        showToast(err.message || "지인 추가 실패", true);
+      } finally {
+        isProcessing = false;
+        btn.disabled = false;
+      }
+    }
+
+    function normalizeHeader(h) {
+      return String(h || "")
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .toLowerCase();
+    }
+
+    function mapCsvHeader(h) {
+      const n = normalizeHeader(h);
+      if (n === "닉네임" || n === "nickname") return "nickname";
+      if (n === "이름" || n === "실명" || n === "name" || n === "realname") return "realName";
+      if (
+        n === "버스 탑승 여부" ||
+        n === "탑승" ||
+        n === "ridetype" ||
+        n === "ride type"
+      ) {
+        return "rideTypeLabel";
+      }
+      if (n === "비고" || n === "note") return "note";
+      if (n === "중식" || n.includes("중식")) return "_lunch";
+      return null;
+    }
+
+    function parseCsvText(text) {
+      const raw = String(text || "").replace(/^\uFEFF/, "");
+      const lines = raw.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+      if (lines.length < 2) return { rows: [], error: "CSV 행이 부족합니다" };
+
+      function splitLine(line) {
+        const out = [];
+        let cur = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if ((ch === "," || ch === "\t") && !inQuotes) {
+            out.push(cur);
+            cur = "";
+          } else {
+            cur += ch;
+          }
+        }
+        out.push(cur);
+        return out;
+      }
+
+      const headers = splitLine(lines[0]);
+      const fields = headers.map(mapCsvHeader);
+      if (!fields.includes("nickname")) {
+        return { rows: [], error: "닉네임 열이 없습니다" };
+      }
+      if (!fields.includes("rideTypeLabel")) {
+        return { rows: [], error: "버스 탑승 여부(탑승) 열이 없습니다" };
+      }
+
+      const hasNoteColumn = fields.includes("note");
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = splitLine(lines[i]);
+        const row = { nickname: "", realName: "", rideTypeLabel: "" };
+        fields.forEach((key, idx) => {
+          if (!key || key === "_lunch") return;
+          const val = cols[idx] != null ? String(cols[idx]).trim() : "";
+          if (key === "note") {
+            if (hasNoteColumn) row.note = val === "" ? null : val;
+          } else {
+            row[key] = val;
+          }
+        });
+        if (!row.nickname && !row.rideTypeLabel) continue;
+        rows.push(row);
+      }
+      return { rows, error: null };
+    }
+
+    async function handleCsvFile(file) {
+      if (!file || !eventId) return;
+      const pw = requirePw();
+      if (!pw) return;
+      const reportEl = document.getElementById("import-report");
+      try {
+        const text = await file.text();
+        const parsed = parseCsvText(text);
+        if (parsed.error) {
+          reportEl.textContent = parsed.error;
+          reportEl.classList.add("show");
+          showToast(parsed.error, true);
+          return;
+        }
+        const { data } = await postBus({
+          subAction: "import",
+          pw,
+          eventId,
+          rows: parsed.rows,
+          sourceLabel: file.name || "csv"
+        });
+        if (!data.ok) throw new Error(data.error || "import 실패");
+
+        const r = data.report || {};
+        const lines = [
+          `추가 ${r.added || 0} · 병합 ${r.merged || 0} · 제외 ${r.excluded || 0}`,
+          (r.errors && r.errors.length)
+            ? `오류 ${r.errors.length}건:\n` +
+              r.errors
+                .slice(0, 12)
+                .map((e) => `- ${e.nickname || "(빈 닉)"}: ${e.reason}`)
+                .join("\n")
+            : "오류 없음"
+        ];
+        reportEl.textContent = lines.join("\n");
+        reportEl.classList.add("show");
+        showToast("CSV 가져오기 완료");
+        await loadBusStatus({ silent: true });
+      } catch (err) {
+        console.error("handleCsvFile:", err);
+        reportEl.textContent = err.message || "import 실패";
+        reportEl.classList.add("show");
+        showToast(err.message || "CSV 실패", true);
+      } finally {
+        document.getElementById("csv-input").value = "";
+      }
+    }
+
+    async function copyText(abs, okMsg) {
+      if (!abs) return;
+      try {
+        await navigator.clipboard.writeText(abs);
+        showToast(okMsg || "링크를 복사했습니다");
+      } catch (_) {
+        window.prompt("링크를 복사하세요", abs);
+      }
+    }
+
+    async function saveGroupSource() {
+      if (!isOwner()) {
+        showToast("오너 권한이 필요합니다", true);
+        return;
+      }
+      const source = document.getElementById("source-select").value;
+      const sourceId = document.getElementById("source-id-input").value.trim();
+      if (!source || !sourceId) {
+        showToast("소스와 sourceId를 모두 입력해주세요", true);
+        return;
+      }
+      if (!eventId) return;
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "source",
+            ownerPw: getOwnerPw(),
+            canonicalEventId: eventId,
+            source,
+            sourceId
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "소스 저장 실패");
+        showToast("소스 저장 완료");
+        await loadEventDetail();
+      } catch (err) {
+        console.error("saveGroupSource:", err);
+        showToast(err.message || "소스 저장 실패", true);
+      }
+    }
+
+    async function scrapeGroupEvent() {
+      if (!isOwner()) {
+        showToast("오너 권한이 필요합니다", true);
+        return;
+      }
+      if (!eventId) return;
+      const btn = document.getElementById("scrape-btn");
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "scrape",
+            ownerPw: getOwnerPw(),
+            canonicalEventId: eventId
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "스크랩 실패");
+        showToast("스크랩이 시작되었습니다");
+        await loadEventDetail();
+      } catch (err) {
+        console.error("scrapeGroupEvent:", err);
+        showToast(err.message || "스크랩 오류", true);
+      } finally {
+        renderScrapeSection();
+      }
+    }
+
+    // —— Bindings ——
+    document.getElementById("auth-btn").addEventListener("click", tryAuth);
+    document.getElementById("auth-pw").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryAuth();
+    });
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      clearSession();
+      document.getElementById("auth-pw").focus();
+    });
+
+    document.getElementById("tab-outbound").addEventListener("click", () => setLeg("outbound"));
+    document.getElementById("tab-return").addEventListener("click", () => setLeg("return"));
+    document.getElementById("enable-btn").addEventListener("click", enableBoarding);
+    document.getElementById("bus-toggle-btn").addEventListener("click", toggleBusEnabled);
+    document.getElementById("guest-add-btn").addEventListener("click", addGuest);
+    document.getElementById("copy-link-btn").addEventListener("click", () =>
+      copyText(participantUrl(), "버스 링크를 복사했습니다")
+    );
+    document.getElementById("copy-bib-link-btn").addEventListener("click", () =>
+      copyText(bibUrl(), "배번 링크를 복사했습니다")
+    );
+    document.getElementById("refresh-all-btn").addEventListener("click", () => loadAll());
+    document.getElementById("save-source-btn").addEventListener("click", saveGroupSource);
+    document.getElementById("scrape-btn").addEventListener("click", scrapeGroupEvent);
+    document.getElementById("csv-input").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) handleCsvFile(f);
+    });
+
+    searchInput.addEventListener("compositionstart", () => { composing = true; });
+    searchInput.addEventListener("compositionend", (e) => {
+      composing = false;
+      renderRoster(e.target.value);
+    });
+    searchInput.addEventListener("input", (e) => {
+      if (composing) return;
+      renderRoster(e.target.value);
+    });
+
+    rosterList.addEventListener("change", (e) => {
+      const t = e.target;
+      if (t && t.classList.contains("board-toggle")) {
+        const id = t.getAttribute("data-roster-id");
+        toggleBoard(id, t.checked);
+      }
+    });
+
+    rosterList.addEventListener("click", (e) => {
+      const removeBtn = e.target.closest(".roster-remove");
+      if (removeBtn) {
+        const id = removeBtn.getAttribute("data-roster-id");
+        const nick = removeBtn.getAttribute("data-nickname") || "";
+        removeRoster(id, nick);
+        return;
+      }
+      const btn = e.target.closest(".note-save");
+      if (!btn) return;
+      const id = btn.getAttribute("data-roster-id");
+      const rowEl = btn.closest(".roster-row");
+      const input = rowEl && rowEl.querySelector(".note-input");
+      const note = input ? input.value.trim() : "";
+      saveNote(id, note === "" ? null : note);
+    });
+
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      eventId = params.get("eventId");
+      updateLinks();
+
+      if (!eventId) {
+        document.getElementById("event-meta").textContent = "잘못된 접근";
+      }
+
+      if (checkAuth()) return;
+
+      authOverlay.classList.remove("hidden");
+      document.getElementById("auth-pw").focus();
+    })();
+  </script>
+</body>
+</html>
