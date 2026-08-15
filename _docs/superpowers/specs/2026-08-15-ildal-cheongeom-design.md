@@ -73,8 +73,8 @@
 ```
 
 ### 송금 딥링크
-- 토스: `https://toss.me/{아이디}/{금액}` (스폰서가 각 러너의 토스 링크 등록)
-- 카카오페이: 카카오페이 송금 링크
+- **토스:** `https://toss.me/{tossId}/{금액}` — 러너의 tossId를 runners 컬렉션에 저장해두고 승인 시 자동 생성
+- **카카오페이:** 공개 딥링크 포맷 없음 → 토스 우선 사용. 카카오페이 필요 시 스폰서가 별도 수동 처리
 - 앱에서 자동 계산된 금액과 함께 링크 제공, 실제 송금은 스폰서가 직접 처리
 
 ---
@@ -86,12 +86,15 @@
 {
   id: string,
   name: string,           // 러너 이름
-  tossId: string,         // 토스 아이디 (선택)
+  tossId: string,         // 토스 아이디 (선택, 송금 딥링크용)
   totalKm: number,        // 승인된 총 km
   totalAmount: number,    // 승인된 총 금액 (원)
   pendingAmount: number   // 승인 대기 중인 금액
 }
 ```
+
+> 러너 7명 초기 등록은 관리자 화면 내 "러너 추가" 기능으로 처리.
+> 스폰서가 이름과 토스 아이디를 입력해 등록.
 
 ### `submissions` 컬렉션
 ```
@@ -101,7 +104,7 @@
   runnerName: string,
   imageUrl: string,       // Firebase Storage URL
   distanceKm: number,     // AI 추출 또는 수동 입력
-  durationMin: number,    // 소요 시간 (분)
+  durationSec: number,    // 소요 시간 (초) — 표시 시 분:초로 변환
   paceMinPerKm: number,   // 페이스 (분/km)
   submittedAt: timestamp,
   status: 'pending' | 'approved' | 'rejected',
@@ -115,13 +118,20 @@
 ```
 {
   totalBudget: 1000000,   // 총 자본금 (원)
-  spentAmount: number,    // 지급 완료된 금액
+  spentAmount: number,    // 승인된 총 금액 (승인 시 즉시 증가)
   adminPassword: string,  // 해시된 비밀번호
   ratePerKm: 1000,        // km당 지급 금액
   speedMinMinPerKm: 7,    // 속도 기준 최소 (분/km)
   speedMaxMinPerKm: 10    // 속도 기준 최대 (분/km)
 }
 ```
+
+### 예산 차감 정책
+- `spentAmount`는 **승인 버튼 클릭 시 즉시 증가** (딥링크 클릭 여부와 무관)
+  - 이유: 딥링크는 외부 앱으로 이동하므로 앱에서 송금 완료 여부 추적 불가
+  - 승인 = 지급 약속 = 예산 차감
+- **소진 판정:** `spentAmount >= totalBudget` 이면 신규 제출 차단
+- 잔액 표시: `totalBudget - spentAmount`
 
 ---
 
