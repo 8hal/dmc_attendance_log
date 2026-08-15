@@ -35,6 +35,7 @@ alwaysApply: true
 | Git 워크트리 사용 | `.cursor/skills/using-git-worktrees/SKILL.md` |
 | 서브에이전트 기반 구현 | `.cursor/skills/subagent-driven-development/SKILL.md` |
 | 스킬 작성/수정 | `.cursor/skills/writing-skills/SKILL.md` |
+| **마라톤 훈련 코치 (Garmin MCP 기반 분석·계획·레이스 전략)** | `.cursor/skills/marathon-coach/SKILL.md` |
 | Cursor 룰 생성 | `~/.cursor/skills-cursor/create-rule/SKILL.md` |
 | Cursor 스킬 생성 | `~/.cursor/skills-cursor/create-skill/SKILL.md` |
 | Cursor 세팅 변경 | `~/.cursor/skills-cursor/update-cursor-settings/SKILL.md` |
