@@ -6,6 +6,10 @@
 
 const { load: cheerioLoad } = require("cheerio");
 const { normalizeRaceDistance } = require("./raceDistance");
+const {
+  resolveMemberSearchQuery,
+  resultBibFromSearch,
+} = require("./scrape-bib-query");
 
 const DELAY_MS = 200;
 // SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
@@ -1193,14 +1197,16 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
           await sleep(randomDelay(baseDelay));
         }
 
-        found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
+        // bib 있으면 bib 조회(이름 fallback 없음); 없으면 realName (개인/ops)
+        const searchQuery = resolveMemberSearchQuery(m);
+        found = await searchMember(source, sourceId, searchQuery, { session: smartchipSession });
 
         // SmartChip 세션 만료 감지 → 재발급 후 즉시 재시도
         if (found === null && source === "smartchip") {
-          console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName})`);
+          console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName || searchQuery})`);
           smartchipSession = await getSmartChipSession();
           await sleep(randomDelay(baseDelay));
-          found = await searchMember(source, sourceId, m.realName, { session: smartchipSession });
+          found = await searchMember(source, sourceId, searchQuery, { session: smartchipSession });
           if (found === null) found = [];
         }
 
@@ -1283,11 +1289,12 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     }
 
     const isAmbiguous = filteredResults.length > 1;
+    const requestBib = String(m.bib ?? "").trim();
     for (const r of filteredResults) {
       const pb = pbMap ? isPB(pbMap, m.realName, r.distance, r.netTime) : false;
       results.push({
         name: r.name,
-        bib: r.bib,
+        bib: resultBibFromSearch(r.bib, requestBib),
         distance: r.distance,
         netTime: r.netTime,
         gunTime: r.gunTime || "",
@@ -1610,6 +1617,7 @@ module.exports = {
   filterEventsWeeklyScrapeWindow, sortWeeklyScrapeQueue, takeWeeklyScrapeSlice,
   WEEKLY_LOOKBACK_DAYS, WEEKLY_LOOKAHEAD_DAYS, WEEKLY_MAX_JOBS_PER_RUN,
   scrapeEvent, getSmartChipSession,
+  resolveMemberSearchQuery, resultBibFromSearch,
   sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
   crawlGorunningEvents,
   crawlRunningwikiiEvents,

@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const {
   pickBibScrapeTargets,
   matchResultByBib,
+  buildBibScrapeMembers,
 } = require("../../functions/lib/group-scrape-bib.js");
 
 describe("pickBibScrapeTargets", () => {
@@ -64,5 +65,33 @@ describe("matchResultByBib", () => {
       "half"
     );
     assert.equal(r.netTime, "1:42:00");
+  });
+});
+
+describe("buildBibScrapeMembers", () => {
+  it("scrapeTargets의 bib·distance를 members에 전달하고 gender는 맵에서", () => {
+    const byName = new Map([["김A", { gender: "M", nickname: "ignored" }]]);
+    const members = buildBibScrapeMembers(
+      [{ realName: "김A", nickname: "게살", bib: "4821", distance: "half" }],
+      byName
+    );
+    assert.deepEqual(members, [
+      {
+        realName: "김A",
+        nickname: "게살",
+        gender: "M",
+        distance: "half",
+        bib: "4821",
+      },
+    ]);
+  });
+
+  it("members 맵에 없어도 실명 필수 없이 gender 빈 문자열", () => {
+    const members = buildBibScrapeMembers(
+      [{ realName: "비회원", nickname: "손님", bib: "  10  ", distance: "full" }],
+      new Map()
+    );
+    assert.equal(members[0].gender, "");
+    assert.equal(members[0].bib, "10");
   });
 });

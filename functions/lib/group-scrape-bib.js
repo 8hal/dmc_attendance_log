@@ -40,7 +40,31 @@ function matchResultByBib(results, bib, distance) {
   return null;
 }
 
+/**
+ * Build scrapeEvent members from bib scrape targets.
+ * Gender from members map when present; missing realName in roster is allowed.
+ * @param {Array<{ realName?: string, nickname?: string, bib?: string, distance?: string }>} scrapeTargets
+ * @param {Map<string, { gender?: string }>} membersByRealName
+ * @returns {Array<{ realName: string, nickname: string, gender: string, distance: string|undefined, bib: string }>}
+ */
+function buildBibScrapeMembers(scrapeTargets, membersByRealName) {
+  const byName = membersByRealName instanceof Map ? membersByRealName : new Map();
+  const list = Array.isArray(scrapeTargets) ? scrapeTargets : [];
+  return list.map((t) => {
+    const realName = t?.realName == null ? "" : String(t.realName);
+    const fromRoster = byName.get(realName);
+    return {
+      realName,
+      nickname: t?.nickname == null ? "" : String(t.nickname),
+      gender: (fromRoster && fromRoster.gender) || "",
+      distance: t?.distance,
+      bib: String(t?.bib ?? "").trim(),
+    };
+  });
+}
+
 module.exports = {
   pickBibScrapeTargets,
   matchResultByBib,
+  buildBibScrapeMembers,
 };
