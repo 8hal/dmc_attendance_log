@@ -36,17 +36,19 @@ PASS=0
 FAIL=0
 RESULTS=()
 
+CURL_MAX="${CURL_MAX:-20}"
+
 curl_get() {
-  curl -s "$1"
+  curl -s --max-time "$CURL_MAX" "$1"
 }
 curl_post() {
-  curl -s -X POST "$1" -H "Content-Type: application/json" -d "$2"
+  curl -s --max-time "$CURL_MAX" -X POST "$1" -H "Content-Type: application/json" -d "$2"
 }
 curl_post_code() {
-  curl -s -o /dev/null -w "%{http_code}" -X POST "$1" -H "Content-Type: application/json" -d "$2"
+  curl -s --max-time "$CURL_MAX" -o /dev/null -w "%{http_code}" -X POST "$1" -H "Content-Type: application/json" -d "$2"
 }
 curl_post_full() {
-  curl -s -w "\n%{http_code}" -X POST "$1" -H "Content-Type: application/json" -d "$2"
+  curl -s --max-time "$CURL_MAX" -w "\n%{http_code}" -X POST "$1" -H "Content-Type: application/json" -d "$2"
 }
 
 assert_contains() {
