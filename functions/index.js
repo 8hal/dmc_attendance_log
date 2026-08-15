@@ -47,6 +47,7 @@ const busBoardingLib = require("./lib/bus-boarding");
 const {
   pickBibScrapeTargets,
   buildBibScrapeMembers,
+  isBibModeGroupScrapeSource,
 } = require("./lib/group-scrape-bib");
 const { google } = require("googleapis");
 
@@ -1113,6 +1114,14 @@ exports.groupEventAutoScrape = onSchedule(
         continue;
       }
 
+      const autoSource = event.groupSource && event.groupSource.source;
+      if (!isBibModeGroupScrapeSource(autoSource)) {
+        console.log(
+          `[groupEventAutoScrape] 배번 스크랩 미지원 소스 건너뜀: ${doc.id} (source=${autoSource})`
+        );
+        continue;
+      }
+
       console.log(`[groupEventAutoScrape] 스크랩 시작: ${doc.id} (bib ${scrapeTargets.length}명)`);
       await db.collection("race_events").doc(doc.id).update({
         groupScrapeStatus: "running",
@@ -1484,6 +1493,9 @@ async function triggerGroupScrape({
   const now = new Date().toISOString();
   const bibMode = queryBy === "bib";
   try {
+    if (bibMode && !isBibModeGroupScrapeSource(source)) {
+      throw new Error("배번 스크랩은 smartchip·ohmyrace만 지원합니다");
+    }
     const membersSnap = await db.collection("members").get();
     const allMembers = [];
     membersSnap.forEach((doc) => {
@@ -3272,6 +3284,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
 
       const { source: src, sourceId: sid } = eventRow.groupSource;
+      if (!isBibModeGroupScrapeSource(src)) {
+        return res.status(400).json({
+          ok: false,
+          error: "배번 스크랩은 smartchip·ohmyrace만 지원합니다",
+        });
+      }
 
       await db.collection("race_events").doc(canonicalEventId).update({
         groupScrapeStatus: "running",
