@@ -1,6 +1,26 @@
 "use strict";
 
 /**
+ * Sources whose search APIs accept bib as the query (not name-only).
+ * - smartchip: nameorbibno
+ * - ohmyrace: bib param
+ * marazone always sends bibNum:"" — excluded until fixed.
+ * @type {ReadonlySet<string>}
+ */
+const BIB_MODE_GROUP_SCRAPE_SOURCES = Object.freeze(
+  new Set(["smartchip", "ohmyrace"])
+);
+
+/**
+ * Whether group scrape may use queryBy=bib for this source.
+ * @param {string|null|undefined} source
+ * @returns {boolean}
+ */
+function isBibModeGroupScrapeSource(source) {
+  return BIB_MODE_GROUP_SCRAPE_SOURCES.has(String(source ?? "").trim());
+}
+
+/**
  * Participants with a non-empty bib (after trim) for bib-first scrape.
  * @param {Array<{ bib?: string|null, [key: string]: unknown }>} participants
  * @returns {Array<{ bib: string, [key: string]: unknown }>}
@@ -64,6 +84,8 @@ function buildBibScrapeMembers(scrapeTargets, membersByRealName) {
 }
 
 module.exports = {
+  BIB_MODE_GROUP_SCRAPE_SOURCES,
+  isBibModeGroupScrapeSource,
   pickBibScrapeTargets,
   matchResultByBib,
   buildBibScrapeMembers,

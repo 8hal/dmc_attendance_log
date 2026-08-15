@@ -6,7 +6,31 @@ const {
   pickBibScrapeTargets,
   matchResultByBib,
   buildBibScrapeMembers,
+  isBibModeGroupScrapeSource,
+  BIB_MODE_GROUP_SCRAPE_SOURCES,
 } = require("../../functions/lib/group-scrape-bib.js");
+
+describe("isBibModeGroupScrapeSource", () => {
+  it("smartchip·ohmyrace만 배번 단체 스크랩 허용 (API에 bib 전달)", () => {
+    assert.equal(isBibModeGroupScrapeSource("smartchip"), true);
+    assert.equal(isBibModeGroupScrapeSource("ohmyrace"), true);
+    assert.deepEqual([...BIB_MODE_GROUP_SCRAPE_SOURCES].sort(), ["ohmyrace", "smartchip"]);
+  });
+
+  it("marazone은 bibNum 빈 문자열 고정 → 불허", () => {
+    assert.equal(isBibModeGroupScrapeSource("marazone"), false);
+  });
+
+  it("myresult·spct·manual·빈값·대소문자 변형 불허", () => {
+    assert.equal(isBibModeGroupScrapeSource("myresult"), false);
+    assert.equal(isBibModeGroupScrapeSource("spct"), false);
+    assert.equal(isBibModeGroupScrapeSource("manual"), false);
+    assert.equal(isBibModeGroupScrapeSource(""), false);
+    assert.equal(isBibModeGroupScrapeSource(null), false);
+    assert.equal(isBibModeGroupScrapeSource(undefined), false);
+    assert.equal(isBibModeGroupScrapeSource("SmartChip"), false);
+  });
+});
 
 describe("pickBibScrapeTargets", () => {
   it("배번 있는 participant만 반환", () => {
