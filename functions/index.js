@@ -55,6 +55,11 @@ const {
   buildSelfConfirmRow,
   assertBibOwnsPending,
 } = require("./lib/self-confirm");
+const {
+  buildPublicRosterRows,
+  filterPublicRosterRows,
+  sortPublicRosterRows,
+} = require("./lib/public-roster");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -3442,6 +3447,69 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       } catch (error) {
         console.error("my-pending-result error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
+    // 회원 공개 명단·결과 (실명·배번 제외). detail 대체 조회용.
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "public-roster") {
+      const eventId = String(req.query.eventId || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        if (event.isGroupEvent !== true) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        const confirmedSnap = await db
+          .collection("race_results")
+          .where("canonicalEventId", "==", eventId)
+          .get();
+        const confirmedByKey = new Map();
+        confirmedSnap.forEach((doc) => {
+          const d = doc.data() || {};
+          const normDist = normalizeRaceDistance(d.distance);
+          const key = `${d.memberRealName}_${normDist}`;
+          confirmedByKey.set(key, d);
+        });
+
+        let rows = buildPublicRosterRows(
+          event.participants || [],
+          confirmedByKey,
+          normalizeRaceDistance
+        );
+        const totalCount = rows.length;
+        const confirmedCount = rows.filter((r) => r.hasResult).length;
+        const distanceSet = new Set();
+        rows.forEach((r) => {
+          if (r.distance) distanceSet.add(r.distance);
+        });
+
+        rows = filterPublicRosterRows(rows, {
+          distance: req.query.distance,
+          query: req.query.q || req.query.query,
+        });
+        rows = sortPublicRosterRows(rows, req.query.sortBy || "result");
+
+        return res.json({
+          ok: true,
+          eventId,
+          eventName: event.eventName || event.primaryName || "",
+          eventDate: event.eventDate || "",
+          rows,
+          distances: Array.from(distanceSet).sort(),
+          confirmedCount,
+          totalCount,
+        });
+      } catch (error) {
+        console.error("public-roster error:", error);
         return res.status(500).json({ ok: false, error: "server error" });
       }
     }

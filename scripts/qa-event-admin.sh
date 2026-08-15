@@ -203,6 +203,27 @@ nobib_sc=$(curl_post_code "$API?action=group-events" \
 assert_code "5f: 무배번 self-confirm → 400" "400" "$nobib_sc"
 
 # ────────────────────────────────────────────────────────────────────
+# 6. public-roster — 실명·배번 미포함, 컨펌 후 hasResult
+# ────────────────────────────────────────────────────────────────────
+echo -e "${YELLOW}[6] public-roster${NC}"
+
+roster=$(curl_get "$API?action=group-events&subAction=public-roster&eventId=$EVENT_ID")
+assert_contains "6a: public-roster ok" '"ok":true' "$roster"
+assert_eq "6b: totalCount == 3" "3" "$(json_get "$roster" 'print(d.get("totalCount",0))')"
+assert_eq "6c: confirmedCount == 1" "1" "$(json_get "$roster" 'print(d.get("confirmedCount",0))')"
+has_pii=$(json_get "$roster" '
+rows=d.get("rows") or []
+keys=set()
+for r in rows:
+  keys.update(r.keys())
+print("realName" in keys or "bib" in keys)')
+assert_eq "6d: rows에 realName/bib 없음" "False" "$has_pii"
+has_me=$(json_get "$roster" '
+rows=d.get("rows") or []
+print(any(r.get("nickname")=="배번있음" and r.get("hasResult") for r in rows))')
+assert_eq "6e: 배번있음 hasResult" "True" "$has_me"
+
+# ────────────────────────────────────────────────────────────────────
 # 결과
 # ────────────────────────────────────────────────────────────────────
 echo ""

@@ -355,8 +355,9 @@
       <h1 class="header-title">버스 탑승 체크</h1>
       <p class="header-subtitle" id="eventInfo">로딩 중...</p>
       <div class="nav-links" id="headerNav">
+        <a id="headerHomeLink" href="#">홈</a>
         <a id="headerBibLink" href="#">배번 입력</a>
-        <span class="muted">결과 보드 · 준비 중</span>
+        <a id="headerRosterLink" href="#">명단·결과</a>
       </div>
     </div>
 
@@ -447,8 +448,9 @@
     </div>
 
     <div class="footer-nav" id="footerNav">
+      <a id="footerHomeLink" href="#">대회 홈</a>
       <a id="footerBibLink" href="#">배번 입력으로 이동</a>
-      <div class="muted">결과 보드 · 준비 중</div>
+      <a id="footerRosterLink" href="#">명단·결과</a>
     </div>
   </div>
 
@@ -556,11 +558,21 @@
     }
 
     function updateBibLinks() {
-      const href = eventId
+      const bibHref = eventId
         ? `my-bib.html?eventId=${encodeURIComponent(eventId)}`
         : "my-bib.html";
-      document.getElementById("headerBibLink").href = href;
-      document.getElementById("footerBibLink").href = href;
+      const homeHref = eventId
+        ? `event-home.html?eventId=${encodeURIComponent(eventId)}`
+        : "event-home.html";
+      const rosterHref = eventId
+        ? `event-roster.html?eventId=${encodeURIComponent(eventId)}`
+        : "event-roster.html";
+      document.getElementById("headerBibLink").href = bibHref;
+      document.getElementById("footerBibLink").href = bibHref;
+      document.getElementById("headerHomeLink").href = homeHref;
+      document.getElementById("footerHomeLink").href = homeHref;
+      document.getElementById("headerRosterLink").href = rosterHref;
+      document.getElementById("footerRosterLink").href = rosterHref;
     }
 
     function setLeg(leg) {
