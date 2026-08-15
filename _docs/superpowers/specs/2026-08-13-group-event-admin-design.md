@@ -1,7 +1,7 @@
 # 단체 대회 운영 홈 (`event-admin`) · 철원 베타 디자인
 
 날짜: 2026-08-13  
-상태: **브레인스토밍 합의**  
+상태: **구현 진행/완료**  
 관련:
 - `_docs/superpowers/specs/2026-08-02-group-event-day-ux-design.md` (당일 UX · 버스)
 - `_docs/superpowers/specs/2026-08-05-group-event-member-home-design.md` (회원 홈)

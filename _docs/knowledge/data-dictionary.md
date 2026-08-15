@@ -113,7 +113,7 @@
 | `sourceMappings` | `{ source, sourceId }[]` — 동일 `(source, sourceId)` 쌍은 전역에서 한 문서에만 |
 | `createdAt` | ISO 문자열 등 |
 | `isGroupEvent` | `boolean` — 단체 대회 여부. 필드 없음이면 일반 대회로 취급 |
-| `participants` | 배열. 요소: `{ memberId: string, realName: string, nickname: string }` — 참가자 목록 |
+| `participants` | 배열. 요소: `{ memberId, realName, nickname, bib?, distance? }` — 참가자 목록. `bib`는 셀프 입력(`update-bib`) 후 스크랩·self-confirm 키 |
 | `groupSource` | `object` 또는 `null` — 단체 기록 소스(오너 입력). `{ source: string, sourceId: string }`. `source`는 `race_results.source`와 동일 범주(`smartchip`, `myresult`, `spct`, `marazone`, `ohmyrace`, `manual` 중 하나) |
 | `groupScrapeStatus` | 문자열 — 단체용 스크랩 상태. 아래 표 참조 |
 | `groupScrapeJobId` | `string` 또는 `null` — 스크랩 완료 후 대응 `scrape_jobs` 문서 ID |
@@ -121,6 +121,19 @@
 | `promotedAt` | ISO KST 문자열 — 단체 대회로 승격된 시각 |
 | `gorunningId` | 문자열 — 고러닝 예정 대회 ID |
 | `busBoarding` | `object` 또는 생략 — 단체 대회 **버스 탑승** 모듈(optional). 버스 없는 대회는 필드 생략 또는 `enabled: false`. `participants[]`와 분리(배번·결과 vs 탑승 체크). 상세는 아래 |
+
+### 배번 스크랩 · self-confirm (단체 대회)
+
+철원 베타 이후 단체 결과 경로 (`event-admin` / 회원 홈).
+
+| 단계 | 동작 |
+|------|------|
+| 배번 입력 | `POST group-events` `update-bib` — `participants[].bib`만 갱신 (공개, nickname exact) |
+| 스크랩 | `POST group-events` `scrape` — **`bib`가 있는 참가자만** 조회 (`pickBibScrapeTargets`). 무배번은 미참가로 간주·제외. 배번 모드 소스: `smartchip`, `ohmyrace` |
+| 대기 조회 | `GET group-events&subAction=my-pending-result&eventId=&nickname=` — `state`: `none` \| `pending` \| `confirmed` |
+| 참가자 컨펌 | `POST group-events` `self-confirm` `{ eventId, nickname }` — scrape job에서 **본인 bib** 행만 `race_results`에 upsert. `confirmSource: "personal"`. 이벤트 전체 bulk delete 금지 |
+
+**SSOT:** 스크랩만으로는 `race_results`에 쓰지 않음. 컨펌 후 `status: confirmed` (+ `confirmSource: personal`)가 대회기록에 반영된다. 총무 `bulk-confirm` / 갭 UI는 주경로가 아님.
 
 ### race_events.busBoarding
 
