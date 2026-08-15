@@ -48,7 +48,13 @@ const {
   pickBibScrapeTargets,
   buildBibScrapeMembers,
   isBibModeGroupScrapeSource,
+  matchResultByBib,
 } = require("./lib/group-scrape-bib");
+const {
+  buildSelfConfirmDocId,
+  buildSelfConfirmRow,
+  assertBibOwnsPending,
+} = require("./lib/self-confirm");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -3375,6 +3381,71 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, message: "대회가 삭제되었습니다" });
     }
 
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "my-pending-result") {
+      const eventId = String(req.query.eventId || "").trim();
+      const nickname = String(req.query.nickname || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!nickname) {
+        return res.status(400).json({ ok: false, error: "nickname required" });
+      }
+
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        const participant = (event.participants || []).find(
+          (p) => p.nickname === nickname
+        );
+        const bib = participant ? String(participant.bib || "").trim() : "";
+        if (!participant || !bib || !event.groupScrapeJobId) {
+          return res.json({ ok: true, state: "none", result: null });
+        }
+
+        const docId = buildSelfConfirmDocId({
+          realName: participant.realName,
+          distance: participant.distance,
+          eventDate: event.eventDate,
+        });
+        const confirmedDoc = await db.collection("race_results").doc(docId).get();
+        if (confirmedDoc.exists) {
+          return res.json({
+            ok: true,
+            state: "confirmed",
+            result: confirmedDoc.data(),
+          });
+        }
+
+        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+        const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+        const pending = matchResultByBib(jobResults, bib, participant.distance);
+        if (!pending) {
+          return res.json({ ok: true, state: "none", result: null });
+        }
+
+        return res.json({
+          ok: true,
+          state: "pending",
+          result: {
+            bib: pending.bib || bib,
+            netTime: pending.netTime || "",
+            gunTime: pending.gunTime || "",
+            distance: pending.distance || participant.distance || "",
+            overallRank: pending.overallRank != null ? pending.overallRank : null,
+            gender: pending.gender || "",
+            memberRealName: participant.realName || "",
+            memberNickname: participant.nickname || "",
+          },
+        });
+      } catch (error) {
+        console.error("my-pending-result error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
     if (action === "group-events" && req.method === "GET" && req.query.subAction === "detail") {
       const { eventId } = req.query;
       if (!eventId) {
@@ -3578,6 +3649,75 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
 
       return res.json({ ok: true, saved });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "self-confirm") {
+      const eventId = String((req.body && req.body.eventId) || "").trim();
+      const nickname = String((req.body && req.body.nickname) || "").trim();
+
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!nickname) {
+        return res.status(400).json({ ok: false, error: "nickname required" });
+      }
+
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        const event = eventDoc.data() || {};
+        const participant = (event.participants || []).find(
+          (p) => p.nickname === nickname
+        );
+        if (!participant) {
+          return res.status(403).json({ ok: false, error: "not a participant" });
+        }
+
+        const bib = String(participant.bib || "").trim();
+        if (!bib) {
+          return res.status(400).json({ ok: false, error: "bib required" });
+        }
+        if (!event.groupScrapeJobId) {
+          return res.status(400).json({ ok: false, error: "no pending result" });
+        }
+
+        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+        const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+        const pending = matchResultByBib(jobResults, bib, participant.distance);
+        if (!pending) {
+          return res.status(400).json({ ok: false, error: "no pending result" });
+        }
+
+        try {
+          assertBibOwnsPending(participant, pending);
+        } catch (err) {
+          return res.status(400).json({ ok: false, error: err.message || "bib mismatch" });
+        }
+
+        const docId = buildSelfConfirmDocId({
+          realName: participant.realName,
+          distance: participant.distance,
+          eventDate: event.eventDate,
+        });
+        const row = buildSelfConfirmRow({
+          canonicalEventId: eventId,
+          event,
+          participant,
+          pending,
+        });
+
+        // Upsert this docId only — never bulk-delete the event's race_results
+        const ref = db.collection("race_results").doc(docId);
+        await ref.set(row);
+
+        return res.json({ ok: true, docId });
+      } catch (error) {
+        console.error("self-confirm error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
     }
 
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "update-bib") {
