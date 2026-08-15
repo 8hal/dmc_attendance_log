@@ -105,15 +105,15 @@
   id: string,
   runnerId: string,
   runnerName: string,
-  imageUrl: string,       // Firebase Storage URL
-  distanceKm: number,     // AI 추출 또는 수동 입력
-  durationSec: number,    // 소요 시간 (초) — 표시 시 분:초로 변환
-  paceMinPerKm: number,   // 페이스 (분/km)
+  imageUrl: string | null, // Firebase Storage URL (수동 입력 시 null)
+  distanceKm: number,      // AI 추출 또는 수동 입력
+  durationSec: number,     // 소요 시간 (초) — 표시 시 분:초로 변환
+  paceMinPerKm: number,    // 페이스 (분/km) — 항상 계산됨 (null 없음)
   submittedAt: timestamp,
   status: 'pending' | 'approved' | 'rejected',
   approvedAt: timestamp | null,
-  amount: number,         // 지급 금액 (distanceKm * 1000)
-  memo: string            // 거절 사유 등 (선택)
+  amount: number,          // 지급 금액 (distanceKm * 1000)
+  memo: string             // 거절 사유 등 (선택)
 }
 ```
 
@@ -154,9 +154,9 @@
 
 ### 수동 입력 Fallback
 - 추출 실패 시 수동 입력 폼 표시
-- **필수 항목:** 거리(km), 소요 시간(분, 초)
-- 페이스는 거리와 시간으로 자동 계산 (별도 입력 불필요)
-- 이 경우 `imageUrl`은 null 허용
+- **필수 항목:** 거리(km), 소요 시간(분, 초) — 두 항목 모두 필수
+- 페이스는 거리와 시간으로 자동 계산 (별도 입력 불필요, null 없음)
+- 이 경우 `imageUrl`은 `null`로 저장
 
 ### 속도 기준 처리
 - **제출 시:** 추출된 페이스가 7~10분/km 범위 밖이면 러너에게 경고 문구 표시 ("기준 속도를 벗어났습니다") — 제출 자체는 허용
@@ -166,7 +166,16 @@
 
 ---
 
-## 7. 기술 스택
+## 7. 관리자 인증
+
+- **방식:** 서버 사이드 검증 — `/api/admin/verify` API Route에 비밀번호 POST
+- 서버에서 해시 비교 후 성공 시 `adminToken` 쿠키(또는 세션) 발급
+- `settings/main` 문서는 Firestore 보안 규칙으로 클라이언트 직접 읽기 차단
+- 관리자 화면은 유효한 `adminToken` 없으면 진입 불가
+
+---
+
+## 8. 기술 스택
 
 | 항목 | 기술 |
 |------|------|
@@ -180,7 +189,7 @@
 
 ---
 
-## 8. 범위 외 (YAGNI)
+## 9. 범위 외 (YAGNI)
 
 - 실시간 자동 송금 API (사업자 등록 필요 → 제외)
 - 푸시 알림
@@ -190,7 +199,7 @@
 
 ---
 
-## 9. 성공 기준
+## 10. 성공 기준
 
 - 러너가 스크린샷 올리면 3초 내 AI 추출 결과 표시
 - 스폰서가 승인 후 딥링크 한 번으로 송금 화면 진입
