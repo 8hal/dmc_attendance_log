@@ -74,6 +74,13 @@
       content: ""; position: absolute; top: 3px; right: 3px;
       width: 20px; height: 20px; border-radius: 50%; background: #fff;
     }
+    .toggle.off { background: #cbd5e1; }
+    .toggle.off::after { right: auto; left: 3px; }
+    .ext-link {
+      display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 700;
+      color: var(--blue); text-decoration: none;
+    }
+    .ext-link:hover { text-decoration: underline; }
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
       border: 0; border-radius: 10px; padding: 10px 12px; font-weight: 700; font-size: 13px;
@@ -188,13 +195,21 @@
       <div class="admin-body">
         <div class="sec">
           <h3><span><span class="num">1</span>준비</span></h3>
-          <div class="row-between">
+          <div class="row-between" style="margin-bottom:8px;">
             <div>
-              <div style="font-weight:700;font-size:14px;">버스 탑승</div>
-              <div class="sub">수동 on/off · 지금은 켜짐</div>
+              <div style="font-weight:700;font-size:14px;">가는 버스 체크</div>
+              <div class="sub">새벽 집결 · 지금은 켜짐</div>
             </div>
             <div class="toggle" title="ON"></div>
           </div>
+          <div class="row-between">
+            <div>
+              <div style="font-weight:700;font-size:14px;">오는 버스 체크</div>
+              <div class="sub">복귀 때 켬 · 지금은 꺼짐</div>
+            </div>
+            <div class="toggle off" title="OFF"></div>
+          </div>
+          <p class="hint">가는·오는을 따로 엽니다. (모듈 전체 on/off 아님)</p>
           <button type="button" class="btn ghost">버스 명단 CSV 가져오기</button>
           <button type="button" class="btn ghost">회원 앱 · 버스 QR/링크 복사</button>
           <p class="hint">소스: smartchip / 2026xxxxx (설정됨)</p>
@@ -268,9 +283,10 @@
               <div class="banner-kicker">기록 준비됨</div>
               <div style="font-size:22px;font-weight:800;margin:4px 0;">1:42:18</div>
               <div class="sub">배번 4821 · 하프 · 순위 표시는 예시</div>
+              <a class="ext-link" href="https://www.smartchip.co.kr/" target="_blank" rel="noopener">기록 사이트에서 상세 보기 →</a>
             </div>
             <div class="cta">내 기록 확인 · 컨펌</div>
-            <p class="hint">컨펌해야 대회기록·명단에 반영됩니다.</p>
+            <p class="hint">컨펌해야 대회기록·명단에 반영됩니다. 상세 링크는 소스(smartchip 등)별로 가능한 대회만.</p>
           </div>
           <nav class="tabs">
             <div class="tab active"><span class="tab-icon">🏠</span>홈</div>
@@ -299,6 +315,7 @@
                 <span class="chip muted">#4821</span>
                 <span class="chip" style="background:var(--green-soft);color:var(--green);">1:42:18</span>
               </div>
+              <a class="ext-link" href="https://www.smartchip.co.kr/" target="_blank" rel="noopener">기록 사이트에서 상세 보기 →</a>
             </div>
             <div class="cta green">컨펌 완료</div>
             <p class="hint">명단·결과 탭에서도 동일 기록이 보입니다.</p>
