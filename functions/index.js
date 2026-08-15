@@ -44,6 +44,10 @@ const {
   REGULAR_TYPES: TRAINING_TYPES,
 } = require("./lib/meeting-training");
 const busBoardingLib = require("./lib/bus-boarding");
+const {
+  pickBibScrapeTargets,
+  buildBibScrapeMembers,
+} = require("./lib/group-scrape-bib");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -1103,7 +1107,13 @@ exports.groupEventAutoScrape = onSchedule(
         continue;
       }
 
-      console.log(`[groupEventAutoScrape] 스크랩 시작: ${doc.id}`);
+      const scrapeTargets = pickBibScrapeTargets(event.participants);
+      if (scrapeTargets.length === 0) {
+        console.log(`[groupEventAutoScrape] 배번 등록 참가자 없음 건너뜀: ${doc.id}`);
+        continue;
+      }
+
+      console.log(`[groupEventAutoScrape] 스크랩 시작: ${doc.id} (bib ${scrapeTargets.length}명)`);
       await db.collection("race_events").doc(doc.id).update({
         groupScrapeStatus: "running",
         groupScrapeTriggeredAt: new Date().toISOString(),
@@ -1113,7 +1123,8 @@ exports.groupEventAutoScrape = onSchedule(
         canonicalEventId: doc.id,
         source: event.groupSource.source,
         sourceId: event.groupSource.sourceId,
-        memberRealNames: event.participants.map((p) => p.realName),
+        scrapeTargets,
+        queryBy: "bib",
         event,
         db,
         scraper,
@@ -1454,11 +1465,24 @@ exports.testWeekendCheck = onRequest(
 
 /**
  * 단체 대회(group-events) 수동 스크랩: scrape_jobs 자동 ID + scrapeEvent (기존 scrape 액션과 동일 패턴)
+ * queryBy==="bib" + scrapeTargets: 배번 조회 경로 (실명 members 맵 필수 완화)
+ * 그 외: memberRealNames 기반 이름 조회 (레거시)
  */
-async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRealNames, event, db, scraper }) {
+async function triggerGroupScrape({
+  canonicalEventId,
+  source,
+  sourceId,
+  memberRealNames,
+  scrapeTargets,
+  queryBy,
+  event,
+  db,
+  scraper,
+}) {
   const jobRef = db.collection("scrape_jobs").doc();
   const jobId = jobRef.id;
   const now = new Date().toISOString();
+  const bibMode = queryBy === "bib";
   try {
     const membersSnap = await db.collection("members").get();
     const allMembers = [];
@@ -1467,34 +1491,47 @@ async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRe
       if (d.hidden === true) return;
       allMembers.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
     });
-    const want = [...new Set(
-      (memberRealNames || []).map((n) => String(n || "").trim()).filter(Boolean),
-    )];
-    if (want.length === 0) {
-      throw new Error("memberRealNames: 한 명 이상 필요");
-    }
     const byName = new Map(allMembers.map((m) => [m.realName, m]));
-    const missingNames = want.filter((n) => !byName.has(n));
-    if (missingNames.length > 0) {
-      throw new Error(`등록·미숨김 회원에 없는 실명: ${missingNames.join(", ")}`);
-    }
-    
-    // race_events.participants에서 distance 정보 가져오기
-    const participantsByName = new Map();
-    if (event && Array.isArray(event.participants)) {
-      event.participants.forEach(p => {
-        if (p.realName && p.distance) {
-          participantsByName.set(p.realName, p.distance);
-        }
+
+    let members;
+    let wantNames;
+
+    if (bibMode) {
+      const targets = Array.isArray(scrapeTargets) ? scrapeTargets : [];
+      if (targets.length === 0) {
+        throw new Error("scrapeTargets: 배번 등록 참가자 한 명 이상 필요");
+      }
+      members = buildBibScrapeMembers(targets, byName);
+      wantNames = [...new Set(members.map((m) => String(m.realName || "").trim()).filter(Boolean))];
+    } else {
+      const want = [...new Set(
+        (memberRealNames || []).map((n) => String(n || "").trim()).filter(Boolean),
+      )];
+      if (want.length === 0) {
+        throw new Error("memberRealNames: 한 명 이상 필요");
+      }
+      const missingNames = want.filter((n) => !byName.has(n));
+      if (missingNames.length > 0) {
+        throw new Error(`등록·미숨김 회원에 없는 실명: ${missingNames.join(", ")}`);
+      }
+
+      // race_events.participants에서 distance 정보 가져오기
+      const participantsByName = new Map();
+      if (event && Array.isArray(event.participants)) {
+        event.participants.forEach((p) => {
+          if (p.realName && p.distance) {
+            participantsByName.set(p.realName, p.distance);
+          }
+        });
+      }
+
+      members = want.map((n) => {
+        const member = byName.get(n);
+        const distance = participantsByName.get(n);
+        return { ...member, distance };
       });
+      wantNames = want;
     }
-    
-    // members 배열 생성 시 participants의 distance 포함
-    const members = want.map((n) => {
-      const member = byName.get(n);
-      const distance = participantsByName.get(n);
-      return { ...member, distance };
-    });
 
     const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
     const confirmedResults = [];
@@ -1504,7 +1541,8 @@ async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRe
     await jobRef.set({
       source,
       sourceId,
-      memberRealNames: want,
+      memberRealNames: wantNames,
+      queryBy: bibMode ? "bib" : "name",
       eventName: (event && event.eventName) || sourceId,
       eventDate: (event && event.eventDate) || "",
       status: "running",
@@ -3224,12 +3262,16 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.status(400).json({ ok: false, error: "참가자 미등록" });
       }
 
+      const scrapeTargets = pickBibScrapeTargets(eventRow.participants);
+      if (scrapeTargets.length === 0) {
+        return res.status(400).json({ ok: false, error: "배번 등록 참가자 없음" });
+      }
+
       if (eventRow.groupScrapeStatus === "running") {
         return res.status(400).json({ ok: false, error: "이미 스크랩이 진행 중입니다" });
       }
 
       const { source: src, sourceId: sid } = eventRow.groupSource;
-      const memberRealNames = eventRow.participants.map((p) => p.realName);
 
       await db.collection("race_events").doc(canonicalEventId).update({
         groupScrapeStatus: "running",
@@ -3240,7 +3282,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         canonicalEventId,
         source: src,
         sourceId: sid,
-        memberRealNames,
+        scrapeTargets,
+        queryBy: "bib",
         event: eventRow,
         db,
         scraper,
