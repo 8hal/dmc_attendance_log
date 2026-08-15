@@ -97,11 +97,13 @@ HTML 호출처:
 | `scrape` | POST | **기존 확장** | 대상을 `pickBibScrapeTargets(participants)`만. 배번 0명이면 400. `queryBy: "bib"`로 scraper 호출. 개인/ops 이름 스크랩 경로 유지 |
 | `my-pending-result` | GET | **신규** | `eventId` + `nickname` → 본인 bib로 job 대기 행 조회. `state`: `confirmed` \| `pending` \| `none` |
 | `self-confirm` | POST | **신규** | `eventId` + `nickname` → pending bib 행을 `race_results`에 upsert. `confirmSource: "personal"`. **해당 docId만** 덮어쓰기 (이벤트 전체 삭제 금지) |
+| `public-roster` | GET | **신규** | `eventId` → 공개 명단 행(닉·종목·기록·PB). **실명·배번 미포함**. `detail`의 PII 노출을 피하기 위한 읽기 전용 |
 
 ### 호출처 (예정)
 
 - `scrape`: `event-admin.html` (총무 「배번 N명 스크랩」); `ops.html` 기존 버튼은 동일 subAction 사용 → **동작이 bib 필터로 바뀜**
 - `my-pending-result` / `self-confirm`: 회원 홈 배너(`event-home` 등), 필요 시 명단·결과 ‘나’ 행
+- `public-roster`: `event-roster.html` (회원 명단·결과 탭)
 
 ### 제품 규칙 (합의)
 
@@ -152,6 +154,11 @@ HTML 호출처:
 - 새 `scrape-by-bib`는 라우팅·ops 호출처 이중화만 초래.
 - **동작 변경**(기존 `scrape` 확장)이 YAGNI·호환에 맞음. `groupEventAutoScrape`도 동일 bib 대상으로 맞춤.
 
+### 왜 `detail`로 명단·결과를 쓰지 않는가?
+
+- `detail`은 participants 실명·배번·gap 전체를 내려줌. 회원 공개 보드 계약과 충돌.
+- → `public-roster`: 닉·종목·확정 기록·`pbConfirmed`만. 실명·배번 키 없음.
+
 ### 왜 `update-bib`만으로는 부족한가?
 
 - 배번 저장만 함. 스크랩·pending·`race_results` 없음.
@@ -166,6 +173,7 @@ HTML 호출처:
 1. **`scrape` 동작 변경** — bib 있는 participant만, bib-first 조회 (개인 이름 스크랩 유지).
 2. **`my-pending-result`** — 참가자 컨펌 UX용 최소 대기 조회.
 3. **`self-confirm`** — 본인 bib pending → `race_results`, `confirmSource: "personal"`.
+4. **`public-roster`** — 회원 명단·결과 보드용 공개 읽기 (실명·배번 제외). `detail` 대체.
 
 ### ⚠️ 검토한 대안
 

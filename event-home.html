@@ -357,7 +357,7 @@
           <span id="bibBadge" class="launcher-badge hidden"></span>
         </a>
         <a id="resultsLauncher" class="launcher is-disabled" href="#" aria-disabled="true" tabindex="-1">
-          <span class="launcher-label">결과 보기</span>
+          <span class="launcher-label">명단·결과</span>
           <span id="resultsBadge" class="launcher-badge muted"></span>
         </a>
       </nav>
@@ -382,7 +382,7 @@
       ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
       : "https://race-nszximpvtq-du.a.run.app";
 
-    const RESULTS_BOARD_READY = false;
+    const RESULTS_BOARD_READY = true;
 
     const loadingEl = document.getElementById("loading");
     const errorEl = document.getElementById("error");
@@ -482,12 +482,19 @@
       }
     }
 
+    function setResultsHref() {
+      if (!eventId) return;
+      resultsLauncher.href =
+        "event-roster.html?eventId=" + encodeURIComponent(eventId);
+    }
+
     function renderResultsLauncher() {
       const state = EventHomeBadges.resultsLauncherState(RESULTS_BOARD_READY);
       if (state.enabled) {
         resultsLauncher.classList.remove("is-disabled");
         resultsLauncher.removeAttribute("aria-disabled");
         resultsLauncher.removeAttribute("tabindex");
+        setResultsHref();
         setBadge(resultsBadge, state.label);
       } else {
         resultsLauncher.classList.add("is-disabled");
