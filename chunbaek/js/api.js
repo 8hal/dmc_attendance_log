@@ -204,7 +204,9 @@ const MOCK = {
     goalBodyWeightKg: 68.5,
     goalBodyWeightPrivate: false,
     goalRace: "jtbc",
+    goalRaceNote: null,
     goalRaceLabel: "JTBC 서울마라톤",
+    goalRaceDate: "2026-11-01",
     resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
     profileComplete: true,
     stats: {
