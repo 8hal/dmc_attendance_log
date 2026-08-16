@@ -451,6 +451,10 @@ git add .
 git commit -m "feat: Firebase 클라이언트/Admin SDK 초기화, Firestore 보안 규칙"
 ```
 
+---
+
+## Task 3: 관리자 인증 API
+
 **Files:**
 - Create: `lib/auth.ts`
 - Create: `app/api/admin/verify/route.ts`
