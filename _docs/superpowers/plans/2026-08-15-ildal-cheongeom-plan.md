@@ -41,7 +41,6 @@ ildal-cheongeom/
 │   │   └── ManualForm.tsx                  # 수동 입력 폼
 │   └── admin/
 │       ├── AdminLogin.tsx                  # 비밀번호 입력
-│       ├── RunnerList.tsx                  # 러너 명단 (선택 가능)
 │       ├── SubmissionCard.tsx              # 기록 카드 (승인/거절/경고배지)
 │       └── AddRunnerForm.tsx               # 러너 추가 폼
 ├── lib/
@@ -435,16 +434,22 @@ service cloud.firestore {
   ```
   adminPassword는 Task 3 완료 후 채운다.
 
-- [ ] **Step 7: 커밋**
+- [ ] **Step 7: Firestore 복합 인덱스 생성**
+
+  Firebase Console → Firestore → 인덱스 탭 → 복합 인덱스 추가:
+  - 컬렉션: `submissions`
+  - 필드 1: `runnerId` (오름차순)
+  - 필드 2: `submittedAt` (내림차순)
+  - 쿼리 범위: 컬렉션
+
+  또는 첫 번째 런타임 쿼리 오류 발생 시 콘솔에 출력되는 자동 생성 링크를 클릭해서 생성.
+
+- [ ] **Step 8: 커밋**
 
 ```bash
 git add .
 git commit -m "feat: Firebase 클라이언트/Admin SDK 초기화, Firestore 보안 규칙"
 ```
-
----
-
-## Task 3: 관리자 인증 API
 
 **Files:**
 - Create: `lib/auth.ts`
@@ -1550,10 +1555,10 @@ git commit -m "feat: 내 기록 화면 (러너별 제출 기록, 승인/거절 �
 
 **Files:**
 - Create: `components/admin/AdminLogin.tsx`
-- Create: `components/admin/RunnerList.tsx`
 - Create: `components/admin/SubmissionCard.tsx`
 - Create: `components/admin/AddRunnerForm.tsx`
 - Create: `app/admin/page.tsx`
+- Create: `app/api/config/route.ts`
 
 - [ ] **Step 1: `components/admin/AdminLogin.tsx` 작성**
 
@@ -1738,12 +1743,19 @@ import { RunnerBadge } from '@/components/RunnerBadge'
 import { BudgetBar } from '@/components/BudgetBar'
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
+  const [authed, setAuthed] = useState<boolean | null>(null) // null = 로딩 중
   const [runners, setRunners] = useState<Runner[]>([])
   const [selectedRunner, setSelectedRunner] = useState<Runner | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [config, setConfig] = useState<Config | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+
+  // 마운트 시 기존 세션 확인
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => setAuthed(res.ok))
+      .catch(() => setAuthed(false))
+  }, [])
 
   const loadRunners = useCallback(async () => {
     const res = await fetch('/api/runners')
@@ -1787,6 +1799,9 @@ export default function AdminPage() {
     if (selectedRunner) loadSubmissions(selectedRunner.id)
     loadRunners()
   }
+
+  // 세션 확인 중
+  if (authed === null) return <div className="text-center py-8 text-gray-400">로딩 중...</div>
 
   if (!authed) return <AdminLogin onLogin={() => setAuthed(true)} />
 
