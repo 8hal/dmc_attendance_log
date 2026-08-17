@@ -1505,7 +1505,7 @@ async function triggerGroupScrape({
   const bibMode = queryBy === "bib";
   try {
     if (bibMode && !isBibModeGroupScrapeSource(source)) {
-      throw new Error("배번 스크랩은 smartchip·ohmyrace만 지원합니다");
+      throw new Error("배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다");
     }
     const membersSnap = await db.collection("members").get();
     const allMembers = [];
@@ -3298,7 +3298,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       if (!isBibModeGroupScrapeSource(src)) {
         return res.status(400).json({
           ok: false,
-          error: "배번 스크랩은 smartchip·ohmyrace만 지원합니다",
+          error: "배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다",
         });
       }
 

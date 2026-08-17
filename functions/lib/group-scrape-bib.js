@@ -4,11 +4,12 @@
  * Sources whose search APIs accept bib as the query (not name-only).
  * - smartchip: nameorbibno
  * - ohmyrace: bib param
+ * - spct: searchResultsName accepts bib (2025 철원 live check)
  * marazone always sends bibNum:"" — excluded until fixed.
  * @type {ReadonlySet<string>}
  */
 const BIB_MODE_GROUP_SCRAPE_SOURCES = Object.freeze(
-  new Set(["smartchip", "ohmyrace"])
+  new Set(["smartchip", "ohmyrace", "spct"])
 );
 
 /**
