@@ -129,7 +129,7 @@
 | 단계 | 동작 |
 |------|------|
 | 배번 입력 | `POST group-events` `update-bib` — `participants[].bib`만 갱신 (공개, nickname exact) |
-| 스크랩 | `POST group-events` `scrape` — **`bib`가 있는 참가자만** 조회 (`pickBibScrapeTargets`). 무배번은 미참가로 간주·제외. 배번 모드 소스: `smartchip`, `ohmyrace` |
+| 스크랩 | `POST group-events` `scrape` — **`bib`가 있는 참가자만** 조회 (`pickBibScrapeTargets`). 무배번은 미참가로 간주·제외. 배번 모드 소스: `smartchip`, `ohmyrace`, `spct` |
 | 대기 조회 | `GET group-events&subAction=my-pending-result&eventId=&nickname=` — `state`: `none` \| `pending` \| `confirmed` |
 | 참가자 컨펌 | `POST group-events` `self-confirm` `{ eventId, nickname }` — scrape job에서 **본인 bib** 행만 `race_results`에 upsert. `confirmSource: "personal"`. 이벤트 전체 bulk delete 금지 |
 | 공개 명단·결과 | `GET group-events&subAction=public-roster&eventId=` — 닉·종목·기록·PB만. **실명·배번 미포함**. 선택: `distance`, `q`, `sortBy` |
