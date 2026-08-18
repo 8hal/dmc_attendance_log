@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>버스 탑승 체크 - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <link rel="stylesheet" href="assets/event-member-shell.css" />
   <style>
     :root {
       --primary: #2563EB;
@@ -28,8 +30,9 @@
       background: var(--bg);
       color: var(--text);
       padding: 20px;
+      padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     }
-    .wrap { max-width: 500px; margin: 0 auto; }
+    .wrap { max-width: 480px; margin: 0 auto; }
 
     .header {
       text-align: center;
@@ -50,24 +53,6 @@
       color: var(--text);
       margin: 0 0 12px;
     }
-    .nav-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      justify-content: center;
-      font-size: 14px;
-    }
-    .nav-links a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .nav-links a:hover { text-decoration: underline; }
-    .nav-links .muted {
-      color: var(--text-sub);
-      font-weight: 500;
-    }
-
     .card {
       background: var(--card);
       border-radius: 14px;
@@ -322,24 +307,6 @@
     }
     .hidden { display: none; }
 
-    .footer-nav {
-      text-align: center;
-      margin-top: 8px;
-      padding: 12px 0 4px;
-      font-size: 14px;
-    }
-    .footer-nav a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .footer-nav a:hover { text-decoration: underline; }
-    .footer-nav .muted {
-      color: var(--text-sub);
-      margin-top: 6px;
-      font-size: 13px;
-    }
-
     @media (max-width: 600px) {
       body { padding: 12px; }
       .header-title { font-size: 20px; }
@@ -354,11 +321,6 @@
       <div class="header-icon">🚌</div>
       <h1 class="header-title">버스 탑승 체크</h1>
       <p class="header-subtitle" id="eventInfo">로딩 중...</p>
-      <div class="nav-links" id="headerNav">
-        <a id="headerHomeLink" href="#">홈</a>
-        <a id="headerBibLink" href="#">배번 입력</a>
-        <a id="headerRosterLink" href="#">명단·결과</a>
-      </div>
     </div>
 
     <div id="loadingScreen" class="loading">
@@ -447,13 +409,15 @@
       </div>
     </div>
 
-    <div class="footer-nav" id="footerNav">
-      <a id="footerHomeLink" href="#">대회 홈</a>
-      <a id="footerBibLink" href="#">배번 입력으로 이동</a>
-      <a id="footerRosterLink" href="#">명단·결과</a>
-    </div>
   </div>
 
+  <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
+    <a class="event-tab-btn" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
+    <a class="event-tab-btn active" data-tab="bus" href="#"><span class="tab-icon">🚌</span>버스</a>
+    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
+  </nav>
+
+  <script src="assets/event-member-tabs.js"></script>
   <script>
     // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (group-detail / api-patterns)
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -557,22 +521,16 @@
         .replace(/"/g, "&quot;");
     }
 
-    function updateBibLinks() {
-      const bibHref = eventId
-        ? `my-bib.html?eventId=${encodeURIComponent(eventId)}`
-        : "my-bib.html";
-      const homeHref = eventId
-        ? `event-home.html?eventId=${encodeURIComponent(eventId)}`
-        : "event-home.html";
-      const rosterHref = eventId
-        ? `event-roster.html?eventId=${encodeURIComponent(eventId)}`
-        : "event-roster.html";
-      document.getElementById("headerBibLink").href = bibHref;
-      document.getElementById("footerBibLink").href = bibHref;
-      document.getElementById("headerHomeLink").href = homeHref;
-      document.getElementById("footerHomeLink").href = homeHref;
-      document.getElementById("headerRosterLink").href = rosterHref;
-      document.getElementById("footerRosterLink").href = rosterHref;
+    let busModuleEnabled = false;
+
+    function mountTabs() {
+      if (!eventId) return;
+      EventMemberTabs.mount({
+        eventId: eventId,
+        active: "bus",
+        busEnabled: busModuleEnabled,
+        barEl: document.getElementById("eventTabBar"),
+      });
     }
 
     function setLeg(leg) {
@@ -694,7 +652,7 @@
     async function loadStatus() {
       const urlParams = new URLSearchParams(window.location.search);
       eventId = urlParams.get("eventId");
-      updateBibLinks();
+      mountTabs();
 
       if (!eventId) {
         showErrorScreen(
@@ -722,6 +680,8 @@
 
         eventName = data.eventName || "단체 대회";
         eventInfo.textContent = eventName;
+        busModuleEnabled = data.enabled === true;
+        mountTabs();
 
         if (data.enabled !== true) {
           showScreen(STEP.CLOSED);
