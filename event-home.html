@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <title>대회 홈 - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <link rel="stylesheet" href="assets/event-member-shell.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg);
+      color: var(--dmc-color-text);
+      font-family: var(--dmc-font-family);
+      padding: var(--dmc-space-5);
+    }
+    .status {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--dmc-color-text-secondary);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .status-title {
+      display: block;
+      color: var(--dmc-color-text);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--dmc-radius-md);
+      background: var(--dmc-color-primary);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--dmc-color-primary-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--dmc-color-primary);
+      border: 1px solid var(--dmc-color-primary-border);
+    }
+    .summary { margin-bottom: var(--dmc-space-5); }
+    .summary-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      line-height: 1.3;
+    }
+    .summary-meta {
+      margin: 0;
+      font-size: 14px;
+      color: var(--dmc-color-text-secondary);
+      line-height: 1.45;
+    }
+    .nick-chip {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--dmc-color-primary-surface);
+      color: var(--dmc-color-primary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .timeline-section { margin-bottom: var(--dmc-space-5); }
+    .timeline-details {
+      border: 1px solid var(--dmc-color-border, var(--dmc-slate-4));
+      border-radius: var(--dmc-radius-card, var(--dmc-radius-md));
+      background: var(--dmc-color-surface, var(--dmc-slate-1));
+      padding: 0 16px;
+    }
+    .timeline-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 0;
+      font-size: 15px;
+      font-weight: 600;
+      user-select: none;
+    }
+    .timeline-details > summary::-webkit-details-marker { display: none; }
+    .timeline-details > summary::after {
+      content: "▾";
+      float: right;
+      color: var(--dmc-color-text-secondary);
+      font-weight: 400;
+    }
+    .timeline-details[open] > summary::after { content: "▴"; }
+    .timeline-list {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 16px;
+      border-top: 1px solid var(--dmc-color-border, var(--dmc-slate-4));
+    }
+    .timeline-row {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0 0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .timeline-time {
+      flex-shrink: 0;
+      min-width: 52px;
+      font-weight: 600;
+      color: var(--dmc-color-primary);
+    }
+    .hidden { display: none !important; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      max-width: min(440px, calc(100vw - 32px));
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 50;
+    }
+    .toast.error { background: #b91c1c; }
+  </style>
+</head>
+<body>
+  <div class="event-app">
+    <div id="loading" class="status" aria-live="polite">불러오는 중…</div>
+
+    <div id="error" class="status hidden" role="alert">
+      <span class="status-title" id="errorMessage">대회를 찾을 수 없어요</span>
+      <button type="button" class="btn hidden" id="retryBtn">다시 시도</button>
+      <a class="btn btn-secondary" id="errorAttendanceLink" href="attendance-v2.html">출석으로 돌아가기</a>
+    </div>
+
+    <div id="pickView" class="hidden pick-section">
+      <header class="summary">
+        <h1 class="summary-title" id="pickEventTitle">대회</h1>
+        <p class="summary-meta" id="pickEventMeta"></p>
+      </header>
+      <h2 class="section-title">당신은 누구신가요?</h2>
+      <p class="section-sub">참가자 명단에서 본인 닉네임을 선택하세요</p>
+      <input type="search" class="pick-search" id="pickSearch" placeholder="닉네임 검색" autocomplete="off" />
+      <ul class="pick-list" id="pickList"></ul>
+      <p class="pick-empty hidden" id="pickEmpty">일치하는 닉네임이 없습니다</p>
+      <button type="button" class="today-cta" id="pickNextBtn" disabled>시작하기</button>
+    </div>
+
+    <div id="home" class="hidden">
+      <header class="summary">
+        <h1 class="summary-title" id="eventTitle">대회</h1>
+        <p class="summary-meta" id="eventMeta"></p>
+        <span id="nickChip" class="nick-chip hidden"></span>
+      </header>
+
+      <section id="todayCard" class="today-card" aria-live="polite">
+        <div class="today-kicker" id="todayKicker">지금</div>
+        <h2 class="today-title" id="todayTitle">—</h2>
+        <p class="today-desc" id="todayDesc"></p>
+        <div id="todayConfirmDetail" class="today-confirm-detail hidden"></div>
+        <button type="button" class="today-cta hidden" id="todayCta"></button>
+        <a class="today-secondary hidden" id="todaySecondary" href="#"></a>
+      </section>
+
+      <button type="button" class="switch-user-btn" id="switchUserBtn">닉네임 변경</button>
+
+      <section id="timeline" class="timeline-section hidden">
+        <details class="timeline-details" open>
+          <summary>당일 일정</summary>
+          <ul id="timelineList" class="timeline-list"></ul>
+        </details>
+      </section>
+    </div>
+  </div>
+
+  <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
+    <a class="event-tab-btn active" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
+    <a class="event-tab-btn" data-tab="bus" href="#"><span class="tab-icon">🚌</span>버스</a>
+    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
+  </nav>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="assets/event-member-profile.js"></script>
+  <script src="assets/event-home-badges.js"></script>
+  <script src="assets/event-home-action.js"></script>
+  <script src="assets/event-member-tabs.js"></script>
+  <script>
+    const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    const loadingEl = document.getElementById("loading");
+    const errorEl = document.getElementById("error");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const retryBtn = document.getElementById("retryBtn");
+    const errorAttendanceLink = document.getElementById("errorAttendanceLink");
+    const pickViewEl = document.getElementById("pickView");
+    const homeEl = document.getElementById("home");
+    const toastEl = document.getElementById("toast");
+    const eventTabBar = document.getElementById("eventTabBar");
+
+    const eventTitleEl = document.getElementById("eventTitle");
+    const eventMetaEl = document.getElementById("eventMeta");
+    const nickChipEl = document.getElementById("nickChip");
+
+    const todayCard = document.getElementById("todayCard");
+    const todayKicker = document.getElementById("todayKicker");
+    const todayTitle = document.getElementById("todayTitle");
+    const todayDesc = document.getElementById("todayDesc");
+    const todayConfirmDetail = document.getElementById("todayConfirmDetail");
+    const todayCta = document.getElementById("todayCta");
+    const todaySecondary = document.getElementById("todaySecondary");
+    const switchUserBtn = document.getElementById("switchUserBtn");
+
+    const pickEventTitle = document.getElementById("pickEventTitle");
+    const pickEventMeta = document.getElementById("pickEventMeta");
+    const pickSearch = document.getElementById("pickSearch");
+    const pickList = document.getElementById("pickList");
+    const pickEmpty = document.getElementById("pickEmpty");
+    const pickNextBtn = document.getElementById("pickNextBtn");
+
+    const timelineSection = document.getElementById("timeline");
+    const timelineList = document.getElementById("timelineList");
+
+    const eventId = new URLSearchParams(location.search).get("eventId");
+
+    let cachedEvent = null;
+    let busRow = null;
+    let confirmMode = "none";
+    let confirmResult = null;
+    let confirmPhase = "cta";
+    let isConfirming = false;
+    let toastTimer = null;
+    let pickSelectedNick = null;
+    let busEnabled = false;
+
+    function showOnly(el) {
+      loadingEl.classList.add("hidden");
+      errorEl.classList.add("hidden");
+      pickViewEl.classList.add("hidden");
+      homeEl.classList.add("hidden");
+      el.classList.remove("hidden");
+    }
+
+    function showToast(message, isError) {
+      if (toastTimer) clearTimeout(toastTimer);
+      toastEl.textContent = message;
+      toastEl.classList.toggle("error", !!isError);
+      toastEl.classList.remove("hidden");
+      toastTimer = setTimeout(function () {
+        toastEl.classList.add("hidden");
+      }, 2800);
+    }
+
+    function showError(message, opts) {
+      opts = opts || {};
+      errorMessageEl.textContent = message;
+      eventTabBar.classList.add("hidden");
+      if (opts.retry) {
+        retryBtn.classList.remove("hidden");
+        errorAttendanceLink.classList.add("hidden");
+      } else {
+        retryBtn.classList.add("hidden");
+        errorAttendanceLink.classList.remove("hidden");
+      }
+      showOnly(errorEl);
+    }
+
+    function showRetry(message) {
+      showError(message || "다시 시도", { retry: true });
+    }
+
+    function eventMetaText(event) {
+      const parts = [];
+      if (event.eventDate) parts.push(event.eventDate);
+      if (event.location) parts.push(event.location);
+      return parts.join(" · ");
+    }
+
+    function mountTabs() {
+      EventMemberTabs.mount({
+        eventId: eventId,
+        active: "home",
+        busEnabled: busEnabled,
+        barEl: eventTabBar,
+      });
+    }
+
+    function renderTimeline(event) {
+      const tl = Array.isArray(event.dayTimeline) ? event.dayTimeline : [];
+      if (!tl.length) {
+        timelineSection.classList.add("hidden");
+        timelineList.innerHTML = "";
+        return;
+      }
+      timelineList.innerHTML = "";
+      tl.forEach(function (row) {
+        const li = document.createElement("li");
+        li.className = "timeline-row";
+        const timeEl = document.createElement("span");
+        timeEl.className = "timeline-time";
+        timeEl.textContent = row && row.time != null ? String(row.time) : "";
+        const labelEl = document.createElement("span");
+        labelEl.className = "timeline-label";
+        labelEl.textContent = row && row.label != null ? String(row.label) : "";
+        li.appendChild(timeEl);
+        li.appendChild(labelEl);
+        timelineList.appendChild(li);
+      });
+      timelineSection.classList.remove("hidden");
+    }
+
+    function renderConfirmDetail() {
+      todayConfirmDetail.innerHTML = "";
+      todayConfirmDetail.classList.add("hidden");
+      if (confirmMode !== "pending" || !confirmResult) return;
+
+      const timeText = EventHomeBadges.confirmDisplayTime(confirmResult);
+      const bib = String(confirmResult.bib || "").trim();
+      const distance = String(confirmResult.distance || "").trim();
+      const rank =
+        confirmResult.overallRank != null && confirmResult.overallRank !== ""
+          ? String(confirmResult.overallRank)
+          : "";
+
+      if (timeText) {
+        const t = document.createElement("div");
+        t.className = "today-confirm-time";
+        t.textContent = timeText;
+        todayConfirmDetail.appendChild(t);
+      }
+      const subParts = [];
+      if (bib) subParts.push("배번 " + bib);
+      if (distance) subParts.push(distance);
+      if (rank) subParts.push("순위 " + rank);
+      if (subParts.length) {
+        const s = document.createElement("div");
+        s.className = "today-confirm-sub";
+        s.textContent = subParts.join(" · ");
+        todayConfirmDetail.appendChild(s);
+      }
+      if (todayConfirmDetail.childNodes.length) {
+        todayConfirmDetail.classList.remove("hidden");
+      }
+    }
+
+    function renderTodayCard(identity) {
+      const action = EventHomeAction.resolveNextAction({
+        nickname: identity.nickname,
+        busEnabled: busEnabled,
+        busRow: busRow,
+        participant: EventMemberProfile.matchInList(
+          (cachedEvent && cachedEvent.participants) || [],
+          identity
+        ),
+        confirmMode: confirmMode,
+      });
+
+      todayCard.className = "today-card";
+      if (action.done) todayCard.classList.add("is-done");
+      else if (action.kind === "confirm_pending") todayCard.classList.add("is-pending");
+
+      todayKicker.textContent = action.kicker;
+      todayTitle.textContent = action.title;
+      todayDesc.textContent = action.desc;
+
+      todayCta.classList.add("hidden");
+      todaySecondary.classList.add("hidden");
+      todayCta.disabled = false;
+      todayCta.classList.remove("is-done");
+      todayCta.onclick = null;
+
+      if (action.kind === "confirm_pending") {
+        renderConfirmDetail();
+        todayCta.textContent =
+          confirmPhase === "review" ? "이 기록으로 컨펌" : action.ctaLabel;
+        todayCta.classList.remove("hidden");
+        todayCta.onclick = onConfirmClick;
+        return;
+      }
+
+      todayConfirmDetail.classList.add("hidden");
+
+      if (action.ctaKind === "link" && action.ctaLabel) {
+        todayCta.classList.remove("hidden");
+        todayCta.textContent = action.ctaLabel;
+        todayCta.onclick = function () {
+          location.href = EventHomeAction.pageHref(action.ctaHref, eventId);
+        };
+        return;
+      }
+
+      if (action.ctaKind === "done") {
+        todayCta.classList.remove("hidden");
+        todayCta.textContent = action.ctaLabel;
+        todayCta.disabled = true;
+        todayCta.classList.add("is-done");
+        return;
+      }
+
+      if (action.secondaryLabel && action.secondaryHref) {
+        todaySecondary.textContent = action.secondaryLabel;
+        todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
+        todaySecondary.classList.remove("hidden");
+      }
+    }
+
+    async function loadBusRow(identity) {
+      busRow = null;
+      if (!busEnabled || !identity.nickname) return;
+      try {
+        const res = await fetch(
+          API_BASE +
+            "?action=bus-boarding&subAction=status&eventId=" +
+            encodeURIComponent(eventId)
+        );
+        const data = await res.json();
+        if (data && data.ok && Array.isArray(data.roster)) {
+          busRow = EventMemberProfile.matchInList(data.roster, identity);
+        }
+      } catch (_err) {
+        /* badge-less */
+      }
+    }
+
+    async function loadConfirmState(identity) {
+      confirmMode = "none";
+      confirmResult = null;
+      confirmPhase = "cta";
+      if (!identity.nickname) return;
+
+      try {
+        const res = await fetch(
+          API_BASE +
+            "?action=group-events&subAction=my-pending-result&eventId=" +
+            encodeURIComponent(eventId) +
+            "&nickname=" +
+            encodeURIComponent(identity.nickname)
+        );
+        const data = await res.json();
+        const panel = EventHomeBadges.confirmPanelFromApi(data);
+        confirmMode = panel.mode;
+        confirmResult = panel.result;
+      } catch (err) {
+        console.error("my-pending-result error:", err);
+      }
+    }
+
+    async function refreshHomeState(identity) {
+      await Promise.all([loadBusRow(identity), loadConfirmState(identity)]);
+      renderTodayCard(identity);
+    }
+
+    async function submitSelfConfirm(identity) {
+      if (isConfirming || !identity.nickname) return;
+      isConfirming = true;
+      todayCta.disabled = true;
+      try {
+        const res = await fetch(API_BASE + "?action=group-events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "self-confirm",
+            eventId: eventId,
+            nickname: identity.nickname,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "컨펌 실패");
+        showToast("기록이 반영되었습니다");
+        confirmPhase = "cta";
+        await refreshHomeState(identity);
+      } catch (err) {
+        console.error("self-confirm error:", err);
+        showToast(err.message || "컨펌 오류", true);
+        todayCta.disabled = false;
+      } finally {
+        isConfirming = false;
+      }
+    }
+
+    function onConfirmClick() {
+      const identity = EventMemberProfile.readSavedIdentity(localStorage);
+      if (confirmMode !== "pending" || isConfirming) return;
+      if (confirmPhase === "cta") {
+        confirmPhase = "review";
+        renderTodayCard(identity);
+        return;
+      }
+      submitSelfConfirm(identity);
+    }
+
+    function renderPickList(filter) {
+      const participants = (cachedEvent && cachedEvent.participants) || [];
+      const nicks = participants
+        .map(function (p) {
+          return p && p.nickname ? String(p.nickname).trim() : "";
+        })
+        .filter(Boolean)
+        .sort(function (a, b) {
+          return a.localeCompare(b, "ko");
+        });
+      const q = (filter || "").trim().toLowerCase();
+      const filtered = q
+        ? nicks.filter(function (n) {
+            return n.toLowerCase().includes(q);
+          })
+        : nicks;
+
+      pickList.innerHTML = "";
+      pickEmpty.classList.toggle("hidden", filtered.length > 0);
+
+      filtered.forEach(function (nick) {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "pick-item" + (pickSelectedNick === nick ? " is-selected" : "");
+        btn.textContent = nick;
+        btn.addEventListener("click", function () {
+          pickSelectedNick = nick;
+          pickNextBtn.disabled = false;
+          renderPickList(pickSearch.value);
+        });
+        li.appendChild(btn);
+        pickList.appendChild(li);
+      });
+    }
+
+    function showPickView(event) {
+      pickEventTitle.textContent = event.eventName || event.primaryName || "대회";
+      pickEventMeta.textContent = eventMetaText(event);
+      pickSelectedNick = null;
+      pickNextBtn.disabled = true;
+      pickSearch.value = "";
+      renderPickList("");
+      mountTabs();
+      showOnly(pickViewEl);
+    }
+
+    function showMemberHome(event, identity) {
+      const title = event.eventName || event.primaryName || "대회";
+      eventTitleEl.textContent = title;
+      document.title = title + " - 동탄 마라톤 클럽";
+      eventMetaEl.textContent = eventMetaText(event);
+
+      if (identity.nickname) {
+        nickChipEl.textContent = identity.nickname + "님";
+        nickChipEl.classList.remove("hidden");
+      } else {
+        nickChipEl.classList.add("hidden");
+      }
+
+      renderTimeline(event);
+      mountTabs();
+      showOnly(homeEl);
+      refreshHomeState(identity);
+    }
+
+    function renderEventShell(event) {
+      cachedEvent = event;
+      busEnabled = EventHomeBadges.busLauncherVisible(event.busBoarding);
+      const identity = EventMemberProfile.readSavedIdentity(localStorage);
+
+      if (!identity.nickname) {
+        showPickView(event);
+        return;
+      }
+      showMemberHome(event, identity);
+    }
+
+    async function loadHome() {
+      if (!eventId) {
+        showError("대회를 찾을 수 없어요");
+        return;
+      }
+
+      showOnly(loadingEl);
+      eventTabBar.classList.add("hidden");
+
+      try {
+        const res = await fetch(
+          API_BASE +
+            "?action=group-events&subAction=detail&eventId=" +
+            encodeURIComponent(eventId)
+        );
+        const data = await res.json();
+        if (!data.ok || !data.event || data.event.isGroupEvent !== true) {
+          showError("대회를 찾을 수 없어요");
+          return;
+        }
+        renderEventShell(data.event);
+      } catch (err) {
+        console.error(err);
+        showRetry("다시 시도");
+      }
+    }
+
+    pickSearch.addEventListener("input", function () {
+      renderPickList(pickSearch.value);
+    });
+
+    pickNextBtn.addEventListener("click", function () {
+      if (!pickSelectedNick || !cachedEvent) return;
+      EventMemberProfile.syncNicknames(localStorage, pickSelectedNick);
+      showMemberHome(cachedEvent, { nickname: pickSelectedNick, memberId: null });
+    });
+
+    switchUserBtn.addEventListener("click", function () {
+      if (!cachedEvent) return;
+      showPickView(cachedEvent);
+    });
+
+    retryBtn.addEventListener("click", function () {
+      loadHome();
+    });
+
+    loadHome();
+  </script>
+</body>
+</html>

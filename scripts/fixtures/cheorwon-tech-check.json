@@ -1,0 +1,44 @@
+{
+  "title": "2026 철원 버스 명단 + 2025 SPCT 배번 기술 검증 fixture",
+  "notProduction2026Results": true,
+  "busRoster": {
+    "source": "네이버카페 2008dmc/4901 붙여넣기 (2026-08-16)",
+    "file": "scripts/fixtures/cheorwon-2026-bus.csv",
+    "uniqueCount": 40,
+    "duplicateDropped": [{ "nickname": "환희", "realName": "김진석", "note": "원본 17행·39행 중복 → 1명만 유지" }],
+    "rideType": "roundtrip",
+    "lunch": true
+  },
+  "scrapeSandbox": {
+    "source": "spct",
+    "sourceId": "2025092102",
+    "eventName": "2025철원DMZ국제평화마라톤",
+    "eventDate": "2025-09-21",
+    "why": "2026 철원 기록 사이트 미확정. 배번 스크랩·self-confirm 기술 검증만 2025 SPCT로 수행."
+  },
+  "participantsSameAsBus": true,
+  "bibInputFile": "scripts/fixtures/cheorwon-2025-spct-bib-input.csv",
+  "bibInputCount": 28,
+  "noBibLeaveAsNonStarters": [
+    { "nickname": "레이스", "realName": "정선옥" },
+    { "nickname": "오구오구", "realName": "김경란" },
+    { "nickname": "말아톤", "realName": "조학구" },
+    { "nickname": "6스타", "realName": "이유창" },
+    { "nickname": "된다", "realName": "황순길" },
+    { "nickname": "난닝구", "realName": "김덕환" },
+    { "nickname": "지미송", "realName": "송재광" },
+    { "nickname": "호프로", "realName": "이순호" },
+    { "nickname": "바람", "realName": "김홍준" },
+    { "nickname": "민주아빠", "realName": "김종현", "note": "SPCT에 하사 김종현만 있어 제외" },
+    { "nickname": "송송", "realName": "송진수" },
+    { "nickname": "Josh", "realName": "조상현" }
+  ],
+  "multiBibPicks": [
+    { "nickname": "진달", "pickedBib": "20666", "alternates": ["21338"] },
+    { "nickname": "제임스", "pickedBib": "21184", "alternates": ["11162"] },
+    { "nickname": "시카고", "pickedBib": "25115", "alternates": ["25356", "55302"] },
+    { "nickname": "디모", "pickedBib": "40069", "alternates": ["50189"] },
+    { "nickname": "SJ", "pickedBib": "15109", "alternates": ["15585"] },
+    { "nickname": "바람요정", "pickedBib": "15108", "alternates": ["15553", "15741", "55083"] }
+  ]
+}
