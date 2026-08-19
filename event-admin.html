@@ -33,7 +33,7 @@
       padding: 0;
       line-height: 1.45;
     }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 0 0 48px; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 0 48px; }
 
     .auth-overlay {
       position: fixed;
@@ -88,19 +88,82 @@
     .logout-btn:hover { color: #e2e8f0; }
 
     .admin-body { padding: 14px 14px 0; }
-    .nav-links {
+    .ops-layout {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      margin: 0 0 12px;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .ops-sidebar {
+      width: 168px;
+      flex-shrink: 0;
+      background: var(--brand);
+      border-radius: 12px;
+      padding: 8px 0 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      position: sticky;
+      top: 10px;
+    }
+    .ops-nav-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 11px 14px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
       font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border-left: 3px solid transparent;
     }
-    .nav-links a {
-      color: var(--primary);
-      text-decoration: none;
+    .ops-nav-btn:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+    .ops-nav-btn.active {
+      color: #fff;
+      border-left-color: var(--primary);
+      background: rgba(37, 99, 235, 0.22);
+    }
+    .ops-sidebar-foot {
+      margin-top: 8px;
+      padding: 10px 14px 4px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .ops-sidebar-foot a {
+      color: #93c5fd;
+      font-size: 12px;
       font-weight: 600;
+      text-decoration: none;
     }
-    .nav-links a:hover { text-decoration: underline; }
+    .ops-sidebar-foot a:hover { text-decoration: underline; }
+    .ops-main { flex: 1; min-width: 0; }
+    .ops-panel { display: none; }
+    .ops-panel.active { display: block; }
+    @media (max-width: 720px) {
+      .ops-layout { flex-direction: column; }
+      .ops-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        position: static;
+        padding: 6px;
+        gap: 0;
+      }
+      .ops-nav-btn {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        white-space: nowrap;
+        padding: 10px 12px;
+      }
+      .ops-nav-btn.active { border-bottom-color: #60a5fa; }
+      .ops-sidebar-foot {
+        margin-top: 0;
+        margin-left: auto;
+        border-top: none;
+        padding: 6px 10px;
+        white-space: nowrap;
+      }
+    }
 
     .sec {
       background: var(--card);
@@ -530,16 +593,20 @@
 
       <div id="loading-screen" class="loading">불러오는 중…</div>
 
+      <div class="ops-layout">
+        <nav class="ops-sidebar" aria-label="운영 단계">
+          <button type="button" class="ops-nav-btn active" data-ops-panel="prep">1 준비</button>
+          <button type="button" class="ops-nav-btn" data-ops-panel="bus">2 버스</button>
+          <button type="button" class="ops-nav-btn" data-ops-panel="bib">3 배번</button>
+          <button type="button" class="ops-nav-btn" data-ops-panel="scrape">4 스크랩</button>
+          <div class="ops-sidebar-foot">
+            <a id="link-member-home" href="#">회원 앱 열기</a>
+          </div>
+        </nav>
+        <div class="ops-main">
       <div id="ops-root" class="hidden">
-        <div class="nav-links">
-          <a id="link-boarding" href="#">버스 (회원)</a>
-          <a id="link-bib" href="#">배번 입력</a>
-          <a href="group.html">단체 대회 목록</a>
-          <a id="link-boarding-admin" href="#">버스 전용 총무</a>
-        </div>
-
         <!-- ① 준비 -->
-        <section class="sec" id="sec-prep">
+        <section class="sec ops-panel active" id="sec-prep" data-ops-section="prep">
           <h3><span class="left"><span class="num">1</span>준비</span></h3>
 
           <div class="row-between" style="margin-bottom:8px;">
@@ -574,7 +641,7 @@
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
             <div style="font-weight:700;font-size:14px;margin-bottom:6px;">기록 소스 (groupSource)</div>
             <div id="owner-scrape-hint" class="owner-banner hidden">
-              스크랩·소스 저장은 오너 비밀번호가 필요합니다. 현재 역할로는 조회만 가능합니다.
+              스크랩·소스 저장은 로그인된 운영진(총무) 비밀번호로 가능합니다.
             </div>
             <div class="source-row">
               <select id="source-select" class="owner-writable">
@@ -594,7 +661,7 @@
         </section>
 
         <!-- ② 버스 -->
-        <section class="sec" id="sec-bus">
+        <section class="sec ops-panel" id="sec-bus" data-ops-section="bus">
           <h3>
             <span class="left"><span class="num">2</span>버스 탑승</span>
             <span class="pill-ok" id="bus-leg-pill">가는</span>
@@ -650,7 +717,7 @@
         </section>
 
         <!-- ③ 배번 -->
-        <section class="sec" id="sec-bib">
+        <section class="sec ops-panel" id="sec-bib" data-ops-section="bib">
           <h3><span class="left"><span class="num">3</span>배번 현황</span></h3>
           <div class="stat-row">
             <div class="stat"><b id="bib-with-count">0</b><span>배번 있음 · 스크랩 대상</span></div>
@@ -661,7 +728,7 @@
         </section>
 
         <!-- ④ 스크랩 -->
-        <section class="sec" id="sec-scrape">
+        <section class="sec ops-panel" id="sec-scrape" data-ops-section="scrape">
           <h3>
             <span class="left"><span class="num">4</span>결과 가져오기</span>
             <span id="scrape-status-pill" class="pill-off">—</span>
@@ -676,9 +743,12 @@
           <button type="button" class="btn btn-ghost" id="refresh-all-btn">전체 새로고침</button>
         </section>
       </div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <script src="assets/event-admin-panels.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -715,6 +785,7 @@
     let eventDetail = null;
     let gapRows = [];
     let confirmedCount = 0;
+    let opsPanelPicked = false;
 
     const authOverlay = document.getElementById("auth-overlay");
     const mainWrap = document.getElementById("main-wrap");
@@ -740,12 +811,12 @@
       setTimeout(() => toast.remove(), isError ? 4000 : 2500);
     }
 
-    function isOwner() {
-      return adminRole === "owner";
+    function isOpsAdmin() {
+      return adminRole === "owner" || adminRole === "operator";
     }
 
     function getOwnerPw() {
-      if (!isOwner()) return "";
+      if (!isOpsAdmin()) return "";
       return adminPwCache || sessionStorage.getItem(AUTH_PW_KEY) || "";
     }
 
@@ -781,19 +852,47 @@
       return u.href;
     }
 
+    function memberHomeUrl() {
+      if (!eventId) return "event-home.html";
+      return `event-home.html?eventId=${encodeURIComponent(eventId)}`;
+    }
+
+    function applyOpsPanel(panelId, opts) {
+      const applied = EventAdminPanels.applyPanel(document, panelId);
+      if (opts && opts.user) {
+        opsPanelPicked = true;
+        if (history.replaceState) {
+          history.replaceState(null, "", `#${applied}`);
+        } else {
+          location.hash = applied;
+        }
+      }
+      return applied;
+    }
+
+    function inferOpsPanelOnce() {
+      const hashPanel = EventAdminPanels.panelFromHash(location.hash);
+      if (hashPanel) {
+        applyOpsPanel(hashPanel);
+        opsPanelPicked = true;
+        return;
+      }
+      if (opsPanelPicked) return;
+      const parts = (eventDetail && eventDetail.participants) || [];
+      const bibMissing = parts.filter((p) => String(p.bib || "").trim() === "").length;
+      const outbound = summary.outbound || {};
+      applyOpsPanel(
+        EventAdminPanels.resolveDefaultPanel({
+          busEnabled: enabled,
+          outboundRequired: outbound.required,
+          outboundBoarded: outbound.boarded,
+          bibMissing: bibMissing,
+        })
+      );
+    }
+
     function updateLinks() {
-      const boardingHref = eventId
-        ? `boarding.html?eventId=${encodeURIComponent(eventId)}`
-        : "boarding.html";
-      const bibHref = eventId
-        ? `my-bib.html?eventId=${encodeURIComponent(eventId)}`
-        : "my-bib.html";
-      const boardingAdminHref = eventId
-        ? `boarding-admin.html?eventId=${encodeURIComponent(eventId)}`
-        : "boarding-admin.html";
-      document.getElementById("link-boarding").href = boardingHref;
-      document.getElementById("link-bib").href = bibHref;
-      document.getElementById("link-boarding-admin").href = boardingAdminHref;
+      document.getElementById("link-member-home").href = memberHomeUrl();
 
       const abs = participantUrl();
       document.getElementById("participant-link-text").textContent = abs || "—";
@@ -808,11 +907,11 @@
     }
 
     function setOwnerWritableUi() {
-      const canOwner = isOwner();
+      const canWriteSource = isOpsAdmin();
       document.querySelectorAll(".owner-writable").forEach((el) => {
-        el.disabled = !canOwner;
+        el.disabled = !canWriteSource;
       });
-      document.getElementById("owner-scrape-hint").classList.toggle("hidden", canOwner);
+      document.getElementById("owner-scrape-hint").classList.toggle("hidden", canWriteSource);
     }
 
     function setWritableUi(canWrite) {
@@ -1097,7 +1196,7 @@
 
       const scrapeBtn = document.getElementById("scrape-btn");
       const canScrape =
-        isOwner() &&
+        isOpsAdmin() &&
         gs &&
         gs.source &&
         BIB_SCRAPE_SOURCES.includes(gs.source) &&
@@ -1122,6 +1221,7 @@
       renderRoster(searchInput.value, { skipIfNoteFocused: true });
       renderBibSection();
       renderScrapeSection();
+      inferOpsPanelOnce();
     }
 
     function applyBusStatus(data) {
@@ -1662,8 +1762,8 @@
     }
 
     async function saveGroupSource() {
-      if (!isOwner()) {
-        showToast("오너 권한이 필요합니다", true);
+      if (!isOpsAdmin()) {
+        showToast("운영진 권한이 필요합니다", true);
         return;
       }
       const source = document.getElementById("source-select").value;
@@ -1696,8 +1796,8 @@
     }
 
     async function scrapeGroupEvent() {
-      if (!isOwner()) {
-        showToast("오너 권한이 필요합니다", true);
+      if (!isOpsAdmin()) {
+        showToast("운영진 권한이 필요합니다", true);
         return;
       }
       if (!eventId) return;
@@ -1726,6 +1826,14 @@
     }
 
     // —— Bindings ——
+    document.querySelectorAll("[data-ops-panel]").forEach((btn) => {
+      btn.addEventListener("click", () => applyOpsPanel(btn.getAttribute("data-ops-panel"), { user: true }));
+    });
+    window.addEventListener("hashchange", () => {
+      const hashPanel = EventAdminPanels.panelFromHash(location.hash);
+      if (hashPanel) applyOpsPanel(hashPanel, { user: true });
+    });
+
     document.getElementById("auth-btn").addEventListener("click", tryAuth);
     document.getElementById("auth-pw").addEventListener("keydown", (e) => {
       if (e.key === "Enter") tryAuth();

@@ -1,6 +1,6 @@
 # 핸드오프: 단체 대회 — 춘백식 회원 홈 → 총무 패널
 
-> 작성: 2026-08-18  
+> 작성: 2026-08-18 · 갱신: 2026-08-19  
 > 이 세션 브랜치: `cursor/group-event-member-home-4524`  
 > 이 세션 PR: https://github.com/8hal/dmc_attendance_log/pull/74 (draft)  
 > 선행 브랜치/PR: `cursor/group-event-admin-design-4524` / https://github.com/8hal/dmc_attendance_log/pull/80  
@@ -10,8 +10,8 @@
 
 ```
 핸드오프 _docs/handoff/2026-08-18-group-event-member-home.md 읽고 이어서.
-1) 에뮬에서 회원 홈 확인
-2) 이상 없으면 Phase 2 event-admin 춘백식 패널
+에뮬에서 철원 기술검증 E2E: 써니형 배번 40066 입력 → 총무(dmc2008) 스크랩 → 회원 홈 컨펌 2단.
+실패하면 원인부터. firebase deploy 금지.
 ```
 
 ---
@@ -116,18 +116,24 @@ C안: 회원 홈 + 총무 둘 다. **구현 순서는 회원 홈 먼저** (Phase
 npm run test:event-home
 ```
 
-### Phase 2 총무 — **미착수**
+### Phase 2 총무 — **코드 있음, 에뮬 확인 필요**
 
-현재 `event-admin.html`은 ①준비 ②버스 ③배번 ④스크랩이 **한 스크롤**이고, 위에 구 링크가 남아 있다:
+춘백식 사이드 패널. 기존 섹션을 감쌈 (SPA 재작성 없음).
 
-- 버스 (회원) → `boarding.html`
-- 배번 입력 → `my-bib`
-- 단체 대회 목록 → `group.html`
-- 버스 전용 총무 → `boarding-admin.html`
+| 파일 | 역할 |
+|------|------|
+| `event-admin.html` | 사이드 메뉴 + 한 패널. 구 링크 제거 |
+| `assets/event-admin-panels.js` | 기본 패널 추정 + 전환 |
+| `scripts/test/event-admin-panels.test.js` | 우선순위 단위 테스트 |
 
-목표: 춘백 `chunbaek/admin.html`처럼 **사이드(또는 상단) 메뉴 + 한 패널**. 기본 화면 = 지금 단계. 구 링크는 주경로에서 제거.
+테스트:
 
-참조 구현: `chunbaek/admin.html` (`admin-sidebar` + `admin-panel`).
+```bash
+npm run test:event-admin
+```
+
+기본 패널: 버스 off → 준비, 가는 편 미완 → 버스, 배번 미입력 → 배번, 그외 스크랩. `#bus` 해시 우선.
+회원 앱: 사이드 `회원 앱 열기` → `event-home.html`.
 
 ### 선행 기능 (이미 #80에 있음)
 
@@ -202,20 +208,23 @@ http://127.0.0.1:5000/event-admin.html?eventId=evt_cheorwon_tech
 
 E2E 플랜: `_docs/superpowers/plans/2026-08-17-cheorwon-e2e-tech-check.md`
 
-### B. Phase 2 `event-admin` (A 통과 후)
+### B. Phase 2 `event-admin` — **구현됨**
 
-브레인스토밍 스킬 → 스펙 보강 → 구현. 범위:
+- 사이드 패널 + 한 단계. 구 링크 제거.
+- **소스 저장·배번 스크랩은 총무(`DMC_ADMIN_PW` / `dmc2008`)도 가능** (`canWriteGroupEvents`). 오너 전용 아님.
+- `my-bib.html`은 `127.0.0.1`도 로컬 API로 봄 (localhost만 보면 프로덕션으로 가서 로딩이 멈춤).
 
-- 춘백 admin처럼 **한 번에 한 패널** (준비 / 버스 / 배번 / 스크랩)
-- 기본 패널 = 지금 단계 추정 가능하면 그쪽으로 (없어도 메뉴 전환만으로 OK)
-- 주경로에서 `boarding-admin` · `group.html` 링크 제거
-- SPA 전면 재작성 금지. 기존 섹션을 패널로 감싸기
-- 신규 API 만들지 말 것 (이미 있는 `bus-boarding` / `group-events` / `verify-admin`)
+### C. 다음 (클라우드 세션 주 작업)
 
-디자인 기준: `_docs/superpowers/specs/2026-08-13-group-event-admin-design.md`  
-회원 홈 스펙: `_docs/superpowers/specs/2026-08-18-group-event-member-home-chunbaek-ia.md`
+에뮬 + `scripts/seed-emulator-cheorwon-tech-check.js` 후:
 
-### C. 하지 말 것
+1. 회원 홈에서 써니형 → 가는 버스 탑승(이미 됐을 수 있음) → 배번 `40066`
+2. 총무 `event-admin` (`dmc2008`) → 스크랩 패널에서 실행
+3. 회원 홈 컨펌 2단 → 명단에 닉·기록만
+
+`firebase deploy` 금지. `node_modules` config 패치 커밋 금지.
+
+### D. 하지 말 것
 
 - `firebase deploy`
 - 프로덕션 Firestore에 철원 2025 날짜로 self-confirm
@@ -249,3 +258,5 @@ E2E 플랜: `_docs/superpowers/plans/2026-08-17-cheorwon-e2e-tech-check.md`
 ```
 
 그 아래는 #80 내용 (`05e616e1` 철원 시드, `8a83cbad` public-roster, self-confirm 등).
+
+2026-08-19 로컬 세션에서 이어서: 총무 패널, 총무 스크랩 권한, my-bib 127.0.0.1.
