@@ -6,6 +6,7 @@ const {
   sortPublicRosterRows,
   timeToSortSeconds,
 } = require("../../functions/lib/public-roster.js");
+const { normalizeRaceDistance } = require("../../functions/lib/raceDistance.js");
 
 describe("buildPublicRosterRows", () => {
   it("실명·배번 없이 닉·종목·기록만", () => {
@@ -39,6 +40,56 @@ describe("buildPublicRosterRows", () => {
     assert.equal(rows[1].netTime, null);
     assert.ok(!("realName" in rows[0]));
     assert.ok(!("bib" in rows[0]));
+  });
+
+  it("참가자 distance가 비어 있으면 확정 기록의 종목·시간으로 붙인다", () => {
+    const confirmed = new Map([
+      [
+        "이의선_full",
+        {
+          status: "confirmed",
+          netTime: "02:54:34",
+          memberRealName: "이의선",
+          bib: "40066",
+          distance: "full",
+        },
+      ],
+    ]);
+    const rows = buildPublicRosterRows(
+      [{ nickname: "써니형", realName: "이의선", bib: "40066", distance: "" }],
+      confirmed,
+      normalizeRaceDistance
+    );
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].nickname, "써니형");
+    assert.equal(rows[0].hasResult, true);
+    assert.equal(rows[0].netTime, "02:54:34");
+    assert.equal(rows[0].distance, "full");
+    assert.ok(!("realName" in rows[0]));
+    assert.ok(!("bib" in rows[0]));
+  });
+
+  it("참가자 distance가 있으면 다른 종목 확정 기록에 붙이지 않는다", () => {
+    const confirmed = new Map([
+      [
+        "이의선_full",
+        {
+          status: "confirmed",
+          netTime: "02:54:34",
+          memberRealName: "이의선",
+          bib: "40066",
+          distance: "full",
+        },
+      ],
+    ]);
+    const rows = buildPublicRosterRows(
+      [{ nickname: "써니형", realName: "이의선", bib: "40066", distance: "half" }],
+      confirmed,
+      normalizeRaceDistance
+    );
+    assert.equal(rows[0].hasResult, false);
+    assert.equal(rows[0].netTime, null);
+    assert.equal(rows[0].distance, "half");
   });
 });
 

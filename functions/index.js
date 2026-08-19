@@ -3766,7 +3766,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
         const docId = buildSelfConfirmDocId({
           realName: participant.realName,
-          distance: participant.distance,
+          distance: pending.distance || participant.distance,
           eventDate: event.eventDate,
         });
         const row = buildSelfConfirmRow({
@@ -3779,6 +3779,21 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         // Upsert this docId only — never bulk-delete the event's race_results
         const ref = db.collection("race_results").doc(docId);
         await ref.set(row);
+
+        const pendingDist = String(pending.distance || "").trim();
+        const partDist = String(participant.distance || "").trim();
+        if (pendingDist && !partDist) {
+          const idx = (event.participants || []).findIndex(
+            (p) => p.nickname === nickname
+          );
+          if (idx >= 0) {
+            const next = event.participants.slice();
+            next[idx] = { ...next[idx], distance: row.distance };
+            await db.collection("race_events").doc(eventId).update({
+              participants: next,
+            });
+          }
+        }
 
         return res.json({ ok: true, docId });
       } catch (error) {

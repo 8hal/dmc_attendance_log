@@ -9,6 +9,42 @@ function normalizeDist(d) {
   return String(d || "").trim().toLowerCase();
 }
 
+function isMissingDistance(raw, norm) {
+  const t = String(raw == null ? "" : raw).trim();
+  if (!t) return true;
+  return norm(t) === "unknown";
+}
+
+/**
+ * Exact `${realName}_${normDist}` first.
+ * If participant distance is empty/unknown, fall back to a unique
+ * confirmed row for that realName (or bib).
+ */
+function findConfirmedForParticipant(p, map, norm) {
+  const realName = String((p && p.realName) || "").trim();
+  const distance = norm(p && p.distance ? p.distance : "");
+  const exact = realName ? map.get(`${realName}_${distance}`) : null;
+  if (exact) return exact;
+  if (!isMissingDistance(p && p.distance, norm)) return null;
+
+  const bib = String((p && p.bib) || "").trim();
+  const rows = [];
+  map.forEach((row) => {
+    if (row) rows.push(row);
+  });
+
+  const byName = realName
+    ? rows.filter((r) => String(r.memberRealName || "").trim() === realName)
+    : [];
+  if (byName.length === 1) return byName[0];
+
+  if (bib) {
+    const byBib = rows.filter((r) => String(r.bib || "").trim() === bib);
+    if (byBib.length === 1) return byBib[0];
+  }
+  return null;
+}
+
 /**
  * @param {Array<object>} participants race_events.participants
  * @param {Map<string, object>|Record<string, object>} confirmedByKey key = `${realName}_${normDist}`
@@ -30,10 +66,7 @@ function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance) 
   for (const p of list) {
     const nickname = normalizeNick(p && p.nickname);
     if (!nickname) continue;
-    const distance = norm(p.distance || "");
-    const realName = String((p && p.realName) || "").trim();
-    const key = `${realName}_${distance}`;
-    const confirmed = map.get(key) || null;
+    const confirmed = findConfirmedForParticipant(p, map, norm);
     const isConfirmed = !!(confirmed && String(confirmed.status || "") === "confirmed");
     const netRaw = confirmed
       ? String(confirmed.netTime || confirmed.gunTime || confirmed.finishTime || "").trim()
@@ -42,6 +75,10 @@ function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance) 
       isConfirmed && netRaw && netRaw !== "-" && netRaw !== "--:--:--"
         ? netRaw
         : null;
+    const fromConfirmed = confirmed && confirmed.distance != null ? String(confirmed.distance).trim() : "";
+    const distance = isMissingDistance(p && p.distance, norm)
+      ? norm(fromConfirmed || "") || ""
+      : norm(p.distance || "");
     rows.push({
       nickname,
       distance: distance || "",
