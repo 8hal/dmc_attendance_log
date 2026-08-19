@@ -160,9 +160,9 @@ no_pw_code=$(curl_post_code "$API?action=group-events" \
   "{\"subAction\":\"source\",\"canonicalEventId\":\"$PROMOTED_ID\",\"source\":\"smartchip\",\"sourceId\":\"2026qa_new\"}")
 assert_code "API-13: ownerPw 누락 → 403" "403" "$no_pw_code"
 
-operator_code=$(curl_post_code "$API?action=group-events" \
-  "{\"subAction\":\"source\",\"ownerPw\":\"$OPERATOR_PW\",\"canonicalEventId\":\"$PROMOTED_ID\",\"source\":\"smartchip\",\"sourceId\":\"2026qa_new\"}")
-assert_code "API-14: 운영자 비밀번호로 source → 403" "403" "$operator_code"
+operator_resp=$(curl_post "$API?action=group-events" \
+  "{\"subAction\":\"source\",\"ownerPw\":\"$OPERATOR_PW\",\"canonicalEventId\":\"$PROMOTED_ID\",\"source\":\"smartchip\",\"sourceId\":\"2026qa_op\"}")
+assert_contains "API-14: 운영자 비밀번호로 source → ok" '"ok":true' "$operator_resp"
 
 no_src_code=$(curl_post_code "$API?action=group-events" \
   "{\"subAction\":\"source\",\"ownerPw\":\"$OWNER_PW\",\"canonicalEventId\":\"$PROMOTED_ID\"}")
@@ -173,10 +173,10 @@ assert_code "API-16: source 누락 → 400" "400" "$no_src_code"
 # ────────────────────────────────────────────────────────────────────
 echo -e "${YELLOW}[§5] POST scrape (API-17~21, EDGE-01, EDGE-04)${NC}"
 
-# API-18: 운영자 비밀번호 → 403
+# API-18: 잘못된 비밀번호 → 403 (총무/오너가 아니면 거부)
 op_scrape_code=$(curl_post_code "$API?action=group-events" \
-  "{\"subAction\":\"scrape\",\"ownerPw\":\"$OPERATOR_PW\",\"canonicalEventId\":\"evt_qa_done\"}")
-assert_code "API-18: 운영자 비밀번호 scrape → 403" "403" "$op_scrape_code"
+  "{\"subAction\":\"scrape\",\"ownerPw\":\"wrong-password\",\"canonicalEventId\":\"evt_qa_done\"}")
+assert_code "API-18: 잘못된 비밀번호 scrape → 403" "403" "$op_scrape_code"
 
 # EDGE-04 / API-20: participants 없는 대회 스크랩 → 400
 # promote 후 participants 추가 안 한 상태의 대회 사용

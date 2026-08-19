@@ -50,6 +50,7 @@ const {
   isBibModeGroupScrapeSource,
   matchResultByBib,
 } = require("./lib/group-scrape-bib");
+const { canWriteGroupEvents } = require("./lib/group-events-write-auth");
 const {
   buildSelfConfirmDocId,
   buildSelfConfirmRow,
@@ -3252,9 +3253,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "source") {
       const { ownerPw, canonicalEventId, source, sourceId } = req.body;
 
-      const expectedOwnerPw = process.env.DMC_OWNER_PW;
-      if (!expectedOwnerPw || ownerPw !== expectedOwnerPw) {
-        return res.status(403).json({ ok: false, error: "오너 권한 필요" });
+      if (!canWriteGroupEvents(ownerPw)) {
+        return res.status(403).json({ ok: false, error: "운영진 권한 필요" });
       }
       if (!canonicalEventId || !source || !sourceId) {
         return res.status(400).json({ ok: false, error: "canonicalEventId, source, sourceId required" });
@@ -3269,9 +3269,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "scrape") {
       const { ownerPw, canonicalEventId } = req.body;
 
-      const expectedOwnerPw = process.env.DMC_OWNER_PW;
-      if (!expectedOwnerPw || ownerPw !== expectedOwnerPw) {
-        return res.status(403).json({ ok: false, error: "오너 권한 필요" });
+      if (!canWriteGroupEvents(ownerPw)) {
+        return res.status(403).json({ ok: false, error: "운영진 권한 필요" });
       }
 
       const eventDoc = await db.collection("race_events").doc(canonicalEventId).get();

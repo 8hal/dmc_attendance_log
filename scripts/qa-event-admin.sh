@@ -173,6 +173,13 @@ else
   RESULTS+=("${YELLOW}SKIP${NC} 4a/4b: OWNER_PW/DMC_OWNER_PW 없음 — scrape 거부 스킵")
 fi
 
+nobib_op_full=$(curl_post_full "$API?action=group-events" \
+  "{\"subAction\":\"scrape\",\"ownerPw\":\"$ADMIN_PW\",\"canonicalEventId\":\"$EVENT_ID_NOBIB\"}")
+nobib_op_code=$(echo "$nobib_op_full" | tail -n1)
+nobib_op_body=$(echo "$nobib_op_full" | sed '$d')
+assert_code "4c: 총무 비밀번호 무배번 scrape → 400 (인증 통과)" "400" "$nobib_op_code"
+assert_contains "4d: 총무 scrape도 배번 없음 거부" '배번 등록 참가자 없음' "$nobib_op_body"
+
 # ────────────────────────────────────────────────────────────────────
 # 5. self-confirm — 성공 1건 + 무배번 거부
 # ────────────────────────────────────────────────────────────────────
