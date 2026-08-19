@@ -97,7 +97,7 @@ C안: 회원 홈 + 총무 둘 다. **구현 순서는 회원 홈 먼저** (Phase
 
 ## 4. 구현 상태
 
-### Phase 1 회원 홈 — 코드 있음, **에뮬 수동 확인 미완**
+### Phase 1 회원 홈 — 코드 있음, **에뮬 E2E 통과 (2026-08-19)**
 
 | 파일 | 역할 |
 |------|------|
@@ -214,13 +214,18 @@ E2E 플랜: `_docs/superpowers/plans/2026-08-17-cheorwon-e2e-tech-check.md`
 - **소스 저장·배번 스크랩은 총무(`DMC_ADMIN_PW` / `dmc2008`)도 가능** (`canWriteGroupEvents`). 오너 전용 아님.
 - `my-bib.html`은 `127.0.0.1`도 로컬 API로 봄 (localhost만 보면 프로덕션으로 가서 로딩이 멈춤).
 
-### C. 다음 (클라우드 세션 주 작업)
+### C. 에뮬 E2E (2026-08-19 클라우드 세션) — **통과**
 
-에뮬 + `scripts/seed-emulator-cheorwon-tech-check.js` 후:
+에뮬 `127.0.0.1:5000` + 시드 `evt_cheorwon_tech` + SPCT live `spct / 2025092102`.
 
-1. 회원 홈에서 써니형 → 가는 버스 탑승(이미 됐을 수 있음) → 배번 `40066`
-2. 총무 `event-admin` (`dmc2008`) → 스크랩 패널에서 실행
-3. 회원 홈 컨펌 2단 → 명단에 닉·기록만
+1. 회원 홈 닉 pick → 써니형 → 가는 버스 탑승 → 배번 `40066` 저장
+2. 총무 `dmc2008` 로그인 → 소스 `spct / 2025092102` 저장 → 배번 1명 스크랩
+3. 회원 홈 컨펌 2단 (`내 기록 확인 · 컨펌` → `이 기록으로 컨펌`) → `confirmSource: personal`, netTime `02:54:34`
+4. 명단: 써니형 + `02:54:34`만. 실명 `이의선`·배번 `40066` 없음. `confirmedCount=1`
+
+컨펌 직후 홈 CTA는 **오는 버스 · 탑승하기** (왕복 미완, 상태 기계 정상). `컨펌 완료 ✓`는 오는 편까지 끝난 뒤.
+
+**버그 (고침):** 시드 참가자의 `distance`가 빈 값이면 public-roster가 `이의선_unknown`으로 찾고, 확정 기록은 `이의선_full`이라 명단에 시간이 안 붙었음. `buildPublicRosterRows`가 distance 비어 있을 때 실명(또는 배번)으로 유일 매칭. self-confirm은 pending 종목을 참가자에 기록.
 
 `firebase deploy` 금지. `node_modules` config 패치 커밋 금지.
 
@@ -260,3 +265,5 @@ E2E 플랜: `_docs/superpowers/plans/2026-08-17-cheorwon-e2e-tech-check.md`
 그 아래는 #80 내용 (`05e616e1` 철원 시드, `8a83cbad` public-roster, self-confirm 등).
 
 2026-08-19 로컬 세션에서 이어서: 총무 패널, 총무 스크랩 권한, my-bib 127.0.0.1.
+
+2026-08-19 클라우드 세션: 철원 에뮬 E2E 통과. public-roster 빈 distance 조인 수정.
