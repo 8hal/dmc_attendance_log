@@ -115,13 +115,19 @@
   background: var(--dmc-color-primary-hover, #1d4ed8);
 }
 
-.today-cta:disabled,
+.today-cta:disabled {
+  background: #94a3b8;
+  cursor: default;
+  opacity: 1;
+}
+
 .today-cta.is-done {
   background: var(--dmc-green-9, #059669);
   cursor: default;
   opacity: 1;
 }
 
+.today-cta.is-done:disabled,
 .today-cta.is-done:hover {
   background: var(--dmc-green-9, #059669);
 }
