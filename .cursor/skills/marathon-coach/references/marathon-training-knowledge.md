@@ -36,6 +36,7 @@ When web or generic advice conflicts with **this athlete's Garmin history**, pre
 | Recreational marathon | 40–50 | 50–65 | 65–80 | 1–2 quality sessions |
 | Strong amateur / 3:15–3:30 | 50–65 | 65–85 | 80–95 | MLR + long run + 1–2 quality |
 | **Sub-3 candidate** | **60–70** | **80–95** | **90–110** | 2–3 quality touches; long run 30–35 km in peak |
+| **Monthly target (this athlete)** | — | — | **≥300 km/month** Sep–Oct build | ≈ **75 km/week** avg; pad with **E volume** on Sun/Fri |
 | This athlete (Aug 2026) | **~55–72** recent | — | — | VO2 ~56, HM pred ~1:30, already **70 km** weeks |
 
 **Planning rule:** For a runner already holding **65–70 km/week** with VO2 ~56, a plan under **55 km/week** without acute injury or post-TE 5.0 recovery is **under-dosed**, not “safe.” Deload weeks are **−20–30%**, not −50%.

@@ -162,32 +162,39 @@ Use this as the default post-double-session refuel template unless the athlete r
 
 Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA = general aerobic; E = easy; T = threshold/tempo.
 
+**Monthly volume target (user):** **≥300 km/month** in **Sep–Oct build months** ≈ **75 km/week** average. Prior plan under-shot this; revised weeks below. Pad with **extra E km** (Sun 8–10, Fri 6–8) — not junk moderate pace.
+
 ### Phase A — 철원 B레이스 (D-14~0)
 
 | Week (Mon–Sun) | Phase goal | Weekly km (run) | Saturday key | Other quality |
 |----------------|------------|-----------------|--------------|---------------|
 | **8/24–8/30** | TE 5.0 흡수; 철원 전 토 이지 롱 | **52–58** | **8/29** E **16–18km**, HR 135–142 | 없음; **8/26** MLR 12km GA |
-| **8/31–9/6** | B레이스 주; 싱글 3:0x 실행 | **~30 + 42** | **9/5 철원 마라톤** | 없음; 9/3 셰이크아웃 4km |
+| **8/31–9/6** | B레이스 주; 싱글 3:0x 실행 | **~40 + 42** | **9/5 철원 마라톤** | 없음; 9/3 셰이크아웃 4km |
 
-### Phase B — 경주 서브3 빌드 (6 weeks)
+**Aug running (partial, incl. 8/22 Namsan):** ~**120–140 km** — not a 300 month (흡수·철원 주).
+
+### Phase B — 경주 서브3 빌드 (6 weeks) — **월 300+ 목표**
 
 | Week | Phase goal | Weekly km | Saturday key | Other quality |
 |------|------------|-----------|--------------|---------------|
-| **9/7–9/13** | 철원 회복; 재가동 | **30–40** | **9/13** E 10–12km | 없음 (E only) |
-| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **65–70** | **9/20** L **22–24km** progressive GA | **9/16** 화 템포 10km (6km T, HR 150–155) |
-| **9/21–9/27** | 빌드 2 — MP 도입 | **72–78** | **9/27** L **24–26km**, last **8km @ 4:18–4:22** | **9/23** 화 12km (8km @ 4:20–4:25) |
-| **9/28–10/4** | 디로드 (−20%) | **58–62** | **10/4** E **18–20km** | 없음 |
-| **10/5–10/11** | 빌드 3 — MP 롱 확대 | **78–85** | **10/11** L **28–30km**, last **10–12km @ 4:15–4:18** | **10/7** 화 14km (10km @ 4:15–4:20) |
-| **10/12–10/18** | **피크 + taper** | **65–70 + race** | **10/17 경주 서브3** | **10/14** 화 8km (5km @ 4:15); 10/11–16 taper volume |
+| **9/7–9/13** | 철원 회복; 재가동 | **48–55** | **9/13** E **12–14km** | E only; **Sun E 8–10** pad |
+| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **9/20** L **24–26km** progressive GA | **9/16** 템포 12km (7km T); **9/17** MLR **15km** |
+| **9/21–9/27** | 빌드 2 — MP 도입 | **82–88** | **9/27** L **26–28km**, last **8–10km @ 4:18–4:22** | **9/23** 14km (9km @ 4:20–4:25); **9/24** MLR **16km** |
+| **9/28–10/4** | 디로드 (−15%) | **68–72** | **10/4** E **20–22km** | 없음 |
+| **10/5–10/11** | 빌드 3 — MP 롱 확대 | **88–95** | **10/11** L **30–32km**, last **12–14km @ 4:15–4:18** | **10/7** 14km (10km @ 4:15–4:20); **10/8** MLR **16km** |
+| **10/12–10/18** | **피크 + taper** | **~72 run + 42** | **10/17 경주 서브3** | **10/14** 8km (5km @ 4:15) |
 
-**경주 10/17 target:** 2:59:59 → **4:15/km**; start 4:18–4:20 first 5km.
+**Sep calendar est.:** ~**310–330 km** (40+42 + 50 + 78 + 85 + ~25 deload tail).  
+**Oct calendar est.:** ~**300–320 km** (deload head ~40 + 92 + 72+42 + absorb ~40 + JTBC bridge ~50).
 
 ### Phase C — JTBC 2주 브릿지 (경주 1순위 후 PB 시도)
 
 | Week | Phase goal | Weekly km | Key session | Race |
 |------|------------|-----------|-------------|------|
-| **10/19–10/25** | Week 1 흡수 | **25–35** | 없음 (E only, HR <115) | — |
-| **10/26–11/1** | Week 2 속도 재점화 | **40–50 + 42** | **10/28–29** 10–12km (**5–6km @ 4:10–4:15**) | **11/1 JTBC** 2:56:59 |
+| **10/19–10/25** | Week 1 흡수 | **35–45** | 없음 (E only, HR <115) | — |
+| **10/26–11/1** | Week 2 속도 재점화 | **48–55 + 42** | **10/28–29** 10–12km (**5–6km @ 4:10–4:15**) | **11/1 JTBC** 2:56:59 |
+
+**Nov** is race-only partial — **not** a 300 km month (by design).
 
 **JTBC target:** 2:56:59 → **~4:12/km**; gate on Gyeongju result (see bridge table above).
 
