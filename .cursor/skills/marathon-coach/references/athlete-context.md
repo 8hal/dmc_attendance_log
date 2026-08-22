@@ -127,9 +127,9 @@ Use this as the default post-double-session refuel template unless the athlete r
 ## Cheorwon taper (D-14 = 2026-08-22)
 
 - **D-14 (8/22):** Namsan 26.69 km, +542 m, HR 145, TE 5.0 — de facto **last long/hard stimulus**; no additional 20 km+ before race.
-- **B-race taper only** — not full A-race taper; preserve aerobic feel without new TE 4.5+ sessions after D-10.
+- **B-race taper only** — not full A-race taper; **light micro-taper** in final 3–4 days only (~70–80% normal volume until D-5).
 - **One race-pace rehearsal** was planned D-8 (8/28) but **superseded** — flat ~10 km @ 4:12–4:26 already done 8/18 tempo (humidity 96%).
-- **Saturday anchor:** D-14 Namsan on 8/22 (Sat); longest remaining taper run on **D-7 8/29 (Sat)** easy 12–14 km, not flat race-pace repeat.
+- **Saturday anchor:** D-14 Namsan on 8/22 (Sat); longest remaining taper run on **D-7 8/29 (Sat)** easy ~14–16 km, not flat race-pace repeat.
 - **Race target:** 3:0x → ~4:22–4:28/km; reassess at 25 km and 30 km — do not chase sub-3:05 if HR/TE drift early.
 
 ## Near-term plan (superseded by Cheorwon taper above)
