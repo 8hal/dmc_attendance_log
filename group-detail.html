@@ -267,6 +267,8 @@
     <section class="section" id="dayHubSection">
       <h2 class="section-title">당일 · 운영 바로가기</h2>
       <div class="hub-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+        <a class="hub-card" id="hubAdmin" href="#">운영 홈</a>
+        <a class="hub-card" id="hubMemberHome" href="#">회원 홈</a>
         <a class="hub-card" id="hubBus" href="#">버스 탑승</a>
         <a class="hub-card" id="hubBib" href="#">배번 입력</a>
         <div class="hub-card hub-card-disabled" id="hubResults">결과 보드 · 준비 중</div>
@@ -531,12 +533,20 @@
       if (!eventId) return;
       const hubBib = document.getElementById("hubBib");
       const hubBus = document.getElementById("hubBus");
+      const hubAdmin = document.getElementById("hubAdmin");
+      const hubMemberHome = document.getElementById("hubMemberHome");
       const hubBoardingParticipant = document.getElementById("hubBoardingParticipant");
+      if (hubAdmin) {
+        hubAdmin.href = `event-admin.html?eventId=${encodeURIComponent(eventId)}`;
+      }
+      if (hubMemberHome) {
+        hubMemberHome.href = `event-home.html?eventId=${encodeURIComponent(eventId)}`;
+      }
       if (hubBib) {
         hubBib.href = `my-bib.html?eventId=${encodeURIComponent(eventId)}`;
       }
       if (hubBus) {
-        hubBus.href = `boarding-admin.html?eventId=${encodeURIComponent(eventId)}`;
+        hubBus.href = `event-admin.html?eventId=${encodeURIComponent(eventId)}#bus`;
       }
       if (hubBoardingParticipant) {
         hubBoardingParticipant.href = `boarding.html?eventId=${encodeURIComponent(eventId)}`;

@@ -128,6 +128,9 @@
       margin-top: 8px;
       padding: 10px 14px 4px;
       border-top: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     .ops-sidebar-foot a {
       color: #93c5fd;
@@ -161,7 +164,9 @@
         margin-left: auto;
         border-top: none;
         padding: 6px 10px;
-        white-space: nowrap;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
       }
     }
 
@@ -601,6 +606,8 @@
           <button type="button" class="ops-nav-btn" data-ops-panel="scrape">4 스크랩</button>
           <div class="ops-sidebar-foot">
             <a id="link-member-home" href="#">회원 앱 열기</a>
+            <a id="link-group-list" href="group.html">대회 목록</a>
+            <a id="link-legacy-detail" href="#">참가자 편집</a>
           </div>
         </nav>
         <div class="ops-main">
@@ -893,6 +900,12 @@
 
     function updateLinks() {
       document.getElementById("link-member-home").href = memberHomeUrl();
+      const legacy = document.getElementById("link-legacy-detail");
+      if (legacy) {
+        legacy.href = eventId
+          ? `group-detail.html?eventId=${encodeURIComponent(eventId)}`
+          : "group-detail.html";
+      }
 
       const abs = participantUrl();
       document.getElementById("participant-link-text").textContent = abs || "—";
