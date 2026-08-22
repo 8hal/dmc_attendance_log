@@ -1,6 +1,8 @@
 # Athlete Context Snapshot
 
-This is a handoff snapshot from the training conversation through 2026-08-20. Treat dynamic Garmin values as stale after this date and refresh them through MCP before decisions.
+This is a handoff snapshot from the training conversation through 2026-08-22. Treat dynamic Garmin values as stale after this date and refresh them through MCP before decisions.
+
+**Generic marathon methodology:** `references/marathon-training-knowledge.md` (Pfitzinger/Daniels structure, volume benchmarks, B-race vs A-race taper).
 
 ## Goals
 
