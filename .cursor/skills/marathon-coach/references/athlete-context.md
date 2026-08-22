@@ -12,7 +12,7 @@ This is a handoff snapshot from the training conversation through 2026-08-22. Tr
 
 ### Priority rule (user-confirmed 2026-08-22)
 
-> **경주 서브3 > JTBC PB.** Gyeongju gets full build + **A-race taper**. JTBC is raced **15 days later** on residual fitness + short re-sharpen — **2:56:59 is ambitious** in that window; treat as bonus if legs cooperate, not a failed season if missed.
+> **경주 서브3 > JTBC PB.** Gyeongju gets full build + **A-race taper**. JTBC **15 days later** — user self-assessment: **1 week recovery insufficient, ~2 weeks to recover and raise speed is plausible** given current fitness (70 km weeks, VO2 ~56, strong bounce after hard sessions). Plan a **structured 2-week bridge** (week 1 absorb, week 2 MP/speed sharpen), not passive hope — but **2:56:59 still requires Gyeongju to be controlled enough** (ideally ≤3:02–3:05, not 3:10+ blow-up).
 
 ### 2026 marathon calendar (widget-confirmed 2026-08-22)
 
@@ -26,7 +26,7 @@ This is a handoff snapshot from the training conversation through 2026-08-22. Tr
 
 - Cheorwon → Gyeongju: **42 days** — **sub-3 build block** after Cheorwon recovery.
 - Gyeongju taper: **2 weeks** (Oct 4–16) per Bosquet/RW where possible.
-- JTBC: **5–7 days easy post-Gyeongju**, optional **one MP touch**, D-1 rest — **not** full volume rebuild.
+- **Recovery self-assessment:** ~**2 weeks** between marathons may suffice to recover and **re-sharpen speed**; **1 week is not enough**. Use full 14-day Gyeongju→JTBC window: **7d absorb + 7d sharpen**.
 
 ## Environment
 
@@ -157,6 +157,28 @@ Use this as the default post-double-session refuel template unless the athlete r
 | 2026-08-22 (Sat) | Namsan completed — see D-14 above |
 | 2026-08-23 (Sun) | D-13 full rest |
 | 2026-08-24–09-04 | Cheorwon taper block — see coaching plan |
+
+## Gyeongju → JTBC bridge (15 days, 2-week model)
+
+User belief: **~2 weeks** to recover and **raise speed** is realistic; **1 week is not**.
+
+| Phase | Dates | Volume | Content |
+|-------|-------|--------|---------|
+| **Week 1 absorb** | 10/18–10/24 | **25–35 km** total | E only, HR <115; 3–4 run days; no quality; protein/sleep priority |
+| **Week 2 sharpen** | 10/25–10/31 | **40–50 km** + race | E + **one MP session** + strides; D-1 rest |
+| **Race** | 11/1 | — | JTBC PB 2:56:59 attempt |
+
+**Week 2 key session (10/28 Wed or 10/29 Thu):** 10–12 km w/ **5–6 km @ 4:10–4:15/km** (JTBC pace), HR **150–155**, TE ≤3.5 — **abort if legs heavy**.
+
+**JTBC race strategy if bridge succeeds:** start **4:13–4:15/km** first 10k; if HR <152 and RPE ≤6 at 20k, allow **4:10–4:12** through 30k.
+
+**Gyeongju outcome gates JTBC ambition:**
+
+| Gyeongju result | Week 1 | Week 2 | JTBC target |
+|-----------------|--------|--------|-------------|
+| **Sub-3 or 3:00–3:02** | Strict absorb | MP sharpen as planned | **2:56–3:00** attempt |
+| **3:03–3:08** controlled | Absorb | Light MP touch | **Sub-3** primary |
+| **3:10+ or major fade** | Extend easy to 10d | Skip MP touch | **Completion / 3:05** |
 
 ## Garmin snapshot on 2026-08-13
 
