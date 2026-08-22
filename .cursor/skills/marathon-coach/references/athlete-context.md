@@ -8,7 +8,7 @@ This is a handoff snapshot from the training conversation through 2026-08-20. Tr
 - Cheorwon Marathon: B-race / training race, not the peak race.
 - Cheorwon goal: "single" = 3:0x (under 3:10), used as a marathon-specific training stimulus and diagnostic.
 - Full A-race taper is not required for Cheorwon; a lighter taper is acceptable.
-- Cheorwon race date: **not yet confirmed** — refresh before race-readiness planning.
+- Cheorwon race date: **2026-09-05 (Sat)** — confirmed D-14 as of 2026-08-22.
 
 ## Environment
 
@@ -124,13 +124,20 @@ Use this as the default post-double-session refuel template unless the athlete r
 - **HR target:** 138–148 avg; uphill cap 157; no fast finish / no acceleration when feeling good.
 - **Context:** first long run after 8/15 overreach session; absorption-week long run, not a race simulation.
 
-## Near-term plan (as of 2026-08-20)
+## Cheorwon taper (D-14 = 2026-08-22)
+
+- **D-14 (8/22):** Namsan 26.69 km, +542 m, HR 145, TE 5.0 — de facto **last long/hard stimulus**; no additional 20 km+ before race.
+- **B-race taper only** — not full A-race taper; preserve aerobic feel without new TE 4.5+ sessions after D-10.
+- **One race-pace rehearsal** planned D-8 (8/28): flat 12–14 km with 8 km @ ~4:25–4:30/km, TE ≤3.5.
+- **Race target:** 3:0x → ~4:22–4:28/km; reassess at 25 km and 30 km — do not chase sub-3:05 if HR/TE drift early.
+
+## Near-term plan (superseded by Cheorwon taper above)
 
 | Date | Recommendation |
 |------|----------------|
-| 2026-08-20 (Thu) | Run + swim completed → no additional training |
-| 2026-08-21 (Fri) | **Full rest** — no run, no swim |
-| 2026-08-22 (Sat) | Namsan long run 20–22 km (see above) |
+| 2026-08-22 (Sat) | Namsan completed — see D-14 above |
+| 2026-08-23 (Sun) | D-13 full rest |
+| 2026-08-24–09-04 | Cheorwon taper block — see coaching plan |
 
 ## Garmin snapshot on 2026-08-13
 
