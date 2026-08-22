@@ -158,27 +158,47 @@ Use this as the default post-double-session refuel template unless the athlete r
 | 2026-08-23 (Sun) | D-13 full rest |
 | 2026-08-24–09-04 | Cheorwon taper block — see coaching plan |
 
-## Gyeongju → JTBC bridge (15 days, 2-week model)
+## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
 
-User belief: **~2 weeks** to recover and **raise speed** is realistic; **1 week is not**.
+Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA = general aerobic; E = easy; T = threshold/tempo.
 
-| Phase | Dates | Volume | Content |
-|-------|-------|--------|---------|
-| **Week 1 absorb** | 10/18–10/24 | **25–35 km** total | E only, HR <115; 3–4 run days; no quality; protein/sleep priority |
-| **Week 2 sharpen** | 10/25–10/31 | **40–50 km** + race | E + **one MP session** + strides; D-1 rest |
-| **Race** | 11/1 | — | JTBC PB 2:56:59 attempt |
+### Phase A — 철원 B레이스 (D-14~0)
 
-**Week 2 key session (10/28 Wed or 10/29 Thu):** 10–12 km w/ **5–6 km @ 4:10–4:15/km** (JTBC pace), HR **150–155**, TE ≤3.5 — **abort if legs heavy**.
+| Week (Mon–Sun) | Phase goal | Weekly km (run) | Saturday key | Other quality |
+|----------------|------------|-----------------|--------------|---------------|
+| **8/24–8/30** | TE 5.0 흡수; 철원 전 토 이지 롱 | **52–58** | **8/29** E **16–18km**, HR 135–142 | 없음; **8/26** MLR 12km GA |
+| **8/31–9/6** | B레이스 주; 싱글 3:0x 실행 | **~30 + 42** | **9/5 철원 마라톤** | 없음; 9/3 셰이크아웃 4km |
 
-**JTBC race strategy if bridge succeeds:** start **4:13–4:15/km** first 10k; if HR <152 and RPE ≤6 at 20k, allow **4:10–4:12** through 30k.
+### Phase B — 경주 서브3 빌드 (6 weeks)
 
-**Gyeongju outcome gates JTBC ambition:**
+| Week | Phase goal | Weekly km | Saturday key | Other quality |
+|------|------------|-----------|--------------|---------------|
+| **9/7–9/13** | 철원 회복; 재가동 | **30–40** | **9/13** E 10–12km | 없음 (E only) |
+| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **65–70** | **9/20** L **22–24km** progressive GA | **9/16** 화 템포 10km (6km T, HR 150–155) |
+| **9/21–9/27** | 빌드 2 — MP 도입 | **72–78** | **9/27** L **24–26km**, last **8km @ 4:18–4:22** | **9/23** 화 12km (8km @ 4:20–4:25) |
+| **9/28–10/4** | 디로드 (−20%) | **58–62** | **10/4** E **18–20km** | 없음 |
+| **10/5–10/11** | 빌드 3 — MP 롱 확대 | **78–85** | **10/11** L **28–30km**, last **10–12km @ 4:15–4:18** | **10/7** 화 14km (10km @ 4:15–4:20) |
+| **10/12–10/18** | **피크 + taper** | **65–70 + race** | **10/17 경주 서브3** | **10/14** 화 8km (5km @ 4:15); 10/11–16 taper volume |
 
-| Gyeongju result | Week 1 | Week 2 | JTBC target |
-|-----------------|--------|--------|-------------|
-| **Sub-3 or 3:00–3:02** | Strict absorb | MP sharpen as planned | **2:56–3:00** attempt |
-| **3:03–3:08** controlled | Absorb | Light MP touch | **Sub-3** primary |
-| **3:10+ or major fade** | Extend easy to 10d | Skip MP touch | **Completion / 3:05** |
+**경주 10/17 target:** 2:59:59 → **4:15/km**; start 4:18–4:20 first 5km.
+
+### Phase C — JTBC 2주 브릿지 (경주 1순위 후 PB 시도)
+
+| Week | Phase goal | Weekly km | Key session | Race |
+|------|------------|-----------|-------------|------|
+| **10/19–10/25** | Week 1 흡수 | **25–35** | 없음 (E only, HR <115) | — |
+| **10/26–11/1** | Week 2 속도 재점화 | **40–50 + 42** | **10/28–29** 10–12km (**5–6km @ 4:10–4:15**) | **11/1 JTBC** 2:56:59 |
+
+**JTBC target:** 2:56:59 → **~4:12/km**; gate on Gyeongju result (see bridge table above).
+
+### Season arc (one line per phase)
+
+1. **철원:** 42km 스티뮬러스 + 25–30km 진단 — **3:0x**, taper 없음  
+2. **9/7–10/11:** 서브3 **볼륨·MP 롱·LT** → 경주 **풀 피크**  
+3. **10/17:** **서브3 1순위**  
+4. **10/19–11/1:** 2주 흡수 + MP 1회 → **JTBC PB** best-effort  
+
+**Gyeongju → JTBC gates:** Sub-3/3:00–3:02 at Gyeongju → JTBC **2:56–3:00**; 3:03–3:08 → JTBC **sub-3**; 3:10+ → JTBC **완주/3:05**.
 
 ## Garmin snapshot on 2026-08-13
 
