@@ -7,8 +7,11 @@ Standard commands live in `README.md`, `functions/package.json`, and `scripts/`;
 section only records non-obvious caveats for running/testing it in this environment.
 
 ### Toolchain / environment gotchas
+- The Cloud Agent `install` step runs `scripts/cloud-agent-setup.sh`, which is idempotent:
+  it pins the user-level npm prefix + `PATH`, ensures the Firebase CLI is present, and runs
+  `npm ci` at the repo root and in `functions/`. It is safe to re-run manually.
 - `firebase` CLI is installed under `~/.npm-global/bin` (user-level npm prefix), which is
-  added to `PATH` via `~/.bashrc`. Both are managed by the startup update script, so no
+  added to `PATH` via `~/.bashrc`. Both are managed by `scripts/cloud-agent-setup.sh`, so no
   manual install is needed.
 - Every `npm`/`node`-launched command prints a warning: *"Your user's .npmrc file has a
   `globalconfig` and/or `prefix` setting, which are incompatible with nvm."* This is
