@@ -128,7 +128,8 @@ Use this as the default post-double-session refuel template unless the athlete r
 
 - **D-14 (8/22):** Namsan 26.69 km, +542 m, HR 145, TE 5.0 — de facto **last long/hard stimulus**; no additional 20 km+ before race.
 - **B-race taper only** — not full A-race taper; preserve aerobic feel without new TE 4.5+ sessions after D-10.
-- **One race-pace rehearsal** planned D-8 (8/28): flat 12–14 km with 8 km @ ~4:25–4:30/km, TE ≤3.5.
+- **One race-pace rehearsal** was planned D-8 (8/28) but **superseded** — flat ~10 km @ 4:12–4:26 already done 8/18 tempo (humidity 96%).
+- **Saturday anchor:** D-14 Namsan on 8/22 (Sat); longest remaining taper run on **D-7 8/29 (Sat)** easy 12–14 km, not flat race-pace repeat.
 - **Race target:** 3:0x → ~4:22–4:28/km; reassess at 25 km and 30 km — do not chase sub-3:05 if HR/TE drift early.
 
 ## Near-term plan (superseded by Cheorwon taper above)
@@ -156,6 +157,7 @@ Do not optimize training to fill the Garmin anaerobic shortage. The marathon obj
 ## Coaching preferences inferred from conversation
 
 - The athlete values gradual progression and pushes back on abrupt pace increases.
+- **Key / high-volume sessions are usually scheduled on Saturday** (long runs, major quality). Weekday sessions are shorter; taper and weekly plans should put the longest run on Saturday when possible.
 - Weather needs to be integrated into pace recommendations.
 - The athlete prefers executable km-by-km or segment tables.
 - The athlete wants data-driven validation rather than motivational generalities.
