@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <title>명단·결과 - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
+  <link rel="stylesheet" href="assets/design-tokens.css" />
+  <link rel="stylesheet" href="assets/event-member-shell.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg, #F8FAFC);
+      color: var(--dmc-color-text, #0F172A);
+      font-family: var(--dmc-font-family, system-ui, -apple-system, Segoe UI, Roboto, Arial);
+      padding: 20px;
+      padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+    .wrap { max-width: 480px; margin: 0 auto; }
+    .header { text-align: left; margin-bottom: 20px; }
+    .header-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      line-height: 1.3;
+    }
+    .header-meta {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--dmc-color-text-secondary, #64748B);
+    }
+    .summary {
+      text-align: left;
+      font-size: 13px;
+      color: #64748B;
+      margin: 0 0 14px;
+    }
+    .toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .dist-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .dist-chip {
+      padding: 8px 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 999px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748B;
+      cursor: pointer;
+    }
+    .dist-chip.active {
+      border-color: #2563EB;
+      color: #2563EB;
+      background: #EFF6FF;
+    }
+    .search-input, .sort-select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 15px;
+      background: #fff;
+    }
+    .search-input:focus, .sort-select:focus {
+      outline: none;
+      border-color: #2563EB;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+    }
+    .row.is-me {
+      border-color: #2563EB;
+      background: #F8FBFF;
+    }
+    .row-nick {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .row-nick .me-tag {
+      margin-left: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #2563EB;
+    }
+    .row-meta {
+      font-size: 13px;
+      color: #64748B;
+    }
+    .row-time {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      align-self: center;
+    }
+    .row-time.pending {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94A3B8;
+    }
+    .row-pb {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      font-weight: 600;
+      color: #059669;
+    }
+    .status {
+      text-align: center;
+      padding: 40px 16px;
+      color: #64748B;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .status-title {
+      display: block;
+      color: #0F172A;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #2563EB;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .hidden { display: none !important; }
+    .privacy-note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #94A3B8;
+      text-align: center;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="loading" class="status">불러오는 중…</div>
+
+    <div id="error" class="status hidden">
+      <span class="status-title" id="errorTitle">오류</span>
+      <p id="errorMessage"></p>
+      <button type="button" class="btn" id="retryBtn">다시 시도</button>
+    </div>
+
+    <div id="main" class="hidden">
+      <header class="header">
+        <h1 class="header-title" id="eventTitle">명단·결과</h1>
+        <p class="header-meta" id="eventMeta"></p>
+      </header>
+
+      <p class="summary" id="summary"></p>
+
+      <div class="toolbar">
+        <div class="dist-chips" id="distChips" role="group" aria-label="종목 필터"></div>
+        <input
+          type="search"
+          id="searchInput"
+          class="search-input"
+          placeholder="닉네임 검색"
+          autocomplete="off"
+          enterkeyhint="search"
+        />
+        <label class="hidden" for="sortSelect">정렬</label>
+        <select id="sortSelect" class="sort-select" aria-label="정렬">
+          <option value="result">기록 빠른 순</option>
+          <option value="nick">닉네임 순</option>
+          <option value="distance">종목 순</option>
+        </select>
+      </div>
+
+      <div class="list" id="rosterList" aria-live="polite"></div>
+      <p class="privacy-note">실명·배번 숫자는 공개되지 않습니다. 컨펌된 기록만 표시됩니다.</p>
+    </div>
+  </div>
+
+  <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
+    <a class="event-tab-btn" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
+    <a class="event-tab-btn" data-tab="bus" href="#"><span class="tab-icon">🚌</span>버스</a>
+    <a class="event-tab-btn active" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
+  </nav>
+
+  <script src="assets/distance-utils.js"></script>
+  <script src="assets/event-member-copy.js"></script>
+  <script src="assets/event-member-profile.js"></script>
+  <script src="assets/event-member-tabs.js"></script>
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    const eventId = new URLSearchParams(location.search).get("eventId");
+    const identity = EventMemberProfile.readSavedIdentity(localStorage);
+
+    const loadingEl = document.getElementById("loading");
+    const errorEl = document.getElementById("error");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const retryBtn = document.getElementById("retryBtn");
+    const mainEl = document.getElementById("main");
+    const eventTitleEl = document.getElementById("eventTitle");
+    const eventMetaEl = document.getElementById("eventMeta");
+    const summaryEl = document.getElementById("summary");
+    const distChipsEl = document.getElementById("distChips");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const rosterList = document.getElementById("rosterList");
+    const eventTabBar = document.getElementById("eventTabBar");
+
+    let distanceFilter = "all";
+    let searchQuery = "";
+    let sortBy = "result";
+    let isComposing = false;
+    let searchTimer = null;
+    let busEnabled = false;
+    let hasLoadedOnce = false;
+
+    function showOnly(el) {
+      loadingEl.classList.add("hidden");
+      errorEl.classList.add("hidden");
+      mainEl.classList.add("hidden");
+      el.classList.remove("hidden");
+    }
+
+    function showError(message) {
+      errorMessageEl.textContent = message || "다시 시도해 주세요";
+      showOnly(errorEl);
+    }
+
+    function wireTabs() {
+      if (!eventId) return;
+      EventMemberTabs.mount({
+        eventId: eventId,
+        active: "roster",
+        busEnabled: busEnabled,
+        barEl: eventTabBar,
+      });
+    }
+
+    function escapeText(s) {
+      const d = document.createElement("div");
+      d.textContent = s == null ? "" : String(s);
+      return d.innerHTML;
+    }
+
+    function isMe(row) {
+      if (!identity.nickname || !row || !row.nickname) return false;
+      return String(row.nickname).toLowerCase() === String(identity.nickname).toLowerCase();
+    }
+
+    function renderChips(distances) {
+      distChipsEl.innerHTML = "";
+      const opts = [{ value: "all", label: "전체" }].concat(
+        (distances || []).map(function (d) {
+          return { value: d, label: EventMemberCopy.memberDistanceLabel(d) };
+        })
+      );
+      opts.forEach(function (opt) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "dist-chip" + (distanceFilter === opt.value ? " active" : "");
+        btn.textContent = opt.label;
+        btn.addEventListener("click", function () {
+          distanceFilter = opt.value;
+          loadRoster();
+        });
+        distChipsEl.appendChild(btn);
+      });
+    }
+
+    function renderRows(rows) {
+      rosterList.innerHTML = "";
+      if (!rows.length) {
+        const empty = document.createElement("div");
+        empty.className = "status";
+        empty.textContent = "표시할 참가자가 없습니다";
+        rosterList.appendChild(empty);
+        return;
+      }
+      rows.forEach(function (row) {
+        const el = document.createElement("article");
+        el.className = "row" + (isMe(row) ? " is-me" : "");
+        const left = document.createElement("div");
+        const nick = document.createElement("div");
+        nick.className = "row-nick";
+        nick.innerHTML =
+          escapeText(row.nickname) +
+          (isMe(row) ? '<span class="me-tag">나</span>' : "");
+        const meta = document.createElement("div");
+        meta.className = "row-meta";
+        meta.textContent = EventMemberCopy.memberDistanceLabel(row.distance);
+        left.appendChild(nick);
+        left.appendChild(meta);
+
+        const time = document.createElement("div");
+        if (row.hasResult && row.netTime) {
+          time.className = "row-time";
+          time.textContent = row.netTime;
+        } else {
+          time.className = "row-time pending";
+          time.textContent = "기록 없음";
+        }
+
+        el.appendChild(left);
+        el.appendChild(time);
+        if (row.pbConfirmed) {
+          const pb = document.createElement("div");
+          pb.className = "row-pb";
+          pb.textContent = "PB";
+          el.appendChild(pb);
+        }
+        rosterList.appendChild(el);
+      });
+    }
+
+    async function probeBus() {
+      if (!eventId) return;
+      try {
+        const res = await fetch(
+          API_BASE +
+            "?action=bus-boarding&subAction=status&eventId=" +
+            encodeURIComponent(eventId)
+        );
+        const data = await res.json();
+        busEnabled = !!(data && data.ok && data.enabled === true);
+      } catch (_e) {
+        busEnabled = false;
+      }
+      wireTabs();
+    }
+
+    async function loadRoster() {
+      if (!eventId) {
+        showError("대회를 찾을 수 없어요");
+        return;
+      }
+
+      if (!hasLoadedOnce) showOnly(loadingEl);
+      wireTabs();
+
+      try {
+        const params = new URLSearchParams({
+          action: "group-events",
+          subAction: "public-roster",
+          eventId: eventId,
+          sortBy: sortBy,
+        });
+        if (distanceFilter && distanceFilter !== "all") {
+          params.set("distance", distanceFilter);
+        }
+        if (searchQuery) params.set("q", searchQuery);
+
+        const res = await fetch(API_BASE + "?" + params.toString());
+        const data = await res.json();
+        if (!data.ok) {
+          throw new Error(data.error || "불러오기 실패");
+        }
+
+        const title = EventMemberCopy.memberEventTitle(data.eventName || "명단·결과");
+        eventTitleEl.textContent = title;
+        document.title = title + " - 동탄 마라톤 클럽";
+        eventMetaEl.textContent = data.eventDate || "";
+        summaryEl.textContent =
+          "참가 " +
+          (data.totalCount != null ? data.totalCount : 0) +
+          "명 · 기록 확정 " +
+          (data.confirmedCount != null ? data.confirmedCount : 0) +
+          "명";
+
+        renderChips(data.distances || []);
+        renderRows(data.rows || []);
+        hasLoadedOnce = true;
+        showOnly(mainEl);
+      } catch (err) {
+        console.error(err);
+        showError(err.message || "다시 시도해 주세요");
+      }
+    }
+
+    searchInput.addEventListener("compositionstart", function () {
+      isComposing = true;
+    });
+    searchInput.addEventListener("compositionend", function () {
+      isComposing = false;
+      searchQuery = searchInput.value.trim();
+      loadRoster();
+    });
+    searchInput.addEventListener("input", function () {
+      if (isComposing) return;
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        searchQuery = searchInput.value.trim();
+        loadRoster();
+      }, 220);
+    });
+
+    sortSelect.addEventListener("change", function () {
+      sortBy = sortSelect.value || "result";
+      loadRoster();
+    });
+
+    retryBtn.addEventListener("click", function () {
+      loadRoster();
+    });
+
+    wireTabs();
+    probeBus().then(loadRoster);
+  </script>
+</body>
+</html>

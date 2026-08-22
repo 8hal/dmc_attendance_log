@@ -43,6 +43,24 @@ const {
   assertSaveRows,
   REGULAR_TYPES: TRAINING_TYPES,
 } = require("./lib/meeting-training");
+const busBoardingLib = require("./lib/bus-boarding");
+const {
+  pickBibScrapeTargets,
+  buildBibScrapeMembers,
+  isBibModeGroupScrapeSource,
+  matchResultByBib,
+} = require("./lib/group-scrape-bib");
+const { canWriteGroupEvents } = require("./lib/group-events-write-auth");
+const {
+  buildSelfConfirmDocId,
+  buildSelfConfirmRow,
+  assertBibOwnsPending,
+} = require("./lib/self-confirm");
+const {
+  buildPublicRosterRows,
+  filterPublicRosterRows,
+  sortPublicRosterRows,
+} = require("./lib/public-roster");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -1102,7 +1120,21 @@ exports.groupEventAutoScrape = onSchedule(
         continue;
       }
 
-      console.log(`[groupEventAutoScrape] 스크랩 시작: ${doc.id}`);
+      const scrapeTargets = pickBibScrapeTargets(event.participants);
+      if (scrapeTargets.length === 0) {
+        console.log(`[groupEventAutoScrape] 배번 등록 참가자 없음 건너뜀: ${doc.id}`);
+        continue;
+      }
+
+      const autoSource = event.groupSource && event.groupSource.source;
+      if (!isBibModeGroupScrapeSource(autoSource)) {
+        console.log(
+          `[groupEventAutoScrape] 배번 스크랩 미지원 소스 건너뜀: ${doc.id} (source=${autoSource})`
+        );
+        continue;
+      }
+
+      console.log(`[groupEventAutoScrape] 스크랩 시작: ${doc.id} (bib ${scrapeTargets.length}명)`);
       await db.collection("race_events").doc(doc.id).update({
         groupScrapeStatus: "running",
         groupScrapeTriggeredAt: new Date().toISOString(),
@@ -1112,7 +1144,8 @@ exports.groupEventAutoScrape = onSchedule(
         canonicalEventId: doc.id,
         source: event.groupSource.source,
         sourceId: event.groupSource.sourceId,
-        memberRealNames: event.participants.map((p) => p.realName),
+        scrapeTargets,
+        queryBy: "bib",
         event,
         db,
         scraper,
@@ -1453,12 +1486,28 @@ exports.testWeekendCheck = onRequest(
 
 /**
  * 단체 대회(group-events) 수동 스크랩: scrape_jobs 자동 ID + scrapeEvent (기존 scrape 액션과 동일 패턴)
+ * queryBy==="bib" + scrapeTargets: 배번 조회 경로 (실명 members 맵 필수 완화)
+ * 그 외: memberRealNames 기반 이름 조회 (레거시)
  */
-async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRealNames, event, db, scraper }) {
+async function triggerGroupScrape({
+  canonicalEventId,
+  source,
+  sourceId,
+  memberRealNames,
+  scrapeTargets,
+  queryBy,
+  event,
+  db,
+  scraper,
+}) {
   const jobRef = db.collection("scrape_jobs").doc();
   const jobId = jobRef.id;
   const now = new Date().toISOString();
+  const bibMode = queryBy === "bib";
   try {
+    if (bibMode && !isBibModeGroupScrapeSource(source)) {
+      throw new Error("배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다");
+    }
     const membersSnap = await db.collection("members").get();
     const allMembers = [];
     membersSnap.forEach((doc) => {
@@ -1466,34 +1515,47 @@ async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRe
       if (d.hidden === true) return;
       allMembers.push({ realName: d.realName, nickname: d.nickname, gender: d.gender || "" });
     });
-    const want = [...new Set(
-      (memberRealNames || []).map((n) => String(n || "").trim()).filter(Boolean),
-    )];
-    if (want.length === 0) {
-      throw new Error("memberRealNames: 한 명 이상 필요");
-    }
     const byName = new Map(allMembers.map((m) => [m.realName, m]));
-    const missingNames = want.filter((n) => !byName.has(n));
-    if (missingNames.length > 0) {
-      throw new Error(`등록·미숨김 회원에 없는 실명: ${missingNames.join(", ")}`);
-    }
-    
-    // race_events.participants에서 distance 정보 가져오기
-    const participantsByName = new Map();
-    if (event && Array.isArray(event.participants)) {
-      event.participants.forEach(p => {
-        if (p.realName && p.distance) {
-          participantsByName.set(p.realName, p.distance);
-        }
+
+    let members;
+    let wantNames;
+
+    if (bibMode) {
+      const targets = Array.isArray(scrapeTargets) ? scrapeTargets : [];
+      if (targets.length === 0) {
+        throw new Error("scrapeTargets: 배번 등록 참가자 한 명 이상 필요");
+      }
+      members = buildBibScrapeMembers(targets, byName);
+      wantNames = [...new Set(members.map((m) => String(m.realName || "").trim()).filter(Boolean))];
+    } else {
+      const want = [...new Set(
+        (memberRealNames || []).map((n) => String(n || "").trim()).filter(Boolean),
+      )];
+      if (want.length === 0) {
+        throw new Error("memberRealNames: 한 명 이상 필요");
+      }
+      const missingNames = want.filter((n) => !byName.has(n));
+      if (missingNames.length > 0) {
+        throw new Error(`등록·미숨김 회원에 없는 실명: ${missingNames.join(", ")}`);
+      }
+
+      // race_events.participants에서 distance 정보 가져오기
+      const participantsByName = new Map();
+      if (event && Array.isArray(event.participants)) {
+        event.participants.forEach((p) => {
+          if (p.realName && p.distance) {
+            participantsByName.set(p.realName, p.distance);
+          }
+        });
+      }
+
+      members = want.map((n) => {
+        const member = byName.get(n);
+        const distance = participantsByName.get(n);
+        return { ...member, distance };
       });
+      wantNames = want;
     }
-    
-    // members 배열 생성 시 participants의 distance 포함
-    const members = want.map((n) => {
-      const member = byName.get(n);
-      const distance = participantsByName.get(n);
-      return { ...member, distance };
-    });
 
     const confirmedSnap = await db.collection("race_results").where("status", "==", "confirmed").get();
     const confirmedResults = [];
@@ -1503,7 +1565,8 @@ async function triggerGroupScrape({ canonicalEventId, source, sourceId, memberRe
     await jobRef.set({
       source,
       sourceId,
-      memberRealNames: want,
+      memberRealNames: wantNames,
+      queryBy: bibMode ? "bib" : "name",
       eventName: (event && event.eventName) || sourceId,
       eventDate: (event && event.eventDate) || "",
       status: "running",
@@ -3190,9 +3253,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "source") {
       const { ownerPw, canonicalEventId, source, sourceId } = req.body;
 
-      const expectedOwnerPw = process.env.DMC_OWNER_PW;
-      if (!expectedOwnerPw || ownerPw !== expectedOwnerPw) {
-        return res.status(403).json({ ok: false, error: "오너 권한 필요" });
+      if (!canWriteGroupEvents(ownerPw)) {
+        return res.status(403).json({ ok: false, error: "운영진 권한 필요" });
       }
       if (!canonicalEventId || !source || !sourceId) {
         return res.status(400).json({ ok: false, error: "canonicalEventId, source, sourceId required" });
@@ -3207,9 +3269,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "scrape") {
       const { ownerPw, canonicalEventId } = req.body;
 
-      const expectedOwnerPw = process.env.DMC_OWNER_PW;
-      if (!expectedOwnerPw || ownerPw !== expectedOwnerPw) {
-        return res.status(403).json({ ok: false, error: "오너 권한 필요" });
+      if (!canWriteGroupEvents(ownerPw)) {
+        return res.status(403).json({ ok: false, error: "운영진 권한 필요" });
       }
 
       const eventDoc = await db.collection("race_events").doc(canonicalEventId).get();
@@ -3223,12 +3284,22 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.status(400).json({ ok: false, error: "참가자 미등록" });
       }
 
+      const scrapeTargets = pickBibScrapeTargets(eventRow.participants);
+      if (scrapeTargets.length === 0) {
+        return res.status(400).json({ ok: false, error: "배번 등록 참가자 없음" });
+      }
+
       if (eventRow.groupScrapeStatus === "running") {
         return res.status(400).json({ ok: false, error: "이미 스크랩이 진행 중입니다" });
       }
 
       const { source: src, sourceId: sid } = eventRow.groupSource;
-      const memberRealNames = eventRow.participants.map((p) => p.realName);
+      if (!isBibModeGroupScrapeSource(src)) {
+        return res.status(400).json({
+          ok: false,
+          error: "배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다",
+        });
+      }
 
       await db.collection("race_events").doc(canonicalEventId).update({
         groupScrapeStatus: "running",
@@ -3239,7 +3310,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         canonicalEventId,
         source: src,
         sourceId: sid,
-        memberRealNames,
+        scrapeTargets,
+        queryBy: "bib",
         event: eventRow,
         db,
         scraper,
@@ -3311,6 +3383,134 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
       await db.collection("race_events").doc(canonicalEventId).delete();
       return res.json({ ok: true, message: "대회가 삭제되었습니다" });
+    }
+
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "my-pending-result") {
+      const eventId = String(req.query.eventId || "").trim();
+      const nickname = String(req.query.nickname || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!nickname) {
+        return res.status(400).json({ ok: false, error: "nickname required" });
+      }
+
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        const participant = (event.participants || []).find(
+          (p) => p.nickname === nickname
+        );
+        const bib = participant ? String(participant.bib || "").trim() : "";
+        if (!participant || !bib || !event.groupScrapeJobId) {
+          return res.json({ ok: true, state: "none", result: null });
+        }
+
+        const docId = buildSelfConfirmDocId({
+          realName: participant.realName,
+          distance: participant.distance,
+          eventDate: event.eventDate,
+        });
+        const confirmedDoc = await db.collection("race_results").doc(docId).get();
+        if (confirmedDoc.exists) {
+          return res.json({
+            ok: true,
+            state: "confirmed",
+            result: confirmedDoc.data(),
+          });
+        }
+
+        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+        const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+        const pending = matchResultByBib(jobResults, bib, participant.distance);
+        if (!pending) {
+          return res.json({ ok: true, state: "none", result: null });
+        }
+
+        return res.json({
+          ok: true,
+          state: "pending",
+          result: {
+            bib: pending.bib || bib,
+            netTime: pending.netTime || "",
+            gunTime: pending.gunTime || "",
+            distance: pending.distance || participant.distance || "",
+            overallRank: pending.overallRank != null ? pending.overallRank : null,
+            gender: pending.gender || "",
+            memberRealName: participant.realName || "",
+            memberNickname: participant.nickname || "",
+          },
+        });
+      } catch (error) {
+        console.error("my-pending-result error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
+    // 회원 공개 명단·결과 (실명·배번 제외). detail 대체 조회용.
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "public-roster") {
+      const eventId = String(req.query.eventId || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        if (event.isGroupEvent !== true) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        const confirmedSnap = await db
+          .collection("race_results")
+          .where("canonicalEventId", "==", eventId)
+          .get();
+        const confirmedByKey = new Map();
+        confirmedSnap.forEach((doc) => {
+          const d = doc.data() || {};
+          const normDist = normalizeRaceDistance(d.distance);
+          const key = `${d.memberRealName}_${normDist}`;
+          confirmedByKey.set(key, d);
+        });
+
+        let rows = buildPublicRosterRows(
+          event.participants || [],
+          confirmedByKey,
+          normalizeRaceDistance
+        );
+        const totalCount = rows.length;
+        const confirmedCount = rows.filter((r) => r.hasResult).length;
+        const distanceSet = new Set();
+        rows.forEach((r) => {
+          if (r.distance) distanceSet.add(r.distance);
+        });
+
+        rows = filterPublicRosterRows(rows, {
+          distance: req.query.distance,
+          query: req.query.q || req.query.query,
+        });
+        rows = sortPublicRosterRows(rows, req.query.sortBy || "result");
+
+        return res.json({
+          ok: true,
+          eventId,
+          eventName: event.eventName || event.primaryName || "",
+          eventDate: event.eventDate || "",
+          rows,
+          distances: Array.from(distanceSet).sort(),
+          confirmedCount,
+          totalCount,
+        });
+      } catch (error) {
+        console.error("public-roster error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
     }
 
     if (action === "group-events" && req.method === "GET" && req.query.subAction === "detail") {
@@ -3518,6 +3718,90 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true, saved });
     }
 
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "self-confirm") {
+      const eventId = String((req.body && req.body.eventId) || "").trim();
+      const nickname = String((req.body && req.body.nickname) || "").trim();
+
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!nickname) {
+        return res.status(400).json({ ok: false, error: "nickname required" });
+      }
+
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        const event = eventDoc.data() || {};
+        const participant = (event.participants || []).find(
+          (p) => p.nickname === nickname
+        );
+        if (!participant) {
+          return res.status(403).json({ ok: false, error: "not a participant" });
+        }
+
+        const bib = String(participant.bib || "").trim();
+        if (!bib) {
+          return res.status(400).json({ ok: false, error: "bib required" });
+        }
+        if (!event.groupScrapeJobId) {
+          return res.status(400).json({ ok: false, error: "no pending result" });
+        }
+
+        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+        const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+        const pending = matchResultByBib(jobResults, bib, participant.distance);
+        if (!pending) {
+          return res.status(400).json({ ok: false, error: "no pending result" });
+        }
+
+        try {
+          assertBibOwnsPending(participant, pending);
+        } catch (err) {
+          return res.status(400).json({ ok: false, error: err.message || "bib mismatch" });
+        }
+
+        const docId = buildSelfConfirmDocId({
+          realName: participant.realName,
+          distance: pending.distance || participant.distance,
+          eventDate: event.eventDate,
+        });
+        const row = buildSelfConfirmRow({
+          canonicalEventId: eventId,
+          event,
+          participant,
+          pending,
+        });
+
+        // Upsert this docId only — never bulk-delete the event's race_results
+        const ref = db.collection("race_results").doc(docId);
+        await ref.set(row);
+
+        const pendingDist = String(pending.distance || "").trim();
+        const partDist = String(participant.distance || "").trim();
+        if (pendingDist && !partDist) {
+          const idx = (event.participants || []).findIndex(
+            (p) => p.nickname === nickname
+          );
+          if (idx >= 0) {
+            const next = event.participants.slice();
+            next[idx] = { ...next[idx], distance: row.distance };
+            await db.collection("race_events").doc(eventId).update({
+              participants: next,
+            });
+          }
+        }
+
+        return res.json({ ok: true, docId });
+      } catch (error) {
+        console.error("self-confirm error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "update-bib") {
       const { eventId, nickname, bib } = req.body;
       
@@ -3591,6 +3875,661 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           error: "server error" 
         });
       }
+    }
+
+    // 버스 탑승 (action=bus-boarding)
+    // - settings / status: 항상 허용 (status는 공개·admin; settings로 enable)
+    // - import / admin-board / roster-* / self-board: enabled === true 아니면
+    //   403 { ok: false, error: "bus boarding not enabled" } (Tasks 4–6)
+    if (action === "bus-boarding") {
+      const sub = String(
+        req.query.subAction || (req.body && req.body.subAction) || ""
+      ).trim() || (req.method === "GET" ? "status" : "");
+
+      if (sub === "status") {
+        // Admin: POST subAction=status + body { pw, eventId } (do not put pw in query).
+        // GET without body.pw → public view only.
+        try {
+          const eventId = String(
+            req.query.eventId || (req.body && req.body.eventId) || ""
+          ).trim();
+          if (!eventId) {
+            return res.status(400).json({ ok: false, error: "eventId required" });
+          }
+
+          const pw = (req.body && req.body.pw) || null;
+          let isAdmin = false;
+          if (pw) {
+            const auth = verifyAdminPassword(pw);
+            if (!auth.ok) {
+              return res.status(401).json({ ok: false, error: "invalid password" });
+            }
+            isAdmin = true;
+          }
+
+          const eventDoc = await db.collection("race_events").doc(eventId).get();
+          if (!eventDoc.exists) {
+            return res.status(404).json({ ok: false, error: "event not found" });
+          }
+
+          const event = eventDoc.data() || {};
+          const eventName = event.eventName || event.primaryName || "";
+          const bb = event.busBoarding;
+          const emptySummary = {
+            outbound: { required: 0, boarded: 0 },
+            return: { required: 0, boarded: 0 },
+          };
+
+          if (!bb) {
+            return res.json({
+              ok: true,
+              enabled: false,
+              legs: ["outbound", "return"],
+              roster: [],
+              eventName,
+              importMeta: null,
+              summary: emptySummary,
+            });
+          }
+
+          const enabled = bb.enabled === true;
+          const legs = Array.isArray(bb.legs) && bb.legs.length
+            ? bb.legs
+            : ["outbound", "return"];
+          const roster = Array.isArray(bb.roster) ? bb.roster : [];
+
+          // Public (non-admin) must not see roster until boarding is enabled.
+          let responseRoster;
+          let summary;
+          if (isAdmin) {
+            responseRoster = roster;
+            summary = {
+              outbound: busBoardingLib.summarizeLeg(roster, "outbound"),
+              return: busBoardingLib.summarizeLeg(roster, "return"),
+            };
+          } else if (!enabled) {
+            responseRoster = [];
+            summary = emptySummary;
+          } else {
+            responseRoster = busBoardingLib.toPublicRoster(roster);
+            summary = {
+              outbound: busBoardingLib.summarizeLeg(roster, "outbound"),
+              return: busBoardingLib.summarizeLeg(roster, "return"),
+            };
+          }
+
+          return res.json({
+            ok: true,
+            enabled,
+            legs,
+            roster: responseRoster,
+            eventName,
+            importMeta: bb.importMeta || null,
+            summary,
+          });
+        } catch (error) {
+          console.error("bus-boarding status error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+      }
+
+      if (sub === "settings" && req.method === "POST") {
+        const body = req.body || {};
+        const auth = verifyAdminPassword(body.pw);
+        if (!auth.ok) {
+          return res.status(401).json({ ok: false, error: "invalid password" });
+        }
+
+        const eventId = String(body.eventId || "").trim();
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (typeof body.enabled !== "boolean") {
+          return res.status(400).json({ ok: false, error: "enabled (boolean) required" });
+        }
+
+        const legsProvided = Array.isArray(body.legs);
+        if (body.legs != null && !legsProvided) {
+          return res.status(400).json({ ok: false, error: "legs must be an array" });
+        }
+        if (legsProvided) {
+          const VALID_LEGS = new Set(["outbound", "return"]);
+          if (body.legs.length === 0) {
+            return res.status(400).json({ ok: false, error: "legs must be non-empty" });
+          }
+          const seen = new Set();
+          for (const leg of body.legs) {
+            if (!VALID_LEGS.has(leg)) {
+              return res.status(400).json({
+                ok: false,
+                error: "legs must be outbound|return",
+              });
+            }
+            if (seen.has(leg)) {
+              return res.status(400).json({ ok: false, error: "legs must be unique" });
+            }
+            seen.add(leg);
+          }
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            let bb;
+            if (!data.busBoarding) {
+              bb = busBoardingLib.emptyBusBoarding(
+                legsProvided ? { legs: body.legs } : {}
+              );
+            } else {
+              bb = { ...data.busBoarding };
+              if (legsProvided) {
+                bb.legs = [...body.legs];
+              }
+            }
+            bb.enabled = body.enabled;
+            tx.update(ref, { busBoarding: bb });
+            return { enabled: bb.enabled, legs: bb.legs };
+          });
+        } catch (error) {
+          console.error("bus-boarding settings error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+
+        return res.json({ ok: true, enabled: result.enabled, legs: result.legs });
+      }
+
+      if (sub === "self-board" && req.method === "POST") {
+        const body = req.body || {};
+        const eventId = String(body.eventId || "").trim();
+        const nickname = String(body.nickname || "").trim();
+        const leg = String(body.leg || "").trim();
+
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (!nickname) {
+          return res.status(400).json({ ok: false, error: "nickname required" });
+        }
+        if (leg !== "outbound" && leg !== "return") {
+          return res.status(400).json({
+            ok: false,
+            error: "leg must be outbound|return",
+          });
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            const bb = data.busBoarding;
+            if (!busBoardingLib.assertEnabled(bb)) {
+              return { notEnabled: true };
+            }
+
+            const roster = Array.isArray(bb.roster) ? bb.roster.slice() : [];
+            const idx = busBoardingLib.findRosterIndexByNickname(roster, nickname);
+            if (idx < 0) {
+              return { notOnRoster: true };
+            }
+
+            const applied = busBoardingLib.applySelfBoard(
+              roster[idx],
+              leg,
+              new Date().toISOString()
+            );
+            if (!applied.ok) {
+              return { notRequired: true };
+            }
+
+            tx.update(ref, { busBoarding: { ...bb, roster } });
+            return { already: !!applied.already };
+          });
+        } catch (error) {
+          console.error("bus-boarding self-board error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        if (result.notEnabled) {
+          return res.status(403).json({
+            ok: false,
+            error: "bus boarding not enabled",
+          });
+        }
+        if (result.notOnRoster) {
+          return res.status(403).json({ ok: false, error: "not on roster" });
+        }
+        if (result.notRequired) {
+          return res.status(400).json({
+            ok: false,
+            error: "leg not required",
+          });
+        }
+
+        const payload = { ok: true };
+        if (result.already) payload.already = true;
+        return res.json(payload);
+      }
+
+      if (sub === "admin-board" && req.method === "POST") {
+        const body = req.body || {};
+        const auth = verifyAdminPassword(body.pw);
+        if (!auth.ok) {
+          return res.status(401).json({ ok: false, error: "invalid password" });
+        }
+
+        const eventId = String(body.eventId || "").trim();
+        const rosterId = String(body.rosterId || "").trim();
+        const leg = String(body.leg || "").trim();
+
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (!rosterId) {
+          return res.status(400).json({ ok: false, error: "rosterId required" });
+        }
+        if (leg !== "outbound" && leg !== "return") {
+          return res.status(400).json({
+            ok: false,
+            error: "leg must be outbound|return",
+          });
+        }
+        if (typeof body.boarded !== "boolean") {
+          return res.status(400).json({
+            ok: false,
+            error: "boarded (boolean) required",
+          });
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            const bb = data.busBoarding;
+            if (!busBoardingLib.assertEnabled(bb)) {
+              return { notEnabled: true };
+            }
+
+            const roster = Array.isArray(bb.roster) ? bb.roster.slice() : [];
+            const idx = roster.findIndex((r) => r.rosterId === rosterId);
+            if (idx < 0) {
+              return { rosterNotFound: true };
+            }
+
+            const applied = busBoardingLib.applyAdminBoard(
+              roster[idx],
+              leg,
+              body.boarded,
+              new Date().toISOString()
+            );
+            if (!applied.ok) {
+              return { legInvalid: true };
+            }
+
+            tx.update(ref, { busBoarding: { ...bb, roster } });
+            return { ok: true };
+          });
+        } catch (error) {
+          console.error("bus-boarding admin-board error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        if (result.notEnabled) {
+          return res.status(403).json({
+            ok: false,
+            error: "bus boarding not enabled",
+          });
+        }
+        if (result.rosterNotFound) {
+          return res.status(404).json({ ok: false, error: "roster entry not found" });
+        }
+        if (result.legInvalid) {
+          return res.status(400).json({ ok: false, error: "leg invalid" });
+        }
+
+        return res.json({ ok: true });
+      }
+
+      if (sub === "roster-upsert" && req.method === "POST") {
+        const body = req.body || {};
+        const auth = verifyAdminPassword(body.pw);
+        if (!auth.ok) {
+          return res.status(401).json({ ok: false, error: "invalid password" });
+        }
+
+        const eventId = String(body.eventId || "").trim();
+        const nickname = String(body.nickname || "").trim();
+        const realName = String(body.realName || "").trim();
+        const rideType = String(body.rideType || "").trim();
+        const rosterIdIn =
+          body.rosterId != null && String(body.rosterId).trim() !== ""
+            ? String(body.rosterId).trim()
+            : null;
+        const note =
+          body.note === undefined ? undefined : body.note == null ? null : body.note;
+        const forceGuest = body.isGuest === true;
+
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (!nickname) {
+          return res.status(400).json({ ok: false, error: "nickname required" });
+        }
+        if (!rideType) {
+          return res.status(400).json({ ok: false, error: "rideType required" });
+        }
+
+        let memberId = null;
+        if (!forceGuest) {
+          try {
+            const memSnap = await db
+              .collection("members")
+              .where("nickname", "==", nickname)
+              .limit(1)
+              .get();
+            if (!memSnap.empty) {
+              memberId = memSnap.docs[0].id;
+            }
+          } catch (error) {
+            console.error("bus-boarding roster-upsert member lookup error:", error);
+            return res.status(500).json({ ok: false, error: "server error" });
+          }
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            const bb = data.busBoarding;
+            if (!busBoardingLib.assertEnabled(bb)) {
+              return { notEnabled: true };
+            }
+
+            const roster = Array.isArray(bb.roster) ? bb.roster.slice() : [];
+            const nickDupIdx = busBoardingLib.findRosterIndexByNickname(
+              roster,
+              nickname
+            );
+            if (
+              nickDupIdx >= 0 &&
+              (!rosterIdIn || roster[nickDupIdx].rosterId !== rosterIdIn)
+            ) {
+              return { nickDuplicate: true };
+            }
+
+            let entry;
+            try {
+              if (rosterIdIn) {
+                const idx = roster.findIndex((r) => r.rosterId === rosterIdIn);
+                if (idx >= 0) {
+                  const prev = roster[idx];
+                  entry = busBoardingLib.buildRosterEntry({
+                    nickname,
+                    realName,
+                    rideType,
+                    note: note === undefined ? prev.note : note,
+                    memberId: forceGuest ? null : memberId,
+                    rosterId: prev.rosterId,
+                    existingLegs: prev.legs,
+                  });
+                  roster[idx] = entry;
+                } else {
+                  entry = busBoardingLib.buildRosterEntry({
+                    nickname,
+                    realName,
+                    rideType,
+                    note: note === undefined ? null : note,
+                    memberId,
+                    rosterId: rosterIdIn,
+                  });
+                  roster.push(entry);
+                }
+              } else {
+                entry = busBoardingLib.buildRosterEntry({
+                  nickname,
+                  realName,
+                  rideType,
+                  note: note === undefined ? null : note,
+                  memberId,
+                });
+                roster.push(entry);
+              }
+            } catch (e) {
+              return { invalidRideType: true, message: e.message };
+            }
+
+            tx.update(ref, { busBoarding: { ...bb, roster } });
+            return { ok: true, rosterId: entry.rosterId, entry };
+          });
+        } catch (error) {
+          console.error("bus-boarding roster-upsert error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        if (result.notEnabled) {
+          return res.status(403).json({
+            ok: false,
+            error: "bus boarding not enabled",
+          });
+        }
+        if (result.nickDuplicate) {
+          return res.status(409).json({
+            ok: false,
+            error: "nickname already on roster",
+          });
+        }
+        if (result.invalidRideType) {
+          return res.status(400).json({
+            ok: false,
+            error: result.message || "invalid rideType",
+          });
+        }
+
+        return res.json({
+          ok: true,
+          rosterId: result.rosterId,
+          entry: result.entry,
+        });
+      }
+
+      if (sub === "roster-remove" && req.method === "POST") {
+        const body = req.body || {};
+        const auth = verifyAdminPassword(body.pw);
+        if (!auth.ok) {
+          return res.status(401).json({ ok: false, error: "invalid password" });
+        }
+
+        const eventId = String(body.eventId || "").trim();
+        const rosterId = String(body.rosterId || "").trim();
+
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (!rosterId) {
+          return res.status(400).json({ ok: false, error: "rosterId required" });
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            const bb = data.busBoarding;
+            if (!busBoardingLib.assertEnabled(bb)) {
+              return { notEnabled: true };
+            }
+
+            const roster = Array.isArray(bb.roster) ? bb.roster.slice() : [];
+            const next = roster.filter((r) => r.rosterId !== rosterId);
+            if (next.length === roster.length) {
+              return { rosterNotFound: true };
+            }
+
+            tx.update(ref, { busBoarding: { ...bb, roster: next } });
+            return { ok: true };
+          });
+        } catch (error) {
+          console.error("bus-boarding roster-remove error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        if (result.notEnabled) {
+          return res.status(403).json({
+            ok: false,
+            error: "bus boarding not enabled",
+          });
+        }
+        if (result.rosterNotFound) {
+          return res.status(404).json({ ok: false, error: "roster entry not found" });
+        }
+
+        return res.json({ ok: true });
+      }
+
+      if (sub === "import" && req.method === "POST") {
+        const body = req.body || {};
+        const auth = verifyAdminPassword(body.pw);
+        if (!auth.ok) {
+          return res.status(401).json({ ok: false, error: "invalid password" });
+        }
+
+        const eventId = String(body.eventId || "").trim();
+        if (!eventId) {
+          return res.status(400).json({ ok: false, error: "eventId required" });
+        }
+        if (!Array.isArray(body.rows)) {
+          return res.status(400).json({ ok: false, error: "rows must be an array" });
+        }
+
+        const rows = body.rows;
+        const sourceLabel =
+          body.sourceLabel == null || body.sourceLabel === ""
+            ? null
+            : String(body.sourceLabel);
+
+        const uniqueNicks = [
+          ...new Set(
+            rows
+              .map((r) => String((r && r.nickname) || "").trim())
+              .filter(Boolean)
+          ),
+        ];
+        const memberIdByNickname = new Map();
+        try {
+          await Promise.all(
+            uniqueNicks.map(async (nick) => {
+              const memSnap = await db
+                .collection("members")
+                .where("nickname", "==", nick)
+                .limit(1)
+                .get();
+              if (!memSnap.empty) {
+                memberIdByNickname.set(nick, memSnap.docs[0].id);
+              }
+            })
+          );
+        } catch (error) {
+          console.error("bus-boarding import member lookup error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        const ref = db.collection("race_events").doc(eventId);
+        let result;
+        try {
+          result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (!snap.exists) {
+              return { notFound: true };
+            }
+            const data = snap.data() || {};
+            const bb = data.busBoarding;
+            if (!busBoardingLib.assertEnabled(bb)) {
+              return { notEnabled: true };
+            }
+
+            const existingRoster = Array.isArray(bb.roster) ? bb.roster : [];
+            const { roster, report } = busBoardingLib.mergeRosterImport(
+              existingRoster,
+              rows,
+              { memberIdByNickname }
+            );
+            const iso = new Date().toISOString();
+            const importMeta = {
+              importedAt: iso,
+              rowCount: rows.length,
+              sourceLabel,
+            };
+            tx.update(ref, {
+              busBoarding: { ...bb, roster, importMeta },
+            });
+            return { ok: true, roster, report };
+          });
+        } catch (error) {
+          console.error("bus-boarding import error:", error);
+          return res.status(500).json({ ok: false, error: "server error" });
+        }
+
+        if (result.notFound) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        if (result.notEnabled) {
+          return res.status(403).json({
+            ok: false,
+            error: "bus boarding not enabled",
+          });
+        }
+
+        return res.json({
+          ok: true,
+          report: result.report,
+          summary: {
+            outbound: busBoardingLib.summarizeLeg(result.roster, "outbound"),
+            return: busBoardingLib.summarizeLeg(result.roster, "return"),
+          },
+        });
+      }
+
+      return res.status(400).json({ ok: false, error: "unknown subAction" });
     }
 
     if (action === "fix-phantom-jobs" && req.method === "POST") {
