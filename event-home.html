@@ -190,6 +190,7 @@
 
   <div id="toast" class="toast hidden" role="status"></div>
 
+  <script src="assets/event-member-copy.js"></script>
   <script src="assets/event-member-profile.js"></script>
   <script src="assets/event-home-badges.js"></script>
   <script src="assets/event-home-action.js"></script>
@@ -538,7 +539,9 @@
     }
 
     function showPickView(event) {
-      pickEventTitle.textContent = event.eventName || event.primaryName || "대회";
+      pickEventTitle.textContent = EventMemberCopy.memberEventTitle(
+        event.eventName || event.primaryName || "대회"
+      );
       pickEventMeta.textContent = eventMetaText(event);
       pickSelectedNick = null;
       pickNextBtn.disabled = true;
@@ -549,7 +552,9 @@
     }
 
     function showMemberHome(event, identity) {
-      const title = event.eventName || event.primaryName || "대회";
+      const title = EventMemberCopy.memberEventTitle(
+        event.eventName || event.primaryName || "대회"
+      );
       eventTitleEl.textContent = title;
       document.title = title + " - 동탄 마라톤 클럽";
       eventMetaEl.textContent = eventMetaText(event);

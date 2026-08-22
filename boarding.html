@@ -32,27 +32,6 @@
       padding: 20px;
       padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     }
-    .wrap { max-width: 480px; margin: 0 auto; }
-
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-    .header-icon {
-      font-size: 48px;
-      margin-bottom: 10px;
-    }
-    .header-title {
-      font-size: 24px;
-      font-weight: 700;
-      margin: 0 0 8px;
-    }
-    .header-subtitle {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text);
-      margin: 0 0 12px;
-    }
     .card {
       background: var(--card);
       border-radius: 14px;
@@ -135,10 +114,6 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-    }
-    .participant-realname {
-      font-size: 13px;
-      color: var(--text-sub);
     }
     .guest-badge {
       display: inline-block;
@@ -309,19 +284,18 @@
 
     @media (max-width: 600px) {
       body { padding: 12px; }
-      .header-title { font-size: 20px; }
+      .summary-title { font-size: 20px; }
       .card { padding: 20px; }
       .btn-board { font-size: 17px; padding: 16px; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header">
-      <div class="header-icon">🚌</div>
-      <h1 class="header-title">버스 탑승 체크</h1>
-      <p class="header-subtitle" id="eventInfo">로딩 중...</p>
-    </div>
+  <div class="event-app">
+    <header class="summary">
+      <h1 class="summary-title" id="eventInfo">대회</h1>
+      <p class="summary-meta">버스 탑승 체크</p>
+    </header>
 
     <div id="loadingScreen" class="loading">
       탑승 정보를 불러오는 중...
@@ -369,7 +343,7 @@
             type="text"
             id="searchInput"
             class="search-input"
-            placeholder="닉네임·실명 검색..."
+            placeholder="닉네임 검색"
             autocomplete="off"
           />
         </div>
@@ -382,10 +356,6 @@
         <h2 class="card-title"><span id="confirmNickname"></span>님</h2>
         <div id="confirmError" class="error-box hidden"></div>
         <div class="detail-row">
-          <div class="detail-label">실명</div>
-          <div class="detail-value" id="confirmRealName"></div>
-        </div>
-        <div class="detail-row">
           <div class="detail-label">구간</div>
           <div class="detail-value" id="confirmLeg"></div>
         </div>
@@ -394,7 +364,7 @@
           <div class="detail-value">지인</div>
         </div>
         <button class="btn btn-primary btn-board" id="boardBtn">탑승 완료</button>
-        <button class="btn btn-secondary" id="backBtn">목록으로 가기</button>
+        <button class="btn btn-secondary" id="backBtn">다시 선택</button>
       </div>
     </div>
 
@@ -405,7 +375,7 @@
           <div class="success-title" id="doneTitle">탑승 완료</div>
           <p class="success-message" id="doneMessage"></p>
         </div>
-        <button class="btn btn-secondary" id="doneBackBtn">목록으로 가기</button>
+        <button class="btn btn-secondary" id="doneBackBtn">홈으로</button>
       </div>
     </div>
 
@@ -417,6 +387,7 @@
     <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
   </nav>
 
+  <script src="assets/event-member-copy.js"></script>
   <script src="assets/event-member-tabs.js"></script>
   <script>
     // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (group-detail / api-patterns)
@@ -463,7 +434,6 @@
     const participantList = document.getElementById("participantList");
     const confirmError = document.getElementById("confirmError");
     const confirmNickname = document.getElementById("confirmNickname");
-    const confirmRealName = document.getElementById("confirmRealName");
     const confirmLeg = document.getElementById("confirmLeg");
     const confirmGuestRow = document.getElementById("confirmGuestRow");
     const boardBtn = document.getElementById("boardBtn");
@@ -558,12 +528,7 @@
       participantList.innerHTML = "";
       const q = String(filterText || "").trim().toLowerCase();
 
-      const filtered = roster.filter((p) => {
-        if (!q) return true;
-        const nick = String(p.nickname || "").toLowerCase();
-        const real = String(p.realName || "").toLowerCase();
-        return nick.includes(q) || real.includes(q);
-      });
+      const filtered = roster.filter((p) => EventMemberCopy.matchesMemberQuery(p, q));
 
       if (filtered.length === 0) {
         participantList.innerHTML =
@@ -589,9 +554,6 @@
         const guestBadge = row.isGuest
           ? '<span class="guest-badge">지인</span>'
           : "";
-        const realName = row.realName
-          ? `<div class="participant-realname">${escapeHtml(row.realName)}</div>`
-          : "";
 
         item.innerHTML = `
           <div class="participant-info">
@@ -599,7 +561,6 @@
               ${escapeHtml(row.nickname)}
               ${guestBadge}
             </div>
-            ${realName}
           </div>
           ${statusHtml}
         `;
@@ -621,7 +582,6 @@
       localStorage.setItem(STORAGE_KEY_MY_BIB, row.nickname);
 
       confirmNickname.textContent = row.nickname;
-      confirmRealName.textContent = row.realName || "—";
       confirmLeg.textContent = LEG_LABEL[currentLeg] || currentLeg;
       confirmGuestRow.classList.toggle("hidden", !row.isGuest);
       hideError();
@@ -678,7 +638,7 @@
           return;
         }
 
-        eventName = data.eventName || "단체 대회";
+        eventName = EventMemberCopy.memberEventTitle(data.eventName || "단체 대회");
         eventInfo.textContent = eventName;
         busModuleEnabled = data.enabled === true;
         mountTabs();
@@ -763,6 +723,10 @@
       showScreen(STEP.LIST);
     }
 
+    function goToHome() {
+      window.location.href = EventMemberCopy.memberHomeHref(eventId);
+    }
+
     tabOutbound.addEventListener("click", () => {
       if (currentLeg !== "outbound") setLeg("outbound");
       if (currentStep === STEP.CONFIRM || currentStep === STEP.DONE) {
@@ -778,7 +742,7 @@
 
     boardBtn.addEventListener("click", selfBoard);
     backBtn.addEventListener("click", goToList);
-    doneBackBtn.addEventListener("click", goToList);
+    doneBackBtn.addEventListener("click", goToHome);
 
     searchInput.addEventListener("compositionstart", () => {
       isComposing = true;
