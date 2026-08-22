@@ -1,0 +1,11 @@
+interface:
+  display_name: Marathon Coach
+  short_description: "Garmin MCP \uAE30\uBC18 \uB9C8\uB77C\uD1A4 \uD6C8\uB828 \uBD84\
+    \uC11D\uACFC \uC11C\uBE0C3 \uCF54\uCE6D"
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
