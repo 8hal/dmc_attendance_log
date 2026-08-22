@@ -286,7 +286,7 @@ When **2–3 marathons** fall in one fall block:
 
 **<21 days between marathons:** second race cannot be second full peak. Either first marathon is **controlled** (MP + 5–10 s/km) or second race is **downgraded** priority.
 
-**This athlete (2026 fall):** Cheorwon (B) → 42d build → Gyeongju (B+ sub-3) → **15d** → JTBC (A 2:56:59). Prefer **JTBC peak** unless user states Gyeongju is the only peak.  
+**This athlete (2026 fall):** Cheorwon (B) → 42d **Gyeongju sub-3 peak** → 15d → JTBC (secondary PB attempt). **User priority: Gyeongju #1.**  
 
 ---
 
