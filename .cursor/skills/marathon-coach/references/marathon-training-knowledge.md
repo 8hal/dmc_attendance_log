@@ -267,9 +267,26 @@ Context as of 2026-08-22:
 
 1. **Recovery 5–10 days** — volume E only, HRV/RHR normalize  
 2. **Resumption** — return to **70 km** template with MLR + LT  
-3. **Build 4–6 weeks** — progress toward **85–95 km**, MP blocks grow  
-4. **Peak** — **90–100 km**, long run **30–32 km** w/ **12–16 km MP** if A-race date known  
-5. **A-race taper only** for sub-3 peak  
+3. **Build 4–6 weeks** — progress toward **85–95 km**, MP blocks grow (Sep 6–Oct 16 toward Gyeongju)  
+4. **Gyeongju Oct 17** — sub-3 attempt OR controlled **3:05–3:10** if peaking JTBC  
+5. **JTBC Nov 1** — **A-race taper** from Oct ~mid; only **15 days** after Gyeongju — plan Gyeongju cost accordingly  
+6. **Peak** — **90–100 km** weeks before JTBC taper; long run **30–32 km** w/ **12–16 km MP** in Sep–Oct build  
+
+---
+
+## Multi-race season (same macro cycle)
+
+When **2–3 marathons** fall in one fall block:
+
+| Role | Taper? | Typical goal |
+|------|--------|--------------|
+| **B / training race** | **No** — normal week, race = hard day | 42 km stimulus, pace diagnostic |
+| **B+** (secondary peak) | Light micro only if **>21 days** to A-race | Sub-3 or strong MP — **trade-off vs A-race** |
+| **A-race** | **Yes** — 2–3 weeks, −41–60% volume | PB / season peak |
+
+**<21 days between marathons:** second race cannot be second full peak. Either first marathon is **controlled** (MP + 5–10 s/km) or second race is **downgraded** priority.
+
+**This athlete (2026 fall):** Cheorwon (B) → 42d build → Gyeongju (B+ sub-3) → **15d** → JTBC (A 2:56:59). Prefer **JTBC peak** unless user states Gyeongju is the only peak.  
 
 ---
 

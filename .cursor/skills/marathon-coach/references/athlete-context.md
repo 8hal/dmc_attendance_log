@@ -6,11 +6,23 @@ This is a handoff snapshot from the training conversation through 2026-08-22. Tr
 
 ## Goals
 
-- Primary A-race objective: sub-3 marathon (~4:15/km average).
-- Cheorwon Marathon: B-race / training race, not the peak race.
-- Cheorwon goal: "single" = 3:0x (under 3:10), used as a marathon-specific training stimulus and diagnostic.
-- Full A-race taper is not required for Cheorwon; a lighter taper is acceptable.
-- Cheorwon race date: **2026-09-05 (Sat)** — confirmed D-14 as of 2026-08-22.
+- **Season peak (A-race):** JTBC Seoul Marathon **2026-11-01 (Sun)** — PB target **2:56:59** (~**4:12/km**).
+- **Major race (B+):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). World Athletics label; cool autumn conditions (~17–19°C typical).
+- **Training / diagnostic race (B):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — **Single** goal **3:0x** (under 3:10, ~4:22–4:28/km). Not the peak race; 42 km stimulus + 25–35 km diagnostic.
+- Legacy wording: “sub-3 A-race” in older notes maps to **Gyeongju sub-3 attempt**; **JTBC 2:56:59 is the sharper peak target** (faster than 2:59:59).
+
+### 2026 marathon calendar (widget-confirmed 2026-08-22)
+
+| Order | Race | Date | D from 8/22 | Goal pace (approx) | Role |
+|-------|------|------|-------------|----------------------|------|
+| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | 14 | 3:0x → 4:22–4:28/km | **B** — no taper |
+| 2 | [경주국제마라톤](https://www.gyeongjumarathon.com/) | **10/17 (토)** 08:00 | 56 | Sub-3 → ~4:15/km | **B+** — sub-3 attempt; see JTBC spacing |
+| 3 | [JTBC 서울마라톤](http://marathon.jtbc.com/) | **11/1 (일)** | 71 | **2:56:59** → ~4:12/km | **A** — full taper |
+
+**Critical spacing:** Gyeongju → JTBC = **15 days only**. Cannot peak for **all-out sub-3 at Gyeongju** and **2:56:59 at JTBC** without high compromise. Default strategy: **peak JTBC**; run Gyeongju as **strong MP / 3:05–3:10 controlled** unless athlete explicitly chooses Gyeongju as primary peak.
+
+- Cheorwon → Gyeongju: **42 days** — full **build block** (volume + MP long runs).
+- Full A-race taper applies to **JTBC only** (2–3 weeks volume reduction per Bosquet/RW).
 
 ## Environment
 
