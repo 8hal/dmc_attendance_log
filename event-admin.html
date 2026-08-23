@@ -701,7 +701,7 @@
           <div class="roster-list" id="roster-list" style="margin-top:12px"></div>
 
           <div id="guest-card" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
-            <div style="font-weight:700;font-size:14px;margin-bottom:8px;">지인 추가</div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:8px;">탑승 인원 추가</div>
             <div class="field-row">
               <div>
                 <label class="field-label" for="guest-nickname">닉네임</label>
@@ -726,7 +726,7 @@
                 <input type="text" id="guest-note" class="field-input" autocomplete="off" />
               </div>
             </div>
-            <button type="button" class="btn btn-primary btn-block" id="guest-add-btn">지인 추가</button>
+            <button type="button" class="btn btn-primary btn-block" id="guest-add-btn">탑승 인원 추가</button>
           </div>
         </section>
 
@@ -1629,15 +1629,15 @@
         };
         if (note) body.note = note;
         const { data } = await postBus(body);
-        if (!data.ok) throw new Error(data.error || "지인 추가 실패");
-        showToast("지인을 추가했습니다");
+        if (!data.ok) throw new Error(data.error || "탑승 인원 추가 실패");
+        showToast("탑승 인원을 추가했습니다");
         document.getElementById("guest-nickname").value = "";
         document.getElementById("guest-real-name").value = "";
         document.getElementById("guest-note").value = "";
         await loadBusStatus({ silent: true });
       } catch (err) {
         console.error("addGuest:", err);
-        showToast(err.message || "지인 추가 실패", true);
+        showToast(err.message || "탑승 인원 추가 실패", true);
       } finally {
         isProcessing = false;
         btn.disabled = false;

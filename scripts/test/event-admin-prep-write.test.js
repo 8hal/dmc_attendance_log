@@ -42,6 +42,12 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(html, /id="guest-nickname"[^>]*ops-writable/);
   });
 
+  it("add-person menu is 탑승 인원 추가", () => {
+    assert.match(html, /id="guest-add-btn">탑승 인원 추가</);
+    assert.match(html, />탑승 인원 추가<\/div>/);
+    assert.doesNotMatch(html, />지인 추가</);
+  });
+
   it("remove and note save work while boarding is off", () => {
     const removeFn = extractFn(html, "removeRoster");
     assert.doesNotMatch(removeFn, /enabled !== true/);
