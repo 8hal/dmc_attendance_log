@@ -642,10 +642,13 @@
             <img id="qr-img" alt="가는 편 탑승 QR" width="160" height="160" />
             <div class="link-box" id="participant-link-text"></div>
             <button type="button" class="btn btn-ghost" id="copy-link-btn">가는 버스 링크 복사</button>
-            <p class="hint" style="margin-top:12px;text-align:left;">회원 · 오는 버스 QR</p>
-            <img id="qr-img-return" alt="오는 편 탑승 QR" width="160" height="160" />
-            <div class="link-box" id="participant-return-link-text"></div>
-            <button type="button" class="btn btn-ghost" id="copy-return-link-btn">오는 버스 링크 복사</button>
+            <details class="qr-return-details">
+              <summary>오는 버스 QR (복귀 때 사용)</summary>
+              <p class="hint" style="margin-top:12px;text-align:left;">새벽에는 가는 편만 보여 주세요</p>
+              <img id="qr-img-return" alt="오는 편 탑승 QR" width="160" height="160" />
+              <div class="link-box" id="participant-return-link-text"></div>
+              <button type="button" class="btn btn-ghost" id="copy-return-link-btn">오는 버스 링크 복사</button>
+            </details>
             <button type="button" class="btn btn-ghost" id="copy-bib-link-btn">배번 입력 링크 복사</button>
           </div>
 

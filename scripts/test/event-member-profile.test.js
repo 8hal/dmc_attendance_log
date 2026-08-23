@@ -66,11 +66,18 @@ describe("event-member-profile", () => {
     assert.equal(matchInList(list, { nickname: "x", memberId: 42 }).nickname, "알파");
   });
 
-  it("syncNicknames writes ATT, BOARDING, and BIB keys", () => {
-    const ls = storage({});
+  it("syncNicknames writes ATT, BOARDING, BIB, and profile nickname", () => {
+    const ls = storage({
+      dmc_attendance_v2_profile: JSON.stringify({
+        nickname: "옛닉",
+        memberId: "m1",
+      }),
+    });
     syncNicknames(ls, "알파");
     assert.equal(ls._store[LS_ATT], "알파");
     assert.equal(ls._store[LS_BOARDING], "알파");
     assert.equal(ls._store[LS_BIB], "알파");
+    assert.equal(JSON.parse(ls._store.dmc_attendance_v2_profile).nickname, "알파");
+    assert.equal(JSON.parse(ls._store.dmc_attendance_v2_profile).memberId, "m1");
   });
 });

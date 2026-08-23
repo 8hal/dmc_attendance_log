@@ -60,11 +60,13 @@ describe("event-home-action", () => {
       confirmMode: "pending",
     });
     assert.equal(a.kind, "confirm_pending");
+    assert.match(a.ctaLabel, /확정/);
+    assert.doesNotMatch(a.ctaLabel, /컨펌/);
     assert.equal(a.secondaryLabel, "오는 버스 탑승");
     assert.equal(a.secondaryHref, "boardingReturn");
   });
 
-  it("return bus after bib when no pending confirm", () => {
+  it("waiting_result after bib when scrape not ready; return bus is secondary", () => {
     const a = resolveNextAction({
       nickname: "하우스",
       busEnabled: true,
@@ -77,7 +79,25 @@ describe("event-home-action", () => {
       participant: { bib: "12345" },
       confirmMode: "none",
     });
+    assert.equal(a.kind, "waiting_result");
+    assert.equal(a.secondaryHref, "boardingReturn");
+  });
+
+  it("return bus after confirm when inbound still open", () => {
+    const a = resolveNextAction({
+      nickname: "하우스",
+      busEnabled: true,
+      busRow: {
+        legs: {
+          outbound: { required: true, boarded: true },
+          return: { required: true, boarded: false },
+        },
+      },
+      participant: { bib: "12345" },
+      confirmMode: "confirmed",
+    });
     assert.equal(a.kind, "bus_return");
+    assert.equal(a.ctaHref, "boardingReturn");
   });
 
   it("confirmed → all_done when buses done", () => {
@@ -95,6 +115,7 @@ describe("event-home-action", () => {
     });
     assert.equal(a.kind, "all_done");
     assert.equal(a.done, true);
+    assert.match(a.ctaLabel, /확정/);
   });
 
   it("bib only when bus disabled", () => {
@@ -115,6 +136,7 @@ describe("event-home-action", () => {
       confirmMode: "none",
     });
     assert.equal(a.kind, "waiting_result");
+    assert.equal(a.ctaKind, "reload");
     assert.equal(a.secondaryHref, "roster");
   });
 

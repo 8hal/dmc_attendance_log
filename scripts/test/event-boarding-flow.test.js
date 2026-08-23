@@ -56,6 +56,8 @@ describe("resolveBoardingDoneLinks", () => {
   it("return or bib already set has no bib secondary", () => {
     const d = resolveBoardingDoneLinks({ completedLeg: "return", hasBib: false });
     assert.equal(d.secondaryHref, null);
+    const withBib = resolveBoardingDoneLinks({ completedLeg: "outbound", hasBib: true });
+    assert.equal(withBib.secondaryHref, null);
   });
 });
 

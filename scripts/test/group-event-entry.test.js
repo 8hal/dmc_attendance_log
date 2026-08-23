@@ -35,4 +35,14 @@ describe("group event primary entry", () => {
     assert.match(html, /id="link-group-list"/);
     assert.match(html, /href="group\.html"/);
   });
+
+  it("event-admin folds return-bus QR so dawn scan uses outbound", () => {
+    const html = readHtml("event-admin.html");
+    assert.match(html, /id="qr-img"/);
+    assert.match(html, /id="qr-img-return"/);
+    assert.match(html, /<details class="qr-return-details">/);
+    assert.match(html, /새벽에는 가는 편만/);
+    assert.match(html, /leg=outbound|participantUrl\("outbound"\)/);
+    assert.match(html, /participantUrl\("return"\)/);
+  });
 });

@@ -61,8 +61,8 @@
         kind: "confirm_pending",
         kicker: "기록 준비됨",
         title: "내 기록",
-        desc: "확인 후 컨펌하면 명단·결과에 반영됩니다",
-        ctaLabel: "내 기록 확인 · 컨펌",
+        desc: "확인 후 확정하면 명단·결과에 반영됩니다",
+        ctaLabel: "내 기록 확인 · 확정",
         ctaKind: "confirm",
         ctaHref: null,
         done: false,
@@ -77,7 +77,7 @@
       return pending;
     }
 
-    if (busEnabled && busRow && busRow.legs) {
+    if (confirmMode === "confirmed" && busEnabled && busRow && busRow.legs) {
       const ret = busRow.legs.return;
       if (ret && ret.required === true && ret.boarded !== true) {
         return actionLink(
@@ -86,7 +86,7 @@
           "오는 버스",
           "복귀 버스 탑승 체크를 해 주세요",
           "탑승하기",
-          "boarding"
+          "boardingReturn"
         );
       }
     }
@@ -97,25 +97,33 @@
         kicker: "완료",
         title: "수고하셨어요",
         desc: "대회기록이 반영되었습니다. 명단·결과에서 확인하세요",
-        ctaLabel: "컨펌 완료 ✓",
+        ctaLabel: "확정 완료 ✓",
         ctaKind: "done",
         ctaHref: null,
         done: true,
       };
     }
 
-    return {
+    const waiting = {
       kind: "waiting_result",
       kicker: "대기",
       title: "기록 준비 중",
-      desc: "경기 후 기록이 올라오면 여기서 컨펌할 수 있어요",
-      ctaLabel: null,
-      ctaKind: "none",
+      desc: "경기 후 기록이 올라오면 여기서 다시 확인할 수 있어요",
+      ctaLabel: "다시 확인",
+      ctaKind: "reload",
       ctaHref: null,
       secondaryLabel: "명단·결과 보기",
       secondaryHref: "roster",
       done: false,
     };
+    if (busEnabled && busRow && busRow.legs) {
+      const ret = busRow.legs.return;
+      if (ret && ret.required === true && ret.boarded !== true) {
+        waiting.secondaryLabel = "오는 버스 탑승";
+        waiting.secondaryHref = "boardingReturn";
+      }
+    }
+    return waiting;
   }
 
   function actionLink(kind, kicker, title, desc, ctaLabel, hrefKey) {

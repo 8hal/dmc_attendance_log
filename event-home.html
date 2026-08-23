@@ -366,7 +366,7 @@
       if (action.kind === "confirm_pending") {
         renderConfirmDetail();
         todayCta.textContent =
-          confirmPhase === "review" ? "이 기록으로 컨펌" : action.ctaLabel;
+          confirmPhase === "review" ? "이 기록으로 확정" : action.ctaLabel;
         todayCta.classList.remove("hidden");
         todayCta.onclick = onConfirmClick;
         if (action.secondaryLabel && action.secondaryHref) {
@@ -385,6 +385,20 @@
         todayCta.onclick = function () {
           location.href = EventHomeAction.pageHref(action.ctaHref, eventId);
         };
+        return;
+      }
+
+      if (action.ctaKind === "reload") {
+        todayCta.classList.remove("hidden");
+        todayCta.textContent = action.ctaLabel;
+        todayCta.onclick = function () {
+          location.reload();
+        };
+        if (action.secondaryLabel && action.secondaryHref) {
+          todaySecondary.textContent = action.secondaryLabel;
+          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
+          todaySecondary.classList.remove("hidden");
+        }
         return;
       }
 
@@ -464,13 +478,13 @@
           }),
         });
         const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "컨펌 실패");
+        if (!data.ok) throw new Error(data.error || "확정 실패");
         showToast("기록이 반영되었습니다");
         confirmPhase = "cta";
         await refreshHomeState(identity);
       } catch (err) {
         console.error("self-confirm error:", err);
-        showToast(err.message || "컨펌 오류", true);
+        showToast(err.message || "확정 오류", true);
         todayCta.disabled = false;
       } finally {
         isConfirming = false;
@@ -597,7 +611,16 @@
       }
     }
 
+    let pickComposing = false;
+    pickSearch.addEventListener("compositionstart", function () {
+      pickComposing = true;
+    });
+    pickSearch.addEventListener("compositionend", function () {
+      pickComposing = false;
+      renderPickList(pickSearch.value);
+    });
     pickSearch.addEventListener("input", function () {
+      if (pickComposing) return;
       renderPickList(pickSearch.value);
     });
 

@@ -68,6 +68,17 @@
     ls.setItem(LS_ATT, nickname);
     ls.setItem(LS_BOARDING, nickname);
     ls.setItem(LS_BIB, nickname);
+    const raw = ls.getItem(LS_PROFILE);
+    if (!raw) return;
+    try {
+      const profile = JSON.parse(raw);
+      if (profile && typeof profile === "object") {
+        profile.nickname = nickname;
+        ls.setItem(LS_PROFILE, JSON.stringify(profile));
+      }
+    } catch (_e) {
+      /* keep loose keys */
+    }
   }
 
   return {

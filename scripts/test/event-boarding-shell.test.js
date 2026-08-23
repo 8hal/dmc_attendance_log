@@ -56,6 +56,13 @@ describe("boarding member shell", () => {
     assert.match(html, /id="doneBibBtn"/);
     assert.match(html, /기록 확정하기/);
     assert.match(html, /이어서 배번 입력/);
+    assert.match(html, /다른 사람 선택/);
+    assert.match(html, /readSavedIdentity/);
+    assert.match(html, /doneRecordBanner/);
+    const doneFn = extractFn(html, "showDoneScreen");
+    assert.match(doneFn, /currentHasBib/);
+    assert.doesNotMatch(doneFn, /hasBib:\s*false/);
+    assert.match(html, /subAction=detail/);
   });
 
   it("shows the member-facing event title", () => {

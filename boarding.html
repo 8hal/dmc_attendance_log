@@ -366,7 +366,6 @@
 
     <div id="confirmScreen" class="hidden">
       <div class="card">
-        <a id="confirmRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <h2 class="card-title"><span id="confirmNickname"></span>님</h2>
         <div id="confirmError" class="error-box hidden"></div>
         <div class="detail-row">
@@ -378,6 +377,7 @@
           <div class="detail-value">지인</div>
         </div>
         <button class="btn btn-primary btn-board" id="boardBtn">탑승 완료</button>
+        <a id="confirmRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <button class="btn btn-secondary" id="backBtn">다시 선택</button>
       </div>
     </div>
@@ -390,7 +390,9 @@
           <p class="success-message" id="doneMessage"></p>
         </div>
         <button class="btn btn-primary hidden" id="doneBibBtn" type="button">이어서 배번 입력</button>
+        <a id="doneRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <button class="btn btn-secondary" id="doneBackBtn">홈으로</button>
+        <button class="btn btn-secondary" id="doneSwitchBtn" type="button">다른 사람 선택</button>
       </div>
     </div>
 
@@ -403,6 +405,7 @@
   </nav>
 
   <script src="assets/event-member-copy.js"></script>
+  <script src="assets/event-member-profile.js"></script>
   <script src="assets/event-home-badges.js"></script>
   <script src="assets/event-home-action.js"></script>
   <script src="assets/event-boarding-flow.js"></script>
@@ -440,6 +443,7 @@
     let currentRow = null;
     let isProcessing = false;
     let isComposing = false;
+    let bibByNickname = {};
 
     const loadingScreen = document.getElementById("loadingScreen");
     const errorScreen = document.getElementById("errorScreen");
@@ -595,9 +599,6 @@
       if (!isRequired(row)) return;
 
       currentRow = row;
-      localStorage.setItem(STORAGE_KEY_BOARDING, row.nickname);
-      localStorage.setItem(STORAGE_KEY_ATTENDANCE, row.nickname);
-      localStorage.setItem(STORAGE_KEY_MY_BIB, row.nickname);
 
       confirmNickname.textContent = row.nickname;
       confirmLeg.textContent = LEG_LABEL[currentLeg] || currentLeg;
@@ -608,6 +609,7 @@
 
       if (isBoarded(row)) {
         showDoneScreen(true);
+        refreshConfirmBanner();
         return;
       }
 
@@ -627,7 +629,7 @@
         : `<strong>${escapeHtml(nick)}</strong>님의<br>${escapeHtml(legLabel)} 탑승이 기록되었습니다.`;
       const doneLinks = EventBoardingFlow.resolveBoardingDoneLinks({
         completedLeg: currentLeg,
-        hasBib: false,
+        hasBib: currentHasBib(),
       });
       const doneBibBtn = document.getElementById("doneBibBtn");
       if (doneLinks.secondaryHref) {
@@ -639,9 +641,36 @@
       showScreen(STEP.DONE);
     }
 
+    function currentHasBib() {
+      if (!currentRow || !currentRow.nickname) return false;
+      return !!bibByNickname[currentRow.nickname];
+    }
+
+    async function loadBibMap() {
+      bibByNickname = {};
+      if (!eventId) return;
+      try {
+        const res = await fetch(
+          `${API_BASE}?action=group-events&subAction=detail&eventId=${encodeURIComponent(eventId)}`
+        );
+        const data = await res.json();
+        const list =
+          data && data.ok && data.event && Array.isArray(data.event.participants)
+            ? data.event.participants
+            : [];
+        list.forEach(function (p) {
+          if (!p || !p.nickname) return;
+          bibByNickname[String(p.nickname)] = String(p.bib || "").trim();
+        });
+      } catch (err) {
+        console.error("loadBibMap error:", err);
+      }
+    }
+
     async function refreshConfirmBanner() {
       const banner = document.getElementById("confirmRecordBanner");
-      if (!banner || !currentRow || !eventId) return;
+      const doneBanner = document.getElementById("doneRecordBanner");
+      if (!currentRow || !eventId) return;
       let confirmMode = "none";
       try {
         const res = await fetch(
@@ -656,13 +685,16 @@
         leg: currentLeg,
         confirmMode: confirmMode,
       });
-      if (bannerState.show) {
-        banner.textContent = bannerState.label;
-        banner.href = EventHomeAction.pageHref(bannerState.hrefKey, eventId);
-        banner.classList.remove("hidden");
-      } else {
-        banner.classList.add("hidden");
-      }
+      [banner, doneBanner].forEach(function (el) {
+        if (!el) return;
+        if (bannerState.show) {
+          el.textContent = bannerState.label;
+          el.href = EventHomeAction.pageHref(bannerState.hrefKey, eventId);
+          el.classList.remove("hidden");
+        } else {
+          el.classList.add("hidden");
+        }
+      });
     }
 
     async function loadStatus() {
@@ -681,10 +713,13 @@
       showScreen(STEP.LOADING);
 
       try {
-        const res = await fetch(
+        const statusPromise = fetch(
           `${API_BASE}?action=bus-boarding&subAction=status&eventId=${encodeURIComponent(eventId)}`
         );
+        const bibPromise = loadBibMap();
+        const res = await statusPromise;
         const data = await res.json();
+        await bibPromise;
 
         if (!data.ok) {
           showErrorScreen(
@@ -707,11 +742,12 @@
         roster = Array.isArray(data.roster) ? data.roster : [];
         currentLeg = EventBoardingFlow.parseBoardingLeg(location.search);
         setLeg(currentLeg);
+        const lockedLeg = new URLSearchParams(location.search).has("leg");
+        tabOutbound.classList.toggle("hidden", lockedLeg && currentLeg !== "outbound");
+        tabReturn.classList.toggle("hidden", lockedLeg && currentLeg !== "return");
 
         const savedNickname =
-          localStorage.getItem(STORAGE_KEY_BOARDING) ||
-          localStorage.getItem(STORAGE_KEY_ATTENDANCE) ||
-          localStorage.getItem(STORAGE_KEY_MY_BIB);
+          EventMemberProfile.readSavedIdentity(localStorage).nickname || "";
 
         const entry = EventBoardingFlow.resolveBoardingEntry({
           savedNickname: savedNickname,
@@ -763,8 +799,12 @@
           currentRow.legs[currentLeg].boarded = true;
         }
 
+        if (currentRow && currentRow.nickname) {
+          EventMemberProfile.syncNicknames(localStorage, currentRow.nickname);
+        }
         showToast(data.already ? "이미 탑승 완료된 상태입니다" : "✅ 탑승 완료");
         showDoneScreen(!!data.already);
+        refreshConfirmBanner();
       } catch (error) {
         console.error("selfBoard error:", error);
         showError(error.message || "네트워크 오류가 발생했습니다");
@@ -804,6 +844,7 @@
     document.getElementById("doneBibBtn").addEventListener("click", function () {
       location.href = EventHomeAction.pageHref("bib", eventId);
     });
+    document.getElementById("doneSwitchBtn").addEventListener("click", goToList);
 
     searchInput.addEventListener("compositionstart", () => {
       isComposing = true;

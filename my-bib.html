@@ -347,7 +347,7 @@
     const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
       ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
-      : "https://asia-northeast3-dmc-attendance.cloudfunctions.net/race";
+      : "https://race-nszximpvtq-du.a.run.app";
 
     // 상태
     const STEP = {
@@ -601,15 +601,11 @@
         // 로컬 데이터 업데이트
         currentParticipant.bib = bib;
         
-        // 토스트 표시 후 목록으로 복귀
         showToast('✅ 저장 완료');
-        
         setTimeout(() => {
-          renderParticipantList();
-          showScreen(STEP.LIST);
-          saveBtn.disabled = false;
-          saveBtn.textContent = '저장';
-        }, 1500);
+          const id = currentEvent && currentEvent.id ? currentEvent.id : "";
+          location.href = "event-home.html?eventId=" + encodeURIComponent(id);
+        }, 800);
         
       } catch (error) {
         console.error('saveBib error:', error);
