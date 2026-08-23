@@ -8,7 +8,7 @@
 # 커버: settings enable, import(왕복/편도/개별/dup), self-board,
 #       outbound_only return 거부, admin-board, guest upsert,
 #       merge boarded 유지, re-import note 생략 시 유지, public/admin note,
-#       401, disable→403→public empty roster→재활성화
+#       401, disable→self/admin-board 403, disable 중 import/upsert 허용, public empty roster→재활성화
 
 set -u
 
@@ -341,9 +341,13 @@ ab_403=$(curl_post_code "$API?action=bus-boarding" \
   "{\"subAction\":\"admin-board\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"rosterId\":\"$TESTER_ID\",\"leg\":\"outbound\",\"boarded\":true}")
 assert_code "11d: disabled admin-board → 403" "403" "$ab_403"
 
-imp_403=$(curl_post_code "$API?action=bus-boarding" \
+imp_ok=$(curl_post "$API?action=bus-boarding" \
   "{\"subAction\":\"import\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"rows\":[]}")
-assert_code "11e: disabled import → 403" "403" "$imp_403"
+assert_contains "11e: disabled import ok" '"ok":true' "$imp_ok"
+
+upsert_ok=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"roster-upsert\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"rosterId\":\"$TESTER_ID\",\"nickname\":\"테스터\",\"realName\":\"테스터\",\"rideType\":\"outbound_only\",\"note\":\"준비수정\"}")
+assert_contains "11e2: disabled roster-upsert ok" '"ok":true' "$upsert_ok"
 
 # admin status still shows roster while disabled
 disabled_st=$(curl_post "$API?action=bus-boarding" \

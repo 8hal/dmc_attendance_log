@@ -84,6 +84,12 @@ function emptyBusBoarding(options = {}) {
   };
 }
 
+/** 총무 명단 쓰기용. 없으면 enabled:false 껍데기를 만든다. 회원 탑승 체크(assertEnabled)와 분리. */
+function ensureBusBoarding(busBoarding) {
+  if (busBoarding && typeof busBoarding === "object") return busBoarding;
+  return emptyBusBoarding();
+}
+
 function findRosterIndexByNickname(roster, nickname) {
   const key = String(nickname).trim();
   return roster.findIndex((r) => r.nickname === key);
@@ -231,6 +237,7 @@ module.exports = {
   applySelfBoard,
   applyAdminBoard,
   emptyBusBoarding,
+  ensureBusBoarding,
   assertEnabled,
   summarizeLeg,
 };

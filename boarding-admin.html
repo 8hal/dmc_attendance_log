@@ -484,7 +484,7 @@
           <button type="button" class="btn btn-sm btn-secondary" id="refreshBtn">새로고침</button>
         </div>
         <div id="disabledBanner" class="disabled-banner hidden">
-          버스 탑승이 꺼져 있습니다. 명단·비고는 조회만 가능합니다. 상단에서 다시 시작하세요.
+          버스 탑승이 꺼져 있습니다. 회원 QR 탑승 체크만 잠깁니다. 명단은 수정할 수 있습니다. 상단에서 시작하면 참가자가 체크할 수 있습니다.
         </div>
         <div class="leg-tabs" role="tablist">
           <button type="button" class="leg-tab active" id="tabOutbound" data-leg="outbound">가는 편</button>
@@ -506,7 +506,7 @@
 
       <div class="card" id="csvCard">
         <h2 class="card-title">CSV 명단 가져오기</h2>
-        <input type="file" id="csvInput" class="ops-writable" accept=".csv,text/csv,text/plain" />
+        <input type="file" id="csvInput" accept=".csv,text/csv,text/plain" />
         <p class="hint">
           헤더: 닉네임, 이름/실명, 버스 탑승 여부, 비고 (중식 열은 무시).<br>
           왕복 · 동탄→철원 · 철원→동탄 · 개별 이동
@@ -519,17 +519,17 @@
         <div class="field-row">
           <div>
             <label class="field-label" for="guestNickname">닉네임</label>
-            <input type="text" id="guestNickname" class="field-input ops-writable" autocomplete="off" />
+            <input type="text" id="guestNickname" class="field-input" autocomplete="off" />
           </div>
           <div>
             <label class="field-label" for="guestRealName">실명</label>
-            <input type="text" id="guestRealName" class="field-input ops-writable" autocomplete="off" />
+            <input type="text" id="guestRealName" class="field-input" autocomplete="off" />
           </div>
         </div>
         <div class="field-row">
           <div>
             <label class="field-label" for="guestRideType">탑승</label>
-            <select id="guestRideType" class="field-select ops-writable">
+            <select id="guestRideType" class="field-select">
               <option value="roundtrip">왕복</option>
               <option value="outbound_only">가는 편만</option>
               <option value="return_only">오는 편만</option>
@@ -537,10 +537,10 @@
           </div>
           <div>
             <label class="field-label" for="guestNote">비고</label>
-            <input type="text" id="guestNote" class="field-input ops-writable" autocomplete="off" />
+            <input type="text" id="guestNote" class="field-input" autocomplete="off" />
           </div>
         </div>
-        <button type="button" class="btn btn-primary btn-block ops-writable" id="guestAddBtn">지인 추가</button>
+        <button type="button" class="btn btn-primary btn-block" id="guestAddBtn">지인 추가</button>
       </div>
 
       <div class="card">
@@ -649,18 +649,15 @@
       return drafts;
     }
 
-    function setWritableUi(canWrite) {
-      document.querySelectorAll(".ops-writable").forEach((el) => {
-        el.disabled = !canWrite;
-      });
+    function setWritableUi(canBoard) {
       const banner = document.getElementById("disabledBanner");
-      if (banner) banner.classList.toggle("hidden", canWrite);
+      if (banner) banner.classList.toggle("hidden", canBoard);
       const disableCard = document.getElementById("disableCard");
-      if (disableCard) disableCard.classList.toggle("hidden", !canWrite);
+      if (disableCard) disableCard.classList.toggle("hidden", !canBoard);
       const csvCard = document.getElementById("csvCard");
-      if (csvCard) csvCard.classList.toggle("hidden", !canWrite);
+      if (csvCard) csvCard.classList.remove("hidden");
       const guestCard = document.getElementById("guestCard");
-      if (guestCard) guestCard.classList.toggle("hidden", !canWrite);
+      if (guestCard) guestCard.classList.remove("hidden");
     }
 
     function participantUrl() {
@@ -766,7 +763,7 @@
         return;
       }
 
-      const canWrite = enabled === true;
+      const canBoard = enabled === true;
 
       rows.forEach((row) => {
         const required = isRequired(row);
@@ -797,9 +794,9 @@
           Object.prototype.hasOwnProperty.call(drafts, row.rosterId)
             ? drafts[row.rosterId]
             : serverNote;
-        const toggleDisabled = !canWrite || !required ? "disabled" : "";
-        const noteDisabled = canWrite ? "" : "disabled";
-        const removeDisabled = canWrite ? "" : "disabled";
+        const toggleDisabled = !canBoard || !required ? "disabled" : "";
+        const noteDisabled = "";
+        const removeDisabled = "";
 
         el.innerHTML = `
           <div class="roster-top">
@@ -879,7 +876,7 @@
         return;
       }
 
-      // enabled=false: 활성화 패널 + 명단 조회(읽기) 동시 표시
+      // enabled=false: 활성화 패널 + 명단 수정 동시 표시. 탑승 체크만 잠금.
       if (enabled !== true) {
         activatePanel.classList.remove("hidden");
       } else {
@@ -1125,10 +1122,6 @@
 
     async function removeRoster(rosterId, nickname) {
       if (isProcessing) return;
-      if (enabled !== true) {
-        showToast("버스 탑승이 꺼져 있습니다", true);
-        return;
-      }
       const label = nickname || "이 사람";
       if (!confirm("'" + label + "'을(를) 명단에서 제외할까요?")) return;
       const pw = requirePw();
@@ -1153,10 +1146,6 @@
     }
 
     async function saveNote(rosterId, note) {
-      if (enabled !== true) {
-        showToast("버스 탑승이 꺼져 있습니다", true);
-        return;
-      }
       const pw = requirePw();
       if (!pw || !eventId) return;
       const row = roster.find((r) => r.rosterId === rosterId);

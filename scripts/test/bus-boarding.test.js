@@ -12,6 +12,7 @@ const {
   applySelfBoard,
   applyAdminBoard,
   emptyBusBoarding,
+  ensureBusBoarding,
 } = require(path.join(__dirname, "../../functions/lib/bus-boarding.js"));
 
 describe("rideTypeToLegRequired", () => {
@@ -310,6 +311,25 @@ describe("findRosterIndexByNickname", () => {
     assert.equal(findRosterIndexByNickname(roster, "  김테스트  "), 1);
     assert.equal(findRosterIndexByNickname(roster, "없음"), -1);
     assert.equal(findRosterIndexByNickname(roster, "라우"), -1);
+  });
+});
+
+describe("ensureBusBoarding", () => {
+  it("creates empty disabled boarding when missing", () => {
+    const bb = ensureBusBoarding(null);
+    assert.equal(bb.enabled, false);
+    assert.deepEqual(bb.roster, []);
+    assert.deepEqual(bb.legs, ["outbound", "return"]);
+  });
+
+  it("returns the same object when present, even if disabled", () => {
+    const existing = {
+      enabled: false,
+      roster: [{ nickname: "a" }],
+      legs: ["outbound"],
+    };
+    assert.equal(ensureBusBoarding(existing), existing);
+    assert.equal(existing.enabled, false);
   });
 });
 
