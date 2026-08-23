@@ -32,4 +32,19 @@ describe("event-home nick pick chrome", () => {
     assert.ok(doneBlock, "today-cta.is-done should keep a green block");
     assert.match(doneBlock[0], /#059669|green-9/);
   });
+
+  it("does not open the day timeline as the primary path", () => {
+    const html = read("event-home.html");
+    assert.match(html, /id="timeline"/);
+    assert.doesNotMatch(html, /<details class="timeline-details" open>/);
+    const render = extractFn(html, "renderTimeline");
+    assert.match(render, /classList\.add\(["']hidden["']\)/);
+    assert.doesNotMatch(render, /classList\.remove\(["']hidden["']\)/);
+  });
+
+  it("shows return-bus secondary while confirm is pending", () => {
+    const render = extractFn(read("event-home.html"), "renderTodayCard");
+    assert.match(render, /secondaryLabel/);
+    assert.match(render, /boardingReturn|secondaryHref/);
+  });
 });

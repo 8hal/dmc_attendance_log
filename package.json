@@ -8,7 +8,7 @@
     "test:group-scrape-bib": "node --test scripts/test/group-scrape-bib.test.js scripts/test/scrape-bib-query.test.js",
     "test:self-confirm": "node --test scripts/test/self-confirm.test.js",
     "test:public-roster": "node --test scripts/test/public-roster.test.js",
-    "test:event-home": "node --test scripts/test/event-home-badges.test.js scripts/test/event-home-action.test.js scripts/test/event-home-pick.test.js scripts/test/event-member-copy.test.js scripts/test/event-boarding-shell.test.js",
+    "test:event-home": "node --test scripts/test/event-home-badges.test.js scripts/test/event-home-action.test.js scripts/test/event-home-pick.test.js scripts/test/event-member-copy.test.js scripts/test/event-boarding-shell.test.js scripts/test/event-boarding-flow.test.js",
     "test:event-admin": "node --test scripts/test/event-admin-panels.test.js scripts/test/group-events-write-auth.test.js scripts/test/group-event-entry.test.js",
     "test:members-sync:emulator": "bash scripts/test-members-sync-emulator.sh"
   }

@@ -60,6 +60,8 @@ describe("event-home-action", () => {
       confirmMode: "pending",
     });
     assert.equal(a.kind, "confirm_pending");
+    assert.equal(a.secondaryLabel, "오는 버스 탑승");
+    assert.equal(a.secondaryHref, "boardingReturn");
   });
 
   it("return bus after bib when no pending confirm", () => {
@@ -118,6 +120,10 @@ describe("event-home-action", () => {
 
   it("pageHref builds event URLs", () => {
     assert.equal(pageHref("home", "evt_x"), "event-home.html?eventId=evt_x");
-    assert.equal(pageHref("boarding", "evt_x"), "boarding.html?eventId=evt_x");
+    assert.equal(pageHref("boarding", "evt_x"), "boarding.html?eventId=evt_x&leg=outbound");
+    assert.equal(
+      pageHref("boardingReturn", "evt_x"),
+      "boarding.html?eventId=evt_x&leg=return"
+    );
   });
 });

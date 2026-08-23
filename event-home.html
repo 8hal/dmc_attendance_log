@@ -174,7 +174,7 @@
       <button type="button" class="switch-user-btn" id="switchUserBtn">닉네임 변경</button>
 
       <section id="timeline" class="timeline-section hidden">
-        <details class="timeline-details" open>
+        <details class="timeline-details">
           <summary>당일 일정</summary>
           <ul id="timelineList" class="timeline-list"></ul>
         </details>
@@ -299,27 +299,8 @@
     }
 
     function renderTimeline(event) {
-      const tl = Array.isArray(event.dayTimeline) ? event.dayTimeline : [];
-      if (!tl.length) {
-        timelineSection.classList.add("hidden");
-        timelineList.innerHTML = "";
-        return;
-      }
       timelineList.innerHTML = "";
-      tl.forEach(function (row) {
-        const li = document.createElement("li");
-        li.className = "timeline-row";
-        const timeEl = document.createElement("span");
-        timeEl.className = "timeline-time";
-        timeEl.textContent = row && row.time != null ? String(row.time) : "";
-        const labelEl = document.createElement("span");
-        labelEl.className = "timeline-label";
-        labelEl.textContent = row && row.label != null ? String(row.label) : "";
-        li.appendChild(timeEl);
-        li.appendChild(labelEl);
-        timelineList.appendChild(li);
-      });
-      timelineSection.classList.remove("hidden");
+      timelineSection.classList.add("hidden");
     }
 
     function renderConfirmDetail() {
@@ -388,6 +369,11 @@
           confirmPhase === "review" ? "이 기록으로 컨펌" : action.ctaLabel;
         todayCta.classList.remove("hidden");
         todayCta.onclick = onConfirmClick;
+        if (action.secondaryLabel && action.secondaryHref) {
+          todaySecondary.textContent = action.secondaryLabel;
+          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
+          todaySecondary.classList.remove("hidden");
+        }
         return;
       }
 

@@ -638,10 +638,14 @@
           <div class="import-report" id="import-report"></div>
 
           <div class="qr-box">
-            <p class="hint" style="margin-top:0;text-align:left;">회원 · 버스 QR / 링크</p>
-            <img id="qr-img" alt="참가자 탑승 QR" width="160" height="160" />
+            <p class="hint" style="margin-top:0;text-align:left;">회원 · 가는 버스 QR</p>
+            <img id="qr-img" alt="가는 편 탑승 QR" width="160" height="160" />
             <div class="link-box" id="participant-link-text"></div>
-            <button type="button" class="btn btn-ghost" id="copy-link-btn">버스 링크 복사</button>
+            <button type="button" class="btn btn-ghost" id="copy-link-btn">가는 버스 링크 복사</button>
+            <p class="hint" style="margin-top:12px;text-align:left;">회원 · 오는 버스 QR</p>
+            <img id="qr-img-return" alt="오는 편 탑승 QR" width="160" height="160" />
+            <div class="link-box" id="participant-return-link-text"></div>
+            <button type="button" class="btn btn-ghost" id="copy-return-link-btn">오는 버스 링크 복사</button>
             <button type="button" class="btn btn-ghost" id="copy-bib-link-btn">배번 입력 링크 복사</button>
           </div>
 
@@ -845,10 +849,11 @@
       return sessionStorage.getItem(AUTH_KEY) === "ok";
     }
 
-    function participantUrl() {
+    function participantUrl(leg) {
       if (!eventId) return "";
       const u = new URL("boarding.html", window.location.href);
       u.searchParams.set("eventId", eventId);
+      u.searchParams.set("leg", leg === "return" ? "return" : "outbound");
       return u.href;
     }
 
@@ -907,15 +912,28 @@
           : "group-detail.html";
       }
 
-      const abs = participantUrl();
+      const abs = participantUrl("outbound");
+      const absReturn = participantUrl("return");
       document.getElementById("participant-link-text").textContent = abs || "—";
+      const returnText = document.getElementById("participant-return-link-text");
+      if (returnText) returnText.textContent = absReturn || "—";
       const qr = document.getElementById("qr-img");
+      const qrReturn = document.getElementById("qr-img-return");
       if (abs) {
         qr.src =
           "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
           encodeURIComponent(abs);
       } else {
         qr.removeAttribute("src");
+      }
+      if (qrReturn) {
+        if (absReturn) {
+          qrReturn.src =
+            "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+            encodeURIComponent(absReturn);
+        } else {
+          qrReturn.removeAttribute("src");
+        }
       }
     }
 
@@ -1862,7 +1880,10 @@
     document.getElementById("bus-toggle-btn").addEventListener("click", toggleBusEnabled);
     document.getElementById("guest-add-btn").addEventListener("click", addGuest);
     document.getElementById("copy-link-btn").addEventListener("click", () =>
-      copyText(participantUrl(), "버스 링크를 복사했습니다")
+      copyText(participantUrl("outbound"), "가는 버스 링크를 복사했습니다")
+    );
+    document.getElementById("copy-return-link-btn").addEventListener("click", () =>
+      copyText(participantUrl("return"), "오는 버스 링크를 복사했습니다")
     );
     document.getElementById("copy-bib-link-btn").addEventListener("click", () =>
       copyText(bibUrl(), "배번 링크를 복사했습니다")

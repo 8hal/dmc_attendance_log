@@ -57,7 +57,7 @@
     }
 
     if (confirmMode === "pending") {
-      return {
+      const pending = {
         kind: "confirm_pending",
         kicker: "기록 준비됨",
         title: "내 기록",
@@ -67,6 +67,14 @@
         ctaHref: null,
         done: false,
       };
+      if (busEnabled && busRow && busRow.legs) {
+        const ret = busRow.legs.return;
+        if (ret && ret.required === true && ret.boarded !== true) {
+          pending.secondaryLabel = "오는 버스 탑승";
+          pending.secondaryHref = "boardingReturn";
+        }
+      }
+      return pending;
     }
 
     if (busEnabled && busRow && busRow.legs) {
@@ -126,7 +134,8 @@
   function pageHref(hrefKey, eventId) {
     if (!eventId) return "#";
     const q = "?eventId=" + encodeURIComponent(eventId);
-    if (hrefKey === "boarding") return "boarding.html" + q;
+    if (hrefKey === "boarding") return "boarding.html" + q + "&leg=outbound";
+    if (hrefKey === "boardingReturn") return "boarding.html" + q + "&leg=return";
     if (hrefKey === "bib") return "my-bib.html" + q;
     if (hrefKey === "roster") return "event-roster.html" + q;
     if (hrefKey === "home") return "event-home.html" + q;

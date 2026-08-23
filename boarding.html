@@ -174,6 +174,19 @@
       margin-top: 12px;
     }
     .btn-secondary:hover { background: #CBD5E1; }
+    .confirm-banner {
+      display: block;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      color: #1d4ed8;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .confirm-banner.hidden { display: none; }
 
     .info-box {
       background: var(--bg);
@@ -353,6 +366,7 @@
 
     <div id="confirmScreen" class="hidden">
       <div class="card">
+        <a id="confirmRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <h2 class="card-title"><span id="confirmNickname"></span>님</h2>
         <div id="confirmError" class="error-box hidden"></div>
         <div class="detail-row">
@@ -375,6 +389,7 @@
           <div class="success-title" id="doneTitle">탑승 완료</div>
           <p class="success-message" id="doneMessage"></p>
         </div>
+        <button class="btn btn-primary hidden" id="doneBibBtn" type="button">이어서 배번 입력</button>
         <button class="btn btn-secondary" id="doneBackBtn">홈으로</button>
       </div>
     </div>
@@ -388,6 +403,9 @@
   </nav>
 
   <script src="assets/event-member-copy.js"></script>
+  <script src="assets/event-home-badges.js"></script>
+  <script src="assets/event-home-action.js"></script>
+  <script src="assets/event-boarding-flow.js"></script>
   <script src="assets/event-member-tabs.js"></script>
   <script>
     // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (group-detail / api-patterns)
@@ -594,6 +612,7 @@
       }
 
       showScreen(STEP.CONFIRM);
+      refreshConfirmBanner();
     }
 
     function showDoneScreen(already) {
@@ -606,7 +625,44 @@
       document.getElementById("doneMessage").innerHTML = already
         ? `<strong>${escapeHtml(nick)}</strong>님은 이미<br>${escapeHtml(legLabel)} 탑승이 체크되어 있습니다.`
         : `<strong>${escapeHtml(nick)}</strong>님의<br>${escapeHtml(legLabel)} 탑승이 기록되었습니다.`;
+      const doneLinks = EventBoardingFlow.resolveBoardingDoneLinks({
+        completedLeg: currentLeg,
+        hasBib: false,
+      });
+      const doneBibBtn = document.getElementById("doneBibBtn");
+      if (doneLinks.secondaryHref) {
+        doneBibBtn.classList.remove("hidden");
+        doneBibBtn.textContent = doneLinks.secondaryLabel;
+      } else {
+        doneBibBtn.classList.add("hidden");
+      }
       showScreen(STEP.DONE);
+    }
+
+    async function refreshConfirmBanner() {
+      const banner = document.getElementById("confirmRecordBanner");
+      if (!banner || !currentRow || !eventId) return;
+      let confirmMode = "none";
+      try {
+        const res = await fetch(
+          `${API_BASE}?action=group-events&subAction=my-pending-result&eventId=${encodeURIComponent(eventId)}&nickname=${encodeURIComponent(currentRow.nickname)}`
+        );
+        const data = await res.json();
+        confirmMode = EventHomeBadges.confirmPanelFromApi(data).mode;
+      } catch (err) {
+        console.error("my-pending-result error:", err);
+      }
+      const bannerState = EventBoardingFlow.resolveReturnConfirmBanner({
+        leg: currentLeg,
+        confirmMode: confirmMode,
+      });
+      if (bannerState.show) {
+        banner.textContent = bannerState.label;
+        banner.href = EventHomeAction.pageHref(bannerState.hrefKey, eventId);
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
+      }
     }
 
     async function loadStatus() {
@@ -649,7 +705,7 @@
         }
 
         roster = Array.isArray(data.roster) ? data.roster : [];
-        currentLeg = "outbound";
+        currentLeg = EventBoardingFlow.parseBoardingLeg(location.search);
         setLeg(currentLeg);
 
         const savedNickname =
@@ -657,12 +713,14 @@
           localStorage.getItem(STORAGE_KEY_ATTENDANCE) ||
           localStorage.getItem(STORAGE_KEY_MY_BIB);
 
-        if (savedNickname) {
-          const match = roster.find((p) => p.nickname === savedNickname);
-          if (match && isRequired(match)) {
-            selectParticipant(match);
-            return;
-          }
+        const entry = EventBoardingFlow.resolveBoardingEntry({
+          savedNickname: savedNickname,
+          roster: roster,
+          leg: currentLeg,
+        });
+        if (entry.screen === "confirm" && entry.row) {
+          selectParticipant(entry.row);
+          return;
         }
 
         showScreen(STEP.LIST);
@@ -743,6 +801,9 @@
     boardBtn.addEventListener("click", selfBoard);
     backBtn.addEventListener("click", goToList);
     doneBackBtn.addEventListener("click", goToHome);
+    document.getElementById("doneBibBtn").addEventListener("click", function () {
+      location.href = EventHomeAction.pageHref("bib", eventId);
+    });
 
     searchInput.addEventListener("compositionstart", () => {
       isComposing = true;

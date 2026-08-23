@@ -47,6 +47,17 @@ describe("boarding member shell", () => {
     assert.match(goHome, /memberHomeHref/);
   });
 
+  it("loads EventBoardingFlow and honors leg query + confirm banner + bib next", () => {
+    assert.match(html, /event-boarding-flow\.js/);
+    const load = extractFn(html, "loadStatus");
+    assert.match(load, /parseBoardingLeg/);
+    assert.match(load, /resolveBoardingEntry/);
+    assert.match(html, /id="confirmRecordBanner"/);
+    assert.match(html, /id="doneBibBtn"/);
+    assert.match(html, /기록 확정하기/);
+    assert.match(html, /이어서 배번 입력/);
+  });
+
   it("shows the member-facing event title", () => {
     assert.match(html, /event-member-copy\.js/);
     assert.match(html, /memberEventTitle\(/);
