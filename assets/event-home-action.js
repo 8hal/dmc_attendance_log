@@ -7,8 +7,15 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   /**
    * Chunbaek-style "what to do now" for group event member home.
-   * Priority: identity → outbound bus → bib → confirm → return bus → done / waiting.
+   * Priority: identity → outbound → bib → waiting/confirm (return bus secondary)
+   * → return bus after confirm → done.
    */
+  function returnBusOpen(busEnabled, busRow) {
+    if (!busEnabled || !busRow || !busRow.legs) return false;
+    const ret = busRow.legs.return;
+    return !!(ret && ret.required === true && ret.boarded !== true);
+  }
+
   function resolveNextAction(ctx) {
     const nickname = ctx && ctx.nickname ? String(ctx.nickname).trim() : "";
     const busEnabled = !!(ctx && ctx.busEnabled);
@@ -62,33 +69,27 @@
         kicker: "기록 준비됨",
         title: "내 기록",
         desc: "확인 후 확정하면 명단·결과에 반영됩니다",
-        ctaLabel: "내 기록 확인 · 확정",
+        ctaLabel: "기록 확인하기",
         ctaKind: "confirm",
         ctaHref: null,
         done: false,
       };
-      if (busEnabled && busRow && busRow.legs) {
-        const ret = busRow.legs.return;
-        if (ret && ret.required === true && ret.boarded !== true) {
-          pending.secondaryLabel = "오는 버스 탑승";
-          pending.secondaryHref = "boardingReturn";
-        }
+      if (returnBusOpen(busEnabled, busRow)) {
+        pending.secondaryLabel = "오는 버스 탑승";
+        pending.secondaryHref = "boardingReturn";
       }
       return pending;
     }
 
-    if (confirmMode === "confirmed" && busEnabled && busRow && busRow.legs) {
-      const ret = busRow.legs.return;
-      if (ret && ret.required === true && ret.boarded !== true) {
-        return actionLink(
-          "bus_return",
-          "지금",
-          "오는 버스",
-          "복귀 버스 탑승 체크를 해 주세요",
-          "탑승하기",
-          "boardingReturn"
-        );
-      }
+    if (confirmMode === "confirmed" && returnBusOpen(busEnabled, busRow)) {
+      return actionLink(
+        "bus_return",
+        "지금",
+        "오는 버스",
+        "복귀 버스 탑승 체크를 해 주세요",
+        "탑승하기",
+        "boardingReturn"
+      );
     }
 
     if (confirmMode === "confirmed") {
@@ -100,6 +101,8 @@
         ctaLabel: "확정 완료 ✓",
         ctaKind: "done",
         ctaHref: null,
+        secondaryLabel: "명단·결과 보기",
+        secondaryHref: "roster",
         done: true,
       };
     }
@@ -116,12 +119,9 @@
       secondaryHref: "roster",
       done: false,
     };
-    if (busEnabled && busRow && busRow.legs) {
-      const ret = busRow.legs.return;
-      if (ret && ret.required === true && ret.boarded !== true) {
-        waiting.secondaryLabel = "오는 버스 탑승";
-        waiting.secondaryHref = "boardingReturn";
-      }
+    if (returnBusOpen(busEnabled, busRow)) {
+      waiting.secondaryLabel = "오는 버스 탑승";
+      waiting.secondaryHref = "boardingReturn";
     }
     return waiting;
   }

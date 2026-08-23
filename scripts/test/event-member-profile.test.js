@@ -5,6 +5,7 @@ const {
   readSavedIdentity,
   matchInList,
   syncNicknames,
+  clearNicknames,
   LS_ATT,
   LS_BOARDING,
   LS_BIB,
@@ -18,6 +19,9 @@ function storage(map) {
     },
     setItem(k, v) {
       store[k] = v;
+    },
+    removeItem(k) {
+      delete store[k];
     },
     _store: store,
   };
@@ -79,5 +83,19 @@ describe("event-member-profile", () => {
     assert.equal(ls._store[LS_BIB], "알파");
     assert.equal(JSON.parse(ls._store.dmc_attendance_v2_profile).nickname, "알파");
     assert.equal(JSON.parse(ls._store.dmc_attendance_v2_profile).memberId, "m1");
+  });
+
+  it("clearNicknames removes profile and loose nickname keys", () => {
+    const ls = storage({
+      dmc_attendance_v2_profile: JSON.stringify({ nickname: "알파" }),
+      marathon_att_nickname: "알파",
+      dmc_boarding_nickname: "알파",
+      dmc_bib_nickname: "알파",
+    });
+    clearNicknames(ls);
+    assert.equal(ls.getItem("dmc_attendance_v2_profile"), null);
+    assert.equal(ls.getItem(LS_ATT), null);
+    assert.equal(ls.getItem(LS_BOARDING), null);
+    assert.equal(ls.getItem(LS_BIB), null);
   });
 });

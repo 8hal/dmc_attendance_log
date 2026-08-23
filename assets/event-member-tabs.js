@@ -49,7 +49,10 @@
 
     if (tabs.bus) {
       if (busEnabled) {
-        tabs.bus.href = "boarding.html" + q;
+        const busLeg = opts && (opts.busLeg === "return" || opts.busLeg === "outbound")
+          ? opts.busLeg
+          : "";
+        tabs.bus.href = "boarding.html" + q + (busLeg ? "&leg=" + busLeg : "");
         tabs.bus.classList.remove("is-muted");
         tabs.bus.removeAttribute("aria-disabled");
         tabs.bus.title = "";

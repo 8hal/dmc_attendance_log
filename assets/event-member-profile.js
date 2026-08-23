@@ -81,6 +81,13 @@
     }
   }
 
+  function clearNicknames(ls) {
+    ls.removeItem(LS_ATT);
+    ls.removeItem(LS_BOARDING);
+    ls.removeItem(LS_BIB);
+    ls.removeItem(LS_PROFILE);
+  }
+
   return {
     LS_PROFILE,
     LS_ATT,
@@ -89,5 +96,6 @@
     readSavedIdentity,
     matchInList,
     syncNicknames,
+    clearNicknames,
   };
 });

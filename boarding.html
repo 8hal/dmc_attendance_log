@@ -154,6 +154,12 @@
       border: none;
       transition: all 0.15s;
     }
+    a.btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      box-sizing: border-box;
+    }
     .btn-primary {
       background: var(--primary);
       color: white;
@@ -185,6 +191,14 @@
       font-size: 14px;
       font-weight: 700;
       text-decoration: none;
+    }
+    .confirm-banner.is-cta {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      text-align: center;
+      padding: 16px;
+      font-size: 16px;
     }
     .confirm-banner.hidden { display: none; }
 
@@ -321,6 +335,8 @@
           <div class="closed-title" id="errorTitle">오류</div>
           <p class="closed-msg" id="errorMessage"></p>
         </div>
+        <button type="button" class="btn btn-primary" id="errorRetryBtn">다시 시도</button>
+        <a class="btn btn-secondary" id="errorAttendanceLink" href="attendance-v2.html">출석으로 돌아가기</a>
       </div>
     </div>
 
@@ -366,6 +382,7 @@
 
     <div id="confirmScreen" class="hidden">
       <div class="card">
+        <a id="confirmRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <h2 class="card-title"><span id="confirmNickname"></span>님</h2>
         <div id="confirmError" class="error-box hidden"></div>
         <div class="detail-row">
@@ -377,21 +394,20 @@
           <div class="detail-value">지인</div>
         </div>
         <button class="btn btn-primary btn-board" id="boardBtn">탑승 완료</button>
-        <a id="confirmRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
-        <button class="btn btn-secondary" id="backBtn">다시 선택</button>
+        <button class="btn btn-secondary" id="backBtn">다른 사람 선택</button>
       </div>
     </div>
 
     <div id="doneScreen" class="hidden">
       <div class="card">
+        <a id="doneRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <div class="success-box">
           <div class="success-icon" id="doneIcon">✅</div>
           <div class="success-title" id="doneTitle">탑승 완료</div>
           <p class="success-message" id="doneMessage"></p>
         </div>
-        <button class="btn btn-primary hidden" id="doneBibBtn" type="button">이어서 배번 입력</button>
-        <a id="doneRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
-        <button class="btn btn-secondary" id="doneBackBtn">홈으로</button>
+        <button class="btn btn-primary" id="doneBackBtn">홈으로</button>
+        <button class="btn btn-secondary hidden" id="doneBibBtn" type="button">이어서 배번 입력</button>
         <button class="btn btn-secondary" id="doneSwitchBtn" type="button">다른 사람 선택</button>
       </div>
     </div>
@@ -431,10 +447,6 @@
       return: "오는 편"
     };
 
-    const STORAGE_KEY_BOARDING = "dmc_boarding_nickname";
-    const STORAGE_KEY_MY_BIB = "dmc_bib_nickname";
-    const STORAGE_KEY_ATTENDANCE = "marathon_att_nickname";
-
     let currentStep = STEP.LOADING;
     let eventId = null;
     let eventName = "";
@@ -443,7 +455,8 @@
     let currentRow = null;
     let isProcessing = false;
     let isComposing = false;
-    let bibByNickname = {};
+    let eventParticipants = [];
+    let doneAlready = false;
 
     const loadingScreen = document.getElementById("loadingScreen");
     const errorScreen = document.getElementById("errorScreen");
@@ -517,10 +530,12 @@
 
     function mountTabs() {
       if (!eventId) return;
+      const lockedLeg = new URLSearchParams(location.search).has("leg");
       EventMemberTabs.mount({
         eventId: eventId,
         active: "bus",
         busEnabled: busModuleEnabled,
+        busLeg: lockedLeg ? currentLeg : null,
         barEl: document.getElementById("eventTabBar"),
       });
     }
@@ -608,6 +623,7 @@
       boardBtn.textContent = "탑승 완료";
 
       if (isBoarded(row)) {
+        EventMemberProfile.syncNicknames(localStorage, row.nickname);
         showDoneScreen(true);
         refreshConfirmBanner();
         return;
@@ -618,11 +634,14 @@
     }
 
     function showDoneScreen(already) {
+      doneAlready = !!already;
       const nick = currentRow ? currentRow.nickname : "";
       const legLabel = LEG_LABEL[currentLeg] || currentLeg;
+      const doneBackBtnEl = document.getElementById("doneBackBtn");
+      const doneSwitchBtnEl = document.getElementById("doneSwitchBtn");
       document.getElementById("doneIcon").textContent = already ? "👍" : "✅";
       document.getElementById("doneTitle").textContent = already
-        ? "이미 탑승 완료"
+        ? "이미 탑승됨"
         : "탑승 완료";
       document.getElementById("doneMessage").innerHTML = already
         ? `<strong>${escapeHtml(nick)}</strong>님은 이미<br>${escapeHtml(legLabel)} 탑승이 체크되어 있습니다.`
@@ -632,36 +651,49 @@
         hasBib: currentHasBib(),
       });
       const doneBibBtn = document.getElementById("doneBibBtn");
-      if (doneLinks.secondaryHref) {
+      if (!already && doneLinks.secondaryHref) {
         doneBibBtn.classList.remove("hidden");
         doneBibBtn.textContent = doneLinks.secondaryLabel;
+        doneBibBtn.classList.remove("btn-primary");
+        doneBibBtn.classList.add("btn-secondary");
       } else {
         doneBibBtn.classList.add("hidden");
+      }
+      if (already) {
+        doneSwitchBtnEl.classList.add("btn-primary");
+        doneSwitchBtnEl.classList.remove("btn-secondary");
+        doneBackBtnEl.classList.add("btn-secondary");
+        doneBackBtnEl.classList.remove("btn-primary");
+      } else {
+        doneBackBtnEl.classList.add("btn-primary");
+        doneBackBtnEl.classList.remove("btn-secondary");
+        doneSwitchBtnEl.classList.add("btn-secondary");
+        doneSwitchBtnEl.classList.remove("btn-primary");
       }
       showScreen(STEP.DONE);
     }
 
     function currentHasBib() {
-      if (!currentRow || !currentRow.nickname) return false;
-      return !!bibByNickname[currentRow.nickname];
+      if (!currentRow) return false;
+      const matched = EventMemberProfile.matchInList(eventParticipants, {
+        nickname: currentRow.nickname,
+        memberId: currentRow.memberId,
+      });
+      return !!(matched && String(matched.bib || "").trim());
     }
 
     async function loadBibMap() {
-      bibByNickname = {};
+      eventParticipants = [];
       if (!eventId) return;
       try {
         const res = await fetch(
           `${API_BASE}?action=group-events&subAction=detail&eventId=${encodeURIComponent(eventId)}`
         );
         const data = await res.json();
-        const list =
+        eventParticipants =
           data && data.ok && data.event && Array.isArray(data.event.participants)
             ? data.event.participants
             : [];
-        list.forEach(function (p) {
-          if (!p || !p.nickname) return;
-          bibByNickname[String(p.nickname)] = String(p.bib || "").trim();
-        });
       } catch (err) {
         console.error("loadBibMap error:", err);
       }
@@ -691,10 +723,20 @@
           el.textContent = bannerState.label;
           el.href = EventHomeAction.pageHref(bannerState.hrefKey, eventId);
           el.classList.remove("hidden");
+          el.classList.toggle("is-cta", el.id === "doneRecordBanner");
         } else {
           el.classList.add("hidden");
+          el.classList.remove("is-cta");
         }
       });
+      if (doneAlready && bannerState.show) {
+        const switchEl = document.getElementById("doneSwitchBtn");
+        const homeEl = document.getElementById("doneBackBtn");
+        switchEl.classList.add("btn-secondary");
+        switchEl.classList.remove("btn-primary");
+        homeEl.classList.add("btn-secondary");
+        homeEl.classList.remove("btn-primary");
+      }
     }
 
     async function loadStatus() {
@@ -746,15 +788,15 @@
         tabOutbound.classList.toggle("hidden", lockedLeg && currentLeg !== "outbound");
         tabReturn.classList.toggle("hidden", lockedLeg && currentLeg !== "return");
 
-        const savedNickname =
-          EventMemberProfile.readSavedIdentity(localStorage).nickname || "";
-
+        const identity = EventMemberProfile.readSavedIdentity(localStorage);
+        const matched = EventMemberProfile.matchInList(roster, identity);
         const entry = EventBoardingFlow.resolveBoardingEntry({
-          savedNickname: savedNickname,
+          row: matched,
+          savedNickname: identity.nickname || "",
           roster: roster,
           leg: currentLeg,
         });
-        if (entry.screen === "confirm" && entry.row) {
+        if (entry.row && (entry.screen === "confirm" || entry.screen === "done")) {
           selectParticipant(entry.row);
           return;
         }
@@ -815,7 +857,10 @@
       }
     }
 
-    function goToList() {
+    function goToList(opts) {
+      if (opts && opts.clearIdentity) {
+        EventMemberProfile.clearNicknames(localStorage);
+      }
       hideError();
       renderParticipantList(searchInput.value);
       showScreen(STEP.LIST);
@@ -839,12 +884,17 @@
     });
 
     boardBtn.addEventListener("click", selfBoard);
-    backBtn.addEventListener("click", goToList);
+    backBtn.addEventListener("click", function () {
+      goToList({ clearIdentity: true });
+    });
     doneBackBtn.addEventListener("click", goToHome);
     document.getElementById("doneBibBtn").addEventListener("click", function () {
       location.href = EventHomeAction.pageHref("bib", eventId);
     });
-    document.getElementById("doneSwitchBtn").addEventListener("click", goToList);
+    document.getElementById("doneSwitchBtn").addEventListener("click", function () {
+      goToList({ clearIdentity: true });
+    });
+    document.getElementById("errorRetryBtn").addEventListener("click", loadStatus);
 
     searchInput.addEventListener("compositionstart", () => {
       isComposing = true;

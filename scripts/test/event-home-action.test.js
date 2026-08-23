@@ -60,7 +60,7 @@ describe("event-home-action", () => {
       confirmMode: "pending",
     });
     assert.equal(a.kind, "confirm_pending");
-    assert.match(a.ctaLabel, /확정/);
+    assert.equal(a.ctaLabel, "기록 확인하기");
     assert.doesNotMatch(a.ctaLabel, /컨펌/);
     assert.equal(a.secondaryLabel, "오는 버스 탑승");
     assert.equal(a.secondaryHref, "boardingReturn");
@@ -116,6 +116,7 @@ describe("event-home-action", () => {
     assert.equal(a.kind, "all_done");
     assert.equal(a.done, true);
     assert.match(a.ctaLabel, /확정/);
+    assert.equal(a.secondaryHref, "roster");
   });
 
   it("bib only when bus disabled", () => {

@@ -13,16 +13,22 @@
   }
 
   function resolveBoardingEntry(ctx) {
-    const nickname = ctx && ctx.savedNickname ? String(ctx.savedNickname).trim() : "";
     const roster = ctx && Array.isArray(ctx.roster) ? ctx.roster : [];
     const leg = ctx && ctx.leg === "return" ? "return" : "outbound";
-    if (!nickname) return { screen: "list", row: null, leg: leg };
-    const row = roster.find(function (p) {
-      return p && String(p.nickname || "").trim() === nickname;
-    });
+    let row = ctx && ctx.row ? ctx.row : null;
+    if (!row) {
+      const nickname = ctx && ctx.savedNickname ? String(ctx.savedNickname).trim() : "";
+      if (!nickname) return { screen: "list", row: null, leg: leg };
+      row = roster.find(function (p) {
+        return p && String(p.nickname || "").trim() === nickname;
+      });
+    }
     if (!row) return { screen: "list", row: null, leg: leg };
     const st = row.legs && row.legs[leg];
     if (st && st.required === true) {
+      if (st.boarded === true) {
+        return { screen: "done", row: row, leg: leg };
+      }
       return { screen: "confirm", row: row, leg: leg };
     }
     return { screen: "list", row: null, leg: leg };

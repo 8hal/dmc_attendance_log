@@ -58,11 +58,34 @@ describe("boarding member shell", () => {
     assert.match(html, /이어서 배번 입력/);
     assert.match(html, /다른 사람 선택/);
     assert.match(html, /readSavedIdentity/);
+    assert.match(html, /matchInList/);
+    assert.match(html, /clearNicknames/);
     assert.match(html, /doneRecordBanner/);
+    assert.match(html, /이미 탑승됨/);
+    assert.match(html, /id="errorRetryBtn"/);
+    assert.match(html, /출석으로 돌아가기/);
     const doneFn = extractFn(html, "showDoneScreen");
     assert.match(doneFn, /currentHasBib/);
     assert.doesNotMatch(doneFn, /hasBib:\s*false/);
     assert.match(html, /subAction=detail/);
+    const mount = extractFn(html, "mountTabs");
+    assert.match(mount, /busLeg/);
+    const confirmStart = html.indexOf('id="confirmScreen"');
+    const confirm = html.slice(confirmStart, html.indexOf('id="doneScreen"'));
+    assert.ok(
+      confirm.indexOf("confirmRecordBanner") < confirm.indexOf("confirmNickname"),
+      "confirm banner should sit above the nickname"
+    );
+    const doneStart = html.indexOf('id="doneScreen"');
+    const done = html.slice(doneStart, html.indexOf('id="eventTabBar"'));
+    assert.ok(
+      done.indexOf("doneRecordBanner") < done.indexOf("doneTitle"),
+      "done banner should sit above the success title"
+    );
+    assert.ok(
+      done.indexOf("doneBackBtn") < done.indexOf("doneBibBtn"),
+      "home should be the primary done action, bib secondary"
+    );
   });
 
   it("shows the member-facing event title", () => {

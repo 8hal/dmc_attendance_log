@@ -342,6 +342,7 @@
     </div>
   </div>
   
+  <script src="assets/event-member-profile.js"></script>
   <script>
     // 환경 자동 감지: localhost/127.0.0.1이면 에뮬레이터, 아니면 프로덕션
     const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
@@ -374,10 +375,6 @@
     const bibInput = document.getElementById('bibInput');
     const saveBtn = document.getElementById('saveBtn');
     const backBtn = document.getElementById('backBtn');
-    
-    // 로컬 스토리지 키
-    const STORAGE_KEY_MY_BIB = 'dmc_bib_nickname';
-    const STORAGE_KEY_ATTENDANCE = 'marathon_att_nickname'; // 출석 페이지와 공유
 
     function showScreen(step) {
       currentStep = step;
@@ -460,9 +457,7 @@
     function selectParticipant(participant) {
       currentParticipant = participant;
       
-      // 로컬 스토리지에 저장 (두 곳에)
-      localStorage.setItem(STORAGE_KEY_MY_BIB, participant.nickname);
-      localStorage.setItem(STORAGE_KEY_ATTENDANCE, participant.nickname);
+      EventMemberProfile.syncNicknames(localStorage, participant.nickname);
       
       confirmedNickname.textContent = participant.nickname;
       distanceInfo.textContent = formatDistance(participant.distance);
@@ -502,20 +497,14 @@
         currentEvent = data.event;
         eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
         
-        // 로컬 스토리지에서 저장된 닉네임 확인 (출석 페이지 우선, 배번 페이지 차선)
-        const savedNickname = localStorage.getItem(STORAGE_KEY_ATTENDANCE) 
-                           || localStorage.getItem(STORAGE_KEY_MY_BIB);
-        
-        if (savedNickname) {
-          const participant = currentEvent.participants.find(
-            p => p.nickname === savedNickname
-          );
-          
-          if (participant) {
-            // 바로 입력 화면으로
-            selectParticipant(participant);
-            return;
-          }
+        const identity = EventMemberProfile.readSavedIdentity(localStorage);
+        const participant = EventMemberProfile.matchInList(
+          currentEvent.participants || [],
+          identity
+        );
+        if (participant) {
+          selectParticipant(participant);
+          return;
         }
         
         renderParticipantList();

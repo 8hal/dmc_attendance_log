@@ -28,6 +28,7 @@ describe("group event primary entry", () => {
     assert.match(html, /event-admin\.html\?eventId=/);
     assert.match(html, /id="hubMemberHome"/);
     assert.match(html, /event-home\.html\?eventId=/);
+    assert.match(html, /boarding\.html\?eventId=\$\{encodeURIComponent\(eventId\)\}&leg=outbound/);
   });
 
   it("event-admin sidebar links back to group list", () => {

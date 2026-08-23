@@ -42,6 +42,16 @@ describe("event-home nick pick chrome", () => {
     assert.doesNotMatch(render, /classList\.remove\(["']hidden["']\)/);
   });
 
+  it("nick change can be cancelled and unknown saved nicks go to pick", () => {
+    const html = read("event-home.html");
+    assert.match(html, /id="pickCancelBtn"/);
+    const shell = extractFn(html, "renderEventShell");
+    assert.match(shell, /matchInList/);
+    assert.match(shell, /showPickView/);
+    const pick = extractFn(html, "showPickView");
+    assert.match(pick, /cancelable/);
+  });
+
   it("shows return-bus secondary while confirm is pending", () => {
     const render = extractFn(read("event-home.html"), "renderTodayCard");
     assert.match(render, /secondaryLabel/);

@@ -549,7 +549,7 @@
         hubBus.href = `event-admin.html?eventId=${encodeURIComponent(eventId)}#bus`;
       }
       if (hubBoardingParticipant) {
-        hubBoardingParticipant.href = `boarding.html?eventId=${encodeURIComponent(eventId)}`;
+        hubBoardingParticipant.href = `boarding.html?eventId=${encodeURIComponent(eventId)}&leg=outbound`;
       }
       refreshHubBusMeta(eventId);
     }

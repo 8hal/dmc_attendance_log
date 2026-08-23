@@ -44,6 +44,55 @@ describe("resolveBoardingEntry", () => {
     assert.equal(e.screen, "confirm");
     assert.equal(e.row.nickname, "하우스");
   });
+
+  it("already boarded required leg → done", () => {
+    const boarded = [
+      {
+        nickname: "하우스",
+        legs: {
+          outbound: { required: true, boarded: true },
+          return: { required: true, boarded: false },
+        },
+      },
+    ];
+    const e = resolveBoardingEntry({
+      savedNickname: "하우스",
+      roster: boarded,
+      leg: "outbound",
+    });
+    assert.equal(e.screen, "done");
+  });
+
+  it("unknown nickname or excluded rider → list", () => {
+    assert.equal(
+      resolveBoardingEntry({ savedNickname: "없는사람", roster, leg: "outbound" }).screen,
+      "list"
+    );
+    const excluded = [
+      {
+        nickname: "게스트",
+        legs: {
+          outbound: { required: false, boarded: false },
+          return: { required: false, boarded: false },
+        },
+      },
+    ];
+    assert.equal(
+      resolveBoardingEntry({ savedNickname: "게스트", roster: excluded, leg: "outbound" })
+        .screen,
+      "list"
+    );
+  });
+
+  it("uses a pre-matched row (memberId / case)", () => {
+    const e = resolveBoardingEntry({
+      row: roster[0],
+      roster,
+      leg: "return",
+    });
+    assert.equal(e.screen, "confirm");
+    assert.equal(e.leg, "return");
+  });
 });
 
 describe("resolveBoardingDoneLinks", () => {
@@ -71,5 +120,16 @@ describe("resolveReturnConfirmBanner", () => {
   it("hides on outbound", () => {
     const b = resolveReturnConfirmBanner({ leg: "outbound", confirmMode: "pending" });
     assert.equal(b.show, false);
+  });
+
+  it("hides when confirm is not pending", () => {
+    assert.equal(
+      resolveReturnConfirmBanner({ leg: "return", confirmMode: "none" }).show,
+      false
+    );
+    assert.equal(
+      resolveReturnConfirmBanner({ leg: "return", confirmMode: "confirmed" }).show,
+      false
+    );
   });
 });
