@@ -51,6 +51,36 @@
     .section { background: var(--card); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(15,23,42,0.07); }
     .section-title { font-size: 16px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
 
+    .hub-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--border-light);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    a.hub-card:hover { border-color: var(--primary); color: var(--primary); }
+    .hub-card-disabled {
+      color: var(--text-muted);
+      cursor: default;
+      font-weight: 500;
+    }
+    .hub-participant-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-sub);
+      text-decoration: none;
+    }
+    .hub-participant-link:hover { color: var(--primary); text-decoration: underline; }
+
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     .stat-card { background: var(--border-light); border-radius: 10px; padding: 12px 14px; }
     .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
@@ -232,6 +262,20 @@
         </div>
       </div>
     </div>
+
+    <!-- 당일 · 운영 바로가기 허브 -->
+    <section class="section" id="dayHubSection">
+      <h2 class="section-title">당일 · 운영 바로가기</h2>
+      <div class="hub-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+        <a class="hub-card" id="hubAdmin" href="#">운영 홈</a>
+        <a class="hub-card" id="hubMemberHome" href="#">회원 홈</a>
+        <a class="hub-card" id="hubBus" href="#">버스 탑승</a>
+        <a class="hub-card" id="hubBib" href="#">배번 입력</a>
+        <div class="hub-card hub-card-disabled" id="hubResults">결과 보드 · 준비 중</div>
+      </div>
+      <p id="hubBusMeta" class="page-subtitle" style="margin-top:8px;"></p>
+      <a class="hub-participant-link" id="hubBoardingParticipant" href="#">참가자 탑승 화면 →</a>
+    </section>
 
     <!-- 참가자 목록 -->
     <div class="section">
@@ -482,6 +526,54 @@
         failed: ["badge-red", "실패"],
       };
       return map[st] || ["badge-gray", st || "—"];
+    }
+
+    /** 당일 허브: 버스·배번 딥링크 + (가능 시) 버스 status 요약. 버스 실패해도 배번 카드 유지. */
+    function setupDayHub(eventId) {
+      if (!eventId) return;
+      const hubBib = document.getElementById("hubBib");
+      const hubBus = document.getElementById("hubBus");
+      const hubAdmin = document.getElementById("hubAdmin");
+      const hubMemberHome = document.getElementById("hubMemberHome");
+      const hubBoardingParticipant = document.getElementById("hubBoardingParticipant");
+      if (hubAdmin) {
+        hubAdmin.href = `event-admin.html?eventId=${encodeURIComponent(eventId)}`;
+      }
+      if (hubMemberHome) {
+        hubMemberHome.href = `event-home.html?eventId=${encodeURIComponent(eventId)}`;
+      }
+      if (hubBib) {
+        hubBib.href = `my-bib.html?eventId=${encodeURIComponent(eventId)}`;
+      }
+      if (hubBus) {
+        hubBus.href = `event-admin.html?eventId=${encodeURIComponent(eventId)}#bus`;
+      }
+      if (hubBoardingParticipant) {
+        hubBoardingParticipant.href = `boarding.html?eventId=${encodeURIComponent(eventId)}`;
+      }
+      refreshHubBusMeta(eventId);
+    }
+
+    async function refreshHubBusMeta(eventId) {
+      const hubBusMeta = document.getElementById("hubBusMeta");
+      if (!hubBusMeta || !eventId) return;
+      try {
+        const res = await fetch(
+          `${API_BASE}?action=bus-boarding&subAction=status&eventId=${encodeURIComponent(eventId)}`
+        );
+        const data = await res.json();
+        if (!data.ok || data.enabled !== true) {
+          hubBusMeta.textContent = "";
+          return;
+        }
+        const outbound = (data.summary && data.summary.outbound) || {};
+        const boarded = Number(outbound.boarded) || 0;
+        const required = Number(outbound.required) || 0;
+        hubBusMeta.textContent = `운영 중 · ${boarded}/${required}`;
+      } catch (err) {
+        console.error("hub bus status error:", err);
+        hubBusMeta.textContent = "";
+      }
     }
 
     function updatePageHeader(event, gap) {
@@ -1303,6 +1395,7 @@
         currentEventId = data.event.id;
         gapResults = Array.isArray(data.gap) ? data.gap : [];
         updatePageHeader(data.event, gapResults);
+        setupDayHub(currentEventId);
 
         // 참가자 0명 체크
         if (!data.event.participants || data.event.participants.length === 0) {

@@ -143,7 +143,7 @@
       <a class="back-link" href="report.html">← 기록 관리</a>
       <div>
         <h1 class="page-title">단체 대회 관리</h1>
-        <p class="page-subtitle">단체 신청 대회 참가자·갭 탐지·기록 확정</p>
+        <p class="page-subtitle">카드 클릭 → 운영 홈 (버스·배번·스크랩). 참가자 편집은 ⋮ 메뉴.</p>
       </div>
     </div>
 
@@ -386,6 +386,7 @@
               <div style="position:relative;">
                 <button type="button" class="btn btn-ghost btn-sm" data-more-menu="${id}" style="font-size:18px;padding:4px 8px;">⋮</button>
                 <div id="more-menu-${id}" class="more-menu" style="display:none;">
+                  <button type="button" data-legacy-detail="${id}">참가자·기록(구)</button>
                   <button type="button" data-delete-event="${id}">🗑️ 삭제</button>
                 </div>
               </div>
@@ -452,12 +453,20 @@
         });
       });
 
+      root.querySelectorAll("[data-legacy-detail]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const eventId = btn.getAttribute("data-legacy-detail");
+          window.location.href = `group-detail.html?eventId=${encodeURIComponent(eventId)}`;
+        });
+      });
+
       root.querySelectorAll("[data-event-card]").forEach((card) => {
         card.style.cursor = "pointer";
         card.addEventListener("click", (e) => {
           if (e.target.closest("button") || e.target.closest(".more-menu")) return;
           const eventId = card.getAttribute("data-event-card");
-          window.location.href = `group-detail.html?eventId=${encodeURIComponent(eventId)}`;
+          window.location.href = `event-admin.html?eventId=${encodeURIComponent(eventId)}`;
         });
       });
     }
