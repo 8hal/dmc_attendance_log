@@ -1,19 +1,16 @@
 ---
 name: firebase-deploy
-description: Firebase 배포 워크플로우. 배포 목표 정의 → 테스트 → 백업 → 커밋 → 배포 → 검증 → 태그 순서로 진행. "배포", "deploy", "firebase deploy" 요청 시 사용.
+description: Use when the user asks to deploy, firebase deploy, hosting/functions 배포, 올려줘, 반영해줘, or 프로덕션에 적용.
 ---
 
 # Firebase 배포 스킬
 
-## 핵심 원칙 (절대 예외 없음)
+## 핵심 원칙 (2026-08-23 변경)
 
-> **AI는 `firebase deploy` 명령어를 직접 실행하지 않는다.**
-> 반드시 사용자에게 명령어를 안내하고, 사용자가 직접 실행하도록 한다.
+> **사용자가 배포를 요청하면 AI가 체크리스트를 수행하고 `firebase deploy`를 Shell로 실행한다.**
+> 명령어만 안내하고 멈추지 않는다.
 
-## 근거
-
-배포는 되돌리기 어렵고 프로덕션 서비스에 즉시 영향을 미친다.
-AI가 임의로 배포를 실행했다가 오류가 발생하면 사용자가 인지하지 못한 상태에서 서비스가 중단될 수 있다.
+배포는 요청이 있을 때만 한다. 목표·테스트·백업·커밋 없이 올리지 않는다.
 
 ---
 
@@ -25,9 +22,9 @@ AI가 임의로 배포를 실행했다가 오류가 발생하면 사용자가 �
 
 ---
 
-## 배포 절차 (6단계)
+## 배포 절차 (AI가 실행)
 
-### 0단계: 배포 목표 정의 (AI가 먼저 작성)
+### 0단계: 배포 목표 정의
 
 ```
 배포 목표: [이 배포로 무엇이 달라지는가? 한 문장]
@@ -36,67 +33,60 @@ AI가 임의로 배포를 실행했다가 오류가 발생하면 사용자가 �
 실패 기준: [어떤 상태면 롤백하는가?]
 ```
 
-목표가 불명확하면 → 사용자에게 확인 후 진행.
+목표가 없으면 배포하지 않는다.
 
-### 1단계: 테스트 실행 (사용자가 실행)
+### 1단계: 테스트
 
 ```bash
 bash scripts/pre-deploy-test.sh
 ```
 
-전체 통과(`✅ 전체 통과 — 배포 가능`) 확인 후 다음 단계 진행.
+`✅ 전체 통과 — 배포 가능`이 나와야 다음 단계. 실패면 고치고 재실행.
 
-**로컬 전제:** `java`(Firestore 에뮬), `cd functions && npm ci` 로 `firebase-functions` 설치. 스크립트는 `emulators:exec` 로 functions·hosting·**firestore** 를 함께 띄우고 에뮬에 최소 시드를 넣은 뒤 검증한다. `firebase-functions` 모듈을 못 찾는다는 에뮬 로그가 나오면 의존성 미설치를 의심한다.
+**전제:** `java`, `cd functions && npm ci`. 스크립트는 `emulators:exec`로 functions·hosting·firestore를 띄운다.
 
-### 2단계: 백업 (사용자가 실행)
+### 2단계: 백업
 
 ```bash
 cd functions && node ../scripts/backup-firestore.js
 ```
 
-### 3단계: 커밋 + 푸시 (사용자가 실행)
+`backup/YYYY-MM-DD/` 확인.
 
-변경 사항 전부 커밋 후 원격 푸시.
+### 3단계: 커밋 + 푸시
 
-**Hosting을 배포할 때 추가 확인:** `hosting.public`이 `.`이면 업로드 대상은 **마지막 커밋이 아니라 현재 디스크**다. Cursor 외 Codex 앱 등에서 저장만 하고 커밋하지 않은 파일이 있으면 그 내용이 올라간다. 배포 전 `git status`·`git diff`로 미커밋 변경이 없는지 본다.
+의도한 변경만 커밋·푸시. Hosting은 디스크를 올리므로 `git status`·`git diff`로 미커밋이 없어야 한다.
 
-### 4단계: 배포 명령어 안내 (AI가 안내, 사용자가 실행)
+### 4단계: 배포 (AI가 실행)
 
 ```bash
-# Functions 먼저
 firebase deploy --only functions
-
-# Hosting 나중에
 firebase deploy --only hosting
 ```
 
-> AI는 이 명령어를 Shell 도구로 직접 실행하지 않는다.
-> 텍스트로 안내만 하고 사용자가 터미널에서 직접 실행한다.
+범위가 hosting만이면 hosting만. functions 변경이 있으면 functions 먼저.
 
 ### 5단계: 배포 후 검증
 
-- 프로덕션 URL 주요 기능 수동 확인
-- `event_logs`에 `page_load` 이벤트 수집 확인
+- 프로덕션 URL 주요 기능 확인
+- `event_logs`에 `page_load`가 쌓이는지 확인
 
-### 6단계: 버전 태그 (사용자가 실행)
+### 6단계: 버전 태그
 
 ```bash
 git tag -a vMAJOR.MINOR.PATCH -m "배포 요약"
 git push origin vMAJOR.MINOR.PATCH
 ```
 
-버전 규칙:
-- MAJOR: 아키텍처/스키마 변경
-- MINOR: 새 기능 추가
-- PATCH: 버그 수정
+MAJOR: 스키마/호환 불가, MINOR: 새 기능, PATCH: 버그·문구.
 
 ---
 
 ## AI 금지 행동
 
 ```
-❌ Shell 도구로 firebase deploy 실행
-❌ 사용자 확인 없이 functions/index.js 배포
-❌ 테스트/백업 단계 생략하고 바로 배포 진행
-❌ "배포했습니다" 라고 먼저 선언하고 나서 확인 요청
+❌ 사용자 요청 없이 배포
+❌ 테스트/백업/커밋을 건너뛰고 배포
+❌ 배포가 끝나기 전에 "배포했습니다" 선언
+❌ 미커밋 로컬 파일이 있는 채로 Hosting 배포
 ```

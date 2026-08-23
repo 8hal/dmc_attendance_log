@@ -42,5 +42,6 @@ section only records non-obvious caveats for running/testing it in this environm
   by the update script). The emulator admin password used in tests is `dmc2008`.
 
 ### Deploy
-- Per repo rules in `.cursor/rules/`, **never run `firebase deploy`** yourself — deployment is
-  a human-only, approval-gated action.
+- When the user asks to deploy, follow `.cursor/skills/firebase-deploy/SKILL.md` and run
+  `firebase deploy` yourself after the checklist (goal, pre-deploy-test, backup, commit).
+  Do not deploy unsolicited. Do not skip the checklist.

@@ -119,7 +119,7 @@ description: Use when the user opens a fresh daily session for this repo or says
 3. **한 커밋 또는 논리 단위**로 `git commit` (본문에 맥락 한 줄, 예: 문서·룰·스킬 정리).
 4. **`git push origin $(git branch --show-current)`** 로 원격 반영까지 하면 EOD 미실행에 대비한 백업으로 충분하다.
 
-**금지·주의:** `data-write-safety.mdc`가 적용되는 **Firestore 대량 쓰기·임포트 스크립트 실행**은 커밋과 별도로 사용자 승인·dry-run을 따른다. **AI는 `firebase deploy`를 실행하지 않는다** (배포 스킬·체크리스트).
+**금지·주의:** `data-write-safety.mdc`가 적용되는 **Firestore 대량 쓰기·임포트 스크립트 실행**은 커밋과 별도로 사용자 승인·dry-run을 따른다. 배포는 사용자가 요청했을 때만 `.cursor/skills/firebase-deploy/SKILL.md` 체크리스트를 수행한 뒤 AI가 `firebase deploy`를 실행한다.
 
 ## When NOT to use
 

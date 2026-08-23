@@ -8,17 +8,18 @@ alwaysApply: true
 
 ## 근거
 
-AI가 사용자 승인 없이 `firebase deploy`를 직접 실행한 사례 발생 (2026-03-27).
-배포는 프로덕션에 즉시 영향을 미치므로 AI가 임의로 실행해서는 안 한다.
+예전(2026-03-27)에는 AI가 승인 없이 `firebase deploy`를 실행한 적이 있어, 한동안 **사용자만** 배포하도록 막아 두었다.
+
+2026-08-23 정책 변경: **사용자가 배포를 요청하면 AI가 체크리스트를 수행하고 `firebase deploy`를 실행한다.** 절차(목표·테스트·백업·커밋)는 그대로다.
 
 다중 편집기(Cursor, Codex 앱 등)로 **같은 클론**을 수정하면, 한쪽에서만 저장·커밋이 안 된 채 디스크만 바뀌는 일이 생긴다. `hosting.public`이 루트(`.`)이면 **Hosting 배포는 Git HEAD가 아니라 디스크 파일**을 올리므로, 커밋에 없는 로컬 수정이 프로덕션에 섞일 수 있다 (2026-03-28).
 
 `pre-deploy-test.sh` 가 백그라운드로 functions+hosting만 띄우면 Firestore 에뮬 없이 Admin SDK가 프로덕션에 붙거나, `node_modules` 불완전 시 함수 로드 실패로 **무한 대기·가짜 통과 실패**가 났다 (2026-03-29). → `emulators:exec` + firestore + 시드 + `npm ci` 전제를 룰에 명시.
 
-## AI 절대 금지
+## 실행 주체
 
-> **AI는 `firebase deploy` 명령어를 Shell 도구로 직접 실행하지 않는다.**
-> 명령어를 텍스트로 안내하고, 사용자가 직접 실행하도록 한다.
+> **배포 요청이 있으면 AI가 `firebase deploy`를 Shell로 실행한다.**
+> 명령어만 안내하고 멈추지 않는다. 요청이 없으면 배포하지 않는다.
 
 상세 절차는 `.cursor/skills/firebase-deploy/SKILL.md` 참조.
 
@@ -77,7 +78,7 @@ cd functions && node ../scripts/backup-firestore.js
 - 변경 사항 전부 커밋 후 원격 푸시 완료
 - **Hosting 배포 직전**: `git status` 깨끗한지(또는 의도한 변경만 커밋됐는지), `git diff`(미커밋 변경 없음) 확인 — Codex 등 다른 클라이언트에서 남긴 로컬만 수정이 배포에 섞이지 않게 할 것
 
-## 4. 배포 순서
+## 4. 배포 순서 (AI가 실행)
 
 ```bash
 firebase deploy --only functions
@@ -85,6 +86,7 @@ firebase deploy --only hosting
 ```
 
 - functions 먼저, hosting 나중에 (API 호환성 보장)
+- 범위가 hosting만이면 hosting만 실행
 
 ## 5. 배포 후 검증
 

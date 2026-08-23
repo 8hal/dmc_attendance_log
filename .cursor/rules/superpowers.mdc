@@ -23,7 +23,7 @@ alwaysApply: true
 | 완료 주장 전 검증 | `.cursor/skills/verification-before-completion/SKILL.md` |
 | 배포 전 로컬 테스트 / 에뮬 점검 | `.cursor/skills/pre-deploy-test/SKILL.md` |
 | 주간 회고 후 운영진(비IT) 안내 문구 | `.cursor/skills/weekly-ops-bulletin/SKILL.md` |
-| Firebase 배포 (절차·금지 사항) | `.cursor/skills/firebase-deploy/SKILL.md` |
+| Firebase 배포 (체크리스트 후 AI 실행) | `.cursor/skills/firebase-deploy/SKILL.md` |
 | **Firestore 데이터 수정 스크립트 작성** | `.cursor/skills/firestore-data-modification/SKILL.md` |
 | **춘백 S3 참가자 추가·제외** | `.cursor/skills/chunbaek-participant-add/SKILL.md` |
 | 정회원 명단 동기화 (API 반복 적용, 권장) | `.cursor/skills/members-sync-via-api/SKILL.md` |
