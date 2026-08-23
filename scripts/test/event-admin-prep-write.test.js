@@ -70,8 +70,9 @@ describe("event-admin prep roster write", () => {
   it("remove and note save work while boarding is off", () => {
     const removeFn = extractFn(html, "removeRoster");
     assert.doesNotMatch(removeFn, /enabled !== true/);
-    const saveFn = extractFn(html, "saveNote");
+    const saveFn = extractFn(html, "saveNote").split("function addGuest")[0];
     assert.doesNotMatch(saveFn, /enabled !== true/);
+    assert.doesNotMatch(saveFn, /isGuest/);
   });
 
   it("boarded toggle still requires boarding on", () => {
@@ -103,7 +104,7 @@ describe("bus-boarding API gates", () => {
   it("roster-upsert rejects explicit member when nickname is missing from members", () => {
     const block = subActionBlock(src, "roster-upsert");
     assert.match(block, /rosterUpsertIdentity/);
-    assert.match(block, /requireMember/);
+    assert.match(block, /requireMember && !memberId/);
     assert.match(block, /회원 명단에 없는 닉네임/);
   });
 });

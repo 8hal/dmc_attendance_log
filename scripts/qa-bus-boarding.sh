@@ -237,6 +237,22 @@ guest_sb=$(curl_post "$API?action=bus-boarding" \
   "{\"subAction\":\"self-board\",\"eventId\":\"$EVENT_ID\",\"nickname\":\"지인게스트\",\"leg\":\"outbound\"}")
 assert_contains "7c: guest self-board ok" '"ok":true' "$guest_sb"
 
+member_miss_full=$(curl_post_full "$API?action=bus-boarding" \
+  "{\"subAction\":\"roster-upsert\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"nickname\":\"없는회원닉\",\"realName\":\"없음\",\"rideType\":\"roundtrip\",\"isGuest\":false}")
+member_miss_code=$(echo "$member_miss_full" | tail -n1)
+member_miss_body=$(echo "$member_miss_full" | sed '$d')
+assert_code "7d: isGuest false + unknown nick → 400" "400" "$member_miss_code"
+assert_contains "7e: unknown member error" "회원 명단에 없는 닉네임" "$member_miss_body"
+
+member_ok=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"roster-upsert\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"nickname\":\"버스회원\",\"realName\":\"김버스\",\"rideType\":\"roundtrip\",\"isGuest\":false}")
+assert_contains "7f: roster-upsert member ok" '"ok":true' "$member_ok"
+st_member=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"status\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\"}")
+member_guest=$(json_get "$st_member" '
+r=next(x for x in d["roster"] if x["nickname"]=="버스회원"); print(r.get("isGuest"))')
+assert_eq "7g: 버스회원 isGuest=false" "False" "$member_guest"
+
 # ────────────────────────────────────────────────────────────────────
 # 8. import 머지 시 boarded 유지
 # ────────────────────────────────────────────────────────────────────

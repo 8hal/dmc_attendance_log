@@ -6,7 +6,7 @@
  * 사용: FIRESTORE_EMULATOR_HOST 필수 (firebase emulators:exec / 로컬 에뮬)
  *
  * 생성 데이터:
- *  - members: 라우펜더만, 테스터 (최소 2명)
+ *  - members: 라우펜더만, 테스터, 버스회원 (CSV 미포함 회원 추가용)
  *  - race_events/evt_bus_qa: 단체 대회 (participants 최소, busBoarding 없음)
  */
 const fs = require("fs");
@@ -51,6 +51,14 @@ const EVENT_ID = "evt_bus_qa";
       nickname: "테스터",
       realName: "김테스터",
       gender: "F",
+      hidden: false,
+      team: "DMC",
+    },
+    {
+      id: "bus_qa_member_extra",
+      nickname: "버스회원",
+      realName: "김버스",
+      gender: "M",
       hidden: false,
       team: "DMC",
     },
