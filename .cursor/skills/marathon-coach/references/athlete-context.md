@@ -116,6 +116,11 @@ Interpretation:
 
 Interpretation: 8/15 TE 5.0 long run + 8/18 tempo + swim stack produced measurable HRV suppression. This week is absorption, not progression.
 
+### Post-Namsan (2026-08-22) subjective — quads
+- **2026-08-23:** User reports **quadriceps muscle soreness** (허벅지 자극), attributed to **downhill eccentric load** on Namsan north-side loops (+542 m rolling).
+- **2026-08-23 evening:** Recovery jog 5.3 km, HR 116, TE 1.7 — acceptable but quads noted.
+- **Coaching rule:** While quad **diffuse soreness** persists (not focal pain), cap easy runs **≤5–6 km**, HR **<115**, **no downhill routes**; postpone MLR if gait affected. Focal/asymmetric quad pain → no running, assess 48 h.
+
 ## Swimming (standing pattern)
 
 - **Schedule:** Tuesday and Thursday only, 07:00–07:50 (50 min lesson).
