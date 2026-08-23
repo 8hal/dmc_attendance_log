@@ -28,6 +28,8 @@ describe("event-home-action", () => {
     });
     assert.equal(a.kind, "bus_outbound");
     assert.equal(a.ctaLabel, "탑승하기");
+    assert.match(a.desc, /탑승을 눌러/);
+    assert.doesNotMatch(a.desc, /체크/);
   });
 
   it("bib after outbound boarded", () => {
@@ -61,7 +63,9 @@ describe("event-home-action", () => {
     });
     assert.equal(a.kind, "confirm_pending");
     assert.equal(a.ctaLabel, "기록 확인하기");
+    assert.match(a.desc, /확정/);
     assert.doesNotMatch(a.ctaLabel, /컨펌/);
+    assert.doesNotMatch(a.desc, /컨펌/);
     assert.equal(a.secondaryLabel, "오는 버스 탑승");
     assert.equal(a.secondaryHref, "boardingReturn");
   });

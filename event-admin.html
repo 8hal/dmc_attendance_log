@@ -747,11 +747,11 @@
             <span class="left"><span class="num">4</span>결과 가져오기</span>
             <span id="scrape-status-pill" class="pill-off">—</span>
           </h3>
-          <p class="hint" style="margin-top:0;" id="scrape-intro">배번 있는 참가자만 스크랩. 대회기록은 참가자 컨펌 후.</p>
+          <p class="hint" style="margin-top:0;" id="scrape-intro">배번 있는 참가자만 스크랩. 대회 기록은 참가자 확정 후.</p>
           <button type="button" class="btn btn-primary btn-block owner-writable" id="scrape-btn">스크랩 실행</button>
           <div class="stat-row" style="margin-top:10px;">
-            <div class="stat"><b id="pending-count">0</b><span>조회됨 · 컨펌 대기</span></div>
-            <div class="stat"><b id="confirmed-count">0</b><span>참가자 컨펌 완료</span></div>
+            <div class="stat"><b id="pending-count">0</b><span>조회됨 · 확정 대기</span></div>
+            <div class="stat"><b id="confirmed-count">0</b><span>참가자 확정 완료</span></div>
           </div>
           <p class="hint">총무 일괄 확정 버튼 없음 (베타 주경로).</p>
           <button type="button" class="btn btn-ghost" id="refresh-all-btn">전체 새로고침</button>
@@ -1217,7 +1217,7 @@
         ? `소스: ${gs.source} / ${gs.sourceId || ""}`
         : "소스 미설정";
       document.getElementById("scrape-intro").textContent =
-        `${srcLine}. 배번 있는 참가자만 스크랩. 대회기록은 참가자 컨펌 후.`;
+        `${srcLine}. 배번 있는 참가자만 스크랩. 대회 기록은 참가자 확정 후.`;
 
       const pending = gapRows.filter((g) => g.gapStatus === "ok").length;
       document.getElementById("pending-count").textContent = String(pending);

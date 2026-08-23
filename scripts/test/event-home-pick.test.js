@@ -42,6 +42,12 @@ describe("event-home nick pick chrome", () => {
     assert.doesNotMatch(render, /classList\.remove\(["']hidden["']\)/);
   });
 
+  it("member home uses 다른 사람 선택, not 닉네임 변경", () => {
+    const html = read("event-home.html");
+    assert.match(html, />다른 사람 선택</);
+    assert.doesNotMatch(html, />닉네임 변경</);
+  });
+
   it("nick change can be cancelled and unknown saved nicks go to pick", () => {
     const html = read("event-home.html");
     assert.match(html, /id="pickCancelBtn"/);

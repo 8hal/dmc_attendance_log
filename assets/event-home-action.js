@@ -43,7 +43,7 @@
           "bus_outbound",
           "지금",
           "가는 버스",
-          "집합 장소에서 탑승 체크를 해 주세요",
+          "집합 장소에서 탑승을 눌러 주세요",
           "탑승하기",
           "boarding"
         );
@@ -57,7 +57,7 @@
         "bib",
         "지금",
         "배번 입력",
-        "대회 배번을 입력하면 기록을 가져올 수 있어요",
+        "배번을 넣으면 경기 후 기록을 가져올 수 있어요",
         "배번 입력",
         "bib"
       );
@@ -68,7 +68,7 @@
         kind: "confirm_pending",
         kicker: "기록 준비됨",
         title: "내 기록",
-        desc: "확인 후 확정하면 명단·결과에 반영됩니다",
+        desc: "기록이 맞으면 확정하세요. 명단·결과에 반영됩니다",
         ctaLabel: "기록 확인하기",
         ctaKind: "confirm",
         ctaHref: null,
@@ -86,8 +86,8 @@
         "bus_return",
         "지금",
         "오는 버스",
-        "복귀 버스 탑승 체크를 해 주세요",
-        "탑승하기",
+          "오는 버스에 탈 때 탑승을 눌러 주세요",
+          "탑승하기",
         "boardingReturn"
       );
     }
@@ -97,7 +97,7 @@
         kind: "all_done",
         kicker: "완료",
         title: "수고하셨어요",
-        desc: "대회기록이 반영되었습니다. 명단·결과에서 확인하세요",
+        desc: "대회 기록이 반영되었습니다. 명단·결과에서 확인하세요",
         ctaLabel: "확정 완료 ✓",
         ctaKind: "done",
         ctaHref: null,
@@ -111,7 +111,7 @@
       kind: "waiting_result",
       kicker: "대기",
       title: "기록 준비 중",
-      desc: "경기 후 기록이 올라오면 여기서 다시 확인할 수 있어요",
+      desc: "경기가 끝나면 기록이 여기 올라옵니다. 그때 다시 확인해 주세요",
       ctaLabel: "다시 확인",
       ctaKind: "reload",
       ctaHref: null,

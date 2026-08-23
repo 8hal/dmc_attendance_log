@@ -583,7 +583,7 @@
         if (!required) {
           statusHtml = '<span class="board-status na">해당없음</span>';
         } else if (boarded) {
-          statusHtml = '<span class="board-status boarded">탑승완료</span>';
+          statusHtml = '<span class="board-status boarded">탑승 완료</span>';
         } else {
           statusHtml = '<span class="board-status pending">대기</span>';
         }
@@ -644,8 +644,8 @@
         ? "이미 탑승됨"
         : "탑승 완료";
       document.getElementById("doneMessage").innerHTML = already
-        ? `<strong>${escapeHtml(nick)}</strong>님은 이미<br>${escapeHtml(legLabel)} 탑승이 체크되어 있습니다.`
-        : `<strong>${escapeHtml(nick)}</strong>님의<br>${escapeHtml(legLabel)} 탑승이 기록되었습니다.`;
+        ? `<strong>${escapeHtml(nick)}</strong>님은 이미<br>${escapeHtml(legLabel)}에 탑승하셨습니다.`
+        : `<strong>${escapeHtml(nick)}</strong>님의<br>${escapeHtml(legLabel)} 탑승을 기록했습니다.`;
       const doneLinks = EventBoardingFlow.resolveBoardingDoneLinks({
         completedLeg: currentLeg,
         hasBib: currentHasBib(),
@@ -844,7 +844,7 @@
         if (currentRow && currentRow.nickname) {
           EventMemberProfile.syncNicknames(localStorage, currentRow.nickname);
         }
-        showToast(data.already ? "이미 탑승 완료된 상태입니다" : "✅ 탑승 완료");
+        showToast(data.already ? "이미 탑승한 상태입니다" : "탑승 완료");
         showDoneScreen(!!data.already);
         refreshConfirmBanner();
       } catch (error) {

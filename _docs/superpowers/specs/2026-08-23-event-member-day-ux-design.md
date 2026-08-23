@@ -1,7 +1,7 @@
 # 단체 대회 회원 당일 UX
 
 날짜: 2026-08-23  
-상태: 구현 중  
+상태: 배포 준비  
 관련: `_docs/superpowers/specs/2026-08-18-group-event-member-home-chunbaek-ia.md`
 
 ## 목표

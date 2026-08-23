@@ -62,6 +62,8 @@ describe("boarding member shell", () => {
     assert.match(html, /clearNicknames/);
     assert.match(html, /doneRecordBanner/);
     assert.match(html, /이미 탑승됨/);
+    assert.match(html, /탑승하셨습니다/);
+    assert.doesNotMatch(html, /체크되어 있습니다/);
     assert.match(html, /id="errorRetryBtn"/);
     assert.match(html, /출석으로 돌아가기/);
     const doneFn = extractFn(html, "showDoneScreen");
@@ -110,5 +112,7 @@ describe("member pages use EventMemberCopy", () => {
     assert.match(html, /memberEventTitle\(/);
     assert.match(html, /memberDistanceLabel\(/);
     assert.doesNotMatch(html, /formatDistance\(/);
+    assert.match(html, /확정된 기록만/);
+    assert.doesNotMatch(html, /컨펌된 기록만/);
   });
 });
