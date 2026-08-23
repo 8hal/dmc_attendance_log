@@ -13,7 +13,29 @@ const {
   applyAdminBoard,
   emptyBusBoarding,
   ensureBusBoarding,
+  rosterUpsertIdentity,
 } = require(path.join(__dirname, "../../functions/lib/bus-boarding.js"));
+
+describe("rosterUpsertIdentity", () => {
+  it("isGuest true → force guest, no member required", () => {
+    assert.deepEqual(rosterUpsertIdentity(true), {
+      forceGuest: true,
+      requireMember: false,
+    });
+  });
+  it("isGuest false → member required", () => {
+    assert.deepEqual(rosterUpsertIdentity(false), {
+      forceGuest: false,
+      requireMember: true,
+    });
+  });
+  it("isGuest omitted → lookup optional (note save / CSV-like)", () => {
+    assert.deepEqual(rosterUpsertIdentity(undefined), {
+      forceGuest: false,
+      requireMember: false,
+    });
+  });
+});
 
 describe("rideTypeToLegRequired", () => {
   it("roundtrip → both required", () => {

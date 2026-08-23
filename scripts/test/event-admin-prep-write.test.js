@@ -48,6 +48,25 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(html, />지인 추가</);
   });
 
+  it("add-person form lets ops pick 회원 or 지인", () => {
+    assert.match(html, /id="guest-kind"/);
+    assert.match(html, /<option value="member"[^>]*>회원</);
+    assert.match(html, /<option value="guest"[^>]*>지인</);
+    const addFn = extractFn(html, "addGuest");
+    assert.match(addFn, /guest-kind/);
+    assert.match(addFn, /isGuest:\s*kind === "guest"/);
+  });
+
+  it("boarding-admin add form also lets ops pick 회원 or 지인", () => {
+    const boarding = read("boarding-admin.html");
+    assert.match(boarding, /id="guestKind"/);
+    assert.match(boarding, /<option value="member"[^>]*>회원</);
+    assert.match(boarding, /<option value="guest"[^>]*>지인</);
+    const addFn = extractFn(boarding, "addGuest");
+    assert.match(addFn, /guestKind/);
+    assert.match(addFn, /isGuest:\s*kind === "guest"/);
+  });
+
   it("remove and note save work while boarding is off", () => {
     const removeFn = extractFn(html, "removeRoster");
     assert.doesNotMatch(removeFn, /enabled !== true/);
@@ -79,5 +98,12 @@ describe("bus-boarding API gates", () => {
   it("self-board and admin-board still require enabled", () => {
     assert.match(subActionBlock(src, "self-board"), /assertEnabled/);
     assert.match(subActionBlock(src, "admin-board"), /assertEnabled/);
+  });
+
+  it("roster-upsert rejects explicit member when nickname is missing from members", () => {
+    const block = subActionBlock(src, "roster-upsert");
+    assert.match(block, /rosterUpsertIdentity/);
+    assert.match(block, /requireMember/);
+    assert.match(block, /회원 명단에 없는 닉네임/);
   });
 });

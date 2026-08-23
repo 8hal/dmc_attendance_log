@@ -704,15 +704,22 @@
             <div style="font-weight:700;font-size:14px;margin-bottom:8px;">탑승 인원 추가</div>
             <div class="field-row">
               <div>
+                <label class="field-label" for="guest-kind">구분</label>
+                <select id="guest-kind" class="field-select">
+                  <option value="member" selected>회원</option>
+                  <option value="guest">지인</option>
+                </select>
+              </div>
+              <div>
                 <label class="field-label" for="guest-nickname">닉네임</label>
                 <input type="text" id="guest-nickname" class="field-input" autocomplete="off" />
               </div>
+            </div>
+            <div class="field-row">
               <div>
                 <label class="field-label" for="guest-real-name">실명</label>
                 <input type="text" id="guest-real-name" class="field-input" autocomplete="off" />
               </div>
-            </div>
-            <div class="field-row">
               <div>
                 <label class="field-label" for="guest-ride-type">탑승</label>
                 <select id="guest-ride-type" class="field-select">
@@ -721,6 +728,8 @@
                   <option value="return_only">오는 편만</option>
                 </select>
               </div>
+            </div>
+            <div class="field-row">
               <div>
                 <label class="field-label" for="guest-note">비고</label>
                 <input type="text" id="guest-note" class="field-input" autocomplete="off" />
@@ -1610,6 +1619,7 @@
       const realName = document.getElementById("guest-real-name").value.trim();
       const rideType = document.getElementById("guest-ride-type").value;
       const note = document.getElementById("guest-note").value.trim();
+      const kind = document.getElementById("guest-kind").value;
       if (!nickname) {
         showToast("닉네임을 입력하세요", true);
         return;
@@ -1625,7 +1635,7 @@
           nickname,
           realName,
           rideType,
-          isGuest: true
+          isGuest: kind === "guest"
         };
         if (note) body.note = note;
         const { data } = await postBus(body);

@@ -4234,7 +4234,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             : null;
         const note =
           body.note === undefined ? undefined : body.note == null ? null : body.note;
-        const forceGuest = body.isGuest === true;
+        const identity = busBoardingLib.rosterUpsertIdentity(body.isGuest);
+        const forceGuest = identity.forceGuest;
 
         if (!eventId) {
           return res.status(400).json({ ok: false, error: "eventId required" });
@@ -4261,6 +4262,13 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             console.error("bus-boarding roster-upsert member lookup error:", error);
             return res.status(500).json({ ok: false, error: "server error" });
           }
+        }
+
+        if (identity.requireMember && !memberId) {
+          return res.status(400).json({
+            ok: false,
+            error: "회원 명단에 없는 닉네임입니다",
+          });
         }
 
         const ref = db.collection("race_events").doc(eventId);

@@ -90,6 +90,13 @@ function ensureBusBoarding(busBoarding) {
   return emptyBusBoarding();
 }
 
+/** roster-upsert: true=지인, false=회원 필수, omit=닉 조회만(없으면 지인). */
+function rosterUpsertIdentity(isGuest) {
+  if (isGuest === true) return { forceGuest: true, requireMember: false };
+  if (isGuest === false) return { forceGuest: false, requireMember: true };
+  return { forceGuest: false, requireMember: false };
+}
+
 function findRosterIndexByNickname(roster, nickname) {
   const key = String(nickname).trim();
   return roster.findIndex((r) => r.nickname === key);
@@ -238,6 +245,7 @@ module.exports = {
   applyAdminBoard,
   emptyBusBoarding,
   ensureBusBoarding,
+  rosterUpsertIdentity,
   assertEnabled,
   summarizeLeg,
 };

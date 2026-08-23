@@ -518,9 +518,18 @@
         <h2 class="card-title">탑승 인원 추가</h2>
         <div class="field-row">
           <div>
+            <label class="field-label" for="guestKind">구분</label>
+            <select id="guestKind" class="field-select">
+              <option value="member" selected>회원</option>
+              <option value="guest">지인</option>
+            </select>
+          </div>
+          <div>
             <label class="field-label" for="guestNickname">닉네임</label>
             <input type="text" id="guestNickname" class="field-input" autocomplete="off" />
           </div>
+        </div>
+        <div class="field-row">
           <div>
             <label class="field-label" for="guestRealName">실명</label>
             <input type="text" id="guestRealName" class="field-input" autocomplete="off" />
@@ -1181,6 +1190,7 @@
       const realName = document.getElementById("guestRealName").value.trim();
       const rideType = document.getElementById("guestRideType").value;
       const note = document.getElementById("guestNote").value.trim();
+      const kind = document.getElementById("guestKind").value;
       if (!nickname) {
         showToast("닉네임을 입력하세요", true);
         return;
@@ -1196,7 +1206,7 @@
           nickname,
           realName,
           rideType,
-          isGuest: true
+          isGuest: kind === "guest"
         };
         if (note) body.note = note;
         const { data } = await postBus(body);
