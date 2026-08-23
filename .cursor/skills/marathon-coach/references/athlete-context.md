@@ -4,6 +4,8 @@ This is a handoff snapshot from the training conversation through 2026-08-22. Tr
 
 **Generic marathon methodology:** `references/marathon-training-knowledge.md` (Pfitzinger/Daniels structure, volume benchmarks, B-race vs A-race taper).
 
+**YoY snapshot:** `references/yoy-aug-2025-vs-2026.md` (Aug 2025 vs Aug 2026 Garmin comparison, 2026-08-23).
+
 ## Goals
 
 - **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위.**

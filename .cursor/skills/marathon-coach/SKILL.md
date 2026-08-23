@@ -16,6 +16,7 @@ Treat Cheorwon Marathon as a B-race/training race. The Cheorwon goal is a contro
 1. `references/athlete-context.md` — this athlete's goals, constraints, schedule, proven paces  
 2. `references/marathon-training-knowledge.md` — periodization, volume benchmarks, Pfitzinger/Daniels structure, taper vs B-race rules  
 3. `references/data-contract.md` — what to pull from Garmin and how to interpret it  
+4. `references/yoy-aug-2025-vs-2026.md` — Aug 2025 vs 2026 YoY (when discussing progress or volume anxiety)
 
 **Before writing any weekly plan**, cross-check volume and session count against `marathon-training-knowledge.md` anti-patterns. Plans that look "safe" but under-dose a 70 km/week runner are **errors**.
 
