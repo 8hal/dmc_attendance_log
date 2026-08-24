@@ -185,11 +185,11 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 | Week | Phase goal | Weekly km | Saturday key | Other quality |
 |------|------------|-----------|--------------|---------------|
 | **9/7–9/13** | 철원 회복; 재가동 | **48–55** | **9/13** E **12–14km** | E only; **Sun E 8–10** pad |
-| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **9/20** L **24–26km** progressive GA | **9/16** 템포 12km (7km T); **9/17** MLR **15km** |
-| **9/21–9/27** | 빌드 2 — MP 도입 | **82–88** | **9/27** L **26–28km**, last **8–10km @ 4:18–4:22** | **9/23** 14km (9km @ 4:20–4:25); **9/24** MLR **16km** |
+| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **9/20** L **24–26km** progressive GA | **9/16 화 템포** 12km (7km T); **9/18 목 인터벌**; **9/17 수 MLR 15km** |
+| **9/21–9/27** | 빌드 2 — MP 도입 | **82–88** | **9/27** L **26–28km**, last **8–10km @ 4:18–4:22** | **9/23 화** 14km (9km @ 4:20–4:25); **9/25 목 인터벌**; **9/24 수 MLR 16km** |
 | **9/28–10/4** | 디로드 (−15%) | **68–72** | **10/4** E **20–22km** | 없음 |
-| **10/5–10/11** | 빌드 3 — MP 롱 확대 | **88–95** | **10/11** L **30–32km**, last **12–14km @ 4:15–4:18** | **10/7** 14km (10km @ 4:15–4:20); **10/8** MLR **16km** |
-| **10/12–10/18** | **피크 + taper** | **~72 run + 42** | **10/17 경주 서브3** | **10/14** 8km (5km @ 4:15) |
+| **10/5–10/11** | 빌드 3 — MP 롱 확대 | **88–95** | **10/11** L **30–32km**, last **12–14km @ 4:15–4:18** | **10/7 화** 14km (10km @ 4:15–4:20); **10/9 목 인터벌**; **10/8 수 MLR 16km** |
+| **10/12–10/18** | **피크 + taper** | **~72 run + 42** | **10/17 경주 서브3** | **10/14 화** 8km (5km @ 4:15); taper — **목 인터벌 없음** |
 
 **Sep calendar est.:** ~**310–330 km** (40+42 + 50 + 78 + 85 + ~25 deload tail).  
 **Oct calendar est.:** ~**300–320 km** (deload head ~40 + 92 + 72+42 + absorb ~40 + JTBC bridge ~50).
@@ -228,10 +228,27 @@ Refresh before use:
 
 Do not optimize training to fill the Garmin anaerobic shortage. The marathon objective has higher priority.
 
-## Coaching preferences inferred from conversation
+## Weekly structure (standing pattern)
+
+| Day | Session | Notes |
+|-----|---------|-------|
+| **Mon** | E or rest | Recovery start |
+| **Tue** | **Tempo / LT** (quality) | Usual quality day #1 |
+| **Tue** | Swim 07:00–07:50 | Often **after** early-morning run (typical start ~05:00–05:30) |
+| **Wed** | **MLR** or E | 12–16 km GA when in build |
+| **Thu** | **Interval** (quality) | Usual quality day #2 |
+| **Thu** | Swim 07:00–07:50 | Same double pattern as Tue when both done |
+| **Fri** | E + strides | Pre-Saturday |
+| **Sat** | **Long run** (key volume) | Primary weekly anchor |
+| **Sun** | E or rest | Volume pad in build months |
+
+**Planning rule:** Default build weeks use **Tue tempo + Thu interval + Sat long + Wed MLR**. Do not move tempo to Wed or drop Thu intervals without user request. Deload / B-race / absorption weeks: **drop both quality days**, keep structure otherwise.
+
+**Current exception (8/24–8/30):** Namsan TE 5.0 + quads — **no Tue tempo, no Thu interval** this week only.
 
 - The athlete values gradual progression and pushes back on abrupt pace increases.
 - **Key / high-volume sessions are usually scheduled on Saturday** (long runs, major quality). Weekday sessions are shorter; taper and weekly plans should put the longest run on Saturday when possible.
+- **Standing quality pattern: Tuesday tempo, Thursday interval** (see Weekly structure above). Swim lessons Tue/Thu 07:00 often follow an early-morning run.
 - Weather needs to be integrated into pace recommendations.
 - The athlete prefers executable km-by-km or segment tables.
 - The athlete wants data-driven validation rather than motivational generalities.

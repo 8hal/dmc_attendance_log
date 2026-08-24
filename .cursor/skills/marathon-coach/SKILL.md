@@ -72,17 +72,19 @@ Do not prescribe extra anaerobic work merely because Garmin reports `ANAEROBIC_S
 
 ## Weekly planning template (default for this athlete)
 
-**Saturday = key session** (long run or primary quality). Pfitzinger-style week at ~70 km:
+**Saturday = key session** (long run). **Tuesday = tempo, Thursday = interval** (standing quality pattern). Typical week ~70–85 km:
 
 | Day | Role | Typical |
 |-----|------|---------|
 | Mon | Rest or E | 0–8 km |
-| Tue | Quality **or** swim + E | LT/VO2 **or** swim + 6–8 km E |
+| **Tue** | **Tempo / LT** + swim 07:00 | 12–16 km w/ 6–10 km T (run often ~05:00, then swim) |
 | Wed | **MLR** | 12–16 km GA |
-| Thu | Swim + E | swim + 6–8 km E |
+| **Thu** | **Interval** + swim 07:00 | e.g. 5×1 km @ I or 400 m reps; 10–14 km total |
 | Fri | E + strides | 5–8 km |
-| **Sat** | **Long or key quality** | 24–32 km **or** hilly 20–28 km **or** tempo |
+| **Sat** | **Long run** | 24–32 km (MP block in build) |
 | Sun | E or rest | 6–10 km E |
+
+Skip Tue/Thu quality in deload, absorption, B-race, and taper weeks only.
 
 Adjust using 3:1 load/deload (−20–30% volume on deload week, **keep structure**).
 
