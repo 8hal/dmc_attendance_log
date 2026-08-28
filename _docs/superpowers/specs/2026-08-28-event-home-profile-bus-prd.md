@@ -93,8 +93,11 @@
 
 입력: 배번 + 종목. 종목은 **`race_results.distance` canonical**만 저장한다 (`functions/lib/raceDistance.js` `RACE_DISTANCE_CANONICAL`). `normalizeRaceDistance`를 거친 값.
 
-1차 선택: `10K` / `half` / `full` (표시는 기존 `EventMemberCopy.memberDistanceLabel`).  
-**기타**는 `unknown`을 쓰지 않는다. 펼치면 나머지 canonical: `5K` / `3K` / `30K` / `32K` / `ultra`.
+종목은 **모두 보여 준다.** `기타` 없음.
+
+우선: `full` / `half` / `10K` (크게, 먼저).  
+이어서: `5K` / `3K` / `30K` / `32K` / `ultra`.  
+표시는 `EventMemberCopy.memberDistanceLabel`.
 
 `unknown`·빈 값은 저장하지 않는다. 고르지 않으면 6.1에 남는다. 철원 주경로는 앞의 세 종목이다.
 
@@ -259,7 +262,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 ## 11. 테스트
 
 - 프로필 6.1~6.5, 6.2 배번·종목 크게, 수정 작게, 6.1에 ‘먼저’ 없음
-- 종목 저장 값이 `10K`\|`half`\|`full`\|`5K`\|`3K`\|`30K`\|`32K`\|`ultra`. 기타 → `unknown` 금지
+- 종목 UI: `full`/`half`/`10K` 우선 표시, 나머지는 같은 목록에 이어서. `기타` 없음. 저장은 canonical만, `unknown` 금지
 - 배번 없이 가는 편 열림 → 탑승하기 활성
 - 지인: 버스만, `self-confirm` 거부, 대회 기록 없음
 - `openLeg` 상호 배타, 옛 `enabled`만 있으면 꺼짐
@@ -307,7 +310,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 - 섹션 두 개, 독립
 - 6.1 문구에 ‘먼저’ 없음
-- 종목 1차 3개 + 기타는 나머지 canonical. **`unknown` 저장 금지.** `race_results.distance`와 동일 enum
+- 종목은 전부 표시, `full`/`half`/`10K` 우선. `기타` 없음. 저장은 `race_results.distance` canonical, `unknown` 금지
 - 대기 카피: 총무가 스크랩 **시작**. 미완주만 간격 재시도, 창 끝나면 중단
 - 회원 배번 수정 시 세션 중이면 즉시 스크랩
 - 재시도 실패 → 회원 수동 (시각/DNS/DNF). 미입력 시 총무
