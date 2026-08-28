@@ -97,4 +97,10 @@ describe("group.html and event-admin.html share ops session", () => {
     const fn = extractFn(readHtml("event-admin.html"), "clearSession");
     assert.match(fn, /clearGroupOpsSession\(sessionStorage\)/);
   });
+
+  it("event-admin checkAuth does not prompt for a second password", () => {
+    const fn = extractFn(readHtml("event-admin.html"), "checkAuth");
+    assert.match(fn, /isAuthedFlag/);
+    assert.doesNotMatch(fn, /window\.prompt/);
+  });
 });

@@ -1447,15 +1447,7 @@
       if (!isAuthedFlag()) return false;
       adminRole = sessionStorage.getItem(AUTH_ROLE_KEY) || "";
       adminPwCache = sessionStorage.getItem(AUTH_PW_KEY) || "";
-      if (!adminPwCache) {
-        const pw = window.prompt("관리자 비밀번호");
-        if (!pw) {
-          sessionStorage.removeItem(AUTH_KEY);
-          return false;
-        }
-        adminPwCache = pw;
-        sessionStorage.setItem(AUTH_PW_KEY, pw);
-      }
+      if (!adminPwCache) return false;
       revealShell();
       loadAll().then(startPoll);
       return true;
