@@ -772,15 +772,21 @@
   </div>
 
   <script src="assets/event-admin-panels.js"></script>
+  <script src="assets/group-ops-session.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
       ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
       : "https://race-nszximpvtq-du.a.run.app";
 
-    const AUTH_KEY = "dmc_event_admin_auth";
-    const AUTH_PW_KEY = "dmc_event_admin_pw";
-    const AUTH_ROLE_KEY = "dmc_event_admin_role";
+    const {
+      AUTH_KEY,
+      PW_KEY: AUTH_PW_KEY,
+      ROLE_KEY: AUTH_ROLE_KEY,
+      saveGroupOpsSession,
+      hasAdminAccess,
+      clearGroupOpsSession,
+    } = GroupOpsSession;
     const POLL_MS = 4000;
     const BIB_SCRAPE_SOURCES = ["smartchip", "ohmyrace", "spct"];
     const LEG_LABEL = { outbound: "가는", return: "오는" };
@@ -858,7 +864,7 @@
     }
 
     function isAuthedFlag() {
-      return sessionStorage.getItem(AUTH_KEY) === "ok";
+      return hasAdminAccess(sessionStorage);
     }
 
     function participantUrl(leg) {
@@ -1389,9 +1395,7 @@
     function clearSession() {
       adminPwCache = "";
       adminRole = "";
-      sessionStorage.removeItem(AUTH_KEY);
-      sessionStorage.removeItem(AUTH_PW_KEY);
-      sessionStorage.removeItem(AUTH_ROLE_KEY);
+      clearGroupOpsSession(sessionStorage);
       stopPoll();
       authOverlay.classList.remove("hidden");
       mainWrap.classList.add("hidden");
@@ -1421,9 +1425,7 @@
         if (data.ok) {
           adminRole = data.role || "operator";
           adminPwCache = pw;
-          sessionStorage.setItem(AUTH_KEY, "ok");
-          sessionStorage.setItem(AUTH_PW_KEY, pw);
-          sessionStorage.setItem(AUTH_ROLE_KEY, adminRole);
+          saveGroupOpsSession(sessionStorage, pw, adminRole);
           errEl.style.display = "none";
           document.getElementById("auth-pw").value = "";
           revealShell();
