@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
-  <title>명단·결과 - 동탄 마라톤 클럽</title>
+  <title>대회 기록 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
   <link rel="stylesheet" href="assets/design-tokens.css" />
   <link rel="stylesheet" href="assets/event-member-shell.css" />
@@ -174,7 +174,7 @@
 
     <div id="main" class="hidden">
       <header class="header">
-        <h1 class="header-title" id="eventTitle">명단·결과</h1>
+        <h1 class="header-title" id="eventTitle">대회 기록</h1>
         <p class="header-meta" id="eventMeta"></p>
       </header>
 
@@ -205,8 +205,7 @@
 
   <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
     <a class="event-tab-btn" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
-    <a class="event-tab-btn" data-tab="bus" href="#"><span class="tab-icon">🚌</span>버스</a>
-    <a class="event-tab-btn active" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
+    <a class="event-tab-btn active" data-tab="roster" href="#"><span class="tab-icon">🏁</span>대회 기록</a>
   </nav>
 
   <script src="assets/distance-utils.js"></script>
@@ -241,7 +240,6 @@
     let sortBy = "result";
     let isComposing = false;
     let searchTimer = null;
-    let busEnabled = false;
     let hasLoadedOnce = false;
 
     function showOnly(el) {
@@ -261,7 +259,6 @@
       EventMemberTabs.mount({
         eventId: eventId,
         active: "roster",
-        busEnabled: busEnabled,
         barEl: eventTabBar,
       });
     }
@@ -342,22 +339,6 @@
       });
     }
 
-    async function probeBus() {
-      if (!eventId) return;
-      try {
-        const res = await fetch(
-          API_BASE +
-            "?action=bus-boarding&subAction=status&eventId=" +
-            encodeURIComponent(eventId)
-        );
-        const data = await res.json();
-        busEnabled = !!(data && data.ok && data.enabled === true);
-      } catch (_e) {
-        busEnabled = false;
-      }
-      wireTabs();
-    }
-
     async function loadRoster() {
       if (!eventId) {
         showError("대회를 찾을 수 없어요");
@@ -385,7 +366,7 @@
           throw new Error(data.error || "불러오기 실패");
         }
 
-        const title = EventMemberCopy.memberEventTitle(data.eventName || "명단·결과");
+        const title = EventMemberCopy.memberEventTitle(data.eventName || "대회 기록");
         eventTitleEl.textContent = title;
         document.title = title + " - 동탄 마라톤 클럽";
         eventMetaEl.textContent = data.eventDate || "";
@@ -433,7 +414,7 @@
     });
 
     wireTabs();
-    probeBus().then(loadRoster);
+    loadRoster();
   </script>
 </body>
 </html>

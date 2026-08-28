@@ -71,7 +71,9 @@ describe("boarding member shell", () => {
     assert.doesNotMatch(doneFn, /hasBib:\s*false/);
     assert.match(html, /subAction=detail/);
     const mount = extractFn(html, "mountTabs");
-    assert.match(mount, /busLeg/);
+    assert.doesNotMatch(mount, /busLeg/);
+    assert.match(html, />대회 기록</);
+    assert.doesNotMatch(html, /data-tab="bus"/);
     const confirmStart = html.indexOf('id="confirmScreen"');
     const confirm = html.slice(confirmStart, html.indexOf('id="doneScreen"'));
     assert.ok(

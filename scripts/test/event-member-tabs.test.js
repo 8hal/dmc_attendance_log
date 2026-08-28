@@ -1,7 +1,12 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
 const path = require("path");
 const { mount } = require(path.join(__dirname, "../../assets/event-member-tabs.js"));
+
+function read(rel) {
+  return fs.readFileSync(path.join(__dirname, "../..", rel), "utf8");
+}
 
 function fakeTab() {
   return {
@@ -45,23 +50,28 @@ function fakeBar(tabs) {
 }
 
 describe("event-member-tabs", () => {
-  it("browse bus tab omits leg", () => {
-    const tabs = { home: fakeTab(), bus: fakeTab(), roster: fakeTab() };
+  it("wires home and roster only", () => {
+    const tabs = { home: fakeTab(), roster: fakeTab() };
     const bar = fakeBar(tabs);
-    mount({ eventId: "evt_x", active: "home", busEnabled: true, barEl: bar });
-    assert.equal(tabs.bus.href, "boarding.html?eventId=evt_x");
+    mount({ eventId: "evt_x", active: "home", barEl: bar });
+    assert.equal(tabs.home.href, "event-home.html?eventId=evt_x");
+    assert.equal(tabs.roster.href, "event-roster.html?eventId=evt_x");
+    assert.equal(tabs.home.attrs["aria-current"], "page");
   });
 
-  it("QR-locked bus tab keeps the current leg", () => {
-    const tabs = { home: fakeTab(), bus: fakeTab(), roster: fakeTab() };
+  it("marks roster tab current on the records page", () => {
+    const tabs = { home: fakeTab(), roster: fakeTab() };
     const bar = fakeBar(tabs);
-    mount({
-      eventId: "evt_x",
-      active: "bus",
-      busEnabled: true,
-      busLeg: "return",
-      barEl: bar,
+    mount({ eventId: "evt_x", active: "roster", barEl: bar });
+    assert.equal(tabs.roster.attrs["aria-current"], "page");
+    assert.equal(tabs.home.attrs["aria-current"], undefined);
+  });
+
+  it("member pages keep only 홈 and 대회 기록 tabs", () => {
+    ["event-home.html", "event-roster.html", "boarding.html"].forEach(function (file) {
+      const html = read(file);
+      assert.match(html, />대회 기록</, file);
+      assert.doesNotMatch(html, /data-tab="bus"/, file);
     });
-    assert.equal(tabs.bus.href, "boarding.html?eventId=evt_x&leg=return");
   });
 });

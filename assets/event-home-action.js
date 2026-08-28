@@ -6,9 +6,8 @@
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   /**
-   * Chunbaek-style "what to do now" for group event member home.
-   * Priority: identity → outbound → bib → waiting/confirm (return bus secondary)
-   * → return bus after confirm → done.
+   * Member home shows four independent tasks. Sequential "what to do now"
+   * stays in resolveNextAction for older callers/tests.
    */
   function returnBusOpen(busEnabled, busRow) {
     if (!busEnabled || !busRow || !busRow.legs) return false;
@@ -150,8 +149,135 @@
     return "#";
   }
 
+  function busTask(id, title, leg, hrefKey, ctx) {
+    const busEnabled = !!(ctx && ctx.busEnabled);
+    const busRow = ctx && ctx.busRow ? ctx.busRow : null;
+    const st = busRow && busRow.legs ? busRow.legs[leg] : null;
+    if (st && st.required !== true) {
+      return {
+        id,
+        title,
+        state: "skip",
+        hint: "이번 편은 해당 없음",
+        ctaLabel: null,
+        ctaKind: null,
+        hrefKey: null,
+      };
+    }
+    if (st && st.boarded === true) {
+      return {
+        id,
+        title,
+        state: "done",
+        hint: "탑승 완료",
+        ctaLabel: null,
+        ctaKind: null,
+        hrefKey: null,
+      };
+    }
+    if (!busEnabled) {
+      return {
+        id,
+        title,
+        state: "locked",
+        hint: "총무가 열면 탑승할 수 있어요",
+        ctaLabel: null,
+        ctaKind: null,
+        hrefKey: null,
+      };
+    }
+    if (!st) {
+      return {
+        id,
+        title,
+        state: "skip",
+        hint: "버스 명단에 없습니다",
+        ctaLabel: null,
+        ctaKind: null,
+        hrefKey: null,
+      };
+    }
+    return {
+      id,
+      title,
+      state: "ready",
+      hint: "지금 탑승하세요",
+      ctaLabel: "탑승하기",
+      ctaKind: "link",
+      hrefKey,
+    };
+  }
+
+  function resolveHomeTasks(ctx) {
+    const participant = ctx && ctx.participant ? ctx.participant : null;
+    const bib =
+      participant && participant.bib != null ? String(participant.bib).trim() : "";
+    const confirmMode = ctx && ctx.confirmMode ? ctx.confirmMode : "none";
+
+    const bibTask = bib
+      ? {
+          id: "bib",
+          title: "배번 입력",
+          state: "done",
+          hint: "배번 " + bib,
+          ctaLabel: null,
+          ctaKind: null,
+          hrefKey: null,
+        }
+      : {
+          id: "bib",
+          title: "배번 입력",
+          state: "ready",
+          hint: "배번을 넣으면 경기 후 기록을 가져올 수 있어요",
+          ctaLabel: "입력하기",
+          ctaKind: "link",
+          hrefKey: "bib",
+        };
+
+    let confirmTask;
+    if (confirmMode === "confirmed") {
+      confirmTask = {
+        id: "confirm",
+        title: "기록 확인",
+        state: "done",
+        hint: "확정 완료",
+        ctaLabel: null,
+        ctaKind: null,
+        hrefKey: null,
+      };
+    } else if (confirmMode === "pending") {
+      confirmTask = {
+        id: "confirm",
+        title: "기록 확인",
+        state: "ready",
+        hint: "기록이 맞으면 확정하세요",
+        ctaLabel: "기록 확인하기",
+        ctaKind: "confirm",
+        hrefKey: null,
+      };
+    } else {
+      confirmTask = {
+        id: "confirm",
+        title: "기록 확인",
+        state: "locked",
+        hint: "기록이 수집되면 확인할 수 있어요",
+        ctaLabel: null,
+        ctaKind: null,
+        hrefKey: null,
+      };
+    }
+
+    return [
+      busTask("bus_outbound", "가는 버스 탑승", "outbound", "boarding", ctx),
+      bibTask,
+      busTask("bus_return", "오는 버스 탑승", "return", "boardingReturn", ctx),
+      confirmTask,
+    ];
+  }
+
   return {
     resolveNextAction,
+    resolveHomeTasks,
     pageHref,
   };
 });

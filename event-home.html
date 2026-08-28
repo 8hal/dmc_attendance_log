@@ -163,13 +163,36 @@
         <span id="nickChip" class="nick-chip hidden"></span>
       </header>
 
-      <section id="todayCard" class="today-card" aria-live="polite">
-        <div class="today-kicker" id="todayKicker">지금</div>
-        <h2 class="today-title" id="todayTitle">—</h2>
-        <p class="today-desc" id="todayDesc"></p>
-        <div id="todayConfirmDetail" class="today-confirm-detail hidden"></div>
-        <button type="button" class="today-cta hidden" id="todayCta"></button>
-        <a class="today-secondary hidden" id="todaySecondary" href="#"></a>
+      <section id="task-list" class="task-list" aria-label="오늘 할 일">
+        <article class="task-row is-locked" id="task-bus-outbound" data-task="bus_outbound">
+          <div class="task-copy">
+            <h2 class="task-title">가는 버스 탑승</h2>
+            <p class="task-hint" id="task-hint-bus-outbound">총무가 열면 탑승할 수 있어요</p>
+          </div>
+          <button type="button" class="task-cta" id="task-cta-bus-outbound" disabled>대기</button>
+        </article>
+        <article class="task-row is-locked" id="task-bib" data-task="bib">
+          <div class="task-copy">
+            <h2 class="task-title">배번 입력</h2>
+            <p class="task-hint" id="task-hint-bib">배번을 넣으면 경기 후 기록을 가져올 수 있어요</p>
+          </div>
+          <button type="button" class="task-cta" id="task-cta-bib" disabled>대기</button>
+        </article>
+        <article class="task-row is-locked" id="task-bus-return" data-task="bus_return">
+          <div class="task-copy">
+            <h2 class="task-title">오는 버스 탑승</h2>
+            <p class="task-hint" id="task-hint-bus-return">총무가 열면 탑승할 수 있어요</p>
+          </div>
+          <button type="button" class="task-cta" id="task-cta-bus-return" disabled>대기</button>
+        </article>
+        <article class="task-row is-locked" id="task-confirm" data-task="confirm">
+          <div class="task-copy">
+            <h2 class="task-title">기록 확인</h2>
+            <p class="task-hint" id="task-hint-confirm">기록이 수집되면 확인할 수 있어요</p>
+            <div id="todayConfirmDetail" class="today-confirm-detail hidden"></div>
+          </div>
+          <button type="button" class="task-cta" id="todayCta" disabled>대기</button>
+        </article>
       </section>
 
       <button type="button" class="switch-user-btn" id="switchUserBtn">다른 사람 선택</button>
@@ -185,8 +208,7 @@
 
   <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
     <a class="event-tab-btn active" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
-    <a class="event-tab-btn" data-tab="bus" href="#"><span class="tab-icon">🚌</span>버스</a>
-    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
+    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>대회 기록</a>
   </nav>
 
   <div id="toast" class="toast hidden" role="status"></div>
@@ -216,13 +238,8 @@
     const eventMetaEl = document.getElementById("eventMeta");
     const nickChipEl = document.getElementById("nickChip");
 
-    const todayCard = document.getElementById("todayCard");
-    const todayKicker = document.getElementById("todayKicker");
-    const todayTitle = document.getElementById("todayTitle");
-    const todayDesc = document.getElementById("todayDesc");
     const todayConfirmDetail = document.getElementById("todayConfirmDetail");
     const todayCta = document.getElementById("todayCta");
-    const todaySecondary = document.getElementById("todaySecondary");
     const switchUserBtn = document.getElementById("switchUserBtn");
 
     const pickEventTitle = document.getElementById("pickEventTitle");
@@ -295,7 +312,6 @@
       EventMemberTabs.mount({
         eventId: eventId,
         active: "home",
-        busEnabled: busEnabled,
         barEl: eventTabBar,
       });
     }
@@ -339,9 +355,8 @@
       }
     }
 
-    function renderTodayCard(identity) {
-      const action = EventHomeAction.resolveNextAction({
-        nickname: identity.nickname,
+    function renderTaskList(identity) {
+      const tasks = EventHomeAction.resolveHomeTasks({
         busEnabled: busEnabled,
         busRow: busRow,
         participant: EventMemberProfile.matchInList(
@@ -350,78 +365,61 @@
         ),
         confirmMode: confirmMode,
       });
+      const rowById = {
+        bus_outbound: document.getElementById("task-bus-outbound"),
+        bib: document.getElementById("task-bib"),
+        bus_return: document.getElementById("task-bus-return"),
+        confirm: document.getElementById("task-confirm"),
+      };
+      const hintById = {
+        bus_outbound: document.getElementById("task-hint-bus-outbound"),
+        bib: document.getElementById("task-hint-bib"),
+        bus_return: document.getElementById("task-hint-bus-return"),
+        confirm: document.getElementById("task-hint-confirm"),
+      };
+      const ctaById = {
+        bus_outbound: document.getElementById("task-cta-bus-outbound"),
+        bib: document.getElementById("task-cta-bib"),
+        bus_return: document.getElementById("task-cta-bus-return"),
+        confirm: todayCta,
+      };
 
-      todayCard.className = "today-card";
-      if (action.done) todayCard.classList.add("is-done");
-      else if (action.kind === "confirm_pending") todayCard.classList.add("is-pending");
-
-      todayKicker.textContent = action.kicker;
-      todayTitle.textContent = action.title;
-      todayDesc.textContent = action.desc;
-
-      todayCta.classList.add("hidden");
-      todaySecondary.classList.add("hidden");
-      todayCta.disabled = false;
-      todayCta.classList.remove("is-done");
-      todayCta.onclick = null;
-
-      if (action.kind === "confirm_pending") {
-        renderConfirmDetail();
-        todayCta.textContent =
-          confirmPhase === "review" ? "이 기록으로 확정" : action.ctaLabel;
-        todayCta.classList.remove("hidden");
-        todayCta.onclick = onConfirmClick;
-        if (action.secondaryLabel && action.secondaryHref) {
-          todaySecondary.textContent = action.secondaryLabel;
-          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-          todaySecondary.classList.remove("hidden");
+      tasks.forEach(function (task) {
+        const row = rowById[task.id];
+        const hint = hintById[task.id];
+        const cta = ctaById[task.id];
+        if (!row || !hint || !cta) return;
+        row.className = "task-row is-" + task.state;
+        hint.textContent = task.hint;
+        cta.onclick = null;
+        cta.classList.remove("is-done", "hidden");
+        if (task.state === "ready") {
+          cta.disabled = false;
+          cta.textContent = task.ctaLabel || "열기";
+          if (task.ctaKind === "link" && task.hrefKey) {
+            cta.onclick = function () {
+              location.href = EventHomeAction.pageHref(task.hrefKey, eventId);
+            };
+          } else if (task.ctaKind === "confirm") {
+            cta.onclick = onConfirmClick;
+            cta.textContent =
+              confirmPhase === "review" ? "이 기록으로 확정" : task.ctaLabel;
+          }
+        } else if (task.state === "done") {
+          cta.disabled = true;
+          cta.textContent = "완료";
+          cta.classList.add("is-done");
+        } else if (task.state === "skip") {
+          cta.disabled = true;
+          cta.textContent = "해당 없음";
+        } else {
+          cta.disabled = true;
+          cta.textContent = "대기";
         }
-        return;
-      }
+      });
 
-      todayConfirmDetail.classList.add("hidden");
-
-      if (action.ctaKind === "link" && action.ctaLabel) {
-        todayCta.classList.remove("hidden");
-        todayCta.textContent = action.ctaLabel;
-        todayCta.onclick = function () {
-          location.href = EventHomeAction.pageHref(action.ctaHref, eventId);
-        };
-        return;
-      }
-
-      if (action.ctaKind === "reload") {
-        todayCta.classList.remove("hidden");
-        todayCta.textContent = action.ctaLabel;
-        todayCta.onclick = function () {
-          location.reload();
-        };
-        if (action.secondaryLabel && action.secondaryHref) {
-          todaySecondary.textContent = action.secondaryLabel;
-          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-          todaySecondary.classList.remove("hidden");
-        }
-        return;
-      }
-
-      if (action.ctaKind === "done") {
-        todayCta.classList.remove("hidden");
-        todayCta.textContent = action.ctaLabel;
-        todayCta.disabled = true;
-        todayCta.classList.add("is-done");
-        if (action.secondaryLabel && action.secondaryHref) {
-          todaySecondary.textContent = action.secondaryLabel;
-          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-          todaySecondary.classList.remove("hidden");
-        }
-        return;
-      }
-
-      if (action.secondaryLabel && action.secondaryHref) {
-        todaySecondary.textContent = action.secondaryLabel;
-        todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-        todaySecondary.classList.remove("hidden");
-      }
+      if (confirmMode === "pending") renderConfirmDetail();
+      else todayConfirmDetail.classList.add("hidden");
     }
 
     async function loadBusRow(identity) {
@@ -467,7 +465,7 @@
 
     async function refreshHomeState(identity) {
       await Promise.all([loadBusRow(identity), loadConfirmState(identity)]);
-      renderTodayCard(identity);
+      renderTaskList(identity);
     }
 
     async function submitSelfConfirm(identity) {
@@ -503,7 +501,7 @@
       if (confirmMode !== "pending" || isConfirming) return;
       if (confirmPhase === "cta") {
         confirmPhase = "review";
-        renderTodayCard(identity);
+        renderTaskList(identity);
         return;
       }
       submitSelfConfirm(identity);

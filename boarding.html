@@ -416,8 +416,7 @@
 
   <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
     <a class="event-tab-btn" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
-    <a class="event-tab-btn active" data-tab="bus" href="#"><span class="tab-icon">🚌</span>버스</a>
-    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>명단</a>
+    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>대회 기록</a>
   </nav>
 
   <script src="assets/event-member-copy.js"></script>
@@ -530,12 +529,9 @@
 
     function mountTabs() {
       if (!eventId) return;
-      const lockedLeg = new URLSearchParams(location.search).has("leg");
       EventMemberTabs.mount({
         eventId: eventId,
-        active: "bus",
-        busEnabled: busModuleEnabled,
-        busLeg: lockedLeg ? currentLeg : null,
+        active: "",
         barEl: document.getElementById("eventTabBar"),
       });
     }

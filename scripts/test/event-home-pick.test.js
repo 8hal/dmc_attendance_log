@@ -58,9 +58,19 @@ describe("event-home nick pick chrome", () => {
     assert.match(pick, /cancelable/);
   });
 
-  it("shows return-bus secondary while confirm is pending", () => {
-    const render = extractFn(read("event-home.html"), "renderTodayCard");
-    assert.match(render, /secondaryLabel/);
-    assert.match(render, /boardingReturn|secondaryHref/);
+  it("home shows four tasks and two tabs: 홈 and 대회 기록", () => {
+    const html = read("event-home.html");
+    assert.match(html, /id="task-list"/);
+    assert.match(html, /가는 버스 탑승/);
+    assert.match(html, /배번 입력/);
+    assert.match(html, /오는 버스 탑승/);
+    assert.match(html, /기록 확인/);
+    const render = extractFn(html, "renderTaskList");
+    assert.match(render, /resolveHomeTasks/);
+    const bar = html.slice(html.indexOf('id="eventTabBar"'), html.indexOf("id=\"toast\""));
+    assert.match(bar, />홈</);
+    assert.match(bar, />대회 기록</);
+    assert.doesNotMatch(bar, />버스</);
+    assert.doesNotMatch(bar, />명단</);
   });
 });
