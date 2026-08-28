@@ -91,8 +91,14 @@
 
 문구: **배번과 종목을 넣어 주세요.** (‘먼저’ 금지)
 
-입력: 배번 + 종목 `10K` / `Half` / `Full` / **기타**.  
-저장 값: `10K` / `half` / `full` / `unknown`. 철원은 앞의 세 종목으로 충분하다. 기타는 다음 대회 확장 구멍이다.
+입력: 배번 + 종목. 종목은 **`race_results.distance` canonical**만 저장한다 (`functions/lib/raceDistance.js` `RACE_DISTANCE_CANONICAL`). `normalizeRaceDistance`를 거친 값.
+
+1차 선택: `10K` / `half` / `full` (표시는 기존 `EventMemberCopy.memberDistanceLabel`).  
+**기타**는 `unknown`을 쓰지 않는다. 펼치면 나머지 canonical: `5K` / `3K` / `30K` / `32K` / `ultra`.
+
+`unknown`·빈 값은 저장하지 않는다. 고르지 않으면 6.1에 남는다. 철원 주경로는 앞의 세 종목이다.
+
+`participants[].distance`와 확정 시 `race_results.distance`가 같은 enum이다.
 
 둘 다 있어야 저장. 배번만 있고 종목이 비면 이 상태(배번 채운 채 종목만 고름).
 
@@ -228,7 +234,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 | 기존 | 변경 |
 |---|---|
-| `update-bib` | `distance`. 세션 중이면 해당 배번 즉시 스크랩 후 클라이언트가 `my-pending-result` |
+| `update-bib` | `distance`는 canonical만 (`unknown`·빈 값 거절). 세션 중이면 해당 배번 즉시 스크랩 후 클라이언트가 `my-pending-result` |
 | `my-pending-result` | 변경 없음 |
 | `self-confirm` | `pbConfirmed`. 수동이면 `netTime` 또는 `dnStatus: DNS\|DNF`. 매칭 행 없이 수동 upsert 허용 |
 | `confirm-one` | 총무 수동. 변경 없이 UI를 `event-admin`에 연결 |
@@ -253,7 +259,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 ## 11. 테스트
 
 - 프로필 6.1~6.5, 6.2 배번·종목 크게, 수정 작게, 6.1에 ‘먼저’ 없음
-- 종목 기타 → `unknown`
+- 종목 저장 값이 `10K`\|`half`\|`full`\|`5K`\|`3K`\|`30K`\|`32K`\|`ultra`. 기타 → `unknown` 금지
 - 배번 없이 가는 편 열림 → 탑승하기 활성
 - 지인: 버스만, `self-confirm` 거부, 대회 기록 없음
 - `openLeg` 상호 배타, 옛 `enabled`만 있으면 꺼짐
@@ -301,7 +307,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 - 섹션 두 개, 독립
 - 6.1 문구에 ‘먼저’ 없음
-- 종목 3개 + 기타. 철원은 3개로 충분, 다음 대회에 추가
+- 종목 1차 3개 + 기타는 나머지 canonical. **`unknown` 저장 금지.** `race_results.distance`와 동일 enum
 - 대기 카피: 총무가 스크랩 **시작**. 미완주만 간격 재시도, 창 끝나면 중단
 - 회원 배번 수정 시 세션 중이면 즉시 스크랩
 - 재시도 실패 → 회원 수동 (시각/DNS/DNF). 미입력 시 총무
