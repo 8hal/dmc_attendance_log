@@ -494,6 +494,11 @@
           <div class="summary-count" id="summaryCount">탑승 0 / 필요 0</div>
           <div class="summary-hint" id="summaryHint"></div>
         </div>
+        <div class="leg-tabs" role="tablist" aria-label="탑승 상태">
+          <button type="button" class="leg-tab active" id="boardFilterAll" data-board-filter="all">전체</button>
+          <button type="button" class="leg-tab" id="boardFilterPending" data-board-filter="pending">미탑승</button>
+          <button type="button" class="leg-tab" id="boardFilterBoarded" data-board-filter="boarded">탑승</button>
+        </div>
         <input
           type="search"
           id="searchInput"
@@ -571,6 +576,7 @@
     </div>
   </div>
 
+  <script src="assets/event-bus-roster-filter.js"></script>
   <script>
     // 환경 자동 감지: localhost / 127.0.0.1 → 에뮬레이터 (boarding.html / group-detail과 동일)
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -598,6 +604,7 @@
       return: { required: 0, boarded: 0 }
     };
     let currentLeg = "outbound";
+    let boardFilter = "all";
     let pollTimer = null;
     let isProcessing = false;
     let composing = false;
@@ -707,6 +714,14 @@
       renderRoster(searchInput.value);
     }
 
+    function setBoardFilter(filter) {
+      boardFilter = EventBusRosterFilter.normalizeBoardFilter(filter);
+      document.getElementById("boardFilterAll").classList.toggle("active", boardFilter === "all");
+      document.getElementById("boardFilterPending").classList.toggle("active", boardFilter === "pending");
+      document.getElementById("boardFilterBoarded").classList.toggle("active", boardFilter === "boarded");
+      renderRoster(searchInput.value);
+    }
+
     function legState(row) {
       return (row.legs && row.legs[currentLeg]) || null;
     }
@@ -744,17 +759,11 @@
       const focusedSelEnd = focusedId ? document.activeElement.selectionEnd : null;
 
       rosterList.innerHTML = "";
-      const q = String(filterText || "").trim().toLowerCase();
-
-      let rows = roster.slice();
-      if (q) {
-        rows = rows.filter((p) => {
-          const nick = String(p.nickname || "").toLowerCase();
-          const real = String(p.realName || "").toLowerCase();
-          const note = String(p.note || "").toLowerCase();
-          return nick.includes(q) || real.includes(q) || note.includes(q);
-        });
-      }
+      let rows = EventBusRosterFilter.filterRosterRows(roster, {
+        query: filterText,
+        boardFilter,
+        currentLeg,
+      });
 
       rows.sort((a, b) => {
         const ar = isRequired(a);
@@ -767,8 +776,9 @@
       });
 
       if (rows.length === 0) {
+        const emptyMsg = roster.length === 0 ? "명단이 없습니다" : "해당하는 사람이 없습니다";
         rosterList.innerHTML =
-          '<div style="text-align:center;padding:20px;color:var(--text-sub);">명단이 없습니다</div>';
+          `<div style="text-align:center;padding:20px;color:var(--text-sub);">${emptyMsg}</div>`;
         return;
       }
 
@@ -1366,6 +1376,9 @@
 
     document.getElementById("tabOutbound").addEventListener("click", () => setLeg("outbound"));
     document.getElementById("tabReturn").addEventListener("click", () => setLeg("return"));
+    document.getElementById("boardFilterAll").addEventListener("click", () => setBoardFilter("all"));
+    document.getElementById("boardFilterPending").addEventListener("click", () => setBoardFilter("pending"));
+    document.getElementById("boardFilterBoarded").addEventListener("click", () => setBoardFilter("boarded"));
     document.getElementById("enableBtn").addEventListener("click", enableBoarding);
     document.getElementById("disableBtn").addEventListener("click", disableBoarding);
     document.getElementById("guestAddBtn").addEventListener("click", addGuest);
