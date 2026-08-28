@@ -129,6 +129,7 @@
 
 - 한 편을 켜면 다른 편은 `null`이 아니라 **꺼짐**. `openLeg`는 값 하나이므로 동시에 두 편이 열리지 않는다.
 - `enabled`는 호환용으로 `openLeg != null`과 항상 같게 유지한다. 기존 `enabled`만 보는 코드가 있어도 “아무 편도 안 열림 / 어떤 편이든 열림”은 깨지지 않는다. **어느 편인지는 `openLeg`만 본다.**
+- 이미 저장된 문서가 `enabled: true`인데 `openLeg`가 없으면 **꺼진 것으로 읽는다** (`openLeg = null`). 총무가 가는/오는 중 한 편을 다시 켠다.
 
 `bus-boarding` `settings`: `openLeg`를 받는다. `enabled: true`만 보내고 `openLeg`가 없으면 거절한다 (모호한 양편 열림 방지). `openLeg: null` 또는 `enabled: false`면 둘 다 꺼짐.
 
