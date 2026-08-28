@@ -252,6 +252,72 @@
       line-height: 1.5;
     }
 
+    .leg-visual {
+      margin: 0 0 16px;
+      padding: 16px 14px 14px;
+      border-radius: 12px;
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      text-align: center;
+    }
+    .leg-visual[data-leg="return"] {
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
+    .leg-visual-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #1d4ed8;
+    }
+    .leg-visual[data-leg="return"] .leg-visual-title {
+      color: #c2410c;
+    }
+    .leg-visual-route {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .leg-visual-stop {
+      flex: 0 0 auto;
+      min-width: 52px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .leg-visual-stop.is-dest {
+      background: #1d4ed8;
+      color: #fff;
+    }
+    .leg-visual[data-leg="return"] .leg-visual-stop.is-dest {
+      background: #ea580c;
+    }
+    .leg-visual-track {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 36px;
+    }
+    .leg-visual-bus { font-size: 32px; line-height: 1; }
+    .leg-visual-arrow {
+      font-size: 22px;
+      font-weight: 800;
+      color: #2563eb;
+    }
+    .leg-visual[data-leg="return"] .leg-visual-arrow { color: #ea580c; }
+    .leg-visual-caption {
+      margin: 10px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
     .detail-row {
       margin-bottom: 14px;
     }
@@ -385,9 +451,18 @@
         <a id="confirmRecordBanner" class="confirm-banner hidden" href="#">기록 확정하기</a>
         <h2 class="card-title"><span id="confirmNickname"></span>님</h2>
         <div id="confirmError" class="error-box hidden"></div>
-        <div class="detail-row">
-          <div class="detail-label">구간</div>
-          <div class="detail-value" id="confirmLeg"></div>
+        <div class="leg-visual" id="confirm-leg-visual" data-leg="outbound">
+          <p class="leg-visual-title" id="confirm-leg-title">대회로 가는 버스</p>
+          <p class="leg-visual-title hidden" id="confirm-leg-title-return">대회에서 오는 버스</p>
+          <div class="leg-visual-route" aria-hidden="true">
+            <span class="leg-visual-stop" id="confirm-leg-from">동탄</span>
+            <span class="leg-visual-track">
+              <span class="leg-visual-bus">🚌</span>
+              <span class="leg-visual-arrow">▶</span>
+            </span>
+            <span class="leg-visual-stop is-dest" id="confirm-leg-to">대회</span>
+          </div>
+          <p class="leg-visual-caption"><span id="confirmLeg">가는 편</span></p>
         </div>
         <div class="detail-row" id="confirmGuestRow">
           <div class="detail-label">구분</div>
@@ -616,6 +691,13 @@
       currentRow = row;
 
       confirmNickname.textContent = row.nickname;
+      const visual = document.getElementById("confirm-leg-visual");
+      const isReturn = currentLeg === "return";
+      visual.setAttribute("data-leg", isReturn ? "return" : "outbound");
+      document.getElementById("confirm-leg-title").classList.toggle("hidden", isReturn);
+      document.getElementById("confirm-leg-title-return").classList.toggle("hidden", !isReturn);
+      document.getElementById("confirm-leg-from").textContent = isReturn ? "대회" : "동탄";
+      document.getElementById("confirm-leg-to").textContent = isReturn ? "동탄" : "대회";
       confirmLeg.textContent = LEG_LABEL[currentLeg] || currentLeg;
       confirmGuestRow.classList.toggle("hidden", !row.isGuest);
       hideError();

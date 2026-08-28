@@ -94,6 +94,23 @@ describe("boarding member shell", () => {
     assert.match(html, /event-member-copy\.js/);
     assert.match(html, /memberEventTitle\(/);
   });
+
+  it("confirm card shows a going-to-race bus graphic, not just 구간 text", () => {
+    const confirmStart = html.indexOf('id="confirmScreen"');
+    const confirm = html.slice(confirmStart, html.indexOf('id="doneScreen"'));
+    assert.match(confirm, /id="confirm-leg-visual"/);
+    assert.match(confirm, /대회로 가는 버스/);
+    assert.match(confirm, /대회에서 오는 버스/);
+    assert.match(confirm, /🚌/);
+    assert.match(confirm, />동탄</);
+    assert.match(confirm, />대회</);
+    const headerStart = html.indexOf("<header");
+    const header = html.slice(headerStart, html.indexOf("</header>", headerStart) + 9);
+    assert.doesNotMatch(header, /🚌/);
+    const select = extractFn(html, "selectParticipant");
+    assert.match(select, /confirm-leg-visual/);
+    assert.match(select, /data-leg/);
+  });
 });
 
 describe("member pages use EventMemberCopy", () => {
