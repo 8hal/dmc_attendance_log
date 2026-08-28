@@ -10,11 +10,11 @@
 
 ## 1. 배경 및 문제
 
-회원 홈(`event-home.html`)이 과업 카드 네 장(가는 버스·배번·오는 버스·기록)을 같은 무게로 보여 주면, 아침에도 “지금 뭐 하지?”가 흩어진다. 배번·기록은 한 사람의 대회 프로필이고, 버스는 총무가 편을 여는 별개 과업이다.
+회원 홈(`event-home.html`)은 춘백식 **오늘 카드 하나**다. 배번·기록·버스가 한 슬롯을 돌아가며 쓰므로, 아침 탑승과 배번 입력을 동시에 끝낼 수 없다. 배번·기록은 한 사람의 대회 프로필이고, 버스는 총무가 편을 여는 별개 과업이다.
 
-총무 버스 스위치는 지금 `busBoarding.enabled` 하나라 가는 편과 오는 편이 같이 열린다. 실제 운영은 한 번에 한 편만 연다. QR도 편마다 URL이 갈라져 있다.
+총무 버스 스위치는 지금 `busBoarding.enabled` 하나라 가는 편과 오는 편이 같이 열린다. 실제 운영은 한 번에 한 편만 연다. QR도 편마다 URL이 갈라져 있다 (`?leg=outbound` / `?leg=return`).
 
-**핵심 고통:** 홈에서 프로필(배번·기록)과 버스가 한 줄 과업으로 섞이고, 버스 열림이 편과 맞지 않는다.
+**핵심 고통:** 프로필(배번·기록)과 버스가 한 카드에서 섞이고, 버스 열림이 편과 맞지 않는다.
 
 ---
 
@@ -22,7 +22,7 @@
 
 | 목표 | 성공 기준 |
 |---|---|
-| 홈이 두 덩어리 | 닉 선택 후 홈에 **프로필 카드 하나 + 버스 카드 하나**만 있다. 네 장 동등 리스트가 없다. |
+| 홈이 두 덩어리 | 닉 선택 후 홈에 **프로필 카드 하나 + 버스 카드 하나**만 있다. 오늘 카드 하나에 과업이 교대되지 않는다. |
 | 과업은 독립 | 배번이 없어도 가는 버스가 열려 있으면 탑승할 수 있다. 버스를 안 타도 배번·기록을 할 수 있다. |
 | 프로필 상태 | 배번 없음 → 대기 → 미확정 → 확정이 카드 안에서만 바뀐다. 배번 입력에 `my-bib.html`로 보내지 않는다. |
 | 버스는 편 스위치 | 총무가 가는/오는를 따로 켠다. 한 편을 켜면 다른 편은 꺼진다. 회원 홈·QR·`boarding.html`은 그 열린 편만 탑승한다. |
@@ -35,7 +35,8 @@
 ### In Scope
 
 - `event-home.html` 홈 본문: 프로필 카드 + 버스 카드
-- `assets/event-home-action.js` 상태 기계 (홈 DOM은 `resolveHomeTasks` 4장 리스트를 쓰지 않음)
+- `assets/event-home-action.js` 상태 기계 (`resolveNextAction` 단일 오늘 카드를 프로필+버스 두 카드로 교체)
+- `assets/event-member-tabs.js` 및 같은 탭을 쓰는 `event-roster.html` · `boarding.html`: **버스 탭 제거** (버스는 홈 카드). 나머지 탭 라벨(`명단`)은 유지. `대회 기록`으로 바꾸는 것은 범위 밖
 - 총무 `event-admin.html` 버스 패널: 가는 편 / 오는 편 스위치, QR 하나
 - `boarding.html`: 열린 편으로 탑승. `?leg=`가 있어도 **열린 편이 우선**
 - 기존 API 확장만
@@ -73,7 +74,7 @@
 1. 대회 제목·날짜·장소, 선택한 닉
 2. **프로필** 카드 — 배번·종목·기록 확인
 3. **버스** 카드 — 지금 해당하는 한 편만
-4. 하단 탭 `홈` | `대회 기록` — 기록 탭 내용은 변경하지 않음
+4. 하단 탭: `홈` | `명단`. 버스 탭은 없앤다. `명단` 화면 내용·이름(`대회 기록`)은 바꾸지 않음
 
 두 카드는 동시에 보이고 서로 잠그지 않는다. 프로필은 홈에서 끝낸다. 버스 탑승 CTA만 `boarding.html`로 간다.
 
@@ -90,6 +91,8 @@
 입력: 배번 + 종목. 종목은 `10K` / `Half` / `Full` (저장 값 `10K` / `half` / `full`, `normalizeRaceDistance`). 둘 다 있어야 저장.
 
 저장: `POST group-events` `update-bib`에 `distance`를 포함. `participants[].bib`, `participants[].distance`.
+
+**배번만 있고 종목이 비어 있으면 6.1이다.** 배번을 채워 두고 종목을 고르게 한다. 6.2는 배번과 종목이 둘 다 있을 때만.
 
 ### 6.2 배번은 있는데 기록 없음
 
@@ -139,20 +142,24 @@ QR·참가자 링크는 **하나**. `boarding.html?eventId={id}` (편 쿼리 없
 
 총무 명단에서 편별 탑승 체크(`admin-board`)는 지금처럼 스위치와 무관하게 할 수 있다. 스위치는 회원 홈 CTA와 QR/`self-board`용이다.
 
-`boarding-admin.html`이 같은 `settings`를 쓰면 편 스위치를 맞춘다. 회원 주경로는 `event-admin.html`이다.
+`boarding-admin.html`도 같은 `settings`를 쓰므로 **이 계획에서 편 스위치를 맞춘다.** `enabled: true`만 보내면 거절되므로 그대로 두면 버스 켜기가 깨진다. 회원 주경로는 `event-admin.html`이다.
 
 ### 7.3 회원 홈 버스 카드
 
 본인 명단 행은 탑승이 꺼져 있어도 필요하다. 홈은 `group-events` `detail`의 `event.busBoarding.roster`에서 닉으로 찾는다. 공개 `bus-boarding` `status`가 꺼짐일 때 명단을 비우는 동작은 `boarding.html`용으로 유지해도 된다.
 
+**열린 편이 이 사람에게 `required`가 아니면 탑승 CTA를 열지 않는다.** (`outbound_only`에게 오는 편 스위치, `return_only`에게 가는 편 스위치, 해당없음.)
+
 | 조건 | 카드 |
 |---|---|
 | 명단에 없음 (`rideType` 해당없음·행 없음) | 버튼 없음. “이번 대회 버스 명단에 없습니다. 버스 탑승 예정이면 총무에게 문의하세요.” |
+| 열린 편이 이 행에 해당 없음 | CTA 없음. 이미 탄 편이 있으면 그 **탑승 완료**. 아직 탈 편이 남아 있으면 그 편 카드(시간 아니면 비활성). 둘 다 아니면 명단 없음과 같은 문의 문구를 쓰지 않고, 완료/대기는 남은 필요 편만 보여 준다. |
 | `return_only` | 처음부터 오는 편 카드. 오는 편이 꺼져 있으면 비활성 + “오는 버스 탑승 시간이 아닙니다.” |
+| `outbound_only` | 처음부터 가는 편 카드. 타면 **가는 버스 탑승 완료**. 오는 편이 열려도 오는 편 CTA를 보여 주지 않는다. |
 | `openLeg === null`, 가는 편 필요·미탑승 | `가는 버스 탑승` 비활성. “가는 버스 탑승 시간이 아닙니다.” |
-| `openLeg === "outbound"`, 미탑승 | 버튼 활성 → `boarding.html?eventId=` (쿼리에 편을 넣지 않음) |
-| 가는 편 탑승 완료, `openLeg !== "return"` | **가는 버스 탑승 완료** (오는 편 카드로 바꾸지 않음) |
-| `openLeg === "return"` | 카드가 오는 편. 미탑승이면 활성, 탔으면 **오는 버스 탑승 완료** |
+| `openLeg === "outbound"`, 가는 편 필요·미탑승 | 버튼 활성 → `boarding.html?eventId=` (쿼리에 편을 넣지 않음) |
+| 가는 편 탑승 완료, 오는 편 필요, `openLeg !== "return"` | **가는 버스 탑승 완료** |
+| `openLeg === "return"`, 오는 편 필요 | 카드가 오는 편. 미탑승이면 활성, 탔으면 **오는 버스 탑승 완료** |
 
 ### 7.4 QR과 `boarding.html`
 
@@ -161,7 +168,7 @@ QR·참가자 링크는 **하나**. `boarding.html?eventId={id}` (편 쿼리 없
 1. 스캔 → `boarding.html?eventId=`
 2. `status.openLeg`가 곧 이번 탑승 편이다. URL `?leg=`는 무시한다 (예전에 인쇄한 가는 편 QR도 오는 편을 연 뒤에는 오는 편으로 동작).
 3. `openLeg === null` → 탑승 시간이 아님. 회원 셀프 보드는 거부 (`self-board`는 `openLeg === 요청 편`일 때만).
-4. 닉 있음 → 그 편 확인 화면. 닉 없음 → 기존처럼 목록에서 고름.
+4. 닉 있음 → `openLeg`가 그 행에 `required`이면 확인 화면. 이미 탔으면 완료. **해당 없으면 확인 화면을 열지 않고** 홈으로 보낸다 (셀프 보드 실패를 보여 주지 않음). 닉 없음 → 기존처럼 목록. 목록에서도 열린 편이 `required`가 아닌 사람은 고를 수 없다.
 5. 탑승 완료 후 홈으로. 배번 유도는 홈 프로필이 한다. boarding의 “이어서 배번 입력 → my-bib”는 홈으로 돌린다.
 
 홈에서 탑승하기를 눌러도 같은 URL이다. 열린 편이 곧 그 버튼의 편이다.
@@ -200,6 +207,8 @@ QR·참가자 링크는 **하나**. `boarding.html?eventId={id}` (편 쿼리 없
 - 명단 없음 문구 vs 시간 아님 비활성 버튼.
 - `openLeg` 상호 배타, `enabled` 동기화, `self-board`가 다른 편이면 거부.
 - `?leg=outbound` QR이 `openLeg=return`일 때 오는 편으로 탑승.
+- `outbound_only` + `openLeg=return` → 오는 편 CTA/확인 화면 없음. `return_only` + `openLeg=outbound`도 대칭.
+- 배번만 있고 종목 없음 → 6.1 (6.2 아님).
 - `update-bib` + 즉시 `my-pending-result` → pending이면 6.3, 없으면 6.2.
 - `self-confirm` + `pbConfirmed: true`가 `race_results`에 반영.
 - 기존 `pre-deploy-test.sh` 버스·self-confirm 회귀.
@@ -209,8 +218,10 @@ QR·참가자 링크는 **하나**. `boarding.html?eventId={id}` (편 쿼리 없
 ## 11. 파일
 
 - `event-home.html`, `assets/event-home-action.js`, `assets/event-member-shell.css`
+- `assets/event-member-tabs.js`, `event-roster.html` (버스 탭 제거, `명단` 유지)
 - `event-admin.html` (스위치·QR)
-- `boarding.html`, `assets/event-boarding-flow.js` (`openLeg` 우선)
+- `boarding-admin.html` (같은 `settings` · 편 스위치)
+- `boarding.html`, `assets/event-boarding-flow.js` (`openLeg` 우선, `?leg=` 무시)
 - `functions/index.js`, `functions/lib/bus-boarding.js`, `functions/lib/self-confirm.js`
 - `scripts/test/event-home-action.test.js` 및 bus-boarding / update-bib / self-confirm 테스트
 
@@ -226,4 +237,4 @@ QR·참가자 링크는 **하나**. `boarding.html?eventId={id}` (편 쿼리 없
 - 대기 화면의 배번·종목은 크게, 수정 버튼은 필요하되 눈에 띄지 않게.
 - 버스 스위치는 가는/오는를 나눈다.
 - QR은 가는 편·오는 편 동일.
-- 대회 기록 탭은 홈 다음.
+- 하단 버스 탭은 제거. `명단` 이름 변경은 홈 다음.
