@@ -40,7 +40,7 @@
 
 - `event-home.html` 프로필 + 버스. QR·탑승하기는 홈에서 `self-board` 후 탑승 완료 연출
 - `boarding.html` 회원 UI 제거. 옛 URL은 홈으로 리다이렉트
-- `event-admin.html` 편 스위치, QR 하나, **당일 체크리스트**, 스크랩 세션 시작/종료, 미입력자 수동 기록
+- `event-admin.html` 편 스위치, QR 하나, **당일 체크리스트**, 기록 소스 저장, 스크랩 세션 시작/종료, 미입력자 수동 기록. 전부 **총무 비밀번호**. 오너/`ops.html` 없음
 - `assets/event-member-tabs.js` 등: 버스 탭 제거, 라벨 **대회 기록**
 - API는 기존 확장 (신규 `action`/`subAction` 없음)
   - `update-bib`: `distance` + (세션 중이면) 해당 배번 즉시 스크랩
@@ -57,6 +57,7 @@
 - 배번 입력을 총무가 켜고 끄는 스위치
 - 종목 칩을 대회마다 다르게 설정하는 관리 UI (다음 대회에 코드로 추가)
 - 스크랩 간격·창 길이를 총무가 숫자로 조절하는 UI (상수)
+- 오너 작업, `ops.html` 당일 사용. 소스·스크랩·수동 기록은 `event-admin`만
 
 ---
 
@@ -66,8 +67,10 @@
 |---|---|---|
 | 회원 (`participants`) | 홈, 대회 기록 | 배번·종목, 기록 확정·PB·수동, QR/홈 탑승 |
 | 지인 (버스 명단 `isGuest`) | 홈 버스만 | 탑승만. 프로필 기록 없음. 대회 기록 탭에 안 나옴 |
-| 총무 | `event-admin.html` | 편 스위치, QR, 체크리스트, 스크랩 세션, 미입력자 수동 기록 |
-| 오너 | ops 소스 매핑 | 이번 화면 없음 |
+| 총무 | `event-admin.html` | 기록 소스, 편 스위치, QR, 체크리스트, 스크랩 세션, 미입력자 수동 기록 |
+| 오너 | 없음 | **이번 대회에서 할 일 없음.** 예전에 오너/`ops.html`이 하던 소스 매핑·스크랩은 전부 총무 화면 |
+
+총무는 이미 쓰는 관리자 비밀번호로 소스 저장과 스크랩을 한다. `ops.html`을 열지 않는다. 화면의 오너 전용 잠금(`owner-writable` 배너로 소스·스크랩을 막는 것)은 없앤다. API `source`/`scrape`는 총무 비번으로 이미 허용되므로 신규 API 없음.
 
 ---
 
@@ -192,13 +195,14 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 `event-admin` 상단(또는 버스·스크랩 패널)에 고정. 완료는 스위치/세션 상태로 표시.
 
-1. **가는 편 탑승 켜기** — 동탄 집합 직전. QR은 이 링크 하나.
-2. **가는 편 끄기** — 출발 후. 안 끈 채 오는 편을 켜면 가는 편은 자동으로 꺼진다.
-3. **오는 편 켜기** — 복귀 탑승 직전.
-4. **오는 편 끄기** — 복귀 후.
-5. **스크랩 시작** — 선두 기록이 올라오기 시작할 때. 누른 뒤엔 미완주만 자동 재시도.
-6. **스크랩 종료** — 창이 끝나기 전에 그만둘 때. 안 누르면 기본 창이 끝나면 멈춘다.
-7. **안 뜬 기록** — 회원 미입력이면 여기서 DNS/DNF/시각 입력.
+1. **기록 소스 저장** — `event-admin`에서 source + sourceId. `ops.html` 아님. 스크랩 시작 전에 끝낸다.
+2. **가는 편 탑승 켜기** — 동탄 집합 직전. QR은 이 링크 하나.
+3. **가는 편 끄기** — 출발 후. 안 끈 채 오는 편을 켜면 가는 편은 자동으로 꺼진다.
+4. **오는 편 켜기** — 복귀 탑승 직전.
+5. **오는 편 끄기** — 복귀 후.
+6. **스크랩 시작** — 선두 기록이 올라오기 시작할 때. 누른 뒤엔 미완주만 자동 재시도.
+7. **스크랩 종료** — 창이 끝나기 전에 그만둘 때. 안 누르면 기본 창이 끝나면 멈춘다.
+8. **안 뜬 기록** — 회원 미입력이면 여기서 DNS/DNF/시각 입력.
 
 힌트 한 줄: 배포 직후에는 편 스위치를 다시 확인하세요.
 
@@ -206,7 +210,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 ## 8. 스크랩 세션
 
-총무가 결과를 “가져오는” 게 아니다. **대회 시간에 맞춰 스크랩을 시작**한다.
+총무가 결과를 “가져오는” 게 아니다. **대회 시간에 맞춰 `event-admin`에서 스크랩을 시작**한다. 소스 저장도 같은 화면, 같은 총무 비밀번호다.
 
 시작 (`POST scrape`, 기존): 배번 있는 참가자 조회. `groupScrapeSession = { startedAt, until, intervalMinutes }`. 기본 **간격 10분**, **창 6시간** (상수, UI 없음).
 
@@ -228,7 +232,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 | `my-pending-result` | 변경 없음 |
 | `self-confirm` | `pbConfirmed`. 수동이면 `netTime` 또는 `dnStatus: DNS\|DNF`. 매칭 행 없이 수동 upsert 허용 |
 | `confirm-one` | 총무 수동. 변경 없이 UI를 `event-admin`에 연결 |
-| `scrape` | 세션 start/stop. 재시도 대상은 미완주만 |
+| `scrape` / `source` | 세션 start/stop. 재시도는 미완주만. **총무 비번.** 오너만 되게 잠그지 않음 |
 | `bus-boarding` settings/status/self-board | `openLeg` |
 
 `race_results` SSOT. 회원·총무 확정은 그 `docId`만 upsert. `bulk-confirm` 전체 삭제 금지.
@@ -268,7 +272,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 - `event-home.html`, `assets/event-home-action.js`, `assets/event-home-badges.js`, `assets/event-member-shell.css`, `assets/event-member-copy.js`
 - `assets/event-member-tabs.js`, `event-roster.html` (짝 PRD)
-- `event-admin.html` (스위치, QR, 체크리스트, 스크랩 세션, 수동 기록)
+- `event-admin.html` (스위치, QR, 체크리스트, **소스·스크랩 총무 권한**, 수동 기록)
 - `boarding-admin.html` (`openLeg`)
 - `boarding.html` (리다이렉트만), `assets/event-boarding-flow.js` (홈 탑승 연출로 흡수 또는 삭제)
 - `functions/index.js`, `functions/lib/bus-boarding.js`, `functions/lib/self-confirm.js`, 스크랩 세션 스케줄러 (`groupEventAutoScrape` 또는 동일 패턴)
@@ -287,7 +291,7 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 
 그래서 배포 **직후** 총무가 **지금 필요한 편 하나**를 켜야 한다. 켜는 순간 `openLeg`가 생기고 이전과 같이 탑승이 된다.
 
-**대회 도중 배포하면** 그 몇 분 동안 전원이 못 탄다. 철원은 **출발 전, 총무가 옆에 있을 때** 배포하고 체크리스트 1을 다시 켠다.
+**대회 도중 배포하면** 그 몇 분 동안 전원이 못 탄다. 철원은 **출발 전, 총무가 옆에 있을 때** 배포하고 **가는 편 탑승**을 다시 켠다.
 
 가는 편으로 추측해 자동 열지 않는 이유: 오는 편 시간에 배포하면 가는 편이 다시 열린다.
 
@@ -307,3 +311,4 @@ QR·링크 **하나**: `event-home.html?eventId={id}&board=1`
 - 탭 이름 대회 기록 (짝 PRD)
 - 총무 당일 체크리스트
 - 옛 `enabled`만 있으면 꺼짐으로 읽음
+- **오너 할 일 없음.** 소스 매핑·스크랩은 총무 `event-admin`. `ops.html` 당일 불필요
