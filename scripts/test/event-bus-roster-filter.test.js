@@ -83,7 +83,17 @@ describe("event-bus-roster-filter", () => {
     assert.equal(matchesBoardFilter(boarded, "outbound", "pending"), false);
     assert.equal(matchesBoardFilter(skip, "outbound", "pending"), false);
     assert.equal(matchesBoardFilter(boarded, "outbound", "boarded"), true);
+    assert.equal(matchesBoardFilter(skip, "outbound", "boarded"), false);
     assert.equal(matchesBoardFilter(skip, "outbound", "all"), true);
+    const skipButMarked = row({
+      nickname: "해당없음인데체크",
+      legs: {
+        outbound: { required: false, boarded: true },
+        return: { required: true, boarded: false },
+      },
+    });
+    assert.equal(matchesBoardFilter(skipButMarked, "outbound", "boarded"), false);
+    assert.equal(matchesBoardFilter(skipButMarked, "outbound", "pending"), false);
   });
 
   it("filterRosterRows combines nickname search with board filter", () => {
@@ -125,6 +135,15 @@ describe("event-bus-roster-filter", () => {
       boarded.map((r) => r.nickname),
       ["게살볶음밥"]
     );
+    const returnPending = filterRosterRows(rows, {
+      query: "",
+      boardFilter: "pending",
+      currentLeg: "return",
+    });
+    assert.deepEqual(
+      returnPending.map((r) => r.nickname),
+      ["개마고원", "게살볶음밥", "6스타"]
+    );
   });
 });
 
@@ -133,6 +152,9 @@ describe("event-admin bus board filter UI", () => {
 
   it("loads the filter module and shows 전체/미탑승/탑승 tabs", () => {
     assert.match(html, /src="assets\/event-bus-roster-filter\.js"/);
+    const filterSrc = html.indexOf('src="assets/event-bus-roster-filter.js"');
+    const inlineScript = html.lastIndexOf("<script>");
+    assert.ok(filterSrc >= 0 && filterSrc < inlineScript, "filter module must load before inline script");
     assert.match(html, /id="board-filter-all"[^>]*>전체</);
     assert.match(html, /id="board-filter-pending"[^>]*>미탑승</);
     assert.match(html, /id="board-filter-boarded"[^>]*>탑승</);
@@ -160,5 +182,8 @@ describe("boarding-admin bus board filter UI", () => {
   it("renderRoster applies EventBusRosterFilter", () => {
     const fn = extractFn(html, "renderRoster");
     assert.match(fn, /EventBusRosterFilter\.filterRosterRows/);
+    const setFn = extractFn(html, "setBoardFilter");
+    assert.match(setFn, /boardFilterPending/);
+    assert.match(setFn, /renderRoster\(/);
   });
 });
