@@ -607,10 +607,9 @@
 
     async function loadConfirmState(identity) {
       const gen = homeGeneration;
-      confirmMode = "none";
-      confirmResult = null;
       if (!identity || !identity.nickname || !matchParticipant(identity)) {
-        syncConfirmPoll();
+        confirmMode = "none";
+        confirmResult = null;
         return;
       }
 
@@ -637,7 +636,6 @@
       } catch (err) {
         console.error("my-pending-result error:", err);
       }
-      syncConfirmPoll();
     }
 
     function shouldPollConfirm() {
@@ -686,6 +684,7 @@
       const gen = homeGeneration;
       loadBusRow(identity);
       await loadConfirmState(identity);
+      syncConfirmPoll();
       if (homeGeneration !== gen) return;
       renderHomeCards(identity);
     }

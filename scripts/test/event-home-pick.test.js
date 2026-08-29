@@ -238,4 +238,36 @@ describe("event-home nick pick chrome", () => {
     assert.match(poll, /confirmed/);
     assert.doesNotMatch(poll, /confirmMode\s*===\s*["']confirmed["']\s*\)\s*return\s*true/);
   });
+
+  it("loadConfirmState does not assign confirmMode none before fetch or in catch", () => {
+    const html = read("event-home.html");
+    const fn = extractAsyncFn(html, "loadConfirmState");
+    const firstIf = fn.search(/if\s*\(/);
+    assert.ok(firstIf >= 0, "missing identity/participant guard");
+    assert.doesNotMatch(
+      fn.slice(0, firstIf),
+      /confirmMode\s*=\s*["']none["']/,
+      "must not reset confirmMode to none before fetch"
+    );
+    const fetchAt = fn.indexOf("fetch");
+    assert.ok(fetchAt > firstIf, "fetch must follow identity guard");
+    const tryAt = fn.search(/try\s*\{/);
+    assert.ok(tryAt >= 0 && fetchAt > tryAt, "fetch must be inside try");
+    assert.doesNotMatch(
+      fn.slice(tryAt, fetchAt),
+      /confirmMode\s*=\s*["']none["']/,
+      "try path must not assign confirmMode none before fetch"
+    );
+    const catchAt = fn.search(/catch\s*\(/);
+    assert.ok(catchAt > fetchAt, "missing catch");
+    assert.doesNotMatch(
+      fn.slice(catchAt),
+      /confirmMode\s*=\s*["']none["']/,
+      "catch must not set confirmMode to none"
+    );
+    const refresh = extractAsyncFn(html, "refreshHomeState");
+    const loadAt = refresh.indexOf("loadConfirmState");
+    const syncAt = refresh.indexOf("syncConfirmPoll");
+    assert.ok(loadAt >= 0 && syncAt > loadAt, "refreshHomeState must syncConfirmPoll after loadConfirmState");
+  });
 });
