@@ -1,5 +1,6 @@
 /**
  * 회원 공개 명단·결과 행 조립 (실명·배번 제외).
+ * 출력은 확정 완주 또는 DNS/DNF만.
  */
 function normalizeNick(n) {
   return String(n || "").trim();
@@ -7,6 +8,33 @@ function normalizeNick(n) {
 
 function normalizeDist(d) {
   return String(d || "").trim().toLowerCase();
+}
+
+/** @returns {"DNS"|"DNF"|null} */
+function publicDnStatus(row) {
+  if (!row) return null;
+  const candidates = [row.dnStatus, row.status];
+  for (const c of candidates) {
+    const v = String(c || "").trim().toLowerCase();
+    if (v === "dns") return "DNS";
+    if (v === "dnf") return "DNF";
+  }
+  return null;
+}
+
+function finishTimeFromConfirmed(confirmed) {
+  if (!confirmed) return null;
+  const netRaw = String(
+    confirmed.netTime || confirmed.gunTime || confirmed.finishTime || ""
+  ).trim();
+  if (!netRaw || netRaw === "-" || netRaw === "--:--:--") return null;
+  return netRaw;
+}
+
+function isConfirmedFinish(confirmed, dnStatus) {
+  if (!confirmed || dnStatus) return false;
+  if (String(confirmed.status || "").toLowerCase() !== "confirmed") return false;
+  return !!finishTimeFromConfirmed(confirmed);
 }
 
 function isMissingDistance(raw, norm) {
@@ -49,7 +77,7 @@ function findConfirmedForParticipant(p, map, norm) {
  * @param {Array<object>} participants race_events.participants
  * @param {Map<string, object>|Record<string, object>} confirmedByKey key = `${realName}_${normDist}`
  * @param {(d: string) => string} normalizeDistance
- * @returns {Array<{ nickname: string, distance: string, netTime: string|null, pbConfirmed: boolean, hasResult: boolean }>}
+ * @returns {Array<{ nickname: string, distance: string, netTime: string|null, pbConfirmed: boolean, hasResult: true, dnStatus: "DNS"|"DNF"|null }>}
  */
 function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance) {
   const list = Array.isArray(participants) ? participants : [];
@@ -67,24 +95,21 @@ function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance) 
     const nickname = normalizeNick(p && p.nickname);
     if (!nickname) continue;
     const confirmed = findConfirmedForParticipant(p, map, norm);
-    const isConfirmed = !!(confirmed && String(confirmed.status || "") === "confirmed");
-    const netRaw = confirmed
-      ? String(confirmed.netTime || confirmed.gunTime || confirmed.finishTime || "").trim()
-      : "";
-    const netTime =
-      isConfirmed && netRaw && netRaw !== "-" && netRaw !== "--:--:--"
-        ? netRaw
-        : null;
-    const fromConfirmed = confirmed && confirmed.distance != null ? String(confirmed.distance).trim() : "";
+    if (!confirmed) continue;
+    const dnStatus = publicDnStatus(confirmed);
+    const isFinish = isConfirmedFinish(confirmed, dnStatus);
+    if (!dnStatus && !isFinish) continue;
+    const fromConfirmed = confirmed.distance != null ? String(confirmed.distance).trim() : "";
     const distance = isMissingDistance(p && p.distance, norm)
       ? norm(fromConfirmed || "") || ""
       : norm(p.distance || "");
     rows.push({
       nickname,
       distance: distance || "",
-      netTime,
-      pbConfirmed: !!(confirmed && confirmed.pbConfirmed),
-      hasResult: isConfirmed,
+      netTime: dnStatus ? null : finishTimeFromConfirmed(confirmed),
+      pbConfirmed: !!confirmed.pbConfirmed,
+      hasResult: true,
+      dnStatus,
     });
   }
   return rows;
@@ -114,9 +139,14 @@ function timeToSortSeconds(t) {
   return null;
 }
 
+function isPublicDnRow(row) {
+  const s = String((row && row.dnStatus) || "").toUpperCase();
+  return s === "DNS" || s === "DNF";
+}
+
 /**
  * sortBy: "result" | "nick" | "distance"
- * result: hasResult first, then netTime asc, no result last; then nick
+ * result: finish times ascending, then DNS/DNF, then nick
  */
 function sortPublicRosterRows(rows, sortBy = "result") {
   const out = Array.isArray(rows) ? rows.slice() : [];
@@ -130,13 +160,16 @@ function sortPublicRosterRows(rows, sortBy = "result") {
       if (d !== 0) return d;
       return String(a.nickname).localeCompare(String(b.nickname), "ko");
     }
-    // result
-    if (a.hasResult !== b.hasResult) return a.hasResult ? -1 : 1;
-    const sa = timeToSortSeconds(a.netTime);
-    const sb = timeToSortSeconds(b.netTime);
-    if (sa != null && sb != null && sa !== sb) return sa - sb;
-    if (sa != null && sb == null) return -1;
-    if (sa == null && sb != null) return 1;
+    const dnA = isPublicDnRow(a);
+    const dnB = isPublicDnRow(b);
+    if (dnA !== dnB) return dnA ? 1 : -1;
+    if (!dnA && !dnB) {
+      const sa = timeToSortSeconds(a.netTime);
+      const sb = timeToSortSeconds(b.netTime);
+      if (sa != null && sb != null && sa !== sb) return sa - sb;
+      if (sa != null && sb == null) return -1;
+      if (sa == null && sb != null) return 1;
+    }
     return String(a.nickname).localeCompare(String(b.nickname), "ko");
   });
   return out;

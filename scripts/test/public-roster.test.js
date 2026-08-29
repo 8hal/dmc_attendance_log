@@ -24,9 +24,10 @@ describe("buildPublicRosterRows", () => {
       confirmed,
       (d) => String(d || "").trim().toLowerCase(),
     );
-    assert.equal(rows.length, 2);
+    assert.equal(rows.length, 1);
     assert.deepEqual(Object.keys(rows[0]).sort(), [
       "distance",
+      "dnStatus",
       "hasResult",
       "netTime",
       "nickname",
@@ -36,8 +37,7 @@ describe("buildPublicRosterRows", () => {
     assert.equal(rows[0].netTime, "1:42:18");
     assert.equal(rows[0].pbConfirmed, true);
     assert.equal(rows[0].hasResult, true);
-    assert.equal(rows[1].hasResult, false);
-    assert.equal(rows[1].netTime, null);
+    assert.equal(rows[0].dnStatus, null);
     assert.ok(!("realName" in rows[0]));
     assert.ok(!("bib" in rows[0]));
   });
@@ -65,6 +65,7 @@ describe("buildPublicRosterRows", () => {
     assert.equal(rows[0].hasResult, true);
     assert.equal(rows[0].netTime, "02:54:34");
     assert.equal(rows[0].distance, "full");
+    assert.equal(rows[0].dnStatus, null);
     assert.ok(!("realName" in rows[0]));
     assert.ok(!("bib" in rows[0]));
   });
@@ -87,17 +88,62 @@ describe("buildPublicRosterRows", () => {
       confirmed,
       normalizeRaceDistance
     );
-    assert.equal(rows[0].hasResult, false);
+    assert.equal(rows.length, 0);
+  });
+
+  it("drops unconfirmed participants", () => {
+    const confirmed = new Map([
+      ["김A_half", { status: "confirmed", netTime: "1:42:18", pbConfirmed: true, distance: "half" }],
+    ]);
+    const rows = buildPublicRosterRows(
+      [
+        { nickname: "게살볶음밥", realName: "김A", distance: "half" },
+        { nickname: "동탄치타", realName: "김B", distance: "full" },
+      ],
+      confirmed,
+      normalizeRaceDistance
+    );
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].nickname, "게살볶음밥");
+    assert.equal(rows[0].dnStatus, null);
+  });
+
+  it("includes DNS case-insensitive", () => {
+    const confirmed = new Map([
+      ["김C_10K", { status: "dns", distance: "10K" }],
+    ]);
+    const rows = buildPublicRosterRows(
+      [{ nickname: "DNS러", realName: "김C", distance: "10K" }],
+      confirmed,
+      normalizeRaceDistance
+    );
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].dnStatus, "DNS");
     assert.equal(rows[0].netTime, null);
-    assert.equal(rows[0].distance, "half");
+    assert.equal(rows[0].hasResult, true);
+  });
+
+  it("includes DNF from dnStatus case-insensitive", () => {
+    const confirmed = new Map([
+      ["김D_half", { dnStatus: "DnF", distance: "half" }],
+    ]);
+    const rows = buildPublicRosterRows(
+      [{ nickname: "DNF러", realName: "김D", distance: "half" }],
+      confirmed,
+      normalizeRaceDistance
+    );
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].dnStatus, "DNF");
+    assert.equal(rows[0].netTime, null);
+    assert.equal(rows[0].hasResult, true);
   });
 });
 
 describe("filterPublicRosterRows", () => {
   const base = [
-    { nickname: "게살볶음밥", distance: "half", netTime: "1:42:00", hasResult: true, pbConfirmed: false },
-    { nickname: "동탄치타", distance: "full", netTime: null, hasResult: false, pbConfirmed: false },
-    { nickname: "러너킴", distance: "half", netTime: "1:40:00", hasResult: true, pbConfirmed: false },
+    { nickname: "게살볶음밥", distance: "half", netTime: "1:42:00", hasResult: true, pbConfirmed: false, dnStatus: null },
+    { nickname: "동탄치타", distance: "full", netTime: null, hasResult: true, pbConfirmed: false, dnStatus: "DNS" },
+    { nickname: "러너킴", distance: "half", netTime: "1:40:00", hasResult: true, pbConfirmed: false, dnStatus: null },
   ];
 
   it("종목 필터", () => {
@@ -113,18 +159,19 @@ describe("filterPublicRosterRows", () => {
 });
 
 describe("sortPublicRosterRows", () => {
-  it("기록 순: 결과 있는 사람 먼저, 시간 오름차순", () => {
+  it("기록 순: 시각 오름차순 다음 DNS/DNF 다음 닉", () => {
     const out = sortPublicRosterRows(
       [
-        { nickname: "B", distance: "half", netTime: "1:50:00", hasResult: true, pbConfirmed: false },
-        { nickname: "C", distance: "half", netTime: null, hasResult: false, pbConfirmed: false },
-        { nickname: "A", distance: "half", netTime: "1:40:00", hasResult: true, pbConfirmed: false },
+        { nickname: "느린완주", distance: "half", netTime: "1:50:00", hasResult: true, pbConfirmed: false, dnStatus: null },
+        { nickname: "가가DNS", distance: "half", netTime: null, hasResult: true, pbConfirmed: false, dnStatus: "DNS" },
+        { nickname: "빠른완주", distance: "half", netTime: "1:40:00", hasResult: true, pbConfirmed: false, dnStatus: null },
+        { nickname: "나나DNF", distance: "half", netTime: null, hasResult: true, pbConfirmed: false, dnStatus: "DNF" },
       ],
       "result",
     );
     assert.deepEqual(
       out.map((r) => r.nickname),
-      ["A", "B", "C"],
+      ["빠른완주", "느린완주", "가가DNS", "나나DNF"],
     );
   });
 });
