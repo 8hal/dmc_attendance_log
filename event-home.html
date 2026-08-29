@@ -324,6 +324,8 @@
     let timeDraft = "";
     let prevProfileState = "";
     let homeGeneration = 0;
+    const CONFIRM_POLL_MS = 30000;
+    let confirmPollTimer = null;
 
     function bumpHomeGeneration() {
       homeGeneration += 1;
@@ -607,7 +609,10 @@
       const gen = homeGeneration;
       confirmMode = "none";
       confirmResult = null;
-      if (!identity || !identity.nickname || !matchParticipant(identity)) return;
+      if (!identity || !identity.nickname || !matchParticipant(identity)) {
+        syncConfirmPoll();
+        return;
+      }
 
       try {
         const res = await fetch(
@@ -623,9 +628,48 @@
         const panel = EventHomeBadges.confirmPanelFromApi(data);
         confirmMode = panel.mode;
         confirmResult = panel.result;
+        if (confirmMode === "none") {
+          const p = matchParticipant(identity);
+          const waitBib = p ? String(p.bib || "").trim() : "";
+          const waitDist = p ? String(p.distance || "").trim() : "";
+          if (waitBib && waitDist) confirmMode = "wait";
+        }
       } catch (err) {
         console.error("my-pending-result error:", err);
       }
+      syncConfirmPoll();
+    }
+
+    function shouldPollConfirm() {
+      if (homeEl.classList.contains("hidden")) return false;
+      if (confirmMode === "confirmed") return false;
+      return confirmMode === "wait" || confirmMode === "pending";
+    }
+
+    function stopConfirmPoll() {
+      if (confirmPollTimer) {
+        clearInterval(confirmPollTimer);
+        confirmPollTimer = null;
+      }
+    }
+
+    function syncConfirmPoll() {
+      if (!shouldPollConfirm()) {
+        stopConfirmPoll();
+        return;
+      }
+      if (confirmPollTimer) return;
+      confirmPollTimer = setInterval(function () {
+        if (document.hidden) return;
+        if (!shouldPollConfirm()) {
+          stopConfirmPoll();
+          return;
+        }
+        const gen = homeGeneration;
+        refreshHomeState(activeIdentity).then(function () {
+          if (homeGeneration !== gen) return;
+        });
+      }, CONFIRM_POLL_MS);
     }
 
     async function reloadEvent() {
@@ -863,6 +907,7 @@
 
     function showPickView(event, opts) {
       bumpHomeGeneration();
+      stopConfirmPoll();
       pickEventTitle.textContent = EventMemberCopy.memberEventTitle(
         event.eventName || event.primaryName || "대회"
       );
@@ -1050,6 +1095,15 @@
 
     retryBtn.addEventListener("click", function () {
       loadHome();
+    });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      if (!shouldPollConfirm()) return;
+      const gen = homeGeneration;
+      refreshHomeState(activeIdentity).then(function () {
+        if (homeGeneration !== gen) return;
+      });
     });
 
     loadHome();

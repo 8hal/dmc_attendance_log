@@ -223,4 +223,19 @@ describe("event-home nick pick chrome", () => {
     const postIdx = fn.indexOf("submitSelfBoard");
     assert.ok(pickIdx >= 0 && postIdx > pickIdx, "pickVisible return must precede self-board POST");
   });
+
+  it("polls wait/pending confirm state every 30s and on visible tab", () => {
+    const html = read("event-home.html");
+    assert.match(html, /setInterval/);
+    assert.match(html, /30000|30\s*\*\s*1000/);
+    assert.match(html, /visibilitychange/);
+    assert.match(html, /confirmMode\s*===\s*["']wait["']/);
+    assert.match(html, /confirmMode\s*===\s*["']pending["']/);
+    assert.match(html, /homeGeneration/);
+    const pick = extractFn(html, "showPickView");
+    assert.match(pick, /stopConfirmPoll|clearInterval/);
+    const poll = extractFn(html, "shouldPollConfirm");
+    assert.match(poll, /confirmed/);
+    assert.doesNotMatch(poll, /confirmMode\s*===\s*["']confirmed["']\s*\)\s*return\s*true/);
+  });
 });

@@ -2,10 +2,13 @@
 
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
+const path = require("path");
 const {
   buildSelfConfirmDocId,
   buildSelfConfirmRow,
   assertBibOwnsPending,
+  resolveMyPendingState,
 } = require("../../functions/lib/self-confirm.js");
 
 describe("self-confirm", () => {
@@ -98,5 +101,80 @@ describe("self-confirm", () => {
     });
     assert.equal(dns.status, "dns");
     assert.equal(dns.pbConfirmed, false);
+  });
+});
+
+describe("resolveMyPendingState", () => {
+  const participant = { realName: "김테스트", nickname: "닉", bib: "4821", distance: "half" };
+  const confirmed = { netTime: "1:42:18", status: "confirmed" };
+  const pending = { bib: "4821", netTime: "1:40:00" };
+
+  it("confirmed doc with groupScrapeJobId null → confirmed", () => {
+    const out = resolveMyPendingState({
+      participant,
+      confirmed,
+      bib: "4821",
+      groupScrapeJobId: null,
+      pending: null,
+    });
+    assert.equal(out.state, "confirmed");
+    assert.equal(out.result, confirmed);
+  });
+
+  it("no confirmed and no job → none", () => {
+    const out = resolveMyPendingState({
+      participant,
+      confirmed: null,
+      bib: "4821",
+      groupScrapeJobId: null,
+      pending: null,
+    });
+    assert.equal(out.state, "none");
+    assert.equal(out.result, null);
+  });
+
+  it("no confirmed, job + pending row → pending", () => {
+    const out = resolveMyPendingState({
+      participant,
+      confirmed: null,
+      bib: "4821",
+      groupScrapeJobId: "job1",
+      pending,
+    });
+    assert.equal(out.state, "pending");
+    assert.equal(out.result, pending);
+  });
+
+  it("no participant → none", () => {
+    const out = resolveMyPendingState({
+      participant: null,
+      confirmed,
+      bib: "4821",
+      groupScrapeJobId: "job1",
+      pending,
+    });
+    assert.equal(out.state, "none");
+    assert.equal(out.result, null);
+  });
+});
+
+describe("my-pending-result wiring", () => {
+  it("looks up race_results / buildSelfConfirmDocId before the jobId gate", () => {
+    const src = fs.readFileSync(path.join(__dirname, "../../functions/index.js"), "utf8");
+    const start = src.indexOf('subAction === "my-pending-result"');
+    assert.ok(start >= 0, "missing my-pending-result");
+    const next = src.indexOf('subAction === "public-roster"', start);
+    assert.ok(next > start, "missing public-roster after my-pending-result");
+    const block = src.slice(start, next);
+
+    const docIdAt = block.indexOf("buildSelfConfirmDocId");
+    const resultsAt = block.indexOf("race_results");
+    const jobIdAt = block.indexOf("groupScrapeJobId");
+    assert.ok(docIdAt >= 0, "must call buildSelfConfirmDocId");
+    assert.ok(resultsAt >= 0, "must read race_results");
+    assert.ok(jobIdAt >= 0, "pending branch still uses groupScrapeJobId");
+    assert.ok(resultsAt < jobIdAt, "race_results lookup must precede the jobId gate");
+    assert.ok(docIdAt < jobIdAt, "buildSelfConfirmDocId must precede the jobId gate");
+    assert.match(block, /resolveMyPendingState/);
   });
 });

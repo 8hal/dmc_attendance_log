@@ -32,6 +32,24 @@ function buildSelfConfirmDocId({ realName, distance, eventDate }) {
 }
 
 /**
+ * Home / my-pending-result state. Confirmed race_results wins even with no scrape job.
+ * @param {{
+ *   participant?: object|null,
+ *   confirmed?: object|null,
+ *   bib?: string,
+ *   groupScrapeJobId?: string|null,
+ *   pending?: object|null,
+ * }} opts
+ * @returns {{ state: "none"|"pending"|"confirmed", result: object|null }}
+ */
+function resolveMyPendingState({ participant, confirmed, bib, groupScrapeJobId, pending }) {
+  if (!participant) return { state: "none", result: null };
+  if (confirmed) return { state: "confirmed", result: confirmed };
+  if (!bib || !groupScrapeJobId || !pending) return { state: "none", result: null };
+  return { state: "pending", result: pending };
+}
+
+/**
  * Ensure participant bib owns the pending scrape row.
  * @param {{ bib?: string|null }} participant
  * @param {{ bib?: string|null }|null|undefined} pending
@@ -144,4 +162,5 @@ module.exports = {
   buildSelfConfirmRow,
   assertBibOwnsPending,
   effectiveNetTimeForConfirm,
+  resolveMyPendingState,
 };

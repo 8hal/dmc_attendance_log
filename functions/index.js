@@ -67,6 +67,7 @@ const {
   buildSelfConfirmDocId,
   buildSelfConfirmRow,
   assertBibOwnsPending,
+  resolveMyPendingState,
 } = require("./lib/self-confirm");
 const {
   buildPublicRosterRows,
@@ -3454,10 +3455,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.status(400).json({ ok: false, error: "배번 등록 참가자 없음" });
       }
 
-      if (eventRow.groupScrapeStatus === "running") {
-        return res.status(400).json({ ok: false, error: "이미 스크랩이 진행 중입니다" });
-      }
-
       const { source: src, sourceId: sid } = eventRow.groupSource;
       if (!isBibModeGroupScrapeSource(src)) {
         return res.status(400).json({
@@ -3466,9 +3463,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       }
 
+      const claim = await claimGroupScrapeRunning(db, canonicalEventId);
+      if (!claim.claimed) {
+        return res.status(400).json({ ok: false, error: "이미 스크랩이 진행 중입니다" });
+      }
+
       await db.collection("race_events").doc(canonicalEventId).update({
-        groupScrapeStatus: "running",
-        groupScrapeTriggeredAt: new Date().toISOString(),
         groupScrapeSession: startSession(Date.now()),
       });
 
@@ -3481,6 +3481,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         event: eventRow,
         db,
         scraper,
+        reuseExistingJob: !!eventRow.groupScrapeJobId,
       }).catch((err) => console.error("[group-events scrape]", err));
 
       return res.json({ ok: true, message: "스크랩 시작됨" });
@@ -3570,46 +3571,46 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const participant = (event.participants || []).find(
           (p) => p.nickname === nickname
         );
-        const bib = participant ? String(participant.bib || "").trim() : "";
-        if (!participant || !bib || !event.groupScrapeJobId) {
+        if (!participant) {
           return res.json({ ok: true, state: "none", result: null });
         }
 
+        const bib = String(participant.bib || "").trim();
         const docId = buildSelfConfirmDocId({
           realName: participant.realName,
           distance: participant.distance,
           eventDate: event.eventDate,
         });
         const confirmedDoc = await db.collection("race_results").doc(docId).get();
-        if (confirmedDoc.exists) {
-          return res.json({
-            ok: true,
-            state: "confirmed",
-            result: confirmedDoc.data(),
-          });
+        const confirmed = confirmedDoc.exists ? confirmedDoc.data() : null;
+
+        let pending = null;
+        if (!confirmed && bib && event.groupScrapeJobId) {
+          const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+          const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+          const match = matchResultByBib(jobResults, bib, participant.distance);
+          if (match) {
+            pending = {
+              bib: match.bib || bib,
+              netTime: match.netTime || "",
+              gunTime: match.gunTime || "",
+              distance: match.distance || participant.distance || "",
+              overallRank: match.overallRank != null ? match.overallRank : null,
+              gender: match.gender || "",
+              memberRealName: participant.realName || "",
+              memberNickname: participant.nickname || "",
+            };
+          }
         }
 
-        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
-        const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
-        const pending = matchResultByBib(jobResults, bib, participant.distance);
-        if (!pending) {
-          return res.json({ ok: true, state: "none", result: null });
-        }
-
-        return res.json({
-          ok: true,
-          state: "pending",
-          result: {
-            bib: pending.bib || bib,
-            netTime: pending.netTime || "",
-            gunTime: pending.gunTime || "",
-            distance: pending.distance || participant.distance || "",
-            overallRank: pending.overallRank != null ? pending.overallRank : null,
-            gender: pending.gender || "",
-            memberRealName: participant.realName || "",
-            memberNickname: participant.nickname || "",
-          },
+        const resolved = resolveMyPendingState({
+          participant,
+          confirmed,
+          bib,
+          groupScrapeJobId: event.groupScrapeJobId,
+          pending,
         });
+        return res.json({ ok: true, ...resolved });
       } catch (error) {
         console.error("my-pending-result error:", error);
         return res.status(500).json({ ok: false, error: "server error" });

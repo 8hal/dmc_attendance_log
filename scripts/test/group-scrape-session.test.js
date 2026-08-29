@@ -440,9 +440,28 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.match(call, /reuseExistingJob:\s*true/);
   });
 
-  it("scrape POST triggerGroupScrape does not pass reuseExistingJob true", () => {
+  it("scrape POST claims running then opens a new session window", () => {
+    const block = scrapePostBlock(src);
+    const claimAt = block.indexOf("claimGroupScrapeRunning");
+    assert.ok(claimAt >= 0, "scrape POST must claimGroupScrapeRunning");
+    const notClaimedAt = block.indexOf("if (!claim.claimed)");
+    assert.ok(notClaimedAt > claimAt, "must check !claim.claimed after claim");
+    const notClaimedEnd = block.indexOf("}", notClaimedAt);
+    const notClaimed = block.slice(notClaimedAt, notClaimedEnd);
+    assert.match(notClaimed, /이미 스크랩이 진행 중입니다/);
+    assert.doesNotMatch(notClaimed, /groupScrapeSession/);
+    assert.doesNotMatch(notClaimed, /startSession/);
+    const startAt = block.indexOf("startSession");
+    assert.ok(startAt > notClaimedEnd, "startSession must follow the unclaimed 400");
+  });
+
+  it("scrape POST triggerGroupScrape reuses an existing job, not always true", () => {
     const block = scrapePostBlock(src);
     const call = triggerCallAt(block, 0);
+    assert.match(
+      call,
+      /reuseExistingJob:\s*!!(?:eventRow\.)?groupScrapeJobId|reuseExistingJob:\s*Boolean\(\s*(?:eventRow\.)?groupScrapeJobId/
+    );
     assert.doesNotMatch(call, /reuseExistingJob:\s*true/);
   });
 
