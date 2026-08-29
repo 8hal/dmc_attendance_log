@@ -96,9 +96,26 @@ describe("bus-boarding API gates", () => {
     }
   });
 
-  it("self-board and admin-board still require enabled", () => {
-    assert.match(subActionBlock(src, "self-board"), /assertEnabled/);
-    assert.match(subActionBlock(src, "admin-board"), /assertEnabled/);
+  it("settings uses parseSettingsOpenLeg, not enabled-boolean-only", () => {
+    const src = read("functions/index.js");
+    const block = subActionBlock(src, "settings");
+    assert.match(block, /parseSettingsOpenLeg/);
+    assert.doesNotMatch(block, /enabled \(boolean\) required/);
+  });
+
+  it("self-board uses assertLegOpen not only assertEnabled", () => {
+    const src = read("functions/index.js");
+    const block = subActionBlock(src, "self-board");
+    assert.match(block, /assertLegOpen/);
+    assert.doesNotMatch(block, /assertEnabled/);
+  });
+
+  it("admin-board does not require enabled or openLeg", () => {
+    const src = read("functions/index.js");
+    const block = subActionBlock(src, "admin-board");
+    assert.doesNotMatch(block, /assertEnabled/);
+    assert.doesNotMatch(block, /assertLegOpen/);
+    assert.match(block, /ensureBusBoarding/);
   });
 
   it("roster-upsert rejects explicit member when nickname is missing from members", () => {

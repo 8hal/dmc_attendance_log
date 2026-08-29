@@ -3878,11 +3878,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     // 버스 탑승 (action=bus-boarding)
-    // - settings / status: 항상 허용 (status는 공개·admin; settings로 enable)
+    // - settings: parseSettingsOpenLeg + applyOpenLeg (openLeg SSOT)
+    // - status: enabled = readOpenLeg(bb) != null, JSON에 openLeg 포함
     // - import / roster-upsert / roster-remove: 준비 단계(enabled false)에서도
     //   총무 명단 쓰기 허용. busBoarding 없으면 enabled:false 로 생성
-    // - admin-board / self-board: enabled === true 아니면
-    //   403 { ok: false, error: "bus boarding not enabled" }
+    // - self-board: assertLegOpen 아니면 403 "bus boarding not enabled"
+    // - admin-board: 스위치 꺼져 있어도 총무 체크 허용 (ensureBusBoarding)
     if (action === "bus-boarding") {
       const sub = String(
         req.query.subAction || (req.body && req.body.subAction) || ""
@@ -3926,6 +3927,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             return res.json({
               ok: true,
               enabled: false,
+              openLeg: null,
               legs: ["outbound", "return"],
               roster: [],
               eventName,
@@ -3934,7 +3936,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             });
           }
 
-          const enabled = bb.enabled === true;
+          const openLeg = busBoardingLib.readOpenLeg(bb);
+          const enabled = openLeg != null;
           const legs = Array.isArray(bb.legs) && bb.legs.length
             ? bb.legs
             : ["outbound", "return"];
@@ -3963,6 +3966,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           return res.json({
             ok: true,
             enabled,
+            openLeg,
             legs,
             roster: responseRoster,
             eventName,
@@ -3986,8 +3990,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         if (!eventId) {
           return res.status(400).json({ ok: false, error: "eventId required" });
         }
-        if (typeof body.enabled !== "boolean") {
-          return res.status(400).json({ ok: false, error: "enabled (boolean) required" });
+        const parsed = busBoardingLib.parseSettingsOpenLeg(body);
+        if (!parsed.ok) {
+          return res.status(400).json({ ok: false, error: parsed.error });
         }
 
         const legsProvided = Array.isArray(body.legs);
@@ -4034,9 +4039,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
                 bb.legs = [...body.legs];
               }
             }
-            bb.enabled = body.enabled;
+            bb = busBoardingLib.applyOpenLeg(bb, parsed.openLeg);
             tx.update(ref, { busBoarding: bb });
-            return { enabled: bb.enabled, legs: bb.legs };
+            return { enabled: bb.enabled, openLeg: bb.openLeg, legs: bb.legs };
           });
         } catch (error) {
           console.error("bus-boarding settings error:", error);
@@ -4047,7 +4052,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           return res.status(404).json({ ok: false, error: "event not found" });
         }
 
-        return res.json({ ok: true, enabled: result.enabled, legs: result.legs });
+        return res.json({
+          ok: true,
+          enabled: result.enabled,
+          openLeg: result.openLeg,
+          legs: result.legs,
+        });
       }
 
       if (sub === "self-board" && req.method === "POST") {
@@ -4079,7 +4089,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             }
             const data = snap.data() || {};
             const bb = data.busBoarding;
-            if (!busBoardingLib.assertEnabled(bb)) {
+            if (!busBoardingLib.assertLegOpen(bb, leg)) {
               return { notEnabled: true };
             }
 
@@ -4169,10 +4179,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
               return { notFound: true };
             }
             const data = snap.data() || {};
-            const bb = data.busBoarding;
-            if (!busBoardingLib.assertEnabled(bb)) {
-              return { notEnabled: true };
-            }
+            const bb = busBoardingLib.ensureBusBoarding(data.busBoarding);
 
             const roster = Array.isArray(bb.roster) ? bb.roster.slice() : [];
             const idx = roster.findIndex((r) => r.rosterId === rosterId);
@@ -4200,12 +4207,6 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
 
         if (result.notFound) {
           return res.status(404).json({ ok: false, error: "event not found" });
-        }
-        if (result.notEnabled) {
-          return res.status(403).json({
-            ok: false,
-            error: "bus boarding not enabled",
-          });
         }
         if (result.rosterNotFound) {
           return res.status(404).json({ ok: false, error: "roster entry not found" });
