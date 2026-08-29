@@ -761,6 +761,7 @@
           </h3>
           <p class="hint" style="margin-top:0;" id="scrape-intro">배번 있는 참가자만 스크랩. 대회 기록은 참가자 확정 후.</p>
           <button type="button" class="btn btn-primary btn-block" id="scrape-btn">스크랩 실행</button>
+          <button type="button" class="btn btn-ghost btn-block" id="scrape-stop-btn">스크랩 종료</button>
           <div class="stat-row" style="margin-top:10px;">
             <div class="stat"><b id="pending-count">0</b><span>조회됨 · 확정 대기</span></div>
             <div class="stat"><b id="confirmed-count">0</b><span>참가자 확정 완료</span></div>
@@ -961,9 +962,8 @@
       const untilMs = session && session.until ? Date.parse(session.until) : NaN;
       const scrapeStopped = !!(
         session &&
-        (session.stoppedAt ||
-          session.stop === true ||
-          (Number.isFinite(untilMs) && untilMs <= Date.now()))
+        Number.isFinite(untilMs) &&
+        untilMs <= Date.now()
       );
       const marks = {
         source: sourceDone,
@@ -1270,6 +1270,8 @@
         BIB_SCRAPE_SOURCES.includes(gs.source) &&
         status !== "running";
       scrapeBtn.disabled = !canScrape;
+      const stopBtn = document.getElementById("scrape-stop-btn");
+      if (stopBtn) stopBtn.disabled = !isOpsAdmin();
       updateChecklist();
     }
 
@@ -1867,6 +1869,37 @@
       }
     }
 
+    async function stopGroupScrape() {
+      if (!isOpsAdmin()) {
+        showToast("운영진 권한이 필요합니다", true);
+        return;
+      }
+      if (!eventId) return;
+      const btn = document.getElementById("scrape-stop-btn");
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "scrape",
+            ownerPw: getOwnerPw(),
+            canonicalEventId: eventId,
+            stop: true
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "스크랩 종료 실패");
+        showToast("스크랩 세션을 종료했습니다");
+        await loadEventDetail();
+      } catch (err) {
+        console.error("stopGroupScrape:", err);
+        showToast(err.message || "스크랩 종료 오류", true);
+      } finally {
+        renderScrapeSection();
+      }
+    }
+
     // —— Bindings ——
     document.querySelectorAll("[data-ops-panel]").forEach((btn) => {
       btn.addEventListener("click", () => applyOpsPanel(btn.getAttribute("data-ops-panel"), { user: true }));
@@ -1905,6 +1938,7 @@
     document.getElementById("refresh-all-btn").addEventListener("click", () => loadAll());
     document.getElementById("save-source-btn").addEventListener("click", saveGroupSource);
     document.getElementById("scrape-btn").addEventListener("click", scrapeGroupEvent);
+    document.getElementById("scrape-stop-btn").addEventListener("click", stopGroupScrape);
     document.getElementById("csv-input").addEventListener("change", (e) => {
       const f = e.target.files && e.target.files[0];
       if (f) handleCsvFile(f);
