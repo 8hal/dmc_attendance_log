@@ -58,9 +58,61 @@ describe("event-home nick pick chrome", () => {
     assert.match(pick, /cancelable/);
   });
 
-  it("shows return-bus secondary while confirm is pending", () => {
-    const render = extractFn(read("event-home.html"), "renderTodayCard");
-    assert.match(render, /secondaryLabel/);
-    assert.match(render, /boardingReturn|secondaryHref/);
+  it("home has profile and bus cards", () => {
+    const html = read("event-home.html");
+    assert.match(html, /id="profileCard"/);
+    assert.match(html, /id="busCard"/);
+    assert.match(html, /id="boardDoneOverlay"/);
+    assert.doesNotMatch(html, /명단·결과/);
+    assert.doesNotMatch(html, /function renderTodayCard/);
+  });
+
+  it("아니에요 does not auto-open manual", () => {
+    const html = read("event-home.html");
+    assert.match(html, /아니에요/);
+    const reject = html.match(/아니에요[\s\S]{0,800}/)[0];
+    assert.doesNotMatch(reject, /intent:\s*["']manual["']/);
+    assert.match(html, /intent:\s*["']reject["']/);
+  });
+
+  it("confirmed profile has no roster CTA", () => {
+    const html = read("event-home.html") + read("assets/event-home-action.js");
+    assert.match(html, /동마클 대회 기록에 저장됐어요/);
+    assert.doesNotMatch(html, /명단·결과 보기/);
+    assert.doesNotMatch(html, /대회 기록 보기/);
+  });
+
+  it("pick list uses roster not participants-only", () => {
+    const pick = extractFn(read("event-home.html"), "renderPickList");
+    assert.match(pick, /pickNicknames/);
+    assert.match(pick, /roster/);
+  });
+
+  it("pick copy is 참가자에서 본인 닉네임을 선택하세요", () => {
+    const html = read("event-home.html");
+    assert.match(html, /참가자에서 본인 닉네임을 선택하세요/);
+    assert.doesNotMatch(html, /먼저/);
+  });
+
+  it("loadBusRow uses detail roster and home self-boards without resolveNextAction", () => {
+    const html = read("event-home.html");
+    const load = extractFn(html, "loadBusRow");
+    assert.match(load, /busBoarding/);
+    assert.match(load, /roster/);
+    assert.doesNotMatch(load, /bus-boarding/);
+    assert.doesNotMatch(html, /resolveNextAction/);
+    assert.doesNotMatch(html, /busLauncherVisible/);
+    assert.match(html, /self-board/);
+    assert.match(html, /PROFILE_DISTANCES/);
+    assert.match(html, /["']board["']/);
+  });
+
+  it("bib and time fields handle IME composition", () => {
+    const html = read("event-home.html");
+    assert.match(html, /profileBib/);
+    assert.match(html, /profileTime/);
+    const bind = extractFn(html, "bindImeInput");
+    assert.match(bind, /compositionstart/);
+    assert.match(bind, /compositionend/);
   });
 });

@@ -256,3 +256,128 @@
   cursor: pointer;
   font-family: inherit;
 }
+
+.profile-card .today-desc,
+.bus-card .today-desc {
+  margin-bottom: 12px;
+}
+
+.profile-bib-large {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 4px 0 8px;
+}
+
+.profile-time {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 4px 0 6px;
+}
+
+.profile-sub {
+  font-size: 13px;
+  color: var(--dmc-color-text-secondary, #64748b);
+  margin: 0 0 10px;
+}
+
+.profile-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.profile-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--dmc-color-border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  margin-bottom: 12px;
+}
+
+.dist-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.dist-chip {
+  padding: 8px 12px;
+  border: 1px solid var(--dmc-color-border, #e2e8f0);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dist-chip.dist-chip-primary {
+  font-size: 15px;
+  padding: 10px 14px;
+}
+
+.dist-chip.is-selected {
+  border-color: var(--dmc-color-primary, #2563eb);
+  color: var(--dmc-color-primary, #2563eb);
+  background: var(--dmc-color-primary-surface, #eff6ff);
+}
+
+.profile-link-btn {
+  display: inline-block;
+  margin: 0 8px 8px 0;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--dmc-color-primary, #2563eb);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.profile-choice-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pb-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.board-done-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dmc-green-9, #059669);
+  color: #fff;
+  padding: 24px;
+  text-align: center;
+}
+
+.board-done-overlay.hidden {
+  display: none !important;
+}
+
+.board-done-text {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.3;
+}

@@ -148,7 +148,7 @@
         <p class="summary-meta" id="pickEventMeta"></p>
       </header>
       <h2 class="section-title">당신은 누구신가요?</h2>
-      <p class="section-sub">참가자 명단에서 본인 닉네임을 선택하세요</p>
+      <p class="section-sub">참가자에서 본인 닉네임을 선택하세요</p>
       <input type="search" class="pick-search" id="pickSearch" placeholder="닉네임 검색" autocomplete="off" />
       <ul class="pick-list" id="pickList"></ul>
       <p class="pick-empty hidden" id="pickEmpty">일치하는 닉네임이 없습니다</p>
@@ -163,13 +163,49 @@
         <span id="nickChip" class="nick-chip hidden"></span>
       </header>
 
-      <section id="todayCard" class="today-card" aria-live="polite">
-        <div class="today-kicker" id="todayKicker">지금</div>
-        <h2 class="today-title" id="todayTitle">—</h2>
-        <p class="today-desc" id="todayDesc"></p>
-        <div id="todayConfirmDetail" class="today-confirm-detail hidden"></div>
-        <button type="button" class="today-cta hidden" id="todayCta"></button>
-        <a class="today-secondary hidden" id="todaySecondary" href="#"></a>
+      <section id="profileCard" class="today-card profile-card" aria-live="polite">
+        <p class="today-desc" id="profilePrompt"></p>
+        <div id="profileDisplay" class="hidden">
+          <div class="profile-time hidden" id="profileTimeDisplay"></div>
+          <div class="profile-bib-large" id="profileBibLarge"></div>
+          <p class="profile-sub" id="profileSub"></p>
+          <button type="button" class="profile-link-btn" id="profileEditBtn">수정</button>
+        </div>
+        <div id="profileBibForm" class="hidden">
+          <label class="profile-label" for="profileBib">배번</label>
+          <input id="profileBib" class="profile-input" inputmode="numeric" autocomplete="off" />
+          <div class="dist-chips" id="profileDistChips"></div>
+          <button type="button" class="today-cta" id="profileBibSave">저장</button>
+        </div>
+        <div id="profilePendingActions" class="hidden">
+          <label class="pb-check hidden" id="profilePbWrap">
+            <input type="checkbox" id="profilePb" /> 이번이 PB예요
+          </label>
+          <div class="profile-choice-row">
+            <button type="button" class="today-cta" id="profileYesBtn">맞아요</button>
+            <button type="button" class="today-secondary" id="profileNoBtn">아니에요</button>
+          </div>
+        </div>
+        <div id="profileManualForm" class="hidden">
+          <label class="profile-label" for="profileTime">완주 시각</label>
+          <input id="profileTime" class="profile-input" placeholder="1:42:00" autocomplete="off" />
+          <div class="profile-choice-row">
+            <button type="button" class="today-secondary" id="profileDnsBtn">DNS</button>
+            <button type="button" class="today-secondary" id="profileDnfBtn">DNF</button>
+          </div>
+          <label class="pb-check hidden" id="profileManualPbWrap">
+            <input type="checkbox" id="profileManualPb" /> 이번이 PB예요
+          </label>
+          <button type="button" class="today-cta" id="profileManualSave">저장</button>
+        </div>
+        <button type="button" class="profile-link-btn hidden" id="profileManualBtn">직접 입력</button>
+      </section>
+
+      <section id="busCard" class="today-card bus-card" aria-live="polite">
+        <div class="today-kicker" id="busKicker">버스</div>
+        <h2 class="today-title" id="busTitle">버스</h2>
+        <p class="today-desc" id="busPrompt"></p>
+        <button type="button" class="today-cta hidden" id="busBoardBtn">탑승하기</button>
       </section>
 
       <button type="button" class="switch-user-btn" id="switchUserBtn">다른 사람 선택</button>
@@ -188,8 +224,13 @@
     <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>대회 기록</a>
   </nav>
 
+  <div id="boardDoneOverlay" class="board-done-overlay hidden" role="status">
+    <p class="board-done-text" id="boardDoneText">버스 탑승 완료</p>
+  </div>
+
   <div id="toast" class="toast hidden" role="status"></div>
 
+  <script src="assets/distance-utils.js"></script>
   <script src="assets/event-member-copy.js"></script>
   <script src="assets/event-member-profile.js"></script>
   <script src="assets/event-home-badges.js"></script>
@@ -214,15 +255,40 @@
     const eventTitleEl = document.getElementById("eventTitle");
     const eventMetaEl = document.getElementById("eventMeta");
     const nickChipEl = document.getElementById("nickChip");
-
-    const todayCard = document.getElementById("todayCard");
-    const todayKicker = document.getElementById("todayKicker");
-    const todayTitle = document.getElementById("todayTitle");
-    const todayDesc = document.getElementById("todayDesc");
-    const todayConfirmDetail = document.getElementById("todayConfirmDetail");
-    const todayCta = document.getElementById("todayCta");
-    const todaySecondary = document.getElementById("todaySecondary");
     const switchUserBtn = document.getElementById("switchUserBtn");
+
+    const profileCard = document.getElementById("profileCard");
+    const profilePrompt = document.getElementById("profilePrompt");
+    const profileDisplay = document.getElementById("profileDisplay");
+    const profileTimeDisplay = document.getElementById("profileTimeDisplay");
+    const profileBibLarge = document.getElementById("profileBibLarge");
+    const profileSub = document.getElementById("profileSub");
+    const profileEditBtn = document.getElementById("profileEditBtn");
+    const profileBibForm = document.getElementById("profileBibForm");
+    const profileBib = document.getElementById("profileBib");
+    const profileDistChips = document.getElementById("profileDistChips");
+    const profileBibSave = document.getElementById("profileBibSave");
+    const profilePendingActions = document.getElementById("profilePendingActions");
+    const profilePbWrap = document.getElementById("profilePbWrap");
+    const profilePb = document.getElementById("profilePb");
+    const profileYesBtn = document.getElementById("profileYesBtn");
+    const profileNoBtn = document.getElementById("profileNoBtn");
+    const profileManualForm = document.getElementById("profileManualForm");
+    const profileTime = document.getElementById("profileTime");
+    const profileDnsBtn = document.getElementById("profileDnsBtn");
+    const profileDnfBtn = document.getElementById("profileDnfBtn");
+    const profileManualPbWrap = document.getElementById("profileManualPbWrap");
+    const profileManualPb = document.getElementById("profileManualPb");
+    const profileManualSave = document.getElementById("profileManualSave");
+    const profileManualBtn = document.getElementById("profileManualBtn");
+
+    const busCard = document.getElementById("busCard");
+    const busKicker = document.getElementById("busKicker");
+    const busTitle = document.getElementById("busTitle");
+    const busPrompt = document.getElementById("busPrompt");
+    const busBoardBtn = document.getElementById("busBoardBtn");
+    const boardDoneOverlay = document.getElementById("boardDoneOverlay");
+    const boardDoneText = document.getElementById("boardDoneText");
 
     const pickEventTitle = document.getElementById("pickEventTitle");
     const pickEventMeta = document.getElementById("pickEventMeta");
@@ -235,17 +301,27 @@
     const timelineSection = document.getElementById("timeline");
     const timelineList = document.getElementById("timelineList");
 
-    const eventId = new URLSearchParams(location.search).get("eventId");
+    const pageParams = new URLSearchParams(location.search);
+    const eventId = pageParams.get("eventId");
+    let boardLanding = pageParams.get("board") === "1";
 
     let cachedEvent = null;
     let busRow = null;
     let confirmMode = "none";
     let confirmResult = null;
-    let confirmPhase = "cta";
     let isConfirming = false;
+    let isBoarding = false;
+    let isSavingBib = false;
     let toastTimer = null;
+    let overlayTimer = null;
     let pickSelectedNick = null;
-    let busEnabled = false;
+    let pickBoardMode = false;
+    let activeIdentity = { nickname: null, memberId: null };
+    let profileIntent = "";
+    let manualKind = "finish";
+    let selectedDistance = "";
+    let bibDraft = "";
+    let timeDraft = "";
 
     function showOnly(el) {
       loadingEl.classList.add("hidden");
@@ -303,148 +379,226 @@
       timelineSection.classList.add("hidden");
     }
 
-    function renderConfirmDetail() {
-      todayConfirmDetail.innerHTML = "";
-      todayConfirmDetail.classList.add("hidden");
-      if (confirmMode !== "pending" || !confirmResult) return;
-
-      const timeText = EventHomeBadges.confirmDisplayTime(confirmResult);
-      const bib = String(confirmResult.bib || "").trim();
-      const distance = String(confirmResult.distance || "").trim();
-      const rank =
-        confirmResult.overallRank != null && confirmResult.overallRank !== ""
-          ? String(confirmResult.overallRank)
-          : "";
-
-      if (timeText) {
-        const t = document.createElement("div");
-        t.className = "today-confirm-time";
-        t.textContent = timeText;
-        todayConfirmDetail.appendChild(t);
-      }
-      const subParts = [];
-      if (bib) subParts.push("배번 " + bib);
-      if (distance) subParts.push(distance);
-      if (rank) subParts.push("순위 " + rank);
-      if (subParts.length) {
-        const s = document.createElement("div");
-        s.className = "today-confirm-sub";
-        s.textContent = subParts.join(" · ");
-        todayConfirmDetail.appendChild(s);
-      }
-      if (todayConfirmDetail.childNodes.length) {
-        todayConfirmDetail.classList.remove("hidden");
-      }
+    function readOpenLeg(bb) {
+      const leg = bb && bb.openLeg;
+      return leg === "outbound" || leg === "return" ? leg : null;
     }
 
-    function renderTodayCard(identity) {
-      const action = EventHomeAction.resolveNextAction({
-        nickname: identity.nickname,
-        busEnabled: busEnabled,
-        busRow: busRow,
-        participant: EventMemberProfile.matchInList(
-          (cachedEvent && cachedEvent.participants) || [],
-          identity
-        ),
+    function rosterOf(event) {
+      return (event && event.busBoarding && event.busBoarding.roster) || [];
+    }
+
+    function matchParticipant(identity) {
+      return EventMemberProfile.matchInList(
+        (cachedEvent && cachedEvent.participants) || [],
+        identity
+      );
+    }
+
+    function matchKnownRow(identity) {
+      const participant = matchParticipant(identity);
+      const rosterRow = EventMemberProfile.matchInList(rosterOf(cachedEvent), identity);
+      return participant || rosterRow;
+    }
+
+    function bindImeInput(el, onCommit) {
+      if (!el) return;
+      let composing = false;
+      el.addEventListener("compositionstart", function () {
+        composing = true;
+      });
+      el.addEventListener("compositionend", function () {
+        composing = false;
+        onCommit(el.value);
+      });
+      el.addEventListener("input", function () {
+        if (composing) return;
+        onCommit(el.value);
+      });
+    }
+
+    function applyProfile(next) {
+      if (next && next.intent) profileIntent = next.intent;
+      if (next && next.manualKind) manualKind = next.manualKind;
+      renderHomeCards(activeIdentity);
+    }
+
+    function onRejectClick() {
+      applyProfile({ intent: "reject" });
+    }
+
+    function onManualClick() {
+      manualKind = "finish";
+      applyProfile({ intent: "manual" });
+    }
+
+    function fillBibDraft(participant) {
+      bibDraft = participant && participant.bib != null ? String(participant.bib).trim() : "";
+      const dist = participant && participant.distance ? String(participant.distance).trim() : "";
+      selectedDistance = EventHomeAction.PROFILE_DISTANCES.indexOf(dist) >= 0 ? dist : "";
+      profileBib.value = bibDraft;
+    }
+
+    function renderDistanceChips() {
+      profileDistChips.innerHTML = "";
+      EventHomeAction.PROFILE_DISTANCES.forEach(function (dist, idx) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className =
+          "dist-chip" +
+          (idx < 3 ? " dist-chip-primary" : "") +
+          (selectedDistance === dist ? " is-selected" : "");
+        btn.textContent = EventMemberCopy.memberDistanceLabel(dist);
+        btn.addEventListener("click", function () {
+          selectedDistance = dist;
+          renderDistanceChips();
+        });
+        profileDistChips.appendChild(btn);
+      });
+    }
+
+    function hideProfileSections() {
+      profileDisplay.classList.add("hidden");
+      profileBibForm.classList.add("hidden");
+      profilePendingActions.classList.add("hidden");
+      profileManualForm.classList.add("hidden");
+      profileManualBtn.classList.add("hidden");
+      profileEditBtn.classList.add("hidden");
+      profilePbWrap.classList.add("hidden");
+      profileManualPbWrap.classList.add("hidden");
+      profileTimeDisplay.classList.add("hidden");
+      profileCard.className = "today-card profile-card";
+    }
+
+    function renderProfileCard(identity) {
+      const participant = matchParticipant(identity);
+      const isGuest = !participant;
+      const card = EventHomeAction.resolveProfileCard({
+        participant: participant,
         confirmMode: confirmMode,
+        isGuest: isGuest,
+        intent: profileIntent,
+        manualKind: manualKind,
       });
 
-      todayCard.className = "today-card";
-      if (action.done) todayCard.classList.add("is-done");
-      else if (action.kind === "confirm_pending") todayCard.classList.add("is-pending");
+      hideProfileSections();
+      profilePrompt.textContent = card.prompt || "";
+      profilePrompt.classList.toggle("hidden", !card.prompt);
 
-      todayKicker.textContent = action.kicker;
-      todayTitle.textContent = action.title;
-      todayDesc.textContent = action.desc;
+      if (card.state === "guest") {
+        return;
+      }
 
-      todayCta.classList.add("hidden");
-      todaySecondary.classList.add("hidden");
-      todayCta.disabled = false;
-      todayCta.classList.remove("is-done");
-      todayCta.onclick = null;
+      if (card.state === "confirmed") {
+        profileCard.classList.add("is-done");
+        return;
+      }
 
-      if (action.kind === "confirm_pending") {
-        renderConfirmDetail();
-        todayCta.textContent =
-          confirmPhase === "review" ? "이 기록으로 확정" : action.ctaLabel;
-        todayCta.classList.remove("hidden");
-        todayCta.onclick = onConfirmClick;
-        if (action.secondaryLabel && action.secondaryHref) {
-          todaySecondary.textContent = action.secondaryLabel;
-          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-          todaySecondary.classList.remove("hidden");
+      if (card.state === "bib") {
+        if (!profileBib.value) fillBibDraft(participant);
+        renderDistanceChips();
+        profileBibForm.classList.remove("hidden");
+        return;
+      }
+
+      const bibText = participant && participant.bib ? String(participant.bib).trim() : "";
+      const distText =
+        participant && participant.distance
+          ? EventMemberCopy.memberDistanceLabel(participant.distance)
+          : "";
+
+      if (card.state === "wait") {
+        profileDisplay.classList.remove("hidden");
+        profileBibLarge.textContent = bibText;
+        profileSub.textContent = distText;
+        if (card.largeBib) profileEditBtn.classList.remove("hidden");
+        if (card.showManual) profileManualBtn.classList.remove("hidden");
+        return;
+      }
+
+      if (card.state === "pending") {
+        profileCard.classList.add("is-pending");
+        profileDisplay.classList.remove("hidden");
+        const timeText = EventHomeBadges.confirmDisplayTime(confirmResult);
+        if (timeText) {
+          profileTimeDisplay.textContent = timeText;
+          profileTimeDisplay.classList.remove("hidden");
         }
-        return;
-      }
-
-      todayConfirmDetail.classList.add("hidden");
-
-      if (action.ctaKind === "link" && action.ctaLabel) {
-        todayCta.classList.remove("hidden");
-        todayCta.textContent = action.ctaLabel;
-        todayCta.onclick = function () {
-          location.href = EventHomeAction.pageHref(action.ctaHref, eventId);
-        };
-        return;
-      }
-
-      if (action.ctaKind === "reload") {
-        todayCta.classList.remove("hidden");
-        todayCta.textContent = action.ctaLabel;
-        todayCta.onclick = function () {
-          location.reload();
-        };
-        if (action.secondaryLabel && action.secondaryHref) {
-          todaySecondary.textContent = action.secondaryLabel;
-          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-          todaySecondary.classList.remove("hidden");
+        profileBibLarge.textContent = bibText;
+        profileSub.textContent = [distText, bibText ? "배번 " + bibText : ""]
+          .filter(Boolean)
+          .join(" · ");
+        if (card.showPb) {
+          profilePb.checked = false;
+          profilePbWrap.classList.remove("hidden");
         }
+        profilePendingActions.classList.remove("hidden");
+        if (card.showManual) profileManualBtn.classList.remove("hidden");
         return;
       }
 
-      if (action.ctaKind === "done") {
-        todayCta.classList.remove("hidden");
-        todayCta.textContent = action.ctaLabel;
-        todayCta.disabled = true;
-        todayCta.classList.add("is-done");
-        if (action.secondaryLabel && action.secondaryHref) {
-          todaySecondary.textContent = action.secondaryLabel;
-          todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-          todaySecondary.classList.remove("hidden");
-        }
+      if (card.state === "manual") {
+        profileManualForm.classList.remove("hidden");
+        const showPb = card.showPb === true;
+        profileManualPbWrap.classList.toggle("hidden", !showPb);
+        if (!showPb) profileManualPb.checked = false;
         return;
-      }
-
-      if (action.secondaryLabel && action.secondaryHref) {
-        todaySecondary.textContent = action.secondaryLabel;
-        todaySecondary.href = EventHomeAction.pageHref(action.secondaryHref, eventId);
-        todaySecondary.classList.remove("hidden");
       }
     }
 
-    async function loadBusRow(identity) {
-      busRow = null;
-      if (!busEnabled || !identity.nickname) return;
-      try {
-        const res = await fetch(
-          API_BASE +
-            "?action=bus-boarding&subAction=status&eventId=" +
-            encodeURIComponent(eventId)
-        );
-        const data = await res.json();
-        if (data && data.ok && Array.isArray(data.roster)) {
-          busRow = EventMemberProfile.matchInList(data.roster, identity);
-        }
-      } catch (_err) {
-        /* badge-less */
+    function renderBusCard() {
+      const openLeg = readOpenLeg(cachedEvent && cachedEvent.busBoarding);
+      const card = EventHomeAction.resolveBusCard({
+        openLeg: openLeg,
+        busRow: busRow,
+      });
+
+      busCard.className = "today-card bus-card";
+      busBoardBtn.classList.add("hidden");
+      busBoardBtn.disabled = false;
+
+      if (card.state === "outbound_done" || card.state === "return_done") {
+        busCard.classList.add("is-done");
       }
+
+      const legLabel = card.leg === "return" ? "오는 버스" : "가는 버스";
+      busKicker.textContent = "버스";
+      if (card.state === "ready") {
+        busTitle.textContent = legLabel;
+        busPrompt.textContent = card.prompt || "";
+        busBoardBtn.textContent = card.ctaLabel || "탑승하기";
+        busBoardBtn.classList.remove("hidden");
+      } else if (card.state === "outbound_done") {
+        busTitle.textContent = "가는 버스 탑승 완료";
+        busPrompt.textContent = "";
+      } else if (card.state === "return_done") {
+        busTitle.textContent = "오는 버스 탑승 완료";
+        busPrompt.textContent = "";
+      } else if (card.state === "missing") {
+        busTitle.textContent = "버스";
+        busPrompt.textContent = card.prompt || "";
+      } else {
+        busTitle.textContent = card.leg === "return" ? "오는 버스" : "가는 버스";
+        busPrompt.textContent = card.prompt || "";
+      }
+    }
+
+    function renderHomeCards(identity) {
+      renderProfileCard(identity);
+      renderBusCard();
+    }
+
+    function loadBusRow(identity) {
+      busRow = null;
+      if (!identity || !identity.nickname) return;
+      const roster = (cachedEvent && cachedEvent.busBoarding && cachedEvent.busBoarding.roster) || [];
+      busRow = EventMemberProfile.matchInList(roster, identity);
     }
 
     async function loadConfirmState(identity) {
       confirmMode = "none";
       confirmResult = null;
-      confirmPhase = "cta";
-      if (!identity.nickname) return;
+      if (!identity || !identity.nickname || !matchParticipant(identity)) return;
 
       try {
         const res = await fetch(
@@ -463,60 +617,176 @@
       }
     }
 
-    async function refreshHomeState(identity) {
-      await Promise.all([loadBusRow(identity), loadConfirmState(identity)]);
-      renderTodayCard(identity);
+    async function reloadEvent() {
+      const res = await fetch(
+        API_BASE +
+          "?action=group-events&subAction=detail&eventId=" +
+          encodeURIComponent(eventId)
+      );
+      const data = await res.json();
+      if (data && data.ok && data.event) cachedEvent = data.event;
     }
 
-    async function submitSelfConfirm(identity) {
-      if (isConfirming || !identity.nickname) return;
-      isConfirming = true;
-      todayCta.disabled = true;
+    async function refreshHomeState(identity) {
+      loadBusRow(identity);
+      await loadConfirmState(identity);
+      renderHomeCards(identity);
+    }
+
+    function showBoardDoneOverlay(leg) {
+      boardDoneText.textContent =
+        leg === "return" ? "오는 버스 탑승 완료" : "가는 버스 탑승 완료";
+      boardDoneOverlay.classList.remove("hidden");
+      if (overlayTimer) clearTimeout(overlayTimer);
+      overlayTimer = setTimeout(function () {
+        boardDoneOverlay.classList.add("hidden");
+      }, 2000);
+    }
+
+    function clearBoardQuery() {
+      boardLanding = false;
+      try {
+        const u = new URL(location.href);
+        u.searchParams.delete("board");
+        history.replaceState({}, "", u.pathname + u.search);
+      } catch (_err) {
+        /* ignore */
+      }
+    }
+
+    async function submitSelfBoard(identity, opts) {
+      const openLeg = readOpenLeg(cachedEvent && cachedEvent.busBoarding);
+      if (!openLeg || !identity || !identity.nickname || isBoarding) return { ok: false };
+      isBoarding = true;
+      busBoardBtn.disabled = true;
+      try {
+        const res = await fetch(API_BASE + "?action=bus-boarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "self-board",
+            eventId: eventId,
+            nickname: identity.nickname,
+            leg: openLeg,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "탑승 실패");
+        await reloadEvent();
+        loadBusRow(identity);
+        renderHomeCards(identity);
+        if (opts && opts.showOverlay && !data.already) {
+          showBoardDoneOverlay(openLeg);
+        }
+        return data;
+      } catch (err) {
+        console.error("self-board error:", err);
+        showToast(err.message || "탑승 오류", true);
+        busBoardBtn.disabled = false;
+        return { ok: false };
+      } finally {
+        isBoarding = false;
+      }
+    }
+
+    async function maybeAutoBoard(identity) {
+      if (!boardLanding) return;
+      const openLeg = readOpenLeg(cachedEvent && cachedEvent.busBoarding);
+      loadBusRow(identity);
+      const legState = busRow && busRow.legs && openLeg ? busRow.legs[openLeg] : null;
+      if (!openLeg || !identity.nickname || !legState || legState.required !== true) {
+        clearBoardQuery();
+        return;
+      }
+      if (legState.boarded === true) {
+        clearBoardQuery();
+        return;
+      }
+      await submitSelfBoard(identity, { showOverlay: true });
+      clearBoardQuery();
+    }
+
+    async function submitUpdateBib(identity) {
+      const bib = String(profileBib.value || bibDraft || "").trim();
+      const distance = selectedDistance;
+      if (!bib || !distance) {
+        showToast("배번과 종목을 넣어 주세요.", true);
+        return;
+      }
+      if (isSavingBib) return;
+      isSavingBib = true;
+      profileBibSave.disabled = true;
       try {
         const res = await fetch(API_BASE + "?action=group-events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            subAction: "self-confirm",
+            subAction: "update-bib",
             eventId: eventId,
             nickname: identity.nickname,
+            bib: bib,
+            distance: distance,
           }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "배번 저장 실패");
+        showToast(data.message || "배번이 저장되었습니다");
+        profileIntent = "";
+        await reloadEvent();
+        await refreshHomeState(identity);
+      } catch (err) {
+        console.error("update-bib error:", err);
+        showToast(err.message || "배번 저장 오류", true);
+      } finally {
+        isSavingBib = false;
+        profileBibSave.disabled = false;
+      }
+    }
+
+    async function submitSelfConfirm(identity, extra) {
+      if (isConfirming || !identity || !identity.nickname) return;
+      isConfirming = true;
+      try {
+        const body = {
+          subAction: "self-confirm",
+          eventId: eventId,
+          nickname: identity.nickname,
+        };
+        if (extra) {
+          if (extra.pbConfirmed != null) body.pbConfirmed = extra.pbConfirmed;
+          if (extra.netTime) body.netTime = extra.netTime;
+          if (extra.dnStatus) body.dnStatus = extra.dnStatus;
+        }
+        const res = await fetch(API_BASE + "?action=group-events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "확정 실패");
         showToast("기록이 반영되었습니다");
-        confirmPhase = "cta";
+        profileIntent = "";
+        await reloadEvent();
         await refreshHomeState(identity);
       } catch (err) {
         console.error("self-confirm error:", err);
         showToast(err.message || "확정 오류", true);
-        todayCta.disabled = false;
       } finally {
         isConfirming = false;
       }
     }
 
-    function onConfirmClick() {
-      const identity = EventMemberProfile.readSavedIdentity(localStorage);
-      if (confirmMode !== "pending" || isConfirming) return;
-      if (confirmPhase === "cta") {
-        confirmPhase = "review";
-        renderTodayCard(identity);
-        return;
-      }
-      submitSelfConfirm(identity);
-    }
-
     function renderPickList(filter) {
       const participants = (cachedEvent && cachedEvent.participants) || [];
-      const nicks = participants
-        .map(function (p) {
-          return p && p.nickname ? String(p.nickname).trim() : "";
-        })
-        .filter(Boolean)
-        .sort(function (a, b) {
-          return a.localeCompare(b, "ko");
-        });
+      const roster = rosterOf(cachedEvent);
+      const nicks = EventHomeAction.pickNicknames({
+        boardLanding: pickBoardMode,
+        openLeg: readOpenLeg(cachedEvent && cachedEvent.busBoarding),
+        participants: participants,
+        roster: roster,
+      }).sort(function (a, b) {
+        return a.localeCompare(b, "ko");
+      });
       const q = (filter || "").trim().toLowerCase();
       const filtered = q
         ? nicks.filter(function (n) {
@@ -551,14 +821,16 @@
       pickSelectedNick = null;
       pickNextBtn.disabled = true;
       pickSearch.value = "";
-      renderPickList("");
       const canCancel = !!(opts && opts.cancelable);
+      pickBoardMode = boardLanding && !canCancel;
       pickCancelBtn.classList.toggle("hidden", !canCancel);
+      renderPickList("");
       eventTabBar.classList.add("hidden");
       showOnly(pickViewEl);
     }
 
     function showMemberHome(event, identity) {
+      activeIdentity = identity;
       const title = EventMemberCopy.memberEventTitle(
         event.eventName || event.primaryName || "대회"
       );
@@ -576,25 +848,28 @@
       renderTimeline(event);
       mountTabs();
       showOnly(homeEl);
-      refreshHomeState(identity);
+      refreshHomeState(identity).then(function () {
+        maybeAutoBoard(identity);
+      });
     }
 
     function renderEventShell(event) {
       cachedEvent = event;
-      busEnabled = EventHomeBadges.busLauncherVisible(event.busBoarding);
       const identity = EventMemberProfile.readSavedIdentity(localStorage);
-      const inRoster = EventMemberProfile.matchInList(
-        (event.participants || []),
+      const inParticipants = EventMemberProfile.matchInList(
+        event.participants || [],
         identity
       );
+      const inRoster = EventMemberProfile.matchInList(rosterOf(event), identity);
+      const known = inParticipants || inRoster;
 
-      if (!identity.nickname || !inRoster) {
+      if (!identity.nickname || !known) {
         showPickView(event);
         return;
       }
       showMemberHome(event, {
-        nickname: inRoster.nickname,
-        memberId: inRoster.memberId || identity.memberId,
+        nickname: known.nickname,
+        memberId: known.memberId || identity.memberId,
       });
     }
 
@@ -625,6 +900,17 @@
       }
     }
 
+    bindImeInput(profileBib, function (value) {
+      bibDraft = value;
+    });
+    bindImeInput(profileTime, function (value) {
+      timeDraft = value;
+      if (profileIntent === "manual" && value.trim()) {
+        manualKind = "finish";
+        renderHomeCards(activeIdentity);
+      }
+    });
+
     let pickComposing = false;
     pickSearch.addEventListener("compositionstart", function () {
       pickComposing = true;
@@ -652,18 +938,46 @@
     pickCancelBtn.addEventListener("click", function () {
       if (!cachedEvent) return;
       const identity = EventMemberProfile.readSavedIdentity(localStorage);
-      const inRoster = EventMemberProfile.matchInList(
-        (cachedEvent.participants || []),
-        identity
-      );
-      if (!inRoster) {
+      const known = matchKnownRow(identity);
+      if (!known) {
         pickCancelBtn.classList.add("hidden");
         return;
       }
       showMemberHome(cachedEvent, {
-        nickname: inRoster.nickname,
-        memberId: inRoster.memberId || identity.memberId,
+        nickname: known.nickname,
+        memberId: known.memberId || identity.memberId,
       });
+    });
+
+    profileEditBtn.addEventListener("click", onRejectClick);
+    profileNoBtn.addEventListener("click", onRejectClick);
+    profileManualBtn.addEventListener("click", onManualClick);
+    profileBibSave.addEventListener("click", function () {
+      submitUpdateBib(activeIdentity);
+    });
+    profileYesBtn.addEventListener("click", function () {
+      submitSelfConfirm(activeIdentity, {
+        pbConfirmed: profilePb.checked === true,
+      });
+    });
+    profileDnsBtn.addEventListener("click", function () {
+      applyProfile({ intent: "manual", manualKind: "dns" });
+    });
+    profileDnfBtn.addEventListener("click", function () {
+      applyProfile({ intent: "manual", manualKind: "dnf" });
+    });
+    profileManualSave.addEventListener("click", function () {
+      const extra = {};
+      if (manualKind === "dns") extra.dnStatus = "DNS";
+      else if (manualKind === "dnf") extra.dnStatus = "DNF";
+      else {
+        extra.netTime = String(profileTime.value || timeDraft || "").trim();
+        if (profileManualPb.checked) extra.pbConfirmed = true;
+      }
+      submitSelfConfirm(activeIdentity, extra);
+    });
+    busBoardBtn.addEventListener("click", function () {
+      submitSelfBoard(activeIdentity, { showOverlay: true });
     });
 
     retryBtn.addEventListener("click", function () {
