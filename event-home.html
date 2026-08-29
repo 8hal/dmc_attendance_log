@@ -323,6 +323,11 @@
     let bibDraft = "";
     let timeDraft = "";
     let prevProfileState = "";
+    let homeGeneration = 0;
+
+    function bumpHomeGeneration() {
+      homeGeneration += 1;
+    }
 
     function showOnly(el) {
       loadingEl.classList.add("hidden");
@@ -599,6 +604,7 @@
     }
 
     async function loadConfirmState(identity) {
+      const gen = homeGeneration;
       confirmMode = "none";
       confirmResult = null;
       if (!identity || !identity.nickname || !matchParticipant(identity)) return;
@@ -611,7 +617,9 @@
             "&nickname=" +
             encodeURIComponent(identity.nickname)
         );
+        if (homeGeneration !== gen) return;
         const data = await res.json();
+        if (homeGeneration !== gen) return;
         const panel = EventHomeBadges.confirmPanelFromApi(data);
         confirmMode = panel.mode;
         confirmResult = panel.result;
@@ -631,8 +639,10 @@
     }
 
     async function refreshHomeState(identity) {
+      const gen = homeGeneration;
       loadBusRow(identity);
       await loadConfirmState(identity);
+      if (homeGeneration !== gen) return;
       renderHomeCards(identity);
     }
 
@@ -661,6 +671,7 @@
       const openLeg = readOpenLeg(cachedEvent && cachedEvent.busBoarding);
       if (!openLeg || !identity || !identity.nickname || isBoarding) return { ok: false };
       const boardedNick = identity.nickname;
+      const gen = homeGeneration;
       isBoarding = true;
       busBoardBtn.disabled = true;
       try {
@@ -674,15 +685,20 @@
             leg: openLeg,
           }),
         });
+        if (homeGeneration !== gen) return { ok: false };
         if (activeIdentity.nickname !== boardedNick) return { ok: false };
         const data = await res.json();
+        if (homeGeneration !== gen) return { ok: false };
         if (activeIdentity.nickname !== boardedNick) return { ok: false };
         if (!data.ok) throw new Error(data.error || "탑승 실패");
         await reloadEvent();
+        if (homeGeneration !== gen) return { ok: false };
         if (activeIdentity.nickname !== boardedNick) return { ok: false };
         loadBusRow(identity);
         renderHomeCards(identity);
-        if (opts && opts.showOverlay && !data.already) {
+        const pickVisible =
+          homeEl.classList.contains("hidden") || !pickViewEl.classList.contains("hidden");
+        if (opts && opts.showOverlay && !data.already && !pickVisible) {
           showBoardDoneOverlay(openLeg);
         }
         return data;
@@ -721,6 +737,7 @@
         return;
       }
       if (isSavingBib) return;
+      const gen = homeGeneration;
       isSavingBib = true;
       profileBibSave.disabled = true;
       try {
@@ -735,11 +752,14 @@
             distance: distance,
           }),
         });
+        if (homeGeneration !== gen) return;
         const data = await res.json();
+        if (homeGeneration !== gen) return;
         if (!data.ok) throw new Error(data.error || "배번 저장 실패");
         showToast(data.message || "배번이 저장되었습니다");
         profileIntent = "";
         await reloadEvent();
+        if (homeGeneration !== gen) return;
         await refreshHomeState(identity);
       } catch (err) {
         console.error("update-bib error:", err);
@@ -752,6 +772,7 @@
 
     async function submitSelfConfirm(identity, extra) {
       if (isConfirming || !identity || !identity.nickname) return;
+      const gen = homeGeneration;
       isConfirming = true;
       try {
         const body = {
@@ -769,11 +790,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
+        if (homeGeneration !== gen) return;
         const data = await res.json();
+        if (homeGeneration !== gen) return;
         if (!data.ok) throw new Error(data.error || "확정 실패");
         showToast("기록이 반영되었습니다");
         profileIntent = "";
         await reloadEvent();
+        if (homeGeneration !== gen) return;
         await refreshHomeState(identity);
       } catch (err) {
         console.error("self-confirm error:", err);
@@ -831,9 +855,11 @@
       profileTime.value = "";
       profilePb.checked = false;
       profileManualPb.checked = false;
+      hideProfileSections();
     }
 
     function showPickView(event, opts) {
+      bumpHomeGeneration();
       pickEventTitle.textContent = EventMemberCopy.memberEventTitle(
         event.eventName || event.primaryName || "대회"
       );
@@ -857,7 +883,10 @@
     function showMemberHome(event, identity) {
       const prevNick = activeIdentity && activeIdentity.nickname;
       const nextNick = identity && identity.nickname;
-      if (prevNick !== nextNick) resetProfileDraft();
+      if (prevNick !== nextNick) {
+        resetProfileDraft();
+        bumpHomeGeneration();
+      }
       activeIdentity = identity;
       const title = EventMemberCopy.memberEventTitle(
         event.eventName || event.primaryName || "대회"

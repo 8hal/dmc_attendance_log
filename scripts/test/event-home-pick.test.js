@@ -14,6 +14,19 @@ function extractFn(html, name) {
   return html.slice(start, next > 0 ? next : start + 500);
 }
 
+function extractAsyncFn(html, name) {
+  const token = "async function " + name + "(";
+  const start = html.indexOf(token);
+  assert.ok(start >= 0, "missing async function " + name);
+  const rest = html.slice(start + token.length);
+  const nextAsync = rest.indexOf("\n    async function ");
+  const nextFn = rest.indexOf("\n    function ");
+  let end = rest.length;
+  if (nextAsync >= 0) end = Math.min(end, nextAsync);
+  if (nextFn >= 0) end = Math.min(end, nextFn);
+  return html.slice(start, start + token.length + end);
+}
+
 describe("event-home nick pick chrome", () => {
   it("showPickView hides the tab bar and does not mount tabs", () => {
     const fn = extractFn(read("event-home.html"), "showPickView");
@@ -164,5 +177,35 @@ describe("event-home nick pick chrome", () => {
     assert.match(reset, /timeDraft/);
     const home = extractFn(html, "showMemberHome");
     assert.match(home, /resetProfileDraft/);
+  });
+
+  it("resetProfileDraft hides profile sections", () => {
+    const reset = extractFn(read("event-home.html"), "resetProfileDraft");
+    assert.match(reset, /hideProfileSections\s*\(/);
+  });
+
+  it("homeGeneration bumps on pick and identity change", () => {
+    const html = read("event-home.html");
+    assert.match(html, /homeGeneration/);
+    const pick = extractFn(html, "showPickView");
+    assert.match(pick, /homeGeneration\s*\+=\s*1|homeGeneration\+\+|bumpHomeGeneration/);
+    const home = extractFn(html, "showMemberHome");
+    assert.match(home, /homeGeneration\s*\+=\s*1|homeGeneration\+\+|bumpHomeGeneration/);
+  });
+
+  it("async home loaders abort on stale homeGeneration", () => {
+    const html = read("event-home.html");
+    ["submitSelfBoard", "refreshHomeState", "loadConfirmState", "submitSelfConfirm", "submitUpdateBib"].forEach(
+      function (name) {
+        const fn = extractAsyncFn(html, name);
+        assert.match(fn, /homeGeneration/, name + " should capture homeGeneration");
+        assert.match(fn, /!==/, name + " should compare generation after await");
+      }
+    );
+  });
+
+  it("submitSelfBoard does not overlay when pick is visible", () => {
+    const fn = extractAsyncFn(read("event-home.html"), "submitSelfBoard");
+    assert.match(fn, /homeEl\.classList\.contains\(["']hidden["']\)|pickViewEl/);
   });
 });
