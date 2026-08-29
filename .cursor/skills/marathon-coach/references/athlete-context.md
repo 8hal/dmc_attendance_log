@@ -157,6 +157,17 @@ Use this as the default post-double-session refuel template unless the athlete r
 - **Saturday anchor:** D-14 Namsan on 8/22 (Sat); longest remaining taper run on **D-7 8/29 (Sat)** easy ~14–16 km, not flat race-pace repeat.
 - **Race target:** 3:0x → ~4:22–4:28/km; reassess at 25 km and 30 km — do not chase sub-3:05 if HR/TE drift early.
 
+### D-7 (8/29 Sat) long run — underperformed vs plan; root cause identified
+
+- **Plan was:** half-MP-finish run, flat course, first ~10.5 km E (5:45–6:15), second ~10.5 km @ MP 4:26–4:30, HR 148–155.
+- **Actual:** 21.73 km in 6:00/km avg, HR avg 125 / max **146** (never reached MP HR zone). Splits: km1-4 warmup 6:51-7:49 (HR105-122), km5-14 "push" 5:06-5:29 (HR125-139, still nowhere near MP), km15-21 **faded back** to 5:16-7:15 (HR117-136). No true MP was executed; course was rolling (+156 m / -154 m, not flat as planned).
+- **Weather:** 28-31°C, dew point **25°C**, humidity **100%**, **0 wind**, "Mist" — near-zero evaporative cooling.
+- **Root-cause analysis (user-confirmed 2026-08-29):** Compared against 8/22 Namsan (27-30°C, dew point 22.2°C, humidity 82%, 4kt breeze, **+542 m** climbing — 3x more elevation than 8/29) which was *faster* (4:57/km, HR145/158) despite far more climbing. This ruled out "hills" as the primary cause. Two real factors:
+  1. **Humidity/evaporative-cooling ceiling** — dew point 25°C + 100% RH + 0 wind + mist is a materially worse thermoregulatory environment than Namsan's 82%/breeze, even at similar dry-bulb temp.
+  2. **Recovery interference — main driver.** 8/27 (Thu) had an **unplanned interval session** (9.3 km, TE 4.3, HR max 170) during what was designated a no-Tue/no-Thu-quality absorption week (see "Current exception 8/24-8/30" below). The long run followed only **~44 hours** after a hard VO2/anaerobic session instead of the planned full absorption gap that Namsan had (Namsan followed a genuine down week with no interval).
+- **Recovery metrics on 8/29 morning were normal** (HRV 65 BALANCED vs weekly avg 55, RHR 44, cadence 180.5 — no mechanical/systemic red flag), confirming this was a session-specific interference + environment effect, not an overtraining or injury signal.
+- **Lesson for future weekly planning:** when a week is flagged as "no Tue tempo / no Thu interval" (absorption, B-race taper, deload), **do not substitute an interval session** even if the athlete feels capable that day — it removes the Saturday long run's intended low-fatigue baseline and confounds diagnostic data. Enforce the designated quality-skip more strictly, or if a quality session is added, downgrade the following Saturday's ambition (E only, no MP block) rather than keeping the original harder plan.
+
 ## Near-term plan (superseded by Cheorwon taper above)
 
 | Date | Recommendation |
@@ -244,7 +255,7 @@ Do not optimize training to fill the Garmin anaerobic shortage. The marathon obj
 
 **Planning rule:** Default build weeks use **Tue tempo + Thu interval + Sat long + Wed MLR**. Do not move tempo to Wed or drop Thu intervals without user request. Deload / B-race / absorption weeks: **drop both quality days**, keep structure otherwise.
 
-**Current exception (8/24–8/30):** Namsan TE 5.0 + quads — **no Tue tempo, no Thu interval** this week only.
+**Current exception (8/24–8/30):** Namsan TE 5.0 + quads — **no Tue tempo, no Thu interval** this week only. **Actual: an interval session was still done 8/27 (Thu)** — see "D-7 (8/29) long run" analysis above for the recovery-interference consequence on the following Saturday long run.
 
 - The athlete values gradual progression and pushes back on abrupt pace increases.
 - **Key / high-volume sessions are usually scheduled on Saturday** (long runs, major quality). Weekday sessions are shorter; taper and weekly plans should put the longest run on Saturday when possible.
