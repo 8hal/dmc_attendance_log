@@ -208,4 +208,19 @@ describe("event-home nick pick chrome", () => {
     const fn = extractAsyncFn(read("event-home.html"), "submitSelfBoard");
     assert.match(fn, /homeEl\.classList\.contains\(["']hidden["']\)|pickViewEl/);
   });
+
+  it("showMemberHome skips auto-board after stale refresh", () => {
+    const home = extractFn(read("event-home.html"), "showMemberHome");
+    assert.match(home, /homeGeneration/);
+    assert.match(home, /maybeAutoBoard/);
+    assert.match(home, /!==/);
+  });
+
+  it("maybeAutoBoard does not POST when pick is visible", () => {
+    const fn = extractAsyncFn(read("event-home.html"), "maybeAutoBoard");
+    assert.match(fn, /homeEl\.classList\.contains\(["']hidden["']\)|pickViewEl/);
+    const pickIdx = fn.search(/homeEl\.classList\.contains\(["']hidden["']\)|pickViewEl/);
+    const postIdx = fn.indexOf("submitSelfBoard");
+    assert.ok(pickIdx >= 0 && postIdx > pickIdx, "pickVisible return must precede self-board POST");
+  });
 });

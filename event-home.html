@@ -714,6 +714,9 @@
 
     async function maybeAutoBoard(identity) {
       if (!boardLanding) return;
+      const pickVisible =
+        homeEl.classList.contains("hidden") || !pickViewEl.classList.contains("hidden");
+      if (pickVisible) return;
       const openLeg = readOpenLeg(cachedEvent && cachedEvent.busBoarding);
       loadBusRow(identity);
       const legState = busRow && busRow.legs && openLeg ? busRow.legs[openLeg] : null;
@@ -905,7 +908,9 @@
       renderTimeline(event);
       mountTabs();
       showOnly(homeEl);
+      const gen = homeGeneration;
       refreshHomeState(identity).then(function () {
+        if (homeGeneration !== gen) return;
         maybeAutoBoard(identity);
       });
     }
