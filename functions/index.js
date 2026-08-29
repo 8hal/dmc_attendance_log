@@ -19,6 +19,7 @@ const {
   normalizeEventDateForId,
 } = require("./lib/canonicalEventId");
 const { normalizeRaceDistance } = require("./lib/raceDistance");
+const { normalizeBibDistance } = require("./lib/update-bib-fields");
 const { applyMemberLeave, isAlreadyAnonymized } = require("./lib/member-leave");
 const {
   normalizeMemberTeam,
@@ -3803,7 +3804,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
     }
 
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "update-bib") {
-      const { eventId, nickname, bib } = req.body;
+      const { eventId, nickname, bib, distance } = req.body;
       
       // 1. 필수 파라미터 검증
       if (!eventId) {
@@ -3820,6 +3821,15 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       const trimmedBib = bib.trim();
       if (trimmedBib === '') {
         return res.status(400).json({ ok: false, error: "bib cannot be empty" });
+      }
+
+      let canonicalDistance = null;
+      if (Object.prototype.hasOwnProperty.call(req.body, "distance")) {
+        const distResult = normalizeBibDistance(distance);
+        if (!distResult.ok) {
+          return res.status(400).json({ ok: false, error: distResult.error });
+        }
+        canonicalDistance = distResult.distance;
       }
       
       try {
@@ -3855,8 +3865,11 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           });
         }
         
-        // 5. 배번 업데이트
+        // 5. 배번(·종목) 업데이트
         event.participants[participantIndex].bib = trimmedBib;
+        if (canonicalDistance !== null) {
+          event.participants[participantIndex].distance = canonicalDistance;
+        }
         
         await db.collection("race_events").doc(eventId).update({
           participants: event.participants
