@@ -438,6 +438,27 @@
     .list-row:last-child { border-bottom: 0; }
     .nick { font-weight: 700; }
     .sub { font-size: 12px; color: var(--text-sub); }
+    #gap-manual-list .list-row {
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .gap-manual-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .gap-manual-actions .gap-net-time {
+      width: 96px;
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+    .gap-manual-actions .btn {
+      width: auto;
+      margin-top: 0;
+    }
 
     .disabled-banner {
       background: var(--amber-light);
@@ -767,6 +788,8 @@
             <div class="stat"><b id="confirmed-count">0</b><span>참가자 확정 완료</span></div>
           </div>
           <p class="hint">총무 일괄 확정 버튼 없음 (베타 주경로).</p>
+          <p class="hint" style="margin:10px 0 4px;">미확정 참가자 · DNS / DNF / 시각</p>
+          <div id="gap-manual-list"></div>
           <button type="button" class="btn btn-ghost" id="refresh-all-btn">전체 새로고침</button>
         </section>
       </div>
@@ -965,6 +988,7 @@
         Number.isFinite(untilMs) &&
         untilMs <= Date.now()
       );
+      const missingDone = gapRows.every((g) => g.gapStatus === "confirmed");
       const marks = {
         source: sourceDone,
         "outbound-on": openLeg === "outbound",
@@ -973,7 +997,7 @@
         "return-off": openLeg !== "return",
         "scrape-start": scrapeStarted,
         "scrape-stop": scrapeStopped,
-        missing: false
+        missing: missingDone
       };
       list.querySelectorAll("[data-check]").forEach((li) => {
         const key = li.getAttribute("data-check");
@@ -1272,7 +1296,88 @@
       scrapeBtn.disabled = !canScrape;
       const stopBtn = document.getElementById("scrape-stop-btn");
       if (stopBtn) stopBtn.disabled = !isOpsAdmin();
+      renderGapManualList();
       updateChecklist();
+    }
+
+    function renderGapManualList() {
+      const list = document.getElementById("gap-manual-list");
+      if (!list) return;
+      const statusLabel = {
+        ok: "조회됨 · 미확정",
+        missing: "기록 없음",
+        ambiguous: "동명이인"
+      };
+      const parts = [];
+      gapRows.forEach((g, i) => {
+        if (g.gapStatus !== "confirmed") {
+          const label = statusLabel[g.gapStatus] || "미확정";
+          parts.push(`
+          <div class="list-row" data-gap-idx="${i}">
+            <div>
+              <div class="nick">${escapeHtml(g.nickname || "—")}</div>
+              <div class="sub">${escapeHtml(g.realName || "—")} · ${escapeHtml(g.distance || "—")} · ${escapeHtml(label)}</div>
+            </div>
+            <div class="gap-manual-actions">
+              <button type="button" class="btn btn-sm btn-secondary" data-dnStatus="DNS">DNS</button>
+              <button type="button" class="btn btn-sm btn-danger" data-dnStatus="DNF">DNF</button>
+              <input type="text" class="field-input gap-net-time" placeholder="1:42:00" maxlength="12" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary gap-time-save">저장</button>
+            </div>
+          </div>`);
+        }
+      });
+      list.innerHTML = parts.length
+        ? parts.join("")
+        : '<p class="hint" style="margin:0;">미확정 없음</p>';
+    }
+
+    async function confirmGapManual(gap, extra) {
+      if (isProcessing) return;
+      if (!eventId || !gap || !String(gap.realName || "").trim()) {
+        showToast("실명이 없어 확정할 수 없습니다", true);
+        return;
+      }
+      isProcessing = true;
+      const list = document.getElementById("gap-manual-list");
+      if (list) {
+        list.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+      }
+      try {
+        const participant = {
+          realName: gap.realName,
+          nickname: gap.nickname,
+          distance: gap.distance
+        };
+        if (extra && extra.dnStatus) participant.dnStatus = extra.dnStatus;
+        if (extra && extra.netTime) participant.netTime = extra.netTime;
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "confirm-one",
+            canonicalEventId: eventId,
+            confirmSource: "operator",
+            participant
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "확정 실패");
+        const who = gap.nickname || gap.realName;
+        const kind = extra && extra.dnStatus
+          ? extra.dnStatus
+          : (extra && extra.netTime) || "기록";
+        showToast(who + " " + kind + " 처리");
+        await loadEventDetail();
+      } catch (err) {
+        console.error("confirmGapManual:", err);
+        showToast(err.message || "확정 오류", true);
+      } finally {
+        isProcessing = false;
+        if (list) {
+          list.querySelectorAll("button").forEach((b) => { b.disabled = false; });
+        }
+      }
     }
 
     function showPanels() {
@@ -1939,6 +2044,27 @@
     document.getElementById("save-source-btn").addEventListener("click", saveGroupSource);
     document.getElementById("scrape-btn").addEventListener("click", scrapeGroupEvent);
     document.getElementById("scrape-stop-btn").addEventListener("click", stopGroupScrape);
+    document.getElementById("gap-manual-list").addEventListener("click", (e) => {
+      const row = e.target.closest(".list-row");
+      if (!row) return;
+      const idx = Number(row.getAttribute("data-gap-idx"));
+      const gap = gapRows[idx];
+      if (!gap) return;
+      const btn = e.target.closest("button");
+      const dnStatus = btn && btn.getAttribute("data-dnStatus");
+      if (dnStatus) {
+        confirmGapManual(gap, { dnStatus });
+        return;
+      }
+      if (!btn || !btn.classList.contains("gap-time-save")) return;
+      const input = row.querySelector(".gap-net-time");
+      const netTime = input ? input.value.trim() : "";
+      if (!netTime) {
+        showToast("기록을 입력하세요", true);
+        return;
+      }
+      confirmGapManual(gap, { netTime });
+    });
     document.getElementById("csv-input").addEventListener("change", (e) => {
       const f = e.target.files && e.target.files[0];
       if (f) handleCsvFile(f);
