@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
-  <title>명단·결과 - 동탄 마라톤 클럽</title>
+  <title>대회 기록 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
   <link rel="stylesheet" href="assets/design-tokens.css" />
   <link rel="stylesheet" href="assets/event-member-shell.css" />
@@ -174,7 +174,7 @@
 
     <div id="main" class="hidden">
       <header class="header">
-        <h1 class="header-title" id="eventTitle">명단·결과</h1>
+        <h1 class="header-title" id="eventTitle">대회 기록</h1>
         <p class="header-meta" id="eventMeta"></p>
       </header>
 
@@ -199,7 +199,7 @@
       </div>
 
       <div class="list" id="rosterList" aria-live="polite"></div>
-      <p class="privacy-note">실명·배번 숫자는 공개되지 않습니다. 확정된 기록만 표시됩니다.</p>
+      <p class="privacy-note">실명·배번은 공개되지 않습니다. 홈에서 확정한 기록만 모입니다.</p>
     </div>
   </div>
 
@@ -241,6 +241,9 @@
     let isComposing = false;
     let searchTimer = null;
     let hasLoadedOnce = false;
+    let rosterTotalCount = 0;
+
+    const ROSTER_DIST_ORDER = ["full", "half", "10K", "5K", "3K", "30K", "32K", "ultra"];
 
     function showOnly(el) {
       loadingEl.classList.add("hidden");
@@ -274,10 +277,28 @@
       return String(row.nickname).toLowerCase() === String(identity.nickname).toLowerCase();
     }
 
+    function sortRosterDistances(distances) {
+      const set = new Set(
+        (distances || []).filter(function (d) {
+          return d && String(d).trim() && String(d).toLowerCase() !== "unknown";
+        })
+      );
+      return ROSTER_DIST_ORDER.filter(function (d) {
+        return set.has(d);
+      });
+    }
+
+    function hasActiveRosterFilter() {
+      return (
+        (distanceFilter && distanceFilter !== "all") ||
+        !!String(searchQuery || "").trim()
+      );
+    }
+
     function renderChips(distances) {
       distChipsEl.innerHTML = "";
       const opts = [{ value: "all", label: "전체" }].concat(
-        (distances || []).map(function (d) {
+        sortRosterDistances(distances).map(function (d) {
           return { value: d, label: EventMemberCopy.memberDistanceLabel(d) };
         })
       );
@@ -299,7 +320,14 @@
       if (!rows.length) {
         const empty = document.createElement("div");
         empty.className = "status";
-        empty.textContent = "표시할 참가자가 없습니다";
+        if (rosterTotalCount === 0 && !hasActiveRosterFilter()) {
+          empty.innerHTML =
+            '<span class="status-title">아직 확정된 기록이 없어요.</span>' +
+            "<p>홈에서 기록을 확인하면 여기에 올라갑니다.</p>";
+        } else {
+          empty.innerHTML =
+            '<span class="status-title">해당하는 기록이 없어요.</span>';
+        }
         rosterList.appendChild(empty);
         return;
       }
@@ -319,12 +347,16 @@
         left.appendChild(meta);
 
         const time = document.createElement("div");
-        if (row.hasResult && row.netTime) {
+        const dn = String(row.dnStatus || "").toUpperCase();
+        if (dn === "DNS" || dn === "DNF") {
+          time.className = "row-time pending";
+          time.textContent = dn;
+        } else if (row.netTime) {
           time.className = "row-time";
           time.textContent = row.netTime;
         } else {
           time.className = "row-time pending";
-          time.textContent = "기록 없음";
+          time.textContent = "-";
         }
 
         el.appendChild(left);
@@ -366,16 +398,12 @@
           throw new Error(data.error || "불러오기 실패");
         }
 
-        const title = EventMemberCopy.memberEventTitle(data.eventName || "명단·결과");
+        const title = EventMemberCopy.memberEventTitle(data.eventName || "대회 기록");
         eventTitleEl.textContent = title;
         document.title = title + " - 동탄 마라톤 클럽";
         eventMetaEl.textContent = data.eventDate || "";
-        summaryEl.textContent =
-          "참가 " +
-          (data.totalCount != null ? data.totalCount : 0) +
-          "명 · 기록 확정 " +
-          (data.confirmedCount != null ? data.confirmedCount : 0) +
-          "명";
+        rosterTotalCount = data.totalCount != null ? data.totalCount : 0;
+        summaryEl.textContent = `기록 ${rosterTotalCount}명`;
 
         renderChips(data.distances || []);
         renderRows(data.rows || []);

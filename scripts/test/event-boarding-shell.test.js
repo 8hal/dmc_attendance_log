@@ -112,7 +112,7 @@ describe("member pages use EventMemberCopy", () => {
     assert.match(html, /memberEventTitle\(/);
     assert.match(html, /memberDistanceLabel\(/);
     assert.doesNotMatch(html, /formatDistance\(/);
-    assert.match(html, /확정된 기록만/);
+    assert.match(html, /홈에서 확정한 기록만 모입니다/);
     assert.doesNotMatch(html, /컨펌된 기록만/);
   });
 });
