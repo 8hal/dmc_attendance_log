@@ -1,7 +1,12 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
 const path = require("path");
 const { mount } = require(path.join(__dirname, "../../assets/event-member-tabs.js"));
+
+function read(rel) {
+  return fs.readFileSync(path.join(__dirname, "../..", rel), "utf8");
+}
 
 function fakeTab() {
   return {
@@ -45,23 +50,29 @@ function fakeBar(tabs) {
 }
 
 describe("event-member-tabs", () => {
-  it("browse bus tab omits leg", () => {
-    const tabs = { home: fakeTab(), bus: fakeTab(), roster: fakeTab() };
+  it("mounts home and roster only, roster label is 대회 기록", () => {
+    const tabs = { home: fakeTab(), roster: fakeTab() };
     const bar = fakeBar(tabs);
-    mount({ eventId: "evt_x", active: "home", busEnabled: true, barEl: bar });
-    assert.equal(tabs.bus.href, "boarding.html?eventId=evt_x");
+    mount({ eventId: "evt_x", active: "home", barEl: bar });
+    assert.equal(tabs.home.href, "event-home.html?eventId=evt_x");
+    assert.equal(tabs.roster.href, "event-roster.html?eventId=evt_x");
   });
 
-  it("QR-locked bus tab keeps the current leg", () => {
-    const tabs = { home: fakeTab(), bus: fakeTab(), roster: fakeTab() };
+  it("does not require a bus tab", () => {
+    const tabs = { home: fakeTab(), roster: fakeTab() };
     const bar = fakeBar(tabs);
-    mount({
-      eventId: "evt_x",
-      active: "bus",
-      busEnabled: true,
-      busLeg: "return",
-      barEl: bar,
-    });
-    assert.equal(tabs.bus.href, "boarding.html?eventId=evt_x&leg=return");
+    assert.doesNotThrow(() => mount({ eventId: "evt_x", active: "roster", barEl: bar }));
+  });
+
+  it("event-home.html roster tab is labeled 대회 기록 without bus tab", () => {
+    const html = read("event-home.html");
+    assert.match(html, />대회 기록</);
+    assert.doesNotMatch(html, /data-tab="bus"/);
+  });
+
+  it("event-roster.html roster tab is labeled 대회 기록 without bus tab", () => {
+    const html = read("event-roster.html");
+    assert.match(html, />대회 기록</);
+    assert.doesNotMatch(html, /data-tab="bus"/);
   });
 });
