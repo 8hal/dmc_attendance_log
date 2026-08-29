@@ -13,6 +13,8 @@ const {
   decideAutoScrapeTick,
   mergeJobResultsByBib,
   participantConfirmKey,
+  restoreSubsetFailureStatuses,
+  isStuckRunningJob,
   WINDOW_MS,
 } = require("../../functions/lib/group-scrape-session.js");
 
@@ -80,6 +82,22 @@ function triggerCallAt(src, fromIdx) {
   const callIdx = src.indexOf("triggerGroupScrape", fromIdx);
   assert.ok(callIdx >= 0, "missing triggerGroupScrape call");
   return src.slice(callIdx, callIdx + 700);
+}
+
+function healthCheckBlock(src) {
+  const start = src.indexOf("exports.scrapeHealthCheck");
+  assert.ok(start >= 0, "missing scrapeHealthCheck");
+  const next = src.indexOf("async function runWeekendScrapeReadinessCheck", start);
+  assert.ok(next > start, "missing readiness check after health check");
+  return src.slice(start, next);
+}
+
+function opsStuckBlock(src) {
+  const start = src.indexOf("Stuck jobs:");
+  assert.ok(start >= 0, "missing ops stuck jobs");
+  const next = src.indexOf("주말 대회", start);
+  assert.ok(next > start, "missing weekend events after stuck jobs");
+  return src.slice(start, next);
 }
 
 describe("startSession / stopSession / isSessionActive", () => {
@@ -217,6 +235,69 @@ describe("mergeJobResultsByBib", () => {
     assert.equal(participantConfirmKey("홍길동", "하프마라톤"), "홍길동_half");
     assert.equal(participantConfirmKey(" 홍길동 ", "half"), "홍길동_half");
   });
+
+  it("two sequential subset merges keep both bibs", () => {
+    const afterA = mergeJobResultsByBib(
+      [{ bib: "X", netTime: "1:00:00" }, { bib: "Y", netTime: "" }],
+      [{ bib: "A", netTime: "1:40:00" }]
+    );
+    const afterB = mergeJobResultsByBib(afterA, [{ bib: "B", netTime: "2:00:00" }]);
+    const byBib = Object.fromEntries(afterB.map((r) => [r.bib, r]));
+    assert.equal(byBib.X.netTime, "1:00:00");
+    assert.equal(byBib.A.netTime, "1:40:00");
+    assert.equal(byBib.B.netTime, "2:00:00");
+  });
+});
+
+describe("restoreSubsetFailureStatuses / isStuckRunningJob", () => {
+  it("restores done/complete when prior status is missing or running", () => {
+    assert.deepEqual(restoreSubsetFailureStatuses("running", "running"), {
+      groupScrapeStatus: "done",
+      scrapeJobStatus: "complete",
+    });
+    assert.deepEqual(restoreSubsetFailureStatuses(undefined, ""), {
+      groupScrapeStatus: "done",
+      scrapeJobStatus: "complete",
+    });
+  });
+
+  it("keeps prior done and complete on subset failure", () => {
+    assert.deepEqual(restoreSubsetFailureStatuses("done", "complete"), {
+      groupScrapeStatus: "done",
+      scrapeJobStatus: "complete",
+    });
+    assert.deepEqual(restoreSubsetFailureStatuses("partial_failure", "partial_failure"), {
+      groupScrapeStatus: "partial_failure",
+      scrapeJobStatus: "partial_failure",
+    });
+  });
+
+  it("07:00 job rescraped at 13:00 is not stuck at 13:10", () => {
+    assert.equal(
+      isStuckRunningJob(
+        { createdAt: "2026-08-29T07:00:00.000Z", rescrapedAt: "2026-08-29T13:00:00.000Z" },
+        "2026-08-29T12:10:00.000Z"
+      ),
+      false
+    );
+  });
+
+  it("running job with only old createdAt is stuck", () => {
+    assert.equal(
+      isStuckRunningJob({ createdAt: "2026-08-29T07:00:00.000Z" }, "2026-08-29T12:10:00.000Z"),
+      true
+    );
+  });
+
+  it("resumedAt beats createdAt for stuck clock", () => {
+    assert.equal(
+      isStuckRunningJob(
+        { createdAt: "2026-08-29T07:00:00.000Z", resumedAt: "2026-08-29T13:00:00.000Z" },
+        "2026-08-29T12:10:00.000Z"
+      ),
+      false
+    );
+  });
 });
 
 describe("event-admin scrape session UI", () => {
@@ -315,7 +396,7 @@ describe("scrape POST and auto-scrape wiring", () => {
   it("update-bib triggers one-person scrape only when session is active and not running", () => {
     const block = updateBibBlock(src);
     assert.match(block, /isSessionActive/);
-    assert.match(block, /groupScrapeStatus !== "running"/);
+    assert.match(block, /runTransaction/);
     assert.match(block, /triggerGroupScrape/);
   });
 
@@ -353,5 +434,72 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.match(block, /participantConfirmKey/);
     assert.doesNotMatch(block, /confirmedKeys\.add\(`\$\{name\}_\$\{dist\}`\)/);
     assert.doesNotMatch(block, /normalizeRaceDistance\(dist\)/);
+  });
+
+  it("if (!reusedJob) assigns groupScrapeJobId and reuse omits it", () => {
+    const fn = triggerGroupScrapeSrc(src);
+    assert.match(fn, /if\s*\(\s*!reusedJob\s*\)[\s\S]{0,200}groupScrapeJobId/);
+  });
+
+  it("reuse start jobRef.update does not wipe results and sets rescrapedAt", () => {
+    const fn = triggerGroupScrapeSrc(src);
+    const reuseStart = fn.indexOf("if (reusedJob)");
+    assert.ok(reuseStart >= 0, "missing reusedJob start branch");
+    const elseAt = fn.indexOf("} else {", reuseStart);
+    assert.ok(elseAt > reuseStart, "missing else after reusedJob start");
+    const startUpdate = fn.slice(reuseStart, elseAt);
+    assert.match(startUpdate, /jobRef\.update/);
+    assert.doesNotMatch(startUpdate, /results:\s*\[\]/);
+    assert.match(startUpdate, /rescrapedAt/);
+  });
+
+  it("mergeJobResultsByBib runs after scrapeEvent via a post-scrape transaction get", () => {
+    const fn = triggerGroupScrapeSrc(src);
+    const scrapeAt = fn.indexOf("scraper.scrapeEvent");
+    const mergeAt = fn.indexOf("mergeJobResultsByBib");
+    const txAt = fn.indexOf("runTransaction", scrapeAt);
+    assert.ok(scrapeAt >= 0, "missing scrapeEvent");
+    assert.ok(mergeAt > scrapeAt, "mergeJobResultsByBib must follow scrapeEvent");
+    assert.ok(txAt > scrapeAt, "runTransaction must follow scrapeEvent");
+    const txBody = fn.slice(txAt, txAt + 1600);
+    assert.match(txBody, /tx\.get\(\s*jobRef\s*\)/);
+    assert.match(txBody, /mergeJobResultsByBib/);
+    assert.doesNotMatch(fn, /\bpreviousResults\b/);
+  });
+
+  it("subset reuse catch restores status and does not fail the group job", () => {
+    const fn = triggerGroupScrapeSrc(src);
+    const catchAt = fn.indexOf("} catch (err)");
+    assert.ok(catchAt >= 0, "missing catch");
+    const catchBlock = fn.slice(catchAt);
+    assert.match(catchBlock, /reusedJob/);
+    assert.match(catchBlock, /restoreSubsetFailureStatuses/);
+    assert.match(catchBlock, /lastSubsetError/);
+    const reusedCatch = catchBlock.slice(
+      catchBlock.indexOf("reusedJob"),
+      catchBlock.indexOf("} else {", catchBlock.indexOf("reusedJob"))
+    );
+    assert.doesNotMatch(reusedCatch, /groupScrapeStatus:\s*"failed"/);
+    assert.doesNotMatch(reusedCatch, /status:\s*"failed"/);
+  });
+
+  it("update-bib claims running via runTransaction before triggerGroupScrape", () => {
+    const block = updateBibBlock(src);
+    const txAt = block.indexOf("runTransaction");
+    const triggerAt = block.indexOf("triggerGroupScrape");
+    assert.ok(txAt >= 0, "missing runTransaction");
+    assert.ok(triggerAt > txAt, "claim running before triggerGroupScrape");
+    const claim = block.slice(txAt, triggerAt);
+    assert.match(claim, /groupScrapeStatus\s*===\s*"running"/);
+    assert.match(claim, /groupScrapeStatus:\s*"running"/);
+  });
+
+  it("health check and ops stuck jobs use rescrapedAt||resumedAt||createdAt", () => {
+    const health = healthCheckBlock(src);
+    const ops = opsStuckBlock(src);
+    assert.match(health, /isStuckRunningJob|jobRunningStartedAt|rescrapedAt\s*\|\|\s*resumedAt\s*\|\|\s*createdAt/);
+    assert.match(ops, /isStuckRunningJob|jobRunningStartedAt|rescrapedAt\s*\|\|\s*resumedAt\s*\|\|\s*createdAt/);
+    assert.doesNotMatch(health, /where\(\s*"createdAt"\s*,\s*"<="\s*,\s*oneHourAgo\s*\)/);
+    assert.doesNotMatch(ops, /where\(\s*"createdAt"\s*,\s*"<="\s*,\s*oneHourAgo\s*\)/);
   });
 });

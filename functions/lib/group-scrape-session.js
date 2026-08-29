@@ -92,6 +92,22 @@ function decideAutoScrapeTick(event, nowMs, kstHour, kstMinute) {
   return "oneshot";
 }
 
+function restoreSubsetFailureStatuses(eventStatus, jobStatus) {
+  const groupScrapeStatus = !eventStatus || eventStatus === "running" ? "done" : eventStatus;
+  const scrapeJobStatus = !jobStatus || jobStatus === "running" ? "complete" : jobStatus;
+  return { groupScrapeStatus, scrapeJobStatus };
+}
+
+function jobRunningStartedAt(job) {
+  const d = job && typeof job === "object" ? job : {};
+  return String(d.rescrapedAt || d.resumedAt || d.createdAt || "");
+}
+
+function isStuckRunningJob(job, oneHourAgoIso) {
+  const start = jobRunningStartedAt(job);
+  return !!(start && start <= String(oneHourAgoIso || ""));
+}
+
 module.exports = {
   INTERVAL_MS,
   WINDOW_MS,
@@ -103,4 +119,7 @@ module.exports = {
   mergeJobResultsByBib,
   pickRetryParticipants,
   decideAutoScrapeTick,
+  restoreSubsetFailureStatuses,
+  jobRunningStartedAt,
+  isStuckRunningJob,
 };

@@ -60,6 +60,8 @@ const {
   decideAutoScrapeTick,
   participantConfirmKey,
   mergeJobResultsByBib,
+  restoreSubsetFailureStatuses,
+  isStuckRunningJob,
 } = require("./lib/group-scrape-session");
 const {
   buildSelfConfirmDocId,
@@ -1233,10 +1235,10 @@ exports.scrapeHealthCheck = onSchedule(
     // 1. stuck job 감지: running 상태로 1시간 이상 멈춘 잡
     const stuckSnap = await db.collection("scrape_jobs")
       .where("status", "==", "running")
-      .where("createdAt", "<=", oneHourAgo)
       .get();
     stuckSnap.forEach((doc) => {
       const d = doc.data();
+      if (!isStuckRunningJob(d, oneHourAgo)) return;
       alerts.push({
         type: "scrape_alert",
         severity: "error",
@@ -1557,7 +1559,7 @@ async function triggerGroupScrape({
 }) {
   let jobRef;
   let reusedJob = false;
-  let previousResults = [];
+  let previousJobStatus = "";
   const now = new Date().toISOString();
   const bibMode = queryBy === "bib";
   try {
@@ -1625,7 +1627,7 @@ async function triggerGroupScrape({
         jobRef = existingRef;
         reusedJob = true;
         const existingData = existingSnap.data() || {};
-        previousResults = Array.isArray(existingData.results) ? existingData.results : [];
+        previousJobStatus = existingData.status || "";
       }
     }
     if (!jobRef) {
@@ -1637,6 +1639,7 @@ async function triggerGroupScrape({
       await jobRef.update({
         status: "running",
         progress: { searched: 0, total: members.length, found: 0 },
+        rescrapedAt: now,
       });
     } else {
       await jobRef.set({
@@ -1667,25 +1670,53 @@ async function triggerGroupScrape({
     });
 
     const scraped = Array.isArray(result.results) ? result.results : [];
-    const mergedResults = reusedJob
-      ? sortScrapeJobResults(mergeJobResultsByBib(previousResults, scraped))
-      : sortScrapeJobResults(scraped);
-
     const finalStatus = result.jobStatus || "complete";
-    await jobRef.update({
-      status: finalStatus,
-      eventName: result.eventName || (event && event.eventName) || sourceId,
-      eventDate: result.eventDate || (event && event.eventDate) || "",
-      results: mergedResults,
-      progress: {
-        searched: members.length,
-        total: members.length,
-        found: mergedResults.length,
-        failCount: result.failCount || 0,
-        failRate: result.failRate || 0,
-      },
-      completedAt: new Date().toISOString(),
-    });
+    const completedAt = new Date().toISOString();
+    const doneEventName = result.eventName || (event && event.eventName) || sourceId;
+    const doneEventDate = result.eventDate || (event && event.eventDate) || "";
+    const failCount = result.failCount || 0;
+    const failRate = result.failRate || 0;
+
+    let mergedResults;
+    if (reusedJob) {
+      mergedResults = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(jobRef);
+        const data = snap.data() || {};
+        const fresh = Array.isArray(data.results) ? data.results : [];
+        const merged = sortScrapeJobResults(mergeJobResultsByBib(fresh, scraped));
+        tx.update(jobRef, {
+          status: finalStatus,
+          eventName: doneEventName,
+          eventDate: doneEventDate,
+          results: merged,
+          progress: {
+            searched: members.length,
+            total: members.length,
+            found: merged.length,
+            failCount,
+            failRate,
+          },
+          completedAt,
+        });
+        return merged;
+      });
+    } else {
+      mergedResults = sortScrapeJobResults(scraped);
+      await jobRef.update({
+        status: finalStatus,
+        eventName: doneEventName,
+        eventDate: doneEventDate,
+        results: mergedResults,
+        progress: {
+          searched: members.length,
+          total: members.length,
+          found: mergedResults.length,
+          failCount,
+          failRate,
+        },
+        completedAt,
+      });
+    }
 
     const eventUpdate = {
       groupScrapeStatus: finalStatus === "partial_failure" ? "partial_failure" : "done",
@@ -1695,26 +1726,55 @@ async function triggerGroupScrape({
     }
     await db.collection("race_events").doc(canonicalEventId).update(eventUpdate);
   } catch (err) {
-    try {
-      await db.collection("race_events").doc(canonicalEventId).update({
-        groupScrapeStatus: "failed",
-      });
-    } catch (e) {
-      console.error("[triggerGroupScrape] race_events failed update:", e);
-    }
-    try {
-      if (jobRef) {
-        const snap = await jobRef.get();
-        if (snap.exists) {
-          await jobRef.update({
-            status: "failed",
-            completedAt: new Date().toISOString(),
-            error: err.message || String(err),
-          });
-        }
+    const errMsg = err.message || String(err);
+    if (reusedJob) {
+      const restored = restoreSubsetFailureStatuses(
+        event && event.groupScrapeStatus,
+        previousJobStatus
+      );
+      try {
+        await db.collection("race_events").doc(canonicalEventId).update({
+          groupScrapeStatus: restored.groupScrapeStatus,
+        });
+      } catch (e) {
+        console.error("[triggerGroupScrape] race_events failed update:", e);
       }
-    } catch (e) {
-      console.error("[triggerGroupScrape] job failed update:", e);
+      try {
+        if (jobRef) {
+          const snap = await jobRef.get();
+          if (snap.exists) {
+            await jobRef.update({
+              status: restored.scrapeJobStatus,
+              lastSubsetError: errMsg,
+              error: errMsg,
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[triggerGroupScrape] job failed update:", e);
+      }
+    } else {
+      try {
+        await db.collection("race_events").doc(canonicalEventId).update({
+          groupScrapeStatus: "failed",
+        });
+      } catch (e) {
+        console.error("[triggerGroupScrape] race_events failed update:", e);
+      }
+      try {
+        if (jobRef) {
+          const snap = await jobRef.get();
+          if (snap.exists) {
+            await jobRef.update({
+              status: "failed",
+              completedAt: new Date().toISOString(),
+              error: errMsg,
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[triggerGroupScrape] job failed update:", e);
+      }
     }
     throw err;
   }
@@ -3022,17 +3082,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         }
       });
 
-      // Stuck jobs: status=running + createdAt 1시간 이상
+      // Stuck jobs: status=running + (rescrapedAt||resumedAt||createdAt) 1시간 이상
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const stuckSnap = await db
         .collection("scrape_jobs")
         .where("status", "==", "running")
-        .where("createdAt", "<=", oneHourAgo)
         .get();
 
       const stuckJobs = [];
       stuckSnap.forEach((doc) => {
         const d = doc.data();
+        if (!isStuckRunningJob(d, oneHourAgo)) return;
         stuckJobs.push({ jobId: doc.id, eventName: d.eventName, createdAt: d.createdAt });
       });
 
@@ -3982,29 +4042,36 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
 
         const savedParticipant = event.participants[participantIndex];
-        if (
-          isSessionActive(event.groupScrapeSession, Date.now()) &&
-          event.groupScrapeStatus !== "running"
-        ) {
+        if (isSessionActive(event.groupScrapeSession, Date.now())) {
           const src = event.groupSource && event.groupSource.source;
           const sid = event.groupSource && event.groupSource.sourceId;
           const bib = String((savedParticipant && savedParticipant.bib) || "").trim();
           if (src && sid && bib && isBibModeGroupScrapeSource(src)) {
-            await db.collection("race_events").doc(eventId).update({
-              groupScrapeStatus: "running",
-              groupScrapeTriggeredAt: new Date().toISOString(),
+            const claimed = await db.runTransaction(async (tx) => {
+              const ref = db.collection("race_events").doc(eventId);
+              const snap = await tx.get(ref);
+              if (!snap.exists) return false;
+              const cur = snap.data() || {};
+              if (cur.groupScrapeStatus === "running") return false;
+              tx.update(ref, {
+                groupScrapeStatus: "running",
+                groupScrapeTriggeredAt: new Date().toISOString(),
+              });
+              return true;
             });
-            triggerGroupScrape({
-              canonicalEventId: eventId,
-              source: src,
-              sourceId: sid,
-              scrapeTargets: [savedParticipant],
-              queryBy: "bib",
-              event,
-              db,
-              scraper,
-              reuseExistingJob: true,
-            }).catch((err) => console.error("[update-bib scrape]", err));
+            if (claimed) {
+              triggerGroupScrape({
+                canonicalEventId: eventId,
+                source: src,
+                sourceId: sid,
+                scrapeTargets: [savedParticipant],
+                queryBy: "bib",
+                event,
+                db,
+                scraper,
+                reuseExistingJob: true,
+              }).catch((err) => console.error("[update-bib scrape]", err));
+            }
           }
         }
         
