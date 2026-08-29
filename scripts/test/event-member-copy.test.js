@@ -1,5 +1,6 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
 const path = require("path");
 const {
   memberEventTitle,
@@ -7,6 +8,24 @@ const {
   memberHomeHref,
   matchesMemberQuery,
 } = require(path.join(__dirname, "../../assets/event-member-copy.js"));
+
+const MEMBER_COPY_FILES = [
+  "event-home.html",
+  "event-roster.html",
+  "boarding.html",
+  "assets/event-home-action.js",
+  "assets/event-member-copy.js",
+  "assets/event-member-tabs.js",
+];
+
+describe("member-facing copy lock", () => {
+  it("does not contain 명단·결과 in member HTML or event-member assets", () => {
+    for (const rel of MEMBER_COPY_FILES) {
+      const src = fs.readFileSync(path.join(__dirname, "../..", rel), "utf8");
+      assert.doesNotMatch(src, /명단·결과/, rel + " must not contain 명단·결과");
+    }
+  });
+});
 
 describe("memberEventTitle", () => {
   it("strips a trailing ops-note parenthesis from the seed title", () => {

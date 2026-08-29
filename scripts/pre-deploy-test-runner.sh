@@ -28,14 +28,14 @@ assert() {
   fi
 }
 
-assert_contains() {
+assert_not_contains() {
   local name="$1" needle="$2" file="$3"
   if grep -q "$needle" "$file" 2>/dev/null; then
+    FAIL=$((FAIL+1))
+    RESULTS+=("${RED}✗${NC} $name (unexpected: $needle)")
+  else
     PASS=$((PASS+1))
     RESULTS+=("${GREEN}✓${NC} $name")
-  else
-    FAIL=$((FAIL+1))
-    RESULTS+=("${RED}✗${NC} $name (missing: $needle)")
   fi
 }
 
@@ -255,6 +255,24 @@ curl -s "$HOST/group.html" > "$TMP_DIR/group.html"
 assert_contains "group.html: 단체 대회 관리" "group-events" "$TMP_DIR/group.html"
 assert_contains "group.html: verify-admin" "verify-admin" "$TMP_DIR/group.html"
 assert_contains "group.html: gap 탐지" "subAction=gap" "$TMP_DIR/group.html"
+
+curl -s "$HOST/event-home.html" > "$TMP_DIR/event-home.html"
+assert_contains "event-home.html: board=1 처리" 'get("board") === "1"' "$TMP_DIR/event-home.html"
+assert_contains "event-home.html: 탭 라벨 대회 기록" "대회 기록" "$TMP_DIR/event-home.html"
+assert_not_contains "event-home.html: 명단·결과 없음" "명단·결과" "$TMP_DIR/event-home.html"
+
+curl -s "$HOST/boarding.html" > "$TMP_DIR/boarding.html"
+assert_contains "boarding.html: event-home.html" "event-home.html" "$TMP_DIR/boarding.html"
+assert_contains "boarding.html: board=1" "board=1" "$TMP_DIR/boarding.html"
+assert_contains "boarding.html: location.replace" "location.replace" "$TMP_DIR/boarding.html"
+
+curl -s "$HOST/event-admin.html" > "$TMP_DIR/event-admin.html"
+assert_contains "event-admin.html: QR event-home.html" "event-home.html" "$TMP_DIR/event-admin.html"
+assert_contains "event-admin.html: QR board=1" "board=1" "$TMP_DIR/event-admin.html"
+assert_contains "event-admin.html: scrape-stop-btn" "scrape-stop-btn" "$TMP_DIR/event-admin.html"
+
+curl -s "$HOST/event-roster.html" > "$TMP_DIR/event-roster.html"
+assert_not_contains "event-roster.html: 명단·결과 없음" "명단·결과" "$TMP_DIR/event-roster.html"
 
 curl -s "$HOST/race-distance-client.js" > "$TMP_DIR/race-distance-client.js"
 assert_contains "race-distance-client.js: 32K 정규화" '"32K"' "$TMP_DIR/race-distance-client.js"

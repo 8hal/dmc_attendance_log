@@ -10,8 +10,11 @@
 #     "node scripts/seed-emulator-event-admin.js && bash scripts/qa-event-admin.sh"
 #
 # 커버:
-#   detail 배번 有/無 수, bus roster, my-pending-result,
-#   무배번 scrape 거부(OWNER_PW 있을 때), self-confirm → race_results 1건
+#   detail 배번 有/無 수, bus roster (seed enabled true without openLeg → off),
+#   my-pending-result,
+#   무배번 scrape 거부(총무 비번 dmc2008 / canWriteGroupEvents),
+#   self-confirm → race_results 1건,
+#   public-roster 확정 행만 (totalCount == confirmedCount)
 
 set -u
 
@@ -139,8 +142,13 @@ bus=$(curl_get "$API?action=bus-boarding&subAction=status&eventId=$EVENT_ID")
 assert_contains "2a: bus status ok" '"ok":true' "$bus"
 enabled=$(json_get "$bus" 'print(d.get("enabled"))')
 roster_n=$(json_get "$bus" 'print(len(d.get("roster") or []))')
-assert_eq "2b: bus enabled" "True" "$enabled"
-assert_eq "2c: roster length >= 2" "True" "$(json_get "$bus" 'print(len(d.get("roster") or []) >= 2)')"
+assert_eq "2b: seed enabled true without openLeg reads as off" "False" "$enabled"
+assert_eq "2c: public roster empty while boarding off" "0" "$roster_n"
+
+admin_bus=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"status\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\"}")
+assert_contains "2d: admin bus status ok" '"ok":true' "$admin_bus"
+assert_eq "2e: admin roster length >= 2" "True" "$(json_get "$admin_bus" 'print(len(d.get("roster") or []) >= 2)')"
 
 # ────────────────────────────────────────────────────────────────────
 # 3. my-pending-result — bib 有 → pending / bib 無 → none
@@ -158,7 +166,7 @@ none_state=$(json_get "$none" 'print(d.get("state",""))')
 assert_eq "3d: 배번없음 state=none" "none" "$none_state"
 
 # ────────────────────────────────────────────────────────────────────
-# 4. scrape — 무배번만 대회 → 400 (OWNER_PW 있을 때)
+# 4. scrape — 무배번만 대회 → 400 (총무 비번 dmc2008 / canWriteGroupEvents)
 # ────────────────────────────────────────────────────────────────────
 echo -e "${YELLOW}[4] scrape no-bib reject${NC}"
 
@@ -167,10 +175,10 @@ if [ -n "$OWNER_PW" ]; then
     "{\"subAction\":\"scrape\",\"ownerPw\":\"$OWNER_PW\",\"canonicalEventId\":\"$EVENT_ID_NOBIB\"}")
   nobib_code=$(echo "$nobib_full" | tail -n1)
   nobib_body=$(echo "$nobib_full" | sed '$d')
-  assert_code "4a: 무배번 scrape → 400" "400" "$nobib_code"
+  assert_code "4a: 오너 무배번 scrape → 400 (인증 통과)" "400" "$nobib_code"
   assert_contains "4b: 배번 등록 참가자 없음" '배번 등록 참가자 없음' "$nobib_body"
 else
-  RESULTS+=("${YELLOW}SKIP${NC} 4a/4b: OWNER_PW/DMC_OWNER_PW 없음 — scrape 거부 스킵")
+  RESULTS+=("${YELLOW}SKIP${NC} 4a/4b: OWNER_PW/DMC_OWNER_PW 없음 — 오너 scrape 스킵 (총무 4c로 검증)")
 fi
 
 nobib_op_full=$(curl_post_full "$API?action=group-events" \
@@ -216,7 +224,7 @@ echo -e "${YELLOW}[6] public-roster${NC}"
 
 roster=$(curl_get "$API?action=group-events&subAction=public-roster&eventId=$EVENT_ID")
 assert_contains "6a: public-roster ok" '"ok":true' "$roster"
-assert_eq "6b: totalCount == 3" "3" "$(json_get "$roster" 'print(d.get("totalCount",0))')"
+assert_eq "6b: totalCount == 1 (confirmed-only)" "1" "$(json_get "$roster" 'print(d.get("totalCount",0))')"
 assert_eq "6c: confirmedCount == 1" "1" "$(json_get "$roster" 'print(d.get("confirmedCount",0))')"
 has_pii=$(json_get "$roster" '
 rows=d.get("rows") or []

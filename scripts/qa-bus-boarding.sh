@@ -5,10 +5,11 @@
 #   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node scripts/seed-emulator-bus-boarding.js
 #   bash scripts/qa-bus-boarding.sh
 #
-# 커버: settings enable, import(왕복/편도/개별/dup), self-board,
+# 커버: settings enable(+openLeg), import(왕복/편도/개별/dup), self-board,
 #       outbound_only return 거부, admin-board, guest upsert,
 #       merge boarded 유지, re-import note 생략 시 유지, public/admin note,
-#       401, disable→self/admin-board 403, disable 중 import/upsert 허용, public empty roster→재활성화
+#       401, disable→self-board 403 / admin-board 200, disable 중 import/upsert 허용,
+#       enabled true without openLeg → 400, public empty roster→재활성화
 
 set -u
 
@@ -115,9 +116,17 @@ echo ""
 echo -e "${YELLOW}[1] settings enable${NC}"
 
 settings_resp=$(curl_post "$API?action=bus-boarding" \
-  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"enabled\":true,\"legs\":[\"outbound\",\"return\"]}")
+  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"enabled\":true,\"openLeg\":\"outbound\"}")
 assert_contains "1a: settings enable ok" '"ok":true' "$settings_resp"
 assert_contains "1b: enabled true" '"enabled":true' "$settings_resp"
+assert_contains "1c: openLeg outbound" '"openLeg":"outbound"' "$settings_resp"
+
+no_leg_full=$(curl_post_full "$API?action=bus-boarding" \
+  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"enabled\":true}")
+no_leg_code=$(echo "$no_leg_full" | tail -n1)
+no_leg_body=$(echo "$no_leg_full" | sed '$d')
+assert_code "1d: enabled true without openLeg → 400" "400" "$no_leg_code"
+assert_contains "1e: openLeg required" 'openLeg required' "$no_leg_body"
 
 # ────────────────────────────────────────────────────────────────────
 # 2. import 왕복+편도+개별(제외) + CSV 내 닉네임 중복 → errors
@@ -180,9 +189,13 @@ assert_contains "3: self-board outbound ok" '"ok":true' "$sb_out"
 # ────────────────────────────────────────────────────────────────────
 echo -e "${YELLOW}[4] roundtrip return self-board${NC}"
 
+open_ret=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"openLeg\":\"return\"}")
+assert_contains "4a: openLeg return ok" '"ok":true' "$open_ret"
+
 sb_ret=$(curl_post "$API?action=bus-boarding" \
   "{\"subAction\":\"self-board\",\"eventId\":\"$EVENT_ID\",\"nickname\":\"라우펜더만\",\"leg\":\"return\"}")
-assert_contains "4: roundtrip return self-board ok" '"ok":true' "$sb_ret"
+assert_contains "4b: roundtrip return self-board ok" '"ok":true' "$sb_ret"
 
 # ────────────────────────────────────────────────────────────────────
 # 5. outbound_only가 return self-board 거부
@@ -226,6 +239,10 @@ assert_eq "6d: 테스터 outbound boarded=false" "False" "$tester_boarded2"
 # 7. roster-upsert 지인 → 그 닉네임 self-board 성공
 # ────────────────────────────────────────────────────────────────────
 echo -e "${YELLOW}[7] roster-upsert guest + self-board${NC}"
+
+open_out=$(curl_post "$API?action=bus-boarding" \
+  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"openLeg\":\"outbound\"}")
+assert_contains "7-0: openLeg outbound for guest self-board" '"ok":true' "$open_out"
 
 guest_resp=$(curl_post "$API?action=bus-boarding" \
   "{\"subAction\":\"roster-upsert\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"nickname\":\"지인게스트\",\"realName\":\"지인실명\",\"rideType\":\"roundtrip\",\"note\":\"지인비고\",\"isGuest\":true}")
@@ -333,9 +350,9 @@ no_pw_code=$(curl_post_code "$API?action=bus-boarding" \
 assert_code "10: pw 없이 admin-board → 401" "401" "$no_pw_code"
 
 # ────────────────────────────────────────────────────────────────────
-# 11. enabled false → 403; roster 유지; 재활성화 후 boarded 유지
+# 11. enabled false → self-board 403, admin-board 200; roster 유지; 재활성화 후 boarded 유지
 # ────────────────────────────────────────────────────────────────────
-echo -e "${YELLOW}[11] disable → 403 → re-enable keeps boarded${NC}"
+echo -e "${YELLOW}[11] disable → self-board 403 / admin-board 200 → re-enable keeps boarded${NC}"
 
 # snapshot boarded before disable
 before_disable=$(curl_post "$API?action=bus-boarding" \
@@ -353,9 +370,12 @@ sb_403=$(curl_post_code "$API?action=bus-boarding" \
   "{\"subAction\":\"self-board\",\"eventId\":\"$EVENT_ID\",\"nickname\":\"테스터\",\"leg\":\"outbound\"}")
 assert_code "11c: disabled self-board → 403" "403" "$sb_403"
 
-ab_403=$(curl_post_code "$API?action=bus-boarding" \
+ab_off_full=$(curl_post_full "$API?action=bus-boarding" \
   "{\"subAction\":\"admin-board\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"rosterId\":\"$TESTER_ID\",\"leg\":\"outbound\",\"boarded\":true}")
-assert_code "11d: disabled admin-board → 403" "403" "$ab_403"
+ab_off_code=$(echo "$ab_off_full" | tail -n1)
+ab_off_body=$(echo "$ab_off_full" | sed '$d')
+assert_code "11d: disabled admin-board → 200" "200" "$ab_off_code"
+assert_contains "11d2: disabled admin-board ok" '"ok":true' "$ab_off_body"
 
 imp_ok=$(curl_post "$API?action=bus-boarding" \
   "{\"subAction\":\"import\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"rows\":[]}")
@@ -383,7 +403,7 @@ assert_eq "11g3: public disabled enabled false" "False" "$public_dis_enabled"
 assert_eq "11g4: public disabled roster empty" "0" "$public_dis_roster"
 
 re_enable=$(curl_post "$API?action=bus-boarding" \
-  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"enabled\":true}")
+  "{\"subAction\":\"settings\",\"pw\":\"$ADMIN_PW\",\"eventId\":\"$EVENT_ID\",\"enabled\":true,\"openLeg\":\"outbound\"}")
 assert_contains "11h: re-enable ok" '"ok":true' "$re_enable"
 
 after_st=$(curl_post "$API?action=bus-boarding" \
