@@ -322,6 +322,7 @@
     let selectedDistance = "";
     let bibDraft = "";
     let timeDraft = "";
+    let prevProfileState = "";
 
     function showOnly(el) {
       loadingEl.classList.add("hidden");
@@ -480,6 +481,8 @@
         intent: profileIntent,
         manualKind: manualKind,
       });
+      const enteringPending = card.state === "pending" && prevProfileState !== "pending";
+      prevProfileState = card.state;
 
       hideProfileSections();
       profilePrompt.textContent = card.prompt || "";
@@ -529,7 +532,7 @@
           .filter(Boolean)
           .join(" · ");
         if (card.showPb) {
-          profilePb.checked = false;
+          if (enteringPending) profilePb.checked = false;
           profilePbWrap.classList.remove("hidden");
         }
         profilePendingActions.classList.remove("hidden");
@@ -657,6 +660,7 @@
     async function submitSelfBoard(identity, opts) {
       const openLeg = readOpenLeg(cachedEvent && cachedEvent.busBoarding);
       if (!openLeg || !identity || !identity.nickname || isBoarding) return { ok: false };
+      const boardedNick = identity.nickname;
       isBoarding = true;
       busBoardBtn.disabled = true;
       try {
@@ -666,13 +670,16 @@
           body: JSON.stringify({
             subAction: "self-board",
             eventId: eventId,
-            nickname: identity.nickname,
+            nickname: boardedNick,
             leg: openLeg,
           }),
         });
+        if (activeIdentity.nickname !== boardedNick) return { ok: false };
         const data = await res.json();
+        if (activeIdentity.nickname !== boardedNick) return { ok: false };
         if (!data.ok) throw new Error(data.error || "탑승 실패");
         await reloadEvent();
+        if (activeIdentity.nickname !== boardedNick) return { ok: false };
         loadBusRow(identity);
         renderHomeCards(identity);
         if (opts && opts.showOverlay && !data.already) {
@@ -813,6 +820,19 @@
       });
     }
 
+    function resetProfileDraft() {
+      profileIntent = "";
+      manualKind = "finish";
+      selectedDistance = "";
+      bibDraft = "";
+      timeDraft = "";
+      prevProfileState = "";
+      profileBib.value = "";
+      profileTime.value = "";
+      profilePb.checked = false;
+      profileManualPb.checked = false;
+    }
+
     function showPickView(event, opts) {
       pickEventTitle.textContent = EventMemberCopy.memberEventTitle(
         event.eventName || event.primaryName || "대회"
@@ -825,11 +845,19 @@
       pickBoardMode = boardLanding && !canCancel;
       pickCancelBtn.classList.toggle("hidden", !canCancel);
       renderPickList("");
+      if (overlayTimer) {
+        clearTimeout(overlayTimer);
+        overlayTimer = null;
+      }
+      boardDoneOverlay.classList.add("hidden");
       eventTabBar.classList.add("hidden");
       showOnly(pickViewEl);
     }
 
     function showMemberHome(event, identity) {
+      const prevNick = activeIdentity && activeIdentity.nickname;
+      const nextNick = identity && identity.nickname;
+      if (prevNick !== nextNick) resetProfileDraft();
       activeIdentity = identity;
       const title = EventMemberCopy.memberEventTitle(
         event.eventName || event.primaryName || "대회"
@@ -905,7 +933,7 @@
     });
     bindImeInput(profileTime, function (value) {
       timeDraft = value;
-      if (profileIntent === "manual" && value.trim()) {
+      if (profileIntent === "manual" && value.trim() && (manualKind === "dns" || manualKind === "dnf")) {
         manualKind = "finish";
         renderHomeCards(activeIdentity);
       }
@@ -949,6 +977,21 @@
       });
     });
 
+    function onManualSave() {
+      const extra = {};
+      if (manualKind === "dns") extra.dnStatus = "DNS";
+      else if (manualKind === "dnf") extra.dnStatus = "DNF";
+      else {
+        extra.netTime = String(profileTime.value || timeDraft || "").trim();
+        if (!extra.netTime) {
+          showToast("완주 시각을 넣어 주세요.", true);
+          return;
+        }
+        if (profileManualPb.checked) extra.pbConfirmed = true;
+      }
+      submitSelfConfirm(activeIdentity, extra);
+    }
+
     profileEditBtn.addEventListener("click", onRejectClick);
     profileNoBtn.addEventListener("click", onRejectClick);
     profileManualBtn.addEventListener("click", onManualClick);
@@ -966,16 +1009,7 @@
     profileDnfBtn.addEventListener("click", function () {
       applyProfile({ intent: "manual", manualKind: "dnf" });
     });
-    profileManualSave.addEventListener("click", function () {
-      const extra = {};
-      if (manualKind === "dns") extra.dnStatus = "DNS";
-      else if (manualKind === "dnf") extra.dnStatus = "DNF";
-      else {
-        extra.netTime = String(profileTime.value || timeDraft || "").trim();
-        if (profileManualPb.checked) extra.pbConfirmed = true;
-      }
-      submitSelfConfirm(activeIdentity, extra);
-    });
+    profileManualSave.addEventListener("click", onManualSave);
     busBoardBtn.addEventListener("click", function () {
       submitSelfBoard(activeIdentity, { showOverlay: true });
     });

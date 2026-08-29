@@ -115,4 +115,54 @@ describe("event-home nick pick chrome", () => {
     assert.match(bind, /compositionstart/);
     assert.match(bind, /compositionend/);
   });
+
+  it("empty manual finish toasts and does not POST", () => {
+    const html = read("event-home.html");
+    const save = html.match(/function onManualSave\([\s\S]{0,800}/);
+    assert.ok(save, "onManualSave");
+    assert.match(save[0], /showToast/);
+    assert.match(save[0], /return/);
+    assert.match(save[0], /netTime|profileTime/);
+  });
+
+  it("showPickView hides the board overlay", () => {
+    const fn = extractFn(read("event-home.html"), "showPickView");
+    assert.match(fn, /boardDoneOverlay/);
+    assert.match(fn, /hidden/);
+  });
+
+  it("submitSelfBoard ignores stale identity after await", () => {
+    const fn = extractFn(read("event-home.html"), "submitSelfBoard");
+    assert.match(fn, /await /);
+    assert.match(fn, /activeIdentity\.nickname/);
+    assert.match(fn, /!==/);
+  });
+
+  it("time IME re-renders only when leaving dns or dnf", () => {
+    const html = read("event-home.html");
+    const ime = html.match(/bindImeInput\(profileTime[\s\S]{0,450}/);
+    assert.ok(ime, "profileTime IME bind");
+    assert.match(ime[0], /dns/);
+    assert.match(ime[0], /dnf/);
+    assert.match(ime[0], /manualKind/);
+  });
+
+  it("pending defaults PB off only when entering pending", () => {
+    const render = extractFn(read("event-home.html"), "renderProfileCard");
+    assert.match(render, /prevProfileState/);
+    assert.match(render, /profilePb\.checked\s*=\s*false/);
+  });
+
+  it("switching identity resets profile draft state", () => {
+    const html = read("event-home.html");
+    assert.match(html, /function resetProfileDraft/);
+    const reset = extractFn(html, "resetProfileDraft");
+    assert.match(reset, /profileIntent/);
+    assert.match(reset, /manualKind/);
+    assert.match(reset, /selectedDistance/);
+    assert.match(reset, /bibDraft/);
+    assert.match(reset, /timeDraft/);
+    const home = extractFn(html, "showMemberHome");
+    assert.match(home, /resetProfileDraft/);
+  });
 });
