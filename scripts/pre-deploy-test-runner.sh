@@ -14,8 +14,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 
-API="http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
-HOST="http://127.0.0.1:5000"
+PROJECT_ID="${FIREBASE_PROJECT_ID:-}"
+if [ -z "$PROJECT_ID" ] && [ -f "$ROOT_DIR/.firebaserc" ]; then
+  PROJECT_ID=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('projects',{}).get('default',''))" "$ROOT_DIR/.firebaserc")
+fi
+API="${API:-http://127.0.0.1:5001/${PROJECT_ID}/asia-northeast3/race}"
+HOST="${HOST:-http://127.0.0.1:5000}"
 
 assert() {
   local name="$1" expected="$2" actual="$3"
@@ -102,7 +106,7 @@ resp=$(curl -s "$API?action=event-logs&limit=5")
 ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
 assert "event-logs: ok=true" "True" "$ok"
 
-ATTENDANCE="http://127.0.0.1:5001/dmc-attendance/asia-northeast3/attendance"
+ATTENDANCE="${ATTENDANCE:-http://127.0.0.1:5001/${PROJECT_ID}/asia-northeast3/attendance}"
 DUP_DATE="2099/06/15"
 DUP_NICK="pre_deploy_dup_nick"
 members_resp=$(curl -s "$API?action=members")
@@ -156,7 +160,7 @@ print(all(k in d for k in required))
 " 2>/dev/null)
 assert "member-stats: 필수 필드 포함" "True" "$has_fields"
 
-PROXY="http://127.0.0.1:5001/dmc-attendance/asia-northeast3/scrapeProxy"
+PROXY="${PROXY:-http://127.0.0.1:5001/${PROJECT_ID}/asia-northeast3/scrapeProxy}"
 status=$(curl -s -o /dev/null -w "%{http_code}" "$PROXY?source=smartchip&sourceId=123&name=test")
 assert "scrapeProxy: secret 없으면 403" "403" "$status"
 

@@ -45,9 +45,49 @@ SEED="node \"${ROOT_DIR}/scripts/seed-emulator-pre-deploy.js\""
 RUNNER="bash \"${ROOT_DIR}/scripts/pre-deploy-test-runner.sh\""
 INNER_CMD="${SEED} && ${RUNNER}"
 
+port_busy() {
+  python3 -c "import socket,sys;s=socket.socket();s.settimeout(0.3);r=s.connect_ex(('127.0.0.1',int(sys.argv[1])));s.close();sys.exit(0 if r==0 else 1)" "$1"
+}
+
+FIREBASE_CONFIG_ARGS=()
+ALT_JSON=""
+if port_busy 5000 || port_busy 5001 || port_busy 8080 || port_busy 4400; then
+  echo "  기본 에뮬 포트(5000/5001/8080/4400)가 사용 중 — 5100/5101/8180/9200 으로 재시도"
+  ALT_JSON="${ROOT_DIR}/.firebase-pre-deploy.json"
+  python3 - "$ROOT_DIR" "$ALT_JSON" <<'PY'
+import json, sys
+root, dest = sys.argv[1], sys.argv[2]
+with open(root + "/firebase.json", encoding="utf-8") as f:
+    d = json.load(f)
+emu = d.setdefault("emulators", {})
+emu.setdefault("functions", {})["port"] = 5101
+emu.setdefault("firestore", {})["port"] = 8180
+emu.setdefault("storage", {})["port"] = 9200
+emu.setdefault("hosting", {})["port"] = 5100
+emu.setdefault("ui", {})["port"] = 4100
+emu["hub"] = {"port": 4410}
+emu["logging"] = {"port": 4510}
+with open(dest, "w", encoding="utf-8") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+PY
+  FIREBASE_CONFIG_ARGS=(-c "$ALT_JSON")
+  PROJECT_ID=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('projects',{}).get('default',''))" "$ROOT_DIR/.firebaserc")
+  export API="http://127.0.0.1:5101/${PROJECT_ID}/asia-northeast3/race"
+  export HOST="http://127.0.0.1:5100"
+  export ATTENDANCE="http://127.0.0.1:5101/${PROJECT_ID}/asia-northeast3/attendance"
+  export PROXY="http://127.0.0.1:5101/${PROJECT_ID}/asia-northeast3/scrapeProxy"
+fi
+
 EMU_LOG="${TMPDIR:-/tmp}/dmc-emulators-exec-$$.log"
+cleanup_alt_json() {
+  if [ -n "$ALT_JSON" ] && [ -f "$ALT_JSON" ]; then
+    rm -f "$ALT_JSON"
+  fi
+}
+trap cleanup_alt_json EXIT
 set +e
-firebase emulators:exec \
+firebase "${FIREBASE_CONFIG_ARGS[@]}" emulators:exec \
   --only functions,hosting,firestore,storage \
   --project dmc-attendance \
   "$INNER_CMD" 2>&1 | tee "$EMU_LOG"
