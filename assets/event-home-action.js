@@ -274,11 +274,15 @@
     const outbound = busLeg(legs, "outbound");
     const ret = busLeg(legs, "return");
 
+    if (openLeg === "return" && ret.required) {
+      if (ret.boarded) {
+        return busCard("return_done", { leg: "return" });
+      }
+      return busCard("ready", { leg: "return", ctaLabel: "탑승하기" });
+    }
+
     if (openLeg === "outbound" && outbound.required && !outbound.boarded) {
       return busCard("ready", { leg: "outbound", ctaLabel: "탑승하기" });
-    }
-    if (openLeg === "return" && ret.required && !ret.boarded) {
-      return busCard("ready", { leg: "return", ctaLabel: "탑승하기" });
     }
 
     if (outbound.required && !outbound.boarded) {
@@ -288,13 +292,11 @@
       });
     }
 
+    if (outbound.boarded && ret.required && openLeg !== "return") {
+      return busCard("outbound_done", { leg: "outbound" });
+    }
+
     if (ret.required) {
-      if (ret.boarded) {
-        return busCard("return_done", { leg: "return" });
-      }
-      if (outbound.required && outbound.boarded) {
-        return busCard("outbound_done", { leg: "outbound" });
-      }
       return busCard("locked", {
         prompt: "오는 버스 탑승 시간이 아닙니다.",
         leg: "return",

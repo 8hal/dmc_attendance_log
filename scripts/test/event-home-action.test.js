@@ -179,8 +179,22 @@ describe("event-home-action", () => {
         },
       },
     });
+    assert.equal(b.state, "outbound_done");
     assert.notEqual(b.state, "ready");
     assert.notEqual(b.state, "locked");
+  });
+
+  it("return boarded is return_done even if outbound still unboarded", () => {
+    const b = resolveBusCard({
+      openLeg: "return",
+      busRow: {
+        legs: {
+          outbound: { required: true, boarded: false },
+          return: { required: true, boarded: true },
+        },
+      },
+    });
+    assert.equal(b.state, "return_done");
   });
 
   it("open return unboarded is ready; boarded is done", () => {
