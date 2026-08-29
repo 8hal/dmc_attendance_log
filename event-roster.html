@@ -240,7 +240,6 @@
     let sortBy = "result";
     let isComposing = false;
     let searchTimer = null;
-    let busEnabled = false;
     let hasLoadedOnce = false;
 
     function showOnly(el) {
@@ -260,7 +259,6 @@
       EventMemberTabs.mount({
         eventId: eventId,
         active: "roster",
-        busEnabled: busEnabled,
         barEl: eventTabBar,
       });
     }
@@ -341,22 +339,6 @@
       });
     }
 
-    async function probeBus() {
-      if (!eventId) return;
-      try {
-        const res = await fetch(
-          API_BASE +
-            "?action=bus-boarding&subAction=status&eventId=" +
-            encodeURIComponent(eventId)
-        );
-        const data = await res.json();
-        busEnabled = !!(data && data.ok && data.enabled === true);
-      } catch (_e) {
-        busEnabled = false;
-      }
-      wireTabs();
-    }
-
     async function loadRoster() {
       if (!eventId) {
         showError("대회를 찾을 수 없어요");
@@ -431,8 +413,7 @@
       loadRoster();
     });
 
-    wireTabs();
-    probeBus().then(loadRoster);
+    loadRoster();
   </script>
 </body>
 </html>

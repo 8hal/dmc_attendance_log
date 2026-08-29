@@ -75,4 +75,13 @@ describe("event-member-tabs", () => {
     assert.match(html, />대회 기록</);
     assert.doesNotMatch(html, /data-tab="bus"/);
   });
+
+  it("event-roster.html does not probe bus-boarding for tabs", () => {
+    const html = read("event-roster.html");
+    assert.doesNotMatch(html, /probeBus/);
+    assert.doesNotMatch(html, /bus-boarding/);
+    const mount = html.match(/EventMemberTabs\.mount\(\{[^}]+\}/);
+    assert.ok(mount, "EventMemberTabs.mount call expected");
+    assert.doesNotMatch(mount[0], /busEnabled/);
+  });
 });
