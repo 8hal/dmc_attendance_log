@@ -11,6 +11,8 @@ const {
   isSessionActive,
   pickRetryParticipants,
   decideAutoScrapeTick,
+  mergeJobResultsByBib,
+  participantConfirmKey,
   WINDOW_MS,
 } = require("../../functions/lib/group-scrape-session.js");
 
@@ -64,6 +66,20 @@ function updateBibBlock(src) {
   const next = src.indexOf('action === "bus-boarding"', start);
   assert.ok(next > start, "missing bus-boarding after update-bib");
   return src.slice(start, next);
+}
+
+function triggerGroupScrapeSrc(src) {
+  const start = src.indexOf("async function triggerGroupScrape");
+  assert.ok(start >= 0, "missing triggerGroupScrape");
+  const next = src.indexOf("exports.race = onRequest", start);
+  assert.ok(next > start, "missing race export after triggerGroupScrape");
+  return src.slice(start, next);
+}
+
+function triggerCallAt(src, fromIdx) {
+  const callIdx = src.indexOf("triggerGroupScrape", fromIdx);
+  assert.ok(callIdx >= 0, "missing triggerGroupScrape call");
+  return src.slice(callIdx, callIdx + 700);
 }
 
 describe("startSession / stopSession / isSessionActive", () => {
@@ -152,6 +168,54 @@ describe("pickRetryParticipants", () => {
       new Set(["DNS_half"])
     );
     assert.deepEqual(retry.map((p) => p.bib), ["3"]);
+  });
+
+  it("pickRetry treats 하프마라톤 participant as confirmed when key uses half", () => {
+    const retry = pickRetryParticipants(
+      [{ realName: "홍길동", bib: "9", distance: "하프마라톤" }],
+      [],
+      new Set(["홍길동_half"])
+    );
+    assert.deepEqual(retry, []);
+  });
+});
+
+describe("mergeJobResultsByBib", () => {
+  it("mergeJobResultsByBib keeps other bibs and upserts the scraped bib", () => {
+    const merged = mergeJobResultsByBib(
+      [
+        { bib: "A", netTime: "1:40:00", memberRealName: "완주" },
+        { bib: "B", netTime: "", memberRealName: "미완" },
+      ],
+      [{ bib: "B", netTime: "2:00:00", memberRealName: "미완" }]
+    );
+    const byBib = Object.fromEntries(merged.map((r) => [r.bib, r]));
+    assert.equal(byBib.A.netTime, "1:40:00");
+    assert.equal(byBib.B.netTime, "2:00:00");
+  });
+
+  it("mergeJobResultsByBib keeps existing empty-bib rows and appends incoming no-bib", () => {
+    const merged = mergeJobResultsByBib(
+      [
+        { bib: "", netTime: "1:00:00", memberRealName: "기존무배번" },
+        { bib: "A", netTime: "1:40:00", memberRealName: "완주" },
+      ],
+      [
+        { bib: "A", netTime: "1:41:00", memberRealName: "완주" },
+        { bib: "  ", netTime: "9:00:00", memberRealName: "신규무배번" },
+      ]
+    );
+    const empty = merged.filter((r) => !String(r.bib || "").trim());
+    assert.equal(empty.length, 2);
+    assert.equal(empty[0].memberRealName, "기존무배번");
+    assert.equal(empty[1].memberRealName, "신규무배번");
+    const byBib = Object.fromEntries(merged.filter((r) => String(r.bib || "").trim()).map((r) => [r.bib, r]));
+    assert.equal(byBib.A.netTime, "1:41:00");
+  });
+
+  it("participantConfirmKey normalizes 하프마라톤 to half", () => {
+    assert.equal(participantConfirmKey("홍길동", "하프마라톤"), "홍길동_half");
+    assert.equal(participantConfirmKey(" 홍길동 ", "half"), "홍길동_half");
   });
 });
 
@@ -253,5 +317,41 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.match(block, /isSessionActive/);
     assert.match(block, /groupScrapeStatus !== "running"/);
     assert.match(block, /triggerGroupScrape/);
+  });
+
+  it("triggerGroupScrape mentions reuseExistingJob and mergeJobResultsByBib", () => {
+    const fn = triggerGroupScrapeSrc(src);
+    assert.match(fn, /reuseExistingJob/);
+    assert.match(fn, /mergeJobResultsByBib/);
+  });
+
+  it("session-retry call passes reuseExistingJob true or equivalent", () => {
+    const block = autoScrapeBlock(src);
+    const retryIdx = block.indexOf("session-retry");
+    assert.ok(retryIdx >= 0, "missing session-retry");
+    const call = triggerCallAt(block, retryIdx);
+    assert.match(
+      call,
+      /reuseExistingJob:\s*true|reuseExistingJob:\s*tick\s*===\s*"session-retry"/
+    );
+  });
+
+  it("update-bib triggerGroupScrape passes reuseExistingJob true", () => {
+    const block = updateBibBlock(src);
+    const call = triggerCallAt(block, 0);
+    assert.match(call, /reuseExistingJob:\s*true/);
+  });
+
+  it("scrape POST triggerGroupScrape does not pass reuseExistingJob true", () => {
+    const block = scrapePostBlock(src);
+    const call = triggerCallAt(block, 0);
+    assert.doesNotMatch(call, /reuseExistingJob:\s*true/);
+  });
+
+  it("auto-scrape confirmedKeys uses participantConfirmKey", () => {
+    const block = autoScrapeBlock(src);
+    assert.match(block, /participantConfirmKey/);
+    assert.doesNotMatch(block, /confirmedKeys\.add\(`\$\{name\}_\$\{dist\}`\)/);
+    assert.doesNotMatch(block, /normalizeRaceDistance\(dist\)/);
   });
 });

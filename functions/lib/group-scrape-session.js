@@ -1,7 +1,33 @@
 "use strict";
 
+const { normalizeRaceDistance } = require("./raceDistance");
+
 const INTERVAL_MS = 10 * 60 * 1000;
 const WINDOW_MS = 6 * 60 * 60 * 1000;
+
+function participantConfirmKey(realName, distance) {
+  return `${String(realName || "").trim()}_${normalizeRaceDistance(distance)}`;
+}
+
+function mergeJobResultsByBib(existing, incoming) {
+  const prev = Array.isArray(existing) ? existing : [];
+  const next = Array.isArray(incoming) ? incoming : [];
+  const incomingBibs = new Set();
+  for (const r of next) {
+    const bib = String(r && r.bib != null ? r.bib : "").trim();
+    if (bib) incomingBibs.add(bib);
+  }
+  const out = [];
+  for (const r of prev) {
+    const bib = String(r && r.bib != null ? r.bib : "").trim();
+    if (bib && incomingBibs.has(bib)) continue;
+    out.push(r);
+  }
+  for (const r of next) {
+    out.push(r);
+  }
+  return out;
+}
 
 function startSession(nowMs) {
   return {
@@ -46,7 +72,7 @@ function pickRetryParticipants(participants, jobResults, confirmedKeys) {
   for (const p of list) {
     const bib = String(p && p.bib != null ? p.bib : "").trim();
     if (!bib) continue;
-    const key = `${p.realName}_${p.distance}`;
+    const key = participantConfirmKey(p.realName, p.distance);
     if (keys.has(key)) continue;
     if (hasValidFinish(byBib.get(bib))) continue;
     out.push(p);
@@ -73,6 +99,8 @@ module.exports = {
   stopSession,
   hasEverStartedSession,
   isSessionActive,
+  participantConfirmKey,
+  mergeJobResultsByBib,
   pickRetryParticipants,
   decideAutoScrapeTick,
 };
