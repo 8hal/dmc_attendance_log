@@ -13,14 +13,19 @@ function mergeJobResultsByBib(existing, incoming) {
   const prev = Array.isArray(existing) ? existing : [];
   const next = Array.isArray(incoming) ? incoming : [];
   const incomingBibs = new Set();
+  const incomingNames = new Set();
   for (const r of next) {
     const bib = String(r && r.bib != null ? r.bib : "").trim();
     if (bib) incomingBibs.add(bib);
+    const name = String(r && r.memberRealName != null ? r.memberRealName : "").trim();
+    if (name) incomingNames.add(name);
   }
   const out = [];
   for (const r of prev) {
     const bib = String(r && r.bib != null ? r.bib : "").trim();
     if (bib && incomingBibs.has(bib)) continue;
+    const name = String(r && r.memberRealName != null ? r.memberRealName : "").trim();
+    if (name && incomingNames.has(name)) continue;
     out.push(r);
   }
   for (const r of next) {
@@ -94,7 +99,7 @@ function decideAutoScrapeTick(event, nowMs, kstHour, kstMinute) {
 
 function restoreSubsetFailureStatuses(eventStatus, jobStatus) {
   const groupScrapeStatus = !eventStatus || eventStatus === "running" ? "done" : eventStatus;
-  const scrapeJobStatus = !jobStatus || jobStatus === "running" ? "complete" : jobStatus;
+  const scrapeJobStatus = !jobStatus ? "complete" : jobStatus;
   return { groupScrapeStatus, scrapeJobStatus };
 }
 

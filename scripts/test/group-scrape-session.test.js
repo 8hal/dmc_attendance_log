@@ -231,6 +231,16 @@ describe("mergeJobResultsByBib", () => {
     assert.equal(byBib.A.netTime, "1:41:00");
   });
 
+  it("merge drops previous bib for the same memberRealName", () => {
+    const merged = mergeJobResultsByBib(
+      [{ bib: "A", memberRealName: "홍", netTime: "1:00:00" }],
+      [{ bib: "B", memberRealName: "홍", netTime: "1:40:00" }]
+    );
+    assert.equal(merged.length, 1);
+    assert.equal(merged[0].bib, "B");
+    assert.equal(merged[0].netTime, "1:40:00");
+  });
+
   it("participantConfirmKey normalizes 하프마라톤 to half", () => {
     assert.equal(participantConfirmKey("홍길동", "하프마라톤"), "홍길동_half");
     assert.equal(participantConfirmKey(" 홍길동 ", "half"), "홍길동_half");
@@ -253,11 +263,18 @@ describe("restoreSubsetFailureStatuses / isStuckRunningJob", () => {
   it("restores done/complete when prior status is missing or running", () => {
     assert.deepEqual(restoreSubsetFailureStatuses("running", "running"), {
       groupScrapeStatus: "done",
-      scrapeJobStatus: "complete",
+      scrapeJobStatus: "running",
     });
     assert.deepEqual(restoreSubsetFailureStatuses(undefined, ""), {
       groupScrapeStatus: "done",
       scrapeJobStatus: "complete",
+    });
+  });
+
+  it("keeps job running when captured job status is running", () => {
+    assert.deepEqual(restoreSubsetFailureStatuses("done", "running"), {
+      groupScrapeStatus: "done",
+      scrapeJobStatus: "running",
     });
   });
 
@@ -396,7 +413,7 @@ describe("scrape POST and auto-scrape wiring", () => {
   it("update-bib triggers one-person scrape only when session is active and not running", () => {
     const block = updateBibBlock(src);
     assert.match(block, /isSessionActive/);
-    assert.match(block, /runTransaction/);
+    assert.match(block, /claimGroupScrapeRunning/);
     assert.match(block, /triggerGroupScrape/);
   });
 
@@ -506,15 +523,27 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.match(elseCatch, /groupScrapeStatus:\s*"failed"/);
   });
 
-  it("update-bib claims running via runTransaction before triggerGroupScrape", () => {
+  it("update-bib claims running via claimGroupScrapeRunning before triggerGroupScrape", () => {
     const block = updateBibBlock(src);
-    const txAt = block.indexOf("runTransaction");
+    const claimAt = block.indexOf("claimGroupScrapeRunning");
     const triggerAt = block.indexOf("triggerGroupScrape");
-    assert.ok(txAt >= 0, "missing runTransaction");
-    assert.ok(triggerAt > txAt, "claim running before triggerGroupScrape");
-    const claim = block.slice(txAt, triggerAt);
-    assert.match(claim, /groupScrapeStatus\s*===\s*"running"/);
-    assert.match(claim, /groupScrapeStatus:\s*"running"/);
+    assert.ok(claimAt >= 0, "missing claimGroupScrapeRunning");
+    assert.ok(triggerAt > claimAt, "claim running before triggerGroupScrape");
+    assert.match(block.slice(claimAt, triggerAt), /claimed/);
+  });
+
+  it("claimGroupScrapeRunning is used in groupEventAutoScrape and update-bib", () => {
+    const auto = autoScrapeBlock(src);
+    const bib = updateBibBlock(src);
+    assert.match(auto, /claimGroupScrapeRunning/);
+    assert.match(bib, /claimGroupScrapeRunning/);
+    assert.match(src, /async function claimGroupScrapeRunning/);
+  });
+
+  it("auto-scrape does not plain-update running without the claim helper", () => {
+    const block = autoScrapeBlock(src);
+    assert.match(block, /claimGroupScrapeRunning/);
+    assert.doesNotMatch(block, /groupScrapeStatus:\s*"running"/);
   });
 
   it("health check and ops stuck jobs use rescrapedAt||resumedAt||createdAt", () => {

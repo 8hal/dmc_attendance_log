@@ -1190,10 +1190,11 @@ exports.groupEventAutoScrape = onSchedule(
       }
 
       console.log(`[groupEventAutoScrape] ${tick} 스크랩 시작: ${doc.id} (bib ${scrapeTargets.length}명)`);
-      await db.collection("race_events").doc(doc.id).update({
-        groupScrapeStatus: "running",
-        groupScrapeTriggeredAt: new Date().toISOString(),
-      });
+      const claim = await claimGroupScrapeRunning(db, doc.id);
+      if (!claim.claimed) {
+        console.log(`[groupEventAutoScrape] 이미 스크랩 진행 중 건너뜀: ${doc.id}`);
+        continue;
+      }
 
       triggerGroupScrape({
         canonicalEventId: doc.id,
@@ -1539,6 +1540,24 @@ exports.testWeekendCheck = onRequest(
     }
   },
 );
+
+/**
+ * 단체 대회 스크랩 running 클레임. 이미 running이면 건너뛴다.
+ */
+async function claimGroupScrapeRunning(db, eventId) {
+  return db.runTransaction(async (tx) => {
+    const ref = db.collection("race_events").doc(eventId);
+    const snap = await tx.get(ref);
+    if (!snap.exists) return { claimed: false };
+    const cur = snap.data() || {};
+    if (cur.groupScrapeStatus === "running") return { claimed: false };
+    tx.update(ref, {
+      groupScrapeStatus: "running",
+      groupScrapeTriggeredAt: new Date().toISOString(),
+    });
+    return { claimed: true };
+  });
+}
 
 /**
  * 단체 대회(group-events) 수동 스크랩: scrape_jobs 자동 ID + scrapeEvent (기존 scrape 액션과 동일 패턴)
@@ -4037,19 +4056,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           const sid = event.groupSource && event.groupSource.sourceId;
           const bib = String((savedParticipant && savedParticipant.bib) || "").trim();
           if (src && sid && bib && isBibModeGroupScrapeSource(src)) {
-            const claimed = await db.runTransaction(async (tx) => {
-              const ref = db.collection("race_events").doc(eventId);
-              const snap = await tx.get(ref);
-              if (!snap.exists) return false;
-              const cur = snap.data() || {};
-              if (cur.groupScrapeStatus === "running") return false;
-              tx.update(ref, {
-                groupScrapeStatus: "running",
-                groupScrapeTriggeredAt: new Date().toISOString(),
-              });
-              return true;
-            });
-            if (claimed) {
+            const claim = await claimGroupScrapeRunning(db, eventId);
+            if (claim.claimed) {
               triggerGroupScrape({
                 canonicalEventId: eventId,
                 source: src,
