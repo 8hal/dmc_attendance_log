@@ -32,6 +32,17 @@ assert() {
   fi
 }
 
+assert_contains() {
+  local name="$1" needle="$2" file="$3"
+  if grep -q "$needle" "$file" 2>/dev/null; then
+    PASS=$((PASS+1))
+    RESULTS+=("${GREEN}✓${NC} $name")
+  else
+    FAIL=$((FAIL+1))
+    RESULTS+=("${RED}✗${NC} $name (missing: $needle)")
+  fi
+}
+
 assert_not_contains() {
   local name="$1" needle="$2" file="$3"
   if grep -q "$needle" "$file" 2>/dev/null; then
