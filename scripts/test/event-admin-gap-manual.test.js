@@ -90,4 +90,39 @@ describe("event-admin gap manual confirm", () => {
     assert.match(fn, /missing:/);
     assert.doesNotMatch(fn, /missing:\s*false/);
   });
+
+  it("renderGapManualList preserves netTime drafts like roster notes", () => {
+    const fn = extractFn(html, "renderGapManualList");
+    assert.match(fn, /skipIfFocused/);
+    assert.match(fn, /isGapNetTimeFocused/);
+    assert.match(fn, /collectGapTimeDrafts/);
+    assert.match(fn, /selectionStart/);
+    assert.match(fn, /setSelectionRange/);
+
+    const focusedFn = extractFn(html, "isGapNetTimeFocused");
+    assert.match(focusedFn, /gap-net-time/);
+    assert.match(focusedFn, /activeElement/);
+
+    const draftsFn = extractFn(html, "collectGapTimeDrafts");
+    assert.match(draftsFn, /realName/);
+    assert.match(draftsFn, /distance/);
+    assert.match(draftsFn, /gap-net-time/);
+  });
+
+  it("silent loadEventDetail still renders scrape counts with skipIfFocused list", () => {
+    const loadFn = extractFn(html, "loadEventDetail");
+    assert.match(loadFn, /opts\.silent|silent/);
+    assert.match(loadFn, /renderScrapeSection/);
+    const silentBranch = loadFn.includes("if (!silent)")
+      ? loadFn.slice(loadFn.indexOf("if (!silent)"))
+      : loadFn;
+    assert.match(silentBranch, /renderScrapeSection/);
+
+    const scrapeFn = extractFn(html, "renderScrapeSection");
+    assert.match(scrapeFn, /pending-count/);
+    assert.match(scrapeFn, /renderGapManualList\(\s*\{\s*skipIfFocused:\s*true\s*\}\)/);
+
+    const pollFn = extractFn(html, "startPoll");
+    assert.match(pollFn, /loadEventDetail\(\s*\{\s*silent:\s*true\s*\}\)/);
+  });
 });

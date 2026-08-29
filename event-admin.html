@@ -1296,13 +1296,58 @@
       scrapeBtn.disabled = !canScrape;
       const stopBtn = document.getElementById("scrape-stop-btn");
       if (stopBtn) stopBtn.disabled = !isOpsAdmin();
-      renderGapManualList();
+      renderGapManualList({ skipIfFocused: true });
       updateChecklist();
     }
 
-    function renderGapManualList() {
+    function isGapNetTimeFocused() {
+      const ae = document.activeElement;
+      const list = document.getElementById("gap-manual-list");
+      return !!(
+        ae &&
+        list &&
+        list.contains(ae) &&
+        ae.classList &&
+        ae.classList.contains("gap-net-time")
+      );
+    }
+
+    function collectGapTimeDrafts() {
+      const drafts = {};
+      const list = document.getElementById("gap-manual-list");
+      if (!list) return drafts;
+      list.querySelectorAll(".list-row").forEach((row) => {
+        const input = row.querySelector(".gap-net-time");
+        if (!input) return;
+        const idx = Number(row.getAttribute("data-gap-idx"));
+        const gap = gapRows[idx];
+        if (!gap) return;
+        drafts[`${gap.realName}_${gap.distance}`] = input.value;
+      });
+      return drafts;
+    }
+
+    function renderGapManualList(opts) {
       const list = document.getElementById("gap-manual-list");
       if (!list) return;
+      const skipIfFocused = opts && opts.skipIfFocused;
+      if (skipIfFocused && isGapNetTimeFocused()) return;
+
+      const drafts = collectGapTimeDrafts();
+      let focusedKey = null;
+      let focusedSelStart = null;
+      let focusedSelEnd = null;
+      if (isGapNetTimeFocused()) {
+        const row = document.activeElement.closest(".list-row");
+        const idx = row ? Number(row.getAttribute("data-gap-idx")) : NaN;
+        const gap = gapRows[idx];
+        if (gap) {
+          focusedKey = `${gap.realName}_${gap.distance}`;
+          focusedSelStart = document.activeElement.selectionStart;
+          focusedSelEnd = document.activeElement.selectionEnd;
+        }
+      }
+
       const statusLabel = {
         ok: "조회됨 · 미확정",
         missing: "기록 없음",
@@ -1330,6 +1375,35 @@
       list.innerHTML = parts.length
         ? parts.join("")
         : '<p class="hint" style="margin:0;">미확정 없음</p>';
+
+      list.querySelectorAll(".list-row").forEach((row) => {
+        const input = row.querySelector(".gap-net-time");
+        const idx = Number(row.getAttribute("data-gap-idx"));
+        const gap = gapRows[idx];
+        if (!input || !gap) return;
+        const key = `${gap.realName}_${gap.distance}`;
+        if (Object.prototype.hasOwnProperty.call(drafts, key)) {
+          input.value = drafts[key];
+        }
+      });
+
+      if (focusedKey) {
+        const rows = list.querySelectorAll(".list-row");
+        for (let i = 0; i < rows.length; i++) {
+          const idx = Number(rows[i].getAttribute("data-gap-idx"));
+          const gap = gapRows[idx];
+          if (!gap || `${gap.realName}_${gap.distance}` !== focusedKey) continue;
+          const input = rows[i].querySelector(".gap-net-time");
+          if (!input) break;
+          input.focus();
+          try {
+            if (focusedSelStart != null && focusedSelEnd != null) {
+              input.setSelectionRange(focusedSelStart, focusedSelEnd);
+            }
+          } catch (_) { /* ignore */ }
+          break;
+        }
+      }
     }
 
     async function confirmGapManual(gap, extra) {
