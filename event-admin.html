@@ -448,15 +448,22 @@
       font-weight: 600;
       margin-bottom: 12px;
     }
-    .owner-banner {
-      background: #EFF6FF;
-      color: #1e40af;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 10px;
+    .leg-toggle-row {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
     }
+    .ops-checklist {
+      margin: 0 0 10px;
+      padding: 10px 14px 10px 32px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 13px;
+    }
+    .ops-checklist li { margin: 3px 0; color: var(--text-sub); }
+    .ops-checklist li.done { color: var(--green); font-weight: 600; }
+    .ops-checklist-hint { margin: 0 0 10px; }
     .ops-writable:disabled { opacity: 0.55; pointer-events: none; }
 
     .qr-box { text-align: center; margin-top: 8px; }
@@ -612,6 +619,17 @@
         </nav>
         <div class="ops-main">
       <div id="ops-root" class="hidden">
+        <ol id="ops-checklist" class="ops-checklist">
+          <li data-check="source">기록 소스 저장</li>
+          <li data-check="outbound-on">가는 편 탑승 켜기</li>
+          <li data-check="outbound-off">가는 편 끄기</li>
+          <li data-check="return-on">오는 편 켜기</li>
+          <li data-check="return-off">오는 편 끄기</li>
+          <li data-check="scrape-start">스크랩 시작</li>
+          <li data-check="scrape-stop">스크랩 종료</li>
+          <li data-check="missing">안 뜬 기록</li>
+        </ol>
+        <p class="hint ops-checklist-hint">배포 직후에는 편 스위치를 다시 확인하세요.</p>
         <!-- ① 준비 -->
         <section class="sec ops-panel active" id="sec-prep" data-ops-section="prep">
           <h3><span class="left"><span class="num">1</span>준비</span></h3>
@@ -619,16 +637,11 @@
           <div class="row-between" style="margin-bottom:8px;">
             <div>
               <div style="font-weight:700;font-size:14px;">버스 탑승</div>
-              <div class="sub" id="bus-enabled-hint">수동 on/off</div>
+              <div class="sub" id="bus-enabled-hint">한 편만 켭니다</div>
             </div>
-            <button type="button" class="btn btn-sm btn-primary" id="bus-toggle-btn">켜기</button>
-          </div>
-
-          <div id="activate-panel" class="hidden">
-            <div class="activate-box">
-              <div class="activate-title">버스 탑승 시작</div>
-              <p class="activate-msg">시작하면 참가자가 QR/링크로 셀프 체크할 수 있습니다.</p>
-              <button type="button" class="btn btn-primary btn-block" id="enable-btn">버스 탑승 시작</button>
+            <div class="leg-toggle-row">
+              <button type="button" class="btn btn-sm btn-primary" id="bus-toggle-outbound">가는 켜기</button>
+              <button type="button" class="btn btn-sm btn-primary" id="bus-toggle-return">오는 켜기</button>
             </div>
           </div>
 
@@ -638,27 +651,17 @@
           <div class="import-report" id="import-report"></div>
 
           <div class="qr-box">
-            <p class="hint" style="margin-top:0;text-align:left;">회원 · 가는 버스 QR</p>
-            <img id="qr-img" alt="가는 편 탑승 QR" width="160" height="160" />
+            <p class="hint" style="margin-top:0;text-align:left;">회원 홈 · 탑승 QR</p>
+            <img id="qr-img" alt="탑승 QR" width="160" height="160" />
             <div class="link-box" id="participant-link-text"></div>
-            <button type="button" class="btn btn-ghost" id="copy-link-btn">가는 버스 링크 복사</button>
-            <details class="qr-return-details">
-              <summary>오는 버스 QR (복귀 때 사용)</summary>
-              <p class="hint" style="margin-top:12px;text-align:left;">새벽에는 가는 편만 보여 주세요</p>
-              <img id="qr-img-return" alt="오는 편 탑승 QR" width="160" height="160" />
-              <div class="link-box" id="participant-return-link-text"></div>
-              <button type="button" class="btn btn-ghost" id="copy-return-link-btn">오는 버스 링크 복사</button>
-            </details>
+            <button type="button" class="btn btn-ghost" id="copy-link-btn">탑승 링크 복사</button>
             <button type="button" class="btn btn-ghost" id="copy-bib-link-btn">배번 입력 링크 복사</button>
           </div>
 
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
             <div style="font-weight:700;font-size:14px;margin-bottom:6px;">기록 소스 (groupSource)</div>
-            <div id="owner-scrape-hint" class="owner-banner hidden">
-              스크랩·소스 저장은 로그인된 운영진(총무) 비밀번호로 가능합니다.
-            </div>
             <div class="source-row">
-              <select id="source-select" class="owner-writable">
+              <select id="source-select">
                 <option value="">소스 선택</option>
                 <option value="smartchip">smartchip</option>
                 <option value="ohmyrace">ohmyrace</option>
@@ -667,8 +670,8 @@
                 <option value="marazone">marazone</option>
                 <option value="manual">manual</option>
               </select>
-              <input type="text" id="source-id-input" class="owner-writable" placeholder="sourceId" autocomplete="off" />
-              <button type="button" class="btn btn-sm btn-primary owner-writable" id="save-source-btn">저장</button>
+              <input type="text" id="source-id-input" placeholder="sourceId" autocomplete="off" />
+              <button type="button" class="btn btn-sm btn-primary" id="save-source-btn">저장</button>
             </div>
             <p class="hint" id="source-hint">배번 스크랩은 smartchip · ohmyrace · spct만 지원합니다.</p>
           </div>
@@ -757,7 +760,7 @@
             <span id="scrape-status-pill" class="pill-off">—</span>
           </h3>
           <p class="hint" style="margin-top:0;" id="scrape-intro">배번 있는 참가자만 스크랩. 대회 기록은 참가자 확정 후.</p>
-          <button type="button" class="btn btn-primary btn-block owner-writable" id="scrape-btn">스크랩 실행</button>
+          <button type="button" class="btn btn-primary btn-block" id="scrape-btn">스크랩 실행</button>
           <div class="stat-row" style="margin-top:10px;">
             <div class="stat"><b id="pending-count">0</b><span>조회됨 · 확정 대기</span></div>
             <div class="stat"><b id="confirmed-count">0</b><span>참가자 확정 완료</span></div>
@@ -802,6 +805,7 @@
     let eventName = "";
     let eventDate = "";
     let enabled = false;
+    let openLeg = null;
     let roster = [];
     let summary = {
       outbound: { required: 0, boarded: 0 },
@@ -867,12 +871,12 @@
       return hasAdminAccess(sessionStorage);
     }
 
-    function participantUrl(leg) {
+    function participantUrl() {
       if (!eventId) return "";
-      const u = new URL("boarding.html", window.location.href);
-      u.searchParams.set("eventId", eventId);
-      u.searchParams.set("leg", leg === "return" ? "return" : "outbound");
-      return u.href;
+      return new URL(
+        "event-home.html?eventId=" + encodeURIComponent(eventId) + "&board=1",
+        window.location.href
+      ).href;
     }
 
     function bibUrl() {
@@ -930,13 +934,9 @@
           : "group-detail.html";
       }
 
-      const abs = participantUrl("outbound");
-      const absReturn = participantUrl("return");
+      const abs = participantUrl();
       document.getElementById("participant-link-text").textContent = abs || "—";
-      const returnText = document.getElementById("participant-return-link-text");
-      if (returnText) returnText.textContent = absReturn || "—";
       const qr = document.getElementById("qr-img");
-      const qrReturn = document.getElementById("qr-img-return");
       if (abs) {
         qr.src =
           "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
@@ -944,38 +944,62 @@
       } else {
         qr.removeAttribute("src");
       }
-      if (qrReturn) {
-        if (absReturn) {
-          qrReturn.src =
-            "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
-            encodeURIComponent(absReturn);
-        } else {
-          qrReturn.removeAttribute("src");
-        }
-      }
     }
 
-    function setOwnerWritableUi() {
-      const canWriteSource = isOpsAdmin();
-      document.querySelectorAll(".owner-writable").forEach((el) => {
-        el.disabled = !canWriteSource;
+    function updateChecklist() {
+      const list = document.getElementById("ops-checklist");
+      if (!list) return;
+      const gs = eventDetail && eventDetail.groupSource;
+      const session = eventDetail && eventDetail.groupScrapeSession;
+      const status = (eventDetail && eventDetail.groupScrapeStatus) || "";
+      const sourceDone = !!(gs && gs.source && gs.sourceId);
+      const scrapeStarted = !!(
+        (session && (session.startedAt || session.until)) ||
+        status === "running" ||
+        status === "done"
+      );
+      const untilMs = session && session.until ? Date.parse(session.until) : NaN;
+      const scrapeStopped = !!(
+        session &&
+        (session.stoppedAt ||
+          session.stop === true ||
+          (Number.isFinite(untilMs) && untilMs <= Date.now()))
+      );
+      const marks = {
+        source: sourceDone,
+        "outbound-on": openLeg === "outbound",
+        "outbound-off": openLeg !== "outbound",
+        "return-on": openLeg === "return",
+        "return-off": openLeg !== "return",
+        "scrape-start": scrapeStarted,
+        "scrape-stop": scrapeStopped,
+        missing: false
+      };
+      list.querySelectorAll("[data-check]").forEach((li) => {
+        const key = li.getAttribute("data-check");
+        li.classList.toggle("done", !!marks[key]);
       });
-      document.getElementById("owner-scrape-hint").classList.toggle("hidden", canWriteSource);
     }
 
-    function setWritableUi(canBoard) {
+    function setWritableUi() {
+      const canBoard = openLeg != null;
       document.getElementById("disabled-banner").classList.toggle("hidden", canBoard);
       document.getElementById("guest-card").classList.remove("hidden");
-      const toggleBtn = document.getElementById("bus-toggle-btn");
-      if (enabled === true) {
-        toggleBtn.textContent = "끄기";
-        toggleBtn.className = "btn btn-sm btn-danger";
-      } else {
-        toggleBtn.textContent = "켜기";
-        toggleBtn.className = "btn btn-sm btn-primary";
-      }
+      const outBtn = document.getElementById("bus-toggle-outbound");
+      const retBtn = document.getElementById("bus-toggle-return");
+      outBtn.textContent = openLeg === "outbound" ? "가는 끄기" : "가는 켜기";
+      outBtn.className =
+        openLeg === "outbound" ? "btn btn-sm btn-danger" : "btn btn-sm btn-primary";
+      retBtn.textContent = openLeg === "return" ? "오는 끄기" : "오는 켜기";
+      retBtn.className =
+        openLeg === "return" ? "btn btn-sm btn-danger" : "btn btn-sm btn-primary";
       document.getElementById("bus-enabled-hint").textContent =
-        enabled === true ? "수동 on/off · 지금은 켜짐" : "수동 on/off · 지금은 꺼짐";
+        openLeg === "outbound"
+          ? "가는 편 탑승 중"
+          : openLeg === "return"
+            ? "오는 편 탑승 중"
+            : "지금은 꺼짐 · 한 편만 켭니다";
+      updateChecklist();
     }
 
     function isNoteInputFocused() {
@@ -1071,8 +1095,6 @@
         return;
       }
 
-      const canBoard = enabled === true;
-
       rows.forEach((row) => {
         const required = isRequired(row);
         const boarded = isBoarded(row);
@@ -1102,7 +1124,7 @@
           Object.prototype.hasOwnProperty.call(drafts, row.rosterId)
             ? drafts[row.rosterId]
             : serverNote;
-        const toggleDisabled = !canBoard || !required ? "disabled" : "";
+        const toggleDisabled = !required ? "disabled" : "";
         const noteDisabled = "";
         const removeDisabled = "";
 
@@ -1248,6 +1270,7 @@
         BIB_SCRAPE_SOURCES.includes(gs.source) &&
         status !== "running";
       scrapeBtn.disabled = !canScrape;
+      updateChecklist();
     }
 
     function showPanels() {
@@ -1260,9 +1283,7 @@
       }
 
       opsRoot.classList.remove("hidden");
-      document.getElementById("activate-panel").classList.toggle("hidden", enabled === true);
-      setWritableUi(enabled === true);
-      setOwnerWritableUi();
+      setWritableUi();
       renderSummary();
       renderRoster(searchInput.value, { skipIfNoteFocused: true });
       renderBibSection();
@@ -1272,7 +1293,9 @@
 
     function applyBusStatus(data) {
       eventName = data.eventName || eventName || "단체 대회";
-      enabled = data.enabled === true;
+      openLeg =
+        data.openLeg === "outbound" || data.openLeg === "return" ? data.openLeg : null;
+      enabled = openLeg != null;
       roster = Array.isArray(data.roster) ? data.roster : [];
       summary = data.summary || {
         outbound: { required: 0, boarded: 0 },
@@ -1323,7 +1346,7 @@
         document.getElementById("poll-dot").style.background = "var(--green)";
         if (!silent) showPanels();
         else {
-          setWritableUi(enabled === true);
+          setWritableUi();
           renderSummary();
           renderRoster(searchInput.value, { skipIfNoteFocused: true });
         }
@@ -1406,7 +1429,6 @@
       mainWrap.classList.remove("hidden");
       document.getElementById("role-label").textContent =
         adminRole === "owner" ? "오너" : adminRole === "operator" ? "운영진" : adminRole || "—";
-      setOwnerWritableUi();
     }
 
     async function tryAuth() {
@@ -1453,38 +1475,42 @@
       return true;
     }
 
-    async function enableBoarding() {
+    async function setOpenLeg(leg) {
       if (isProcessing) return;
+      if (leg !== "outbound" && leg !== "return") return;
+      if (openLeg === leg) {
+        await clearOpenLeg();
+        return;
+      }
       const pw = requirePw();
       if (!pw || !eventId) return;
       isProcessing = true;
-      const btn = document.getElementById("enable-btn");
-      const toggleBtn = document.getElementById("bus-toggle-btn");
-      btn.disabled = true;
-      toggleBtn.disabled = true;
+      const outBtn = document.getElementById("bus-toggle-outbound");
+      const retBtn = document.getElementById("bus-toggle-return");
+      outBtn.disabled = true;
+      retBtn.disabled = true;
       try {
         const { data } = await postBus({
           subAction: "settings",
           pw,
           eventId,
-          enabled: true,
-          legs: ["outbound", "return"]
+          openLeg: leg
         });
-        if (!data.ok) throw new Error(data.error || "활성화 실패");
-        showToast("버스 탑승을 시작했습니다");
+        if (!data.ok) throw new Error(data.error || "편 스위치 실패");
+        showToast(leg === "return" ? "오는 편 탑승을 켰습니다" : "가는 편 탑승을 켰습니다");
         await loadBusStatus();
         showPanels();
       } catch (err) {
-        console.error("enableBoarding:", err);
-        showToast(err.message || "활성화 실패", true);
+        console.error("setOpenLeg:", err);
+        showToast(err.message || "편 스위치 실패", true);
       } finally {
         isProcessing = false;
-        btn.disabled = false;
-        toggleBtn.disabled = false;
+        outBtn.disabled = false;
+        retBtn.disabled = false;
       }
     }
 
-    async function disableBoarding() {
+    async function clearOpenLeg() {
       if (isProcessing) return;
       if (!confirm("버스 탑승을 끌까요? 명단은 유지됩니다.")) return;
       const pw = requirePw();
@@ -1495,34 +1521,23 @@
           subAction: "settings",
           pw,
           eventId,
-          enabled: false
+          openLeg: null
         });
         if (!data.ok) throw new Error(data.error || "비활성화 실패");
         showToast("버스 탑승을 껐습니다");
         await loadBusStatus();
         showPanels();
       } catch (err) {
-        console.error("disableBoarding:", err);
+        console.error("clearOpenLeg:", err);
         showToast(err.message || "비활성화 실패", true);
       } finally {
         isProcessing = false;
       }
     }
 
-    async function toggleBusEnabled() {
-      if (enabled === true) await disableBoarding();
-      else await enableBoarding();
-    }
-
     async function toggleBoard(rosterId, boarded) {
       if (isProcessing) {
         renderRoster(searchInput.value);
-        return;
-      }
-      if (enabled !== true) {
-        showToast("버스 탑승이 꺼져 있습니다", true);
-        renderRoster(searchInput.value);
-        await loadBusStatus({ silent: true });
         return;
       }
       const pw = requirePw();
@@ -1872,14 +1887,17 @@
 
     document.getElementById("tab-outbound").addEventListener("click", () => setLeg("outbound"));
     document.getElementById("tab-return").addEventListener("click", () => setLeg("return"));
-    document.getElementById("enable-btn").addEventListener("click", enableBoarding);
-    document.getElementById("bus-toggle-btn").addEventListener("click", toggleBusEnabled);
+    document.getElementById("bus-toggle-outbound").addEventListener("click", () => {
+      if (openLeg === "outbound") clearOpenLeg();
+      else setOpenLeg("outbound");
+    });
+    document.getElementById("bus-toggle-return").addEventListener("click", () => {
+      if (openLeg === "return") clearOpenLeg();
+      else setOpenLeg("return");
+    });
     document.getElementById("guest-add-btn").addEventListener("click", addGuest);
     document.getElementById("copy-link-btn").addEventListener("click", () =>
-      copyText(participantUrl("outbound"), "가는 버스 링크를 복사했습니다")
-    );
-    document.getElementById("copy-return-link-btn").addEventListener("click", () =>
-      copyText(participantUrl("return"), "오는 버스 링크를 복사했습니다")
+      copyText(participantUrl(), "탑승 링크를 복사했습니다")
     );
     document.getElementById("copy-bib-link-btn").addEventListener("click", () =>
       copyText(bibUrl(), "배번 링크를 복사했습니다")

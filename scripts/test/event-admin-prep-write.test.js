@@ -75,9 +75,50 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(saveFn, /isGuest/);
   });
 
-  it("boarded toggle still requires boarding on", () => {
+  it("has separate outbound and return boarding toggles", () => {
+    const html = read("event-admin.html");
+    assert.match(html, /id="bus-toggle-outbound"/);
+    assert.match(html, /id="bus-toggle-return"/);
+    assert.doesNotMatch(html, /id="enable-btn"/);
+    assert.doesNotMatch(html, /id="bus-toggle-btn"/);
+  });
+
+  it("boarded toggle works while boarding is off", () => {
+    const html = read("event-admin.html");
     const toggleFn = extractFn(html, "toggleBoard");
-    assert.match(toggleFn, /enabled !== true/);
+    assert.doesNotMatch(toggleFn, /enabled !== true/);
+  });
+
+  it("event-admin settings never posts enabled true without openLeg", () => {
+    const html = read("event-admin.html");
+    assert.doesNotMatch(html, /function enableBoarding/);
+    const setFn = extractFn(html, "setOpenLeg") + extractFn(html, "clearOpenLeg");
+    assert.match(setFn, /openLeg/);
+    assert.doesNotMatch(setFn, /enabled:\s*true/);
+  });
+
+  it("boarding-admin boarded toggle works while boarding is off", () => {
+    const boarding = read("boarding-admin.html");
+    const toggleFn = extractFn(boarding, "toggleBoard");
+    assert.doesNotMatch(toggleFn, /enabled !== true/);
+  });
+
+  it("boarding-admin enableBoarding sends openLeg", () => {
+    const boarding = read("boarding-admin.html");
+    assert.match(boarding, /function enableBoarding/);
+    const enableFn = extractFn(boarding, "enableBoarding");
+    assert.match(enableFn, /openLeg:\s*(currentLeg|"outbound"|"return")/);
+    assert.doesNotMatch(enableFn, /enabled:\s*true[\s\S]{0,80}legs:\s*\[/);
+  });
+
+  it("source and scrape are not owner-only", () => {
+    const html = read("event-admin.html");
+    assert.doesNotMatch(html, /id="owner-scrape-hint"/);
+    assert.doesNotMatch(html, /class="owner-writable"/);
+  });
+
+  it("shows day checklist", () => {
+    assert.match(read("event-admin.html"), /id="ops-checklist"/);
   });
 
   it("disabled banner says roster is still editable", () => {

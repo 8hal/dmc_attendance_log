@@ -37,15 +37,14 @@ describe("group event primary entry", () => {
     assert.match(html, /href="group\.html"/);
   });
 
-  it("event-admin folds return-bus QR so dawn scan uses outbound", () => {
+  it("event-admin has one participant QR without leg query", () => {
     const html = readHtml("event-admin.html");
     assert.match(html, /id="qr-img"/);
-    assert.match(html, /id="qr-img-return"/);
-    assert.match(html, /<details class="qr-return-details">/);
-    assert.match(html, /새벽에는 가는 편만/);
-    assert.match(html, /참가자 확정 후/);
-    assert.doesNotMatch(html, /참가자 컨펌 후/);
-    assert.match(html, /leg=outbound|participantUrl\("outbound"\)/);
-    assert.match(html, /participantUrl\("return"\)/);
+    assert.doesNotMatch(html, /id="qr-img-return"/);
+    assert.doesNotMatch(html, /<details class="qr-return-details">/);
+    assert.match(html, /event-home\.html/);
+    assert.match(html, /board=1/);
+    assert.doesNotMatch(html, /leg=return/);
+    assert.doesNotMatch(html, /participantUrl\("return"\)/);
   });
 });

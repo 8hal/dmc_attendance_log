@@ -772,8 +772,6 @@
         return;
       }
 
-      const canBoard = enabled === true;
-
       rows.forEach((row) => {
         const required = isRequired(row);
         const boarded = isBoarded(row);
@@ -803,7 +801,7 @@
           Object.prototype.hasOwnProperty.call(drafts, row.rosterId)
             ? drafts[row.rosterId]
             : serverNote;
-        const toggleDisabled = !canBoard || !required ? "disabled" : "";
+        const toggleDisabled = !required ? "disabled" : "";
         const noteDisabled = "";
         const removeDisabled = "";
 
@@ -1047,8 +1045,7 @@
           subAction: "settings",
           pw,
           eventId,
-          enabled: true,
-          legs: ["outbound", "return"]
+          openLeg: currentLeg === "return" ? "return" : "outbound"
         });
         if (!data.ok) throw new Error(data.error || "활성화 실패");
         showToast("버스 탑승을 시작했습니다");
@@ -1094,12 +1091,6 @@
       // change 이벤트로 체크박스가 이미 뒤집힌 상태 — 조기 return 전 roster로 복원
       if (isProcessing) {
         renderRoster(searchInput.value);
-        return;
-      }
-      if (enabled !== true) {
-        showToast("버스 탑승이 꺼져 있습니다", true);
-        renderRoster(searchInput.value);
-        await loadStatus({ silent: true });
         return;
       }
       const pw = requirePw();
