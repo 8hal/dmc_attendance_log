@@ -472,15 +472,29 @@ describe("scrape POST and auto-scrape wiring", () => {
     const catchAt = fn.indexOf("} catch (err)");
     assert.ok(catchAt >= 0, "missing catch");
     const catchBlock = fn.slice(catchAt);
-    assert.match(catchBlock, /reusedJob/);
+    assert.match(catchBlock, /if\s*\(\s*reuseExistingJob/);
     assert.match(catchBlock, /restoreSubsetFailureStatuses/);
     assert.match(catchBlock, /lastSubsetError/);
-    const reusedCatch = catchBlock.slice(
-      catchBlock.indexOf("reusedJob"),
-      catchBlock.indexOf("} else {", catchBlock.indexOf("reusedJob"))
-    );
-    assert.doesNotMatch(reusedCatch, /groupScrapeStatus:\s*"failed"/);
-    assert.doesNotMatch(reusedCatch, /status:\s*"failed"/);
+    const reuseIf = catchBlock.search(/if\s*\(\s*reuseExistingJob/);
+    const elseAt = catchBlock.indexOf("} else {", reuseIf);
+    assert.ok(elseAt > reuseIf, "reuseExistingJob then else");
+    const reuseCatch = catchBlock.slice(reuseIf, elseAt);
+    assert.doesNotMatch(reuseCatch, /groupScrapeStatus:\s*"failed"/);
+    assert.doesNotMatch(reuseCatch, /status:\s*"failed"/);
+  });
+
+  it("catch restore path keys off reuseExistingJob, not only reusedJob", () => {
+    const fn = triggerGroupScrapeSrc(src);
+    const catchBlock = fn.slice(fn.indexOf("} catch (err)"));
+    assert.match(catchBlock, /if\s*\(\s*reuseExistingJob/);
+    const reuseIf = catchBlock.search(/if\s*\(\s*reuseExistingJob/);
+    assert.ok(reuseIf >= 0, "catch must consult reuseExistingJob");
+    const elseAt = catchBlock.indexOf("} else {", reuseIf);
+    assert.ok(elseAt > reuseIf, "reuseExistingJob branch then else");
+    const reuseCatch = catchBlock.slice(reuseIf, elseAt);
+    assert.doesNotMatch(reuseCatch, /groupScrapeStatus:\s*"failed"/);
+    const elseCatch = catchBlock.slice(elseAt);
+    assert.match(elseCatch, /groupScrapeStatus:\s*"failed"/);
   });
 
   it("update-bib claims running via runTransaction before triggerGroupScrape", () => {

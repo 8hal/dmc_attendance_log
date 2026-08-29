@@ -1727,7 +1727,7 @@ async function triggerGroupScrape({
     await db.collection("race_events").doc(canonicalEventId).update(eventUpdate);
   } catch (err) {
     const errMsg = err.message || String(err);
-    if (reusedJob) {
+    if (reuseExistingJob) {
       const restored = restoreSubsetFailureStatuses(
         event && event.groupScrapeStatus,
         previousJobStatus
