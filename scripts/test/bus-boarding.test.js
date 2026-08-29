@@ -14,6 +14,10 @@ const {
   emptyBusBoarding,
   ensureBusBoarding,
   rosterUpsertIdentity,
+  readOpenLeg,
+  applyOpenLeg,
+  assertLegOpen,
+  parseSettingsOpenLeg,
 } = require(path.join(__dirname, "../../functions/lib/bus-boarding.js"));
 
 describe("rosterUpsertIdentity", () => {
@@ -388,5 +392,56 @@ describe("mergeRosterImport mixed batch", () => {
     assert.equal(roster[0].nickname, "유일");
     assert.ok(report.errors.length >= 1);
     assert.equal(report.added, 1);
+  });
+});
+
+describe("openLeg", () => {
+  it("enabled true without openLeg reads as off", () => {
+    assert.equal(readOpenLeg({ enabled: true, roster: [] }), null);
+  });
+  it("applyOpenLeg outbound sets enabled true", () => {
+    const bb = applyOpenLeg({ enabled: false }, "outbound");
+    assert.equal(bb.openLeg, "outbound");
+    assert.equal(bb.enabled, true);
+  });
+  it("applyOpenLeg null clears both", () => {
+    const bb = applyOpenLeg({ openLeg: "outbound", enabled: true }, null);
+    assert.equal(bb.openLeg, null);
+    assert.equal(bb.enabled, false);
+  });
+  it("turning return on replaces outbound", () => {
+    const bb = applyOpenLeg({ openLeg: "outbound", enabled: true }, "return");
+    assert.equal(bb.openLeg, "return");
+    assert.equal(bb.enabled, true);
+  });
+  it("assertLegOpen only matches current leg", () => {
+    const bb = { openLeg: "outbound", enabled: true };
+    assert.equal(assertLegOpen(bb, "outbound"), true);
+    assert.equal(assertLegOpen(bb, "return"), false);
+    assert.equal(assertLegOpen({ enabled: true }, "outbound"), false);
+  });
+});
+
+describe("parseSettingsOpenLeg", () => {
+  it("accepts openLeg without enabled", () => {
+    assert.deepEqual(parseSettingsOpenLeg({ openLeg: "outbound" }), {
+      ok: true,
+      openLeg: "outbound",
+    });
+  });
+  it("accepts enabled false or openLeg null as off", () => {
+    assert.deepEqual(parseSettingsOpenLeg({ enabled: false }), {
+      ok: true,
+      openLeg: null,
+    });
+    assert.deepEqual(parseSettingsOpenLeg({ openLeg: null }), {
+      ok: true,
+      openLeg: null,
+    });
+  });
+  it("rejects enabled true without openLeg", () => {
+    const r = parseSettingsOpenLeg({ enabled: true });
+    assert.equal(r.ok, false);
+    assert.match(r.error, /openLeg required/);
   });
 });

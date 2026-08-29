@@ -74,6 +74,7 @@ function buildRosterEntry({ nickname, realName, rideType, note, memberId, roster
 function emptyBusBoarding(options = {}) {
   return {
     enabled: false,
+    openLeg: null,
     legs: [...(options.legs || ["outbound", "return"])],
     importMeta: {
       importedAt: null,
@@ -221,6 +222,45 @@ function assertEnabled(busBoarding) {
   return !!(busBoarding && busBoarding.enabled === true);
 }
 
+function readOpenLeg(busBoarding) {
+  if (!busBoarding || typeof busBoarding !== "object") return null;
+  const leg = busBoarding.openLeg;
+  if (leg === "outbound" || leg === "return") return leg;
+  return null;
+}
+
+function applyOpenLeg(busBoarding, openLeg) {
+  const bb = busBoarding && typeof busBoarding === "object"
+    ? { ...busBoarding }
+    : emptyBusBoarding();
+  if (openLeg === "outbound" || openLeg === "return") {
+    bb.openLeg = openLeg;
+    bb.enabled = true;
+  } else {
+    bb.openLeg = null;
+    bb.enabled = false;
+  }
+  return bb;
+}
+
+function assertLegOpen(busBoarding, leg) {
+  return readOpenLeg(busBoarding) === leg;
+}
+
+function parseSettingsOpenLeg(body) {
+  if (!body || typeof body !== "object") {
+    return { ok: false, error: "openLeg required" };
+  }
+  if (body.enabled === false || body.openLeg === null) {
+    return { ok: true, openLeg: null };
+  }
+  const leg = body.openLeg;
+  if (leg === "outbound" || leg === "return") {
+    return { ok: true, openLeg: leg };
+  }
+  return { ok: false, error: "openLeg required" };
+}
+
 function summarizeLeg(roster, leg) {
   let required = 0;
   let boarded = 0;
@@ -247,5 +287,9 @@ module.exports = {
   ensureBusBoarding,
   rosterUpsertIdentity,
   assertEnabled,
+  readOpenLeg,
+  applyOpenLeg,
+  assertLegOpen,
+  parseSettingsOpenLeg,
   summarizeLeg,
 };
