@@ -3737,37 +3737,46 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         }
 
         const event = eventDoc.data() || {};
-        const participant = (event.participants || []).find(
+        const found = (event.participants || []).find(
           (p) => p.nickname === nickname
         );
-        if (!participant) {
+        if (!found) {
           return res.status(403).json({ ok: false, error: "not a participant" });
         }
+
+        const participant = { ...found };
+        if (req.body.pbConfirmed != null) participant.pbConfirmed = req.body.pbConfirmed;
+        const bodyNetTime = String(req.body.netTime || "").trim();
+        const bodyDnStatus = String(req.body.dnStatus || "").trim();
+        if (bodyNetTime) participant.netTime = bodyNetTime;
+        if (bodyDnStatus) participant.dnStatus = bodyDnStatus;
+        const allowManual = !!(bodyNetTime || bodyDnStatus);
 
         const bib = String(participant.bib || "").trim();
         if (!bib) {
           return res.status(400).json({ ok: false, error: "bib required" });
         }
-        if (!event.groupScrapeJobId) {
-          return res.status(400).json({ ok: false, error: "no pending result" });
-        }
 
-        const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
-        const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
-        const pending = matchResultByBib(jobResults, bib, participant.distance);
-        if (!pending) {
-          return res.status(400).json({ ok: false, error: "no pending result" });
-        }
-
-        try {
-          assertBibOwnsPending(participant, pending);
-        } catch (err) {
-          return res.status(400).json({ ok: false, error: err.message || "bib mismatch" });
+        let pending = null;
+        if (!allowManual) {
+          if (event.groupScrapeJobId) {
+            const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+            const jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+            pending = matchResultByBib(jobResults, bib, participant.distance);
+          }
+          if (!pending) {
+            return res.status(400).json({ ok: false, error: "no pending result" });
+          }
+          try {
+            assertBibOwnsPending(participant, pending);
+          } catch (err) {
+            return res.status(400).json({ ok: false, error: err.message || "bib mismatch" });
+          }
         }
 
         const docId = buildSelfConfirmDocId({
           realName: participant.realName,
-          distance: pending.distance || participant.distance,
+          distance: (pending && pending.distance) || participant.distance,
           eventDate: event.eventDate,
         });
         const row = buildSelfConfirmRow({
@@ -3775,13 +3784,14 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           event,
           participant,
           pending,
+          allowManual,
         });
 
         // Upsert this docId only — never bulk-delete the event's race_results
         const ref = db.collection("race_results").doc(docId);
         await ref.set(row);
 
-        const pendingDist = String(pending.distance || "").trim();
+        const pendingDist = String((pending && pending.distance) || "").trim();
         const partDist = String(participant.distance || "").trim();
         if (pendingDist && !partDist) {
           const idx = (event.participants || []).findIndex(

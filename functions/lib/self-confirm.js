@@ -63,6 +63,7 @@ function assertBibOwnsPending(participant, pending) {
  *     pbConfirmed?: boolean,
  *     note?: string,
  *     dnStatus?: string,
+ *     netTime?: string,
  *     finishTime?: string,
  *   },
  *   pending: {
@@ -73,8 +74,9 @@ function assertBibOwnsPending(participant, pending) {
  *     overallRank?: number|null,
  *     gender?: string,
  *     distance?: string,
- *   },
+ *   }|null,
  *   confirmedAt?: string,
+ *   allowManual?: boolean,
  * }} opts
  * @returns {object}
  */
@@ -84,37 +86,47 @@ function buildSelfConfirmRow({
   participant,
   pending,
   confirmedAt,
+  allowManual,
 }) {
-  assertBibOwnsPending(participant, pending);
+  if (!allowManual) {
+    assertBibOwnsPending(participant, pending);
+  }
 
   const ev = event || {};
   const p = participant || {};
-  const rowSource = {
-    netTime: pending?.netTime,
-    finishTime: pending?.finishTime ?? p.finishTime,
-    gunTime: pending?.gunTime,
-  };
+  const rowSource = allowManual
+    ? {
+        netTime: p.netTime,
+        finishTime: p.finishTime,
+        gunTime: p.gunTime,
+      }
+    : {
+        netTime: pending?.netTime,
+        finishTime: pending?.finishTime ?? p.finishTime,
+        gunTime: pending?.gunTime,
+      };
   const distNorm = normalizeRaceDistance(pending?.distance || p.distance);
   const now = confirmedAt || new Date().toISOString();
   const finishTrim = String(rowSource.finishTime || "").trim();
   const dnStatus = p.dnStatus;
+  const isDn = !!String(dnStatus || "").trim();
 
   const row = {
     jobId: ev.groupScrapeJobId || canonicalEventId,
     canonicalEventId,
     eventName: ev.eventName || "",
     eventDate: ev.eventDate || "",
-    source: (ev.groupSource && ev.groupSource.source) || "manual",
-    sourceId: (ev.groupSource && ev.groupSource.sourceId) || "",
+    source: allowManual ? "manual" : ((ev.groupSource && ev.groupSource.source) || "manual"),
+    sourceId: allowManual ? "" : ((ev.groupSource && ev.groupSource.sourceId) || ""),
     memberRealName: p.realName,
     memberNickname: p.nickname || p.realName,
     distance: distNorm,
     netTime: effectiveNetTimeForConfirm(rowSource),
-    gunTime: pending?.gunTime || "",
+    gunTime: allowManual ? (p.gunTime || "") : (pending?.gunTime || ""),
     bib: String(pending?.bib ?? p.bib ?? "").trim(),
-    overallRank: pending?.overallRank != null ? pending.overallRank : null,
-    gender: pending?.gender || "",
-    pbConfirmed: p.pbConfirmed != null ? p.pbConfirmed : false,
+    overallRank: allowManual ? null : (pending?.overallRank != null ? pending.overallRank : null),
+    gender: allowManual ? "" : (pending?.gender || ""),
+    pbConfirmed: isDn ? false : (p.pbConfirmed != null ? p.pbConfirmed : false),
     isGuest: false,
     note: p.note || "",
     status: dnStatus ? String(dnStatus).toLowerCase() : "confirmed",

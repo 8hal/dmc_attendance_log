@@ -68,4 +68,35 @@ describe("self-confirm", () => {
     assert.equal(row.pbConfirmed, false);
     assert.equal(row.isGuest, false);
   });
+
+  it("pbConfirmed from participant wins", () => {
+    const row = buildSelfConfirmRow({
+      canonicalEventId: "evt1",
+      event: { eventDate: "2026-09-05", eventName: "철원" },
+      participant: { realName: "김테스트", nickname: "닉", bib: "1", distance: "half", pbConfirmed: true },
+      pending: { bib: "1", netTime: "1:00:00" },
+    });
+    assert.equal(row.pbConfirmed, true);
+  });
+
+  it("manual finish allows PB; DNS does not", () => {
+    const finish = buildSelfConfirmRow({
+      canonicalEventId: "evt1",
+      event: { eventDate: "2026-09-05", eventName: "철원" },
+      participant: { realName: "김테스트", nickname: "닉", bib: "1", distance: "half", netTime: "1:42:00", pbConfirmed: true },
+      pending: null,
+      allowManual: true,
+    });
+    assert.equal(finish.source, "manual");
+    assert.equal(finish.pbConfirmed, true);
+    const dns = buildSelfConfirmRow({
+      canonicalEventId: "evt1",
+      event: { eventDate: "2026-09-05", eventName: "철원" },
+      participant: { realName: "김테스트", nickname: "닉", bib: "1", distance: "half", dnStatus: "DNS" },
+      pending: null,
+      allowManual: true,
+    });
+    assert.equal(dns.status, "dns");
+    assert.equal(dns.pbConfirmed, false);
+  });
 });
