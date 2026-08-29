@@ -1727,44 +1727,34 @@ async function triggerGroupScrape({
     await db.collection("race_events").doc(canonicalEventId).update(eventUpdate);
   } catch (err) {
     const errMsg = err.message || String(err);
-    if (reuseExistingJob) {
-      const restored = restoreSubsetFailureStatuses(
-        event && event.groupScrapeStatus,
-        previousJobStatus
-      );
-      try {
+    const restored = restoreSubsetFailureStatuses(
+      event && event.groupScrapeStatus,
+      previousJobStatus
+    );
+    try {
+      if (reuseExistingJob) {
         await db.collection("race_events").doc(canonicalEventId).update({
           groupScrapeStatus: restored.groupScrapeStatus,
         });
-      } catch (e) {
-        console.error("[triggerGroupScrape] race_events failed update:", e);
+      } else {
+        await db.collection("race_events").doc(canonicalEventId).update({
+          groupScrapeStatus: "failed",
+        });
       }
-      try {
-        if (jobRef) {
-          const snap = await jobRef.get();
-          if (snap.exists) {
+    } catch (e) {
+      console.error("[triggerGroupScrape] race_events failed update:", e);
+    }
+    try {
+      if (jobRef) {
+        const snap = await jobRef.get();
+        if (snap.exists) {
+          if (reusedJob) {
             await jobRef.update({
               status: restored.scrapeJobStatus,
               lastSubsetError: errMsg,
               error: errMsg,
             });
-          }
-        }
-      } catch (e) {
-        console.error("[triggerGroupScrape] job failed update:", e);
-      }
-    } else {
-      try {
-        await db.collection("race_events").doc(canonicalEventId).update({
-          groupScrapeStatus: "failed",
-        });
-      } catch (e) {
-        console.error("[triggerGroupScrape] race_events failed update:", e);
-      }
-      try {
-        if (jobRef) {
-          const snap = await jobRef.get();
-          if (snap.exists) {
+          } else {
             await jobRef.update({
               status: "failed",
               completedAt: new Date().toISOString(),
@@ -1772,9 +1762,9 @@ async function triggerGroupScrape({
             });
           }
         }
-      } catch (e) {
-        console.error("[triggerGroupScrape] job failed update:", e);
       }
+    } catch (e) {
+      console.error("[triggerGroupScrape] job failed update:", e);
     }
     throw err;
   }

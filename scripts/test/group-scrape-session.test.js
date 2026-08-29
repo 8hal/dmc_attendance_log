@@ -467,7 +467,7 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.doesNotMatch(fn, /\bpreviousResults\b/);
   });
 
-  it("subset reuse catch restores status and does not fail the group job", () => {
+  it("subset reuse catch restores event and reused job, but fallback new job can fail", () => {
     const fn = triggerGroupScrapeSrc(src);
     const catchAt = fn.indexOf("} catch (err)");
     assert.ok(catchAt >= 0, "missing catch");
@@ -475,12 +475,21 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.match(catchBlock, /if\s*\(\s*reuseExistingJob/);
     assert.match(catchBlock, /restoreSubsetFailureStatuses/);
     assert.match(catchBlock, /lastSubsetError/);
-    const reuseIf = catchBlock.search(/if\s*\(\s*reuseExistingJob/);
-    const elseAt = catchBlock.indexOf("} else {", reuseIf);
-    assert.ok(elseAt > reuseIf, "reuseExistingJob then else");
-    const reuseCatch = catchBlock.slice(reuseIf, elseAt);
-    assert.doesNotMatch(reuseCatch, /groupScrapeStatus:\s*"failed"/);
-    assert.doesNotMatch(reuseCatch, /status:\s*"failed"/);
+
+    const eventIf = catchBlock.search(/if\s*\(\s*reuseExistingJob/);
+    const eventElse = catchBlock.indexOf("} else {", eventIf);
+    assert.ok(eventElse > eventIf, "reuseExistingJob event branch then else");
+    const eventReuse = catchBlock.slice(eventIf, eventElse);
+    assert.doesNotMatch(eventReuse, /groupScrapeStatus:\s*"failed"/);
+    assert.match(catchBlock.slice(eventElse), /groupScrapeStatus:\s*"failed"/);
+
+    const jobIf = catchBlock.search(/if\s*\(\s*reusedJob/);
+    assert.ok(jobIf >= 0, "catch job path must consult reusedJob");
+    const jobElse = catchBlock.indexOf("} else {", jobIf);
+    assert.ok(jobElse > jobIf, "reusedJob job branch then else");
+    const reusedJobCatch = catchBlock.slice(jobIf, jobElse);
+    assert.doesNotMatch(reusedJobCatch, /status:\s*"failed"/);
+    assert.match(catchBlock.slice(jobElse), /status:\s*"failed"/);
   });
 
   it("catch restore path keys off reuseExistingJob, not only reusedJob", () => {
