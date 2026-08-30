@@ -355,6 +355,26 @@
   margin-bottom: 12px;
 }
 
+.profile-time-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-time-row .profile-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.profile-time-row .pb-check {
+  flex: 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
+}
+
 .dist-chips {
   display: flex;
   flex-wrap: wrap;
