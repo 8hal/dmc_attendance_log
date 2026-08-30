@@ -43,7 +43,10 @@
       "functions/**",
       "apps-script/**",
       "README.md",
-      "backup/**"
+      "backup/**",
+      "*.log",
+      "firebase-debug.log",
+      "firestore-debug.log"
     ]
   },
   "emulators": {
