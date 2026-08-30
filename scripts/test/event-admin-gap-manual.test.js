@@ -37,6 +37,13 @@ describe("event-admin gap manual confirm", () => {
     assert.doesNotMatch(scrape, /id="bib-missing-list"/);
   });
 
+  it("labels no-bib count as 스크랩 대상 아님", () => {
+    const bib = sectionHtml(html, "sec-bib");
+    assert.match(bib, /id="bib-without-count"/);
+    assert.match(bib, /없음 · 스크랩 대상 아님/);
+    assert.doesNotMatch(bib, /미참가로 봄/);
+  });
+
   it("draws DNS/DNF buttons with data-dnStatus", () => {
     assert.match(html, /data-dnStatus="DNS"/);
     assert.match(html, /data-dnStatus="DNF"/);
