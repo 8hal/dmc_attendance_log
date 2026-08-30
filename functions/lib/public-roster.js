@@ -1,7 +1,9 @@
 /**
- * 회원 공개 명단·결과 행 조립 (실명·배번 제외).
- * 출력은 확정 완주 또는 DNS/DNF만.
+ * 회원 공개 명단·결과 행 조립 (실명 제외. 배번·recordStatus 포함).
  */
+const { matchResultByBib } = require("./group-scrape-bib");
+const { effectiveNetTimeForConfirm } = require("./self-confirm");
+
 function normalizeNick(n) {
   return String(n || "").trim();
 }
@@ -77,9 +79,10 @@ function findConfirmedForParticipant(p, map, norm) {
  * @param {Array<object>} participants race_events.participants
  * @param {Map<string, object>|Record<string, object>} confirmedByKey key = `${realName}_${normDist}`
  * @param {(d: string) => string} normalizeDistance
- * @returns {Array<{ nickname: string, distance: string, netTime: string|null, pbConfirmed: boolean, hasResult: true, dnStatus: "DNS"|"DNF"|null }>}
+ * @param {Array<object>} [scrapeResults]
+ * @returns {Array<{ nickname: string, distance: string, bib: string, netTime: string|null, pbConfirmed: boolean, hasResult: boolean, dnStatus: "DNS"|"DNF"|null, recordStatus: "confirmed"|"scraped"|"none" }>}
  */
-function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance) {
+function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance, scrapeResults) {
   const list = Array.isArray(participants) ? participants : [];
   const norm =
     typeof normalizeDistance === "function"
@@ -89,27 +92,55 @@ function buildPublicRosterRows(participants, confirmedByKey, normalizeDistance) 
     confirmedByKey instanceof Map
       ? confirmedByKey
       : new Map(Object.entries(confirmedByKey || {}));
+  const scrapeList = Array.isArray(scrapeResults) ? scrapeResults : [];
 
   const rows = [];
   for (const p of list) {
     const nickname = normalizeNick(p && p.nickname);
     if (!nickname) continue;
+    const bib = String((p && p.bib) || "").trim();
     const confirmed = findConfirmedForParticipant(p, map, norm);
-    if (!confirmed) continue;
     const dnStatus = publicDnStatus(confirmed);
     const isFinish = isConfirmedFinish(confirmed, dnStatus);
-    if (!dnStatus && !isFinish) continue;
-    const fromConfirmed = confirmed.distance != null ? String(confirmed.distance).trim() : "";
+
+    let recordStatus = "none";
+    let netTime = null;
+    let pbConfirmed = false;
+    let hasResult = false;
+    let rowDnStatus = null;
+    let attachedDistance = "";
+
+    if (confirmed && (dnStatus || isFinish)) {
+      recordStatus = "confirmed";
+      netTime = dnStatus ? null : finishTimeFromConfirmed(confirmed);
+      pbConfirmed = !!confirmed.pbConfirmed;
+      hasResult = true;
+      rowDnStatus = dnStatus;
+      attachedDistance = confirmed.distance != null ? String(confirmed.distance).trim() : "";
+    } else {
+      const scrapedHit = bib ? matchResultByBib(scrapeList, bib, p && p.distance) : null;
+      if (scrapedHit) {
+        recordStatus = "scraped";
+        const scrapedTime = effectiveNetTimeForConfirm(scrapedHit);
+        netTime = scrapedTime || null;
+        pbConfirmed = false;
+        hasResult = false;
+        attachedDistance = scrapedHit.distance != null ? String(scrapedHit.distance).trim() : "";
+      }
+    }
+
     const distance = isMissingDistance(p && p.distance, norm)
-      ? norm(fromConfirmed || "") || ""
+      ? norm(attachedDistance || "") || ""
       : norm(p.distance || "");
     rows.push({
       nickname,
       distance: distance || "",
-      netTime: dnStatus ? null : finishTimeFromConfirmed(confirmed),
-      pbConfirmed: !!confirmed.pbConfirmed,
-      hasResult: true,
-      dnStatus,
+      bib,
+      netTime,
+      pbConfirmed,
+      hasResult,
+      dnStatus: rowDnStatus,
+      recordStatus,
     });
   }
   return rows;
