@@ -49,6 +49,10 @@
 
   /** Short destination for bus card titles: prefer location when clearer. */
   function busDestinationLabel(event) {
+    const venue = event && event.busBoarding && event.busBoarding.placeVenue;
+    if (venue != null && String(venue).trim()) {
+      return String(venue).trim();
+    }
     const title = memberEventTitle(
       (event && (event.eventName || event.primaryName)) || ""
     );
@@ -61,11 +65,21 @@
     return title || "대회";
   }
 
+  /** Club-side place for bus route titles. Default 동탄. */
+  function busClubLabel(event) {
+    const club = event && event.busBoarding && event.busBoarding.placeClub;
+    if (club != null && String(club).trim()) {
+      return String(club).trim();
+    }
+    return "동탄";
+  }
+
   return {
     memberEventTitle,
     memberDistanceLabel,
     memberHomeHref,
     matchesMemberQuery,
     busDestinationLabel,
+    busClubLabel,
   };
 });

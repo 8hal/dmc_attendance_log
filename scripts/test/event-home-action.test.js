@@ -296,6 +296,27 @@ describe("busRouteTitle", () => {
       "대회 → 동탄 · 탑승 완료"
     );
   });
+
+  it("uses placeClub when provided", () => {
+    assert.equal(
+      busRouteTitle({
+        leg: "outbound",
+        placeClub: "판교",
+        destination: "철원",
+        done: false,
+      }),
+      "판교 → 철원"
+    );
+    assert.equal(
+      busRouteTitle({
+        leg: "return",
+        placeClub: "판교",
+        destination: "철원",
+        done: true,
+      }),
+      "철원 → 판교 · 탑승 완료"
+    );
+  });
 });
 
 describe("event-home bus card titles", () => {
@@ -309,5 +330,14 @@ describe("event-home bus card titles", () => {
     assert.doesNotMatch(html, /오는 버스"/);
     assert.doesNotMatch(html, /가는 버스 탑승 완료/);
     assert.doesNotMatch(html, /오는 버스 탑승 완료/);
+  });
+
+  it("passes busClubLabel into busRouteTitle", () => {
+    const html = fs.readFileSync(
+      path.join(__dirname, "../../event-home.html"),
+      "utf8"
+    );
+    assert.match(html, /EventMemberCopy\.busClubLabel/);
+    assert.match(html, /placeClub:/);
   });
 });

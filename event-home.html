@@ -632,6 +632,7 @@
         busRow: busRow,
       });
       const dest = EventMemberCopy.busDestinationLabel(cachedEvent || {});
+      const placeClub = EventMemberCopy.busClubLabel(cachedEvent || {});
 
       busCard.className = "today-card bus-card";
       busBoardBtn.classList.add("hidden");
@@ -645,6 +646,7 @@
       if (card.state === "ready") {
         busTitle.textContent = EventHomeAction.busRouteTitle({
           leg: card.leg,
+          placeClub: placeClub,
           destination: dest,
           done: false,
         });
@@ -654,6 +656,7 @@
       } else if (card.state === "outbound_done") {
         busTitle.textContent = EventHomeAction.busRouteTitle({
           leg: "outbound",
+          placeClub: placeClub,
           destination: dest,
           done: true,
         });
@@ -661,6 +664,7 @@
       } else if (card.state === "return_done") {
         busTitle.textContent = EventHomeAction.busRouteTitle({
           leg: "return",
+          placeClub: placeClub,
           destination: dest,
           done: true,
         });
@@ -671,6 +675,7 @@
       } else {
         busTitle.textContent = EventHomeAction.busRouteTitle({
           leg: card.leg,
+          placeClub: placeClub,
           destination: dest,
           done: false,
         });
@@ -776,8 +781,10 @@
 
     function showBoardDoneOverlay(leg) {
       const dest = EventMemberCopy.busDestinationLabel(cachedEvent || {});
+      const placeClub = EventMemberCopy.busClubLabel(cachedEvent || {});
       boardDoneText.textContent = EventHomeAction.busRouteTitle({
         leg: leg,
+        placeClub: placeClub,
         destination: dest,
         done: true,
       });

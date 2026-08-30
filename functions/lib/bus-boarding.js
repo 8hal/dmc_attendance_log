@@ -261,6 +261,44 @@ function parseSettingsOpenLeg(body) {
   return { ok: false, error: "openLeg required" };
 }
 
+const PLACE_LABEL_MAX = 40;
+
+function normalizePlaceLabel(value) {
+  if (value == null) return "";
+  return String(value).trim().slice(0, PLACE_LABEL_MAX);
+}
+
+function parseSettingsPlaces(body) {
+  if (!body || typeof body !== "object") {
+    return { ok: true, any: false, places: {} };
+  }
+  const places = {};
+  let any = false;
+  if (Object.prototype.hasOwnProperty.call(body, "placeClub")) {
+    any = true;
+    places.placeClub = normalizePlaceLabel(body.placeClub);
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "placeVenue")) {
+    any = true;
+    places.placeVenue = normalizePlaceLabel(body.placeVenue);
+  }
+  return { ok: true, any, places };
+}
+
+function applyPlaceLabels(busBoarding, places) {
+  const bb = busBoarding && typeof busBoarding === "object"
+    ? { ...busBoarding }
+    : emptyBusBoarding();
+  if (!places || typeof places !== "object") return bb;
+  if (Object.prototype.hasOwnProperty.call(places, "placeClub")) {
+    bb.placeClub = places.placeClub;
+  }
+  if (Object.prototype.hasOwnProperty.call(places, "placeVenue")) {
+    bb.placeVenue = places.placeVenue;
+  }
+  return bb;
+}
+
 function summarizeLeg(roster, leg) {
   let required = 0;
   let boarded = 0;
@@ -291,5 +329,8 @@ module.exports = {
   applyOpenLeg,
   assertLegOpen,
   parseSettingsOpenLeg,
+  normalizePlaceLabel,
+  parseSettingsPlaces,
+  applyPlaceLabels,
   summarizeLeg,
 };

@@ -18,6 +18,9 @@ const {
   applyOpenLeg,
   assertLegOpen,
   parseSettingsOpenLeg,
+  normalizePlaceLabel,
+  parseSettingsPlaces,
+  applyPlaceLabels,
 } = require(path.join(__dirname, "../../functions/lib/bus-boarding.js"));
 
 describe("rosterUpsertIdentity", () => {
@@ -443,5 +446,47 @@ describe("parseSettingsOpenLeg", () => {
     const r = parseSettingsOpenLeg({ enabled: true });
     assert.equal(r.ok, false);
     assert.match(r.error, /openLeg required/);
+  });
+});
+
+describe("place labels", () => {
+  it("normalizePlaceLabel trims and caps length", () => {
+    assert.equal(normalizePlaceLabel("  철원  "), "철원");
+    assert.equal(normalizePlaceLabel(null), "");
+    assert.equal(normalizePlaceLabel("x".repeat(50)).length, 40);
+  });
+
+  it("parseSettingsPlaces is optional and returns only provided keys", () => {
+    assert.deepEqual(parseSettingsPlaces({}), { ok: true, any: false, places: {} });
+    assert.deepEqual(parseSettingsPlaces({ placeClub: " 동탄 ", placeVenue: "철원" }), {
+      ok: true,
+      any: true,
+      places: { placeClub: "동탄", placeVenue: "철원" },
+    });
+    assert.deepEqual(parseSettingsPlaces({ placeVenue: "  " }), {
+      ok: true,
+      any: true,
+      places: { placeVenue: "" },
+    });
+  });
+
+  it("applyPlaceLabels merges without wiping other fields", () => {
+    const bb = applyPlaceLabels(
+      { openLeg: "outbound", enabled: true, roster: [{ nickname: "A" }] },
+      { placeClub: "동탄", placeVenue: "철원" }
+    );
+    assert.equal(bb.placeClub, "동탄");
+    assert.equal(bb.placeVenue, "철원");
+    assert.equal(bb.openLeg, "outbound");
+    assert.equal(bb.roster[0].nickname, "A");
+  });
+
+  it("applyPlaceLabels empty string clears stored label", () => {
+    const bb = applyPlaceLabels(
+      { placeClub: "동탄", placeVenue: "철원" },
+      { placeVenue: "" }
+    );
+    assert.equal(bb.placeClub, "동탄");
+    assert.equal(bb.placeVenue, "");
   });
 });
