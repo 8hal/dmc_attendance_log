@@ -37,6 +37,22 @@ describe("event-admin gap manual confirm", () => {
     assert.doesNotMatch(scrape, /id="bib-missing-list"/);
   });
 
+  it("labels no-bib count as 스크랩 대상 아님", () => {
+    const bib = sectionHtml(html, "sec-bib");
+    assert.match(bib, /id="bib-without-count"/);
+    assert.match(bib, /없음 · 스크랩 대상 아님/);
+    assert.doesNotMatch(bib, /미참가로 봄/);
+  });
+
+  it("stacked ops layout stretches the bib list to full width", () => {
+    const start = html.indexOf("@media (max-width: 720px)");
+    assert.ok(start >= 0, "missing stacked ops-layout breakpoint");
+    const end = html.indexOf("}", html.indexOf(".ops-sidebar-foot", start));
+    const media = html.slice(start, end + 1);
+    assert.match(media, /\.ops-layout\s*\{[^}]*flex-direction:\s*column/);
+    assert.match(media, /\.ops-layout\s*\{[^}]*align-items:\s*stretch/);
+  });
+
   it("draws DNS/DNF buttons with data-dnStatus", () => {
     assert.match(html, /data-dnStatus="DNS"/);
     assert.match(html, /data-dnStatus="DNF"/);
