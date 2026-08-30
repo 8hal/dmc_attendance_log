@@ -21,7 +21,7 @@ describe("event-home-action", () => {
       isGuest: false,
     });
     assert.equal(p.state, "bib");
-    assert.match(p.prompt, /배번과 종목을 넣어 주세요/);
+    assert.match(p.prompt, /대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요/);
     assert.doesNotMatch(p.prompt, /먼저/);
   });
 
@@ -31,7 +31,7 @@ describe("event-home-action", () => {
       confirmMode: "none",
     });
     assert.equal(p.state, "bib");
-    assert.match(p.prompt, /배번과 종목을 넣어 주세요/);
+    assert.match(p.prompt, /대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요/);
   });
 
   it("bib+distance no result → wait with large bib", () => {
