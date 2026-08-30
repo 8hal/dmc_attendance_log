@@ -40,7 +40,9 @@ describe("event-home-action", () => {
       confirmMode: "none",
     });
     assert.equal(p.state, "wait");
-    assert.match(p.prompt, /기록이 올라오면 여기서 확인해요/);
+    assert.match(p.prompt, /대회가 종료되면 기록을 자동 수집합니다/);
+    assert.match(p.prompt, /대회 종료 후 기록을 확정해주세요/);
+    assert.doesNotMatch(p.prompt, /기록이 올라오면 여기서 확인해요/);
     assert.equal(p.showManual, true);
     assert.equal(p.largeBib, true);
   });

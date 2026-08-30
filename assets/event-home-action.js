@@ -89,7 +89,7 @@
 
     return Object.assign(emptyCardExtras(), {
       state: "wait",
-      prompt: "기록이 올라오면 여기서 확인해요.",
+      prompt: "대회가 종료되면 기록을 자동 수집합니다. 대회 종료 후 기록을 확정해주세요!",
       showManual: true,
       largeBib: true,
     });
