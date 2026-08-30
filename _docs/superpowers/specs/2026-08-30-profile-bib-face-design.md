@@ -26,12 +26,15 @@
 
 ```html
 <div class="bib-face" id="profileBibFace">
-  <!-- 핀홀 4 -->
   <div class="bib-face-band">
     <span class="bib-face-dist" id="profileBibDist"></span>
     <div class="bib-face-number" id="profileBibLarge"></div>
   </div>
   <p class="bib-face-event" id="profileBibEvent"></p>
+</div>
+<div class="profile-link-row">
+  <button id="profileEditBtn">배번 수정</button>
+  <button id="profileManualBtn">기록 직접 입력</button>
 </div>
 ```
 
