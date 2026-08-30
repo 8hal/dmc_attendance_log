@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>단체 대회 참가 안내 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <meta property="og:title" content="동탄 마라톤 클럽 — 단체 대회 참가 안내" />
+  <meta property="og:description" content="버스 탑승 체크 · 배번 입력 · 기록 확인까지 폰 하나로. 단체 대회 참가 방법을 확인하세요!" />
+  <meta property="og:image" content="assets/dmc_logo.png" />
+  <meta property="og:url" content="pamphlet-group-event-member.html" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 40%, #FFF7ED 100%);
+      color: #0F172A;
+      min-height: 100vh;
+    }
+    .page { max-width: 480px; margin: 0 auto; padding: 24px 20px 40px; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 40px 16px 32px;
+      background: linear-gradient(135deg, #2563EB, #1D4ED8);
+      border-radius: 24px;
+      color: #fff;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      bottom: -60px; left: -30px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+    }
+    .hero-logo {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      border: 3px solid rgba(255,255,255,0.3);
+      margin-bottom: 16px;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: 25px;
+      font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      font-size: 15px;
+      opacity: 0.85;
+      line-height: 1.5;
+    }
+
+    /* Section */
+    .section {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 16px rgba(15,23,42,0.06);
+    }
+    .section-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+    .section h2 { font-size: 19px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+    .section .desc { font-size: 14px; color: #64748B; line-height: 1.6; margin-bottom: 16px; }
+    .section .desc:last-child { margin-bottom: 0; }
+
+    /* Before/After */
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .compare-card {
+      padding: 14px 12px;
+      border-radius: 14px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+    }
+    .compare-card.after { background: #F0FDF4; border-color: #D1FAE5; }
+    .compare-label { font-size: 11px; font-weight: 700; margin-bottom: 6px; color: #64748B; }
+    .compare-card.after .compare-label { color: #059669; }
+    .compare-text { font-size: 13px; line-height: 1.6; color: #334155; }
+
+    /* Flow steps */
+    .flow { display: flex; align-items: stretch; gap: 0; margin: 16px 0; flex-wrap: wrap; }
+    .flow-step {
+      flex: 1 1 21%;
+      min-width: 70px;
+      text-align: center;
+      padding: 14px 6px;
+      background: linear-gradient(135deg, #F0F7FF, #EFF6FF);
+      border-radius: 14px;
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .flow-step:not(:last-child)::after {
+      content: "\2192";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      color: #94A3B8;
+      z-index: 1;
+      font-weight: 700;
+    }
+    .flow-step:not(:last-child) { margin-right: 18px; }
+    .flow-num {
+      display: inline-flex;
+      width: 26px; height: 26px;
+      align-items: center; justify-content: center;
+      background: #2563EB;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .flow-icon { font-size: 21px; display: block; margin-bottom: 4px; }
+    .flow-label { font-size: 11.5px; font-weight: 600; color: #334155; line-height: 1.3; }
+    .flow-note {
+      font-size: 12.5px;
+      color: #64748B;
+      background: #F8FAFC;
+      border-radius: 10px;
+      padding: 10px 12px;
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+
+    /* Reason list */
+    .reason-list { display: flex; flex-direction: column; gap: 10px; }
+    .reason-item {
+      display: flex;
+      gap: 10px;
+      padding: 12px 14px;
+      background: #F8FAFC;
+      border-radius: 12px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #334155;
+    }
+    .reason-emoji { font-size: 18px; flex-shrink: 0; }
+
+    /* Notice */
+    .notice {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 14px;
+      font-size: 13px;
+      color: #92400E;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .notice:last-child { margin-bottom: 0; }
+    .notice-icon { font-size: 20px; flex-shrink: 0; }
+    .notice.blue { background: #EFF6FF; border-color: #BFDBFE; color: #1E3A8A; }
+
+    /* Closing */
+    .closing {
+      text-align: center;
+      padding: 32px 20px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 2px 16px rgba(15,23,42,0.06);
+    }
+    .closing-emoji { font-size: 40px; margin-bottom: 12px; }
+    .closing h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .closing p { font-size: 13px; color: #64748B; margin-bottom: 18px; line-height: 1.6; }
+    .closing-sub { display: block; margin-top: 6px; font-size: 12px; color: #94A3B8; }
+    .closing-sub a { color: #2563EB; text-decoration: none; }
+    .closing-sub a:hover { text-decoration: underline; }
+
+    .footer {
+      text-align: center;
+      padding: 24px 0 8px;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <img src="assets/dmc_logo.png" alt="동마클" class="hero-logo" />
+    <div class="hero-badge">신기능 · 철원마라톤부터 시범 운영</div>
+    <h1>단체 대회, 버스·배번·기록까지<br>폰 하나로 🚌</h1>
+    <p>탑승 체크부터 기록 확인까지, 대회 당일 할 일을 한 화면에서</p>
+  </div>
+
+  <!-- 왜 필요한가 -->
+  <div class="section">
+    <span class="section-icon">✨</span>
+    <h2>이렇게 달라졌어요</h2>
+    <p class="desc">단체로 참가하는 대회는 이제 이렇게 진행됩니다.</p>
+    <div class="compare">
+      <div class="compare-card">
+        <div class="compare-label">이전에는</div>
+        <div class="compare-text">총무님이 종이에 버스 탑승을 손으로 체크하고,<br>기록도 이름으로 하나씩 찾아서 정리했어요.</div>
+      </div>
+      <div class="compare-card after">
+        <div class="compare-label">✨ 이제는</div>
+        <div class="compare-text">버스에서 QR 찍고 탑승 체크,<br>배번만 입력해두면 기록이 자동으로 나타나요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사용 흐름 -->
+  <div class="section">
+    <span class="section-icon">📱</span>
+    <h2>이렇게 사용하면 돼요</h2>
+    <p class="desc">버스에 붙어있는 QR 코드를 폰 카메라로 찍으면, 아래 순서대로 진행됩니다.</p>
+    <div class="flow">
+      <div class="flow-step">
+        <span class="flow-num">1</span>
+        <span class="flow-icon">📷</span>
+        <span class="flow-label">버스에서<br>QR 스캔</span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">2</span>
+        <span class="flow-icon">👤</span>
+        <span class="flow-label">닉네임 선택<br><span style="font-weight:500;color:#94A3B8;">(로그인 안 됐을 때만)</span></span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">3</span>
+        <span class="flow-icon">🚌</span>
+        <span class="flow-label">탑승 완료<br>체크</span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">4</span>
+        <span class="flow-icon">🔢</span>
+        <span class="flow-label">종목·배번<br>입력</span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">5</span>
+        <span class="flow-icon">✅</span>
+        <span class="flow-label">기록 확인<br>완료</span>
+      </div>
+    </div>
+    <div class="flow-note">
+      💡 출석부에 이미 로그인/체크인 되어 있으면 <strong>2단계(닉네임 선택)는 자동으로 건너뛰고</strong> 바로 탑승 완료 체크부터 시작해요. 탑승 체크를 마치면 종목·배번 입력까지 같은 화면에서 이어서 할 수 있어요.
+    </div>
+  </div>
+
+  <!-- 왜 배번을 입력해야 하나 -->
+  <div class="section">
+    <span class="section-icon">🔢</span>
+    <h2>배번은 왜 입력하나요?</h2>
+    <div class="reason-list">
+      <div class="reason-item">
+        <span class="reason-emoji">🎯</span>
+        <span>이름만으로는 동명이인이 있으면 기록이 헷갈릴 수 있어요. 배번을 넣으면 내 기록을 정확히 찾을 수 있어요.</span>
+      </div>
+      <div class="reason-item">
+        <span class="reason-emoji">🚀</span>
+        <span>앞으로는 배번으로 대회 중 구간 통과 시간 같은 실시간 기록도 볼 수 있게 넓혀갈 계획이에요. 지금 입력해두시면 그 준비가 됩니다.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 버스 왕복 각각 체크 -->
+  <div class="section">
+    <span class="section-icon">🚌</span>
+    <h2>버스는 가는편·오는편 따로 체크해요</h2>
+    <p class="desc" style="margin-bottom:0">
+      가는 버스 탑승 체크와 오는 버스 탑승 체크는 별개예요. 둘 다 체크해야 홈 화면의 "할 일"이 사라지니, 대회를 마치고 돌아오는 버스에서도 <strong>같은 QR을 다시 한 번 찍어서</strong> 탑승 체크해주세요.
+    </p>
+  </div>
+
+  <!-- 어떻게 시작하나요 + 시범 운영 안내 -->
+  <div class="section">
+    <span class="section-icon">🔗</span>
+    <h2>어떻게 시작하나요?</h2>
+    <div class="notice blue">
+      <span class="notice-icon">💡</span>
+      <div>
+        이 페이지는 특정 대회로 들어가는 링크가 아니에요. 단체 대회로 이동하는 <strong>버스 문(또는 좌석)에 붙어있는 QR 코드</strong>를 폰 카메라로 찍으면 시작됩니다.<br>
+        버스를 안 타거나 QR을 놓쳤을 때, 배번을 나중에 따로 넣고 싶으실 때는 총무님이 알려주시는 링크로 들어가시면 돼요.
+      </div>
+    </div>
+    <div class="notice">
+      <span class="notice-icon">🌱</span>
+      <div>
+        <strong>철원마라톤에서 처음 운영</strong>하는 기능이라 화면이 계속 좋아질 예정이에요. 사용하다 이상하거나 헷갈리는 부분이 있으면 총무님께 편하게 알려주세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 마무리 -->
+  <div class="closing">
+    <div class="closing-emoji">🏃‍♂️💨</div>
+    <h2>대회 준비, 이제 폰 하나면 충분해요</h2>
+    <p>버스에서 QR을 찍고 시작해보세요</p>
+    <span class="closing-sub">개인 기록 조회·저장이 궁금하다면 <a href="pamphlet.html">회원 안내 보기</a></span>
+  </div>
+
+  <div class="footer">동탄 마라톤 클럽 © 2026</div>
+
+</div>
+</body>
+</html>

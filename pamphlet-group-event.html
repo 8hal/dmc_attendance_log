@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>단체 대회 기록 관리 가이드 - 동마클 운영자 전용</title>
+  <title>단체 대회 버스·배번·기록 관리 가이드 - 동마클 총무 전용</title>
   <style>
     :root {
       --primary: #2563EB;
@@ -20,13 +20,13 @@
       --gray-600: #64748B;
       --gray-900: #0F172A;
     }
-    
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-    
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
       line-height: 1.6;
@@ -34,7 +34,7 @@
       background: var(--gray-50);
       padding: 20px;
     }
-    
+
     .container {
       max-width: 900px;
       margin: 0 auto;
@@ -43,25 +43,25 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       overflow: hidden;
     }
-    
+
     .header {
       background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
       color: white;
       padding: 32px 40px;
       text-align: center;
     }
-    
+
     .header h1 {
       font-size: 28px;
       font-weight: 700;
       margin-bottom: 8px;
     }
-    
+
     .header .subtitle {
       font-size: 14px;
       opacity: 0.9;
     }
-    
+
     .badge {
       display: inline-block;
       padding: 4px 12px;
@@ -70,24 +70,24 @@
       font-weight: 600;
       margin-top: 12px;
     }
-    
+
     .badge-warning {
       background: var(--warning-light);
       color: var(--warning);
     }
-    
+
     .content {
       padding: 40px;
     }
-    
+
     .section {
       margin-bottom: 40px;
     }
-    
+
     .section:last-child {
       margin-bottom: 0;
     }
-    
+
     h2 {
       font-size: 22px;
       font-weight: 700;
@@ -96,19 +96,19 @@
       border-left: 4px solid var(--primary);
       padding-left: 12px;
     }
-    
+
     h3 {
       font-size: 18px;
       font-weight: 600;
       margin: 24px 0 12px;
       color: var(--gray-900);
     }
-    
+
     p {
       margin-bottom: 12px;
       line-height: 1.7;
     }
-    
+
     .card {
       background: var(--gray-50);
       border: 1px solid var(--gray-200);
@@ -116,22 +116,22 @@
       padding: 20px;
       margin: 16px 0;
     }
-    
+
     .card-primary {
       background: var(--primary-light);
       border-color: var(--primary);
     }
-    
+
     .card-success {
       background: var(--success-light);
       border-color: var(--success);
     }
-    
+
     .card-warning {
       background: var(--warning-light);
       border-color: var(--warning);
     }
-    
+
     .card-title {
       font-weight: 700;
       font-size: 16px;
@@ -140,18 +140,18 @@
       align-items: center;
       gap: 8px;
     }
-    
+
     .steps {
       counter-reset: step;
     }
-    
+
     .step {
       counter-increment: step;
       margin-bottom: 24px;
       padding-left: 48px;
       position: relative;
     }
-    
+
     .step::before {
       content: counter(step);
       position: absolute;
@@ -168,20 +168,20 @@
       font-weight: 700;
       font-size: 16px;
     }
-    
+
     .step h3 {
       margin-top: 0;
       margin-bottom: 8px;
     }
-    
+
     ul, ol {
       margin: 12px 0 12px 20px;
     }
-    
+
     li {
       margin-bottom: 8px;
     }
-    
+
     code {
       background: var(--gray-100);
       padding: 2px 6px;
@@ -190,7 +190,7 @@
       font-size: 13px;
       color: #D73A49;
     }
-    
+
     .password-box {
       background: white;
       border: 2px solid var(--primary);
@@ -199,7 +199,7 @@
       margin: 16px 0;
       text-align: center;
     }
-    
+
     .password-label {
       font-size: 12px;
       color: var(--gray-600);
@@ -207,7 +207,7 @@
       letter-spacing: 0.5px;
       margin-bottom: 4px;
     }
-    
+
     .password-value {
       font-size: 24px;
       font-weight: 700;
@@ -215,7 +215,7 @@
       font-family: "SF Mono", Monaco, monospace;
       letter-spacing: 2px;
     }
-    
+
     .url-box {
       background: var(--gray-900);
       color: white;
@@ -228,45 +228,45 @@
       align-items: center;
       justify-content: space-between;
     }
-    
+
     .url-box a {
       color: #60A5FA;
       text-decoration: none;
     }
-    
+
     .url-box a:hover {
       text-decoration: underline;
     }
-    
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 16px 0;
       font-size: 14px;
     }
-    
+
     th, td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid var(--gray-200);
     }
-    
+
     th {
       background: var(--gray-50);
       font-weight: 600;
       color: var(--gray-900);
     }
-    
+
     tr:last-child td {
       border-bottom: none;
     }
-    
+
     .highlight {
       background: #FEF08A;
       padding: 2px 4px;
       border-radius: 3px;
     }
-    
+
     .mock-ui {
       background: white;
       border: 2px solid var(--gray-200);
@@ -277,17 +277,17 @@
       font-size: 13px;
       line-height: 1.8;
     }
-    
+
     .mock-ui-header {
       font-weight: 700;
       margin-bottom: 8px;
       color: var(--gray-900);
     }
-    
+
     .status-ok { color: var(--success); }
     .status-warn { color: var(--warning); }
     .status-error { color: var(--danger); }
-    
+
     @media print {
       body {
         background: white;
@@ -297,7 +297,7 @@
         box-shadow: none;
       }
     }
-    
+
     @media (max-width: 768px) {
       .content {
         padding: 24px;
@@ -322,232 +322,212 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🏃‍♂️ 단체 대회 기록 관리 가이드</h1>
-      <p class="subtitle">동마클 운영자 전용 매뉴얼</p>
+      <h1>🚌 단체 대회 버스·배번·기록 관리 가이드</h1>
+      <p class="subtitle">동마클 총무 전용 매뉴얼 · 철원마라톤부터 시범 운영</p>
       <span class="badge badge-warning">⚠️ 비밀번호 포함 - 외부 공유 금지</span>
     </div>
-    
+
     <div class="content">
       <!-- 접근 정보 -->
       <div class="section">
         <h2>🔐 접근 정보</h2>
-        
+
         <div class="card card-primary">
-          <div class="card-title">🌐 단체 대회 관리 페이지</div>
+          <div class="card-title">🌐 단체 대회 목록</div>
           <div class="url-box">
-            <a href="https://dmc-attendance.web.app/group.html" target="_blank">https://dmc-attendance.web.app/group.html</a>
+            <a href="group.html" target="_blank">group.html</a>
             <span style="opacity:0.7">↗</span>
           </div>
           <div class="password-box">
-            <div class="password-label">운영자 비밀번호</div>
+            <div class="password-label">총무 비밀번호</div>
             <div class="password-value">dmc2008</div>
           </div>
           <p style="margin-top:16px;font-size:14px;color:var(--gray-600);">
-            ✅ 단체 대회 등록, 참가자 선택, 기록 확정
+            ✅ 대회 등록, 대회 카드 클릭 시 그 대회의 관리 화면으로 바로 이동
           </p>
         </div>
+
+        <div class="card">
+          <strong>📌 참고:</strong> 대회 카드를 누르면 그 대회의 관리 화면(준비·버스·배번·기록 수집)으로 들어갑니다.
+          예전 화면(참가자 이름으로 하나씩 맞춰서 한꺼번에 확정하는 화면)이 필요할 때는 카드의 <strong>⋮ 더보기 → "참가자·기록(구)"</strong>로 열 수 있어요. 평소에는 안 써도 됩니다.
+        </div>
       </div>
-      
+
       <!-- 개요 -->
       <div class="section">
-        <h2>🎯 단체 대회 기록 관리란?</h2>
+        <h2>🎯 무엇이 달라졌나요?</h2>
         <p>
-          동마클에서 <strong>단체로 신청한 대회</strong>의 경우, 참가자를 미리 등록해두면 
-          <span class="highlight">대회 후 자동으로 기록을 수집</span>하고 
-          <span class="highlight">한 번에 확정</span>할 수 있습니다.
+          이제 단체 대회는 <span class="highlight">회원이 직접 배번을 입력</span>하고
+          <span class="highlight">본인 기록도 직접 확인</span>합니다. 총무님은 대회를 등록하고,
+          버스를 관리하고, 기록 수집을 실행해주시는 역할만 하시면 됩니다.
         </p>
-        
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
           <div class="card">
-            <div style="font-size:12px;color:var(--gray-600);margin-bottom:4px;">기존 방식</div>
-            <div style="font-size:14px;">대회 후에만 검색 → 기록 확인 → 확정</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-bottom:4px;">이전 방식</div>
+            <div style="font-size:14px;">총무가 참가자를 등록하고, 대회 후 기록도 이름으로 하나씩 찾아서 확인·정리</div>
           </div>
           <div class="card card-success">
-            <div style="font-size:12px;color:var(--success);margin-bottom:4px;">✨ 단체 대회 방식</div>
-            <div style="font-size:14px;">참가자 미리 등록 → 대회 후 자동 수집 → 일괄 확정</div>
+            <div style="font-size:12px;color:var(--success);margin-bottom:4px;">✨ 지금 방식</div>
+            <div style="font-size:14px;">회원이 배번 입력 + 본인 기록 확인 → 총무는 등록·버스·수집 실행만</div>
           </div>
         </div>
-        
-        <div class="card" style="margin-top:16px;">
-          <strong>📌 참고:</strong> 기록 소스(사이트) 지정은 시스템 담당자가 별도로 진행합니다.
-        </div>
       </div>
-      
-      <!-- 등록 절차 -->
+
+      <!-- 사용법 -->
       <div class="section">
-        <h2>📋 단체 대회 등록 절차</h2>
-        
+        <h2>📋 한 화면에서 순서대로 하는 일</h2>
+
         <div class="steps">
           <div class="step">
-            <h3>대회 등록</h3>
+            <h3>준비</h3>
             <ol>
-              <li><code>group.html</code> 접속 → 운영자 비밀번호 <code>dmc2008</code> 입력</li>
-              <li><strong>"+ 단체 대회 등록"</strong> 버튼 클릭</li>
-              <li>대회명 검색 (예: "경기 마라톤")</li>
-              <li>대회 선택 → 등록 완료</li>
+              <li><code>group.html</code> 접속 → 총무 비밀번호 <code>dmc2008</code> 입력</li>
+              <li><strong>"+ 단체 대회 등록"</strong>으로 대회 등록 → 참가자 명단 올리기</li>
+              <li>대회 카드 클릭 → <strong>준비</strong> 화면에서 기록을 어디서 가져올지(사이트 이름과 대회 번호) 입력</li>
             </ol>
           </div>
-          
+
           <div class="step">
-            <h3>참가자 선택</h3>
+            <h3>버스</h3>
             <ol>
-              <li>등록된 대회 카드에서 <strong>"참가자 선택"</strong> 버튼 클릭</li>
-              <li>회원 목록에서 참가자 체크 (또는 검색 후 <kbd>Enter</kbd> 키로 빠른 선택)</li>
-              <li><strong>"저장"</strong> 클릭</li>
+              <li>버스 탈 사람 명단을 파일로 올리거나 직접 추가 (버스만 타고 대회는 안 뛰는 사람도 등록 가능)</li>
+              <li>지금 탑승 체크를 받을 편(가는편/오는편)을 켜기</li>
+              <li><strong>탑승 QR을 내려받아 버스 문이나 좌석에 인쇄해서 붙여두기</strong> — 회원은 이 QR을 폰으로 찍어서 스스로 탑승 체크해요</li>
+              <li>타는 장소 이름 정하기 (예: 동탄 출발, 대회장 도착)</li>
             </ol>
             <div class="card" style="margin-top:12px;">
-              <strong>💡 Tip:</strong> 회원이 목록에 없으면?<br>
-              <strong>"+ 출석 운영 (회원)"</strong> 링크 → <code>attendance-admin.html#members</code>에서 회원 추가 → <strong>"↺ 새로고침"</strong> 버튼
+              <strong>💡 참고:</strong> QR은 가는편·오는편 공통이에요. 한 번 붙여두면 돌아오는 버스에서도 같은 QR로 체크할 수 있어요. 회원이 QR을 못 찍었을 때는 "탑승 링크 복사"로 링크를 개별로 보내줄 수 있어요.
             </div>
           </div>
-          
+
           <div class="step">
-            <h3>기록 확정 (대회 다음 날)</h3>
+            <h3>배번</h3>
             <ol>
-              <li><code>group.html</code> 접속</li>
-              <li>대회 카드에서 <strong>"기록 확인"</strong> 섹션 펼치기</li>
-              <li>결과 확인:
+              <li>회원들이 배번을 얼마나 입력했는지 화면에서 확인</li>
+              <li>배번 입력은 <strong>회원이 스스로 하는 것이 기본</strong>이니, 안 넣은 회원에게는 입력을 부탁해주세요</li>
+            </ol>
+          </div>
+
+          <div class="step">
+            <h3>기록 수집 (대회 다음 날)</h3>
+            <ol>
+              <li><strong>배번을 입력한 회원만 대상</strong>으로 기록 수집 시작</li>
+              <li>수집이 끝나면 결과 확인:
                 <ul>
-                  <li><span class="status-ok">✅ 자동 매칭</span>: 이름·기록 확인</li>
-                  <li><span class="status-warn">⚠️ 동명이인</span>: 라디오 버튼으로 선택</li>
-                  <li><span class="status-error">🔴 기록 없음</span>: DNS(기권) 또는 DNF(완주 실패) 선택</li>
+                  <li><span class="status-ok">✅ 수집됨</span>: 회원이 직접 "이 기록 맞아요" 확인하면 완료</li>
+                  <li><span class="status-error">🔴 기록 없음</span>: DNS(기권) 또는 DNF(완주 실패)로 표시</li>
                 </ul>
               </li>
-              <li><strong>"일괄 확정"</strong> 버튼 클릭</li>
+              <li>회원이 확인을 안 하거나 못 하는 경우에만, 예전 화면(참가자·기록(구))에서 총무가 대신 확정할 수 있어요</li>
             </ol>
           </div>
         </div>
       </div>
-      
+
       <!-- 화면 예시 -->
       <div class="section">
         <h2>🎨 화면 구성 예시</h2>
         <div class="mock-ui">
-          <div class="mock-ui-header">┌─ 2026 경기 마라톤 ──────────── ⋮ 더보기 ─┐</div>
-          │ 날짜: 2026-04-20 (일)<br>
+          <div class="mock-ui-header">┌─ 준비 · 버스 · 배번 · 기록 수집 ──────────────┐</div>
+          │ 2026 철원 마라톤 · 2026-09-20(일)<br>
           ├──────────────────────────────────────────┤<br>
-          │ <strong>참가자 (3명)</strong><br>
-          │ · 홍길동 · 김철수 · 이영희<br>
-          │ <span style="color:var(--primary)">[참가자 선택]</span><br>
+          │ <strong>버스</strong> · 가는편 열림 · 탑승 38/40<br>
+          │ <strong>배번</strong> · 입력 완료 32/40<br>
+          │ <strong>기록 수집</strong> · <span class="status-ok">✅ 완료</span> (배번 있는 32명 대상)<br>
           ├──────────────────────────────────────────┤<br>
-          │ 소스: smartchip / 202650000123<br>
-          │ 스크랩 상태: <span class="status-ok">✅ 완료</span><br>
-          ├──────────────────────────────────────────┤<br>
-          │ <strong>▼ 기록 확인 (3명)</strong><br>
-          │   <span class="status-ok">✅</span> 홍길동 — 3:24:15 (123위)<br>
-          │   <span class="status-warn">⚠️</span> 김철수 — 동명이인 2명<br>
-          │      <input type="radio" checked> 김철수 (78세) 4:12:30<br>
-          │      <input type="radio"> 김철수 (45세) 3:58:22<br>
-          │   <span class="status-error">🔴</span> 이영희 — 기록 없음<br>
-          │      <span style="color:var(--gray-600)">[DNS] [DNF]</span><br>
-          │<br>
-          │ <span style="color:var(--success)">[일괄 확정]</span><br>
+          │ <span style="color:var(--primary)">[기록 수집 시작]</span> <span style="color:var(--gray-600)">[대회 카드로 돌아가기]</span>
           └──────────────────────────────────────────┘
         </div>
       </div>
-      
-      <!-- 자동 스크랩 -->
+
+      <!-- 주의사항 -->
       <div class="section">
-        <h2>⚙️ 자동 스크랩 일정</h2>
-        <div class="card card-primary">
-          <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start;">
-            <div style="font-weight:600;">실행 시간</div>
-            <div>매일 오후 <strong>3시</strong> (KST)</div>
-            
-            <div style="font-weight:600;">실행 대상</div>
-            <div>오늘 날짜 단체 대회 중 소스가 지정된 것</div>
-            
-            <div style="font-weight:600;">실행 조건</div>
-            <div>
-              ✅ 참가자가 1명 이상 등록됨<br>
-              ✅ 기록 소스(사이트 + 번호)가 입력됨<br>
-              ✅ 아직 스크랩되지 않음
-            </div>
-          </div>
-        </div>
-        <p style="margin-top:12px;font-size:14px;color:var(--gray-600);">
-          <strong>예시:</strong> 4월 20일 대회 → 4월 20일 오후 3시에 자동 스크랩
-        </p>
-      </div>
-      
-      <!-- 상태 표시 -->
-      <div class="section">
-        <h2>🔍 스크랩 상태 표시</h2>
+        <h2>⚠️ 주의사항</h2>
         <table>
           <thead>
             <tr>
-              <th>표시</th>
-              <th>의미</th>
-              <th>조치 사항</th>
+              <th>내용</th>
+              <th>이유 / 조치</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><span style="background:var(--gray-200);padding:2px 8px;border-radius:4px;font-size:12px;">대기</span></td>
-              <td>소스 미설정</td>
-              <td>ops.html에서 기록 소스 입력 필요</td>
+              <td>회원 진입 방법</td>
+              <td>카톡 링크가 아니라 <strong>버스에 붙인 QR</strong>로 시작합니다. 탑승 전에 QR을 꼭 인쇄해서 붙여두세요.</td>
             </tr>
             <tr>
-              <td><span style="background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:4px;font-size:12px;">스크랩 중</span></td>
-              <td>자동 수집 진행 중</td>
-              <td>1~2분 후 새로고침</td>
+              <td>배번을 입력하지 않은 참가자</td>
+              <td>기록 수집 대상에서 빠집니다(대회에 안 나간 것으로 처리). 배번 입력을 안내해주세요.</td>
             </tr>
             <tr>
-              <td><span style="background:var(--success-light);color:var(--success);padding:2px 8px;border-radius:4px;font-size:12px;">✅ 완료</span></td>
-              <td>스크랩 완료</td>
-              <td>기록 확인 후 일괄 확정</td>
+              <td>기록을 자동으로 가져올 수 있는 사이트</td>
+              <td>스마트칩 · 오마이레이스 · SPCT 세 곳뿐입니다. 그 외 사이트는 아직 지원하지 않아요.</td>
             </tr>
             <tr>
-              <td><span style="background:var(--warning-light);color:var(--warning);padding:2px 8px;border-radius:4px;font-size:12px;">⚠️ 부분 실패</span></td>
-              <td>일부만 수집됨</td>
-              <td>확인 후 재스크랩 또는 수동 입력</td>
+              <td>기록 확정 방법</td>
+              <td>회원이 스스로 확인하는 것이 기본입니다. 예전 화면(참가자·기록(구))의 "한꺼번에 확정"은 회원이 확인을 못 할 때만 쓰는 보조 방법이에요.</td>
             </tr>
             <tr>
-              <td><span style="background:var(--danger-light);color:var(--danger);padding:2px 8px;border-radius:4px;font-size:12px;">❌ 실패</span></td>
-              <td>스크랩 실패</td>
-              <td>소스 번호 확인 또는 재시도</td>
+              <td>보조 방법으로 다시 확정할 때</td>
+              <td>이미 회원이 스스로 확인해둔 기록도 덮어써질 수 있으니 주의해주세요.</td>
             </tr>
           </tbody>
         </table>
       </div>
-      
+
       <!-- FAQ -->
       <div class="section">
         <h2>❓ 자주 묻는 질문</h2>
-        
+
         <div class="card">
-          <h3 style="margin-top:0;">Q1. 참가자를 나중에 추가할 수 있나요?</h3>
+          <h3 style="margin-top:0;">Q1. QR을 못 찍었거나 버스를 안 탄 회원은요?</h3>
           <p>
-            <strong>A:</strong> 네, 언제든지 <strong>"참가자 선택"</strong> 버튼으로 추가 가능합니다.
+            <strong>A:</strong> "버스" 화면의 <strong>"탑승 링크 복사"</strong>로 링크를 복사해서 개별로 보내주면, QR을 찍은 것과 똑같이 들어갈 수 있어요.
           </p>
         </div>
-        
+
         <div class="card">
-          <h3 style="margin-top:0;">Q2. 동명이인이 너무 많으면?</h3>
+          <h3 style="margin-top:0;">Q2. 회원이 배번을 안 넣으면요?</h3>
           <p>
-            <strong>A:</strong> 나이, 기록, 동호회 정보 등을 참고해서 라디오 버튼으로 선택합니다. 
-            불확실하면 해당 회원에게 직접 문의하세요.
+            <strong>A:</strong> 기록 수집 대상에서 빠지니, 배번 화면에서 누가 아직 안 넣었는지 확인해서 알려주세요.
           </p>
         </div>
-        
+
         <div class="card">
-          <h3 style="margin-top:0;">Q3. 자동 스크랩이 안 됐어요</h3>
-          <p><strong>A:</strong> 시스템 담당자에게 문의하세요. 기록 소스 설정이 필요할 수 있습니다.</p>
+          <h3 style="margin-top:0;">Q3. 회원이 본인 확인을 안 하면요?</h3>
+          <p>
+            <strong>A:</strong> 카드의 <strong>⋮ 더보기 → "참가자·기록(구)"</strong> 화면에서 총무가 대신 확정해줄 수 있어요. 자주 쓸 일은 아니에요.
+          </p>
         </div>
-        
+
         <div class="card">
-          <h3 style="margin-top:0;">Q4. 단체 대회를 삭제하려면?</h3>
+          <h3 style="margin-top:0;">Q4. 버스만 타고 대회는 안 뛰는 사람은요?</h3>
+          <p><strong>A:</strong> 버스 타는 명단과 대회 참가자 명단은 서로 다른 목록이에요. 버스 명단에만 추가하면 됩니다.</p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Q5. 단체 대회를 삭제하려면?</h3>
           <p>
             <strong>A:</strong> <code>group.html</code> 대회 카드 우측 상단 <strong>⋮ 더보기</strong> → <strong>삭제</strong> 선택.<br>
             ⚠️ 대회만 삭제되고, 이미 확정된 기록은 유지됩니다.
           </p>
         </div>
       </div>
-      
+
+      <!-- 철원 베타 노트 -->
+      <div class="section">
+        <h2>🌱 철원마라톤 시범 운영</h2>
+        <div class="card card-warning">
+          이번 철원마라톤에서 이 기능을 처음 운영하며, 그 경험을 바탕으로 계속 다듬고 넓혀갈 계획입니다.
+          사용하시다가 불편한 점이나 이상한 부분이 있으면 편하게 알려주세요.
+        </div>
+      </div>
+
       <!-- 푸터 -->
       <div style="text-align:center;padding-top:24px;border-top:1px solid var(--gray-200);color:var(--gray-600);font-size:13px;">
-        <p>동마클 기록 시스템 v1.0 · 2026-04-13 작성</p>
-        <p style="margin-top:8px;">⚠️ 이 문서는 운영자 전용이며 비밀번호가 포함되어 있습니다. 외부 공유를 금지합니다.</p>
+        <p>동마클 기록 시스템 v2.0 · 2026-08-30 작성</p>
+        <p style="margin-top:8px;">⚠️ 이 문서는 총무 전용이며 비밀번호가 포함되어 있습니다. 외부 공유를 금지합니다.</p>
       </div>
     </div>
   </div>
