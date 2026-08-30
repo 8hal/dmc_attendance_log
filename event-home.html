@@ -981,6 +981,7 @@
       const distance = selectedDistance;
       if (!bib || !distance) {
         showToast("배번과 종목을 넣어 주세요.", true);
+        if (!distance) renderProfileCard(identity);
         return;
       }
       if (isSavingBib) return;
