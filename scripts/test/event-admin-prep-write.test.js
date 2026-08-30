@@ -43,9 +43,24 @@ describe("event-admin prep roster write", () => {
   });
 
   it("add-person menu is 탑승 인원 추가", () => {
-    assert.match(html, /id="guest-add-btn">탑승 인원 추가</);
-    assert.match(html, />탑승 인원 추가<\/div>/);
+    assert.match(html, /id="guest-open-btn"[^>]*>탑승 인원 추가</);
+    assert.match(html, /id="guest-sheet"/);
+    assert.match(html, /id="guest-add-btn"/);
     assert.doesNotMatch(html, />지인 추가</);
+  });
+
+  it("add-person form opens in a bottom sheet", () => {
+    const html = read("event-admin.html");
+    assert.match(html, /id="guest-open-btn"/);
+    assert.match(html, /id="guest-sheet"/);
+    assert.match(html, /class="[^"]*bottom-sheet/);
+    assert.match(html, /id="guest-sheet-close"/);
+    const openFn = extractFn(html, "openGuestSheet");
+    const closeFn = extractFn(html, "closeGuestSheet");
+    assert.match(openFn, /guest-sheet/);
+    assert.match(closeFn, /guest-sheet/);
+    const addFn = extractFn(html, "addGuest");
+    assert.match(addFn, /closeGuestSheet/);
   });
 
   it("add-person form lets ops pick 회원 or 지인", () => {

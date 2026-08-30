@@ -529,6 +529,50 @@
       color: var(--text-sub);
     }
     .hidden { display: none !important; }
+    .bottom-sheet {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+    }
+    .bottom-sheet.open { display: block; }
+    .bottom-sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+    }
+    .bottom-sheet-panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+      padding: 16px 16px 24px;
+      box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.16);
+    }
+    .bottom-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .bottom-sheet-head .title {
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .bottom-sheet-close {
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      line-height: 1;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 4px 8px;
+    }
     .poll-meta {
       font-size: 12px;
       color: #94a3b8;
@@ -723,44 +767,7 @@
             autocomplete="off"
           />
           <div class="roster-list" id="roster-list" style="margin-top:12px"></div>
-
-          <div id="guest-card" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
-            <div style="font-weight:700;font-size:14px;margin-bottom:8px;">탑승 인원 추가</div>
-            <div class="field-row">
-              <div>
-                <label class="field-label" for="guest-kind">구분</label>
-                <select id="guest-kind" class="field-select">
-                  <option value="member" selected>회원</option>
-                  <option value="guest">지인</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="guest-nickname">닉네임</label>
-                <input type="text" id="guest-nickname" class="field-input" autocomplete="off" />
-              </div>
-            </div>
-            <div class="field-row">
-              <div>
-                <label class="field-label" for="guest-real-name">실명</label>
-                <input type="text" id="guest-real-name" class="field-input" autocomplete="off" />
-              </div>
-              <div>
-                <label class="field-label" for="guest-ride-type">탑승</label>
-                <select id="guest-ride-type" class="field-select">
-                  <option value="roundtrip">왕복</option>
-                  <option value="outbound_only">가는 편만</option>
-                  <option value="return_only">오는 편만</option>
-                </select>
-              </div>
-            </div>
-            <div class="field-row">
-              <div>
-                <label class="field-label" for="guest-note">비고</label>
-                <input type="text" id="guest-note" class="field-input" autocomplete="off" />
-              </div>
-            </div>
-            <button type="button" class="btn btn-primary btn-block" id="guest-add-btn">탑승 인원 추가</button>
-          </div>
+          <button type="button" class="btn btn-primary btn-block" id="guest-open-btn" style="margin-top:14px;">탑승 인원 추가</button>
         </section>
 
         <!-- ③ 배번 -->
@@ -795,6 +802,50 @@
       </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="guest-sheet" class="bottom-sheet">
+    <div class="bottom-sheet-backdrop" id="guest-sheet-backdrop"></div>
+    <div id="guest-card" class="bottom-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="guest-sheet-title">
+      <div class="bottom-sheet-head">
+        <div class="title" id="guest-sheet-title">탑승 인원 추가</div>
+        <button type="button" class="bottom-sheet-close" id="guest-sheet-close" aria-label="닫기">×</button>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label" for="guest-kind">구분</label>
+          <select id="guest-kind" class="field-select">
+            <option value="member" selected>회원</option>
+            <option value="guest">지인</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="guest-nickname">닉네임</label>
+          <input type="text" id="guest-nickname" class="field-input" autocomplete="off" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label" for="guest-real-name">실명</label>
+          <input type="text" id="guest-real-name" class="field-input" autocomplete="off" />
+        </div>
+        <div>
+          <label class="field-label" for="guest-ride-type">탑승</label>
+          <select id="guest-ride-type" class="field-select">
+            <option value="roundtrip">왕복</option>
+            <option value="outbound_only">가는 편만</option>
+            <option value="return_only">오는 편만</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label" for="guest-note">비고</label>
+          <input type="text" id="guest-note" class="field-input" autocomplete="off" />
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="guest-add-btn">추가</button>
     </div>
   </div>
 
@@ -1008,7 +1059,6 @@
     function setWritableUi() {
       const canBoard = openLeg != null;
       document.getElementById("disabled-banner").classList.toggle("hidden", canBoard);
-      document.getElementById("guest-card").classList.remove("hidden");
       const outBtn = document.getElementById("bus-toggle-outbound");
       const retBtn = document.getElementById("bus-toggle-return");
       outBtn.textContent = openLeg === "outbound" ? "가는 끄기" : "가는 켜기";
@@ -1801,6 +1851,20 @@
       }
     }
 
+    function closeGuestSheet() {
+      const sheet = document.getElementById("guest-sheet");
+      sheet.classList.remove("open");
+      document.body.style.overflow = "";
+    }
+
+    function openGuestSheet() {
+      const sheet = document.getElementById("guest-sheet");
+      sheet.classList.add("open");
+      document.body.style.overflow = "hidden";
+      const nick = document.getElementById("guest-nickname");
+      if (nick) nick.focus();
+    }
+
     async function addGuest() {
       if (isProcessing) return;
       const pw = requirePw();
@@ -1834,6 +1898,7 @@
         document.getElementById("guest-nickname").value = "";
         document.getElementById("guest-real-name").value = "";
         document.getElementById("guest-note").value = "";
+        closeGuestSheet();
         await loadBusStatus({ silent: true });
       } catch (err) {
         console.error("addGuest:", err);
@@ -2106,6 +2171,14 @@
     document.getElementById("bus-toggle-return").addEventListener("click", () => {
       if (openLeg === "return") clearOpenLeg();
       else setOpenLeg("return");
+    });
+    document.getElementById("guest-open-btn").addEventListener("click", openGuestSheet);
+    document.getElementById("guest-sheet-close").addEventListener("click", closeGuestSheet);
+    document.getElementById("guest-sheet-backdrop").addEventListener("click", closeGuestSheet);
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const sheet = document.getElementById("guest-sheet");
+      if (sheet && sheet.classList.contains("open")) closeGuestSheet();
     });
     document.getElementById("guest-add-btn").addEventListener("click", addGuest);
     document.getElementById("copy-link-btn").addEventListener("click", () =>
