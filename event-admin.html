@@ -143,7 +143,10 @@
     .ops-panel { display: none; }
     .ops-panel.active { display: block; }
     @media (max-width: 720px) {
-      .ops-layout { flex-direction: column; }
+      .ops-layout {
+        flex-direction: column;
+        align-items: stretch;
+      }
       .ops-sidebar {
         width: 100%;
         flex-direction: row;
