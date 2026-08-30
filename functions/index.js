@@ -3617,7 +3617,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
     }
 
-    // 회원 공개 명단·결과 (실명·배번 제외). detail 대체 조회용.
+    // 회원 공개 명단·결과 (실명 제외, 배번·recordStatus 포함). detail 대체 조회용.
     if (action === "group-events" && req.method === "GET" && req.query.subAction === "public-roster") {
       const eventId = String(req.query.eventId || "").trim();
       if (!eventId) {
@@ -3646,16 +3646,28 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           confirmedByKey.set(key, d);
         });
 
+        let scrapeResults = [];
+        const jobId = String(event.groupScrapeJobId || "").trim();
+        if (jobId) {
+          const jobDoc = await db.collection("scrape_jobs").doc(jobId).get();
+          if (jobDoc.exists) {
+            const job = jobDoc.data() || {};
+            scrapeResults = Array.isArray(job.results) ? job.results : [];
+          }
+        }
+
         let rows = buildPublicRosterRows(
           event.participants || [],
           confirmedByKey,
-          normalizeRaceDistance
+          normalizeRaceDistance,
+          scrapeResults
         );
         const totalCount = rows.length;
-        const confirmedCount = rows.filter((r) => r.hasResult).length;
+        const confirmedCount = rows.filter((r) => r.recordStatus === "confirmed").length;
         const distanceSet = new Set();
         rows.forEach((r) => {
-          if (r.distance) distanceSet.add(r.distance);
+          const d = normalizeRaceDistance(r.distance);
+          if (d && d !== "unknown") distanceSet.add(d);
         });
 
         rows = filterPublicRosterRows(rows, {
