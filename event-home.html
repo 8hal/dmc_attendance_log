@@ -194,14 +194,16 @@
         </div>
         <div id="profileManualForm" class="hidden">
           <label class="profile-label" for="profileTime">완주 시각</label>
-          <input id="profileTime" class="profile-input" placeholder="1:42:00" autocomplete="off" />
+          <div class="profile-time-row">
+            <input id="profileTime" class="profile-input" placeholder="1:42:00" autocomplete="off" />
+            <label class="pb-check hidden" id="profileManualPbWrap">
+              <input type="checkbox" id="profileManualPb" /> 이번이 PB예요
+            </label>
+          </div>
           <div class="profile-choice-row">
             <button type="button" class="today-secondary" id="profileDnsBtn">DNS</button>
             <button type="button" class="today-secondary" id="profileDnfBtn">DNF</button>
           </div>
-          <label class="pb-check hidden" id="profileManualPbWrap">
-            <input type="checkbox" id="profileManualPb" /> 이번이 PB예요
-          </label>
           <button type="button" class="today-cta" id="profileManualSave">저장</button>
         </div>
         <div class="profile-link-row">
