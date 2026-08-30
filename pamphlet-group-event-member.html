@@ -177,6 +177,21 @@
     .notice:last-child { margin-bottom: 0; }
     .notice-icon { font-size: 20px; flex-shrink: 0; }
     .notice.blue { background: #EFF6FF; border-color: #BFDBFE; color: #1E3A8A; }
+    .notice-links { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .notice-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid #BFDBFE;
+      border-radius: 999px;
+      color: #2563EB;
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .notice-link:hover { background: #DBEAFE; }
 
     /* Closing */
     .closing {
@@ -298,8 +313,12 @@
     <div class="notice blue">
       <span class="notice-icon">💡</span>
       <div>
-        이 페이지는 특정 대회로 들어가는 링크가 아니에요. 단체 대회로 이동하는 <strong>버스 문(또는 좌석)에 붙어있는 QR 코드</strong>를 폰 카메라로 찍으면 시작됩니다.<br>
-        버스를 안 타거나 QR을 놓쳤을 때, 배번을 나중에 따로 넣고 싶으실 때는 총무님이 알려주시는 링크로 들어가시면 돼요.
+        <strong>버스 탑승 시 문(또는 좌석)에 붙어있는 QR 코드</strong>를 폰 카메라로 찍으면 시작됩니다.<br>
+        QR을 놓쳤거나 배번을 나중에 따로 넣고 싶으실 때는 아래 링크로 들어가시면 돼요.
+        <div class="notice-links">
+          <a class="notice-link" href="event-home.html?eventId=evt_2026-09-05_23_dmz">🏃 철원 회원 페이지</a>
+          <a class="notice-link" href="event-admin.html?eventId=evt_2026-09-05_23_dmz">🛠 총무 페이지</a>
+        </div>
       </div>
     </div>
     <div class="notice">
