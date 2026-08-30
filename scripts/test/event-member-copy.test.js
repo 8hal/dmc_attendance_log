@@ -25,6 +25,14 @@ describe("member-facing copy lock", () => {
       assert.doesNotMatch(src, /명단·결과/, rel + " must not contain 명단·결과");
     }
   });
+
+  it("wait-state profile actions name bib vs record", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../../event-home.html"), "utf8");
+    assert.match(html, /id="profileEditBtn">배번 수정</);
+    assert.match(html, /id="profileManualBtn"[^>]*>기록 직접 입력</);
+    assert.doesNotMatch(html, /id="profileEditBtn">수정</);
+    assert.doesNotMatch(html, /id="profileManualBtn"[^>]*>직접 입력</);
+  });
 });
 
 describe("memberEventTitle", () => {
