@@ -772,7 +772,17 @@
 
     async function refreshHomeState(identity) {
       const gen = homeGeneration;
+      // openLeg is SSOT on the server — reload before painting the bus card so
+      // "오는 켜기" shows 탑승하기 without a full page reload.
+      try {
+        await reloadEvent();
+      } catch (err) {
+        console.error("reloadEvent error:", err);
+      }
+      if (homeGeneration !== gen) return;
       loadBusRow(identity);
+      // Paint bus before confirm API so #busCard never sticks on placeholder 버스/버스.
+      renderBusCard();
       await loadConfirmState(identity);
       syncConfirmPoll();
       if (homeGeneration !== gen) return;
@@ -1230,7 +1240,7 @@
 
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState !== "visible") return;
-      if (!shouldPollConfirm()) return;
+      if (homeEl.classList.contains("hidden") || !activeIdentity) return;
       const gen = homeGeneration;
       refreshHomeState(activeIdentity).then(function () {
         if (homeGeneration !== gen) return;
