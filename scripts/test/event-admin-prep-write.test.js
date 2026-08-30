@@ -129,6 +129,26 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(html, /board-toggle/);
   });
 
+  it("add-person button sits at the end of roster-list without an inner scroll pane", () => {
+    const html = read("event-admin.html");
+    const bus = html.slice(html.indexOf('id="sec-bus"'), html.indexOf('id="sec-bib"'));
+    const listIdx = bus.indexOf('id="roster-list"');
+    const btnIdx = bus.indexOf('id="guest-open-btn"');
+    assert.ok(listIdx >= 0 && btnIdx > listIdx, "guest-open-btn follows roster-list markup");
+    const listOpen = bus.indexOf(">", listIdx);
+    const listClose = bus.indexOf("</div>", listOpen);
+    assert.ok(btnIdx > listOpen && btnIdx < listClose, "guest-open-btn is inside #roster-list");
+    assert.doesNotMatch(html, /\.roster-list\s*\{[^}]*max-height\s*:/);
+    assert.doesNotMatch(html, /\.roster-list\s*\{[^}]*overflow-y\s*:\s*auto/);
+    const render = extractFn(html, "renderRoster");
+    assert.match(render, /detachGuestOpenBtn/);
+    assert.match(render, /appendGuestOpenBtn/);
+    assert.match(html, /function detachGuestOpenBtn/);
+    assert.match(html, /function appendGuestOpenBtn/);
+    assert.match(extractFn(html, "appendGuestOpenBtn"), /guest-open-btn/);
+    assert.match(extractFn(html, "appendGuestOpenBtn"), /appendChild/);
+  });
+
   it("event-admin settings never posts enabled true without openLeg", () => {
     const html = read("event-admin.html");
     assert.doesNotMatch(html, /function enableBoarding/);

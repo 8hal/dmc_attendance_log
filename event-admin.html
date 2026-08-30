@@ -324,7 +324,7 @@
     .summary-count .need { color: var(--text-sub); font-weight: 600; font-size: 15px; }
     .summary-hint { font-size: 13px; color: var(--amber); font-weight: 600; }
 
-    .roster-list { max-height: 50vh; overflow-y: auto; }
+    .roster-list { margin-top: 12px; }
     .roster-row {
       border: 2px solid var(--border);
       border-radius: 10px;
@@ -798,8 +798,9 @@
             placeholder="닉네임·실명·비고 검색…"
             autocomplete="off"
           />
-          <div class="roster-list" id="roster-list" style="margin-top:12px"></div>
-          <button type="button" class="btn btn-primary btn-block" id="guest-open-btn" style="margin-top:14px;">탑승 인원 추가</button>
+          <div class="roster-list" id="roster-list">
+            <button type="button" class="btn btn-primary btn-block" id="guest-open-btn" style="margin-top:14px;">탑승 인원 추가</button>
+          </div>
         </section>
 
         <!-- ③ 배번 -->
@@ -1161,6 +1162,17 @@
         pending > 0 ? `미탑승 ${pending}명` : required > 0 ? "전원 탑승" : "";
     }
 
+    function detachGuestOpenBtn() {
+      const btn = document.getElementById("guest-open-btn");
+      if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+      return btn;
+    }
+
+    function appendGuestOpenBtn(btn) {
+      const el = btn || document.getElementById("guest-open-btn");
+      if (el) rosterList.appendChild(el);
+    }
+
     function renderRoster(filterText, opts) {
       const skipIfNoteFocused = opts && opts.skipIfNoteFocused;
       if (skipIfNoteFocused && isNoteInputFocused()) return;
@@ -1172,6 +1184,7 @@
       const focusedSelStart = focusedId ? document.activeElement.selectionStart : null;
       const focusedSelEnd = focusedId ? document.activeElement.selectionEnd : null;
 
+      const guestBtn = detachGuestOpenBtn();
       rosterList.innerHTML = "";
       const q = String(filterText || "").trim().toLowerCase();
 
@@ -1198,6 +1211,7 @@
       if (rows.length === 0) {
         rosterList.innerHTML =
           '<div style="text-align:center;padding:20px;color:var(--text-sub);">명단이 없습니다</div>';
+        appendGuestOpenBtn(guestBtn);
         return;
       }
 
@@ -1291,6 +1305,8 @@
         `;
         rosterList.appendChild(el);
       });
+
+      appendGuestOpenBtn(guestBtn);
 
       if (focusedId) {
         const inputs = rosterList.querySelectorAll(".note-input");
