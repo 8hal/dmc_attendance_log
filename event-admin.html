@@ -738,9 +738,7 @@
         <ol id="ops-checklist" class="ops-checklist">
           <li data-check="source">기록 소스 저장</li>
           <li data-check="outbound-on">가는 편 탑승 켜기</li>
-          <li data-check="outbound-off">가는 편 끄기</li>
           <li data-check="return-on">오는 편 켜기</li>
-          <li data-check="return-off">오는 편 끄기</li>
           <li data-check="scrape-start">스크랩 시작</li>
           <li data-check="scrape-stop">스크랩 종료</li>
           <li data-check="missing">안 뜬 기록</li>
@@ -1127,9 +1125,7 @@
       const marks = {
         source: sourceDone,
         "outbound-on": openLeg === "outbound",
-        "outbound-off": openLeg !== "outbound",
         "return-on": openLeg === "return",
-        "return-off": openLeg !== "return",
         "scrape-start": scrapeStarted,
         "scrape-stop": scrapeStopped,
         missing: missingDone

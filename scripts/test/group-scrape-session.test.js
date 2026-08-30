@@ -335,7 +335,7 @@ describe("event-admin scrape session UI", () => {
     assert.match(html, /id="scrape-btn"/);
   });
 
-  it("checklist item 7 scrape-stop uses until, not stoppedAt", () => {
+  it("checklist scrape-stop uses until, not stoppedAt", () => {
     assert.match(html, /data-check="scrape-stop"/);
     const fn = extractFn(html, "updateChecklist");
     assert.match(fn, /untilMs\s*<=\s*Date\.now\(\)|until.*Date\.now/);

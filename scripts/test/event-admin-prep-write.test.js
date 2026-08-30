@@ -191,8 +191,18 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(html, /class="owner-writable"/);
   });
 
-  it("shows day checklist", () => {
-    assert.match(read("event-admin.html"), /id="ops-checklist"/);
+  it("shows day checklist without leg-off steps", () => {
+    const page = read("event-admin.html");
+    assert.match(page, /id="ops-checklist"/);
+    assert.match(page, /data-check="outbound-on"/);
+    assert.match(page, /data-check="return-on"/);
+    assert.doesNotMatch(page, /data-check="outbound-off"/);
+    assert.doesNotMatch(page, /data-check="return-off"/);
+    assert.doesNotMatch(page, /가는 편 끄기/);
+    assert.doesNotMatch(page, /오는 편 끄기/);
+    const fn = extractFn(page, "updateChecklist");
+    assert.doesNotMatch(fn, /"outbound-off"/);
+    assert.doesNotMatch(fn, /"return-off"/);
   });
 
   it("disabled banner says roster is still editable", () => {
