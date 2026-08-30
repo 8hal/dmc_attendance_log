@@ -4145,6 +4145,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
               eventName,
               importMeta: null,
               summary: emptySummary,
+              placeClub: "",
+              placeVenue: "",
             });
           }
 
@@ -4184,6 +4186,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             eventName,
             importMeta: bb.importMeta || null,
             summary,
+            placeClub: bb.placeClub != null ? String(bb.placeClub) : "",
+            placeVenue: bb.placeVenue != null ? String(bb.placeVenue) : "",
           });
         } catch (error) {
           console.error("bus-boarding status error:", error);
@@ -4205,6 +4209,10 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         const parsed = busBoardingLib.parseSettingsOpenLeg(body);
         if (!parsed.ok) {
           return res.status(400).json({ ok: false, error: parsed.error });
+        }
+        const placesParsed = busBoardingLib.parseSettingsPlaces(body);
+        if (!placesParsed.ok) {
+          return res.status(400).json({ ok: false, error: placesParsed.error });
         }
 
         const legsProvided = Array.isArray(body.legs);
@@ -4252,8 +4260,17 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
               }
             }
             bb = busBoardingLib.applyOpenLeg(bb, parsed.openLeg);
+            if (placesParsed.any) {
+              bb = busBoardingLib.applyPlaceLabels(bb, placesParsed.places);
+            }
             tx.update(ref, { busBoarding: bb });
-            return { enabled: bb.enabled, openLeg: bb.openLeg, legs: bb.legs };
+            return {
+              enabled: bb.enabled,
+              openLeg: bb.openLeg,
+              legs: bb.legs,
+              placeClub: bb.placeClub != null ? String(bb.placeClub) : "",
+              placeVenue: bb.placeVenue != null ? String(bb.placeVenue) : "",
+            };
           });
         } catch (error) {
           console.error("bus-boarding settings error:", error);
@@ -4269,6 +4286,8 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           enabled: result.enabled,
           openLeg: result.openLeg,
           legs: result.legs,
+          placeClub: result.placeClub,
+          placeVenue: result.placeVenue,
         });
       }
 

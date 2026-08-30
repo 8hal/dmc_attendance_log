@@ -658,6 +658,25 @@
       font-size: 13px;
     }
     .source-row input { flex: 1; min-width: 140px; }
+    .place-labels-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-end;
+      margin: 10px 0 4px;
+    }
+    .place-labels-row .place-field {
+      flex: 1;
+      min-width: 110px;
+    }
+    .place-labels-row .field-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
 
     @media (max-width: 600px) {
       .field-row { grid-template-columns: 1fr; }
@@ -741,6 +760,19 @@
               <button type="button" class="btn btn-sm btn-primary" id="bus-toggle-return">오는 켜기</button>
             </div>
           </div>
+
+          <div class="place-labels-row">
+            <div class="place-field">
+              <label class="field-label" for="place-club-input">클럽(출발)</label>
+              <input type="text" class="field-input" id="place-club-input" placeholder="동탄" maxlength="40" autocomplete="off" />
+            </div>
+            <div class="place-field">
+              <label class="field-label" for="place-venue-input">대회(도착)</label>
+              <input type="text" class="field-input" id="place-venue-input" placeholder="철원" maxlength="40" autocomplete="off" />
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="save-place-labels-btn">장소 저장</button>
+          </div>
+          <p class="hint">회원 홈 버스 카드에 「동탄 → 철원」처럼 짧게 표시됩니다. 비우면 대회명·위치로 대체합니다.</p>
 
           <label class="field-label" for="csv-input">버스 명단 CSV</label>
           <input type="file" id="csv-input" accept=".csv,text/csv,text/plain" />
@@ -1590,6 +1622,14 @@
         outbound: { required: 0, boarded: 0 },
         return: { required: 0, boarded: 0 }
       };
+      const clubEl = document.getElementById("place-club-input");
+      const venueEl = document.getElementById("place-venue-input");
+      if (clubEl && document.activeElement !== clubEl) {
+        clubEl.value = data.placeClub != null ? String(data.placeClub) : "";
+      }
+      if (venueEl && document.activeElement !== venueEl) {
+        venueEl.value = data.placeVenue != null ? String(data.placeVenue) : "";
+      }
       updateEventMeta();
       updateLinks();
     }
@@ -1821,6 +1861,36 @@
         showToast(err.message || "비활성화 실패", true);
       } finally {
         isProcessing = false;
+      }
+    }
+
+    async function savePlaceLabels() {
+      if (isProcessing) return;
+      const pw = requirePw();
+      if (!pw || !eventId) return;
+      const clubEl = document.getElementById("place-club-input");
+      const venueEl = document.getElementById("place-venue-input");
+      const btn = document.getElementById("save-place-labels-btn");
+      isProcessing = true;
+      if (btn) btn.disabled = true;
+      try {
+        const { data } = await postBus({
+          subAction: "settings",
+          pw,
+          eventId,
+          openLeg: openLeg,
+          placeClub: clubEl ? clubEl.value : "",
+          placeVenue: venueEl ? venueEl.value : ""
+        });
+        if (!data.ok) throw new Error(data.error || "장소 저장 실패");
+        showToast("버스 장소를 저장했습니다");
+        await loadBusStatus({ silent: true });
+      } catch (err) {
+        console.error("savePlaceLabels:", err);
+        showToast(err.message || "장소 저장 실패", true);
+      } finally {
+        isProcessing = false;
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -2233,6 +2303,7 @@
       if (openLeg === "return") clearOpenLeg();
       else setOpenLeg("return");
     });
+    document.getElementById("save-place-labels-btn").addEventListener("click", savePlaceLabels);
     document.getElementById("guest-open-btn").addEventListener("click", openGuestSheet);
     document.getElementById("guest-sheet-close").addEventListener("click", closeGuestSheet);
     document.getElementById("guest-sheet-backdrop").addEventListener("click", closeGuestSheet);

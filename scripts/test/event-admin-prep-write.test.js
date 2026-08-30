@@ -198,6 +198,20 @@ describe("event-admin prep roster write", () => {
   it("disabled banner says roster is still editable", () => {
     assert.match(html, /명단은 수정할 수 있습니다/);
   });
+
+  it("prep has club/venue place inputs and save", () => {
+    assert.match(html, /id="place-club-input"/);
+    assert.match(html, /id="place-venue-input"/);
+    assert.match(html, /id="save-place-labels-btn"/);
+  });
+
+  it("savePlaceLabels posts settings with placeClub and placeVenue", () => {
+    const fn = extractFn(html, "savePlaceLabels");
+    assert.match(fn, /subAction:\s*"settings"/);
+    assert.match(fn, /placeClub:/);
+    assert.match(fn, /placeVenue:/);
+    assert.match(fn, /openLeg:/);
+  });
 });
 
 describe("bus-boarding API gates", () => {
@@ -216,6 +230,13 @@ describe("bus-boarding API gates", () => {
     const block = subActionBlock(src, "settings");
     assert.match(block, /parseSettingsOpenLeg/);
     assert.doesNotMatch(block, /enabled \(boolean\) required/);
+  });
+
+  it("settings applies optional placeClub/placeVenue", () => {
+    const src = read("functions/index.js");
+    const block = subActionBlock(src, "settings");
+    assert.match(block, /parseSettingsPlaces/);
+    assert.match(block, /applyPlaceLabels/);
   });
 
   it("self-board uses assertLegOpen not only assertEnabled", () => {

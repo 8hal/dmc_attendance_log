@@ -217,13 +217,14 @@
     return "#";
   }
 
-  /** Club side is always 동탄. leg: outbound|return; done → · 탑승 완료 */
+  /** placeClub defaults to 동탄. leg: outbound|return; done → · 탑승 완료 */
   function busRouteTitle(opts) {
     const leg = opts && opts.leg;
     const done = !!(opts && opts.done);
+    const placeClub = trimField(opts && opts.placeClub) || "동탄";
     const dest = trimField(opts && opts.destination) || "대회";
     const route =
-      leg === "return" ? dest + " → 동탄" : "동탄 → " + dest;
+      leg === "return" ? dest + " → " + placeClub : placeClub + " → " + dest;
     return done ? route + " · 탑승 완료" : route;
   }
 

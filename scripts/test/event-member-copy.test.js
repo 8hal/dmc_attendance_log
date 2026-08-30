@@ -8,6 +8,7 @@ const {
   memberHomeHref,
   matchesMemberQuery,
   busDestinationLabel,
+  busClubLabel,
 } = require(path.join(__dirname, "../../assets/event-member-copy.js"));
 
 const MEMBER_COPY_FILES = [
@@ -93,6 +94,17 @@ describe("matchesMemberQuery", () => {
 });
 
 describe("busDestinationLabel", () => {
+  it("prefers admin placeVenue over location and event title", () => {
+    assert.equal(
+      busDestinationLabel({
+        eventName: "제23회 철원DMZ국제평화마라톤",
+        location: "강원 철원군",
+        busBoarding: { placeVenue: "철원" },
+      }),
+      "철원"
+    );
+  });
+
   it("prefers shorter location over long event title", () => {
     assert.equal(
       busDestinationLabel({
@@ -122,6 +134,21 @@ describe("busDestinationLabel", () => {
     assert.equal(
       busDestinationLabel({ eventName: "", location: "속초" }),
       "속초"
+    );
+  });
+});
+
+describe("busClubLabel", () => {
+  it("defaults to 동탄 when unset", () => {
+    assert.equal(busClubLabel({}), "동탄");
+    assert.equal(busClubLabel({ busBoarding: {} }), "동탄");
+    assert.equal(busClubLabel({ busBoarding: { placeClub: "  " } }), "동탄");
+  });
+
+  it("uses admin placeClub when set", () => {
+    assert.equal(
+      busClubLabel({ busBoarding: { placeClub: " 판교 " } }),
+      "판교"
     );
   });
 });
