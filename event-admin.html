@@ -921,6 +921,7 @@
   <script src="assets/event-admin-panels.js"></script>
   <script src="assets/group-ops-session.js"></script>
   <script src="assets/event-bus-roster-filter.js"></script>
+  <script src="assets/event-admin-place-labels.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -935,6 +936,7 @@
       hasAdminAccess,
       clearGroupOpsSession,
     } = GroupOpsSession;
+    const { shouldApplyPlaceFromServer } = EventAdminPlaceLabels;
     const POLL_MS = 4000;
     const BIB_SCRAPE_SOURCES = ["smartchip", "ohmyrace", "spct"];
     const LEG_LABEL = { outbound: "가는", return: "오는" };
@@ -961,6 +963,8 @@
     let pollTimer = null;
     let isProcessing = false;
     let composing = false;
+    let placeLabelsDirty = false;
+    let placeLabelsComposing = false;
     let eventDetail = null;
     let gapRows = [];
     let confirmedCount = 0;
@@ -1624,11 +1628,21 @@
       };
       const clubEl = document.getElementById("place-club-input");
       const venueEl = document.getElementById("place-venue-input");
-      if (clubEl && document.activeElement !== clubEl) {
-        clubEl.value = data.placeClub != null ? String(data.placeClub) : "";
-      }
-      if (venueEl && document.activeElement !== venueEl) {
-        venueEl.value = data.placeVenue != null ? String(data.placeVenue) : "";
+      const placeFocused =
+        document.activeElement === clubEl || document.activeElement === venueEl;
+      if (
+        shouldApplyPlaceFromServer({
+          focused: placeFocused,
+          composing: placeLabelsComposing,
+          dirty: placeLabelsDirty
+        })
+      ) {
+        if (clubEl) {
+          clubEl.value = data.placeClub != null ? String(data.placeClub) : "";
+        }
+        if (venueEl) {
+          venueEl.value = data.placeVenue != null ? String(data.placeVenue) : "";
+        }
       }
       updateEventMeta();
       updateLinks();
@@ -1883,6 +1897,8 @@
           placeVenue: venueEl ? venueEl.value : ""
         });
         if (!data.ok) throw new Error(data.error || "장소 저장 실패");
+        placeLabelsDirty = false;
+        placeLabelsComposing = false;
         showToast("버스 장소를 저장했습니다");
         await loadBusStatus({ silent: true });
       } catch (err) {
@@ -2304,6 +2320,26 @@
       else setOpenLeg("return");
     });
     document.getElementById("save-place-labels-btn").addEventListener("click", savePlaceLabels);
+    (function bindPlaceLabelDraftGuards() {
+      const clubEl = document.getElementById("place-club-input");
+      const venueEl = document.getElementById("place-venue-input");
+      const markDirty = () => {
+        placeLabelsDirty = true;
+      };
+      const onCompositionStart = () => {
+        placeLabelsComposing = true;
+      };
+      const onCompositionEnd = () => {
+        placeLabelsComposing = false;
+        placeLabelsDirty = true;
+      };
+      [clubEl, venueEl].forEach((el) => {
+        if (!el) return;
+        el.addEventListener("input", markDirty);
+        el.addEventListener("compositionstart", onCompositionStart);
+        el.addEventListener("compositionend", onCompositionEnd);
+      });
+    })();
     document.getElementById("guest-open-btn").addEventListener("click", openGuestSheet);
     document.getElementById("guest-sheet-close").addEventListener("click", closeGuestSheet);
     document.getElementById("guest-sheet-backdrop").addEventListener("click", closeGuestSheet);
