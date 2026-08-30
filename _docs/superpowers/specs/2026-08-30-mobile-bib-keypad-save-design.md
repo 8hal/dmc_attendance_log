@@ -59,8 +59,10 @@
 - `#profileBib`에 `enterkeyhint="done"`을 넣는다. 안드로이드 **이동**이 **완료/입력** 쪽으로 바뀌는 힌트다. OS가 문구를 보장하지는 않는다.
 - `#profileBibForm`을 `<form>`으로 감싼다. `submit`에서 `preventDefault` 후 `submitUpdateBib(activeIdentity)`.
 - 칩·저장 버튼은 `type="button"`을 유지해 form submit을 가로채지 않게 한다.
-- `#profileBib`에서 `Enter`도 같은 저장 경로로 보낸다. IME `isComposing`이면 무시한다 (한글 IME 패턴).
+- 키패드 확인과 `Enter`는 **form `submit` 한 경로**만 쓴다. `#profileBib`에 별도 Enter 리스너를 또 두면 `submitUpdateBib`가 두 번 호출된다 (`isSavingBib`는 성공 경로만 막는다).
+- form `submit`이 IME `isComposing`이면 무시한다 (한글 IME 패턴).
 - `inputmode="numeric"`은 유지한다. `type="number"`로 바꾸지 않는다 (스피너·빈 값 이슈).
+- `enterkeyhint="done"`은 힌트다. 일부 안드로이드는 여전히 **이동**으로 보일 수 있다. 문구 변경은 성공 기준이 아니고, 그 키가 form submit을 일으키면 된다.
 
 ### 저장 조건
 
@@ -96,8 +98,9 @@
 
 ## 검증
 
-- 배번+종목 있는 상태에서 `#profileBib` `Enter` → `submitUpdateBib`가 호출된다.
-- 종목 없이 `Enter` → 저장 호출 없음, 기존 토스트.
+- 배번+종목 있는 상태에서 `#profileBib` `Enter` → `submitUpdateBib`가 **한 번** 호출된다.
+- 배번 있고 종목 없이 `Enter` → `update-bib` 호출 없음, 기존 토스트, `#profileBib` 블러.
+- 배번 없고 종목만 있는 상태에서 `Enter` → 저장 호출 없음, 기존 토스트.
 - `inputmode="numeric"`, `enterkeyhint="done"`이 마크업에 있다.
 - form `submit`이 페이지를 리로드하지 않는다.
 - `#profileBibSave` 클릭 저장은 유지된다.
