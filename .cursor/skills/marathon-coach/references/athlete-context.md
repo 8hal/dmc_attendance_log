@@ -176,6 +176,22 @@ Use this as the default post-double-session refuel template unless the athlete r
 | 2026-08-23 (Sun) | D-13 full rest |
 | 2026-08-24–09-04 | Cheorwon taper block — see coaching plan |
 
+## Cheorwon race week (2026-08-31 → 2026-09-06), confirmed 2026-08-30
+
+D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30; enforce strictly per the 8/29 recovery-interference lesson above — do not add an interval/tempo even if legs feel fresh).
+
+| Day | D-day | Session | Notes |
+|-----|-------|---------|-------|
+| Mon 8/31 | D-5 | E 8–10 km, HR <120 | No leg gym; upper/core only if any |
+| Tue 9/1 | D-4 | Swim 07:00 + E 6–8 km | Easy AM run before swim, per standing pattern |
+| Wed 9/2 | D-3 | E 8–10 km + 4–6×100 m strides | Skip full 12 km MLR this week — bank freshness, not fatigue |
+| Thu 9/3 | D-2 | Swim 07:00 + shakeout 4–6 km w/ a few 100–200 m @ ~MP (4:22–4:28) | Prime legs only, not a workout |
+| Fri 9/4 | D-1 | Rest | Carb-up, hydrate, prep race kit/gels, early sleep |
+| **Sat 9/5** | **D-0** | **철원 DMZ 마라톤, target 3:0x (~4:22–4:28/km)** | Reassess at 25 km & 30 km; do not chase sub-3:05 if HR/TE drifts early; check race-morning weather |
+| Sun 9/6 | D+1 | Rest or very easy ≤20–30 min, HR <115 (skip if DOMS significant) | First day of 3–7 day post-race recovery window before 9/7–9/13 build resumption |
+
+**Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" B-race-week target above.
+
 ## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
 
 Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA = general aerobic; E = easy; T = threshold/tempo.
