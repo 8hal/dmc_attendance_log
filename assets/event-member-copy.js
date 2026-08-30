@@ -47,5 +47,25 @@
     return nick.includes(q) || real.includes(q);
   }
 
-  return { memberEventTitle, memberDistanceLabel, memberHomeHref, matchesMemberQuery };
+  /** Short destination for bus card titles: prefer location when clearer. */
+  function busDestinationLabel(event) {
+    const title = memberEventTitle(
+      (event && (event.eventName || event.primaryName)) || ""
+    );
+    const loc = event && event.location != null
+      ? String(event.location).trim()
+      : "";
+    if (loc && (!title || title === "대회" || loc.length < title.length)) {
+      return loc;
+    }
+    return title || "대회";
+  }
+
+  return {
+    memberEventTitle,
+    memberDistanceLabel,
+    memberHomeHref,
+    matchesMemberQuery,
+    busDestinationLabel,
+  };
 });

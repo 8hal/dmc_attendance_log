@@ -631,6 +631,7 @@
         openLeg: openLeg,
         busRow: busRow,
       });
+      const dest = EventMemberCopy.busDestinationLabel(cachedEvent || {});
 
       busCard.className = "today-card bus-card";
       busBoardBtn.classList.add("hidden");
@@ -640,24 +641,39 @@
         busCard.classList.add("is-done");
       }
 
-      const legLabel = card.leg === "return" ? "오는 버스" : "가는 버스";
       busKicker.textContent = "버스";
       if (card.state === "ready") {
-        busTitle.textContent = legLabel;
+        busTitle.textContent = EventHomeAction.busRouteTitle({
+          leg: card.leg,
+          destination: dest,
+          done: false,
+        });
         busPrompt.textContent = card.prompt || "";
         busBoardBtn.textContent = card.ctaLabel || "탑승하기";
         busBoardBtn.classList.remove("hidden");
       } else if (card.state === "outbound_done") {
-        busTitle.textContent = "가는 버스 탑승 완료";
+        busTitle.textContent = EventHomeAction.busRouteTitle({
+          leg: "outbound",
+          destination: dest,
+          done: true,
+        });
         busPrompt.textContent = "";
       } else if (card.state === "return_done") {
-        busTitle.textContent = "오는 버스 탑승 완료";
+        busTitle.textContent = EventHomeAction.busRouteTitle({
+          leg: "return",
+          destination: dest,
+          done: true,
+        });
         busPrompt.textContent = "";
       } else if (card.state === "missing") {
         busTitle.textContent = "버스";
         busPrompt.textContent = card.prompt || "";
       } else {
-        busTitle.textContent = card.leg === "return" ? "오는 버스" : "가는 버스";
+        busTitle.textContent = EventHomeAction.busRouteTitle({
+          leg: card.leg,
+          destination: dest,
+          done: false,
+        });
         busPrompt.textContent = card.prompt || "";
       }
     }
@@ -759,8 +775,12 @@
     }
 
     function showBoardDoneOverlay(leg) {
-      boardDoneText.textContent =
-        leg === "return" ? "오는 버스 탑승 완료" : "가는 버스 탑승 완료";
+      const dest = EventMemberCopy.busDestinationLabel(cachedEvent || {});
+      boardDoneText.textContent = EventHomeAction.busRouteTitle({
+        leg: leg,
+        destination: dest,
+        done: true,
+      });
       boardDoneOverlay.classList.remove("hidden");
       if (overlayTimer) clearTimeout(overlayTimer);
       overlayTimer = setTimeout(function () {

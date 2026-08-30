@@ -217,11 +217,22 @@
     return "#";
   }
 
+  /** Club side is always 동탄. leg: outbound|return; done → · 탑승 완료 */
+  function busRouteTitle(opts) {
+    const leg = opts && opts.leg;
+    const done = !!(opts && opts.done);
+    const dest = trimField(opts && opts.destination) || "대회";
+    const route =
+      leg === "return" ? dest + " → 동탄" : "동탄 → " + dest;
+    return done ? route + " · 탑승 완료" : route;
+  }
+
   return {
     resolveProfileCard,
     resolveBusCard,
     pickNicknames,
     PROFILE_DISTANCES,
     pageHref,
+    busRouteTitle,
   };
 });

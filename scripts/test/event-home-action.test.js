@@ -1,11 +1,13 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
+const fs = require("fs");
 const {
   resolveProfileCard,
   resolveBusCard,
   PROFILE_DISTANCES,
   pickNicknames,
+  busRouteTitle,
 } = require(path.join(__dirname, "../../assets/event-home-action.js"));
 
 describe("event-home-action", () => {
@@ -252,5 +254,60 @@ describe("event-home-action", () => {
     });
     assert.ok(nicks.includes("회원A"));
     assert.ok(nicks.includes("지인B"));
+  });
+});
+
+describe("busRouteTitle", () => {
+  it("outbound ready is 동탄 → dest", () => {
+    assert.equal(
+      busRouteTitle({ leg: "outbound", destination: "철원", done: false }),
+      "동탄 → 철원"
+    );
+  });
+
+  it("return ready is dest → 동탄", () => {
+    assert.equal(
+      busRouteTitle({ leg: "return", destination: "철원", done: false }),
+      "철원 → 동탄"
+    );
+  });
+
+  it("outbound_done appends · 탑승 완료", () => {
+    assert.equal(
+      busRouteTitle({ leg: "outbound", destination: "철원", done: true }),
+      "동탄 → 철원 · 탑승 완료"
+    );
+  });
+
+  it("return_done appends · 탑승 완료", () => {
+    assert.equal(
+      busRouteTitle({ leg: "return", destination: "철원", done: true }),
+      "철원 → 동탄 · 탑승 완료"
+    );
+  });
+
+  it("empty destination falls back to 대회", () => {
+    assert.equal(
+      busRouteTitle({ leg: "outbound", destination: "", done: false }),
+      "동탄 → 대회"
+    );
+    assert.equal(
+      busRouteTitle({ leg: "return", destination: null, done: true }),
+      "대회 → 동탄 · 탑승 완료"
+    );
+  });
+});
+
+describe("event-home bus card titles", () => {
+  it("renderBusCard uses busRouteTitle instead of 가는/오는 버스", () => {
+    const html = fs.readFileSync(
+      path.join(__dirname, "../../event-home.html"),
+      "utf8"
+    );
+    assert.match(html, /EventHomeAction\.busRouteTitle/);
+    assert.doesNotMatch(html, /가는 버스"/);
+    assert.doesNotMatch(html, /오는 버스"/);
+    assert.doesNotMatch(html, /가는 버스 탑승 완료/);
+    assert.doesNotMatch(html, /오는 버스 탑승 완료/);
   });
 });

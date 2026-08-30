@@ -7,6 +7,7 @@ const {
   memberDistanceLabel,
   memberHomeHref,
   matchesMemberQuery,
+  busDestinationLabel,
 } = require(path.join(__dirname, "../../assets/event-member-copy.js"));
 
 const MEMBER_COPY_FILES = [
@@ -88,5 +89,39 @@ describe("matchesMemberQuery", () => {
     assert.equal(matchesMemberQuery(row, "태양"), true);
     assert.equal(matchesMemberQuery(row, "하우스"), false);
     assert.equal(matchesMemberQuery(row, ""), true);
+  });
+});
+
+describe("busDestinationLabel", () => {
+  it("prefers shorter location over long event title", () => {
+    assert.equal(
+      busDestinationLabel({
+        eventName: "2026 철원 DMZ 국제평화마라톤",
+        location: "철원",
+      }),
+      "철원"
+    );
+  });
+
+  it("uses short event title when location is empty", () => {
+    assert.equal(
+      busDestinationLabel({
+        eventName: "철원 기술검증 (버스=2026명단 / 기록=2025 SPCT)",
+        location: "",
+      }),
+      "철원 기술검증"
+    );
+  });
+
+  it("falls back to 대회 when name and location are empty", () => {
+    assert.equal(busDestinationLabel({}), "대회");
+    assert.equal(busDestinationLabel({ eventName: "", location: "" }), "대회");
+  });
+
+  it("uses location when title is only 대회", () => {
+    assert.equal(
+      busDestinationLabel({ eventName: "", location: "속초" }),
+      "속초"
+    );
   });
 });
