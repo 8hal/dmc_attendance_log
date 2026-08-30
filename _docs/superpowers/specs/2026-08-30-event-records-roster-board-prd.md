@@ -68,19 +68,20 @@
 |---|---|---|
 | 공통 | 닉 (본인 「나」). 아래 `하프 · 배번 4821`. 배번 없으면 `하프 · 배번 미입력`. 종목 없으면 배번만 | |
 | `none` | | 흐린 「기록 수집되지 않음」. PB 없음 |
-| `scraped` | | 시각 + 아래 「미확정」. PB 없음 |
+| `scraped` 시각 있음 | | 시각 + 아래 「미확정」. PB 없음 |
+| `scraped` 시각 없음 | | 「미확정」만 (홈과 같이 배번 히트면 `scraped`. 시각이 있어야 하는 건 아님) |
 | `confirmed` 완주 | | 시각. `pbConfirmed`면 초록 「PB」 |
 | `confirmed` DNS/DNF | | `DNS` 또는 `DNF` |
 
 본인 행 파란 테두리 유지. 행에 버튼·체크 없음.
 
-**빈 화면:** 참가자 0명만 「아직 참가자가 없어요.」 칩·검색 0건은 「해당하는 참가자가 없어요.」 전원 미확정이어도 행을 둔다. 「아직 확정된 기록이 없어요」삭제.
+**빈 화면:** 참가자 0명만 「아직 참가자가 없어요.」 부제 「홈에서 기록을 확인하면…」도 삭제. 칩·검색 0건은 「해당하는 참가자가 없어요.」 전원 미확정이어도 행을 둔다. 「아직 확정된 기록이 없어요」삭제.
 
 **안내:** 「실명은 공개되지 않습니다. 수집된 기록은 홈에서 확인하기 전까지 미확정입니다.」
 
 **칩:** 참가자 종목 (기록 없어도). 순 `full` → `half` → `10K` → 나머지. `unknown` 칩 없음.
 
-**정렬 기본 `result`:** 확정 완주 시각 오름차순 → 미확정(시각 있는 것) 오름차순 → 확정 DNS/DNF → `none` → 닉. `nick` / `distance` 옵션 유지.
+**정렬 기본 `result`:** 확정 완주 시각 오름차순 → 미확정(시각 있는 것) 오름차순 → 미확정(시각 없음) → 확정 DNS/DNF → `none` → 닉. `nick` / `distance` 옵션 유지.
 
 ---
 
@@ -110,7 +111,7 @@
 ### 행 상태 (이 순서)
 
 1. 기존 `findConfirmedForParticipant`로 확정 완주 또는 DNS/DNF가 있으면 `confirmed`. PB는 저장된 `pbConfirmed`만.
-2. 아니면 참가자 `bib`가 있고 `matchResultByBib(job.results, bib, participant.distance)`가 있으면 `scraped`. 시각은 홈과 같이 net → finishTime → gun (`effectiveNetTimeForConfirm`). 이름만 같은 잡 행은 무시.
+2. 아니면 참가자 `bib`가 있고 `matchResultByBib(job.results, bib, participant.distance)`가 있으면 `scraped`. `participant.distance`는 정규화하지 말고 홈과 같이 그대로 넘긴다. 시각은 net → finishTime → gun (`effectiveNetTimeForConfirm`). 시각이 비어도 `scraped`다. 이름만 같은 잡 행은 무시.
 3. 그 외 `none`. 배번 없음 = 스크레이프 대상 아님 = 항상 `none`.
 
 확정은 스크레이프가 아니라 SSOT 조회다. 확정 뒤 배번을 지워도 확정 행은 남는다. 같은 배번이 잡에 여러 개면 홈과 같이 첫 매칭.
@@ -148,7 +149,7 @@
 |---|---|
 | `totalCount` | 닉 있는 참가 전원 (필터 전). 예전에는 확정 수와 같았음 |
 | `confirmedCount` | `recordStatus === "confirmed"` |
-| `distances` | 참가자 종목 전부 (`unknown` 제외) |
+| `distances` | 참가자 종목을 `normalizeRaceDistance`한 값 (`unknown` 제외). 칩 키가 `full`/`half`/`10K`와 맞아야 함 |
 
 쿼리 `distance`, `q`, `sortBy` 유지. 닉 검색만 (배번 검색 없음).
 
@@ -185,6 +186,7 @@
 - `scripts/test/public-roster.test.js`
 - `scripts/test/event-roster-shell.test.js`
 - `scripts/qa-event-admin.sh`
+- `_docs/knowledge/data-dictionary.md` (`public-roster` 행에 배번·`recordStatus`)
 - `_docs/superpowers/specs/2026-08-28-event-records-tab-prd.md` 상태만 「일부 대체」로 표시
 
 ---
