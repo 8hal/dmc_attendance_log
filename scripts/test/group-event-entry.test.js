@@ -43,25 +43,31 @@ describe("group event primary entry", () => {
     assert.doesNotMatch(block, /15:00/);
     assert.doesNotMatch(block, /기록 소스:/);
     assert.match(block, /참가자 추가·변경/);
-    assert.match(block, /참가자 편집/);
+    assert.match(block, /editParticipants=/);
   });
 
-  it("group-detail participant modal loads all-members (not stub 2 names)", () => {
+  it("group-detail has no stub participant modal; 참가자 편집 redirects to group.html", () => {
     const html = readHtml("group-detail.html");
     assert.doesNotMatch(html, /라우펜더만/);
     assert.doesNotMatch(html, /쌩메/);
-    assert.match(html, /id="participantModalHelp"/);
-    assert.match(html, /대회 참가자로 넣을|대회 참가자 선택|전체 회원/);
-    assert.match(html, /action=all-members/);
-    assert.match(html, /function openParticipantModal/);
-    assert.match(html, /subAction: "participants"/);
-    assert.match(html, /editParticipantsBtn[\s\S]*openParticipantModal\(\)/);
+    assert.doesNotMatch(html, /id="participantModal"/);
+    assert.doesNotMatch(html, /id="memberList"/);
+    assert.match(
+      html,
+      /editParticipantsBtn[\s\S]*group\.html\?editParticipants=\$\{encodeURIComponent\(id\)\}/
+    );
+    assert.match(html, /function goEditParticipants/);
   });
 
-  it("group.html participant modal explains full-roster replace UX", () => {
+  it("group.html participant modal explains recording-roster purpose", () => {
     const html = readHtml("group.html");
+    assert.match(html, /id="participantModalHelp"/);
+    assert.match(html, /기록을 남길 클럽 회원/);
+    assert.match(html, /새로 등록하는 폼이 아닙니다/);
     assert.match(html, /전체 회원/);
     assert.match(html, /통째로 교체/);
+    assert.match(html, /action=all-members/);
+    assert.match(html, /function renderMemberList/);
     assert.match(html, /prev\.bib/);
   });
 
