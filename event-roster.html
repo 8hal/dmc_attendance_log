@@ -120,6 +120,18 @@
       font-weight: 600;
       color: #94A3B8;
     }
+    .row-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      text-align: right;
+    }
+    .row-status {
+      font-size: 12px;
+      color: #94A3B8;
+      margin-top: 2px;
+    }
     .row-pb {
       grid-column: 1 / -1;
       font-size: 12px;
@@ -199,7 +211,7 @@
       </div>
 
       <div class="list" id="rosterList" aria-live="polite"></div>
-      <p class="privacy-note">실명·배번은 공개되지 않습니다. 홈에서 확정한 기록만 모입니다.</p>
+      <p class="privacy-note">실명은 공개되지 않습니다. 수집된 기록은 홈에서 확인하기 전까지 미확정입니다.</p>
     </div>
   </div>
 
@@ -322,11 +334,10 @@
         empty.className = "status";
         if (rosterTotalCount === 0 && !hasActiveRosterFilter()) {
           empty.innerHTML =
-            '<span class="status-title">아직 확정된 기록이 없어요.</span>' +
-            "<p>홈에서 기록을 확인하면 여기에 올라갑니다.</p>";
+            '<span class="status-title">아직 참가자가 없어요.</span>';
         } else {
           empty.innerHTML =
-            '<span class="status-title">해당하는 기록이 없어요.</span>';
+            '<span class="status-title">해당하는 참가자가 없어요.</span>';
         }
         rosterList.appendChild(empty);
         return;
@@ -342,26 +353,47 @@
           (isMe(row) ? '<span class="me-tag">나</span>' : "");
         const meta = document.createElement("div");
         meta.className = "row-meta";
-        meta.textContent = EventMemberCopy.memberDistanceLabel(row.distance);
+        meta.textContent =
+          EventMemberCopy.memberDistanceLabel(row.distance) +
+          " · 배번 " +
+          (row.bib || "미입력");
         left.appendChild(nick);
         left.appendChild(meta);
 
+        const right = document.createElement("div");
+        right.className = "row-right";
         const time = document.createElement("div");
         const dn = String(row.dnStatus || "").toUpperCase();
+        const recordStatus = String(row.recordStatus || "");
         if (dn === "DNS" || dn === "DNF") {
           time.className = "row-time pending";
           time.textContent = dn;
-        } else if (row.netTime) {
+          right.appendChild(time);
+        } else if (recordStatus === "confirmed" && row.netTime) {
           time.className = "row-time";
           time.textContent = row.netTime;
+          right.appendChild(time);
+        } else if (recordStatus === "scraped" && row.netTime) {
+          time.className = "row-time";
+          time.textContent = row.netTime;
+          const status = document.createElement("div");
+          status.className = "row-status";
+          status.textContent = "미확정";
+          right.appendChild(time);
+          right.appendChild(status);
+        } else if (recordStatus === "scraped" && !row.netTime) {
+          time.className = "row-time pending";
+          time.textContent = "미확정";
+          right.appendChild(time);
         } else {
           time.className = "row-time pending";
-          time.textContent = "-";
+          time.textContent = "기록 수집되지 않음";
+          right.appendChild(time);
         }
 
         el.appendChild(left);
-        el.appendChild(time);
-        if (row.pbConfirmed) {
+        el.appendChild(right);
+        if (recordStatus === "confirmed" && row.netTime && row.pbConfirmed) {
           const pb = document.createElement("div");
           pb.className = "row-pb";
           pb.textContent = "PB";
@@ -403,7 +435,7 @@
         document.title = title + " - 동탄 마라톤 클럽";
         eventMetaEl.textContent = data.eventDate || "";
         rosterTotalCount = data.totalCount != null ? data.totalCount : 0;
-        summaryEl.textContent = `기록 ${rosterTotalCount}명`;
+        summaryEl.textContent = `참가 ${data.totalCount}명 · 확정 ${data.confirmedCount}명`;
 
         renderChips(data.distances || []);
         renderRows(data.rows || []);
