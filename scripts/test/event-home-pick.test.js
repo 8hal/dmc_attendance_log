@@ -120,10 +120,12 @@ describe("event-home nick pick chrome", () => {
     assert.match(html, /["']board["']/);
   });
 
-  it("bib and time fields handle IME composition", () => {
+  it("bib field handles IME composition; finish time uses digit parts", () => {
     const html = read("event-home.html");
     assert.match(html, /profileBib/);
-    assert.match(html, /profileTime/);
+    assert.match(html, /profileTimeH/);
+    assert.match(html, /profileTimeM/);
+    assert.match(html, /profileTimeS/);
     const bind = extractFn(html, "bindImeInput");
     assert.match(bind, /compositionstart/);
     assert.match(bind, /compositionend/);
@@ -131,11 +133,11 @@ describe("event-home nick pick chrome", () => {
 
   it("empty manual finish toasts and does not POST", () => {
     const html = read("event-home.html");
-    const save = html.match(/function onManualSave\([\s\S]{0,800}/);
+    const save = html.match(/function onManualSave\([\s\S]{0,1200}/);
     assert.ok(save, "onManualSave");
     assert.match(save[0], /showToast/);
     assert.match(save[0], /return/);
-    assert.match(save[0], /netTime|profileTime/);
+    assert.match(save[0], /EventFinishTime\.composeNetTime|readManualNetTime/);
   });
 
   it("showPickView hides the board overlay", () => {
@@ -151,13 +153,13 @@ describe("event-home nick pick chrome", () => {
     assert.match(fn, /!==/);
   });
 
-  it("time IME re-renders only when leaving dns or dnf", () => {
+  it("time parts re-render only when leaving dns or dnf", () => {
     const html = read("event-home.html");
-    const ime = html.match(/bindImeInput\(profileTime[\s\S]{0,450}/);
-    assert.ok(ime, "profileTime IME bind");
-    assert.match(ime[0], /dns/);
-    assert.match(ime[0], /dnf/);
-    assert.match(ime[0], /manualKind/);
+    const sync = html.match(/function syncTimeDraftFromParts\([\s\S]{0,500}/);
+    assert.ok(sync, "syncTimeDraftFromParts");
+    assert.match(sync[0], /dns/);
+    assert.match(sync[0], /dnf/);
+    assert.match(sync[0], /manualKind = "finish"/);
   });
 
   it("pending defaults PB off only when entering pending", () => {

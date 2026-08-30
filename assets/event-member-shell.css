@@ -363,10 +363,29 @@
   margin-bottom: 12px;
 }
 
-.profile-time-row .profile-input {
+.profile-time-parts {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.profile-time-part {
+  width: 3.25rem;
+  flex: 0 0 auto;
+  text-align: center;
   margin-bottom: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.profile-time-sep {
+  flex: 0 0 auto;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dmc-color-text-secondary, #64748b);
 }
 
 .profile-time-row .pb-check {

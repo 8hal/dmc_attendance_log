@@ -193,9 +193,39 @@
           </div>
         </div>
         <div id="profileManualForm" class="hidden">
-          <label class="profile-label" for="profileTime">완주 시각</label>
+          <span class="profile-label" id="profileTimeLabel">완주 시각</span>
           <div class="profile-time-row">
-            <input id="profileTime" class="profile-input" placeholder="1:42:00" autocomplete="off" />
+            <div class="profile-time-parts" role="group" aria-labelledby="profileTimeLabel">
+              <input
+                id="profileTimeH"
+                class="profile-input profile-time-part"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="시"
+                autocomplete="off"
+                aria-label="시"
+              />
+              <span class="profile-time-sep" aria-hidden="true">:</span>
+              <input
+                id="profileTimeM"
+                class="profile-input profile-time-part"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="분"
+                autocomplete="off"
+                aria-label="분"
+              />
+              <span class="profile-time-sep" aria-hidden="true">:</span>
+              <input
+                id="profileTimeS"
+                class="profile-input profile-time-part"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="초"
+                autocomplete="off"
+                aria-label="초"
+              />
+            </div>
             <label class="pb-check hidden" id="profileManualPbWrap">
               <input type="checkbox" id="profileManualPb" /> 이번이 PB예요
             </label>
@@ -246,6 +276,7 @@
   <script src="assets/event-member-profile.js"></script>
   <script src="assets/event-home-badges.js"></script>
   <script src="assets/event-home-action.js"></script>
+  <script src="assets/event-finish-time.js"></script>
   <script src="assets/event-member-tabs.js"></script>
   <script>
     const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
@@ -289,7 +320,9 @@
     const profileYesBtn = document.getElementById("profileYesBtn");
     const profileNoBtn = document.getElementById("profileNoBtn");
     const profileManualForm = document.getElementById("profileManualForm");
-    const profileTime = document.getElementById("profileTime");
+    const profileTimeH = document.getElementById("profileTimeH");
+    const profileTimeM = document.getElementById("profileTimeM");
+    const profileTimeS = document.getElementById("profileTimeS");
     const profileDnsBtn = document.getElementById("profileDnsBtn");
     const profileDnfBtn = document.getElementById("profileDnfBtn");
     const profileManualPbWrap = document.getElementById("profileManualPbWrap");
@@ -924,7 +957,9 @@
       timeDraft = "";
       prevProfileState = "";
       profileBib.value = "";
-      profileTime.value = "";
+      profileTimeH.value = "";
+      profileTimeM.value = "";
+      profileTimeS.value = "";
       profilePb.checked = false;
       profileManualPb.checked = false;
       hideProfileSections();
@@ -1035,13 +1070,36 @@
     bindImeInput(profileBib, function (value) {
       bibDraft = value;
     });
-    bindImeInput(profileTime, function (value) {
-      timeDraft = value;
-      if (profileIntent === "manual" && value.trim() && (manualKind === "dns" || manualKind === "dnf")) {
+
+    function readManualNetTime() {
+      return EventFinishTime.composeNetTime(
+        profileTimeH.value,
+        profileTimeM.value,
+        profileTimeS.value
+      );
+    }
+
+    function syncTimeDraftFromParts() {
+      const composed = readManualNetTime();
+      timeDraft = composed.ok ? composed.netTime : "";
+      if (profileIntent === "manual" && timeDraft && (manualKind === "dns" || manualKind === "dnf")) {
         manualKind = "finish";
         renderHomeCards(activeIdentity);
       }
-    });
+    }
+
+    function bindTimePart(input, sanitize, nextInput) {
+      input.addEventListener("input", function () {
+        const cleaned = sanitize(input.value);
+        if (cleaned !== input.value) input.value = cleaned;
+        syncTimeDraftFromParts();
+        if (nextInput && cleaned.length >= 2) nextInput.focus();
+      });
+    }
+
+    bindTimePart(profileTimeH, EventFinishTime.sanitizeHourDigits, profileTimeM);
+    bindTimePart(profileTimeM, EventFinishTime.sanitizeMinSecDigits, profileTimeS);
+    bindTimePart(profileTimeS, EventFinishTime.sanitizeMinSecDigits, null);
 
     let pickComposing = false;
     pickSearch.addEventListener("compositionstart", function () {
@@ -1086,11 +1144,12 @@
       if (manualKind === "dns") extra.dnStatus = "DNS";
       else if (manualKind === "dnf") extra.dnStatus = "DNF";
       else {
-        extra.netTime = String(profileTime.value || timeDraft || "").trim();
-        if (!extra.netTime) {
-          showToast("완주 시각을 넣어 주세요.", true);
+        const composed = readManualNetTime();
+        if (!composed.ok) {
+          showToast("완주 시각을 시·분·초로 넣어 주세요.", true);
           return;
         }
+        extra.netTime = composed.netTime;
         if (profileManualPb.checked) extra.pbConfirmed = true;
       }
       submitSelfConfirm(activeIdentity, extra);
@@ -1107,10 +1166,19 @@
         pbConfirmed: profilePb.checked === true,
       });
     });
+    function clearManualTimeParts() {
+      profileTimeH.value = "";
+      profileTimeM.value = "";
+      profileTimeS.value = "";
+      timeDraft = "";
+    }
+
     profileDnsBtn.addEventListener("click", function () {
+      clearManualTimeParts();
       applyProfile({ intent: "manual", manualKind: "dns" });
     });
     profileDnfBtn.addEventListener("click", function () {
+      clearManualTimeParts();
       applyProfile({ intent: "manual", manualKind: "dnf" });
     });
     profileManualSave.addEventListener("click", onManualSave);
