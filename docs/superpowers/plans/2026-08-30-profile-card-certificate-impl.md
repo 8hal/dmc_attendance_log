@@ -16,9 +16,9 @@
 - Modify: `assets/event-home-badges.js`
 - Test: `scripts/test/event-home-badges.test.js`
 
-- [ ] RED: tests for `status`/`dnStatus` DNS, PB ignored on DNS, hero time, empty result
-- [ ] GREEN: implement `confirmDnLabel` + `confirmCertificateView`; fix `confirmDoneSummary`
-- [ ] Commit
+- [x] RED: tests for `status`/`dnStatus` DNS, PB ignored on DNS, hero time, empty result
+- [x] GREEN: implement `confirmDnLabel` + `confirmCertificateView`; fix `confirmDoneSummary`
+- [x] Commit `d2909fa0`
 
 ### Task 2: Markup + CSS Design D
 
@@ -27,7 +27,7 @@
 - Modify: `assets/event-member-shell.css`
 - Test: `scripts/test/event-home-done-record.test.js`
 
-- [ ] RED: done-record smoke expects result-cert / danger / footer
-- [ ] GREEN: wire DOM/CSS/JS
-- [ ] `npm run test:event-home`
-- [ ] Commit + push
+- [x] RED: done-record smoke expects result-cert / danger / footer
+- [x] GREEN: wire DOM/CSS/JS
+- [x] `npm run test:event-home` → 153/153 pass
+- [x] Commit `4ae0c0a2` + push
