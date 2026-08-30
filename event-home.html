@@ -544,8 +544,10 @@
           (selectedDistance === dist ? " is-selected" : "");
         btn.textContent = EventMemberCopy.memberDistanceLabel(dist);
         btn.addEventListener("click", function () {
+          const wasHidden = profileBibNumberGroup.classList.contains("hidden");
           selectedDistance = dist;
-          renderDistanceChips();
+          bibStageFocusPending = wasHidden;
+          renderProfileCard(activeIdentity);
         });
         profileDistChips.appendChild(btn);
       });
