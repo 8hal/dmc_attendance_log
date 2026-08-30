@@ -167,7 +167,18 @@
         <p class="today-desc" id="profilePrompt"></p>
         <div id="profileDisplay" class="hidden">
           <div class="profile-time hidden" id="profileTimeDisplay"></div>
-          <div class="profile-bib-large" id="profileBibLarge"></div>
+          <div class="bib-face hidden" id="profileBibFace" aria-label="배번">
+            <span class="bib-face-pin bib-face-pin-tl" aria-hidden="true"></span>
+            <span class="bib-face-pin bib-face-pin-tr" aria-hidden="true"></span>
+            <span class="bib-face-pin bib-face-pin-bl" aria-hidden="true"></span>
+            <span class="bib-face-pin bib-face-pin-br" aria-hidden="true"></span>
+            <div class="bib-face-band">
+              <span class="bib-face-dist" id="profileBibDist"></span>
+              <div class="bib-face-number" id="profileBibLarge"></div>
+            </div>
+            <p class="bib-face-event" id="profileBibEvent"></p>
+          </div>
+          <div class="profile-bib-large hidden" id="profileBibPlain"></div>
           <p class="profile-sub" id="profileSub"></p>
           <button type="button" class="profile-link-btn" id="profileEditBtn">배번 수정</button>
         </div>
@@ -261,7 +272,11 @@
     const profilePrompt = document.getElementById("profilePrompt");
     const profileDisplay = document.getElementById("profileDisplay");
     const profileTimeDisplay = document.getElementById("profileTimeDisplay");
+    const profileBibFace = document.getElementById("profileBibFace");
+    const profileBibDist = document.getElementById("profileBibDist");
     const profileBibLarge = document.getElementById("profileBibLarge");
+    const profileBibEvent = document.getElementById("profileBibEvent");
+    const profileBibPlain = document.getElementById("profileBibPlain");
     const profileSub = document.getElementById("profileSub");
     const profileEditBtn = document.getElementById("profileEditBtn");
     const profileBibForm = document.getElementById("profileBibForm");
@@ -475,6 +490,8 @@
       profilePbWrap.classList.add("hidden");
       profileManualPbWrap.classList.add("hidden");
       profileTimeDisplay.classList.add("hidden");
+      profileBibFace.classList.add("hidden");
+      profileBibPlain.classList.add("hidden");
       profileCard.className = "today-card profile-card";
     }
 
@@ -519,8 +536,15 @@
 
       if (card.state === "wait") {
         profileDisplay.classList.remove("hidden");
+        profileBibFace.classList.remove("hidden");
+        profileBibPlain.classList.add("hidden");
         profileBibLarge.textContent = bibText;
-        profileSub.textContent = distText;
+        profileBibDist.textContent = distText || "";
+        profileBibDist.classList.toggle("hidden", !distText);
+        profileBibEvent.textContent = EventMemberCopy.memberEventTitle(
+          cachedEvent && cachedEvent.name
+        );
+        profileSub.textContent = "";
         if (card.largeBib) profileEditBtn.classList.remove("hidden");
         if (card.showManual) profileManualBtn.classList.remove("hidden");
         return;
@@ -534,7 +558,9 @@
           profileTimeDisplay.textContent = timeText;
           profileTimeDisplay.classList.remove("hidden");
         }
-        profileBibLarge.textContent = bibText;
+        profileBibFace.classList.add("hidden");
+        profileBibPlain.classList.remove("hidden");
+        profileBibPlain.textContent = bibText;
         profileSub.textContent = [distText, bibText ? "배번 " + bibText : ""]
           .filter(Boolean)
           .join(" · ");
