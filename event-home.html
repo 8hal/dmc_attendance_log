@@ -168,10 +168,6 @@
         <div id="profileDisplay" class="hidden">
           <div class="profile-time hidden" id="profileTimeDisplay"></div>
           <div class="bib-face hidden" id="profileBibFace" aria-label="배번">
-            <span class="bib-face-pin bib-face-pin-tl" aria-hidden="true"></span>
-            <span class="bib-face-pin bib-face-pin-tr" aria-hidden="true"></span>
-            <span class="bib-face-pin bib-face-pin-bl" aria-hidden="true"></span>
-            <span class="bib-face-pin bib-face-pin-br" aria-hidden="true"></span>
             <div class="bib-face-band">
               <span class="bib-face-dist" id="profileBibDist"></span>
               <div class="bib-face-number" id="profileBibLarge"></div>
@@ -180,7 +176,6 @@
           </div>
           <div class="profile-bib-large hidden" id="profileBibPlain"></div>
           <p class="profile-sub" id="profileSub"></p>
-          <button type="button" class="profile-link-btn" id="profileEditBtn">배번 수정</button>
         </div>
         <div id="profileBibForm" class="hidden">
           <label class="profile-label" for="profileBib">배번</label>
@@ -209,7 +204,10 @@
           </label>
           <button type="button" class="today-cta" id="profileManualSave">저장</button>
         </div>
-        <button type="button" class="profile-link-btn hidden" id="profileManualBtn">기록 직접 입력</button>
+        <div class="profile-link-row">
+          <button type="button" class="profile-link-btn hidden" id="profileEditBtn">배번 수정</button>
+          <button type="button" class="profile-link-btn hidden" id="profileManualBtn">기록 직접 입력</button>
+        </div>
       </section>
 
       <section id="busCard" class="today-card bus-card" aria-live="polite">
@@ -542,7 +540,7 @@
         profileBibDist.textContent = distText || "";
         profileBibDist.classList.toggle("hidden", !distText);
         profileBibEvent.textContent = EventMemberCopy.memberEventTitle(
-          cachedEvent && cachedEvent.name
+          (cachedEvent && (cachedEvent.eventName || cachedEvent.primaryName)) || ""
         );
         profileSub.textContent = "";
         if (card.largeBib) profileEditBtn.classList.remove("hidden");

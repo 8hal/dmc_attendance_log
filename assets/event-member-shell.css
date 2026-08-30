@@ -265,26 +265,12 @@
 .bib-face {
   position: relative;
   margin: 4px 0 12px;
-  padding: 22px 16px 14px;
+  padding: 16px 14px 12px;
   border-radius: 10px;
   background: #fff;
   border: 1px solid #dbe3f0;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
-
-.bib-face-pin {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #f8fafc 0 28%, #94a3b8 32% 55%, #475569 60% 100%);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.25);
-}
-
-.bib-face-pin-tl { top: 8px; left: 10px; }
-.bib-face-pin-tr { top: 8px; right: 10px; }
-.bib-face-pin-bl { bottom: 8px; left: 10px; }
-.bib-face-pin-br { bottom: 8px; right: 10px; }
 
 .bib-face-band {
   position: relative;
@@ -292,7 +278,7 @@
   align-items: center;
   justify-content: center;
   min-height: 64px;
-  margin: 4px 8px 10px;
+  margin: 0 0 10px;
   padding: 14px 16px 12px;
   border-radius: 4px;
   background: var(--dmc-color-primary, #2563eb);
@@ -324,7 +310,7 @@
 }
 
 .bib-face-event {
-  margin: 0 12px 2px;
+  margin: 0 4px 2px;
   text-align: center;
   font-size: 12px;
   font-weight: 700;
@@ -399,9 +385,18 @@
   background: var(--dmc-color-primary-surface, #eff6ff);
 }
 
+.profile-link-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-top: 2px;
+}
+
 .profile-link-btn {
   display: inline-block;
-  margin: 0 8px 8px 0;
+  margin: 0;
   padding: 4px 0;
   border: none;
   background: transparent;
