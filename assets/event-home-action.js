@@ -28,7 +28,21 @@
       ctaLabel: null,
       ctaHref: null,
       secondaryHref: null,
+      bibStage: null,
     };
+  }
+
+  const BIB_STAGE_PROMPTS = Object.freeze({
+    distance: "이번 대회에 어느 종목에 출전하나요?",
+    bib: "기록 자동 수집을 위해 배번을 입력해 주세요.",
+  });
+
+  function bibStagePrompt(stage) {
+    return BIB_STAGE_PROMPTS[stage] || BIB_STAGE_PROMPTS.bib;
+  }
+
+  function resolveBibStage(distance) {
+    return PROFILE_DISTANCES.indexOf(distance) >= 0 ? "bib" : "distance";
   }
 
   function resolveProfileCard(ctx) {
@@ -53,9 +67,12 @@
     }
 
     if (intent === "reject") {
+      const rejectDistance = participant ? trimField(participant.distance) : "";
+      const rejectStage = resolveBibStage(rejectDistance);
       return Object.assign(emptyCardExtras(), {
         state: "bib",
-        prompt: "대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요.",
+        bibStage: rejectStage,
+        prompt: bibStagePrompt(rejectStage),
         showManual: false,
       });
     }
@@ -70,10 +87,12 @@
 
     const bib = participant ? trimField(participant.bib) : "";
     const distance = participant ? trimField(participant.distance) : "";
-    if (!bib || !distance) {
+    const bibStage = resolveBibStage(distance);
+    if (!bib || bibStage === "distance") {
       return Object.assign(emptyCardExtras(), {
         state: "bib",
-        prompt: "대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요.",
+        bibStage: bibStage,
+        prompt: bibStagePrompt(bibStage),
       });
     }
 
@@ -235,5 +254,6 @@
     PROFILE_DISTANCES,
     pageHref,
     busRouteTitle,
+    bibStagePrompt,
   };
 });

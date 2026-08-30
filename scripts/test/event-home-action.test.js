@@ -9,6 +9,10 @@ const {
   pickNicknames,
   busRouteTitle,
 } = require(path.join(__dirname, "../../assets/event-home-action.js"));
+const EventHomeAction = require(path.join(
+  __dirname,
+  "../../assets/event-home-action.js"
+));
 
 describe("event-home-action", () => {
   it("profile distances put full half 10K first", () => {
@@ -16,24 +20,25 @@ describe("event-home-action", () => {
     assert.ok(!PROFILE_DISTANCES.includes("unknown"));
   });
 
-  it("no bib → profile bib", () => {
+  it("no bib, no distance → bib state, distance stage", () => {
     const p = resolveProfileCard({
       participant: { bib: "", distance: "" },
       confirmMode: "none",
       isGuest: false,
     });
     assert.equal(p.state, "bib");
-    assert.match(p.prompt, /대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요/);
-    assert.doesNotMatch(p.prompt, /먼저/);
+    assert.equal(p.bibStage, "distance");
+    assert.match(p.prompt, /이번 대회에 어느 종목에 출전하나요\?/);
   });
 
-  it("bib without distance stays bib", () => {
+  it("bib without distance → bib state, distance stage (legacy record)", () => {
     const p = resolveProfileCard({
       participant: { bib: "4821", distance: "" },
       confirmMode: "none",
     });
     assert.equal(p.state, "bib");
-    assert.match(p.prompt, /대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요/);
+    assert.equal(p.bibStage, "distance");
+    assert.match(p.prompt, /이번 대회에 어느 종목에 출전하나요\?/);
   });
 
   it("bib+distance no result → wait with large bib", () => {
@@ -67,6 +72,8 @@ describe("event-home-action", () => {
     });
     assert.equal(p.state, "bib");
     assert.equal(p.showManual, false);
+    assert.equal(p.bibStage, "bib");
+    assert.match(p.prompt, /기록 자동 수집을 위해 배번을 입력해 주세요\./);
   });
 
   it("직접 입력 → manual; finish has PB, DNS does not", () => {
@@ -339,5 +346,28 @@ describe("event-home bus card titles", () => {
     );
     assert.match(html, /EventMemberCopy\.busClubLabel/);
     assert.match(html, /placeClub:/);
+  });
+});
+
+describe("bibStagePrompt", () => {
+  it("distance stage asks which category", () => {
+    assert.match(
+      EventHomeAction.bibStagePrompt("distance"),
+      /이번 대회에 어느 종목에 출전하나요\?/
+    );
+  });
+
+  it("bib stage asks for bib number", () => {
+    assert.match(
+      EventHomeAction.bibStagePrompt("bib"),
+      /기록 자동 수집을 위해 배번을 입력해 주세요\./
+    );
+  });
+
+  it("unknown stage falls back to bib prompt", () => {
+    assert.equal(
+      EventHomeAction.bibStagePrompt("nope"),
+      EventHomeAction.bibStagePrompt("bib")
+    );
   });
 });
