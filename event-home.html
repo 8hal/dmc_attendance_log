@@ -192,12 +192,14 @@
           <div class="profile-bib-large hidden" id="profileBibPlain"></div>
           <p class="profile-sub" id="profileSub"></p>
         </div>
-        <div id="profileBibForm" class="hidden">
-          <label class="profile-label" for="profileBib">배번</label>
-          <input id="profileBib" class="profile-input" inputmode="numeric" autocomplete="off" />
+        <form id="profileBibForm" class="hidden">
           <div class="dist-chips" id="profileDistChips"></div>
-          <button type="button" class="today-cta" id="profileBibSave">저장</button>
-        </div>
+          <div id="profileBibNumberGroup" class="hidden">
+            <label class="profile-label" for="profileBib">배번</label>
+            <input id="profileBib" class="profile-input" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
+            <button type="button" class="today-cta" id="profileBibSave">저장</button>
+          </div>
+        </form>
         <div id="profilePendingActions" class="hidden">
           <label class="pb-check hidden" id="profilePbWrap">
             <input type="checkbox" id="profilePb" /> 이번이 PB예요
