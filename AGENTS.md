@@ -44,6 +44,11 @@ section only records non-obvious caveats for running/testing it in this environm
   (functions + hosting + firestore + storage), seeds minimal data, and runs ~50 API/hosting
   assertions. Requires the `firebase` CLI, `java`, and `functions/node_modules` (all provided
   by the update script). The emulator admin password used in tests is `dmc2008`.
+- **UI / visual changes (default):** prefer unit tests that lock markup·CSS·render branches,
+  plus production `curl`/string smoke after hosting deploy. Do **not** launch a `computerUse`
+  subagent for routine UI proof — it is slow. Use `computerUse` only when the user explicitly
+  asks for browser/manual GUI testing, or when a click-path bug cannot be verified without it.
+  Visual polish sign-off may be left to the user’s hard refresh after deploy.
 
 ### Deploy
 - When the user asks to deploy, follow `.cursor/skills/firebase-deploy/SKILL.md` and run
