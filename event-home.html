@@ -398,6 +398,7 @@
     let manualKind = "finish";
     let selectedDistance = "";
     let bibStageFocusPending = false;
+    let bibComposing = false;
     let bibDraft = "";
     let timeDraft = "";
     let prevProfileState = "";
@@ -1212,6 +1213,13 @@
       bibDraft = value;
     });
 
+    profileBib.addEventListener("compositionstart", function () {
+      bibComposing = true;
+    });
+    profileBib.addEventListener("compositionend", function () {
+      bibComposing = false;
+    });
+
     function readManualNetTime() {
       return EventFinishTime.composeNetTime(
         profileTimeH.value,
@@ -1300,6 +1308,11 @@
     profileNoBtn.addEventListener("click", onRejectClick);
     profileManualBtn.addEventListener("click", onManualClick);
     profileBibSave.addEventListener("click", function () {
+      submitUpdateBib(activeIdentity);
+    });
+    profileBibForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (bibComposing) return;
       submitUpdateBib(activeIdentity);
     });
     profileYesBtn.addEventListener("click", function () {
