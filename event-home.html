@@ -561,6 +561,24 @@
 
       if (card.state === "confirmed") {
         profileCard.classList.add("is-done");
+        const distRaw =
+          (confirmResult && confirmResult.distance) ||
+          (participant && participant.distance) ||
+          "";
+        const distLabel = distRaw
+          ? EventMemberCopy.memberDistanceLabel(distRaw)
+          : "";
+        const summary = EventHomeBadges.confirmDoneSummary(confirmResult, {
+          distanceLabel: distLabel,
+        });
+        if (summary.timeText || summary.subText) {
+          profileDisplay.classList.remove("hidden");
+          if (summary.timeText) {
+            profileTimeDisplay.textContent = summary.timeText;
+            profileTimeDisplay.classList.remove("hidden");
+          }
+          profileSub.textContent = summary.subText;
+        }
         return;
       }
 

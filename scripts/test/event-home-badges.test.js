@@ -8,6 +8,7 @@ const {
   resultsLauncherState,
   confirmPanelFromApi,
   confirmDisplayTime,
+  confirmDoneSummary,
 } = require(path.join(__dirname, "../../assets/event-home-badges.js"));
 
 describe("event-home-badges", () => {
@@ -63,5 +64,30 @@ describe("event-home-badges", () => {
     assert.equal(confirmDisplayTime({ netTime: "", gunTime: "1:45:00" }), "1:45:00");
     assert.equal(confirmDisplayTime({ netTime: "--:--:--", gunTime: "1:45:00" }), "1:45:00");
     assert.equal(confirmDisplayTime(null), "");
+  });
+
+  it("confirmDoneSummary: time + distance · PB", () => {
+    assert.deepEqual(
+      confirmDoneSummary(
+        { netTime: "1:42:18", pbConfirmed: true },
+        { distanceLabel: "하프" }
+      ),
+      { timeText: "1:42:18", subText: "하프 · PB" }
+    );
+  });
+
+  it("confirmDoneSummary: DNS/DNF prefer status over PB; empty when no data", () => {
+    assert.deepEqual(
+      confirmDoneSummary(
+        { netTime: "", dnStatus: "DNS", pbConfirmed: true },
+        { distanceLabel: "풀" }
+      ),
+      { timeText: "", subText: "풀 · DNS" }
+    );
+    assert.deepEqual(
+      confirmDoneSummary({ finishTime: "3:10:01" }, { distanceLabel: "풀" }),
+      { timeText: "3:10:01", subText: "풀" }
+    );
+    assert.deepEqual(confirmDoneSummary(null, {}), { timeText: "", subText: "" });
   });
 });

@@ -55,6 +55,24 @@
     return "";
   }
 
+  /** Done-card lines from confirmed my-pending-result payload (no new API). */
+  function confirmDoneSummary(result, opts) {
+    const timeText = confirmDisplayTime(result);
+    const distanceLabel =
+      opts && opts.distanceLabel != null ? String(opts.distanceLabel).trim() : "";
+    const dn = String((result && result.dnStatus) || "")
+      .trim()
+      .toUpperCase();
+    const parts = [];
+    if (distanceLabel) parts.push(distanceLabel);
+    if (dn === "DNS" || dn === "DNF") {
+      parts.push(dn);
+    } else if (result && result.pbConfirmed === true) {
+      parts.push("PB");
+    }
+    return { timeText: timeText, subText: parts.join(" · ") };
+  }
+
   return {
     busLauncherVisible,
     busBadgeLabel,
@@ -62,5 +80,6 @@
     resultsLauncherState,
     confirmPanelFromApi,
     confirmDisplayTime,
+    confirmDoneSummary,
   };
 });
