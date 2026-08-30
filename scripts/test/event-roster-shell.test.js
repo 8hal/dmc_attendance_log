@@ -20,21 +20,26 @@ describe("event-roster member shell", () => {
   it("member roster page is labeled 대회 기록", () => {
     assert.match(html, />대회 기록</);
     assert.doesNotMatch(html, /명단·결과/);
-    assert.match(html, /아직 확정된 기록이 없어요/);
-    assert.match(html, /해당하는 기록이 없어요/);
+    assert.match(html, /아직 참가자가 없어요/);
+    assert.match(html, /해당하는 참가자가 없어요/);
+    assert.doesNotMatch(html, /아직 확정된 기록이 없어요/);
+    assert.doesNotMatch(html, /해당하는 기록이 없어요/);
   });
 
-  it("uses 기록 N명 summary without leading 참가 N명", () => {
-    assert.match(html, /기록 \$\{/);
-    assert.doesNotMatch(html, /참가 \$\{/);
-    assert.doesNotMatch(html, /참가 .*기록 확정/);
+  it("uses 참가 N명 · 확정 M명 summary", () => {
+    assert.match(html, /참가 \$\{/);
+    assert.match(html, /확정 \$\{/);
+    assert.doesNotMatch(html, /기록 \$\{rosterTotalCount\}명/);
   });
 
-  it("renders DNS and DNF from dnStatus, not 기록 없음", () => {
+  it("renders DNS/DNF, 미확정, 기록 수집되지 않음, 배번", () => {
     const renderRows = extractFn(html, "renderRows");
     assert.match(renderRows, /dnStatus/);
     assert.match(renderRows, /DNS/);
     assert.match(renderRows, /DNF/);
+    assert.match(renderRows, /미확정/);
+    assert.match(renderRows, /기록 수집되지 않음/);
+    assert.match(renderRows, /배번/);
     assert.doesNotMatch(renderRows, /기록 없음/);
   });
 
@@ -45,8 +50,10 @@ describe("event-roster member shell", () => {
     assert.doesNotMatch(extractFn(html, "renderChips"), /종목 미정/);
   });
 
-  it("shows privacy hint without exposing real names or bibs", () => {
-    assert.match(html, /실명·배번은 공개되지 않습니다/);
-    assert.match(html, /홈에서 확정한 기록만 모입니다/);
+  it("shows privacy hint without exposing real names", () => {
+    assert.match(html, /실명은 공개되지 않습니다/);
+    assert.match(html, /홈에서 확인하기 전까지 미확정/);
+    assert.doesNotMatch(html, /배번은 공개되지 않습니다/);
+    assert.doesNotMatch(html, /홈에서 확정한 기록만 모입니다/);
   });
 });

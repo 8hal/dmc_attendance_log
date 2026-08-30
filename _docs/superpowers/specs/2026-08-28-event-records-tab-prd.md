@@ -1,7 +1,7 @@
 # PRD: 회원 탭 「명단」→「대회 기록」
 
 날짜: 2026-08-28  
-상태: 초안  
+상태: 일부 대체됨 — 확정만·배번 숨김은 `_docs/superpowers/specs/2026-08-30-event-records-roster-board-prd.md`  
 관련: `_docs/superpowers/specs/2026-08-28-event-home-profile-bus-prd.md`
 
 회원에게 이 탭은 **누가 참가했는가**가 아니라 **동마클 기록이 얼마인가**다. 보이는 이름·목록·카피를 **대회 기록**으로 바꾼다. 총무 버스 명단(`event-admin` CSV·탑승 리스트)은 그대로 「명단」이다.

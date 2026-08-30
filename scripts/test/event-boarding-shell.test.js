@@ -68,7 +68,7 @@ describe("member pages use EventMemberCopy", () => {
     assert.match(html, /memberEventTitle\(/);
     assert.match(html, /memberDistanceLabel\(/);
     assert.doesNotMatch(html, /formatDistance\(/);
-    assert.match(html, /홈에서 확정한 기록만 모입니다/);
+    assert.match(html, /실명은 공개되지 않습니다. 수집된 기록은 홈에서 확인하기 전까지 미확정입니다./);
     assert.doesNotMatch(html, /컨펌된 기록만/);
   });
 });
