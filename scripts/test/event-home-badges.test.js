@@ -9,6 +9,7 @@ const {
   confirmPanelFromApi,
   confirmDisplayTime,
   confirmDoneSummary,
+  confirmCertificateView,
 } = require(path.join(__dirname, "../../assets/event-home-badges.js"));
 
 describe("event-home-badges", () => {
@@ -85,9 +86,90 @@ describe("event-home-badges", () => {
       { timeText: "", subText: "풀 · DNS" }
     );
     assert.deepEqual(
+      confirmDoneSummary(
+        { netTime: "1:00:00", status: "dnf", pbConfirmed: true },
+        { distanceLabel: "하프" }
+      ),
+      { timeText: "1:00:00", subText: "하프 · DNF" }
+    );
+    assert.deepEqual(
       confirmDoneSummary({ finishTime: "3:10:01" }, { distanceLabel: "풀" }),
       { timeText: "3:10:01", subText: "풀" }
     );
     assert.deepEqual(confirmDoneSummary(null, {}), { timeText: "", subText: "" });
+  });
+
+  it("confirmCertificateView: finish + PB shows hero time and pills", () => {
+    assert.deepEqual(
+      confirmCertificateView(
+        { netTime: "1:42:18", pbConfirmed: true, bib: "2543" },
+        { distanceLabel: "하프", name: "게살볶음밥", dateLabel: "2026년 4월 12일" }
+      ),
+      {
+        timeText: "1:42:18",
+        distanceLabel: "하프",
+        pb: true,
+        dnLabel: "",
+        bib: "2543",
+        name: "게살볶음밥",
+        dateLabel: "2026년 4월 12일",
+        showHeroTime: true,
+        showDnHero: false,
+        savedPrompt: "끝. 동마클 대회 기록에 저장됐어요.",
+        footerText: "동마클 저장 기록 · 공식 기록이 아닐 수 있어요",
+      }
+    );
+  });
+
+  it("confirmCertificateView: DNS from status hides time and PB", () => {
+    assert.deepEqual(
+      confirmCertificateView(
+        { netTime: "1:42:18", status: "dns", pbConfirmed: true },
+        { distanceLabel: "풀", name: "닉", bib: "" }
+      ),
+      {
+        timeText: "",
+        distanceLabel: "풀",
+        pb: false,
+        dnLabel: "DNS",
+        bib: "",
+        name: "닉",
+        dateLabel: "",
+        showHeroTime: false,
+        showDnHero: true,
+        savedPrompt: "끝. 동마클 대회 기록에 저장됐어요.",
+        footerText: "동마클 저장 기록 · 공식 기록이 아닐 수 있어요",
+      }
+    );
+  });
+
+  it("confirmCertificateView: empty / unknown distance / no time finish", () => {
+    assert.deepEqual(confirmCertificateView(null, {}), {
+      timeText: "",
+      distanceLabel: "",
+      pb: false,
+      dnLabel: "",
+      bib: "",
+      name: "",
+      dateLabel: "",
+      showHeroTime: false,
+      showDnHero: false,
+      savedPrompt: "끝. 동마클 대회 기록에 저장됐어요.",
+      footerText: "동마클 저장 기록 · 공식 기록이 아닐 수 있어요",
+    });
+    assert.equal(
+      confirmCertificateView(
+        { status: "confirmed", finishTime: "" },
+        { distanceLabel: "종목 미정", name: "A" }
+      ).distanceLabel,
+      ""
+    );
+    const noTime = confirmCertificateView(
+      { status: "confirmed", pbConfirmed: false },
+      { distanceLabel: "하프", name: "A" }
+    );
+    assert.equal(noTime.showHeroTime, false);
+    assert.equal(noTime.showDnHero, false);
+    assert.equal(noTime.distanceLabel, "하프");
   });
 });

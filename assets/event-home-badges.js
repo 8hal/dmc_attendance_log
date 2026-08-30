@@ -55,22 +55,66 @@
     return "";
   }
 
+  /** DNS/DNF from dnStatus or status (same as public-roster publicDnStatus). */
+  function confirmDnLabel(result) {
+    if (!result) return "";
+    const candidates = [result.dnStatus, result.status];
+    for (let i = 0; i < candidates.length; i++) {
+      const v = String(candidates[i] || "")
+        .trim()
+        .toUpperCase();
+      if (v === "DNS" || v === "DNF") return v;
+    }
+    return "";
+  }
+
   /** Done-card lines from confirmed my-pending-result payload (no new API). */
   function confirmDoneSummary(result, opts) {
     const timeText = confirmDisplayTime(result);
     const distanceLabel =
       opts && opts.distanceLabel != null ? String(opts.distanceLabel).trim() : "";
-    const dn = String((result && result.dnStatus) || "")
-      .trim()
-      .toUpperCase();
+    const dn = confirmDnLabel(result);
     const parts = [];
     if (distanceLabel) parts.push(distanceLabel);
-    if (dn === "DNS" || dn === "DNF") {
+    if (dn) {
       parts.push(dn);
     } else if (result && result.pbConfirmed === true) {
       parts.push("PB");
     }
     return { timeText: timeText, subText: parts.join(" · ") };
+  }
+
+  const CERT_SAVED_PROMPT = "끝. 동마클 대회 기록에 저장됐어요.";
+  const CERT_FOOTER_TEXT = "동마클 저장 기록 · 공식 기록이 아닐 수 있어요";
+
+  /** Design D certificate panel model for confirmed/done profile card. */
+  function confirmCertificateView(result, opts) {
+    opts = opts || {};
+    const dnLabel = confirmDnLabel(result);
+    let distanceLabel =
+      opts.distanceLabel != null ? String(opts.distanceLabel).trim() : "";
+    if (!distanceLabel || distanceLabel === "종목 미정") distanceLabel = "";
+    const bibFromOpts = opts.bib != null ? String(opts.bib).trim() : "";
+    const bibFromResult =
+      result && result.bib != null ? String(result.bib).trim() : "";
+    const bib = bibFromOpts || bibFromResult;
+    const name = opts.name != null ? String(opts.name).trim() : "";
+    const dateLabel = opts.dateLabel != null ? String(opts.dateLabel).trim() : "";
+    const pb = !dnLabel && !!(result && result.pbConfirmed === true);
+    const timeText = dnLabel ? "" : confirmDisplayTime(result);
+    return {
+      timeText: timeText,
+      distanceLabel: distanceLabel,
+      pb: pb,
+      dnLabel: dnLabel,
+      bib: bib,
+      name: name,
+      dateLabel: dateLabel,
+      showHeroTime: !!timeText,
+      showDnHero: !!dnLabel,
+      savedPrompt: CERT_SAVED_PROMPT,
+      footerText: CERT_FOOTER_TEXT,
+    };
   }
 
   return {
@@ -80,6 +124,8 @@
     resultsLauncherState,
     confirmPanelFromApi,
     confirmDisplayTime,
+    confirmDnLabel,
     confirmDoneSummary,
+    confirmCertificateView,
   };
 });
