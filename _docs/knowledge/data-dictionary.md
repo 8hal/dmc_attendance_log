@@ -143,6 +143,9 @@
 | 필드 | 의미 |
 |------|------|
 | `enabled` | `boolean` — 참가자 셀프체크·공개 탑승 화면 활성 여부 |
+| `openLeg` | `"outbound"` \| `"return"` \| `null` — 현재 열린 탑승 편 (SSOT). null이면 회원 QR 탑승 잠김 |
+| `placeClub` | `string` (optional) — 클럽 쪽 짧은 지명 (예: `동탄`). 비어 있으면 UI 기본 `동탄` |
+| `placeVenue` | `string` (optional) — 대회 쪽 짧은 지명 (예: `철원`). 비어 있으면 location / 짧은 대회명 / `대회` 폴백 |
 | `legs` | `("outbound" \| "return")[]` — 운영 구간. 예: `["outbound","return"]` (가는/오는) |
 | `importMeta` | `{ importedAt, rowCount, sourceLabel }` — 최근 CSV import 메타. `importedAt`: Timestamp\|null, `rowCount`: number, `sourceLabel`: string\|null (예: `"철원설문_0809.csv"`) |
 | `roster` | 배열 — 탑승 명단. 지인(`isGuest`) 가능. `participants[]`와 별도 |
