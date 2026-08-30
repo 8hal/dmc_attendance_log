@@ -10,11 +10,11 @@
 ## 포함
 
 - CSS `.bib-face` (사진·SVG 배경 이미지 없음)
-- 흰 배번면, 모서리 핀홀 4개
+- 흰 배번면 (핀홀 없음)
 - 파란 밴드 + 큰 검정 배번 숫자 (`#profileBibLarge`)
 - 밴드 왼쪽 위 거리 pill (`memberDistanceLabel`, 예: `풀`)
-- 하단 대회명 (`memberEventTitle`, 홈 헤더와 동일)
-- 기존 링크 「배번 수정」「기록 직접 입력」 유지 (카드 하단)
+- 하단 대회명 (`memberEventTitle(event.eventName || event.primaryName)`, 홈 헤더와 동일)
+- 「배번 수정」「기록 직접 입력」은 `.profile-link-row` 한 줄
 
 ## 제외
 
