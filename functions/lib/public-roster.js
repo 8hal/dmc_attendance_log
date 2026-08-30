@@ -175,9 +175,19 @@ function isPublicDnRow(row) {
   return s === "DNS" || s === "DNF";
 }
 
+function resultSortBucket(row) {
+  const status = String((row && row.recordStatus) || "");
+  const sec = timeToSortSeconds(row && row.netTime);
+  if (status === "confirmed" && !isPublicDnRow(row) && sec != null) return 0;
+  if (status === "scraped" && sec != null) return 1;
+  if (status === "scraped") return 2;
+  if (status === "confirmed" && isPublicDnRow(row)) return 3;
+  return 4;
+}
+
 /**
  * sortBy: "result" | "nick" | "distance"
- * result: finish times ascending, then DNS/DNF, then nick
+ * result: confirmed times → scraped times → scraped no-time → DNS/DNF → none, then nick
  */
 function sortPublicRosterRows(rows, sortBy = "result") {
   const out = Array.isArray(rows) ? rows.slice() : [];
@@ -191,16 +201,11 @@ function sortPublicRosterRows(rows, sortBy = "result") {
       if (d !== 0) return d;
       return String(a.nickname).localeCompare(String(b.nickname), "ko");
     }
-    const dnA = isPublicDnRow(a);
-    const dnB = isPublicDnRow(b);
-    if (dnA !== dnB) return dnA ? 1 : -1;
-    if (!dnA && !dnB) {
-      const sa = timeToSortSeconds(a.netTime);
-      const sb = timeToSortSeconds(b.netTime);
-      if (sa != null && sb != null && sa !== sb) return sa - sb;
-      if (sa != null && sb == null) return -1;
-      if (sa == null && sb != null) return 1;
-    }
+    const bucketDiff = resultSortBucket(a) - resultSortBucket(b);
+    if (bucketDiff !== 0) return bucketDiff;
+    const sa = timeToSortSeconds(a && a.netTime);
+    const sb = timeToSortSeconds(b && b.netTime);
+    if (sa != null && sb != null && sa !== sb) return sa - sb;
     return String(a.nickname).localeCompare(String(b.nickname), "ko");
   });
   return out;

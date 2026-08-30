@@ -189,19 +189,22 @@ describe("filterPublicRosterRows", () => {
 });
 
 describe("sortPublicRosterRows", () => {
-  it("기록 순: 시각 오름차순 다음 DNS/DNF 다음 닉", () => {
+  it("확정 시각 → 미확정 시각 → 미확정 무시각 → DNS/DNF → none → 닉", () => {
     const out = sortPublicRosterRows(
       [
-        { nickname: "느린완주", distance: "half", netTime: "1:50:00", hasResult: true, pbConfirmed: false, dnStatus: null },
-        { nickname: "가가DNS", distance: "half", netTime: null, hasResult: true, pbConfirmed: false, dnStatus: "DNS" },
-        { nickname: "빠른완주", distance: "half", netTime: "1:40:00", hasResult: true, pbConfirmed: false, dnStatus: null },
-        { nickname: "나나DNF", distance: "half", netTime: null, hasResult: true, pbConfirmed: false, dnStatus: "DNF" },
+        { nickname: "없음가", recordStatus: "none", netTime: null, dnStatus: null },
+        { nickname: "가가DNS", recordStatus: "confirmed", netTime: null, dnStatus: "DNS" },
+        { nickname: "느린확정", recordStatus: "confirmed", netTime: "1:50:00", dnStatus: null },
+        { nickname: "빠른미확정", recordStatus: "scraped", netTime: "1:20:00", dnStatus: null },
+        { nickname: "빠른확정", recordStatus: "confirmed", netTime: "1:40:00", dnStatus: null },
+        { nickname: "무시각미확정", recordStatus: "scraped", netTime: null, dnStatus: null },
+        { nickname: "없음나", recordStatus: "none", netTime: null, dnStatus: null },
       ],
-      "result",
+      "result"
     );
     assert.deepEqual(
       out.map((r) => r.nickname),
-      ["빠른완주", "느린완주", "가가DNS", "나나DNF"],
+      ["빠른확정", "느린확정", "빠른미확정", "무시각미확정", "가가DNS", "없음가", "없음나"]
     );
   });
 });
