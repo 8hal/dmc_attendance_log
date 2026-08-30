@@ -11,16 +11,16 @@ describe("event-home manual form PB beside finish time", () => {
   const html = read("event-home.html");
   const css = read("assets/event-member-shell.css");
 
-  it("puts profileManualPbWrap in the same row as profileTime", () => {
+  it("puts profileManualPbWrap in the same row as finish-time parts", () => {
     const formStart = html.indexOf('id="profileManualForm"');
     assert.ok(formStart >= 0);
     const form = html.slice(formStart, html.indexOf('id="profileManualSave"', formStart));
     assert.match(form, /class="profile-time-row"/);
     const rowStart = form.indexOf('class="profile-time-row"');
-    const row = form.slice(rowStart, form.indexOf("</div>", rowStart) + 6);
-    assert.match(row, /id="profileTime"/);
+    const rowEnd = form.indexOf('class="profile-choice-row"', rowStart);
+    const row = form.slice(rowStart, rowEnd);
+    assert.match(row, /id="profileTimeH"/);
     assert.match(row, /id="profileManualPbWrap"/);
-    // PB must not sit alone below DNS/DNF
     const afterDns = form.slice(form.indexOf("profileDnsBtn"));
     assert.doesNotMatch(afterDns, /id="profileManualPbWrap"/);
   });
