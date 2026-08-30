@@ -7,13 +7,20 @@ function read(rel) {
   return fs.readFileSync(path.join(__dirname, "../..", rel), "utf8");
 }
 
+function extractFn(html, name) {
+  const start = html.indexOf("function " + name + "(");
+  assert.ok(start >= 0, "missing function " + name);
+  const next = html.indexOf("\n    function ", start + 1);
+  return html.slice(start, next > 0 ? next : html.length);
+}
+
 describe("event-home manual DNS/DNF row", () => {
   const html = read("event-home.html");
   const css = read("assets/event-member-shell.css");
 
   it("manual form puts DNS and DNF in an inline row, save spaced below", () => {
     const formStart = html.indexOf('id="profileManualForm"');
-    const form = html.slice(formStart, html.indexOf("</div>", html.indexOf("profileManualSave", formStart)) + 6);
+    const form = html.slice(formStart, html.indexOf("profileManualSave", formStart) + 80);
     assert.match(form, /class="[^"]*profile-dn-row/);
     const rowStart = form.indexOf("profile-dn-row");
     const row = form.slice(rowStart, form.indexOf("profileManualSave"));
@@ -29,5 +36,13 @@ describe("event-home manual DNS/DNF row", () => {
     assert.match(dnRule, /display:\s*flex/);
     assert.match(dnRule, /flex-direction:\s*row/);
     assert.match(css, /#profileManualSave\s*\{[^}]*margin-top/s);
+  });
+
+  it("manual form has 돌아가기 that clears manual intent", () => {
+    assert.match(html, /id="profileManualBack"/);
+    assert.match(html, />돌아가기</);
+    const back = extractFn(html, "onManualBack");
+    assert.match(back, /profileIntent\s*=\s*""/);
+    assert.match(back, /renderHomeCards/);
   });
 });

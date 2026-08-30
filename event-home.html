@@ -193,6 +193,7 @@
           </div>
         </div>
         <div id="profileManualForm" class="hidden">
+          <button type="button" class="profile-back-btn" id="profileManualBack">돌아가기</button>
           <span class="profile-label" id="profileTimeLabel">완주 시각</span>
           <div class="profile-time-row">
             <div class="profile-time-parts" role="group" aria-labelledby="profileTimeLabel">
@@ -328,6 +329,7 @@
     const profileManualPbWrap = document.getElementById("profileManualPbWrap");
     const profileManualPb = document.getElementById("profileManualPb");
     const profileManualSave = document.getElementById("profileManualSave");
+    const profileManualBack = document.getElementById("profileManualBack");
     const profileManualBtn = document.getElementById("profileManualBtn");
 
     const busCard = document.getElementById("busCard");
@@ -486,6 +488,14 @@
     function onManualClick() {
       manualKind = "finish";
       applyProfile({ intent: "manual" });
+    }
+
+    function onManualBack() {
+      clearManualTimeParts();
+      profileIntent = "";
+      manualKind = "finish";
+      profileManualPb.checked = false;
+      renderHomeCards(activeIdentity);
     }
 
     function fillBibDraft(participant) {
@@ -1182,6 +1192,7 @@
       applyProfile({ intent: "manual", manualKind: "dnf" });
     });
     profileManualSave.addEventListener("click", onManualSave);
+    profileManualBack.addEventListener("click", onManualBack);
     busBoardBtn.addEventListener("click", function () {
       submitSelfBoard(activeIdentity, { showOverlay: true });
     });
