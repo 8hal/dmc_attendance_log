@@ -340,6 +340,7 @@
     const profileBibForm = document.getElementById("profileBibForm");
     const profileBib = document.getElementById("profileBib");
     const profileDistChips = document.getElementById("profileDistChips");
+    const profileBibNumberGroup = document.getElementById("profileBibNumberGroup");
     const profileBibSave = document.getElementById("profileBibSave");
     const profilePendingActions = document.getElementById("profilePendingActions");
     const profilePbWrap = document.getElementById("profilePbWrap");
@@ -396,6 +397,7 @@
     let profileIntent = "";
     let manualKind = "finish";
     let selectedDistance = "";
+    let bibStageFocusPending = false;
     let bibDraft = "";
     let timeDraft = "";
     let prevProfileState = "";
@@ -583,11 +585,13 @@
         manualKind: manualKind,
       });
       const enteringPending = card.state === "pending" && prevProfileState !== "pending";
+      const enteringBib = card.state === "bib" && prevProfileState !== "bib";
       prevProfileState = card.state;
 
       hideProfileSections();
       profilePrompt.textContent = card.prompt || "";
       profilePrompt.classList.toggle("hidden", !card.prompt);
+      profilePrompt.classList.remove("profile-prompt-question");
 
       if (card.state === "guest") {
         return;
@@ -646,9 +650,16 @@
       }
 
       if (card.state === "bib") {
-        if (!profileBib.value) fillBibDraft(participant);
+        if (enteringBib && !profileBib.value) fillBibDraft(participant);
+        const stage =
+          card.bibStage === "distance" && selectedDistance ? "bib" : card.bibStage;
         renderDistanceChips();
         profileBibForm.classList.remove("hidden");
+        profilePrompt.textContent = EventHomeAction.bibStagePrompt(stage);
+        profilePrompt.classList.toggle("profile-prompt-question", stage === "distance");
+        profileBibNumberGroup.classList.toggle("hidden", stage !== "bib");
+        if (stage === "bib" && bibStageFocusPending) profileBib.focus();
+        bibStageFocusPending = false;
         return;
       }
 
