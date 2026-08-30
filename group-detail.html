@@ -1354,9 +1354,14 @@
       });
     });
 
-    // 참가자 편집 모달
+    // 참가자 편집: 실제 저장은 group.html 모달에서 수행 (이 페이지 모달은 스텁)
     document.getElementById("editParticipantsBtn").addEventListener("click", () => {
-      document.getElementById("participantModal").classList.add("open");
+      const id = currentEventId || new URLSearchParams(window.location.search).get("eventId");
+      if (!id) {
+        showToast("대회 ID가 없습니다", true);
+        return;
+      }
+      window.location.href = `group.html?editParticipants=${encodeURIComponent(id)}`;
     });
     document.getElementById("participantModalClose").addEventListener("click", () => {
       document.getElementById("participantModal").classList.remove("open");
@@ -1365,7 +1370,6 @@
       document.getElementById("participantModal").classList.remove("open");
     });
     document.getElementById("participantModalSave").addEventListener("click", () => {
-      showToast("참가자 저장됨");
       document.getElementById("participantModal").classList.remove("open");
     });
 
@@ -1399,13 +1403,13 @@
 
         // 참가자 0명 체크
         if (!data.event.participants || data.event.participants.length === 0) {
-          showEmptyStateUI("참가자가 없습니다. group.html에서 참가자를 추가하세요.");
+          showEmptyStateUI("참가자가 없습니다. 단체 대회 목록(group.html) → ⋮ → 참가자 편집에서 추가하세요.");
           return;
         }
 
         // 스크랩 실패 체크
         if (data.event.groupScrapeStatus === "failed") {
-          showEmptyStateUI("스크랩 실패했습니다. group.html에서 재시도하세요.");
+          showEmptyStateUI("스크랩 실패했습니다. 운영 홈(event-admin)에서 스크랩을 다시 시도하세요.");
           return;
         }
 
@@ -1455,14 +1459,12 @@
       progressBar.innerHTML = `
         <div class="progress-title complete">✅ 대회 준비 완료 ${daysText ? `— ${daysText}` : ""}</div>
         <div class="progress-detail" style="line-height:1.8;">
-          ✓ 참가자 등록: ${event.participants.length}명<br>
-          ✓ 기록 소스: ${event.groupSource ? `${event.groupSource.source} (${event.groupSource.sourceId})` : "미설정"}<br>
-          ✓ 자동 스크랩: 대회 당일 15:00 KST 예정
+          ✓ 참가자 등록: ${event.participants.length}명
         </div>
         <div style="background:var(--blue-light);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;color:var(--blue);">
-          📅 <strong>대회 당일 안내</strong><br>
-          대회 당일 15:00에 자동으로 기록을 수집합니다.<br>
-          수집 완료 후 이 페이지에서 기록 매칭 결과를 확인하세요.
+          <strong>참가자 추가·변경</strong><br>
+          단체 대회 목록 → 대회 카드 <b>⋮</b> → <b>참가자 편집</b><br>
+          <a href="group.html?editParticipants=${encodeURIComponent(event.id || "")}" style="color:var(--blue);font-weight:700;">목록에서 참가자 편집 열기 →</a>
         </div>
       `;
 
@@ -1511,7 +1513,7 @@
       
       footerInfo.classList.add("complete");
       footerInfo.classList.remove("incomplete");
-      footerInfo.textContent = `✅ 참가자 ${participants.length}명 등록 완료`;
+      footerInfo.textContent = `✅ 참가자 ${participants.length}명 등록 완료 · 추가·변경은 목록 ⋮`;
       
       bulkBtn.style.display = "none";
     }    loadEventDetail();

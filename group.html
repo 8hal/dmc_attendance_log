@@ -143,7 +143,7 @@
       <a class="back-link" href="report.html">← 기록 관리</a>
       <div>
         <h1 class="page-title">단체 대회 관리</h1>
-        <p class="page-subtitle">카드 클릭 → 운영 홈 (버스·배번·스크랩). 참가자 편집은 ⋮ 메뉴.</p>
+        <p class="page-subtitle">카드 클릭 → 운영 홈 (버스·배번·스크랩). 참가자 추가·편집은 ⋮ → 참가자 편집.</p>
       </div>
     </div>
 
@@ -308,6 +308,14 @@
 
         renderGroupEvents(events, gapById);
         renderAvailableGorunning(available);
+
+        const editId = new URLSearchParams(window.location.search).get("editParticipants");
+        if (editId && events.some((ev) => ev.id === editId)) {
+          openParticipantModal(editId);
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete("editParticipants");
+          window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+        }
       } catch (e) {
         root.innerHTML = `<p class="empty">네트워크 오류: ${escapeHtml(e.message)}</p>`;
       }
@@ -387,6 +395,7 @@
               <div style="position:relative;">
                 <button type="button" class="btn btn-ghost btn-sm" data-more-menu="${id}" style="font-size:18px;padding:4px 8px;">⋮</button>
                 <div id="more-menu-${id}" class="more-menu" style="display:none;">
+                  <button type="button" data-edit-participants="${id}">참가자 편집</button>
                   <button type="button" data-legacy-detail="${id}">참가자·기록(구)</button>
                   <button type="button" data-delete-event="${id}">🗑️ 삭제</button>
                 </div>
@@ -451,6 +460,14 @@
           console.error("삭제 오류:", err);
           showToast(err.message || "삭제 중 오류 발생", true);
         }
+        });
+      });
+
+      root.querySelectorAll("[data-edit-participants]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const eventId = btn.getAttribute("data-edit-participants");
+          openParticipantModal(eventId);
         });
       });
 

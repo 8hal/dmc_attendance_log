@@ -22,6 +22,38 @@ describe("group event primary entry", () => {
     assert.match(html, /group-detail\.html\?eventId=/);
   });
 
+  it("group.html kebab restores 참가자 편집 entry that opens modal", () => {
+    const html = readHtml("group.html");
+    assert.match(html, /data-edit-participants=/);
+    assert.match(html, />참가자 편집</);
+    assert.match(html, /data-edit-participants[\s\S]*openParticipantModal\(eventId\)/);
+    assert.match(html, /editParticipants/);
+  });
+
+  it("group-detail pre-event mode drops obsolete auto-scrape copy", () => {
+    const html = readHtml("group-detail.html");
+    const start = html.indexOf("function showPreEventMode");
+    assert.ok(start >= 0, "showPreEventMode missing");
+    const next = html.indexOf("\n    function ", start + 1);
+    const block = html.slice(start, next > 0 ? next : html.length);
+    assert.match(block, /대회 준비 완료/);
+    assert.match(block, /참가자 등록/);
+    assert.doesNotMatch(block, /자동 스크랩/);
+    assert.doesNotMatch(block, /대회 당일 안내/);
+    assert.doesNotMatch(block, /15:00/);
+    assert.doesNotMatch(block, /기록 소스:/);
+    assert.match(block, /참가자 추가·변경/);
+    assert.match(block, /editParticipants=/);
+  });
+
+  it("group-detail 참가자 편집 button routes to group.html modal", () => {
+    const html = readHtml("group-detail.html");
+    assert.match(
+      html,
+      /editParticipantsBtn[\s\S]*group\.html\?editParticipants=\$\{encodeURIComponent\(id\)\}/
+    );
+  });
+
   it("group-detail day hub points at event-admin and event-home", () => {
     const html = readHtml("group-detail.html");
     assert.match(html, /id="hubAdmin"/);
