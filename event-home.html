@@ -174,6 +174,21 @@
             </div>
             <p class="bib-face-event" id="profileBibEvent"></p>
           </div>
+          <div class="result-cert hidden" id="profileResultCert" aria-label="저장 기록">
+            <div class="result-cert-pills" id="profileCertPills">
+              <span class="result-cert-pill hidden" id="profileCertDist"></span>
+              <span class="result-cert-pill result-cert-pill-pb hidden" id="profileCertPb">PB</span>
+            </div>
+            <p class="result-cert-bib hidden" id="profileCertBib"></p>
+            <p class="result-cert-name hidden" id="profileCertName"></p>
+            <div class="result-cert-time hidden" id="profileCertTime"></div>
+            <div class="result-cert-dn hidden" id="profileCertDn"></div>
+            <p class="result-cert-prompt" id="profileCertPrompt"></p>
+            <p class="result-cert-date hidden" id="profileCertDate"></p>
+            <div class="result-cert-foot" id="profileCertFoot">
+              동마클 저장 기록 · 공식 기록이 아닐 수 있어요
+            </div>
+          </div>
           <div class="profile-bib-large hidden" id="profileBibPlain"></div>
           <p class="profile-sub" id="profileSub"></p>
         </div>
@@ -308,6 +323,15 @@
     const profileBibDist = document.getElementById("profileBibDist");
     const profileBibLarge = document.getElementById("profileBibLarge");
     const profileBibEvent = document.getElementById("profileBibEvent");
+    const profileResultCert = document.getElementById("profileResultCert");
+    const profileCertDist = document.getElementById("profileCertDist");
+    const profileCertPb = document.getElementById("profileCertPb");
+    const profileCertBib = document.getElementById("profileCertBib");
+    const profileCertName = document.getElementById("profileCertName");
+    const profileCertTime = document.getElementById("profileCertTime");
+    const profileCertDn = document.getElementById("profileCertDn");
+    const profileCertPrompt = document.getElementById("profileCertPrompt");
+    const profileCertDate = document.getElementById("profileCertDate");
     const profileBibPlain = document.getElementById("profileBibPlain");
     const profileSub = document.getElementById("profileSub");
     const profileEditBtn = document.getElementById("profileEditBtn");
@@ -534,6 +558,14 @@
       profileManualPbWrap.classList.add("hidden");
       profileTimeDisplay.classList.add("hidden");
       profileBibFace.classList.add("hidden");
+      profileResultCert.classList.add("hidden");
+      profileCertDist.classList.add("hidden");
+      profileCertPb.classList.add("hidden");
+      profileCertBib.classList.add("hidden");
+      profileCertName.classList.add("hidden");
+      profileCertTime.classList.add("hidden");
+      profileCertDn.classList.add("hidden");
+      profileCertDate.classList.add("hidden");
       profileBibPlain.classList.add("hidden");
       profileCard.className = "today-card profile-card";
     }
@@ -561,6 +593,7 @@
 
       if (card.state === "confirmed") {
         profileCard.classList.add("is-done");
+        profilePrompt.classList.add("hidden");
         const distRaw =
           (confirmResult && confirmResult.distance) ||
           (participant && participant.distance) ||
@@ -568,16 +601,44 @@
         const distLabel = distRaw
           ? EventMemberCopy.memberDistanceLabel(distRaw)
           : "";
-        const summary = EventHomeBadges.confirmDoneSummary(confirmResult, {
+        const bibRaw =
+          (confirmResult && confirmResult.bib) ||
+          (participant && participant.bib) ||
+          "";
+        const cert = EventHomeBadges.confirmCertificateView(confirmResult, {
           distanceLabel: distLabel,
+          name: (identity && identity.nickname) || "",
+          bib: bibRaw,
+          dateLabel: (cachedEvent && cachedEvent.eventDate) || "",
         });
-        if (summary.timeText || summary.subText) {
-          profileDisplay.classList.remove("hidden");
-          if (summary.timeText) {
-            profileTimeDisplay.textContent = summary.timeText;
-            profileTimeDisplay.classList.remove("hidden");
-          }
-          profileSub.textContent = summary.subText;
+        profileDisplay.classList.remove("hidden");
+        profileResultCert.classList.remove("hidden");
+        profileSub.textContent = "";
+        if (cert.distanceLabel) {
+          profileCertDist.textContent = cert.distanceLabel;
+          profileCertDist.classList.remove("hidden");
+        }
+        if (cert.pb) profileCertPb.classList.remove("hidden");
+        if (cert.bib) {
+          profileCertBib.textContent = "배번 " + cert.bib;
+          profileCertBib.classList.remove("hidden");
+        }
+        if (cert.name) {
+          profileCertName.textContent = cert.name;
+          profileCertName.classList.remove("hidden");
+        }
+        if (cert.showHeroTime) {
+          profileCertTime.textContent = cert.timeText;
+          profileCertTime.classList.remove("hidden");
+        }
+        if (cert.showDnHero) {
+          profileCertDn.textContent = cert.dnLabel;
+          profileCertDn.classList.remove("hidden");
+        }
+        profileCertPrompt.textContent = cert.savedPrompt;
+        if (cert.dateLabel) {
+          profileCertDate.textContent = cert.dateLabel;
+          profileCertDate.classList.remove("hidden");
         }
         return;
       }

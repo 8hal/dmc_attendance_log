@@ -1,6 +1,6 @@
 # 확정(done) 프로필 카드 — 기록증(certificate) 톤
 
-**상태:** 설계 초안 · **사용자 승인 대기** (구현 HARD-GATE)  
+**상태:** 사용자 승인 완료 · Design D 구현 (`confirmCertificateView` + `.result-cert`)  
 **선행 합의:** Option 2 「조금 더」 — 종목 + 완주 시간 + PB / DNS·DNF (데이터·엣지 유지)  
 **이번 갱신:** 서울하프 모바일 기록증 *느낌*(히어로 시간·계층)을 **동마클 카드 언어**로 옮긴다.  
 **범위:** `event-home.html` `#profileCard` 의 `confirmed` / `is-done` 만  
