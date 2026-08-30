@@ -43,15 +43,26 @@ describe("group event primary entry", () => {
     assert.doesNotMatch(block, /15:00/);
     assert.doesNotMatch(block, /기록 소스:/);
     assert.match(block, /참가자 추가·변경/);
-    assert.match(block, /editParticipants=/);
+    assert.match(block, /참가자 편집/);
   });
 
-  it("group-detail 참가자 편집 button routes to group.html modal", () => {
+  it("group-detail participant modal loads all-members (not stub 2 names)", () => {
     const html = readHtml("group-detail.html");
-    assert.match(
-      html,
-      /editParticipantsBtn[\s\S]*group\.html\?editParticipants=\$\{encodeURIComponent\(id\)\}/
-    );
+    assert.doesNotMatch(html, /라우펜더만/);
+    assert.doesNotMatch(html, /쌩메/);
+    assert.match(html, /id="participantModalHelp"/);
+    assert.match(html, /대회 참가자로 넣을|대회 참가자 선택|전체 회원/);
+    assert.match(html, /action=all-members/);
+    assert.match(html, /function openParticipantModal/);
+    assert.match(html, /subAction: "participants"/);
+    assert.match(html, /editParticipantsBtn[\s\S]*openParticipantModal\(\)/);
+  });
+
+  it("group.html participant modal explains full-roster replace UX", () => {
+    const html = readHtml("group.html");
+    assert.match(html, /전체 회원/);
+    assert.match(html, /통째로 교체/);
+    assert.match(html, /prev\.bib/);
   });
 
   it("group-detail day hub points at event-admin and event-home", () => {

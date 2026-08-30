@@ -328,31 +328,30 @@
     </button>
   </div>
 
-  <!-- 참가자 편집 모달 -->
+  <!-- 참가자 편집 모달: 클럽 전체 회원 중 이 대회 참가자를 체크해 일괄 저장 -->
   <div id="participantModal" class="modal-backdrop">
-    <div class="modal" role="dialog">
+    <div class="modal" role="dialog" aria-labelledby="participantModalTitle">
       <div class="modal-header">
-        <h2>참가자 선택</h2>
+        <h2 id="participantModalTitle">대회 참가자 선택 <span id="selectedCount" style="font-size:13px;font-weight:400;color:var(--primary);margin-left:6px;"></span></h2>
         <button type="button" class="modal-close" id="participantModalClose" aria-label="닫기">×</button>
       </div>
       <div class="modal-body">
-        <input type="text" id="memberFilter" class="search-input" placeholder="닉네임·실명으로 검색…" />
+        <p id="participantModalHelp" style="margin:0 0 10px;font-size:13px;color:var(--text-sub);line-height:1.5;">
+          클럽 <strong>전체 회원</strong> 목록입니다. 이 대회에 넣을 사람을 체크한 뒤 저장하면 참가자 명단이 통째로 바뀝니다.
+          (뒤의 「40명」은 이미 등록된 참가자 수이고, 여기 목록은 회원 전체입니다.)
+        </p>
+        <input type="text" id="memberFilter" class="search-input" placeholder="닉네임·실명으로 검색… (Enter로 바로 선택)" autocomplete="off" />
         <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;">
           <button type="button" class="btn btn-ghost btn-sm" id="memberSelectAll">전체 선택</button>
           <button type="button" class="btn btn-ghost btn-sm" id="memberClearAll">선택 해제</button>
         </div>
         <div id="memberList" style="max-height:48vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 6px;">
-          <label class="member-item">
-            <input type="checkbox" checked />
-            <span class="member-nickname">라우펜더만<span class="member-realname">이원기</span></span>
-          </label>
-          <label class="member-item">
-            <input type="checkbox" checked />
-            <span class="member-nickname">쌩메<span class="member-realname">서윤석</span></span>
-          </label>
+          <p style="color:var(--text-muted);font-size:13px;padding:12px 8px;margin:0;">불러오는 중…</p>
         </div>
       </div>
       <div class="modal-footer">
+        <a href="attendance-admin.html#members" target="_blank" rel="noopener" class="btn btn-ghost" style="margin-right:auto;font-size:13px;">+ 출석 운영 (회원)</a>
+        <button type="button" class="btn btn-ghost btn-sm" id="participantModalRefresh" title="회원 추가 후 목록 새로고침">↺ 새로고침</button>
         <button type="button" class="btn btn-ghost" id="participantModalCancel">취소</button>
         <button type="button" class="btn btn-primary" id="participantModalSave">저장</button>
       </div>
@@ -507,6 +506,11 @@
     let gapResults = [];
     let currentEvent = null;
     let contextMenuTarget = null; // 컨텍스트 메뉴 대상 row
+    let membersCache = null;
+    const selectedMemberIds = new Set();
+    let participantModalSaving = false;
+    let memberFilterComposing = false;
+    let memberFilterEnterBusy = false;
 
     function escapeHtml(s) {
       return String(s == null ? "" : s)
@@ -1354,23 +1358,204 @@
       });
     });
 
-    // 참가자 편집: 실제 저장은 group.html 모달에서 수행 (이 페이지 모달은 스텁)
-    document.getElementById("editParticipantsBtn").addEventListener("click", () => {
+    async function loadAllMembers() {
+      if (membersCache) return membersCache;
+      const res = await fetch(`${API_BASE}?action=all-members`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "all-members failed");
+      membersCache = (data.members || []).filter((m) => !m.hidden);
+      return membersCache;
+    }
+
+    function updateSelectedCount() {
+      const el = document.getElementById("selectedCount");
+      if (!el) return;
+      const n = selectedMemberIds.size;
+      el.textContent = n > 0 ? `${n}명 선택` : "";
+    }
+
+    function openParticipantModal() {
       const id = currentEventId || new URLSearchParams(window.location.search).get("eventId");
       if (!id) {
         showToast("대회 ID가 없습니다", true);
         return;
       }
-      window.location.href = `group.html?editParticipants=${encodeURIComponent(id)}`;
-    });
-    document.getElementById("participantModalClose").addEventListener("click", () => {
+      currentEventId = id;
+      selectedMemberIds.clear();
+      const parts = (currentEvent && currentEvent.participants) || [];
+      parts.forEach((p) => {
+        if (p.memberId) selectedMemberIds.add(p.memberId);
+      });
+      document.getElementById("participantModal").classList.add("open");
+      document.getElementById("memberFilter").value = "";
+      void renderParticipantMemberList();
+    }
+
+    function closeParticipantModal() {
       document.getElementById("participantModal").classList.remove("open");
+    }
+
+    async function renderParticipantMemberList() {
+      const listEl = document.getElementById("memberList");
+      try {
+        const members = await loadAllMembers();
+        const q = (document.getElementById("memberFilter").value || "").trim().toLowerCase();
+        const filtered = !q
+          ? members
+          : members.filter(
+              (m) =>
+                (m.nickname || "").toLowerCase().includes(q) ||
+                (m.realName || "").toLowerCase().includes(q),
+            );
+        if (filtered.length === 0) {
+          listEl.innerHTML =
+            '<p style="color:var(--text-muted);font-size:13px;padding:12px 8px;margin:0;">검색 결과가 없습니다.</p>';
+          updateSelectedCount();
+          return;
+        }
+        listEl.innerHTML = filtered
+          .map(
+            (m) => `
+          <label class="member-item">
+            <input type="checkbox" data-mid="${escapeHtml(m.id)}" ${selectedMemberIds.has(m.id) ? "checked" : ""} />
+            <span class="member-nickname">${escapeHtml(m.nickname || "")}<span class="member-realname">${escapeHtml(m.realName || "")}</span></span>
+          </label>`,
+          )
+          .join("");
+        listEl.querySelectorAll("input[data-mid]").forEach((inp) => {
+          inp.addEventListener("change", () => {
+            const mid = inp.getAttribute("data-mid");
+            if (inp.checked) selectedMemberIds.add(mid);
+            else selectedMemberIds.delete(mid);
+            updateSelectedCount();
+          });
+        });
+        updateSelectedCount();
+      } catch (e) {
+        listEl.innerHTML = `<p style="color:var(--red);font-size:13px;padding:12px 8px;margin:0;">${escapeHtml(e.message || String(e))}</p>`;
+      }
+    }
+
+    document.getElementById("editParticipantsBtn").addEventListener("click", () => {
+      openParticipantModal();
     });
-    document.getElementById("participantModalCancel").addEventListener("click", () => {
-      document.getElementById("participantModal").classList.remove("open");
+    document.getElementById("participantModalClose").addEventListener("click", closeParticipantModal);
+    document.getElementById("participantModalCancel").addEventListener("click", closeParticipantModal);
+    document.getElementById("participantModal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeParticipantModal();
     });
-    document.getElementById("participantModalSave").addEventListener("click", () => {
-      document.getElementById("participantModal").classList.remove("open");
+    document.getElementById("memberFilter").addEventListener("input", () => void renderParticipantMemberList());
+    document.getElementById("memberFilter").addEventListener("compositionstart", () => {
+      memberFilterComposing = true;
+    });
+    document.getElementById("memberFilter").addEventListener("compositionend", () => {
+      memberFilterComposing = false;
+    });
+    document.getElementById("memberFilter").addEventListener("keydown", async (e) => {
+      if (e.key !== "Enter" || memberFilterComposing || memberFilterEnterBusy) return;
+      e.preventDefault();
+      memberFilterEnterBusy = true;
+      try {
+        const q = (e.target.value || "").trim().toLowerCase();
+        if (!q) return;
+        const members = await loadAllMembers();
+        const filtered = members.filter(
+          (m) =>
+            (m.nickname || "").toLowerCase().includes(q) ||
+            (m.realName || "").toLowerCase().includes(q),
+        );
+        if (filtered.length === 0) {
+          showToast("검색 결과가 없습니다.", true);
+          return;
+        }
+        const first = filtered[0];
+        if (selectedMemberIds.has(first.id)) {
+          showToast(`${first.nickname}은 이미 선택됨`, true);
+        } else {
+          selectedMemberIds.add(first.id);
+          showToast(`${first.nickname} 선택됨`);
+          e.target.value = "";
+          void renderParticipantMemberList();
+        }
+      } finally {
+        memberFilterEnterBusy = false;
+      }
+    });
+    document.getElementById("memberSelectAll").addEventListener("click", async () => {
+      const members = await loadAllMembers();
+      const q = (document.getElementById("memberFilter").value || "").trim().toLowerCase();
+      const filtered = !q
+        ? members
+        : members.filter(
+            (m) =>
+              (m.nickname || "").toLowerCase().includes(q) ||
+              (m.realName || "").toLowerCase().includes(q),
+          );
+      filtered.forEach((m) => selectedMemberIds.add(m.id));
+      void renderParticipantMemberList();
+    });
+    document.getElementById("memberClearAll").addEventListener("click", () => {
+      selectedMemberIds.clear();
+      updateSelectedCount();
+      void renderParticipantMemberList();
+    });
+    document.getElementById("participantModalRefresh").addEventListener("click", async () => {
+      membersCache = null;
+      const btn = document.getElementById("participantModalRefresh");
+      btn.textContent = "↺ 로딩중…";
+      btn.disabled = true;
+      try {
+        await renderParticipantMemberList();
+      } finally {
+        btn.textContent = "↺ 새로고침";
+        btn.disabled = false;
+      }
+    });
+    document.getElementById("participantModalSave").addEventListener("click", async () => {
+      if (!currentEventId || participantModalSaving) return;
+      participantModalSaving = true;
+      const saveBtn = document.getElementById("participantModalSave");
+      saveBtn.disabled = true;
+      try {
+        const members = await loadAllMembers();
+        const byId = new Map(members.map((m) => [m.id, m]));
+        const prevById = new Map(
+          ((currentEvent && currentEvent.participants) || [])
+            .filter((p) => p.memberId)
+            .map((p) => [p.memberId, p]),
+        );
+        const participants = [...selectedMemberIds].map((id) => {
+          const m = byId.get(id);
+          const prev = prevById.get(id) || {};
+          const row = {
+            memberId: id,
+            realName: (m && m.realName) || prev.realName || "",
+            nickname: (m && m.nickname) || prev.nickname || "",
+          };
+          if (prev.bib != null && String(prev.bib).trim() !== "") row.bib = prev.bib;
+          if (prev.distance) row.distance = prev.distance;
+          return row;
+        });
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "participants",
+            canonicalEventId: currentEventId,
+            participants,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "save failed");
+        showToast(`참가자 ${participants.length}명 저장됨`);
+        closeParticipantModal();
+        await loadEventDetail();
+      } catch (e) {
+        showToast(e.message || String(e), true);
+      } finally {
+        participantModalSaving = false;
+        saveBtn.disabled = false;
+      }
     });
 
     document.getElementById("refreshBtn").addEventListener("click", () => {
@@ -1403,7 +1588,10 @@
 
         // 참가자 0명 체크
         if (!data.event.participants || data.event.participants.length === 0) {
-          showEmptyStateUI("참가자가 없습니다. 단체 대회 목록(group.html) → ⋮ → 참가자 편집에서 추가하세요.");
+          showEmptyStateUI(
+            "참가자가 없습니다. 「참가자 편집」에서 클럽 회원을 선택해 추가하세요.",
+            { offerParticipantEdit: true },
+          );
           return;
         }
 
@@ -1432,18 +1620,27 @@
       }
     }
 
-    function showEmptyStateUI(message) {
+    function showEmptyStateUI(message, opts) {
       const participantSection = document.querySelector("#participantList").closest(".section");
+      const offerEdit = opts && opts.offerParticipantEdit;
       participantSection.innerHTML = `
         <h2 class="section-title">⚠️ 알림</h2>
         <div style="text-align:center;padding:40px 20px;">
           <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
           <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;">처리 불가</div>
           <div style="font-size:14px;color:var(--text-sub);">${message}</div>
-          <a href="group.html" class="btn btn-primary" style="margin-top:20px;text-decoration:none;">← 단체 대회 목록으로</a>
+          ${
+            offerEdit
+              ? `<button type="button" class="btn btn-primary" id="emptyEditParticipantsBtn" style="margin-top:20px;">참가자 편집</button>`
+              : `<a href="group.html" class="btn btn-primary" style="margin-top:20px;text-decoration:none;">← 단체 대회 목록으로</a>`
+          }
         </div>`;
-      
+
       document.getElementById("stickyFooter").style.display = "none";
+      const emptyBtn = document.getElementById("emptyEditParticipantsBtn");
+      if (emptyBtn) {
+        emptyBtn.addEventListener("click", () => openParticipantModal());
+      }
     }
 
     function showPreEventMode(event) {
@@ -1463,8 +1660,8 @@
         </div>
         <div style="background:var(--blue-light);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;color:var(--blue);">
           <strong>참가자 추가·변경</strong><br>
-          단체 대회 목록 → 대회 카드 <b>⋮</b> → <b>참가자 편집</b><br>
-          <a href="group.html?editParticipants=${encodeURIComponent(event.id || "")}" style="color:var(--blue);font-weight:700;">목록에서 참가자 편집 열기 →</a>
+          아래 <b>참가자 편집</b>을 누르면 클럽 전체 회원 목록이 열립니다.<br>
+          대회에 넣을 사람을 체크한 뒤 저장하세요. (저장 시 명단이 선택한 목록으로 교체됩니다.)
         </div>
       `;
 
@@ -1513,7 +1710,7 @@
       
       footerInfo.classList.add("complete");
       footerInfo.classList.remove("incomplete");
-      footerInfo.textContent = `✅ 참가자 ${participants.length}명 등록 완료 · 추가·변경은 목록 ⋮`;
+      footerInfo.textContent = `✅ 참가자 ${participants.length}명 등록 완료 · 추가·변경은 「참가자 편집」`;
       
       bulkBtn.style.display = "none";
     }    loadEventDetail();
