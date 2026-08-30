@@ -55,7 +55,7 @@
     if (intent === "reject") {
       return Object.assign(emptyCardExtras(), {
         state: "bib",
-        prompt: "배번과 종목을 넣어 주세요.",
+        prompt: "대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요.",
         showManual: false,
       });
     }
@@ -73,7 +73,7 @@
     if (!bib || !distance) {
       return Object.assign(emptyCardExtras(), {
         state: "bib",
-        prompt: "배번과 종목을 넣어 주세요.",
+        prompt: "대회 기록 자동 수집을 위해 배번과 종목을 입력해주세요.",
       });
     }
 
