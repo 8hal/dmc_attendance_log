@@ -54,13 +54,20 @@ describe("event-admin prep roster write", () => {
     assert.match(html, /id="guest-open-btn"/);
     assert.match(html, /id="guest-sheet"/);
     assert.match(html, /class="[^"]*bottom-sheet/);
+    assert.match(html, /\.bottom-sheet\.open\s*\{\s*display:\s*block/);
     assert.match(html, /id="guest-sheet-close"/);
+    assert.match(html, /id="guest-sheet-backdrop"/);
     const openFn = extractFn(html, "openGuestSheet");
     const closeFn = extractFn(html, "closeGuestSheet");
     assert.match(openFn, /guest-sheet/);
     assert.match(closeFn, /guest-sheet/);
     const addFn = extractFn(html, "addGuest");
     assert.match(addFn, /closeGuestSheet/);
+    assert.match(html, /guest-sheet-close"\)\.addEventListener\("click", closeGuestSheet\)/);
+    assert.match(html, /guest-sheet-backdrop"\)\.addEventListener\("click", closeGuestSheet\)/);
+    assert.match(html, /e\.key !== "Escape"/);
+    assert.match(html, /e\.isComposing/);
+    assert.match(html, /guest-open-btn"\)\.addEventListener\("click", openGuestSheet\)/);
   });
 
   it("add-person form lets ops pick 회원 or 지인", () => {

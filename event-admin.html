@@ -2176,7 +2176,7 @@
     document.getElementById("guest-sheet-close").addEventListener("click", closeGuestSheet);
     document.getElementById("guest-sheet-backdrop").addEventListener("click", closeGuestSheet);
     document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
+      if (e.key !== "Escape" || e.isComposing) return;
       const sheet = document.getElementById("guest-sheet");
       if (sheet && sheet.classList.contains("open")) closeGuestSheet();
     });
