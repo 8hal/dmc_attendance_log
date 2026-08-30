@@ -111,6 +111,24 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(toggleFn, /enabled !== true/);
   });
 
+  it("roster board CTA is a button; note and remove sit in more menu", () => {
+    const html = read("event-admin.html");
+    const render = extractFn(html, "renderRoster");
+    assert.match(render, /roster-board-btn/);
+    assert.match(render, /roster-more/);
+    assert.match(render, /더 보기/);
+    assert.doesNotMatch(render, /class="board-toggle"/);
+    assert.doesNotMatch(render, /type="checkbox"/);
+    const moreIdx = render.indexOf("roster-more");
+    const removeIdx = render.indexOf("roster-remove");
+    const noteIdx = render.indexOf("note-input");
+    assert.ok(moreIdx >= 0, "more menu missing");
+    assert.ok(removeIdx > moreIdx, "제외 should be inside more menu");
+    assert.ok(noteIdx > moreIdx, "비고 should be inside more menu");
+    assert.match(html, /closest\(["']\.roster-board-btn["']\)/);
+    assert.doesNotMatch(html, /board-toggle/);
+  });
+
   it("event-admin settings never posts enabled true without openLeg", () => {
     const html = read("event-admin.html");
     assert.doesNotMatch(html, /function enableBoarding/);
