@@ -285,6 +285,7 @@ curl -s "$HOST/event-admin.html" > "$TMP_DIR/event-admin.html"
 assert_contains "event-admin.html: QR event-home.html" "event-home.html" "$TMP_DIR/event-admin.html"
 assert_contains "event-admin.html: QR board=1" "board=1" "$TMP_DIR/event-admin.html"
 assert_contains "event-admin.html: scrape-stop-btn" "scrape-stop-btn" "$TMP_DIR/event-admin.html"
+assert_not_contains "event-admin.html: 배번 입력 링크 복사 없음" "배번 입력 링크 복사" "$TMP_DIR/event-admin.html"
 
 curl -s "$HOST/event-roster.html" > "$TMP_DIR/event-roster.html"
 assert_not_contains "event-roster.html: 명단·결과 없음" "명단·결과" "$TMP_DIR/event-roster.html"

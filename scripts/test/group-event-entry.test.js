@@ -46,5 +46,7 @@ describe("group event primary entry", () => {
     assert.match(html, /board=1/);
     assert.doesNotMatch(html, /leg=return/);
     assert.doesNotMatch(html, /participantUrl\("return"\)/);
+    assert.doesNotMatch(html, /id="copy-bib-link-btn"/);
+    assert.doesNotMatch(html, /배번 입력 링크 복사/);
   });
 });
