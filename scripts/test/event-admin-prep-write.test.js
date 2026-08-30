@@ -105,6 +105,20 @@ describe("event-admin prep roster write", () => {
     assert.doesNotMatch(html, /id="bus-toggle-btn"/);
   });
 
+  it("QR is one home board link; no separate bib copy", () => {
+    const html = read("event-admin.html");
+    const urlFn = extractFn(html, "participantUrl");
+    assert.match(urlFn, /event-home\.html/);
+    assert.match(urlFn, /board=1/);
+    assert.doesNotMatch(urlFn, /leg=/);
+    assert.doesNotMatch(html, /id="copy-bib-link-btn"/);
+    assert.doesNotMatch(html, /배번 입력 링크 복사/);
+    assert.doesNotMatch(html, /function bibUrl/);
+    assert.doesNotMatch(html, /가는 버스 링크 복사/);
+    assert.doesNotMatch(html, /오는 버스 QR/);
+    assert.match(html, /id="copy-link-btn"/);
+  });
+
   it("boarded toggle works while boarding is off", () => {
     const html = read("event-admin.html");
     const toggleFn = extractFn(html, "toggleBoard");

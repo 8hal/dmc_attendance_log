@@ -748,11 +748,10 @@
           <div class="import-report" id="import-report"></div>
 
           <div class="qr-box">
-            <p class="hint" style="margin-top:0;text-align:left;">회원 홈 · 탑승 QR</p>
+            <p class="hint" style="margin-top:0;text-align:left;">QR은 가는·오는 편 공통입니다. 편은 위에서 켭니다.</p>
             <img id="qr-img" alt="탑승 QR" width="160" height="160" />
             <div class="link-box" id="participant-link-text"></div>
             <button type="button" class="btn btn-ghost" id="copy-link-btn">탑승 링크 복사</button>
-            <button type="button" class="btn btn-ghost" id="copy-bib-link-btn">배번 입력 링크 복사</button>
           </div>
 
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
@@ -992,13 +991,6 @@
         "event-home.html?eventId=" + encodeURIComponent(eventId) + "&board=1",
         window.location.href
       ).href;
-    }
-
-    function bibUrl() {
-      if (!eventId) return "";
-      const u = new URL("my-bib.html", window.location.href);
-      u.searchParams.set("eventId", eventId);
-      return u.href;
     }
 
     function memberHomeUrl() {
@@ -2252,9 +2244,6 @@
     document.getElementById("guest-add-btn").addEventListener("click", addGuest);
     document.getElementById("copy-link-btn").addEventListener("click", () =>
       copyText(participantUrl(), "탑승 링크를 복사했습니다")
-    );
-    document.getElementById("copy-bib-link-btn").addEventListener("click", () =>
-      copyText(bibUrl(), "배번 링크를 복사했습니다")
     );
     document.getElementById("refresh-all-btn").addEventListener("click", () => loadAll());
     document.getElementById("save-source-btn").addEventListener("click", saveGroupSource);
