@@ -6,7 +6,7 @@
   <title>단체 대회 참가 안내 - 동탄 마라톤 클럽</title>
   <link rel="icon" href="assets/dmc_logo.png" />
   <meta property="og:title" content="동탄 마라톤 클럽 — 단체 대회 참가 안내" />
-  <meta property="og:description" content="버스 탑승 체크 · 배번 입력 · 기록 확인까지 폰 하나로. 단체 대회 참가 방법을 확인하세요!" />
+  <meta property="og:description" content="버스 탑승 체크 · 배번 입력 · 대회 후 기록 확인까지 폰 하나로. 단체 대회 참가 방법을 확인하세요!" />
   <meta property="og:image" content="assets/dmc_logo.png" />
   <meta property="og:url" content="pamphlet-group-event-member.html" />
   <style>
@@ -124,6 +124,11 @@
       font-weight: 700;
     }
     .flow-step:not(:last-child) { margin-right: 18px; }
+    @media (max-width: 480px) {
+      .flow-step { flex: 1 1 calc(33.333% - 14px); }
+      .flow-step:nth-child(3n) { margin-right: 0; }
+      .flow-step:nth-child(3n)::after { content: none; }
+    }
     .flow-num {
       display: inline-flex;
       width: 26px; height: 26px;
@@ -224,7 +229,7 @@
     <img src="assets/dmc_logo.png" alt="동마클" class="hero-logo" />
     <div class="hero-badge">신기능 · 철원마라톤부터 시범 운영</div>
     <h1>단체 대회, 버스·배번·기록까지<br>폰 하나로 🚌</h1>
-    <p>탑승 체크부터 기록 확인까지, 대회 당일 할 일을 한 화면에서</p>
+    <p>탑승 체크와 배번 입력은 한 화면에서, 기록은 대회가 끝난 뒤에</p>
   </div>
 
   <!-- 왜 필요한가 -->
@@ -239,7 +244,7 @@
       </div>
       <div class="compare-card after">
         <div class="compare-label">✨ 이제는</div>
-        <div class="compare-text">버스에서 QR 찍고 탑승 체크,<br>배번만 입력해두면 기록이 자동으로 나타나요.</div>
+        <div class="compare-text">버스에서 QR 찍고 탑승 체크,<br>배번만 입력해두면 대회가 끝난 뒤 기록이 자동으로 나타나요.</div>
       </div>
     </div>
   </div>
@@ -272,12 +277,17 @@
       </div>
       <div class="flow-step">
         <span class="flow-num">5</span>
+        <span class="flow-icon">🏃</span>
+        <span class="flow-label">대회 참가<br>(경기 뛰기)</span>
+      </div>
+      <div class="flow-step">
+        <span class="flow-num">6</span>
         <span class="flow-icon">✅</span>
-        <span class="flow-label">기록 확인<br>완료</span>
+        <span class="flow-label">대회 후<br>기록 확인</span>
       </div>
     </div>
     <div class="flow-note">
-      💡 출석부에 이미 로그인/체크인 되어 있으면 <strong>2단계(닉네임 선택)는 자동으로 건너뛰고</strong> 바로 탑승 완료 체크부터 시작해요. 탑승 체크를 마치면 종목·배번 입력까지 같은 화면에서 이어서 할 수 있어요.
+      💡 출석부에 이미 로그인/체크인 되어 있으면 <strong>2단계(닉네임 선택)는 자동으로 건너뛰고</strong> 바로 탑승 완료 체크부터 시작해요. 탑승 체크를 마치면 종목·배번 입력까지 같은 화면에서 이어서 할 수 있어요. 배번을 넣었다고 바로 기록이 뜨는 건 아니에요. <strong>대회를 뛰고 난 뒤</strong>에 기록을 확인하면 됩니다.
     </div>
   </div>
 
