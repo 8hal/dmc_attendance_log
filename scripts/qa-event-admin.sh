@@ -14,7 +14,7 @@
 #   my-pending-result,
 #   무배번 scrape 거부(총무 비번 dmc2008 / canWriteGroupEvents),
 #   self-confirm → race_results 1건,
-#   public-roster 확정 행만 (totalCount == confirmedCount)
+#   public-roster 참가 전원, bib 있음, realName 없음
 
 set -u
 
@@ -218,21 +218,21 @@ nobib_sc=$(curl_post_code "$API?action=group-events" \
 assert_code "5f: 무배번 self-confirm → 400" "400" "$nobib_sc"
 
 # ────────────────────────────────────────────────────────────────────
-# 6. public-roster — 실명·배번 미포함, 컨펌 후 hasResult
+# 6. public-roster — 참가 전원·bib 허용, 실명 미포함, 컨펌 후 hasResult
 # ────────────────────────────────────────────────────────────────────
 echo -e "${YELLOW}[6] public-roster${NC}"
 
 roster=$(curl_get "$API?action=group-events&subAction=public-roster&eventId=$EVENT_ID")
 assert_contains "6a: public-roster ok" '"ok":true' "$roster"
-assert_eq "6b: totalCount == 1 (confirmed-only)" "1" "$(json_get "$roster" 'print(d.get("totalCount",0))')"
+assert_eq "6b: totalCount == 3" "3" "$(json_get "$roster" 'print(d.get("totalCount",0))')"
 assert_eq "6c: confirmedCount == 1" "1" "$(json_get "$roster" 'print(d.get("confirmedCount",0))')"
-has_pii=$(json_get "$roster" '
+has_real_name=$(json_get "$roster" '
 rows=d.get("rows") or []
 keys=set()
 for r in rows:
   keys.update(r.keys())
-print("realName" in keys or "bib" in keys)')
-assert_eq "6d: rows에 realName/bib 없음" "False" "$has_pii"
+print("realName" in keys)')
+assert_eq "6d: rows에 realName 없음" "False" "$has_real_name"
 has_me=$(json_get "$roster" '
 rows=d.get("rows") or []
 print(any(r.get("nickname")=="배번있음" and r.get("hasResult") for r in rows))')
