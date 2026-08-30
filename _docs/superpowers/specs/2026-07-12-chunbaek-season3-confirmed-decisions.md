@@ -35,7 +35,7 @@
 
 | 포함 | 제외 (Phase 2+) |
 |------|----------------|
-| 100슬롯 출석·온보딩·팀 집계 | 마일리지·몸무게·대회 PB 연동 |
+| 100슬롯 출석·온보딩·팀 집계 | 마일리지·몸무게·대회 PB 연동. **마일리지는 시즌3 안 함** (2026-08-24, [보류 결정](./2026-08-24-chunbaek-mileage-defer-design.md)) |
 | 회원 모바일 SPA (4탭) | 카카오 로그인 (Phase 1.5) |
 | 운영진 admin 그리드 (계획) | 카톡 API 연동 |
 | session token 인증 | 사진 필수 (`photoRequired` 기본 false) |
@@ -256,7 +256,7 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | 출석 메모 → 내 100일 | ✅ |
 | 팀 profileComplete만 | ✅ |
 | 사진 업로드 UI | ❌ disabled |
-| 월간/시즌 타임라인 | ❌ Phase 2 |
+| 월간/시즌 타임라인 | ❌ Phase 2. 마일리지 월간은 S3 보류 — [2026-08-24](./2026-08-24-chunbaek-mileage-defer-design.md) |
 
 ---
 
@@ -313,6 +313,7 @@ MVP 앱 **`goalRace`** 필드로 개인 목표 대회 선택 (`chuncheon` / `jtb
 | 2026-07-12 | FE 스켈레톤·갤러리·Hosting 배포 |
 | 2026-07-16 | 시즌 대회 2개·참가자별 목표(춘천/JTBC) 참고 — [ops-prep](./2026-07-16-chunbaek-season3-ops-prep.md) |
 | 2026-07-12 | **v0.1.0-alpha.2 준비** — OG 실서비스, VERSION bump (미배포) |
+| 2026-08-24 | 마일리지(가민 비밀번호·스크린샷·슬롯 km) **시즌3 안 함**. 다음 후보: 가민·코로스 MCP — [보류 결정](./2026-08-24-chunbaek-mileage-defer-design.md) |
 
 ---
 
