@@ -6,8 +6,30 @@
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   /**
-   * Poll/applyBusStatus may write server place labels into inputs only when
-   * the user is not editing: not focused, not IME-composing, no unsaved draft.
+   * Place labels (prep inputs) sync only on initial fetch / after save —
+   * never from the live poll path.
+   */
+  function shouldSyncPlaceLabels(sourceOrOpts) {
+    const source =
+      sourceOrOpts && typeof sourceOrOpts === "object"
+        ? sourceOrOpts.source
+        : sourceOrOpts;
+    return source === "initial" || source === "save";
+  }
+
+  /**
+   * Live bus status poll only while the ops UI is on the bus section
+   * and the document is visible. Prep/bib/scrape do not need 4s refresh.
+   */
+  function shouldPollBusStatus(opts) {
+    const o = opts || {};
+    if (o.documentHidden) return false;
+    return o.opsPanel === "bus";
+  }
+
+  /**
+   * Defense-in-depth: even when sync is allowed, do not overwrite inputs
+   * while the user is editing (focus / IME / unsaved draft).
    */
   function shouldApplyPlaceFromServer(opts) {
     const o = opts || {};
@@ -31,6 +53,8 @@
   }
 
   return {
+    shouldSyncPlaceLabels: shouldSyncPlaceLabels,
+    shouldPollBusStatus: shouldPollBusStatus,
     shouldApplyPlaceFromServer: shouldApplyPlaceFromServer,
     placeLabelsEqual: placeLabelsEqual,
   };

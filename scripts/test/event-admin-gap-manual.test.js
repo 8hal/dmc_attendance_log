@@ -138,7 +138,9 @@ describe("event-admin gap manual confirm", () => {
     assert.match(scrapeFn, /pending-count/);
     assert.match(scrapeFn, /renderGapManualList\(\s*\{\s*skipIfFocused:\s*true\s*\}\)/);
 
+    // Poll is bus-scoped only — scrape/gap UI is not overwritten every 4s.
     const pollFn = extractFn(html, "startPoll");
-    assert.match(pollFn, /loadEventDetail\(\s*\{\s*silent:\s*true\s*\}\)/);
+    assert.doesNotMatch(pollFn, /loadEventDetail/);
+    assert.match(pollFn, /shouldPollBusStatus/);
   });
 });

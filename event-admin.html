@@ -936,7 +936,11 @@
       hasAdminAccess,
       clearGroupOpsSession,
     } = GroupOpsSession;
-    const { shouldApplyPlaceFromServer } = EventAdminPlaceLabels;
+    const {
+      shouldApplyPlaceFromServer,
+      shouldSyncPlaceLabels,
+      shouldPollBusStatus,
+    } = EventAdminPlaceLabels;
     const POLL_MS = 4000;
     const BIB_SCRAPE_SOURCES = ["smartchip", "ohmyrace", "spct"];
     const LEG_LABEL = { outbound: "가는", return: "오는" };
@@ -965,6 +969,7 @@
     let composing = false;
     let placeLabelsDirty = false;
     let placeLabelsComposing = false;
+    let activeOpsPanel = "prep";
     let eventDetail = null;
     let gapRows = [];
     let confirmedCount = 0;
@@ -1036,6 +1041,8 @@
 
     function applyOpsPanel(panelId, opts) {
       const applied = EventAdminPanels.applyPanel(document, panelId);
+      const prevPanel = activeOpsPanel;
+      activeOpsPanel = applied;
       if (opts && opts.user) {
         opsPanelPicked = true;
         if (history.replaceState) {
@@ -1043,6 +1050,15 @@
         } else {
           location.hash = applied;
         }
+      }
+      // Entering bus: one-shot refresh for live boarding (no place-label overwrite).
+      if (
+        applied === "bus" &&
+        prevPanel !== "bus" &&
+        adminPwCache &&
+        eventId
+      ) {
+        loadBusStatus({ silent: true, source: "panel" });
       }
       return applied;
     }
@@ -1616,7 +1632,7 @@
       inferOpsPanelOnce();
     }
 
-    function applyBusStatus(data) {
+    function applyBusStatus(data, opts) {
       eventName = data.eventName || eventName || "단체 대회";
       openLeg =
         data.openLeg === "outbound" || data.openLeg === "return" ? data.openLeg : null;
@@ -1626,22 +1642,26 @@
         outbound: { required: 0, boarded: 0 },
         return: { required: 0, boarded: 0 }
       };
-      const clubEl = document.getElementById("place-club-input");
-      const venueEl = document.getElementById("place-venue-input");
-      const placeFocused =
-        document.activeElement === clubEl || document.activeElement === venueEl;
-      if (
-        shouldApplyPlaceFromServer({
-          focused: placeFocused,
-          composing: placeLabelsComposing,
-          dirty: placeLabelsDirty
-        })
-      ) {
-        if (clubEl) {
-          clubEl.value = data.placeClub != null ? String(data.placeClub) : "";
-        }
-        if (venueEl) {
-          venueEl.value = data.placeVenue != null ? String(data.placeVenue) : "";
+      const source = opts && opts.source;
+      // Primary fix: place inputs only from initial/save — never poll/action/panel.
+      if (shouldSyncPlaceLabels(source)) {
+        const clubEl = document.getElementById("place-club-input");
+        const venueEl = document.getElementById("place-venue-input");
+        const placeFocused =
+          document.activeElement === clubEl || document.activeElement === venueEl;
+        if (
+          shouldApplyPlaceFromServer({
+            focused: placeFocused,
+            composing: placeLabelsComposing,
+            dirty: placeLabelsDirty
+          })
+        ) {
+          if (clubEl) {
+            clubEl.value = data.placeClub != null ? String(data.placeClub) : "";
+          }
+          if (venueEl) {
+            venueEl.value = data.placeVenue != null ? String(data.placeVenue) : "";
+          }
         }
       }
       updateEventMeta();
@@ -1667,6 +1687,7 @@
 
     async function loadBusStatus(opts) {
       const silent = opts && opts.silent;
+      const source = (opts && opts.source) || "action";
       if (!eventId || !adminPwCache) return;
 
       try {
@@ -1685,7 +1706,7 @@
           throw new Error(data.error || "버스 현황을 불러오지 못했습니다");
         }
 
-        applyBusStatus(data);
+        applyBusStatus(data, { source: source });
         document.getElementById("poll-dot").style.background = "var(--green)";
         if (!silent) showPanels();
         else {
@@ -1736,7 +1757,10 @@
         loadingScreen.classList.remove("hidden");
         opsRoot.classList.add("hidden");
       }
-      await Promise.all([loadBusStatus({ silent: true }), loadEventDetail({ silent: true })]);
+      await Promise.all([
+        loadBusStatus({ silent: true, source: "initial" }),
+        loadEventDetail({ silent: true })
+      ]);
       if (!silent) showPanels();
       else showPanels();
     }
@@ -1744,10 +1768,17 @@
     function startPoll() {
       stopPoll();
       pollTimer = setInterval(() => {
-        if (document.hidden) return;
         if (!adminPwCache || !eventId) return;
-        loadBusStatus({ silent: true });
-        loadEventDetail({ silent: true });
+        // Live refresh only on bus section — prep place labels / bib / scrape stay idle.
+        if (
+          !shouldPollBusStatus({
+            opsPanel: activeOpsPanel,
+            documentHidden: document.hidden
+          })
+        ) {
+          return;
+        }
+        loadBusStatus({ silent: true, source: "poll" });
       }, POLL_MS);
     }
 
@@ -1900,7 +1931,7 @@
         placeLabelsDirty = false;
         placeLabelsComposing = false;
         showToast("버스 장소를 저장했습니다");
-        await loadBusStatus({ silent: true });
+        await loadBusStatus({ silent: true, source: "save" });
       } catch (err) {
         console.error("savePlaceLabels:", err);
         showToast(err.message || "장소 저장 실패", true);
