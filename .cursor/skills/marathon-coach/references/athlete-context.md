@@ -1,6 +1,8 @@
 # Athlete Context Snapshot
 
-This is a handoff snapshot from the training conversation through 2026-08-22. Treat dynamic Garmin values as stale after this date and refresh them through MCP before decisions.
+This is a handoff snapshot from the training conversation through 2026-08-22, with priority-tier and race-week updates through 2026-08-31. Treat dynamic Garmin values as stale after the latest date below and refresh them through MCP before decisions.
+
+**Latest update (2026-08-31): Cheorwon downgraded to C-race (see Goals below); JTBC date needs reconfirmation.**
 
 **Generic marathon methodology:** `references/marathon-training-knowledge.md` (Pfitzinger/Daniels structure, volume benchmarks, B-race vs A-race taper).
 
@@ -8,23 +10,26 @@ This is a handoff snapshot from the training conversation through 2026-08-22. Tr
 
 ## Goals
 
-- **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위.**
-- **Season peak attempt #2 (15d later):** JTBC Seoul Marathon **2026-11-01 (Sun)** — PB target **2:56:59** (~4:12/km). **Desired but secondary** to Gyeongju; plan for best-effort after Gyeongju recovery, not a second full peak.
-- **Training / diagnostic race (B):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — **Single** goal **3:0x** (~4:22–4:28/km). No taper.
+**Priority tier update (user-confirmed 2026-08-31):** Cheorwon downgraded from B-race to **C-race** ("첫 번째 풀코스" — first-ever full marathon, an experience/finish milestone, not a performance target). Gyeongju remains **A-race #1 (sub-3)**. JTBC remains **A-race #2 (PB attempt)**, third in the season.
 
-### Priority rule (user-confirmed 2026-08-22)
+- **Experience / first-marathon race (C):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — no performance target required; goal is a **safe, enjoyable finish** and marathon-distance data, not a specific time. Zero taper, zero pacing pressure — see "C-race" rule in `marathon-training-knowledge.md`. (Prior 3:0x single-goal framing is now optional upside, not the objective.)
+- **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위**, unchanged.
+- **Season peak attempt #2:** JTBC Seoul Marathon — PB target **2:56:59** (~4:12/km). **Desired but secondary** to Gyeongju; plan for best-effort after Gyeongju recovery, not a second full peak.
+  - **Date needs re-confirmation (flagged 2026-08-31):** user restated the date verbally as "10월 첫째 주 일요일" (→ calculates to **2026-10-04**) after first saying "11월 1일인가?". The previously widget-confirmed date was **2026-11-01**, which is *also* the first Sunday of November — so "10월" may be a spoken slip for "11월". **2026-10-04 would fall BEFORE Gyeongju (10/17)**, which contradicts the athlete's own stated season order (철원 → 경주 → JTBC, chronological). Until the user confirms, this file assumes **JTBC = 2026-11-01** (consistent with prior confirmation + stated race order) and flags 10/4 as a likely misstatement. **Re-verify before building the Gyeongju→JTBC bridge plan.**
 
-> **경주 서브3 > JTBC PB.** Gyeongju gets full build + **A-race taper**. JTBC **15 days later** — user self-assessment: **1 week recovery insufficient, ~2 weeks to recover and raise speed is plausible** given current fitness (70 km weeks, VO2 ~56, strong bounce after hard sessions). Plan a **structured 2-week bridge** (week 1 absorb, week 2 MP/speed sharpen), not passive hope — but **2:56:59 still requires Gyeongju to be controlled enough** (ideally ≤3:02–3:05, not 3:10+ blow-up).
+### Priority rule (user-confirmed 2026-08-22, tier updated 2026-08-31)
 
-### 2026 marathon calendar (widget-confirmed 2026-08-22)
+> **경주 서브3 > JTBC PB > 철원 (경험/완주).** Gyeongju gets full build + **A-race taper**. JTBC **15 days later** (pending date reconfirmation) — user self-assessment: **1 week recovery insufficient, ~2 weeks to recover and raise speed is plausible** given current fitness (70 km weeks, VO2 ~56, strong bounce after hard sessions). Plan a **structured 2-week bridge** (week 1 absorb, week 2 MP/speed sharpen), not passive hope — but **2:56:59 still requires Gyeongju to be controlled enough** (ideally ≤3:02–3:05, not 3:10+ blow-up). Cheorwon is now the **lowest-priority race** in the season — protect the Gyeongju build over any temptation to race Cheorwon hard.
 
-| Order | Race | Date | D from 8/22 | Goal pace (approx) | Role |
+### 2026 marathon calendar (updated 2026-08-31; JTBC date pending reconfirmation)
+
+| Order | Race | Date | D from 8/31 | Goal pace (approx) | Role |
 |-------|------|------|-------------|----------------------|------|
-| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | 14 | 3:0x → 4:22–4:28/km | **B** — no taper |
-| 2 | [경주국제마라톤](https://www.gyeongjumarathon.com/) | **10/17 (토)** 08:00 | 56 | Sub-3 → ~4:15/km | **A-race #1** — full taper, sub-3 peak |
-| 3 | [JTBC 서울마라톤](http://marathon.jtbc.com/) | **11/1 (일)** | 71 | **2:56:59** → ~4:12/km | **A-race #2** — 15d after Gyeongju; best-effort PB, no second full peak |
+| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | 5 | none required; 3:0x optional upside | **C — first full marathon**, no taper, no pace pressure |
+| 2 | [경주국제마라톤](https://www.gyeongjumarathon.com/) | **10/17 (토)** 08:00 | 47 | Sub-3 → ~4:15/km | **A-race #1** — full taper, sub-3 peak |
+| 3 | [JTBC 서울마라톤](http://marathon.jtbc.com/) | **11/1 (일)** — *user said "10월 첫째주"(10/4) 2026-08-31, unconfirmed* | 62 | **2:56:59** → ~4:12/km | **A-race #2** — best-effort PB, no second full peak |
 
-**Critical spacing:** Gyeongju → JTBC = **15 days only**. User priority = **Gyeongju sub-3 first**; JTBC 2:56 same season is **stretch** — plan recovery + micro-sharpen, not a second 3-week taper block.
+**Critical spacing (if JTBC = 11/1):** Gyeongju → JTBC = **15 days only**. User priority = **Gyeongju sub-3 first**; JTBC 2:56 same season is **stretch** — plan recovery + micro-sharpen, not a second 3-week taper block. **If JTBC is actually 10/4, the season order/plan must be rebuilt entirely** (JTBC would precede Gyeongju) — ask the user to confirm the exact date before planning past Cheorwon.
 
 - Cheorwon → Gyeongju: **42 days** — **sub-3 build block** after Cheorwon recovery.
 - Gyeongju taper: **2 weeks** (Oct 4–16) per Bosquet/RW where possible.
@@ -152,10 +157,10 @@ Use this as the default post-double-session refuel template unless the athlete r
 ## Cheorwon taper (D-14 = 2026-08-22)
 
 - **D-14 (8/22):** Namsan 26.69 km, +542 m, HR 145, TE 5.0 — de facto **last long/hard stimulus**; no additional 20 km+ before race.
-- **B-race taper only** — not full A-race taper; **light micro-taper** in final 3–4 days only (~70–80% normal volume until D-5).
+- **C-race, no taper needed at all** — even lighter than the original B-race framing; the **light micro-taper** already applied (~70–80% normal volume until D-5) is more than sufficient and doesn't need to change now that the race is downgraded.
 - **One race-pace rehearsal** was planned D-8 (8/28) but **superseded** — flat ~10 km @ 4:12–4:26 already done 8/18 tempo (humidity 96%).
 - **Saturday anchor:** D-14 Namsan on 8/22 (Sat); longest remaining taper run on **D-7 8/29 (Sat)** easy ~14–16 km, not flat race-pace repeat.
-- **Race target:** 3:0x → ~4:22–4:28/km; reassess at 25 km and 30 km — do not chase sub-3:05 if HR/TE drift early.
+- **Race target (updated 2026-08-31):** No time target required — **run by feel, finish safely**, first full-marathon experience. 3:0x (~4:22–4:28/km) is optional upside **only if it feels easy**; do not chase any specific split. No need to grind through discomfort for a time goal — this race no longer informs the sub-3 build in a pace-validation sense, only in a durability/fueling-logistics sense.
 
 ### D-7 (8/29 Sat) long run — underperformed vs plan; root cause identified
 
@@ -187,10 +192,10 @@ D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30
 | Wed 9/2 | D-3 | E 8–10 km + 4–6×100 m strides | Skip full 12 km MLR this week — bank freshness, not fatigue |
 | Thu 9/3 | D-2 | Swim 07:00 + shakeout 4–6 km w/ a few 100–200 m @ ~MP (4:22–4:28) | Prime legs only, not a workout |
 | Fri 9/4 | D-1 | Rest | Carb-up, hydrate, prep race kit/gels, early sleep |
-| **Sat 9/5** | **D-0** | **철원 DMZ 마라톤, target 3:0x (~4:22–4:28/km)** | Reassess at 25 km & 30 km; do not chase sub-3:05 if HR/TE drifts early; check race-morning weather |
+| **Sat 9/5** | **D-0** | **철원 DMZ 마라톤 — C-race, first full marathon, no time target** | Run by feel; finish safely; 3:0x is optional upside only if easy; check race-morning weather |
 | Sun 9/6 | D+1 | Rest or very easy ≤20–30 min, HR <115 (skip if DOMS significant) | First day of 3–7 day post-race recovery window before 9/7–9/13 build resumption |
 
-**Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" B-race-week target above.
+**Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above. (Table below still labeled "B레이스 주" from the pre-8/31 plan; role is now C — no plan changes needed since the taper was already minimal.)
 
 ## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
 
@@ -198,12 +203,12 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 **Monthly volume target (user):** **≥300 km/month** in **Sep–Oct build months** ≈ **75 km/week** average. Prior plan under-shot this; revised weeks below. Pad with **extra E km** (Sun 8–10, Fri 6–8) — not junk moderate pace.
 
-### Phase A — 철원 B레이스 (D-14~0)
+### Phase A — 철원 C레이스 (D-14~0) *(downgraded from B-race 2026-08-31)*
 
 | Week (Mon–Sun) | Phase goal | Weekly km (run) | Saturday key | Other quality |
 |----------------|------------|-----------------|--------------|---------------|
 | **8/24–8/30** | TE 5.0 흡수; 철원 전 토 이지 롱 | **52–58** | **8/29** E **16–18km**, HR 135–142 | 없음; **8/26** MLR 12km GA |
-| **8/31–9/6** | B레이스 주; 싱글 3:0x 실행 | **~40 + 42** | **9/5 철원 마라톤** | 없음; 9/3 셰이크아웃 4km |
+| **8/31–9/6** | C레이스 주; 페이스 목표 없음, 안전 완주 | **~40 + 42** | **9/5 철원 마라톤** (완주 목표, 3:0x는 옵션) | 없음; 9/3 셰이크아웃 4km |
 
 **Aug running (partial, incl. 8/22 Namsan):** ~**120–140 km** — not a 300 month (흡수·철원 주).
 
@@ -234,7 +239,7 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 ### Season arc (one line per phase)
 
-1. **철원:** 42km 스티뮬러스 + 25–30km 진단 — **3:0x**, taper 없음  
+1. **철원:** 42km 첫 완주 경험 — **페이스 목표 없음**, 3:0x는 옵션, taper 없음  
 2. **9/7–10/11:** 서브3 **볼륨·MP 롱·LT** → 경주 **풀 피크**  
 3. **10/17:** **서브3 1순위**  
 4. **10/19–11/1:** 2주 흡수 + MP 1회 → **JTBC PB** best-effort  

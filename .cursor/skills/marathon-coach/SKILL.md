@@ -9,7 +9,7 @@ description: Analyze Garmin running data through an available Garmin MCP server 
 
 Act as the user's running coach using Garmin MCP data as the primary evidence source. Optimize the long-term objective of a sub-3 A-race marathon, not isolated workout scores or Garmin badges.
 
-Treat Cheorwon Marathon as a B-race/training race. The Cheorwon goal is a controlled 3:0x performance that provides a strong marathon-specific stimulus and useful 30-42 km durability data **without an A-race taper**.
+Treat Cheorwon Marathon as a **C-race** (downgraded from B-race 2026-08-31 — athlete's first full marathon, an experience/finish milestone, not a performance target). No taper, no pace target, no reassessment gates; run by feel. 3:0x is optional upside only if it comes easily. See `references/marathon-training-knowledge.md` "C-race rules" and `references/athlete-context.md` Goals section for the current season priority order (Gyeongju sub-3 = A-race #1, JTBC PB = A-race #2, Cheorwon = C-race, lowest priority).
 
 ## Required reading (order)
 
@@ -94,21 +94,21 @@ Read `references/marathon-training-knowledge.md` for session definitions (E, GA,
 
 Treat all paces as context-dependent, especially in Korean summer heat and humidity. Prefer effort/HR/power guardrails when conditions are hot.
 
-- Cheorwon B-race target: 3:0x, roughly 4:22–4:28/km.
+- Cheorwon: **no pace target** (C-race, updated 2026-08-31). 3:0x (~4:22–4:28/km) is optional upside only if it feels easy — never a mandate.
 - A-race target: sub-3, approximately 4:15/km.
 - Do not force 4:15/km training in 28-35 C conditions solely because it is goal marathon pace.
 - When adjusting for heat, use actual observed pace-HR relationships from the athlete before generic heat-adjustment tables.
 
-## B-race vs A-race taper (critical)
+## C-race / B-race vs A-race taper (critical)
 
-| | B-race (Cheorwon) | A-race (sub-3 peak) |
-|---|-------------------|---------------------|
-| Taper | **No** — maintain ~80–100% normal structure | Yes — 2–3 weeks, volume −41–60% |
-| Race role | 42 km **training stimulus** + diagnostic | Peak performance |
-| Week before | Normal training (avoid only fresh TE 5.0) | Taper per knowledge base |
-| Day before | Rest or short E | Rest |
+| | C-race (Cheorwon, updated 8/31) | B-race (generic) | A-race (sub-3 peak) |
+|---|---|-------------------|---------------------|
+| Taper | **No** — normal or lighter structure | **No** — maintain ~80–100% normal structure | Yes — 2–3 weeks, volume −41–60% |
+| Pace target | **None** — run by feel | 42 km **training stimulus** + pace diagnostic | Peak performance |
+| Week before | Normal training | Normal training (avoid only fresh TE 5.0) | Taper per knowledge base |
+| Day before | Rest or short E | Rest or short E | Rest |
 
-**Never apply A-race taper math to Cheorwon.**
+**Never apply A-race taper math to Cheorwon.** Cheorwon is now a C-race, not a B-race — do not impose a pacing plan or reassessment gates on it.
 
 ## Workout design rules
 
@@ -135,17 +135,16 @@ After TE ≥4.5 or RPE 9/10: **deload week** (−20–30% volume, easier long ru
 
 Do not interpret a good HRV value as permission to ignore RPE 9/10, unusually high training effect, local soreness, or poor sleep.
 
-## Cheorwon B-race strategy
+## Cheorwon C-race strategy (updated 2026-08-31)
 
-Arrive from **normal training**, not emptied taper.
+Arrive from **normal training**, not emptied taper — this hasn't changed, but the race no longer carries a pace mandate.
 
-The race should primarily answer:
-- Is 4:25-4:30/km metabolically controlled through 25-30 km?
-- What happens to HR, power, form, and RPE after 30 km?
+The race should primarily answer (observational, not gated on hitting a time):
+- What happens to HR, power, form, and RPE across a full 42.2 km, at whatever pace feels sustainable?
 - Is fueling adequate through 35-42 km?
-- How quickly does the athlete recover from a 42.2 km marathon-specific load?
+- How quickly does the athlete recover from a 42.2 km load?
 
-Do not chase an unnecessarily fast 3:0x if doing so materially increases recovery cost and harms the A-race build.
+**Do not** prescribe pacing, reassessment checkpoints, or a "don't chase sub-X" rule tied to a specific time — there is no time target. If the athlete asks for a pacing plan anyway, offer one framed as a ceiling/comfort guide, not a goal, and make clear finishing safely and enjoying the first marathon matters more than the clock. Protect the Gyeongju A-race build above all: if Cheorwon effort threatens next week's build (excess soreness, poor recovery), extend easy days rather than treating Cheorwon like a hard key session.
 
 ## Sub-3 development logic
 

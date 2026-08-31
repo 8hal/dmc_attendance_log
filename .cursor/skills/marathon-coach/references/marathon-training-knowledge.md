@@ -281,13 +281,20 @@ When **2–3 marathons** fall in one fall block:
 
 | Role | Taper? | Typical goal |
 |------|--------|--------------|
+| **C / experience race** | **None** — normal or even reduced week; race itself is optional-effort | Finish safely, gather durability/fueling data; **no pace target, no reassessment gates** |
 | **B / training race** | **No** — normal week, race = hard day | 42 km stimulus, pace diagnostic |
 | **B+** (secondary peak) | Light micro only if **>21 days** to A-race | Sub-3 or strong MP — **trade-off vs A-race** |
 | **A-race** | **Yes** — 2–3 weeks, −41–60% volume | PB / season peak |
 
+**C-race rules (below B-race in commitment):**
+- No taper, no pacing plan, no "reassess at 25/30 km to protect a time" logic — those only apply when a time target exists.
+- Treat pacing as **run by feel / conversational-to-moderate**; any faster segment is opportunistic, not prescribed.
+- Purpose is **experience + submaximal durability/fueling data**, not a diagnostic for goal-marathon pace. Don't use C-race splits to validate or invalidate MP fitness.
+- Recovery days after a C-race can be **shorter** than after a B/A-race if the athlete kept effort genuinely easy (use actual HR/TE from the race, not the marathon distance alone, to size the recovery window).
+
 **<21 days between marathons:** second race cannot be second full peak. Either first marathon is **controlled** (MP + 5–10 s/km) or second race is **downgraded** priority.
 
-**This athlete (2026 fall):** Cheorwon (B) → 42d **Gyeongju sub-3 peak** → 15d → JTBC (secondary PB attempt). **User priority: Gyeongju #1.**  
+**This athlete (2026 fall, updated 2026-08-31):** Cheorwon (**C** — first full marathon, no pace target) → **Gyeongju sub-3 peak** (**A-race #1**) → JTBC (**A-race #2**, secondary PB attempt, date pending reconfirmation — see athlete-context.md). **User priority: Gyeongju #1**, Cheorwon now lowest priority in the season.
 
 ---
 
