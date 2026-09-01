@@ -195,6 +195,31 @@ D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30
 | **Sat 9/5** | **D-0** | **철원 DMZ 마라톤 — target 싱글 (3:0x, ~4:22–4:28/km)** | Reassess at 25 km & 30 km; drop the target immediately (not sub-3:05, just finish comfortably) if it threatens the Gyeongju build — lowest-priority race; check race-morning weather |
 | Sun 9/6 | D+1 | Rest or very easy ≤20–30 min, HR <115 (skip if DOMS significant) | First day of 3–7 day post-race recovery window before 9/7–9/13 build resumption |
 
+### Cheorwon race-day pacing plan (built 2026-09-01, target 싱글/3:0x ≈ 3:04:30–3:08:36)
+
+**Weather (KMA mid-term forecast issued 9/1 06:00, 강원영서):** clear, ~18°C morning → ~27°C midday, 0% precip. **Materially cooler/drier than recent training** (8/18 tempo 96% humidity, 8/29 long run dew point 25°C/100% RH) — pace-at-given-HR should run *better* than recent hot-weather sessions suggest. Re-check forecast D-1.
+
+**Evidence base:**
+- 8/18 tempo: 10 km continuous @ 4:12–4:26/km, HR 144–153 (well below LT ~160), in 96% humidity — target pace is sub-LT even in worse conditions than expected race day.
+- 9/1 tempo: 10 km @ 4:26/km avg, HR 145 avg/159 max, TE 4.1 — reconfirms target pace at moderate HR, 4 days out.
+- 8/15 long run: 18–24 km @ 4:22–4:34/km stayed controllable (HR 144–155); **25–27 km became threshold-like** (4:11–4:28, HR 152–163, RPE 9) — but that was after a hard 24 km buildup, not a fresh-effort analog. Treat 25–30 km as the **genuine unknown** — longest run this cycle topped out at 28–30 km.
+- Garmin generic marathon prediction: 3:15:50 — slower than target; **don't weight heavily**, it's VO2-based and doesn't capture this athlete's specific MP evidence or the cooler race-day forecast (per data-contract.md guidance on Garmin predictions).
+
+| Segment | Pace target | HR guardrail | Purpose / abort rule |
+|---|---|---|---|
+| 0–5 km | **4:35–4:45/km** | <150 | Deliberately conservative start — do not get pulled by adrenaline/cooler air/faster runners |
+| 5–21 km (half) | **4:22–4:28/km** | 148–156 | Settle into 싱글 pace; half-way target **~1:33:00–1:34:30** |
+| 21–25 km | **4:22–4:28/km**, hold | 150–158 | First real fatigue test; if HR >160 sustained or RPE ≥8 here, start backing off early rather than waiting for 30 km |
+| **25–30 km** | Hold if HR <158 & RPE ≤7; else drift to **4:35–4:45** | checkpoint | **Key decision point** (per 8/15 evidence this is where it got hard). This is a **C-race — disposable goal**: no forcing it through discomfort here |
+| 30–35 km | Effort-based, not pace-based — **uncharted distance this cycle** | keep HR <165 | Expect natural slowdown; protect form/joints over pace |
+| 35–42.2 km | Finish steady; sub-3:10 only if trajectory allows without strain | no red-line effort | Priority = safe finish + Gyeongju-build protection, not a specific split |
+
+**Fueling/hydration (first marathon — execute conservatively):**
+- Gel every ~5 km starting at 5 km (not later); water or electrolyte at **every** aid station regardless of thirst.
+- Prior sweat-loss estimate ~2.2 L on hot days; cooler forecast should reduce this, but hydrate as if it's still warm — don't under-drink because the forecast looks mild.
+
+**Abort rule (C-race, lowest priority):** if cramping, sharp/asymmetric pain, dizziness, or HR failing to come down on walk breaks — stop chasing 싱글 immediately and finish however is safest. Gyeongju (46 days out) is the real goal; nothing here is worth risking it.
+
 **Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above. (Table below still labeled "B레이스 주" from the pre-8/31 plan; role is now C — no plan changes needed since the taper was already minimal.)
 
 ## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
