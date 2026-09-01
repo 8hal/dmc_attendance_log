@@ -281,20 +281,21 @@ When **2–3 marathons** fall in one fall block:
 
 | Role | Taper? | Typical goal |
 |------|--------|--------------|
-| **C / experience race** | **None** — normal or even reduced week; race itself is optional-effort | Finish safely, gather durability/fueling data; **no pace target, no reassessment gates** |
+| **C / lowest-priority race** | **None** — normal or even reduced week | **Can still have a real pace target** — the "C" is about priority/commitment, not about lacking a goal. Drop the target immediately if pursuing it risks the A-race build (injury, excess recovery cost) |
 | **B / training race** | **No** — normal week, race = hard day | 42 km stimulus, pace diagnostic |
 | **B+** (secondary peak) | Light micro only if **>21 days** to A-race | Sub-3 or strong MP — **trade-off vs A-race** |
 | **A-race** | **Yes** — 2–3 weeks, −41–60% volume | PB / season peak |
 
-**C-race rules (below B-race in commitment):**
-- No taper, no pacing plan, no "reassess at 25/30 km to protect a time" logic — those only apply when a time target exists.
-- Treat pacing as **run by feel / conversational-to-moderate**; any faster segment is opportunistic, not prescribed.
-- Purpose is **experience + submaximal durability/fueling data**, not a diagnostic for goal-marathon pace. Don't use C-race splits to validate or invalidate MP fitness.
-- Recovery days after a C-race can be **shorter** than after a B/A-race if the athlete kept effort genuinely easy (use actual HR/TE from the race, not the marathon distance alone, to size the recovery window).
+**C-race rules (lowest priority tier, below B-race in commitment — NOT "no goal"):**
+- **Important distinction:** "C-race" ranks the race's *priority and taper investment* relative to the A-race, not whether the athlete has a time goal. A C-race can absolutely carry a real target (e.g. this athlete's 싱글/3:0x at Cheorwon) — the tier only determines how much the coach protects/tapers for it and how readily the target gets dropped if it conflicts with A-race prep.
+- No taper. Normal or lighter training load in race week.
+- Keep the athlete's actual stated target and give a real pacing plan + reassessment checkpoints (25/30 km etc.) if one exists — do not silently strip the goal down to "run by feel" without the athlete asking for that.
+- The tier expresses itself in the **abort/downgrade rule**: if HR/TE/soreness/weather signal risk to the upcoming A-race build, downgrade the target (or just finish comfortably) without hesitation — much lower threshold to bail than for a B or A-race.
+- Recovery days after a C-race can be **shorter** than after a B/A-race if the athlete kept effort genuinely easy or if the target was dropped mid-race — use actual HR/TE from the race, not the marathon distance alone, to size the recovery window.
 
 **<21 days between marathons:** second race cannot be second full peak. Either first marathon is **controlled** (MP + 5–10 s/km) or second race is **downgraded** priority.
 
-**This athlete (2026 fall, updated 2026-08-31):** Cheorwon (**C** — first full marathon, no pace target) → **Gyeongju sub-3 peak** (**A-race #1**) → JTBC (**A-race #2**, secondary PB attempt, date pending reconfirmation — see athlete-context.md). **User priority: Gyeongju #1**, Cheorwon now lowest priority in the season.
+**This athlete (2026 fall, updated 2026-09-01):** Cheorwon (**C** — lowest priority, target 싱글/3:0x, drop it without hesitation if it threatens the build) → **Gyeongju sub-3 peak** (**A-race #1**) → JTBC (**A-race #2**, PB attempt vs existing 2:57:59, target 2:56:59, confirmed 2026-11-01). **User priority: Gyeongju #1**.
 
 ---
 

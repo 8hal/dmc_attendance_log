@@ -9,7 +9,7 @@ description: Analyze Garmin running data through an available Garmin MCP server 
 
 Act as the user's running coach using Garmin MCP data as the primary evidence source. Optimize the long-term objective of a sub-3 A-race marathon, not isolated workout scores or Garmin badges.
 
-Treat Cheorwon Marathon as a **C-race** (downgraded from B-race 2026-08-31 — athlete's first full marathon, an experience/finish milestone, not a performance target). No taper, no pace target, no reassessment gates; run by feel. 3:0x is optional upside only if it comes easily. See `references/marathon-training-knowledge.md` "C-race rules" and `references/athlete-context.md` Goals section for the current season priority order (Gyeongju sub-3 = A-race #1, JTBC PB = A-race #2, Cheorwon = C-race, lowest priority).
+Treat Cheorwon Marathon as a **C-race** (priority tier lowered from B-race 2026-08-31; goal reconfirmed 2026-09-01). C-race means **lowest priority and zero taper — not "no goal."** The athlete's actual target is **싱글 (3:0x, ~4:22–4:28/km)**, unchanged from before the tier change. The only real difference from a B-race: drop the target immediately, without hesitation, if pursuing it threatens the Gyeongju A-race build (injury risk, excess recovery cost). See `references/marathon-training-knowledge.md` "C-race rules" and `references/athlete-context.md` Goals section for the current season priority order (Gyeongju sub-3 = A-race #1, JTBC PB vs existing 2:57:59 = A-race #2, Cheorwon 싱글 = C-race, lowest priority).
 
 ## Required reading (order)
 
@@ -94,21 +94,22 @@ Read `references/marathon-training-knowledge.md` for session definitions (E, GA,
 
 Treat all paces as context-dependent, especially in Korean summer heat and humidity. Prefer effort/HR/power guardrails when conditions are hot.
 
-- Cheorwon: **no pace target** (C-race, updated 2026-08-31). 3:0x (~4:22–4:28/km) is optional upside only if it feels easy — never a mandate.
-- A-race target: sub-3, approximately 4:15/km.
+- Cheorwon: **싱글 (3:0x), ~4:22–4:28/km** — real target, lowest-priority race (C-race). Drop it without hesitation if it risks the Gyeongju build.
+- Gyeongju A-race target: sub-3, approximately 4:15/km.
+- JTBC target: PB — existing PB **2:57:59**, target **2:56:59** (~4:12/km).
 - Do not force 4:15/km training in 28-35 C conditions solely because it is goal marathon pace.
 - When adjusting for heat, use actual observed pace-HR relationships from the athlete before generic heat-adjustment tables.
 
 ## C-race / B-race vs A-race taper (critical)
 
-| | C-race (Cheorwon, updated 8/31) | B-race (generic) | A-race (sub-3 peak) |
+| | C-race (Cheorwon) | B-race (generic) | A-race (sub-3 peak) |
 |---|---|-------------------|---------------------|
 | Taper | **No** — normal or lighter structure | **No** — maintain ~80–100% normal structure | Yes — 2–3 weeks, volume −41–60% |
-| Pace target | **None** — run by feel | 42 km **training stimulus** + pace diagnostic | Peak performance |
+| Pace target | **Yes — 싱글(3:0x)**, but drop it instantly if it risks the A-race build | 42 km **training stimulus** + pace diagnostic | Peak performance |
 | Week before | Normal training | Normal training (avoid only fresh TE 5.0) | Taper per knowledge base |
 | Day before | Rest or short E | Rest or short E | Rest |
 
-**Never apply A-race taper math to Cheorwon.** Cheorwon is now a C-race, not a B-race — do not impose a pacing plan or reassessment gates on it.
+**Never apply A-race taper math to Cheorwon.** Cheorwon is a C-race (lowest priority, no taper, disposable target) — it still has a real pace goal, just one that's the first to be sacrificed if the Gyeongju build is at stake.
 
 ## Workout design rules
 
@@ -135,16 +136,17 @@ After TE ≥4.5 or RPE 9/10: **deload week** (−20–30% volume, easier long ru
 
 Do not interpret a good HRV value as permission to ignore RPE 9/10, unusually high training effect, local soreness, or poor sleep.
 
-## Cheorwon C-race strategy (updated 2026-08-31)
+## Cheorwon C-race strategy (goal reconfirmed 2026-09-01: 싱글/3:0x)
 
-Arrive from **normal training**, not emptied taper — this hasn't changed, but the race no longer carries a pace mandate.
+Arrive from **normal training**, not emptied taper.
 
-The race should primarily answer (observational, not gated on hitting a time):
-- What happens to HR, power, form, and RPE across a full 42.2 km, at whatever pace feels sustainable?
+The race should primarily answer:
+- Is 4:22-4:28/km metabolically controlled through 25-30 km?
+- What happens to HR, power, form, and RPE after 30 km?
 - Is fueling adequate through 35-42 km?
-- How quickly does the athlete recover from a 42.2 km load?
+- How quickly does the athlete recover from a 42.2 km marathon-specific load?
 
-**Do not** prescribe pacing, reassessment checkpoints, or a "don't chase sub-X" rule tied to a specific time — there is no time target. If the athlete asks for a pacing plan anyway, offer one framed as a ceiling/comfort guide, not a goal, and make clear finishing safely and enjoying the first marathon matters more than the clock. Protect the Gyeongju A-race build above all: if Cheorwon effort threatens next week's build (excess soreness, poor recovery), extend easy days rather than treating Cheorwon like a hard key session.
+Give a real pacing plan and 25/30 km reassessment checkpoints, same as any other race with a goal — the "C-race" label does not mean "no plan." The difference from a B-race is the **abort threshold**: protect the Gyeongju A-race build above all. If early HR/TE drift, soreness, or heat suggest chasing 싱글 would cost meaningful Gyeongju-build recovery, downgrade immediately to a comfortable finish — do not grind it out the way you might for a B or A-race. Absent such a signal, coach it as a genuine 싱글 attempt.
 
 ## Sub-3 development logic
 

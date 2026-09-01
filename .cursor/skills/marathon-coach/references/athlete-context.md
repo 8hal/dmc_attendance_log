@@ -2,7 +2,7 @@
 
 This is a handoff snapshot from the training conversation through 2026-08-22, with priority-tier and race-week updates through 2026-08-31. Treat dynamic Garmin values as stale after the latest date below and refresh them through MCP before decisions.
 
-**Latest update (2026-09-01): JTBC date confirmed as 2026-11-01; existing PB confirmed as 2:57:59.** (2026-08-31: Cheorwon downgraded to C-race — see Goals below.)
+**Latest update (2026-09-01): JTBC date confirmed as 2026-11-01; existing PB confirmed as 2:57:59; Cheorwon goal corrected back to 싱글(3:0x) — see Goals below.** (2026-08-31: Cheorwon's *priority tier* was downgraded to C-race; that changed how much taper/protection it gets, but the user has now clarified it did NOT remove the 싱글 pace goal — an earlier version of this file incorrectly stripped the pace target entirely. Corrected 2026-09-01.)
 
 **Generic marathon methodology:** `references/marathon-training-knowledge.md` (Pfitzinger/Daniels structure, volume benchmarks, B-race vs A-race taper).
 
@@ -10,9 +10,9 @@ This is a handoff snapshot from the training conversation through 2026-08-22, wi
 
 ## Goals
 
-**Priority tier update (user-confirmed 2026-08-31):** Cheorwon downgraded from B-race to **C-race** ("첫 번째 풀코스" — first-ever full marathon, an experience/finish milestone, not a performance target). Gyeongju remains **A-race #1 (sub-3)**. JTBC remains **A-race #2 (PB attempt)**, third in the season.
+**Priority tier update (user-confirmed 2026-08-31, goal corrected 2026-09-01):** Cheorwon downgraded from B-race to **C-race** — this is a **priority/taper-commitment tier change** (lowest priority of the three, zero taper, don't sacrifice the Gyeongju build for it), **not** a removal of the pace goal. The user explicitly restated on 2026-09-01: **철원=싱글(3:0x), 경주=서브3, JTBC=PB.** Gyeongju remains **A-race #1 (sub-3)**. JTBC remains **A-race #2 (PB attempt)**, third in the season.
 
-- **Experience / first-marathon race (C):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — no performance target required; goal is a **safe, enjoyable finish** and marathon-distance data, not a specific time. Zero taper, zero pacing pressure — see "C-race" rule in `marathon-training-knowledge.md`. (Prior 3:0x single-goal framing is now optional upside, not the objective.)
+- **C-race, target = 싱글 (3:0x):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — goal is **싱글, ~4:22–4:28/km**, same as the original pre-downgrade target. What changed with the C-race tier: **no taper, lowest priority of the three races, and the goal is dropped without hesitation if pursuing it would cost the Gyeongju A-race build** (excess soreness, poor recovery, injury risk). It is still a real target, just not one worth protecting at the expense of Gyeongju.
 - **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위**, unchanged.
 - **Season peak attempt #2:** JTBC Seoul Marathon, **date confirmed 2026-09-01: 2026-11-01 (Sun)** (resolves the 8/31 "10월 첫째주" ambiguity — user explicitly confirmed 11/1). Goal: **PB**, i.e. faster than the existing PB below. Target time **2:56:59** (~4:12/km) — a clean ~60 s buffer past the existing PB, not an arbitrary number.
   - **Existing PB (user-confirmed 2026-09-01): 2:57:59.** The prior "2:56:59" figure in this file is the **target**, not the current best — do not confuse the two. Any finish under 2:57:59 counts as a PB; 2:56:59 is the planned target with a small safety margin.
@@ -25,7 +25,7 @@ This is a handoff snapshot from the training conversation through 2026-08-22, wi
 
 | Order | Race | Date | D from 9/1 | Goal pace (approx) | Role |
 |-------|------|------|-------------|----------------------|------|
-| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | 4 | none required; 3:0x optional upside | **C — first full marathon**, no taper, no pace pressure |
+| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | 4 | **싱글 (3:0x)** → ~4:22–4:28/km | **C — lowest priority**, no taper; drop the goal without hesitation if it threatens the Gyeongju build |
 | 2 | [경주국제마라톤](https://www.gyeongjumarathon.com/) | **10/17 (토)** 08:00 | 46 | Sub-3 → ~4:15/km | **A-race #1** — full taper, sub-3 peak |
 | 3 | [JTBC 서울마라톤](http://marathon.jtbc.com/) | **11/1 (일)** — **confirmed 2026-09-01** | 61 | **PB** (existing 2:57:59), target **2:56:59** → ~4:12/km | **A-race #2** — best-effort PB, no second full peak |
 
@@ -160,7 +160,7 @@ Use this as the default post-double-session refuel template unless the athlete r
 - **C-race, no taper needed at all** — even lighter than the original B-race framing; the **light micro-taper** already applied (~70–80% normal volume until D-5) is more than sufficient and doesn't need to change now that the race is downgraded.
 - **One race-pace rehearsal** was planned D-8 (8/28) but **superseded** — flat ~10 km @ 4:12–4:26 already done 8/18 tempo (humidity 96%).
 - **Saturday anchor:** D-14 Namsan on 8/22 (Sat); longest remaining taper run on **D-7 8/29 (Sat)** easy ~14–16 km, not flat race-pace repeat.
-- **Race target (updated 2026-08-31):** No time target required — **run by feel, finish safely**, first full-marathon experience. 3:0x (~4:22–4:28/km) is optional upside **only if it feels easy**; do not chase any specific split. No need to grind through discomfort for a time goal — this race no longer informs the sub-3 build in a pace-validation sense, only in a durability/fueling-logistics sense.
+- **Race target (corrected 2026-09-01): 싱글 (3:0x), ~4:22–4:28/km** — same goal as before the C-race tier change. Reassess at 25 km and 30 km; **do not force it through injury risk or at the cost of the Gyeongju build** — lowest-priority race, so downgrade to a comfortable finish immediately if HR/TE/legs say so. But absent a red flag, run it as a real 싱글 attempt, not a jog.
 
 ### D-7 (8/29 Sat) long run — underperformed vs plan; root cause identified
 
@@ -192,7 +192,7 @@ D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30
 | Wed 9/2 | D-3 | E 8–10 km + 4–6×100 m strides | Skip full 12 km MLR this week — bank freshness, not fatigue |
 | Thu 9/3 | D-2 | Swim 07:00 + shakeout 4–6 km w/ a few 100–200 m @ ~MP (4:22–4:28) | Prime legs only, not a workout |
 | Fri 9/4 | D-1 | Rest | Carb-up, hydrate, prep race kit/gels, early sleep |
-| **Sat 9/5** | **D-0** | **철원 DMZ 마라톤 — C-race, first full marathon, no time target** | Run by feel; finish safely; 3:0x is optional upside only if easy; check race-morning weather |
+| **Sat 9/5** | **D-0** | **철원 DMZ 마라톤 — target 싱글 (3:0x, ~4:22–4:28/km)** | Reassess at 25 km & 30 km; drop the target immediately (not sub-3:05, just finish comfortably) if it threatens the Gyeongju build — lowest-priority race; check race-morning weather |
 | Sun 9/6 | D+1 | Rest or very easy ≤20–30 min, HR <115 (skip if DOMS significant) | First day of 3–7 day post-race recovery window before 9/7–9/13 build resumption |
 
 **Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above. (Table below still labeled "B레이스 주" from the pre-8/31 plan; role is now C — no plan changes needed since the taper was already minimal.)
@@ -208,7 +208,7 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 | Week (Mon–Sun) | Phase goal | Weekly km (run) | Saturday key | Other quality |
 |----------------|------------|-----------------|--------------|---------------|
 | **8/24–8/30** | TE 5.0 흡수; 철원 전 토 이지 롱 | **52–58** | **8/29** E **16–18km**, HR 135–142 | 없음; **8/26** MLR 12km GA |
-| **8/31–9/6** | C레이스 주; 페이스 목표 없음, 안전 완주 | **~40 + 42** | **9/5 철원 마라톤** (완주 목표, 3:0x는 옵션) | 없음; 9/3 셰이크아웃 4km |
+| **8/31–9/6** | C레이스 주; 싱글(3:0x) 실행, 최하순위 | **~40 + 42** | **9/5 철원 마라톤** (목표 싱글 3:0x) | 없음; 9/3 셰이크아웃 4km |
 
 **Aug running (partial, incl. 8/22 Namsan):** ~**120–140 km** — not a 300 month (흡수·철원 주).
 
@@ -239,7 +239,7 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 ### Season arc (one line per phase)
 
-1. **철원:** 42km 첫 완주 경험 — **페이스 목표 없음**, 3:0x는 옵션, taper 없음  
+1. **철원:** 42km **싱글(3:0x)** 목표 — 최하순위 C레이스, taper 없음, 경주 빌드 위협 시 즉시 목표 하향  
 2. **9/7–10/11:** 서브3 **볼륨·MP 롱·LT** → 경주 **풀 피크**  
 3. **10/17:** **서브3 1순위**  
 4. **10/19–11/1:** 2주 흡수 + MP 1회 → **JTBC PB** best-effort  
