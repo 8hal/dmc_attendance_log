@@ -10,10 +10,14 @@
   },
   "warnings": [],
   "notes": [
-    "8/31 명단 신규만 적용 (박병규 퇴회는 보류).",
-    "신규: 이승호(제영아빠), 이서호(Siho).",
-    "사용자 승인 없이 프로덕션 API 호출 금지."
+    "적용 완료 2026-09-02: 신규만. 박병규(PBK)는 춘백방 손님이라 유지.",
+    "이승호(제영아빠) id=6aMU3oPhKlOqS8IE1IQp, 이서호(Siho) id=rYz84fdYo0e8uiHvnmw1."
   ],
+  "appliedAt": "2026-09-02T08:43:00.000Z",
+  "applied": {
+    "제영아빠": "6aMU3oPhKlOqS8IE1IQp",
+    "Siho": "rYz84fdYo0e8uiHvnmw1"
+  },
   "operations": [
     {
       "type": "add_member",
