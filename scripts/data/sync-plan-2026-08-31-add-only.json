@@ -1,0 +1,43 @@
+{
+  "projectId": "dmc-attendance",
+  "generatedAt": "2026-09-02T08:29:37.289Z",
+  "summary": {
+    "add": 2,
+    "updateNickname": 0,
+    "unhide": 0,
+    "leave": 0,
+    "warnings": 0
+  },
+  "warnings": [],
+  "notes": [
+    "8/31 명단 신규만 적용 (박병규 퇴회는 보류).",
+    "신규: 이승호(제영아빠), 이서호(Siho).",
+    "사용자 승인 없이 프로덕션 API 호출 금지."
+  ],
+  "operations": [
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이승호",
+        "nickname": "제영아빠",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-09-02T08:29:37.289Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이서호",
+        "nickname": "Siho",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-09-02T08:29:37.289Z"
+      }
+    }
+  ]
+}

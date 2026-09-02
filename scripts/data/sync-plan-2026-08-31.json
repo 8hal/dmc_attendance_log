@@ -1,0 +1,100 @@
+{
+  "projectId": "dmc-attendance",
+  "generatedAt": "2026-09-02T08:29:37.289Z",
+  "summary": {
+    "add": 2,
+    "updateNickname": 0,
+    "unhide": 0,
+    "leave": 1,
+    "warnings": 0
+  },
+  "warnings": [],
+  "notes": [
+    "8/31 정회원 명단 179명 vs 프로덕션 활성 178명(숨김 1=이경주 제명 완료).",
+    "신규: 이승호(제영아빠), 이서호(Siho) — CSV 비고 7월 신입.",
+    "퇴회 후보: 박병규(PBK, gw9qdf1yxXQYONMYNPxU). 8/31 명단에 없음. 2026-07-16 추가, 춘백 S3 참가자. 명단 누락이면 leave 작업을 제거하고 적용.",
+    "닉변경/복귀 없음. 동명이인 김태영(Tommy·탱님)은 양쪽 명단에 그대로 매칭.",
+    "사용자 승인 없이 프로덕션 API 호출 금지."
+  ],
+  "operations": [
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이승호",
+        "nickname": "제영아빠",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-09-02T08:29:37.289Z"
+      }
+    },
+    {
+      "type": "add_member",
+      "collection": "members",
+      "data": {
+        "realName": "이서호",
+        "nickname": "Siho",
+        "hidden": false,
+        "gender": "",
+        "team": "",
+        "createdAt": "2026-09-02T08:29:37.289Z"
+      }
+    },
+    {
+      "type": "member_leave",
+      "collection": "members",
+      "docId": "gw9qdf1yxXQYONMYNPxU",
+      "leaveReason": "withdrawn",
+      "leftAt": "2026-08-31",
+      "before": {
+        "nickname": "PBK",
+        "realName": "박병규"
+      },
+      "memberUpdate": {
+        "hidden": true,
+        "nickname": "탈퇴_gw9qdf1y",
+        "realName": "탈퇴회원_gw9qdf1y",
+        "_archivedNickname": "PBK",
+        "_archivedRealName": "박병규",
+        "leaveReason": "withdrawn",
+        "leftAt": "2026-08-31",
+        "anonymizedAt": "2026-09-02T08:29:37.289Z",
+        "updatedAt": "2026-09-02T08:29:37.289Z"
+      },
+      "relatedUpdates": [
+        {
+          "collection": "attendance",
+          "query": {
+            "memberId": "gw9qdf1yxXQYONMYNPxU"
+          },
+          "fields": {
+            "nickname": "탈퇴_gw9qdf1y",
+            "nicknameKey": "탈퇴_gw9qdf1y"
+          }
+        },
+        {
+          "collection": "attendance",
+          "query": {
+            "nicknameKey": "pbk"
+          },
+          "fields": {
+            "nickname": "탈퇴_gw9qdf1y",
+            "nicknameKey": "탈퇴_gw9qdf1y"
+          }
+        },
+        {
+          "collection": "race_results",
+          "query": {
+            "memberRealName": "박병규"
+          },
+          "fields": {
+            "memberRealName": "탈퇴회원_gw9qdf1y",
+            "memberNickName": "탈퇴_gw9qdf1y"
+          }
+        }
+      ],
+      "note": ""
+    }
+  ]
+}
