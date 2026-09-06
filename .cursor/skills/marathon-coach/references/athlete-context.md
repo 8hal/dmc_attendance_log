@@ -220,6 +220,13 @@ D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30
 
 **Abort rule (C-race, lowest priority):** if cramping, sharp/asymmetric pain, dizziness, or HR failing to come down on walk breaks — stop chasing 싱글 immediately and finish however is safest. Gyeongju (46 days out) is the real goal; nothing here is worth risking it.
 
+### Cheorwon race result (2026-09-05) — 싱글 실패, Gyeongju-build diagnostic
+
+- **Result:** 42.39 km in **3:29:51** (~4:57/km avg), HR avg 151 / max **165**, TE 5.0. Target 싱글 3:0x (~4:22–4:28) **missed by ~22 min**.
+- **Checkpoints:** 10 km 46:43 (~4:40); half ~1:41 (~9 min behind 싱글); **30 km 2:16:46** (~6 min behind 싱글 — still salvageable); **31–39 km collapse** (5:54–7:30/km, HR **drops** to 134–140 = glycogen/legs, not cardiac limit).
+- **Pacing:** km 14–30 held **4:17–4:35 @ HR 155–163** — speed capacity existed; limiter = **30 km+ durability + fueling + heat** (27–38°C recorded), not early overcooking.
+- **Implication for Gyeongju build:** add **35 km + 40 km rear-MP LSDs** (see Phase B table); **gel every 5 km from km 5** on all 28 km+ runs; do not repeat 싱글 failure analysis as "need more speed" — need **long MP blocks on tired legs past 30 km**.
+
 **Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above. (Table below still labeled "B레이스 주" from the pre-8/31 plan; role is now C — no plan changes needed since the taper was already minimal.)
 
 ## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
@@ -239,17 +246,21 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 ### Phase B — 경주 서브3 빌드 (6 weeks) — **월 300+ 목표**
 
+**Long-run progression revised 2026-09-06** after Cheorwon (31–39 km bonk despite 14–30 km @ 4:17–4:28): priority = **35 km + 40 km LSD with rear MP blocks** + **fueling every 5 km** on all 28 km+ runs. Do not skip the 28–30 km bridge week before 35 km.
+
 | Week | Phase goal | Weekly km | Saturday key | Other quality |
 |------|------------|-----------|--------------|---------------|
 | **9/7–9/13** | 철원 회복; 재가동 | **48–55** | **9/13** E **12–14km** | E only; **Sun E 8–10** pad |
-| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **9/20** L **24–26km** progressive GA | **9/16 화 템포** 12km (7km T); **9/18 목 인터벌**; **9/17 수 MLR 15km** |
-| **9/21–9/27** | 빌드 2 — MP 도입 | **82–88** | **9/27** L **26–28km**, last **8–10km @ 4:18–4:22** | **9/23 화** 14km (9km @ 4:20–4:25); **9/25 목 인터벌**; **9/24 수 MLR 16km** |
-| **9/28–10/4** | 디로드 (−15%) | **68–72** | **10/4** E **20–22km** | 없음 |
-| **10/5–10/11** | 빌드 3 — MP 롱 확대 | **88–95** | **10/11** L **30–32km**, last **12–14km @ 4:15–4:18** | **10/7 화** 14km (10km @ 4:15–4:20); **10/9 목 인터벌**; **10/8 수 MLR 16km** |
-| **10/12–10/18** | **피크 + taper** | **~72 run + 42** | **10/17 경주 서브3** | **10/14 화** 8km (5km @ 4:15); taper — **목 인터벌 없음** |
+| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **9/20** L **28km** progressive GA, last **6km @ 4:20–4:25** (MP touch) | **9/16 화 템포** 12km (7km T); **9/18 목 인터벌**; **9/17 수 MLR 15km** |
+| **9/21–9/27** | 빌드 2 — **35km LSD + 후반 MP** | **82–88** | **9/27** **35km LSD**: km 1–20 E/GA (5:10–5:40, HR<135), km 21–35 **MP 4:18–4:22** (HR 148–158) | **9/23 화** 14km (9km @ 4:20–4:25); **9/25 목 인터벌**; **9/24 수 MLR 16km** |
+| **9/28–10/4** | 피크 롱 주 (디로드 대신 **40km**; 월–금 볼륨 −20%) | **75–82** | **10/4** **40km LSD**: km 1–25 E/GA (5:15–5:45, HR<135), km 26–40 **MP 4:15–4:18** (HR 150–160, 4:15 이하 금지) | 없음 (화·목 강도 스킵 — 롱 회복) |
+| **10/5–10/11** | **경주 taper 1주** (볼륨 −30%, 구조 유지) | **60–68** | **10/11** E **10–12km** + 4–6×100m strides | **10/7 화** 8km (5km @ 4:15); **목 인터벌 없음** |
+| **10/12–10/18** | **taper + 경주** | **~50 run + 42** | **10/17 경주 서브3** | **10/14 화** 6km (3km @ 4:15); **금 휴식** |
 
-**Sep calendar est.:** ~**310–330 km** (40+42 + 50 + 78 + 85 + ~25 deload tail).  
-**Oct calendar est.:** ~**300–320 km** (deload head ~40 + 92 + 72+42 + absorb ~40 + JTBC bridge ~50).
+**35/40 km fueling rule (mandatory):** gel **every 5 km from km 5** + water/electrolyte at every chance on 28 km+ runs — Cheorwon bonk at km 31 was glycogen-pattern, not early pace error.
+
+**Sep calendar est.:** ~**310–330 km**.  
+**Oct calendar est.:** ~**280–300 km** (peak 40 km week + taper; Oct total slightly lower than 300 — acceptable for A-race taper).
 
 ### Phase C — JTBC 2주 브릿지 (경주 1순위 후 PB 시도)
 
