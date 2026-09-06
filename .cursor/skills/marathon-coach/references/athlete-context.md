@@ -16,6 +16,34 @@ This is a handoff snapshot from the training conversation through 2026-08-22, wi
 - **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위**, unchanged.
 - **Season peak attempt #2:** JTBC Seoul Marathon, **date confirmed 2026-09-01: 2026-11-01 (Sun)** (resolves the 8/31 "10월 첫째주" ambiguity — user explicitly confirmed 11/1). Goal: **PB**, i.e. faster than the existing PB below. Target time **2:56:59** (~4:12/km) — a clean ~60 s buffer past the existing PB, not an arbitrary number.
   - **Existing PB (user-confirmed 2026-09-01): 2:57:59.** The prior "2:56:59" figure in this file is the **target**, not the current best — do not confuse the two. Any finish under 2:57:59 counts as a PB; 2:56:59 is the planned target with a small safety margin.
+  - **Body weight at PB (user-confirmed 2026-09-07): ~68 kg.** Current fasting weight **~72.9 kg** (173 cm, reported 2026-09-01) → **~4.9 kg above PB race weight.** Closing this gap is a **season goal** alongside Gyeongju sub-3 / JTBC PB — integrate with training, never trade MP-long fueling or recovery for aggressive deficit.
+
+## Body composition & race weight (added 2026-09-07)
+
+| Metric | PB era | Current (2026-09) | Gyeongju target (10/17) | JTBC stretch |
+|--------|--------|-------------------|-------------------------|--------------|
+| Weight | **~68 kg** | **~72.9 kg** | **70–71 kg** (realistic) | **68–69 kg** (if trend holds) |
+| Gap | — | **+4.9 kg** | **−2 to −3 kg** | **−4 to −5 kg** |
+
+**Coaching rules — weight loss × marathon build (do not violate):**
+
+1. **Rate:** **0.25–0.4 kg/week** max during 75–88 km build weeks. Faster loss → Cheorwon-style late-race bonk risk, injury, poor MP sessions.
+2. **Never deficit on:** 35/40 km MP long days, tempo/interval days, **2 days before** any 28 km+ run, race week, or when HRV suppressed / legs heavy post-long.
+3. **Deficit OK on:** easy-only days, swim days (if run was easy), Mon rest after long run — target **−200~300 kcal** vs maintenance, not −500+.
+4. **Protein floor:** **1.6–2.0 g/kg** (~115–145 g/day at 73 kg) — protect muscle while leaning.
+5. **Weigh-in:** **공복, 같은 조건** (e.g. post-easy-morning or rest morning) **1×/week** — daily scale noise during glycogen flux misleads.
+6. **Late dinner (22:00) + 04:30 run:** weight strategy = **퇴근 전 400–600 kcal 저녁 1차 (탄수+단백)** + **집 200 kcal 이하** — not skip dinner before hard mornings.
+7. **Cheorwon lesson:** glycogen depletion at 31 km — **never cut carbs on long-run weeks** to chase scale; cut **fat + late-night second dinner** first.
+8. **Gyeongju week (10/5–16):** **no active cut** — maintain ~70–71 kg, carb-load, race weight = already achieved trend not last-minute crash diet.
+
+**Phase integration (summary):**
+
+| Phase | Weight focus |
+|-------|----------------|
+| **9/7–9/13** recovery | **유지** (~73 kg). 철원 회복 — deficit 금지. |
+| **9/14–10/4** build + 35/40 LR | **−0.3 kg/week** trend; fuel long runs fully. |
+| **10/5–10/17** Gyeongju taper/race | **유지**, 탄수 로딩. 목표 **70–71 kg** 도달이면 성공. |
+| **10/19–11/1** JTBC bridge | if **≤71 kg** at Gyeongju, optional **−0.2 kg/week** to approach **69–70**; if still **>72**, hold — JTBC = finish/PB attempt not crash cut. |
 
 ### Priority rule (user-confirmed 2026-08-22, tier updated 2026-08-31, dates/PB locked 2026-09-01)
 
