@@ -12,10 +12,16 @@
 
 const fs = require("fs");
 const path = require("path");
-const { load: cheerioLoad } = require(path.join(
-  __dirname,
-  "../functions/node_modules/cheerio"
-));
+const { createRequire } = require("module");
+
+const root = path.join(__dirname, "..");
+const functionsNm = path.join(root, "functions", "node_modules");
+if (!fs.existsSync(functionsNm)) {
+  console.error("functions/node_modules 없음. cd functions && npm ci");
+  process.exit(1);
+}
+const requireFromFunctions = createRequire(path.join(functionsNm, "_"));
+const { load: cheerioLoad } = requireFromFunctions("cheerio");
 const { normalizeRaceDistance } = require("../functions/lib/raceDistance");
 
 const EVENT_ID = "evt_2026-09-05_23_dmz";
