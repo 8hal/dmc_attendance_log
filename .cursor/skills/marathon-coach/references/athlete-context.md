@@ -254,6 +254,7 @@ D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30
 - **Checkpoints:** 10 km 46:43 (~4:40); half ~1:41 (~9 min behind 싱글); **30 km 2:16:46** (~6 min behind 싱글 — still salvageable); **31–39 km collapse** (5:54–7:30/km, HR **drops** to 134–140 = glycogen/legs, not cardiac limit).
 - **Pacing:** km 14–30 held **4:17–4:35 @ HR 155–163** — speed capacity existed; limiter = **30 km+ durability + fueling + heat** (27–38°C recorded), not early overcooking.
 - **Implication for Gyeongju build:** add **35 km + 40 km rear-MP LSDs** (see Phase B table); **gel every 5 km from km 5** on all 28 km+ runs; do not repeat 싱글 failure analysis as "need more speed" — need **long MP blocks on tired legs past 30 km**.
+- **Athlete subjective (2026-09-07):** from **30 km+**, felt **cardiorespiratory system "not working"** (심폐 미작동 느낌) **and** leg pain; judged continuing would **hurt recovery** → **stopped / backed off** (matches km 31–39 Garmin). Correct C-race call for Gyeongju preservation. HR **fell** during collapse — often **glycogen/CNS + protective slowdown**, not max-HR cardio failure; still address with fueling + 35/40 km exposure.
 
 **Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above. (Table below still labeled "B레이스 주" from the pre-8/31 plan; role is now C — no plan changes needed since the taper was already minimal.)
 
