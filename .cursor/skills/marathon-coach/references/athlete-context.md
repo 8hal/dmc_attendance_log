@@ -14,8 +14,9 @@ This is a handoff snapshot from the training conversation through 2026-08-22, wi
 
 - **C-race, target = 싱글 (3:0x):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — goal is **싱글, ~4:22–4:28/km**, same as the original pre-downgrade target. What changed with the C-race tier: **no taper, lowest priority of the three races, and the goal is dropped without hesitation if pursuing it would cost the Gyeongju A-race build** (excess soreness, poor recovery, injury risk). It is still a real target, just not one worth protecting at the expense of Gyeongju.
 - **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위**, unchanged.
-- **Season peak attempt #2:** JTBC Seoul Marathon, **date confirmed 2026-09-01: 2026-11-01 (Sun)** (resolves the 8/31 "10월 첫째주" ambiguity — user explicitly confirmed 11/1). Goal: **PB**, i.e. faster than the existing PB below. Target time **2:56:59** (~4:12/km) — a clean ~60 s buffer past the existing PB, not an arbitrary number.
-  - **Existing PB (user-confirmed 2026-09-01): 2:57:59.** The prior "2:56:59" figure in this file is the **target**, not the current best — do not confuse the two. Any finish under 2:57:59 counts as a PB; 2:56:59 is the planned target with a small safety margin.
+- **Season peak attempt #2:** JTBC Seoul Marathon **2026-11-01 (Sun)** — **2026 race date** (user-confirmed 2026-09-01). Goal: **PB**, i.e. faster than the existing PB below. Target time **2:56:59** (~4:12/km) — a clean ~60 s buffer past the existing PB, not an arbitrary number.
+  - **Existing PB (user-confirmed 2026-09-01): 2:57:59** at **JTBC 2025-11-02 (Sun)** — **2025 race date** (user-clarified 2026-09-07). Do **not** confuse **2026-11-01** (upcoming A-race) with **2025-11-02** (PB / HR reference race).
+  - The prior "2:56:59" figure in this file is the **target**, not the current best — do not confuse the two. Any finish under 2:57:59 counts as a PB; 2:56:59 is the planned target with a small safety margin.
   - **Body weight at PB (user-confirmed 2026-09-07): ~68 kg.** Current fasting weight **~72.9 kg** (173 cm, reported 2026-09-01) → **~4.9 kg above PB race weight.** Closing this gap is a **season goal** alongside Gyeongju sub-3 / JTBC PB — integrate with training, never trade MP-long fueling or recovery for aggressive deficit.
 
 ## Body composition & race weight (added 2026-09-07)
@@ -310,6 +311,42 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 4. **10/19–11/1:** 2주 흡수 + MP 1회 → **JTBC PB** best-effort  
 
 **Gyeongju → JTBC gates:** Sub-3/3:00–3:02 at Gyeongju → JTBC **2:56–3:00**; 3:03–3:08 → JTBC **sub-3**; 3:10+ → JTBC **완주/3:05**.
+
+## Personal HR profile — low-HR athlete (added 2026-09-07)
+
+**User-stated:** HR runs **lower than typical runners**; **cannot sustain / "overcome" efforts above personal marathon max HR** — treat **JTBC 2025-11-02** (not 2026-11-01) **PB race max** as the practical ceiling, not generic age formulas or other athletes' numbers.
+
+### JTBC Seoul Marathon 2025-11-02 (Sun) — PB reference session (Garmin id 20864378983)
+
+> **Date note:** PB was set **2025-11-02**; **2026 JTBC is 2026-11-01** — same event, different calendar year.
+
+| Field | Value |
+|-------|-------|
+| Result | **2:58:04** (PB 2:57:59) @ **~68 kg** |
+| avg HR | **160** |
+| **max HR** | **171** ← **personal marathon ceiling (user-confirmed)** |
+| km 5–20 | ~4:02–4:14/km, lap avg HR **157–158** |
+| km 25–30 | ~4:17–4:18/km, lap avg HR **160–161** |
+| km 35–42 | ~4:12–4:22/km, lap avg HR **164–167**, lap max **168–171** |
+
+**Interpretation:** PB marathon was run mostly **157–167 avg HR** with **171 touched only in the final 10 km** — not a "high-HR" race by population standards, but **this athlete's true max effort**. Garmin LT HR **~160** aligns with **PB marathon average HR 160** — marathon at goal pace ≈ threshold HR for this athlete.
+
+### Cheorwon 2026-09-05 contrast
+
+- max HR **165** only ( **6 bpm below PB ceiling** ), yet **31–39 km collapse** with "cardiorespiratory not working" + leg pain → **bonk was NOT "failed to push HR high enough"**; fueling + first-42km durability remain primary limiters even with low-HR phenotype.
+
+### Race & MP guardrails (use instead of generic tables)
+
+| Zone | HR | Use |
+|------|-----|-----|
+| E / recovery | <120 | Easy days, recovery week |
+| GA / MLR | 120–135 | Aerobic support |
+| **MP target (Gyeongju ~4:15)** | **158–165** | Match JTBC PB km 5–30 pattern |
+| **MP high / cost zone** | **166–168** | Brief only; PB finish territory |
+| **Absolute marathon max** | **171** | **Do not plan to race here before km 35+**; user cannot sustain above |
+| **Abort / downshift** | Sustained >168 before km 30, or "심폐 미작동" feel at any HR | Downshift 10–15 s/km immediately — Cheorwon lesson |
+
+**Coaching rule:** Never cite "other runners' marathon HR" or push this athlete to "run higher HR" to hit pace — **pace must fit within 158–165 for MP blocks**; if pace requires >168 sustained, it's too fast for current fitness or conditions.
 
 ## Garmin snapshot on 2026-08-13
 
