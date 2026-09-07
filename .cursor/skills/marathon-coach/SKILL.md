@@ -97,6 +97,7 @@ Treat all paces as context-dependent, especially in Korean summer heat and humid
 - Cheorwon: **싱글 (3:0x), ~4:22–4:28/km** — real target, lowest-priority race (C-race). Drop it without hesitation if it risks the Gyeongju build.
 - Gyeongju A-race target: sub-3, approximately 4:15/km.
 - JTBC target: PB — existing PB **2:57:59**, target **2:56:59** (~4:12/km).
+- **HR guardrails (this athlete — low-HR phenotype):** use **JTBC 2025-11-02 PB** as reference, not generic tables. MP **158–165**; brief **166–168**; absolute max **171** (km 35+ only). **Cheorwon lesson:** bonk at km 31+ with HR **falling** to 134–140 at max 165 — do **not** coach "push HR higher." See `athlete-context.md` → Personal HR profile + Post-Cheorwon build goals.
 - Do not force 4:15/km training in 28-35 C conditions solely because it is goal marathon pace.
 - When adjusting for heat, use actual observed pace-HR relationships from the athlete before generic heat-adjustment tables.
 
@@ -152,7 +153,9 @@ Give a real pacing plan and 25/30 km reassessment checkpoints, same as any other
 
 After Cheorwon, use the race as a diagnostic session rather than a verdict.
 
-Progression outline in `references/marathon-training-knowledge.md` (return to 70 km → build 85–95 → peak 90–100 with MP long runs → **A-race taper only** at sub-3 peak).
+**Cheorwon diagnostic (locked 2026-09-07):** limiter = **30 km+ durability + fueling**, **not** speed or max HR. km 14–30 @ 4:17–4:35 / HR 155–163; km 31–39 collapse with HR **dropping** to 134–140 at max 165 (6 bpm below PB ceiling 171). Build response: **35 km + 40 km rear-MP LSDs**, gel every 5 km on 28 km+ runs, 75–85 km/week — **not** more speed or "higher HR."
+
+Progression outline in `references/marathon-training-knowledge.md` (return to 70 km → build 85–95 → peak with 35/40 km MP long runs → **A-race taper only** at Gyeongju peak).
 
 ## Post-workout review format
 

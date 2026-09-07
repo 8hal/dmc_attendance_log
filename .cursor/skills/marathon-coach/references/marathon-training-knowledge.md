@@ -266,12 +266,14 @@ Context as of 2026-08-22:
 
 ## Post-Cheorwon → sub-3 build (outline)
 
-1. **Recovery 5–10 days** — volume E only, HRV/RHR normalize  
-2. **Resumption** — return to **70 km** template with MLR + LT  
-3. **Build 4–6 weeks** — progress toward **85–95 km**, MP blocks grow (Sep 6–Oct 16 toward Gyeongju)  
-4. **Gyeongju Oct 17** — sub-3 attempt OR controlled **3:05–3:10** if peaking JTBC  
-5. **JTBC Nov 1** — **A-race taper** from Oct ~mid; only **15 days** after Gyeongju — plan Gyeongju cost accordingly  
-6. **Peak** — **90–100 km** weeks before JTBC taper; long run **30–32 km** w/ **12–16 km MP** in Sep–Oct build  
+**Diagnostic conclusion (2026-09-07):** Cheorwon bonk was **not** max-HR failure (max 165 vs PB ceiling 171; HR **fell** during km 31–39 collapse). Primary limiters: **fueling + 30 km+ durability on tired legs**. Do not add speed or "push HR higher" — add **long MP blocks past 30 km** and **race fueling in training**.
+
+1. **Recovery 5–10 days** — volume E only, HRV/RHR normalize; **no calorie deficit**
+2. **Resumption** — return to **70–80 km** template with MLR + LT
+3. **Build 4–6 weeks** — progress toward **75–88 km**, **35 km + 40 km rear-MP LSDs** (9/27, 10/4), gel every 5 km on 28 km+ runs (Sep 6–Oct 16 toward Gyeongju)
+4. **Gyeongju Oct 17** — sub-3 attempt @ MP **4:15/km**, HR **158–165**; downshift if "심폐 미작동" feel at any HR
+5. **JTBC Nov 1** — only **15 days** after Gyeongju — plan Gyeongju cost accordingly; 2-week bridge (absorb + sharpen)
+6. **Peak long runs** — **35 km + 40 km** w/ rear **14–15 km MP** blocks, not generic 30–32 km
 
 ---
 
@@ -295,7 +297,7 @@ When **2–3 marathons** fall in one fall block:
 
 **<21 days between marathons:** second race cannot be second full peak. Either first marathon is **controlled** (MP + 5–10 s/km) or second race is **downgraded** priority.
 
-**This athlete (2026 fall, updated 2026-09-01):** Cheorwon (**C** — lowest priority, target 싱글/3:0x, drop it without hesitation if it threatens the build) → **Gyeongju sub-3 peak** (**A-race #1**) → JTBC (**A-race #2**, PB attempt vs existing 2:57:59, target 2:56:59, confirmed 2026-11-01). **User priority: Gyeongju #1**.
+**This athlete (2026 fall, updated 2026-09-07):** Cheorwon (**C** — 싱글 missed; diagnostic = fueling + 30 km+ durability, **not** max HR) → **Gyeongju sub-3 peak** (**A-race #1**, HR 158–165 @ ~4:15) → JTBC (**A-race #2**, PB 2:57:59 → target 2:56:59, **2026-11-01**). **User priority: Gyeongju #1**.
 
 ---
 

@@ -2,7 +2,7 @@
 
 This is a handoff snapshot from the training conversation through 2026-08-22, with priority-tier and race-week updates through 2026-08-31. Treat dynamic Garmin values as stale after the latest date below and refresh them through MCP before decisions.
 
-**Latest update (2026-09-01): JTBC date confirmed as 2026-11-01; existing PB confirmed as 2:57:59; Cheorwon goal corrected back to 싱글(3:0x) — see Goals below.** (2026-08-31: Cheorwon's *priority tier* was downgraded to C-race; that changed how much taper/protection it gets, but the user has now clarified it did NOT remove the 싱글 pace goal — an earlier version of this file incorrectly stripped the pace target entirely. Corrected 2026-09-01.)
+**Latest update (2026-09-07): Cheorwon HR analysis locked — not max-HR effort; bonk = fueling + 30 km+ durability. Post-Cheorwon Gyeongju build goals documented. JTBC dates: 2026-11-01 (race) vs 2025-11-02 (PB/HR reference).**
 
 **Generic marathon methodology:** `references/marathon-training-knowledge.md` (Pfitzinger/Daniels structure, volume benchmarks, B-race vs A-race taper).
 
@@ -254,10 +254,68 @@ D-5 → race → D+1. **No Tue/Thu quality this week** (same rule as 8/24–8/30
 - **Result:** 42.39 km in **3:29:51** (~4:57/km avg), HR avg 151 / max **165**, TE 5.0. Target 싱글 3:0x (~4:22–4:28) **missed by ~22 min**.
 - **Checkpoints:** 10 km 46:43 (~4:40); half ~1:41 (~9 min behind 싱글); **30 km 2:16:46** (~6 min behind 싱글 — still salvageable); **31–39 km collapse** (5:54–7:30/km, HR **drops** to 134–140 = glycogen/legs, not cardiac limit).
 - **Pacing:** km 14–30 held **4:17–4:35 @ HR 155–163** — speed capacity existed; limiter = **30 km+ durability + fueling + heat** (27–38°C recorded), not early overcooking.
-- **Implication for Gyeongju build:** add **35 km + 40 km rear-MP LSDs** (see Phase B table); **gel every 5 km from km 5** on all 28 km+ runs; do not repeat 싱글 failure analysis as "need more speed" — need **long MP blocks on tired legs past 30 km**.
-- **Athlete subjective (2026-09-07):** from **30 km+**, felt **cardiorespiratory system "not working"** (심폐 미작동 느낌) **and** leg pain; judged continuing would **hurt recovery** → **stopped / backed off** (matches km 31–39 Garmin). Correct C-race call for Gyeongju preservation. HR **fell** during collapse — often **glycogen/CNS + protective slowdown**, not max-HR cardio failure; still address with fueling + 35/40 km exposure.
+- **Athlete subjective (2026-09-07):** from **30 km+**, felt **cardiorespiratory system "not working"** (심폐 미작동 느낌) **and** leg pain; judged continuing would **hurt recovery** → **stopped / backed off** (matches km 31–39 Garmin). Correct C-race call for Gyeongju preservation.
 
-**Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above. (Table below still labeled "B레이스 주" from the pre-8/31 plan; role is now C — no plan changes needed since the taper was already minimal.)
+#### Cheorwon HR analysis — was it max HR? (user-confirmed 2026-09-07)
+
+**Conclusion: No.** Cheorwon was **not** a max-HR cardiovascular effort for this athlete. Do **not** interpret the race as "심박을 더 올려서 버텼어야 했다" or "심폐가 한계까지 갔다."
+
+| Metric | Cheorwon 2026-09-05 | JTBC PB 2025-11-02 (reference) |
+|--------|---------------------|--------------------------------|
+| **avg HR** | **151** | **160** |
+| **max HR** | **165** | **171** (personal marathon ceiling) |
+| **Gap to ceiling** | **6 bpm below** (~96% of max) | ceiling itself |
+| **km 14–30** | 4:17–4:35/km, HR **155–163** | 4:02–4:18/km, HR **157–161** (similar zone) |
+| **km 31–39** | 5:54–7:30/km, HR **falls to 134–140** | — (PB race: HR **164–171** in final 10 km) |
+
+**Pattern diagnosis:**
+
+| Pattern | Max-HR cardio limit | Cheorwon actual |
+|---------|---------------------|-----------------|
+| Late-race pace | Slows but athlete still "fighting" | Collapsed 5:54–7:30/km |
+| Late-race HR | Stays high or rises when pushing | **Dropped** to 134–140 |
+| Subjective feel | Lungs/legs maxed at high HR | "심폐 미작동" **at moderate HR** |
+| **Verdict** | — | **Glycogen bonk + first-42km durability + heat** — not cardiac ceiling |
+
+**Coaching implications (locked):**
+
+1. **Do not** prescribe "push HR higher" to fix late-race fade — this athlete's bonk pattern is **HR falling**, not HR failing to reach max.
+2. **Do not** reframe 싱글 miss as "started too fast" — km 14–30 was controlled (155–163 HR, within MP target zone).
+3. **Do** fix via **35 km + 40 km rear-MP LSDs**, **gel every 5 km** on 28 km+ runs, and **full carb fueling** on long-run weeks (never cut carbs to chase scale weight).
+4. **"심폐 미작동" feel at km 30+** with HR **below** 165 → treat as **downshift signal** (pace −10–15 s/km or walk), not as permission to dig deeper — matches C-race abort rule and Gyeongju guardrails.
+
+### Post-Cheorwon build goals — Gyeongju A-race #1 (locked 2026-09-07)
+
+**Primary limiter identified:** not speed, not max HR — **30 km+ durability on tired legs + race fueling**.
+
+**Top 3 must-dos (non-negotiable):**
+
+| # | Goal | Detail |
+|---|------|--------|
+| 1 | **35 km + 40 km rear-MP LSDs** | 9/27: 35 km (km 21–35 @ MP 4:18–4:22); 10/4: 40 km (km 26–40 @ MP 4:15–4:18) — simulate Cheorwon km 30+ on pre-fatigued legs |
+| 2 | **Fueling discipline** | Gel **every 5 km from km 5** on all **28 km+** runs — training = race; Cheorwon bonk was glycogen-pattern |
+| 3 | **Volume + structure** | **75–85 km/week**, Tue tempo + Thu interval + Sat long; Sep **≥300 km** month target |
+
+**Explicit non-goals (do not pursue based on Cheorwon):**
+
+- ❌ More speed / VO2 / anaerobic work — speed existed through km 30
+- ❌ "Run higher HR" to hit pace — low-HR phenotype; bonk was not HR-ceiling failure
+- ❌ Aggressive weight cut on long-run weeks — Cheorwon lesson: glycogen > scale number
+
+**Gyeongju race targets (2026-10-17):**
+
+| Target | Value | HR guardrail (this athlete) |
+|--------|-------|----------------------------|
+| **Time** | **Sub-3** (~2:59:59) | — |
+| **Pace** | **~4:15/km** MP | **158–165** sustained (match JTBC PB km 5–30) |
+| **Weight** | **70–71 kg** (realistic; not crash to 68) | Maintain on taper week |
+| **Fueling** | Gel every 5 km from km 5 | Same as training long runs |
+| **Downshift trigger** | km 25–30 | HR **>168 sustained** OR "심폐 미작동" feel **at any HR** → −10–15 s/km immediately |
+| **Late race (km 35+)** | Hold effort | Brief **166–168** OK; **171** = absolute ceiling, PB-finish territory only |
+
+**Recovery week (9/7–13):** E only, no quality; **no calorie deficit**; 9/7 Mon recovery jog (4.24 km, HR 97/105) = on track.
+
+**Weekly total:** ~26–34 km non-race + 42.2 km race ≈ 68–76 km — consistent with "~40+42" C-race-week target above.
 
 ## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
 
@@ -331,9 +389,17 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 **Interpretation:** PB marathon was run mostly **157–167 avg HR** with **171 touched only in the final 10 km** — not a "high-HR" race by population standards, but **this athlete's true max effort**. Garmin LT HR **~160** aligns with **PB marathon average HR 160** — marathon at goal pace ≈ threshold HR for this athlete.
 
-### Cheorwon 2026-09-05 contrast
+### Cheorwon 2026-09-05 — HR contrast vs PB (see full analysis above)
 
-- max HR **165** only ( **6 bpm below PB ceiling** ), yet **31–39 km collapse** with "cardiorespiratory not working" + leg pain → **bonk was NOT "failed to push HR high enough"**; fueling + first-42km durability remain primary limiters even with low-HR phenotype.
+| | Cheorwon | JTBC PB |
+|---|----------|---------|
+| avg / max HR | 151 / **165** | 160 / **171** |
+| km 31–39 | HR **134–140** (fell) | HR **164–171** (rose to ceiling) |
+| **Verdict** | **Not max-HR effort** — bonk = fueling + 30 km+ durability | True max-effort reference |
+
+- User confirmed 2026-09-07: 철원 심박은 **거의 최대가 아니었다** — max **165** vs ceiling **171**, collapse 시 HR **하락**.
+- **"심폐 미작동" subjective feel** at km 30+ is consistent with **glycogen/CNS bonk**, not proof that cardiovascular max was reached.
+- Full build response → **Post-Cheorwon build goals** section and Phase B table (35/40 km LSDs + fueling).
 
 ### Race & MP guardrails (use instead of generic tables)
 
