@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Garmin 훈련 데이터 다운로드</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-press: #2563eb;
+      --border: #2a3548;
+      --ok: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 20px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card h2 { font-size: 0.95rem; margin: 0 0 12px; color: var(--muted); font-weight: 600; }
+    a.btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      min-height: 52px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    a.btn:active { background: var(--accent-press); }
+    a.btn.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.9rem;
+      min-height: 48px;
+    }
+    a.btn.secondary:active { background: #243044; }
+    .btn-meta { font-size: 0.75rem; opacity: 0.85; font-weight: 400; }
+    .badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--ok);
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.8rem; }
+    li { margin-bottom: 4px; }
+    .note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    code { font-size: 0.7rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <p class="badge">2026-06-13 ~ 2026-09-12 · 74 activities</p>
+  <h1>Garmin 훈련 데이터</h1>
+  <p class="sub">다른 agent 분석용 CSV · 모바일에서 탭하여 저장</p>
+
+  <div class="card">
+    <h2>한 번에 받기 (권장)</h2>
+    <a class="btn" href="garmin-export-last-3mo.zip" download="garmin-export-last-3mo.zip">
+      <span>ZIP 전체 다운로드</span>
+      <span class="btn-meta">CSV 2 + meta + README</span>
+    </a>
+  </div>
+
+  <div class="card">
+    <h2>파일별</h2>
+    <a class="btn secondary" href="garmin-training-last-3mo.csv" download="garmin-training-last-3mo.csv">
+      <span>활동별 상세 CSV</span>
+      <span class="btn-meta">74 rows</span>
+    </a>
+    <a class="btn secondary" href="garmin-daily-summary-last-3mo.csv" download="garmin-daily-summary-last-3mo.csv">
+      <span>일자별 요약 CSV</span>
+      <span class="btn-meta">63 days</span>
+    </a>
+    <a class="btn secondary" href="garmin-export-meta.json" download="garmin-export-meta.json">
+      <span>메타 JSON</span>
+      <span class="btn-meta">기간·컨텍스트</span>
+    </a>
+    <a class="btn secondary" href="README.md" download="README.md">
+      <span>컬럼 설명 README</span>
+    </a>
+  </div>
+
+  <div class="card">
+    <h2>포함 필드</h2>
+    <ul>
+      <li>날짜·시간·요일·거리·페이스·HR·TE</li>
+      <li>기온·습도·이슬점 (pace-HR 비교용)</li>
+      <li>파워·고도·1km/마지막 km 페이스·HR</li>
+    </ul>
+  </div>
+
+  <p class="note">
+    iPhone: 길게 눌러 「다운로드」 또는 Safari 공유 → 파일에 저장.<br />
+    Android: 탭 후 알림 또는 다운로드 폴더 확인.<br />
+    링크가 안 열리면 hosting 배포 후
+    <code>https://dmc-attendance.web.app/exports/</code>
+    접속.
+  </p>
+
+  <script>
+    // GitHub raw fallback when not served from hosting yet
+    (function () {
+      var host = location.hostname;
+      if (host === "dmc-attendance.web.app" || host === "localhost" || host === "127.0.0.1") return;
+      var base = "https://raw.githubusercontent.com/8hal/dmc_attendance_log/cursor/add-marathon-coach-skill-b7b3/exports/";
+      document.querySelectorAll("a.btn").forEach(function (a) {
+        var file = a.getAttribute("href");
+        if (file && !file.startsWith("http")) a.setAttribute("href", base + file);
+      });
+    })();
+  </script>
+</body>
+</html>

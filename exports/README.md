@@ -33,6 +33,15 @@ Exported **2026-09-12** from Garmin Connect API for handoff to another agent.
 - **Cheorwon 2026-09-05:** 42.4 km, 3:29:51, max HR 165, bonk km 31+ (fueling + heat)
 - **Key positive:** 2026-09-12 long 31.7 km, rear MP 4:08–4:13 @ HR 152–158
 
+## Mobile download
+
+Open in phone browser:
+
+- **After hosting deploy:** https://dmc-attendance.web.app/exports/
+- **GitHub (branch pushed):** https://github.com/8hal/dmc_attendance_log/tree/cursor/add-marathon-coach-skill-b7b3/exports
+
+Tap **ZIP 전체 다운로드** on `index.html`, or download individual CSV files.
+
 ## Regenerate
 
 ```bash

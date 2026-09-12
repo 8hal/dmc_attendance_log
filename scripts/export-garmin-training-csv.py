@@ -250,9 +250,24 @@ def main():
     meta_path = OUT_DIR / "garmin-export-meta.json"
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
+    import zipfile
+
+    zip_path = OUT_DIR / "garmin-export-last-3mo.zip"
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name in (
+            "garmin-training-last-3mo.csv",
+            "garmin-daily-summary-last-3mo.csv",
+            "garmin-export-meta.json",
+            "README.md",
+        ):
+            p = OUT_DIR / name
+            if p.exists():
+                zf.write(p, name)
+
     print(f"Wrote {activity_path} ({len(rows)} activities)")
     print(f"Wrote {daily_path} ({len(daily_rows)} days)")
     print(f"Wrote {meta_path}")
+    print(f"Wrote {zip_path}")
 
 
 if __name__ == "__main__":
