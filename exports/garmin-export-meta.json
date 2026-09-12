@@ -1,0 +1,17 @@
+{
+  "exported_at": "2026-09-12T10:15:26.008335",
+  "period_start": "2026-06-12",
+  "period_end": "2026-09-12",
+  "activity_count": 74,
+  "running_count": 67,
+  "files": [
+    "/workspace/exports/garmin-training-last-3mo.csv",
+    "/workspace/exports/garmin-daily-summary-last-3mo.csv"
+  ],
+  "athlete_notes": {
+    "device": "Garmin Forerunner 265",
+    "goals": "Gyeongju sub-3 2026-10-17, JTBC PB 2026-11-01",
+    "hr_profile": "low-HR athlete, marathon max HR ~171",
+    "pace_hr_heat": "compare pace-HR only at similar temp/dewpoint"
+  }
+}
