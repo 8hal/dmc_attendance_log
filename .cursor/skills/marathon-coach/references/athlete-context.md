@@ -1,6 +1,6 @@
 # Athlete Context Snapshot
 
-This is a handoff snapshot from the training conversation through 2026-08-22. Treat dynamic Garmin values as stale after this date and refresh them through MCP before decisions.
+This is a handoff snapshot from the training conversation through **2026-09-15**. Treat dynamic Garmin values as stale after this date and refresh them through MCP (or the Garmin snapshot script) before coaching decisions.
 
 **Generic marathon methodology:** `references/marathon-training-knowledge.md` (Pfitzinger/Daniels structure, volume benchmarks, B-race vs A-race taper).
 
@@ -10,23 +10,23 @@ This is a handoff snapshot from the training conversation through 2026-08-22. Tr
 
 - **Season peak (A-race #1):** Gyeongju International Marathon **2026-10-17 (Sat)** — **sub-3** goal (~4:15/km). **User priority: 경주 1순위.**
 - **Season peak attempt #2 (15d later):** JTBC Seoul Marathon **2026-11-01 (Sun)** — PB target **2:56:59** (~4:12/km). **Desired but secondary** to Gyeongju; plan for best-effort after Gyeongju recovery, not a second full peak.
-- **Training / diagnostic race (B):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — **Single** goal **3:0x** (~4:22–4:28/km). No taper.
+- **Training / diagnostic race (B):** Cheorwon DMZ Peace Marathon **2026-09-05 (Sat)** — **completed**. Goal was **3:0x** (~4:22–4:28/km), no taper. **Result TBD / refresh from Garmin** — do not invent a finish time.
 
 ### Priority rule (user-confirmed 2026-08-22)
 
 > **경주 서브3 > JTBC PB.** Gyeongju gets full build + **A-race taper**. JTBC **15 days later** — user self-assessment: **1 week recovery insufficient, ~2 weeks to recover and raise speed is plausible** given current fitness (70 km weeks, VO2 ~56, strong bounce after hard sessions). Plan a **structured 2-week bridge** (week 1 absorb, week 2 MP/speed sharpen), not passive hope — but **2:56:59 still requires Gyeongju to be controlled enough** (ideally ≤3:02–3:05, not 3:10+ blow-up).
 
-### 2026 marathon calendar (widget-confirmed 2026-08-22)
+### 2026 marathon calendar (refreshed 2026-09-15; widget-confirmed 2026-08-22)
 
-| Order | Race | Date | D from 8/22 | Goal pace (approx) | Role |
+| Order | Race | Date | D from 9/15 | Goal pace (approx) | Role |
 |-------|------|------|-------------|----------------------|------|
-| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | 14 | 3:0x → 4:22–4:28/km | **B** — no taper |
-| 2 | [경주국제마라톤](https://www.gyeongjumarathon.com/) | **10/17 (토)** 08:00 | 56 | Sub-3 → ~4:15/km | **A-race #1** — full taper, sub-3 peak |
-| 3 | [JTBC 서울마라톤](http://marathon.jtbc.com/) | **11/1 (일)** | 71 | **2:56:59** → ~4:12/km | **A-race #2** — 15d after Gyeongju; best-effort PB, no second full peak |
+| 1 | [철원 DMZ 국제평화마라톤](https://www.kormarathon.com/ko/races/the-23rd-cheorwon-dmz-international-peace-marathon) | **9/5 (토)** 09:00 | **done (−10d)** | 3:0x → 4:22–4:28/km | **B — completed**; result TBD / refresh Garmin |
+| 2 | [경주국제마라톤](https://www.gyeongjumarathon.com/) | **10/17 (토)** 08:00 | **32** | Sub-3 → ~4:15/km | **A-race #1** — full taper, sub-3 peak (**current priority**) |
+| 3 | [JTBC 서울마라톤](http://marathon.jtbc.com/) | **11/1 (일)** | **47** | **2:56:59** → ~4:12/km | **A-race #2** — 15d after Gyeongju; best-effort PB, no second full peak |
 
 **Critical spacing:** Gyeongju → JTBC = **15 days only**. User priority = **Gyeongju sub-3 first**; JTBC 2:56 same season is **stretch** — plan recovery + micro-sharpen, not a second 3-week taper block.
 
-- Cheorwon → Gyeongju: **42 days** — **sub-3 build block** after Cheorwon recovery.
+- Cheorwon → Gyeongju: **42 days** calendar spacing — as of **2026-09-15**, **32 days** remain to Gyeongju (**Phase B build 1** in progress).
 - Gyeongju taper: **2 weeks** (Oct 4–16) per Bosquet/RW where possible.
 - **Recovery self-assessment:** ~**2 weeks** between marathons may suffice to recover and **re-sharpen speed**; **1 week is not enough**. Use full 14-day Gyeongju→JTBC window: **7d absorb + 7d sharpen**.
 
@@ -47,11 +47,17 @@ Recent weeks before 2026-08-15 included approximately:
 - 55.4 km
 - 72.4 km
 
-Long runs included 24 km, 26.6 km, 30.0 km, 27.6 km, and 28.0 km, with some hilly/trail routes.
+Long runs included 24 km, 26.6 km, 30.0 km, 27.6 km, and 28.0 km, with some hilly/trail routes. Snapshot **2026-09-12:** **31.66 km** (~4:36/km, HR 141).
 
 Interpretation: aerobic volume and long-run frequency are now reasonably strong, but the ramp was relatively fast. Avoid chasing further mileage increases without a specific reason.
 
-**Current week (through 2026-08-20): absorption week.** Do not increase pace or distance before the Saturday long run. Quality stimulus already delivered via 8/18 tempo; no additional intervals needed this week.
+**Current week (2026-09-14–09-20, Mon–Sun): Phase B 빌드 1 — LT·MLR 복귀.** Plan **75–80 km**. Standing pattern still applies: **Tue tempo, Wed MLR, Thu interval, Sat long**. Calendar truth (Asia/Seoul): **9/14 Mon … 9/15 Tue (today) … 9/16 Wed … 9/19 Sat … 9/20 Sun**. The original table’s `9/16 화 템포` / `9/20` Saturday-key labels are **off by one weekday** — do not treat 9/16 as Tuesday.
+
+**Mon 9/14 done:** easy **11.03 km** (~6:30/km, HR 114).
+
+**Tue 9/15 done (today):** Dongtan club ~**13.8 km** (WU 1.26 + main **12.58 km / ~4:24/km / HR 146**) plus indoor cardio ~45 min. Main-set pace/HR is **not** a Monday E day — treat it as the week’s **Tuesday club/quality stimulus already delivered**.
+
+**Wed 9/16 (tomorrow):** calendar again has 동탄클럽 05:15–07:00. Default role is **MLR**, not a second tempo. After Tue volume + **sleep ~4.5 h / body battery ~20**, prefer a **downshift** — keep club **easy**, or **shorten** any remaining quality rather than stacking full LT / full 15 km MLR. Re-check Garmin sleep/HRV/RHR before locking the session.
 
 ## Speed / quality evidence
 
@@ -90,7 +96,38 @@ Interpretation:
 - Because the session was RPE 9 and TE 5.0, do not immediately prescribe another maximal long run.
 - The athlete has a tendency to accelerate when feeling good; explicitly prevent unnecessary fast finishes when the goal is clean diagnostic data.
 
-## Recent sessions (2026-08-17 through 2026-08-20)
+## Recent sessions (2026-09-12 through 2026-09-15)
+
+Source: Garmin snapshot `garmin-snapshot-2026-09-15` + calendar 동탄마라톤클럽 새벽 러닝 05:15–07:00 (Asia/Seoul). Pace = duration/distance from the compact snapshot (no laps). Refresh MCP before using these as decision-grade.
+
+### 2026-09-12 (Sat) — long run
+- **31.66 km / 145.7 min (~4:36/km)**, avg HR **141**, start 06:23. Calories 2072.
+- First post-Cheorwon long in the snapshot window; volume is already at Phase B long-run range (plan for 9/13 was E 12–14 km — this is a **bigger Saturday** than the recovery-week cap).
+
+### 2026-09-13 (Sun) — easy
+- **5.02 km / 39.1 min (~7:47/km)**, avg HR **114**, start 20:22.
+
+### 2026-09-14 (Mon, week 9/14–9/20 start) — easy
+- **11.03 km / 71.7 min (~6:30/km)**, avg HR **114**, start 05:25.
+
+### 2026-09-15 (Tue, today) — Dongtan club + indoor cardio
+Calendar: **동탄마라톤클럽 새벽 러닝 05:15–07:00**.
+- **WU:** 1.26 km / 6.3 min (~5:00/km), avg HR **124**, start **05:18**.
+- **Main:** **12.58 km / 55.3 min (~4:24/km)**, avg HR **146**, start **05:29**.
+- **Club run total ~13.84 km.** Main ~4:24/km / HR 146 is quality-adjacent, not easy.
+- **Indoor cardio (카디오):** ~45 min, avg HR **99**, start **07:02** — consistent with post-run Cardio/swim-load recording.
+
+### Recovery snapshot (Garmin daily summary, 2026-09-15)
+- Resting HR **41**, body battery **~20**, sleep **16326 s (~4.5 h / 4h 32m)**, stress avg **~28**, steps **~22033**.
+- Moderate 20 / vigorous 86 intensity minutes; total kcal **2820**.
+- **Coaching read:** RHR is low (good baseline) but **sleep + body battery are poor** after ~13.8 km plus cardio. Tuesday club quality is already in; do not treat this as a green light for another LT block on Wednesday.
+
+### Tomorrow 2026-09-16 (Wed) — MLR vs downshift
+- Calendar: again **동탄클럽 05:15–07:00**.
+- Standing pattern: **Wednesday = MLR** (~15 km GA). Original week table said **`9/16 화 템포` 12 km with ~7 km T** — that **화 label does not match 2026-09-16 (Wed)**.
+- **Downshift option (preferred given 9/15 recovery):** keep the club run **easy** (HR well below LT), **or** shorten MLR rather than forcing full 15 km GA or a late tempo. Do **not** add a full 7 km T on top of today’s 4:24/km club main. Re-pull Garmin sleep/HRV/RHR in the morning.
+
+## Earlier sessions (2026-08-17 through 2026-08-20)
 
 ### 2026-08-17 (Mon) — easy run
 - 10.5 km, 6:59/km, HR 106.
@@ -114,7 +151,7 @@ Interpretation:
 - ACWR ~1.0, Garmin training status MAINTAINING.
 - VO2max ~56.
 
-Interpretation: 8/15 TE 5.0 long run + 8/18 tempo + swim stack produced measurable HRV suppression. This week is absorption, not progression.
+Interpretation (historical, week of 8/17–8/20): 8/15 TE 5.0 long run + 8/18 tempo + swim stack produced measurable HRV suppression. That week was absorption, not progression.
 
 ### Post-Namsan (2026-08-22) subjective — quads
 - **2026-08-23:** User reports **quadriceps muscle soreness** (허벅지 자극), attributed to **downhill eccentric load** on Namsan north-side loops (+542 m rolling).
@@ -149,7 +186,13 @@ Use this as the default post-double-session refuel template unless the athlete r
 - **HR target:** 138–148 avg; uphill cap 157; no fast finish / no acceleration when feeling good.
 - **Context:** first long run after 8/15 overreach session; absorption-week long run, not a race simulation.
 
-## Cheorwon taper (D-14 = 2026-08-22)
+## Cheorwon B-race — **completed 2026-09-05**
+
+**Status as of 2026-09-15:** race is in the past. **Finish time / splits TBD — refresh from Garmin**; do not invent a result. Use the race as a diagnostic for the Gyeongju sub-3 build, not as a verdict.
+
+Historical taper notes below are kept for context (D-14 = 2026-08-22).
+
+## Cheorwon taper (D-14 = 2026-08-22) — historical
 
 - **D-14 (8/22):** Namsan 26.69 km, +542 m, HR 145, TE 5.0 — de facto **last long/hard stimulus**; no additional 20 km+ before race.
 - **B-race taper only** — not full A-race taper; **light micro-taper** in final 3–4 days only (~70–80% normal volume until D-5).
@@ -168,13 +211,17 @@ Use this as the default post-double-session refuel template unless the athlete r
 - **Recovery metrics on 8/29 morning were normal** (HRV 65 BALANCED vs weekly avg 55, RHR 44, cadence 180.5 — no mechanical/systemic red flag), confirming this was a session-specific interference + environment effect, not an overtraining or injury signal.
 - **Lesson for future weekly planning:** when a week is flagged as "no Tue tempo / no Thu interval" (absorption, B-race taper, deload), **do not substitute an interval session** even if the athlete feels capable that day — it removes the Saturday long run's intended low-fatigue baseline and confounds diagnostic data. Enforce the designated quality-skip more strictly, or if a quality session is added, downgrade the following Saturday's ambition (E only, no MP block) rather than keeping the original harder plan.
 
-## Near-term plan (superseded by Cheorwon taper above)
+## Near-term plan (2026-09-15 handoff — Phase B 빌드 1)
 
 | Date | Recommendation |
 |------|----------------|
-| 2026-08-22 (Sat) | Namsan completed — see D-14 above |
-| 2026-08-23 (Sun) | D-13 full rest |
-| 2026-08-24–09-04 | Cheorwon taper block — see coaching plan |
+| 2026-09-14 (Mon) | **Done** — easy 11.03 km, HR 114 |
+| 2026-09-15 (Tue) | **Done** — Dongtan club ~13.8 km (main ~4:24/km, HR 146) + indoor cardio ~45 min |
+| 2026-09-16 (Wed) | Standing: MLR 15 km GA. **Downshift** after low sleep / BB ~20: club easy or shortened MLR; do not force the original `9/16 화 템포` block |
+| 2026-09-17 (Thu) | Interval + swim 07:00 — only if Wed absorbed; otherwise E |
+| 2026-09-18 (Fri) | E + strides 5–8 km |
+| 2026-09-19 (Sat) | L **24–26 km** progressive GA (**actual Saturday**; original table listed 9/20) |
+| 2026-09-20 (Sun) | E pad 8–10 km |
 
 ## 2026 fall season — week-by-week goals (Aug 23 → Nov 1)
 
@@ -187,7 +234,7 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 | Week (Mon–Sun) | Phase goal | Weekly km (run) | Saturday key | Other quality |
 |----------------|------------|-----------------|--------------|---------------|
 | **8/24–8/30** | TE 5.0 흡수; 철원 전 토 이지 롱 | **52–58** | **8/29** E **16–18km**, HR 135–142 | 없음; **8/26** MLR 12km GA |
-| **8/31–9/6** | B레이스 주; 싱글 3:0x 실행 | **~40 + 42** | **9/5 철원 마라톤** | 없음; 9/3 셰이크아웃 4km |
+| **8/31–9/6** | B레이스 주; 싱글 3:0x 실행 | **~40 + 42** | **9/5 철원 마라톤 — completed**; result TBD / refresh Garmin | 없음; 9/3 셰이크아웃 4km |
 
 **Aug running (partial, incl. 8/22 Namsan):** ~**120–140 km** — not a 300 month (흡수·철원 주).
 
@@ -195,8 +242,8 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 | Week | Phase goal | Weekly km | Saturday key | Other quality |
 |------|------------|-----------|--------------|---------------|
-| **9/7–9/13** | 철원 회복; 재가동 | **48–55** | **9/13** E **12–14km** | E only; **Sun E 8–10** pad |
-| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **9/20** L **24–26km** progressive GA | **9/16 화 템포** 12km (7km T); **9/18 목 인터벌**; **9/17 수 MLR 15km** |
+| **9/7–9/13** | 철원 회복; 재가동 | **48–55** | **9/13** E **12–14km** — **actual Sat 9/12 long 31.66 km** (snapshot) | E only; **Sun E 8–10** pad |
+| **9/14–9/20** | 빌드 1 — LT·MLR 복귀 | **75–80** | **Sat 9/19** L **24–26km** progressive GA (table had 9/20; **9/20 is Sun**) | Standing: **Tue 9/15 템포** (club ~13.8 km **already done**, main ~4:24/km); **Wed 9/16 MLR** — **downshift if sleep/BB still low**; **Thu 9/17 인터벌**. Original `9/16 화 템포` / `9/18 목` labels are weekday-shifted — use calendar days, not those 화/수/목 tags. |
 | **9/21–9/27** | 빌드 2 — MP 도입 | **82–88** | **9/27** L **26–28km**, last **8–10km @ 4:18–4:22** | **9/23 화** 14km (9km @ 4:20–4:25); **9/25 목 인터벌**; **9/24 수 MLR 16km** |
 | **9/28–10/4** | 디로드 (−15%) | **68–72** | **10/4** E **20–22km** | 없음 |
 | **10/5–10/11** | 빌드 3 — MP 롱 확대 | **88–95** | **10/11** L **30–32km**, last **12–14km @ 4:15–4:18** | **10/7 화** 14km (10km @ 4:15–4:20); **10/9 목 인터벌**; **10/8 수 MLR 16km** |
@@ -218,20 +265,29 @@ Saturday = key run anchor. Swim Tue/Thu 07:00 when noted. MP = marathon pace; GA
 
 ### Season arc (one line per phase)
 
-1. **철원:** 42km 스티뮬러스 + 25–30km 진단 — **3:0x**, taper 없음  
+1. **철원:** 42km 스티뮬러스 + 25–30km 진단 — **3:0x**, taper 없음 — **completed 9/5** (result TBD)  
 2. **9/7–10/11:** 서브3 **볼륨·MP 롱·LT** → 경주 **풀 피크**  
 3. **10/17:** **서브3 1순위**  
 4. **10/19–11/1:** 2주 흡수 + MP 1회 → **JTBC PB** best-effort  
 
 **Gyeongju → JTBC gates:** Sub-3/3:00–3:02 at Gyeongju → JTBC **2:56–3:00**; 3:03–3:08 → JTBC **sub-3**; 3:10+ → JTBC **완주/3:05**.
 
-## Garmin snapshot on 2026-08-13
+## Garmin snapshot on 2026-09-15
 
-Refresh before use:
+Compact daily summary + recent activities (refresh via MCP/script before decisions; this dump has **no** VO2/LT/HRV/ACWR):
+
+- Resting HR **41**
+- Body battery **~20**
+- Sleep **16326 s (~4.5 h)**
+- Stress avg **~28**
+- Steps **~22033**; total kcal **2820**
+- Intensity minutes: moderate 20 / vigorous 86
+- Today’s load: club run ~13.84 km (WU HR 124, main HR 146) + indoor cardio 45 min HR 99
+
+Last known from **2026-08-13** (stale — re-pull):
 - VO2max ~56 (55.8)
 - LT HR 160 bpm
 - Garmin race predictions: 5K 19:17, 10K 40:53, half 1:31:16, marathon 3:19:19
-- Resting HR 45 bpm
 - HRV weekly average 54 ms, balanced, baseline 44-76 ms
 - Acute load 1070, chronic load 860, ACWR ~1.2
 - Garmin training status: Maintaining
@@ -255,7 +311,9 @@ Do not optimize training to fill the Garmin anaerobic shortage. The marathon obj
 
 **Planning rule:** Default build weeks use **Tue tempo + Thu interval + Sat long + Wed MLR**. Do not move tempo to Wed or drop Thu intervals without user request. Deload / B-race / absorption weeks: **drop both quality days**, keep structure otherwise.
 
-**Current exception (8/24–8/30):** Namsan TE 5.0 + quads — **no Tue tempo, no Thu interval** this week only. **Actual: an interval session was still done 8/27 (Thu)** — see "D-7 (8/29) long run" analysis above for the recovery-interference consequence on the following Saturday long run.
+**Current exception (9/15–9/16):** Phase B 빌드 1 is **on**. **Tue 9/15 club quality is already done** (main ~4:24/km, HR 146, plus cardio). Exception is **recovery-gated** for **Wed 9/16**: after sleep ~4.5 h / BB ~20, **downshift** (club easy or shortened MLR) instead of full 15 km GA or a second LT. Do **not** drop Thu interval automatically — decide after Wed execution + next morning Garmin. Do not execute the original `9/16 화 템포` block as if tomorrow were Tuesday.
+
+Historical exception (8/24–8/30): Namsan TE 5.0 + quads — **no Tue tempo, no Thu interval** that week only. **Actual: an interval session was still done 8/27 (Thu)** — see "D-7 (8/29) long run" analysis above for the recovery-interference consequence on the following Saturday long run.
 
 - The athlete values gradual progression and pushes back on abrupt pace increases.
 - **Key / high-volume sessions are usually scheduled on Saturday** (long runs, major quality). Weekday sessions are shorter; taper and weekly plans should put the longest run on Saturday when possible.
