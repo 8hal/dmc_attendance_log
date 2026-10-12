@@ -74,13 +74,13 @@
 
 탭: `홈 | 대회 기록 | 응원`.
 
-- 홈: 기존 (버스, 프로필 대기·확정). 배번 CTA는 새 입력 페이지 (`pageHref` `bib` 갱신)
+- 홈: 기존 (버스, 프로필 대기·확정). 배번 CTA·인라인 `submitUpdateBib`는 **저장하지 않고** `event-bib.html`로만 보낸다. 풀코스 필수 필드를 홈에서 빼 먹으면 `update-bib`가 400이 된다.
 - 대회 기록: 기존 roster
 - 응원: 닉이 있을 때만 내용. 없으면 홈과 같은 닉 선택. 출발 전에도 열림. 자동 활성화 없음
 
 응원 탭 안:
 
-1. **코스** — 0–42.195 km를 5 km 지그재그(뱀). 한 줄 5 km, 줄마다 방향 반대. 마지막 줄만 40→42.195. 고정 눈금: 5, 10, 15, 20, 25, 30, 35, **38**, 40, 42.2. 사용자 핀 없음. 풀코스 점 전부. 같은 ~0.4 km 안은 숫자 묶음.
+1. **코스** — 0–42.195 km를 5 km 지그재그(뱀). 한 줄 5 km. **짝수 줄(0, 2, …)은 왼쪽→오른쪽**, 홀수 줄은 오른쪽→왼쪽. 마지막 줄만 40→42.195. 고정 눈금: 5, 10, 15, 20, 25, 30, 35, **38**, 40, 42.2. 사용자 핀 없음. 풀코스 점 전부. 같은 ~0.4 km 안은 숫자 묶음.
 2. **순위** — 추정 거리 내림차순. 열: 닉, 조, 추정 km, 조 출발 후 경과, 평균 페이스, 칩 보정 여부. 핀 ETA 열 없음.
 3. **상세** — 순위(또는 코스 점)에서 닉을 눌렀을 때. 탭이 아님. 뒤로 = 순위. 2번 필드 + 목표 완주/페이스 + 조 출발 + 배번 + 칩 `splits`. 실명 없음.
 
@@ -119,34 +119,34 @@
 | 필드 | 형 | 의미 |
 |------|----|------|
 | `waveId` | string \| 생략 | `waves[].id`. 풀코스 보드 입장에 필수 |
-| `goalFinishSec` | number \| 생략 | 목표 넷 완주 초. 페이스 입력도 이 값으로만 저장. `42.195 / paceSecPerKm` |
+| `goalFinishSec` | number \| 생략 | 목표 넷 완주 초. 페이스 입력도 이 값으로만 저장. `goalFinishSec = round(FULL_KM * paceSecPerKm)` (`FULL_KM = 42.195`). 목표 페이스(초/km)는 `goalFinishSec / FULL_KM` |
 
 풀코스가 보드에 올라가려면 `bib`, `distance === "full"`, `waveId`(존재하는 조), `goalFinishSec`가 모두 있어야 한다.
 
-하프 등이 `waveId`/`goalFinishSec`를내면 **저장하지 않는다** (무시 또는 400. 구현은 400으로 통일).
+하프 등이 `waveId`/`goalFinishSec`를 내면 400.
 
 ### 5.3 칩 구간
 
 확정 `race_results`와 분리. 당일 `groupScrapeJobId` → `scrape_jobs.results[]`에 `splits: { label, time }[]`를 **있으면** 넣는다 (`scrapeEvent`가 버리던 필드 유지).
 
-라벨→km (대소문자·공백 무시, 부분 일치 허용):
+라벨→km: 라벨을 소문자·공백 제거한 뒤 **숫자 km는 긴 값부터** 매칭한다 (`42` → `40` → `38` → `35` → `30` → `25` → `21.1` → `15` → `10` → `5`). `15`/`25`/`35`가 `5`로 떨어지지 않게 한다. 토큰 `half`/`하프` → 21.0975, `finish`/`완주` → 42.195. 그 외는 버린다.
 
-| 인식 | km |
+| 인식 (우선) | km |
 |------|-----|
-| `5`, `5k`, `5km` | 5 |
-| `10`, `10k` | 10 |
-| `15` | 15 |
-| `21.1`, `half`, `하프` | 21.0975 |
-| `25` | 25 |
-| `30` | 30 |
-| `35` | 35 |
-| `38` | 38 |
+| `42`, `finish`, `완주` | 42.195 |
 | `40` | 40 |
-| `finish`, `완주`, `42` | 42.195 |
+| `38` | 38 |
+| `35` | 35 |
+| `30` | 30 |
+| `25` | 25 |
+| `21.1`, `half`, `하프` | 21.0975 |
+| `15` | 15 |
+| `10`, `10k` | 10 |
+| `5`, `5k`, `5km` | 5 |
 
 매핑 불가면 그 split은 버린다. 스마트칩/오마이레이스 파서가 빈 `splits`여도 1차는 목표 페이스만으로 보드가 성립한다. 파서 보강은 이 스펙의 **필수 구현이 아니다** (잡에 필드만 통과).
 
-`time`은 출발 후 경과 `HH:MM:SS` 또는 `H:MM:SS`로 해석. 불가하면 그 항목 스킵.
+`time`과 잡 `netTime`은 기존 기록 파서와 같이 `HH:MM:SS` / `H:MM:SS` → 초. 불가하면 그 항목 스킵. 보드 러너와 잡 행은 `my-pending-result`와 같이 **배번 + 종목** (`matchResultByBib`). 실명 매칭 금지.
 
 ---
 
@@ -170,7 +170,7 @@
 
 ## 7. API (`action=group-events`)
 
-신규 `action` 없음.
+신규 HTTP `action` 이름은 없다. `waves` / `cheer-board` / `cheer-runner`는 기존 `group-events`의 `subAction`이다. 구현 전에 `_docs/justification/`에 한 장 쓰고 (기존 `update-bib`·`public-roster`·`my-pending-result`로 대체 불가 이유) 사용자 확인을 받는다. `.cursor/rules/new-api-validation.mdc` 절차.
 
 ### 7.1 `POST` `update-bib` 확장
 
@@ -181,7 +181,7 @@
 `distance === "full"` (또는 저장 후 canonical이 full):
 
 - `waveId`가 `waves`에 있어야 함
-- 목표: `goalFinishSec`이 3600–36000 (1–10시간) 이거나, `goalPaceSecPerKm`으로 환산한 완주가 그 범위
+- 목표: `goalFinishSec`이 3600–36000 (1–10시간). 페이스만 오면 `goalFinishSec = round(FULL_KM * goalPaceSecPerKm)` 후 같은 범위
 - 아니면 400
 
 `distance`가 full이 아니면 `waveId`/`goal*`를 보내지 않아야 한다. 보내면 400.
@@ -194,7 +194,7 @@
 
 권한: `canWriteGroupEvents(ownerPw)` (오너·총무).
 
-`name` trim 필수. `startAt` 파싱 가능해야 함. `id` 없으면 서버가 생성. 배열 전체 교체.
+`name` trim 필수. `startAt` 파싱 가능해야 하고 **날짜가 `eventDate`와 같아야** 한다. `id` 없으면 서버가 생성. 클라이언트가 기존 조를 유지하려면 받은 `id`를 다시 보낸다. 배열 전체 교체. 사라진 `id`를 가리키는 `participants[].waveId`는 보드에서 빠진다 (orphan, 마이그레이션 없음).
 
 ### 7.3 `GET` `cheer-board`
 
