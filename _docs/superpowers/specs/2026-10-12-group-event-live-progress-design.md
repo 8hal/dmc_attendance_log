@@ -80,7 +80,7 @@
 
 응원 탭 안:
 
-1. **코스** — 0–42.195 km를 5 km 지그재그(뱀). 한 줄 5 km. **짝수 줄(0, 2, …)은 왼쪽→오른쪽**, 홀수 줄은 오른쪽→왼쪽. 마지막 줄만 40→42.195. 고정 눈금: 5, 10, 15, 20, 25, 30, 35, **38**, 40, 42.2. 사용자 핀 없음. 풀코스 점 전부. 같은 ~0.4 km 안은 숫자 묶음.
+1. **코스** — 0–42.195 km를 5 km 지그재그(뱀). 한 줄 5 km. **짝수 줄(0, 2, …)은 왼쪽→오른쪽**, 홀수 줄은 오른쪽→왼쪽. 마지막 줄만 40→42.195. 고정 눈금: 5, 10, 15, 20, 25, 30, 35, **38**, 40, 42.2. 사용자 핀 없음. 풀코스 점 전부. 점을 누르면 그 러너 상세. 같은 ~0.4 km 안은 숫자 묶음이고, 누르면 닉 목록 후 상세.
 2. **순위** — 추정 거리 내림차순. 열: 닉, 조, 추정 km, 조 출발 후 경과, 평균 페이스, 칩 보정 여부. 핀 ETA 열 없음.
 3. **상세** — 순위(또는 코스 점)에서 닉을 눌렀을 때. 탭이 아님. 뒤로 = 순위. 2번 필드 + 목표 완주/페이스 + 조 출발 + 배번 + 칩 `splits`. 실명 없음.
 
@@ -91,6 +91,7 @@
 유일한 배번 입력처.
 
 - 쿼리: `?eventId=`
+- 조 목록은 기존 `GET group-events` `detail`(또는 홈이 쓰는 같은 대회 GET)에 `waves`를 실어 온다. 별도 읽기 API 없음
 - 흐름: 닉(참가자 exact) → 종목 → 배번. `distance === "full"`이면 조 select + 목표 완주 **또는** km 페이스 (UI는 둘 중 하나, 저장은 `goalFinishSec`)
 - `my-bib.html?eventId=` → `event-bib.html?eventId=` (호스팅 redirect 또는 페이지 최상단 location replace. 쿼리 유지)
 
@@ -160,7 +161,7 @@
 2. 목표 페이스 `goalPace = goalFinishSec / FULL_KM` (초/km).
 3. 칩 없음: `km = min(FULL_KM, elapsedSec / goalPace)`.
 4. 칩 있음: `km = min(FULL_KM, lastSplit.km + max(0, elapsedSec - lastSplit.elapsedSec) / goalPace)`. (1차 보정 페이스는 목표 페이스. 구간 페이스로 바꾸지 않음.)
-5. `elapsedSec >= 0`이고 `km > 0`이면 `avgPace = elapsedSec / km`, 아니면 `avgPace = goalPace`.
+5. `elapsedSec >= 0`이고 `km > 0`이면 `avgPace = elapsedSec / km`, 아니면 `avgPace = goalPace`. `km`가 `FULL_KM`이면 완주로 보고 `elapsedSec`·`avgPace`를 더 이상 늘리지 않는다. 잡 `netTime`이 있으면 그 초를 경과·페이스 분모로 쓴다.
 6. 순위 정렬: `km` 내림차순, 동률이면 `nickname` 오름차순.
 7. 칩 뱃지: `lastSplit`이 있으면 true.
 
@@ -184,7 +185,7 @@
 - 목표: `goalFinishSec`이 3600–36000 (1–10시간). 페이스만 오면 `goalFinishSec = round(FULL_KM * goalPaceSecPerKm)` 후 같은 범위
 - 아니면 400
 
-`distance`가 full이 아니면 `waveId`/`goal*`를 보내지 않아야 한다. 보내면 400.
+`distance`가 full이 아니면 `waveId`/`goal*`를 보내지 않아야 한다. 보내면 400. 저장 후 canonical이 full이 아니면 기존 `waveId`·`goalFinishSec`를 지운다.
 
 응답: 기존처럼 `{ ok, message }`.
 
@@ -195,6 +196,8 @@
 권한: `canWriteGroupEvents(ownerPw)` (오너·총무).
 
 `name` trim 필수. `startAt` 파싱 가능해야 하고 **날짜가 `eventDate`와 같아야** 한다. `id` 없으면 서버가 생성. 클라이언트가 기존 조를 유지하려면 받은 `id`를 다시 보낸다. 배열 전체 교체. 사라진 `id`를 가리키는 `participants[].waveId`는 보드에서 빠진다 (orphan, 마이그레이션 없음).
+
+기존 `GET` `detail`(및 홈이 대회를 불러오는 GET) 응답에 `waves[]`를 포함한다. 실명은 지금처럼 총무 `detail`에만 두고, 회원 경로에는 넣지 않는다.
 
 ### 7.3 `GET` `cheer-board`
 
