@@ -230,7 +230,7 @@
     const q = "?eventId=" + encodeURIComponent(eventId);
     if (hrefKey === "boarding") return "event-home.html" + q + "&board=1";
     if (hrefKey === "boardingReturn") return "event-home.html" + q + "&board=1";
-    if (hrefKey === "bib") return "my-bib.html" + q;
+    if (hrefKey === "bib") return "event-bib.html" + q;
     if (hrefKey === "roster") return "event-roster.html" + q;
     if (hrefKey === "home") return "event-home.html" + q;
     return "#";

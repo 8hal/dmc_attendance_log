@@ -3,30 +3,23 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
-const html = fs.readFileSync(path.join(__dirname, "../../my-bib.html"), "utf8");
+const redirectHtml = fs.readFileSync(path.join(__dirname, "../../my-bib.html"), "utf8");
+const bibHtml = fs.readFileSync(path.join(__dirname, "../../event-bib.html"), "utf8");
+const cheerHtml = fs.readFileSync(path.join(__dirname, "../../event-cheer.html"), "utf8");
 
-function apiSnippet() {
-  const m = html.match(/const IS_LOCAL[\s\S]*?const API_BASE[\s\S]*?;/);
-  assert.ok(m, "missing IS_LOCAL/API_BASE block");
-  return m[0];
-}
-
-describe("my-bib API_BASE local detection", () => {
-  it("treats 127.0.0.1 as emulator host like event-home", () => {
-    assert.match(
-      apiSnippet(),
-      /hostname === ['"]localhost['"]\s*\|\|\s*(?:window\.)?location\.hostname === ['"]127\.0\.0\.1['"]/
-    );
+describe("my-bib redirects to event-bib", () => {
+  it("keeps the query string and does not call the API itself", () => {
+    assert.match(redirectHtml, /event-bib\.html/);
+    assert.match(redirectHtml, /location\.search/);
+    assert.doesNotMatch(redirectHtml, /action=group-events/);
   });
+});
 
-  it("points local API at 127.0.0.1:5001 race emulator", () => {
-    assert.match(apiSnippet(), /http:\/\/127\.0\.0\.1:5001\//);
-    assert.match(apiSnippet(), /asia-northeast3\/race/);
-  });
-
-  it("uses EventMemberProfile for saved identity and writes via syncNicknames", () => {
-    assert.match(html, /event-member-profile\.js/);
-    assert.match(html, /readSavedIdentity/);
-    assert.match(html, /syncNicknames/);
+describe("event-bib and cheer API_BASE", () => {
+  it("treats 127.0.0.1 as the emulator", () => {
+    assert.match(bibHtml, /127\.0\.0\.1/);
+    assert.match(bibHtml, /asia-northeast3\/race/);
+    assert.match(cheerHtml, /subAction=cheer-board&eventId=/);
+    assert.doesNotMatch(cheerHtml, /cheer-board&eventId=[^"]*nickname/);
   });
 });

@@ -120,15 +120,15 @@ describe("event-home bib form submit is the single keypad-confirm save path", ()
   });
 });
 
-describe("event-home submitUpdateBib falls back to the distance stage when distance is missing", () => {
+describe("event-home submitUpdateBib opens the bib page", () => {
   const html = read("event-home.html");
 
-  it("re-renders the profile card when distance is missing so the UI matches reality", () => {
+  it("sends the member to event-bib.html instead of posting update-bib", () => {
     const fn = extractFn(html, "submitUpdateBib");
-    const guardIdx = fn.search(/if\s*\(!bib\s*\|\|\s*!distance\)/);
-    assert.ok(guardIdx >= 0, "missing bib/distance guard");
-    const guardBlock = fn.slice(guardIdx, guardIdx + 250);
-    assert.match(guardBlock, /showToast\(/);
-    assert.match(guardBlock, /renderProfileCard\(identity\)/);
+    assert.match(fn, /event-bib\.html/);
+    assert.doesNotMatch(fn, /subAction:\s*"update-bib"/);
+    assert.match(html, /get\("tab"\) !== "cheer"/);
+    assert.match(html, /event-cheer\.html/);
+    assert.match(html, /data-tab="cheer"/);
   });
 });

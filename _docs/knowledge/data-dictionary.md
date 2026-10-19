@@ -113,7 +113,8 @@
 | `sourceMappings` | `{ source, sourceId }[]` — 동일 `(source, sourceId)` 쌍은 전역에서 한 문서에만 |
 | `createdAt` | ISO 문자열 등 |
 | `isGroupEvent` | `boolean` — 단체 대회 여부. 필드 없음이면 일반 대회로 취급 |
-| `participants` | 배열. 요소: `{ memberId, realName, nickname, bib?, distance? }` — 참가자 목록. `bib`는 셀프 입력(`update-bib`) 후 스크랩·self-confirm 키 |
+| `participants` | 배열. 요소: `{ memberId, realName, nickname, bib?, distance?, waveId?, goalFinishSec? }` — 참가자 목록. `bib`는 셀프 입력(`update-bib`) 후 스크랩·self-confirm 키. `waveId`·`goalFinishSec`는 풀코스 응원 보드용 (조 id, 목표 완주 초) |
+| `waves` | 배열 또는 생략. 요소: `{ id, name, startAt }` — 풀코스 조. `startAt`은 대회일과 같은 KST `YYYY-MM-DDTHH:mm:ss+09:00` |
 | `groupSource` | `object` 또는 `null` — 단체 기록 소스(오너 입력). `{ source: string, sourceId: string }`. `source`는 `race_results.source`와 동일 범주(`smartchip`, `myresult`, `spct`, `marazone`, `ohmyrace`, `manual` 중 하나) |
 | `groupScrapeStatus` | 문자열 — 단체용 스크랩 상태. 아래 표 참조 |
 | `groupScrapeJobId` | `string` 또는 `null` — 스크랩 완료 후 대응 `scrape_jobs` 문서 ID |
@@ -128,7 +129,9 @@
 
 | 단계 | 동작 |
 |------|------|
-| 배번 입력 | `POST group-events` `update-bib` — `participants[].bib`만 갱신 (공개, nickname exact) |
+| 배번 입력 | `POST group-events` `update-bib` — `participants[].bib`·종목. 풀코스는 `waveId`·`goalFinishSec`(또는 `goalPaceSecPerKm`) 필수. 페이지는 `event-bib.html` (`my-bib.html`은 그쪽으로 이동) |
+| 조 | `POST group-events` `waves` — 총무 비밀번호. `race_events.waves[]` 전체 교체 |
+| 응원 보드 | `GET group-events` `cheer-board` / `cheer-runner` — `eventId`만. 실명 없음. 풀코스(배번·조·목표)만 |
 | 스크랩 | `POST group-events` `scrape` — **`bib`가 있는 참가자만** 조회 (`pickBibScrapeTargets`). 무배번은 미참가로 간주·제외. 배번 모드 소스: `smartchip`, `ohmyrace`, `spct` |
 | 대기 조회 | `GET group-events&subAction=my-pending-result&eventId=&nickname=` — `state`: `none` \| `pending` \| `confirmed` |
 | 참가자 컨펌 | `POST group-events` `self-confirm` `{ eventId, nickname }` — scrape job에서 **본인 bib** 행만 `race_results`에 upsert. `confirmSource: "personal"`. 이벤트 전체 bulk delete 금지 |

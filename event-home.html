@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <title>대회 홈 - 동탄 마라톤 클럽</title>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get("tab") !== "cheer") return;
+      params.delete("tab");
+      var query = params.toString();
+      window.location.replace("event-cheer.html" + (query ? "?" + query : ""));
+    })();
+  </script>
   <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
   <link rel="stylesheet" href="assets/design-tokens.css" />
   <link rel="stylesheet" href="assets/event-member-shell.css" />
@@ -281,6 +290,7 @@
   <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
     <a class="event-tab-btn active" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
     <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>대회 기록</a>
+    <a class="event-tab-btn" data-tab="cheer" href="#"><span class="tab-icon">📣</span>응원</a>
   </nav>
 
   <div id="boardDoneOverlay" class="board-done-overlay hidden" role="status">
@@ -976,46 +986,11 @@
       clearBoardQuery();
     }
 
-    async function submitUpdateBib(identity) {
-      const bib = String(profileBib.value || bibDraft || "").trim();
-      const distance = selectedDistance;
-      if (!bib || !distance) {
-        showToast("배번과 종목을 넣어 주세요.", true);
-        if (!distance) renderProfileCard(identity);
-        return;
-      }
-      if (isSavingBib) return;
-      const gen = homeGeneration;
-      isSavingBib = true;
-      profileBibSave.disabled = true;
-      try {
-        const res = await fetch(API_BASE + "?action=group-events", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            subAction: "update-bib",
-            eventId: eventId,
-            nickname: identity.nickname,
-            bib: bib,
-            distance: distance,
-          }),
-        });
-        if (homeGeneration !== gen) return;
-        const data = await res.json();
-        if (homeGeneration !== gen) return;
-        if (!data.ok) throw new Error(data.error || "배번 저장 실패");
-        showToast(data.message || "배번이 저장되었습니다");
-        profileIntent = "";
-        await reloadEvent();
-        if (homeGeneration !== gen) return;
-        await refreshHomeState(identity);
-      } catch (err) {
-        console.error("update-bib error:", err);
-        showToast(err.message || "배번 저장 오류", true);
-      } finally {
-        isSavingBib = false;
-        profileBibSave.disabled = false;
-      }
+    function submitUpdateBib(identity) {
+      const params = new URLSearchParams();
+      if (eventId) params.set("eventId", eventId);
+      if (identity && identity.nickname) params.set("nickname", identity.nickname);
+      location.href = "event-bib.html?" + params.toString();
     }
 
     async function submitSelfConfirm(identity, extra) {
