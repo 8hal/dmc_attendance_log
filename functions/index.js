@@ -74,6 +74,12 @@ const {
   filterPublicRosterRows,
   sortPublicRosterRows,
 } = require("./lib/public-roster");
+const {
+  buildCheerBoard,
+  buildCheerRunner,
+  normalizeWaves,
+  resolveProgressPatch,
+} = require("./lib/cheer-progress");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -81,6 +87,15 @@ const MEETING_TRAINING_COLLECTION = "meeting_training";
 // 초기화
 initializeApp();
 const db = getFirestore();
+
+async function loadGroupScrapeResults(firestore, event) {
+  const jobId = String((event && event.groupScrapeJobId) || "").trim();
+  if (!jobId) return [];
+  const jobDoc = await firestore.collection("scrape_jobs").doc(jobId).get();
+  if (!jobDoc.exists) return [];
+  const job = jobDoc.data() || {};
+  return Array.isArray(job.results) ? job.results : [];
+}
 
 /**
  * 이메일 발송 헬퍼
@@ -3424,6 +3439,28 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       return res.json({ ok: true });
     }
 
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "waves") {
+      const { ownerPw } = req.body;
+      if (!canWriteGroupEvents(ownerPw)) {
+        return res.status(403).json({ ok: false, error: "운영진 권한 필요" });
+      }
+      const eventId = String(req.body.canonicalEventId || req.body.eventId || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      const eventDoc = await db.collection("race_events").doc(eventId).get();
+      if (!eventDoc.exists) {
+        return res.status(404).json({ ok: false, error: "대회 없음" });
+      }
+      const eventRow = eventDoc.data() || {};
+      const normalized = normalizeWaves(req.body.waves, eventRow.eventDate || "");
+      if (!normalized.ok) {
+        return res.status(400).json({ ok: false, error: normalized.error });
+      }
+      await db.collection("race_events").doc(eventId).update({ waves: normalized.waves });
+      return res.json({ ok: true, waves: normalized.waves });
+    }
+
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "scrape") {
       const { ownerPw, canonicalEventId } = req.body;
 
@@ -3688,6 +3725,57 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       } catch (error) {
         console.error("public-roster error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "cheer-board") {
+      const eventId = String(req.query.eventId || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists || eventDoc.data().isGroupEvent !== true) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        const jobResults = await loadGroupScrapeResults(db, event);
+        return res.json(buildCheerBoard({ event, jobResults, nowMs: Date.now() }));
+      } catch (error) {
+        console.error("cheer-board error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "cheer-runner") {
+      const eventId = String(req.query.eventId || "").trim();
+      const runnerNickname = String(req.query.runnerNickname || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!runnerNickname) {
+        return res.status(400).json({ ok: false, error: "runnerNickname required" });
+      }
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists || eventDoc.data().isGroupEvent !== true) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        const jobResults = await loadGroupScrapeResults(db, event);
+        const detail = buildCheerRunner({
+          event,
+          jobResults,
+          nowMs: Date.now(),
+          runnerNickname,
+        });
+        if (!detail.ok) {
+          return res.status(detail.status || 404).json({ ok: false, error: detail.error || "runner not on board" });
+        }
+        return res.json(detail);
+      } catch (error) {
+        console.error("cheer-runner error:", error);
         return res.status(500).json({ ok: false, error: "server error" });
       }
     }
@@ -4057,6 +4145,22 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         event.participants[participantIndex].bib = trimmedBib;
         if (canonicalDistance !== null) {
           event.participants[participantIndex].distance = canonicalDistance;
+        }
+
+        const progress = resolveProgressPatch({
+          distance: event.participants[participantIndex].distance || "",
+          body: req.body,
+          waves: Array.isArray(event.waves) ? event.waves : [],
+        });
+        if (!progress.ok) {
+          return res.status(400).json({ ok: false, error: progress.error });
+        }
+        if (progress.clearProgress) {
+          delete event.participants[participantIndex].waveId;
+          delete event.participants[participantIndex].goalFinishSec;
+        } else if (progress.patch) {
+          event.participants[participantIndex].waveId = progress.patch.waveId;
+          event.participants[participantIndex].goalFinishSec = progress.patch.goalFinishSec;
         }
         
         await db.collection("race_events").doc(eventId).update({
