@@ -1,8 +1,8 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
-const { coursePoint, clusterRunners } = require("../../assets/cheer-course");
+const { coursePoint, snakePath, clusterRunners } = require("../../assets/cheer-course");
 
-describe("zigzag course", () => {
+describe("snake course", () => {
   it("places 0, 5, 30, 38, and 42.195 on the expected row and direction", () => {
     const start = coursePoint(0);
     assert.equal(start.row, 0);
@@ -27,15 +27,28 @@ describe("zigzag course", () => {
     const finish = coursePoint(42.195);
     assert.equal(finish.row, 8);
     assert.equal(finish.ltr, true);
-    assert.ok(finish.x > 0.99);
+    assert.ok(Math.abs(finish.x - 2.195 / 5) < 1e-9);
   });
 
-  it("puts y on the diagonal so a dot lands on the drawn line", () => {
-    assert.equal(coursePoint(0).y, 0);
-    assert.ok(Math.abs(coursePoint(2.5).y - 0.5) < 1e-9);
-    assert.ok(Math.abs(coursePoint(4.999).y - coursePoint(5).y) < 0.001);
-    assert.equal(coursePoint(5).y, 1);
-    assert.ok(Math.abs(coursePoint(42.195).y - 9) < 1e-9);
+  it("keeps every row horizontal so y is the row", () => {
+    for (const km of [0, 2.5, 4.999, 5, 17.3, 41, 42.195]) {
+      const p = coursePoint(km);
+      assert.equal(p.y, p.row, String(km));
+    }
+    assert.ok(Math.abs(coursePoint(2.5).x - 0.5) < 1e-9);
+    assert.ok(Math.abs(coursePoint(7.5).x - 0.5) < 1e-9);
+  });
+
+  it("draws rows joined by U-turns on alternating sides", () => {
+    const box = { left: 10, right: 90, top: 12, gap: 16 };
+    const d = snakePath(box);
+    assert.ok(d.startsWith("M 10 12 "));
+    const arcs = d.match(/A 8 8 0 0 [01] /g) || [];
+    assert.equal(arcs.length, 8);
+    assert.ok(d.includes("A 8 8 0 0 1 90 28"), "first turn on the right");
+    assert.ok(d.includes("A 8 8 0 0 0 10 44"), "second turn on the left");
+    assert.ok(d.endsWith(" H 45.12"));
+    assert.equal((d.match(/H /g) || []).length, 9);
   });
 
   it("clusters runners within 0.4 km", () => {

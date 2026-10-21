@@ -64,7 +64,7 @@
       <button type="button" id="viewRank">순위</button>
     </div>
     <p class="hint" id="emptyHint"></p>
-    <div id="courseView" class="course" aria-label="5km 지그재그 코스"></div>
+    <div id="courseView" class="course" aria-label="5km 단위 ㄹ자 코스"></div>
     <div id="rankView" class="rank hidden"></div>
     <div id="detailView" class="hidden">
       <button type="button" class="btn back" id="backBtn">순위로</button>
@@ -103,22 +103,18 @@
       document.getElementById("errorMessage").textContent = message || "불러오지 못했습니다.";
     }
 
+    const BOX = { left: 10, right: 90, top: 12, gap: 16 };
+
     function xy(km) {
       const point = CheerCourse.coursePoint(km);
-      return { x: 10 + point.x * 80, y: 16 + point.y * 22, point: point };
+      return { x: BOX.left + point.x * (BOX.right - BOX.left), y: BOX.top + point.y * BOX.gap, point: point };
     }
 
     function renderCourse() {
       const runners = (board && board.runners) || [];
       const parts = [];
-      parts.push('<svg viewBox="0 0 100 224" role="img" aria-label="42.195km 지그재그">');
-      for (let row = 0; row < 9; row += 1) {
-        const fromKm = row * 5;
-        const toKm = row === 8 ? 42.195 : (row + 1) * 5;
-        const a = xy(fromKm);
-        const b = xy(toKm);
-        parts.push('<line x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '" stroke="#CBD5E1" stroke-width="2.2" stroke-linecap="round"/>');
-      }
+      parts.push('<svg viewBox="0 0 100 152" role="img" aria-label="42.195km ㄹ자 코스">');
+      parts.push('<path d="' + CheerCourse.snakePath(BOX) + '" fill="none" stroke="#CBD5E1" stroke-width="2.2" stroke-linecap="round"/>');
       MARKS.forEach(function (km) {
         const p = xy(km);
         const label = km === 42.195 ? "42.2" : String(km);

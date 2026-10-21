@@ -10,12 +10,27 @@
   function coursePoint(km) {
     const clamped = Math.max(0, Math.min(FULL_KM, Number(km) || 0));
     const row = Math.min(8, Math.floor(clamped / 5));
-    const rowStart = row * 5;
-    const rowLen = row === 8 ? FULL_KM - 40 : 5;
-    const t = rowLen === 0 ? 0 : (clamped - rowStart) / rowLen;
+    const t = (clamped - row * 5) / 5;
     const ltr = row % 2 === 0;
     const x = ltr ? t : 1 - t;
-    return { row: row, x: x, y: row + t, ltr: ltr };
+    return { row: row, x: x, y: row, ltr: ltr };
+  }
+
+  // U-turns between rows carry no distance; each row is 5 km wide.
+  function snakePath(box) {
+    const r = box.gap / 2;
+    const parts = ["M " + box.left + " " + box.top];
+    for (let row = 0; row < 9; row += 1) {
+      const xEnd = row === 8
+        ? Math.round((box.left + (box.right - box.left) * coursePoint(FULL_KM).x) * 100) / 100
+        : (row % 2 === 0 ? box.right : box.left);
+      parts.push("H " + xEnd);
+      if (row < 8) {
+        const yNext = box.top + (row + 1) * box.gap;
+        parts.push("A " + r + " " + r + " 0 0 " + (row % 2 === 0 ? 1 : 0) + " " + xEnd + " " + yNext);
+      }
+    }
+    return parts.join(" ");
   }
 
   function clusterRunners(runners, thresholdKm) {
@@ -64,6 +79,7 @@
   return {
     FULL_KM: FULL_KM,
     coursePoint: coursePoint,
+    snakePath: snakePath,
     clusterRunners: clusterRunners,
     formatKm: formatKm,
     formatElapsed: formatElapsed,
