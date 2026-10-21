@@ -167,6 +167,8 @@ curl -s -X POST 'https://dmc-attendance.web.app/api/race?action=group-events' \
 
 프로덕션 춘천 문서는 열어서 저장하지 않는다. 에뮬레이터 대회 날짜는 토요일이다. `startAt`이 `eventDate`와 같아야 하기 때문이다.
 
+빠른 경로: 에뮬레이터와 회원 시드(Step 1) 다음 `bash scripts/qa-cheer-board.sh`. 오늘 KST 날짜로 버릴 대회를 만들고 조 출발을 실행 10분 전으로 둔 뒤 Step 2–4를 검사한다. `API`가 `127.0.0.1`/`localhost`가 아니면 멈춘다. 끝에 찍힌 `event-cheer.html` 주소로 Step 5 화면을 본다. 2026-10-21 실행 결과 20/20 통과. 아래 수동 절차는 스크립트가 실패할 때 원인을 찾는 용도다.
+
 - [ ] **Step 1: 에뮬레이터**
 
 ```bash
