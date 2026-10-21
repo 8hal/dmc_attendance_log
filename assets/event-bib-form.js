@@ -13,8 +13,7 @@
     return filled(value) ? Number(value) : 0;
   }
 
-  // Bib must save on the bus even before the treasurer adds waves or the runner knows a goal.
-  // Wave and goal go together only when both are present; otherwise the runner is just off the board.
+  // Wave and goal are each optional; an empty field is left out so the saved value stays.
   function buildBibBody(input) {
     const body = {
       subAction: "update-bib",
@@ -23,16 +22,15 @@
       bib: input.bib,
       distance: input.distance,
     };
-    if (input.distance !== "full" || !filled(input.waveId)) return body;
+    if (input.distance !== "full") return body;
+    if (filled(input.waveId)) body.waveId = input.waveId;
     if (input.goalMode === "pace") {
-      if (!filled(input.paceM) && !filled(input.paceS)) return body;
-      body.waveId = input.waveId;
-      body.goalPaceSecPerKm = num(input.paceM) * 60 + num(input.paceS);
-      return body;
+      if (filled(input.paceM) || filled(input.paceS)) {
+        body.goalPaceSecPerKm = num(input.paceM) * 60 + num(input.paceS);
+      }
+    } else if (filled(input.goalH) || filled(input.goalM) || filled(input.goalS)) {
+      body.goalFinishSec = num(input.goalH) * 3600 + num(input.goalM) * 60 + num(input.goalS);
     }
-    if (!filled(input.goalH) && !filled(input.goalM) && !filled(input.goalS)) return body;
-    body.waveId = input.waveId;
-    body.goalFinishSec = num(input.goalH) * 3600 + num(input.goalM) * 60 + num(input.goalS);
     return body;
   }
 

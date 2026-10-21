@@ -165,6 +165,41 @@ describe("cheer board", () => {
     assert.equal(detail.splits[1].km, 15);
   });
 
+  it("puts a runner with a goal but no wave on the earliest wave", () => {
+    const board = buildCheerBoard({
+      event: {
+        eventDate: "2026-10-19",
+        waves: [
+          { id: "late", name: "B조", startAt: "2026-10-19T08:20:00+09:00" },
+          { id: "early", name: "A조", startAt: "2026-10-19T08:00:00+09:00" },
+        ],
+        participants: [
+          { nickname: "무조", bib: "505", distance: "full", goalFinishSec: GOAL },
+          { nickname: "옛조", bib: "606", distance: "full", waveId: "gone", goalFinishSec: GOAL },
+        ],
+      },
+      jobResults: [],
+      nowMs: START + 3600 * 1000,
+    });
+    assert.equal(board.runners.length, 2);
+    for (const runner of board.runners) {
+      assert.equal(runner.waveId, "early");
+      assert.equal(runner.elapsedSec, 3600);
+    }
+  });
+
+  it("leaves goal runners off the board when no wave exists", () => {
+    const board = buildCheerBoard({
+      event: {
+        eventDate: "2026-10-19",
+        participants: [{ nickname: "무조", bib: "505", distance: "full", goalFinishSec: GOAL }],
+      },
+      jobResults: [],
+      nowMs: START,
+    });
+    assert.equal(board.runners.length, 0);
+  });
+
   it("404s when the nickname is not on the board", () => {
     const detail = buildCheerRunner({
       event,
@@ -195,21 +230,31 @@ describe("waves and bib progress", () => {
     assert.equal(result.waves[0].id, "a");
   });
 
-  it("requires wave and goal together for full and rejects them on half", () => {
+  it("accepts wave and goal separately for full and rejects them on half", () => {
     const waves = [{ id: "a", name: "A조", startAt: "2026-10-19T08:00:00+09:00" }];
     const waveOnly = resolveProgressPatch({
       distance: "full",
       body: { waveId: "a" },
       waves,
     });
-    assert.equal(waveOnly.ok, false);
+    assert.equal(waveOnly.ok, true);
+    assert.deepEqual(waveOnly.patch, { waveId: "a" });
 
     const goalOnly = resolveProgressPatch({
       distance: "full",
       body: { goalFinishSec: GOAL },
+      waves: [],
+    });
+    assert.equal(goalOnly.ok, true);
+    assert.deepEqual(goalOnly.patch, { goalFinishSec: GOAL });
+
+    const unknownWave = resolveProgressPatch({
+      distance: "full",
+      body: { waveId: "zz", goalFinishSec: GOAL },
       waves,
     });
-    assert.equal(goalOnly.ok, false);
+    assert.equal(unknownWave.ok, false);
+    assert.equal(unknownWave.error, "unknown waveId");
 
     const emptyGoal = resolveProgressPatch({
       distance: "full",

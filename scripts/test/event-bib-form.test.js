@@ -7,11 +7,11 @@ const { buildBibBody, goalFieldsFromSec } = require("../../assets/event-bib-form
 const base = { eventId: "e1", nickname: "닉", bib: "1001" };
 
 describe("event-bib request body", () => {
-  it("saves bib only for a full runner who leaves the goal empty", () => {
+  it("saves bib only for a full runner who leaves wave and goal empty", () => {
     const body = buildBibBody({
       ...base,
       distance: "full",
-      waveId: "w1",
+      waveId: "",
       goalMode: "finish",
       goalH: "",
       goalM: "",
@@ -26,7 +26,7 @@ describe("event-bib request body", () => {
     });
   });
 
-  it("saves bib only when no wave exists yet even if a goal is typed", () => {
+  it("sends the goal without a wave when no wave is picked", () => {
     const body = buildBibBody({
       ...base,
       distance: "full",
@@ -37,7 +37,20 @@ describe("event-bib request body", () => {
       goalS: "0",
     });
     assert.equal(body.waveId, undefined);
-    assert.equal(body.goalFinishSec, undefined);
+    assert.equal(body.goalFinishSec, 14400);
+  });
+
+  it("sends the wave without a goal when only a wave is picked", () => {
+    const body = buildBibBody({
+      ...base,
+      distance: "full",
+      waveId: "w1",
+      goalMode: "pace",
+      paceM: "",
+      paceS: "",
+    });
+    assert.equal(body.waveId, "w1");
+    assert.equal(body.goalPaceSecPerKm, undefined);
   });
 
   it("sends wave and finish seconds when a goal is typed", () => {

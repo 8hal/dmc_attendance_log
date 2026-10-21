@@ -4159,8 +4159,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           delete event.participants[participantIndex].waveId;
           delete event.participants[participantIndex].goalFinishSec;
         } else if (progress.patch) {
-          event.participants[participantIndex].waveId = progress.patch.waveId;
-          event.participants[participantIndex].goalFinishSec = progress.patch.goalFinishSec;
+          Object.assign(event.participants[participantIndex], progress.patch);
         }
         
         await db.collection("race_events").doc(eventId).update({

@@ -66,9 +66,12 @@
       <label for="bib">배번</label>
       <input id="bib" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
       <div id="fullFields" class="hidden">
-        <label for="wave">조</label>
-        <select id="wave"></select>
-        <label for="goalMode">목표</label>
+        <div id="waveField">
+          <label for="wave">조 (선택)</label>
+          <select id="wave"></select>
+          <p class="hint">조를 고르지 않으면 첫 출발 시각으로 계산합니다.</p>
+        </div>
+        <label for="goalMode">목표 기록 (선택)</label>
         <select id="goalMode">
           <option value="finish">완주 시각</option>
           <option value="pace">페이스 (분:초/km)</option>
@@ -87,8 +90,8 @@
           <label for="paceS">초</label>
           <input id="paceS" inputmode="numeric" placeholder="00" />
         </div>
-        <p class="hint" id="waveEmpty">총무가 아직 조를 등록하지 않았습니다. 배번만 먼저 저장하세요.</p>
-        <p class="hint">조와 목표를 비워도 배번은 저장됩니다. 둘 다 있어야 응원 보드에 나옵니다.</p>
+        <p class="hint" id="waveEmpty">아직 출발 시각이 등록되지 않았습니다. 지금 넣어 두면 등록 후 응원 보드에 나옵니다.</p>
+        <p class="hint">조와 목표를 비워도 배번은 저장됩니다. 목표 기록을 넣으면 응원 보드에 나옵니다.</p>
       </div>
       <p id="formError" class="error hidden"></p>
       <button class="btn" type="submit" id="saveBtn">저장</button>
@@ -111,7 +114,7 @@
     let composing = false;
     const SAVE_ERRORS = {
       "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
-      "waveId required": "조를 골라 주세요.",
+      "unknown waveId": "조 목록이 바뀌었습니다. 새로고침 후 다시 골라 주세요.",
       "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
     };
 
@@ -159,11 +162,12 @@
         return '<button type="button" class="dist' + on + '" data-dist="' + dist + '">' + formatDistance(dist) + "</button>";
       }).join("");
       const waves = event.waves || [];
-      document.getElementById("wave").innerHTML = waves.map(function (wave) {
+      document.getElementById("wave").innerHTML = '<option value="">고르지 않음 (첫 출발)</option>' + waves.map(function (wave) {
         const hhmm = String(wave.startAt || "").slice(11, 16);
         return '<option value="' + wave.id + '">' + wave.name + " " + hhmm + "</option>";
       }).join("");
-      if (row.waveId) document.getElementById("wave").value = row.waveId;
+      document.getElementById("wave").value = waves.some(function (wave) { return wave.id === row.waveId; }) ? row.waveId : "";
+      document.getElementById("waveField").classList.toggle("hidden", waves.length < 2);
       const savedGoal = EventBibForm.goalFieldsFromSec(row.goalFinishSec);
       if (savedGoal && !document.getElementById("goalH").value) {
         document.getElementById("goalH").value = savedGoal.h;
@@ -200,8 +204,8 @@
       renderForm();
       document.getElementById("bib").value = typedBib;
     });
-    document.getElementById("form").addEventListener("submit", async function (event) {
-      event.preventDefault();
+    document.getElementById("form").addEventListener("submit", async function (submitEvent) {
+      submitEvent.preventDefault();
       if (composing) return;
       const formError = document.getElementById("formError");
       formError.classList.add("hidden");
@@ -225,7 +229,8 @@
         paceM: val("paceM"),
         paceS: val("paceS"),
       });
-      const onBoard = !!body.waveId;
+      const hasGoal = body.goalFinishSec != null || body.goalPaceSecPerKm != null || !!(participant() || {}).goalFinishSec;
+      const hasStart = ((event && event.waves) || []).length > 0;
       document.getElementById("saveBtn").disabled = true;
       try {
         const res = await fetch(API_BASE + "?action=group-events", {
@@ -236,9 +241,10 @@
         const data = await res.json();
         if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
         document.getElementById("form").classList.add("hidden");
-        document.getElementById("done").textContent = distance === "full" && !onBoard
-          ? "배번을 저장했습니다. 조와 목표를 넣으면 응원 보드에 나옵니다."
-          : "저장했습니다.";
+        let doneText = "저장했습니다.";
+        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 목표 기록을 넣으면 응원 보드에 나옵니다.";
+        else if (distance === "full" && !hasStart) doneText = "저장했습니다. 출발 시각이 등록되면 응원 보드에 나옵니다.";
+        document.getElementById("done").textContent = doneText;
         document.getElementById("done").classList.remove("hidden");
       } catch (err) {
         formError.textContent = err.message || "저장 실패";

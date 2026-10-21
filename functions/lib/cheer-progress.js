@@ -151,11 +151,25 @@ function waveMap(waves) {
   return map;
 }
 
-function isBoardRunner(participant, wavesById) {
-  if (!participant) return false;
+function earliestWave(waves) {
+  let best = null;
+  for (const wave of waves) {
+    const ms = Date.parse(wave && wave.startAt);
+    if (!wave || !wave.id || Number.isNaN(ms)) continue;
+    if (!best || ms < best.ms) best = { wave, ms };
+  }
+  return best ? best.wave : null;
+}
+
+// Wave is optional: a runner who did not pick one (or picked a deleted one) starts with the first gun.
+function runnerWave(participant, wavesById, fallback) {
+  return wavesById.get(String(participant.waveId || "")) || fallback;
+}
+
+function isBoardRunner(participant, wave) {
+  if (!participant || !wave) return false;
   if (String(participant.distance || "") !== "full") return false;
   if (!String(participant.bib || "").trim()) return false;
-  if (!wavesById.has(String(participant.waveId || ""))) return false;
   const goal = Number(participant.goalFinishSec);
   return Number.isFinite(goal) && goal >= GOAL_MIN_SEC && goal <= GOAL_MAX_SEC;
 }
@@ -181,10 +195,11 @@ function buildCheerBoard(input) {
   const jobResults = (input && input.jobResults) || [];
   const waves = Array.isArray(event.waves) ? event.waves : [];
   const wavesById = waveMap(waves);
+  const fallback = earliestWave(waves);
   const runners = [];
   for (const participant of event.participants || []) {
-    if (!isBoardRunner(participant, wavesById)) continue;
-    const wave = wavesById.get(String(participant.waveId));
+    const wave = participant ? runnerWave(participant, wavesById, fallback) : null;
+    if (!isBoardRunner(participant, wave)) continue;
     const startMs = Date.parse(wave.startAt);
     const match = matchResultByBib(jobResults, participant.bib, participant.distance);
     const lastSplit = pickLastSplit(match);
@@ -290,23 +305,26 @@ function resolveProgressPatch(input) {
   if (!sentWave(body) && !sentGoal(body)) {
     return { ok: true, clearProgress: false, patch: null };
   }
-  const waveId = String(body.waveId || "").trim();
-  if (!waves.some((wave) => String(wave.id) === waveId)) {
-    return { ok: false, error: "waveId required" };
+  const patch = {};
+  if (sentWave(body)) {
+    const waveId = String(body.waveId).trim();
+    if (!waves.some((wave) => String(wave.id) === waveId)) {
+      return { ok: false, error: "unknown waveId" };
+    }
+    patch.waveId = waveId;
   }
-  const goalFinishSec = goalFromBody(body);
-  if (
-    goalFinishSec == null ||
-    goalFinishSec < GOAL_MIN_SEC ||
-    goalFinishSec > GOAL_MAX_SEC
-  ) {
-    return { ok: false, error: "goal out of range" };
+  if (sentGoal(body)) {
+    const goalFinishSec = goalFromBody(body);
+    if (
+      goalFinishSec == null ||
+      goalFinishSec < GOAL_MIN_SEC ||
+      goalFinishSec > GOAL_MAX_SEC
+    ) {
+      return { ok: false, error: "goal out of range" };
+    }
+    patch.goalFinishSec = goalFinishSec;
   }
-  return {
-    ok: true,
-    clearProgress: false,
-    patch: { waveId, goalFinishSec },
-  };
+  return { ok: true, clearProgress: false, patch };
 }
 
 module.exports = {
