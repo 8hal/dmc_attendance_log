@@ -3,6 +3,7 @@
 날짜: 2026-10-12  
 상태: **브레인스토밍 합의** (1차 = 위치 확인. 응원 핀·시간표는 다음)  
 2026-10-14: 응원 보기 권한을 닉 필수에서 `public-roster`와 같은 링크 공개로 변경  
+2026-10-21: **검증 전 시험판으로 격리.** 아래 4절의 화면 배치(홈 응원 탭, `tab=cheer`, `my-bib` 리다이렉트, 홈 배번 CTA 변경, `event-admin` 조 패널, 스크래퍼 `splits` 전달)는 이번 차수에서 **하지 않는다**. 회원 화면과 `functions/lib/scraper.js`는 `main`과 같다. 화면은 링크 없는 `lab/cheer/`에만 둔다: 보드 `lab/cheer/index.html`, 배번·조·목표 `lab/cheer/bib.html`, 총무 조 편집 `lab/cheer/waves.html` (모두 `noindex`). 서버는 `group-events`의 `waves`·`cheer-board`·`cheer-runner` 추가와 `update-bib` 확장만 있고, 조·목표를 안 보내는 기존 호출은 예전과 같다. 잡에 구간이 없으므로 칩 보정은 꺼진 채다. 실전 검증 후 회원 화면 연결은 별도 차수.  
 관련:
 - `_docs/knowledge/data-dictionary.md` (`race_events.participants`, 단체 스크랩)
 - `_docs/superpowers/specs/2026-08-02-group-event-day-ux-design.md` (당일 홈·버스)
