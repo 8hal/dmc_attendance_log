@@ -10,6 +10,26 @@
 
 ---
 
+## 할 일 목록 (2026-10-21 기준)
+
+| 상태 | 언제 | 누가 | 할 일 |
+|------|------|------|-------|
+| ✅ | 10/21 | AI | 프로덕션 춘천 단체 대회 문서 생성. `EVENT_ID` = `evt_2026-10-25_2026`, `eventDate` `2026-10-25`, `gorunningId` `gorunning_2026-10-25_155`(등록 목록에서 숨겨져 중복 등록 안 됨) |
+| ✅ | 10/21 | AI | 기록 사이트 확인: **MyResult `https://myresult.co.kr/176`** (2026 춘천마라톤 2026-10-25 공지천, 대회 전이라 No Data). 공식 홈페이지 [대회 기록] 메뉴도 대회 후 열린다 |
+| ✅ | 10/21 | AI | 에뮬레이터 리허설 `scripts/qa-cheer-board.sh` 23/23 |
+| ☐ | 10/22–23 | 총무 | `group.html` 춘천 카드 ⋮ → **참가자 편집**으로 참가 회원 저장. **한 번만**. 배번 입력이 시작된 뒤에는 다시 저장하지 않는다 |
+| ☐ | 10/22–23 | 사용자 | 시험 참가자 고르기: 풀코스 2명 이상(목표 차가 클수록 좋음), 가능하면 10 km 1명 |
+| ☐ | 10/23 | 사용자 → AI | “배포해줘”. AI가 pre-deploy-test → 백업 → 커밋 확인 → functions → hosting. 회원 화면은 바뀌지 않는다 |
+| ☐ | 10/23 배포 후 | 총무 | `lab/cheer/waves.html?eventId=evt_2026-10-25_2026`에서 조 `출발` `09:00` 저장(배번표에 다른 총성이 있으면 그 시각). 저장 후 지우고 다시 만들지 않는다 |
+| ☐ | 10/23 배포 후 | 사용자 | 시험 참가자에게만 `lab/cheer/bib.html?eventId=evt_2026-10-25_2026` 전달. 배번·조·목표 완주 입력(버스에서 해도 됨) |
+| ☐ | 10/23 배포 후 | 사용자 | `lab/cheer/index.html?eventId=evt_2026-10-25_2026`에서 시험 참가자가 0 km로 보이는지 |
+| ☐ | 10/24 | AI(요청 시) | 에뮬레이터 리허설 재실행. 프로덕션 춘천 조 시각은 건드리지 않는다 |
+| ☐ | 10/25 08:50 / 09:10 / 09:30 | 사용자 | 4절 체크 (0 km → 약 2.0/1.4 km → 약 6.0/4.2 km) |
+| ☐ | 10/25 대회 후 | 총무 | 기록 확정은 기존 흐름: 리포트에서 소스 `myresult`, id `176`으로 스크랩 → 확정. 단체 대회 **기록 소스 칸은 비워 둔다**(myresult는 배번 단체 스크랩 미지원, 넣으면 15:00 자동 스크랩이 오류로 끝난다) |
+| ☐ | 결정 필요 | 사용자 | 춘백 S3 목표 대회 D-day: `SEASON_RACE_DATES.chuncheon`이 `2026-10-26`이라 춘백 카드가 하루 늦다. 회원 화면이라 이 PR과 별도로 고칠지 정한다 |
+
+---
+
 ## 0. 사실 (이 계획의 전제)
 
 | 항목 | 값 |
@@ -21,10 +41,11 @@
 | 코드 위치 | `main`에 없다. 화면은 `lab/cheer/` 아래에만 있고 회원 페이지 어디에서도 링크하지 않는다(`noindex`). 홈·`my-bib.html`·`event-admin.html`·스크래퍼는 `main`과 같다. 일요일 폰 테스트는 이 브랜치의 functions+hosting 배포가 끝난 뒤에만 된다 |
 | 회원 기능 호환 | 운영 `my-bib.html`·홈은 계속 배번만 보낸다. 풀코스여도 조·목표를 하나도 안 보내면 `update-bib`는 예전처럼 배번만 저장하고 기존 조·목표는 둔다. 이런 사람은 보드에 없다. 서버에 더한 것은 `group-events`의 `waves`·`cheer-board`·`cheer-runner` subAction뿐이다 |
 | 성공 | 목표 페이스 점이 조 출발 전 0 km, 출발 후 아래 식과 ±0.05 km |
+| 기록 소스 | 2026 춘천은 MyResult `176`. 배번 단체 스크랩은 `smartchip`·`ohmyrace`·`spct`만 되므로 단체 대회 기록 소스는 비우고, 대회 후 기록은 리포트의 일반 스크랩으로 확정한다 |
 | 칩 | 이 시험판은 스크래퍼를 건드리지 않으므로 잡 결과에 구간이 없다. 칩 뱃지는 켜지지 않는다. 뱃지가 없는 것이 1차 성공이다. 2025 춘천 기록 소스는 `myresult:132`였고, 배번 스크랩은 `smartchip` · `ohmyrace` · `spct`만 된다. 스마트칩 파서는 `splits: []`를 줄 수 있다 |
 | 스크랩 | `groupEventAutoScrape`는 10분 유지. 세션이 없으면 당일 15:00–15:09 원샷뿐이라 경기 중 칩을 받지 못한다. 주기를 줄이지 않는다 |
 | D-day | `functions/lib/chunbaek-handlers.js`의 `SEASON_RACE_DATES.chuncheon`은 `2026-10-26`. 응원 보드는 `race_events.eventDate`와 `waves.startAt`만 본다. 춘백 카드가 월요일에야 “당일”이 되어도 이 리허설의 실패가 아니다 |
-| 대회 만들기 | `event-admin.html`은 `?eventId=`가 있을 때만 열린다. 문서 생성은 `POST group-events` `subAction=promote`. `group.html`의 **+ 단체 대회 등록**은 고러닝 캐시 날짜를 복사하고, 날짜 칸이 없다. `scripts/discover-events.js`의 춘천 날짜는 `${year}-10-26`이다. 그 행을 누르면 `eventDate`가 10월 26일이 되어 25일 09:00 조 저장이 `400`이 된다 |
+| 대회 문서 | 2026-10-21에 만들었다: `evt_2026-10-25_2026` (`eventDate` `2026-10-25`). 고러닝 캐시의 춘천 행 날짜는 25일이 맞다. 26일은 `scripts/discover-events.js`가 붙인 `matchedEvent` 날짜뿐이다. 다시 만들지 않는다 |
 | 참가자 | 명단은 `group.html` 카드 **⋮ → 참가자 편집** (`POST` `subAction=participants`). `event-admin` 버스 패널은 버스 명단만 쓴다. 참가자 편집을 배번 입력 **후에** 다시 저장하면 `bib`·`distance`만 남고 `waveId`·`goalFinishSec`가 빠져 보드에서 사라진다 |
 
 추정 거리:
@@ -80,7 +101,7 @@ for (const min of [10, 30]) {
 - 스크랩 cron을 10분보다 짧게 바꾸기.
 - 토요일에 진짜 춘천 `race_events`의 `waves[].startAt`을 과거로 두기. 두면 일요일 0 km 확인이 깨지고, 세션을 토요일에 시작하면 `hasEverStartedSession` 때문에 일요일 15:00 원샷도 건너뛴다.
 - 2025 문서 `evt_2025-10-26_chuncheon_marathon` 재사용.
-- 고러닝 캐시에 나온 `2026-10-26` 춘천 행을 **등록**으로 승격.
+- 춘천 단체 대회를 한 번 더 등록하기. `evt_2026-10-25_2026`이 있다.
 - 배번·조·목표를 넣은 뒤에 **참가자 편집** 저장을 다시 누르기.
 - 응원 링크를 클럽 단톡 밖에 올리기. `cheer-board` JSON에 배번·목표 초·조 출발이 있다. 실명 필드는 없다.
 
@@ -100,24 +121,7 @@ for (const min of [10, 30]) {
 
 순서는 스킬 그대로다. `bash scripts/pre-deploy-test.sh` → `cd functions && node ../scripts/backup-firestore.js` → 커밋이 원격에 있는지 → `firebase deploy --only functions` 다음 `firebase deploy --only hosting`.
 
-- [ ] **Step 1: 대회 문서 고르기**
-
-`https://dmc-attendance.web.app/group.html`에서 날짜가 **2026-10-25**인 단체 대회 카드를 찾는다. 그 카드의 id가 `EVENT_ID`다. 2025 문서와 날짜가 10월 26일인 카드는 쓰지 않는다.
-
-25일 카드가 없으면 등록 모달의 10월 26일 행을 누르지 않는다. 날짜를 직접 지정해 만든다.
-
-```bash
-curl -s -X POST 'https://dmc-attendance.web.app/api/race?action=group-events' \
-  -H 'content-type: application/json' \
-  -d '{
-    "subAction": "promote",
-    "gorunningId": "dry-chuncheon-2026-10-25",
-    "eventName": "2026 춘천마라톤",
-    "eventDate": "2026-10-25"
-  }'
-```
-
-기대: `{"ok":true,"canonicalEventId":"..."}`. 그 값이 `EVENT_ID`다. `group.html`을 새로고침하면 카드 날짜가 10월 25일이다. `event-admin.html`만 열어서는 대회가 생기지 않는다.
+- [x] **Step 1: 대회 문서** — 2026-10-21 완료. `EVENT_ID` = `evt_2026-10-25_2026`. `group.html`에 날짜 10월 25일 카드로 보인다.
 
 - [ ] **Step 2: 참가자**
 
@@ -137,16 +141,11 @@ curl -s -X POST 'https://dmc-attendance.web.app/api/race?action=group-events' \
 
 `https://dmc-attendance.web.app/lab/cheer/waves.html?eventId=EVENT_ID`를 연다. 이름 `출발`, 시각 `09:00`, 운영 비밀번호를 넣고 **조 저장**. `event-admin.html`에는 조 편집이 없다. 비밀번호를 curl·단톡에 붙여 넣지 않는다.
 
-저장이 되면 조가 화면에 남는다. `eventDate`가 10월 26일이면 09:00이어도 `400` `startAt date must match eventDate`다. 그때는 그 문서를 버리고 Step 1의 promote를 다시 한다. 조를 지웠다 다시 저장하면 id가 바뀌어, 이미 고른 러너는 보드에서 빠진다. 배번 입력 전에 조를 확정한다.
+저장이 되면 조가 화면에 남는다. 조를 지웠다 다시 저장하면 id가 바뀌어, 이미 고른 러너는 보드에서 빠진다. 배번 입력 전에 조를 확정한다.
 
 배번표에 총성이 09:00이 아니면 그 시각으로 조를 나눈다. 한 사람이 한 조다. 클럽 공통 출발은 쓰지 않는다.
 
-- [ ] **Step 4: 기록 소스**
-
-금요일에 공식 기록 페이지와 배번표의 타이머를 본다. 소스는 **1 준비**의 **기록 소스 (groupSource)** 다. 배번 패널이 아니다.
-
-- `smartchip`, `ohmyrace`, `spct` 이고 sourceId를 알 때만 저장한다. 칩은 보너스다.
-- `myresult`이거나 사이트를 모르면 소스를 비운다. 응원 보드는 소스 없이 목표 페이스로 동작한다. **4 결과 가져오기**의 스크랩은 그때 누르지 않는다. 누르면 `400` `배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다`다.
+- [x] **Step 4: 기록 소스** — 2026-10-21 확인. MyResult `https://myresult.co.kr/176`. 배번 단체 스크랩 미지원 소스라 **1 준비**의 기록 소스 칸은 비운다. **4 결과 가져오기**의 스크랩도 누르지 않는다(`400`). 응원 보드는 소스 없이 목표 페이스로 동작한다.
 
 - [ ] **Step 5: 배번 입력 안내**
 
@@ -301,7 +300,7 @@ curl -s --get "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race" \
 - [ ] **09:10** 목표가 3:30:00과 5:00:00이면 km는 약 2.009와 1.407, 차이 0.6 km라 점이 둘이다. 다른 목표면 0절의 식 ±0.05 km. 09:00 이전이면 아직 0 km인데, 그때는 조 시각이 09:00이 아닌 것이다. 배번표와 맞으면 식을 그 시각으로 다시 계산한다. 맞추려고 `startAt`을 당기지 않는다.
 - [ ] **09:30** 3:30:00은 약 6.028 km, 5:00:00은 약 4.220 km. 순위는 km가 큰 사람이 위다. 30 km 눈금은 아직 비어 있다. 4시간 목표(14400초)는 이 시각에 약 5.274 km다.
 - [ ] **홈** `event-home.html?eventId=EVENT_ID`는 평소와 같다. 응원 탭·링크가 없고 버스·기록 확인 카드가 그대로다.
-- [ ] **칩** 소스가 배번 모드이고 sourceId를 금요일에 넣었고 배번이 한 명 이상일 때만, 08:40에 `event-admin.html?eventId=EVENT_ID`를 연다. 비밀번호 칸이 나오면 금요일에 쓴 운영 비밀번호로 들어간다. 위 탭 **4 스크랩**(제목은 결과 가져오기)에서 **배번 N명 스크랩 실행**을 누른다. 그 클릭이 6시간 `groupScrapeSession`을 만들고 스크랩을 한 번 돌린다. 08:40에 누르면 14:40에 세션이 끝난다. 그 사이 10분마다 미완주만 다시 조회한다. 14:40 이후에는 세션이 끝났고, 한 번이라도 세션을 시작했으므로 15:00 원샷도 건너뛴다. 소스가 없거나 `myresult`이면 이 버튼을 누르지 않는다. 이 시험판에서는 잡 결과에 구간이 없어 뱃지가 켜지지 않는다. 스크랩은 완주 넷타임을 위해서만 누른다. 당일 파서를 고치지 않는다.
+- [ ] **칩** 해당 없음. 춘천은 MyResult라 단체 배번 스크랩을 돌리지 않는다. 칩 뱃지는 켜지지 않는다.
 - [ ] **완주 후** 넷타임이 잡에 들어가면 그 러너는 42.195 km에서 경과가 멈추고 평균 페이스는 `넷타임 / 42.195`다. 넷타임이 없으면 목표 완주 초에 멈춘다. 10 km 러너는 끝까지 표에 없다.
 
 실패로 보는 것:
