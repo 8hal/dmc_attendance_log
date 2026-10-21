@@ -84,7 +84,8 @@
           <label for="paceS">초</label>
           <input id="paceS" inputmode="numeric" placeholder="00" />
         </div>
-        <p class="hint">풀코스는 조와 목표가 있어야 응원 보드에 나옵니다.</p>
+        <p class="hint" id="waveEmpty">총무가 아직 조를 등록하지 않았습니다. 배번만 먼저 저장하세요.</p>
+        <p class="hint">조와 목표를 비워도 배번은 저장됩니다. 둘 다 있어야 응원 보드에 나옵니다.</p>
       </div>
       <p id="formError" class="error hidden"></p>
       <button class="btn" type="submit" id="saveBtn">저장</button>
@@ -99,6 +100,7 @@
   <script src="assets/event-home-action.js"></script>
   <script src="assets/distance-utils.js"></script>
   <script src="assets/event-member-tabs.js"></script>
+  <script src="assets/event-bib-form.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -110,6 +112,11 @@
     let nickname = params.get("nickname") || "";
     let distance = "";
     let composing = false;
+    const SAVE_ERRORS = {
+      "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
+      "waveId required": "조를 골라 주세요.",
+      "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
+    };
 
     function showError(message) {
       const el = document.getElementById("error");
@@ -160,6 +167,13 @@
         return '<option value="' + wave.id + '">' + wave.name + " " + hhmm + "</option>";
       }).join("");
       if (row.waveId) document.getElementById("wave").value = row.waveId;
+      const savedGoal = EventBibForm.goalFieldsFromSec(row.goalFinishSec);
+      if (savedGoal && !document.getElementById("goalH").value) {
+        document.getElementById("goalH").value = savedGoal.h;
+        document.getElementById("goalM").value = savedGoal.m;
+        document.getElementById("goalS").value = savedGoal.s;
+      }
+      document.getElementById("waveEmpty").classList.toggle("hidden", waves.length > 0);
       document.getElementById("fullFields").classList.toggle("hidden", distance !== "full");
     }
 
@@ -200,26 +214,21 @@
         formError.classList.remove("hidden");
         return;
       }
-      const body = {
-        subAction: "update-bib",
+      const val = function (id) { return document.getElementById(id).value; };
+      const body = EventBibForm.buildBibBody({
         eventId: eventId,
         nickname: nickname,
         bib: bib,
         distance: distance,
-      };
-      if (distance === "full") {
-        body.waveId = document.getElementById("wave").value;
-        if (document.getElementById("goalMode").value === "pace") {
-          const min = Number(document.getElementById("paceM").value);
-          const sec = Number(document.getElementById("paceS").value || 0);
-          body.goalPaceSecPerKm = min * 60 + sec;
-        } else {
-          const h = Number(document.getElementById("goalH").value);
-          const m = Number(document.getElementById("goalM").value || 0);
-          const s = Number(document.getElementById("goalS").value || 0);
-          body.goalFinishSec = h * 3600 + m * 60 + s;
-        }
-      }
+        waveId: val("wave"),
+        goalMode: val("goalMode"),
+        goalH: val("goalH"),
+        goalM: val("goalM"),
+        goalS: val("goalS"),
+        paceM: val("paceM"),
+        paceS: val("paceS"),
+      });
+      const onBoard = !!body.waveId;
       document.getElementById("saveBtn").disabled = true;
       try {
         const res = await fetch(API_BASE + "?action=group-events", {
@@ -228,8 +237,11 @@
           body: JSON.stringify(body),
         });
         const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "저장 실패");
+        if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
         document.getElementById("form").classList.add("hidden");
+        document.getElementById("done").textContent = distance === "full" && !onBoard
+          ? "배번을 저장했습니다. 조와 목표를 넣으면 응원 보드에 나옵니다."
+          : "저장했습니다. 홈에서 기록을 확인하세요.";
         document.getElementById("done").classList.remove("hidden");
       } catch (err) {
         formError.textContent = err.message || "저장 실패";

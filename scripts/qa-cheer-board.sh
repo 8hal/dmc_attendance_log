@@ -69,6 +69,19 @@ check "participants 저장" "$(curl -s -X POST "$API?action=group-events" \
   -H 'Content-Type: application/json' --data-binary @"$PART_FILE" | jq -r .ok)" "true"
 rm -f "$PART_FILE"
 
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+page_body() {
+  node -e '
+    const { buildBibBody } = require(process.argv[1] + "/assets/event-bib-form.js");
+    console.log(JSON.stringify(buildBibBody(JSON.parse(process.argv[2]))));
+  ' "$REPO_ROOT" "$1"
+}
+BUS_NICK="${NICK[3]}"
+check "버스: 조 등록 전 풀 배번만 저장 (event-bib 본문)" "$(post "$(page_body "$(jq -n \
+  --arg id "$EVENT_ID" --arg n "$BUS_NICK" \
+  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:"",goalMode:"finish",goalH:"4",goalM:"0",goalS:"0"}')")" \
+  | jq -r .ok)" "true"
+
 WAVE_ID=$(post "$(jq -n --arg id "$EVENT_ID" --arg pw "$ADMIN_PW" --arg s "$START" \
   '{subAction:"waves",ownerPw:$pw,eventId:$id,waves:[{id:"",name:"출발",startAt:$s}]}')" \
   | jq -r '.waves[0].id // empty')
@@ -92,13 +105,25 @@ check "풀 5:00:00 저장" "$(bib "${NICK[1]}" --arg bib 1002 --arg distance ful
 check "10K에 조를 보내면 400" "$(bib "${NICK[2]}" --arg bib 2001 --arg distance 10K \
   --arg waveId "$WAVE_ID" | jq -r .error)" "wave and goal are full marathon only"
 check "10K 배번만 저장" "$(bib "${NICK[2]}" --arg bib 2001 --arg distance 10K | jq -r .ok)" "true"
-check "풀 목표 비면 400" "$(bib "${NICK[3]}" --arg bib 1004 --arg distance full \
+check "풀 목표 0초는 400" "$(bib "${NICK[3]}" --arg bib 3001 --arg distance full \
   --arg waveId "$WAVE_ID" --argjson goalFinishSec 0 | jq -r .error)" "goal out of range"
-check "옛 my-bib(배번만) 풀 저장" "$(bib "${NICK[3]}" --arg bib 1004 --arg distance full | jq -r .ok)" "true"
+check "버스: 조 등록 후에도 목표 비우면 배번만 저장" "$(post "$(page_body "$(jq -n \
+  --arg id "$EVENT_ID" --arg n "$BUS_NICK" --arg w "$WAVE_ID" \
+  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:$w,goalMode:"finish",goalH:"",goalM:"",goalS:""}')")" \
+  | jq -r .ok)" "true"
 check "옛 my-bib(배번만)이 조·목표를 지우지 않음" "$(bib "${NICK[0]}" --arg bib 1009 | jq -r .ok)" "true"
 
 BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
-check "보드 인원 = 조·목표 있는 풀 2명" "$(echo "$BOARD" | jq '.runners | length')" "2"
+check "보드 인원 = 조·목표 있는 풀 2명 (배번만 넣은 버스 인원 제외)" "$(echo "$BOARD" | jq '.runners | length')" "2"
+
+check "버스 인원이 나중에 조·목표를 넣음" "$(post "$(page_body "$(jq -n \
+  --arg id "$EVENT_ID" --arg n "$BUS_NICK" --arg w "$WAVE_ID" \
+  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:$w,goalMode:"pace",paceM:"5",paceS:"41"}')")" \
+  | jq -r .ok)" "true"
+check "그 뒤 보드 3명" "$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID" \
+  | jq '.runners | length')" "3"
+bib "$BUS_NICK" --arg bib 3001 --arg distance 10K > /dev/null
+BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
 check "옛 저장 후에도 목표 유지" "$(echo "$BOARD" | jq -r --arg n "${NICK[0]}" \
   '.runners[] | select(.nickname==$n) | "\(.bib) \(.goalFinishSec)"')" "1009 12600"
 check "km = 경과 × 42.195 / 목표 (±0.05)" "$(echo "$BOARD" | jq '[.runners[] |
