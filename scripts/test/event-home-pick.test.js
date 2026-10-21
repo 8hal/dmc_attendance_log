@@ -197,7 +197,7 @@ describe("event-home nick pick chrome", () => {
 
   it("async home loaders abort on stale homeGeneration", () => {
     const html = read("event-home.html");
-    ["submitSelfBoard", "refreshHomeState", "loadConfirmState", "submitSelfConfirm"].forEach(
+    ["submitSelfBoard", "refreshHomeState", "loadConfirmState", "submitSelfConfirm", "submitUpdateBib"].forEach(
       function (name) {
         const fn = extractAsyncFn(html, name);
         assert.match(fn, /homeGeneration/, name + " should capture homeGeneration");

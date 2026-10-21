@@ -92,7 +92,6 @@ describe("event-admin gap manual confirm", () => {
       "source",
       "scrape",
       "confirm-one",
-      "waves",
     ]);
     for (const sub of posted) {
       assert.ok(allowed.has(sub), "unexpected subAction " + sub);

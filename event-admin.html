@@ -846,14 +846,6 @@
           </div>
           <div id="bib-missing-list"></div>
           <p class="hint">갭(이름 매칭) 목록 없음. 독려만.</p>
-          <div id="wave-editor" style="margin-top:16px;">
-            <h4 style="margin:0 0 8px;">풀코스 조</h4>
-            <p class="hint" style="margin-top:0;">이름과 출발 시각. 러너가 배번 페이지에서 고릅니다.</p>
-            <div id="wave-rows"></div>
-            <button type="button" class="btn btn-ghost" id="wave-add-btn">조 추가</button>
-            <button type="button" class="btn btn-primary" id="wave-save-btn">조 저장</button>
-            <p class="hint"><a id="cheer-link" href="#">응원 보드</a></p>
-          </div>
         </section>
 
         <!-- ④ 스크랩 -->
@@ -1418,77 +1410,6 @@
         withBib.length > 0
           ? `배번 ${withBib.length}명 스크랩 실행`
           : "스크랩 실행 (배번 없음)";
-      renderWaveEditor();
-    }
-
-    function waveRowMarkup(wave) {
-      const hhmm = String((wave && wave.startAt) || "").slice(11, 16);
-      return `<div class="list-row wave-row" data-wave-id="${escapeHtml((wave && wave.id) || "")}">
-        <input class="wave-name search-input" value="${escapeHtml((wave && wave.name) || "")}" placeholder="A조" style="max-width:140px;" />
-        <input class="wave-time search-input" type="time" value="${escapeHtml(hhmm)}" style="max-width:120px;" />
-      </div>`;
-    }
-
-    function renderWaveEditor() {
-      const rows = document.getElementById("wave-rows");
-      if (!rows || rows.dataset.editing === "1") return;
-      const waves = (eventDetail && eventDetail.waves) || [];
-      rows.innerHTML = (waves.length ? waves : [{ id: "", name: "", startAt: "" }])
-        .map(waveRowMarkup)
-        .join("");
-      const link = document.getElementById("cheer-link");
-      if (link && eventId) {
-        link.href = `event-cheer.html?eventId=${encodeURIComponent(eventId)}`;
-      }
-    }
-
-    function collectWaveRows() {
-      return Array.from(document.querySelectorAll("#wave-rows .wave-row")).map((row) => {
-        const name = row.querySelector(".wave-name").value.trim();
-        const hhmm = row.querySelector(".wave-time").value;
-        const id = row.getAttribute("data-wave-id") || "";
-        return { id, name, hhmm };
-      }).filter((row) => row.name || row.hhmm);
-    }
-
-    async function saveWaves() {
-      if (!isOpsAdmin()) {
-        showToast("운영진 권한이 필요합니다", true);
-        return;
-      }
-      if (!eventId || !eventDate) {
-        showToast("대회 날짜가 없습니다", true);
-        return;
-      }
-      const waves = collectWaveRows().map((row) => {
-        const item = {
-          name: row.name,
-          startAt: `${eventDate}T${row.hhmm || "00:00"}:00+09:00`,
-        };
-        if (row.id) item.id = row.id;
-        return item;
-      });
-      try {
-        const res = await fetch(`${API_BASE}?action=group-events`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            subAction: "waves",
-            ownerPw: getOwnerPw(),
-            canonicalEventId: eventId,
-            waves,
-          }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "조 저장 실패");
-        showToast("조를 저장했습니다");
-        const rows = document.getElementById("wave-rows");
-        if (rows) delete rows.dataset.editing;
-        await loadEventDetail();
-      } catch (err) {
-        console.error("saveWaves:", err);
-        showToast(err.message || "조 저장 실패", true);
-      }
     }
 
     function renderScrapeSection() {
@@ -2461,15 +2382,6 @@
     document.getElementById("refresh-all-btn").addEventListener("click", () => loadAll());
     document.getElementById("save-source-btn").addEventListener("click", saveGroupSource);
     document.getElementById("scrape-btn").addEventListener("click", scrapeGroupEvent);
-    document.getElementById("wave-add-btn").addEventListener("click", () => {
-      const rows = document.getElementById("wave-rows");
-      rows.dataset.editing = "1";
-      rows.insertAdjacentHTML("beforeend", waveRowMarkup({ id: "", name: "", startAt: "" }));
-    });
-    document.getElementById("wave-save-btn").addEventListener("click", saveWaves);
-    document.getElementById("wave-rows").addEventListener("input", () => {
-      document.getElementById("wave-rows").dataset.editing = "1";
-    });
     document.getElementById("scrape-stop-btn").addEventListener("click", stopGroupScrape);
     document.getElementById("gap-manual-list").addEventListener("click", (e) => {
       const row = e.target.closest(".list-row");

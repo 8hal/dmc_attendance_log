@@ -2,16 +2,626 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <title>배번 입력</title>
-  <script>
-    var search = window.location.search || "";
-    window.location.replace("event-bib.html" + search);
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>배번 입력 - 동탄 마라톤 클럽</title>
+  <link rel="icon" href="assets/dmc_logo.png" />
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+    .wrap { max-width: 500px; margin: 0 auto; }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .header-subtitle {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+    
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(15,23,42,0.07);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .info-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+    .info-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .info-list {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin: 0;
+      padding-left: 20px;
+    }
+    .info-list li {
+      margin-bottom: 4px;
+    }
+    
+    .search-box {
+      margin-bottom: 12px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .participant-list {
+      max-height: 450px;
+      overflow-y: auto;
+    }
+    
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+      margin-top: 12px;
+    }
+    .btn-secondary:hover {
+      background: #CBD5E1;
+    }
+    .participant-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .participant-item:hover {
+      border-color: var(--primary);
+      background: #F1F5F9;
+    }
+    .participant-info {
+      flex: 1;
+    }
+    .participant-nickname {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .participant-distance {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .participant-bib {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bib-status {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .bib-status.entered {
+      background: var(--green-light);
+      color: var(--green);
+    }
+    .bib-status.empty {
+      background: var(--red-light);
+      color: var(--red);
+    }
+    .bib-number {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown {
+      from {
+        transform: translateX(-50%) translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .error-box {
+      background: var(--red-light);
+      border: 2px solid var(--red);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: var(--red);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-sub);
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      .header-title {
+        font-size: 20px;
+      }
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+  <script src="assets/distance-utils.js"></script>
 </head>
 <body>
-  <p><a id="bib-redirect" href="event-bib.html">배번 입력으로 이동</a></p>
+  <div class="wrap">
+    <div class="header">
+      <div class="header-icon">🎽</div>
+      <h1 class="header-title">배번 입력</h1>
+      <p class="header-subtitle" id="eventInfo">로딩 중...</p>
+    </div>
+    
+    <div id="loadingScreen" class="loading">
+      대회 정보를 불러오는 중...
+    </div>
+    
+    <div id="listScreen" class="hidden">
+      <div class="card">
+        <h2 class="card-title">📋 참가자 목록</h2>
+        <div class="info-box" style="margin-top: 0; margin-bottom: 16px;">
+          <div class="info-title">💡 안내</div>
+          <ul class="info-list">
+            <li>동명이인 이슈 해결을 위해 필요합니다</li>
+            <li>입력하지 않으면 이름 기반으로 기록을 검색해서 저장하게 됩니다</li>
+          </ul>
+        </div>
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="닉네임 검색..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="participant-list" id="participantList"></div>
+      </div>
+    </div>
+    
+    <div id="inputScreen" class="hidden">
+      <div class="card">
+        <h2 class="card-title">✅ <span id="confirmedNickname"></span>님</h2>
+        <div id="inputError" class="error-box hidden"></div>
+        <div class="form-group">
+          <label class="form-label">종목</label>
+          <div id="distanceInfo" style="font-size: 15px; font-weight: 600;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">현재 배번</label>
+          <div id="currentBib" style="font-size: 15px; font-weight: 600; color: var(--text-sub);"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="bibInput">배번 번호</label>
+          <input 
+            type="text" 
+            id="bibInput" 
+            class="form-input" 
+            placeholder="예: 12345"
+            autocomplete="off"
+          />
+        </div>
+        <button class="btn btn-primary" id="saveBtn">저장</button>
+        <button class="btn btn-secondary" id="backBtn">목록으로 가기</button>
+      </div>
+    </div>
+    
+    <div id="successScreen" class="hidden">
+      <div class="card">
+        <div class="success-box">
+          <div class="success-icon">✅</div>
+          <div class="success-title">저장 완료</div>
+          <p class="success-message">
+            배번을 저장했습니다.<br>
+            홈에서 기록을 확인하세요.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="assets/event-member-profile.js"></script>
   <script>
-    document.getElementById("bib-redirect").search = window.location.search || "";
+    // 환경 자동 감지: localhost/127.0.0.1이면 에뮬레이터, 아니면 프로덕션
+    const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+
+    // 상태
+    const STEP = {
+      LOADING: 1,
+      LIST: 2,
+      INPUT: 3
+    };
+
+    let currentStep = STEP.LOADING;
+    let currentEvent = null;
+    let currentParticipant = null;
+
+    // DOM 요소
+    const loadingScreen = document.getElementById('loadingScreen');
+    const listScreen = document.getElementById('listScreen');
+    const inputScreen = document.getElementById('inputScreen');
+    const eventInfo = document.getElementById('eventInfo');
+    const searchInput = document.getElementById('searchInput');
+    const participantList = document.getElementById('participantList');
+    const inputError = document.getElementById('inputError');
+    const confirmedNickname = document.getElementById('confirmedNickname');
+    const distanceInfo = document.getElementById('distanceInfo');
+    const currentBib = document.getElementById('currentBib');
+    const bibInput = document.getElementById('bibInput');
+    const saveBtn = document.getElementById('saveBtn');
+    const backBtn = document.getElementById('backBtn');
+
+    function showScreen(step) {
+      currentStep = step;
+      
+      loadingScreen.classList.add('hidden');
+      listScreen.classList.add('hidden');
+      inputScreen.classList.add('hidden');
+      
+      if (step === STEP.LOADING) {
+        loadingScreen.classList.remove('hidden');
+      } else if (step === STEP.LIST) {
+        listScreen.classList.remove('hidden');
+      } else if (step === STEP.INPUT) {
+        inputScreen.classList.remove('hidden');
+      }
+    }
+
+    function showError(elementId, message) {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.classList.remove('hidden');
+    }
+
+    function hideError(elementId) {
+      const el = document.getElementById(elementId);
+      el.classList.add('hidden');
+    }
+
+    // Toast 표시 함수
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+    
+    function renderParticipantList(filterText = '') {
+      participantList.innerHTML = '';
+      
+      const filtered = currentEvent.participants.filter(p => 
+        p.nickname.toLowerCase().includes(filterText.toLowerCase())
+      );
+      
+      if (filtered.length === 0) {
+        participantList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-sub);">검색 결과가 없습니다</div>';
+        return;
+      }
+      
+      filtered.forEach(participant => {
+        const item = document.createElement('div');
+        item.className = 'participant-item';
+        
+        const hasBib = participant.bib && participant.bib.trim() !== '';
+        
+        item.innerHTML = `
+          <div class="participant-info">
+            <div class="participant-nickname">${participant.nickname}</div>
+            <div class="participant-distance">${formatDistance(participant.distance)}</div>
+          </div>
+          <div class="participant-bib">
+            ${hasBib 
+              ? `<span class="bib-number">#${participant.bib}</span><span class="bib-status entered">입력완료</span>` 
+              : `<span class="bib-status empty">미입력</span>`
+            }
+          </div>
+        `;
+        
+        item.addEventListener('click', () => {
+          selectParticipant(participant);
+        });
+        
+        participantList.appendChild(item);
+      });
+    }
+    
+    function selectParticipant(participant) {
+      currentParticipant = participant;
+      
+      EventMemberProfile.syncNicknames(localStorage, participant.nickname);
+      
+      confirmedNickname.textContent = participant.nickname;
+      distanceInfo.textContent = formatDistance(participant.distance);
+      currentBib.textContent = participant.bib || '미입력';
+      
+      if (participant.bib) {
+        bibInput.value = participant.bib;
+      } else {
+        bibInput.value = '';
+      }
+      
+      showScreen(STEP.INPUT);
+      hideError('inputError');
+      
+      // 입력 필드에 포커스
+      setTimeout(() => bibInput.focus(), 100);
+    }
+
+    async function loadEvent() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('eventId');
+      
+      if (!eventId) {
+        alert('잘못된 접근입니다. 링크를 확인해주세요.');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events&subAction=detail&eventId=${eventId}`);
+        const data = await res.json();
+        
+        if (!data.ok) {
+          alert('대회 정보를 불러올 수 없습니다.');
+          return;
+        }
+        
+        currentEvent = data.event;
+        eventInfo.textContent = `${currentEvent.eventName} · ${currentEvent.eventDate}`;
+        
+        const identity = EventMemberProfile.readSavedIdentity(localStorage);
+        const participant = EventMemberProfile.matchInList(
+          currentEvent.participants || [],
+          identity
+        );
+        if (participant) {
+          selectParticipant(participant);
+          return;
+        }
+        
+        renderParticipantList();
+        showScreen(STEP.LIST);
+        
+      } catch (error) {
+        console.error('loadEvent error:', error);
+        alert('네트워크 오류가 발생했습니다.');
+      }
+    }
+
+    function authenticateUser() {
+      const nickname = nicknameInput.value.trim();
+      
+      if (!nickname) {
+        showError('authError', '닉네임을 입력해주세요');
+        return;
+      }
+      
+      const participant = currentEvent.participants.find(
+        p => p.nickname === nickname
+      );
+      
+      if (!participant) {
+        showError('authError', '해당 대회에 참가하지 않는 회원입니다');
+        return;
+      }
+      
+      hideError('authError');
+      currentParticipant = participant;
+      
+      confirmedNickname.textContent = participant.nickname;
+      distanceInfo.textContent = formatDistance(participant.distance);
+      currentBib.textContent = participant.bib || '미입력';
+      
+      if (participant.bib) {
+        bibInput.value = participant.bib;
+      }
+      
+      showScreen(STEP.INPUT);
+    }
+
+    async function saveBib() {
+      const bib = bibInput.value.trim();
+      
+      if (!bib) {
+        showError('inputError', '배번을 입력해주세요');
+        return;
+      }
+      
+      // 배번 중복 검증
+      const duplicate = currentEvent.participants.find(
+        p => p.nickname !== currentParticipant.nickname && p.bib === bib
+      );
+      
+      if (duplicate) {
+        showError('inputError', `이미 ${duplicate.nickname}님이 사용 중인 배번입니다`);
+        return;
+      }
+      
+      hideError('inputError');
+      saveBtn.disabled = true;
+      saveBtn.textContent = '저장 중...';
+      
+      try {
+        const res = await fetch(`${API_BASE}?action=group-events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subAction: 'update-bib',
+            eventId: currentEvent.id,
+            nickname: currentParticipant.nickname,
+            bib: bib
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (!data.ok) {
+          throw new Error(data.error || '저장 실패');
+        }
+        
+        // 로컬 데이터 업데이트
+        currentParticipant.bib = bib;
+        
+        showToast('✅ 저장 완료');
+        setTimeout(() => {
+          const id = currentEvent && currentEvent.id ? currentEvent.id : "";
+          location.href = "event-home.html?eventId=" + encodeURIComponent(id);
+        }, 800);
+        
+      } catch (error) {
+        console.error('saveBib error:', error);
+        showError('inputError', error.message || '네트워크 오류가 발생했습니다');
+        saveBtn.disabled = false;
+        saveBtn.textContent = '저장';
+      }
+    }
+
+    saveBtn.addEventListener('click', saveBib);
+    bibInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        saveBib();
+      }
+    });
+    
+    backBtn.addEventListener('click', () => {
+      renderParticipantList();
+      showScreen(STEP.LIST);
+    });
+    
+    searchInput.addEventListener('input', (e) => {
+      renderParticipantList(e.target.value);
+    });
+
+    // 페이지 로드 시 대회 정보 불러오기
+    loadEvent();
   </script>
 </body>
 </html>

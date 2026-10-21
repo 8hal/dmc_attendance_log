@@ -150,5 +150,6 @@ post "$(jq -n --arg id "$EVENT_ID" --arg pw "$ADMIN_PW" --arg w "$WAVE_ID" --arg
 
 echo
 echo "통과 $PASS / 실패 $FAIL"
-echo "화면: http://127.0.0.1:5000/event-cheer.html?eventId=$EVENT_ID"
+echo "화면: http://127.0.0.1:5000/lab/cheer/index.html?eventId=$EVENT_ID"
+echo "조:   http://127.0.0.1:5000/lab/cheer/waves.html?eventId=$EVENT_ID"
 [ "$FAIL" -eq 0 ]

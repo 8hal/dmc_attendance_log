@@ -87,9 +87,9 @@ describe("event-bib request body", () => {
 });
 
 describe("event-bib page wiring", () => {
-  const html = fs.readFileSync(path.join(__dirname, "../../event-bib.html"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "../../lab/cheer/bib.html"), "utf8");
   it("loads the form helper and uses it to build the request", () => {
-    assert.match(html, /assets\/event-bib-form\.js/);
+    assert.match(html, /\.\.\/\.\.\/assets\/event-bib-form\.js/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
   });
 });

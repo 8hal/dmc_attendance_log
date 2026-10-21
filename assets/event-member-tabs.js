@@ -23,7 +23,6 @@
     const tabs = {
       home: barEl.querySelector('[data-tab="home"]'),
       roster: barEl.querySelector('[data-tab="roster"]'),
-      cheer: barEl.querySelector('[data-tab="cheer"]'),
     };
 
     if (tabs.home) {
@@ -43,16 +42,6 @@
         tabs.roster.setAttribute("aria-current", "page");
       } else {
         tabs.roster.removeAttribute("aria-current");
-      }
-    }
-
-    if (tabs.cheer) {
-      tabs.cheer.href = "event-cheer.html" + q;
-      tabs.cheer.classList.toggle("active", active === "cheer");
-      if (active === "cheer") {
-        tabs.cheer.setAttribute("aria-current", "page");
-      } else {
-        tabs.cheer.removeAttribute("aria-current");
       }
     }
 

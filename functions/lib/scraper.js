@@ -1309,12 +1309,6 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         candidateCount: found.length,
         filteredCount: filteredResults.length,
         isPB: pb,
-        splits: Array.isArray(r.splits)
-          ? r.splits.map((split) => ({
-              label: split && split.label != null ? String(split.label) : "",
-              time: split && split.time != null ? String(split.time) : "",
-            }))
-          : [],
       });
     }
 
