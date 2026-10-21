@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
-  <title>응원 - 동탄 마라톤 클럽</title>
-  <link rel="icon" type="image/png" sizes="150x150" href="assets/dmc_logo.png" />
-  <link rel="stylesheet" href="assets/design-tokens.css" />
-  <link rel="stylesheet" href="assets/event-member-shell.css" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>응원 (시험) - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../../assets/design-tokens.css" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -16,8 +16,10 @@
       color: var(--dmc-color-text, #0F172A);
       font-family: var(--dmc-font-family, system-ui, sans-serif);
       padding: 20px;
-      padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
+    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+    .lab a { color: inherit; }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 6px; }
     .meta { margin: 0 0 14px; color: #64748B; font-size: 14px; }
@@ -54,6 +56,7 @@
 </head>
 <body>
   <div class="wrap">
+    <p class="lab">시험 중인 화면입니다. <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
     <h1 id="title">응원</h1>
     <p class="meta" id="meta">풀코스 추정 위치</p>
     <div class="views" id="views">
@@ -73,13 +76,7 @@
       <button type="button" class="btn" id="retryBtn">다시 시도</button>
     </div>
   </div>
-  <nav class="event-tab-bar hidden" id="eventTabBar" aria-label="대회 탭">
-    <a class="event-tab-btn" data-tab="home" href="#"><span class="tab-icon">📍</span>홈</a>
-    <a class="event-tab-btn" data-tab="roster" href="#"><span class="tab-icon">🏁</span>대회 기록</a>
-    <a class="event-tab-btn active" data-tab="cheer" href="#"><span class="tab-icon">📣</span>응원</a>
-  </nav>
-  <script src="assets/cheer-course.js"></script>
-  <script src="assets/event-member-tabs.js"></script>
+  <script src="../../assets/cheer-course.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -108,13 +105,13 @@
 
     function xy(km) {
       const point = CheerCourse.coursePoint(km);
-      return { x: 10 + point.x * 80, y: 16 + point.row * 22, point: point };
+      return { x: 10 + point.x * 80, y: 16 + point.y * 22, point: point };
     }
 
     function renderCourse() {
       const runners = (board && board.runners) || [];
       const parts = [];
-      parts.push('<svg viewBox="0 0 100 214" role="img" aria-label="42.195km 지그재그">');
+      parts.push('<svg viewBox="0 0 100 224" role="img" aria-label="42.195km 지그재그">');
       for (let row = 0; row < 9; row += 1) {
         const fromKm = row * 5;
         const toKm = row === 8 ? 42.195 : (row + 1) * 5;
@@ -278,7 +275,7 @@
       }
     });
 
-    EventMemberTabs.mount({ eventId: eventId, active: "cheer", barEl: document.getElementById("eventTabBar") });
+    document.getElementById("bibLink").href = "bib.html?eventId=" + encodeURIComponent(eventId);
     loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
   </script>
 </body>

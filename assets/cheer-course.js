@@ -15,7 +15,7 @@
     const t = rowLen === 0 ? 0 : (clamped - rowStart) / rowLen;
     const ltr = row % 2 === 0;
     const x = ltr ? t : 1 - t;
-    return { row: row, x: x, y: row, ltr: ltr };
+    return { row: row, x: x, y: row + t, ltr: ltr };
   }
 
   function clusterRunners(runners, thresholdKm) {

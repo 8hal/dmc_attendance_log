@@ -30,6 +30,14 @@ describe("zigzag course", () => {
     assert.ok(finish.x > 0.99);
   });
 
+  it("puts y on the diagonal so a dot lands on the drawn line", () => {
+    assert.equal(coursePoint(0).y, 0);
+    assert.ok(Math.abs(coursePoint(2.5).y - 0.5) < 1e-9);
+    assert.ok(Math.abs(coursePoint(4.999).y - coursePoint(5).y) < 0.001);
+    assert.equal(coursePoint(5).y, 1);
+    assert.ok(Math.abs(coursePoint(42.195).y - 9) < 1e-9);
+  });
+
   it("clusters runners within 0.4 km", () => {
     const groups = clusterRunners([
       { nickname: "가", km: 10 },
