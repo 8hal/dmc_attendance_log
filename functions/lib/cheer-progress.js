@@ -286,6 +286,10 @@ function resolveProgressPatch(input) {
     }
     return { ok: true, clearProgress: true, patch: {} };
   }
+  // Pages deployed before cheer send bib only; their full runners keep any saved wave/goal.
+  if (!sentWave(body) && !sentGoal(body)) {
+    return { ok: true, clearProgress: false, patch: null };
+  }
   const waveId = String(body.waveId || "").trim();
   if (!waves.some((wave) => String(wave.id) === waveId)) {
     return { ok: false, error: "waveId required" };

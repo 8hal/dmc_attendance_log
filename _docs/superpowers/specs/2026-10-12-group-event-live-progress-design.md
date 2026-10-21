@@ -180,11 +180,13 @@
 
 추가 본문: `waveId`, `goalFinishSec` 또는 `goalPaceSecPerKm` (하나만 있으면 됨. 둘 다 있으면 `goalFinishSec` 우선).
 
-`distance === "full"` (또는 저장 후 canonical이 full):
+`distance === "full"` (또는 저장 후 canonical이 full)이고 `waveId`나 `goal*` 중 하나라도 보냈으면:
 
 - `waveId`가 `waves`에 있어야 함
 - 목표: `goalFinishSec`이 3600–36000 (1–10시간). 페이스만 오면 `goalFinishSec = round(FULL_KM * goalPaceSecPerKm)` 후 같은 범위
 - 아니면 400
+
+2026-10-21: 풀코스인데 `waveId`·`goal*`를 **하나도** 안 보내면 배번·종목만 저장하고 기존 `waveId`·`goalFinishSec`는 그대로 둔다. Functions를 Hosting보다 먼저 배포하는 동안과 캐시된 옛 `my-bib.html`·홈이 배번만 보내기 때문이다. `event-bib.html`은 풀코스면 항상 둘 다 보내므로 거기서는 계속 거절된다.
 
 `distance`가 full이 아니면 `waveId`/`goal*`를 보내지 않아야 한다. 보내면 400. 저장 후 canonical이 full이 아니면 기존 `waveId`·`goalFinishSec`를 지운다.
 

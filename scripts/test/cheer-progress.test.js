@@ -195,14 +195,28 @@ describe("waves and bib progress", () => {
     assert.equal(result.waves[0].id, "a");
   });
 
-  it("requires wave and goal for full and rejects them on half", () => {
+  it("requires wave and goal together for full and rejects them on half", () => {
     const waves = [{ id: "a", name: "A조", startAt: "2026-10-19T08:00:00+09:00" }];
-    const missing = resolveProgressPatch({
+    const waveOnly = resolveProgressPatch({
       distance: "full",
-      body: { bib: "1" },
+      body: { waveId: "a" },
       waves,
     });
-    assert.equal(missing.ok, false);
+    assert.equal(waveOnly.ok, false);
+
+    const goalOnly = resolveProgressPatch({
+      distance: "full",
+      body: { goalFinishSec: GOAL },
+      waves,
+    });
+    assert.equal(goalOnly.ok, false);
+
+    const emptyGoal = resolveProgressPatch({
+      distance: "full",
+      body: { waveId: "a", goalFinishSec: 0 },
+      waves,
+    });
+    assert.equal(emptyGoal.ok, false);
 
     const ok = resolveProgressPatch({
       distance: "full",
@@ -226,5 +240,25 @@ describe("waves and bib progress", () => {
     });
     assert.equal(halfClear.ok, true);
     assert.equal(halfClear.clearProgress, true);
+  });
+
+  it("keeps a bib-only full save from older pages without touching wave or goal", () => {
+    const waves = [{ id: "a", name: "A조", startAt: "2026-10-19T08:00:00+09:00" }];
+    const bibOnly = resolveProgressPatch({
+      distance: "full",
+      body: { bib: "1" },
+      waves,
+    });
+    assert.equal(bibOnly.ok, true);
+    assert.equal(bibOnly.clearProgress, false);
+    assert.equal(bibOnly.patch, null);
+
+    const noWaves = resolveProgressPatch({
+      distance: "full",
+      body: { bib: "1", distance: "full" },
+      waves: [],
+    });
+    assert.equal(noWaves.ok, true);
+    assert.equal(noWaves.patch, null);
   });
 });
