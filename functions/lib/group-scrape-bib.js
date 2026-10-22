@@ -5,12 +5,16 @@
  * - smartchip: nameorbibno
  * - ohmyrace: bib param
  * - spct: searchResultsName accepts bib (2025 철원 live check)
+ * - myresult: 배번으로 소켓 선수 상세 (검색 API에는 기록이 없음)
  * marazone always sends bibNum:"" — excluded until fixed.
  * @type {ReadonlySet<string>}
  */
 const BIB_MODE_GROUP_SCRAPE_SOURCES = Object.freeze(
-  new Set(["smartchip", "ohmyrace", "spct"])
+  new Set(["smartchip", "ohmyrace", "spct", "myresult"])
 );
+
+const BIB_MODE_GROUP_SCRAPE_UNSUPPORTED_ERROR =
+  "배번 스크랩은 smartchip·ohmyrace·spct·myresult만 지원합니다";
 
 /**
  * Whether group scrape may use queryBy=bib for this source.
@@ -86,6 +90,7 @@ function buildBibScrapeMembers(scrapeTargets, membersByRealName) {
 
 module.exports = {
   BIB_MODE_GROUP_SCRAPE_SOURCES,
+  BIB_MODE_GROUP_SCRAPE_UNSUPPORTED_ERROR,
   isBibModeGroupScrapeSource,
   pickBibScrapeTargets,
   matchResultByBib,

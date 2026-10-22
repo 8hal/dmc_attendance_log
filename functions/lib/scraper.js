@@ -10,6 +10,8 @@ const {
   resolveMemberSearchQuery,
   resultBibFromSearch,
 } = require("./scrape-bib-query");
+const { myResultPlayerToRecord } = require("./myresult-player");
+const { fetchMyResultPlayer } = require("./myresult-socket");
 
 const DELAY_MS = 200;
 // SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
@@ -360,33 +362,50 @@ async function searchSmartChip(eventId, memberName, session = "") {
 
 // ─── MyResult 검색 ────────────────────────────────────────────
 
-async function searchMyResult(eventId, memberName) {
-  const url = `https://myresult.co.kr/api/event/${eventId}/player?q=${encodeURIComponent(memberName)}`;
-  const res = await fetch(url, {
-    headers: {
-      ...browserHeaders("myresult"),
-      "Accept": "application/json, text/plain, */*",
-    },
-  });
-  if (!res.ok) return [];
-  const players = await res.json();
-  return (players || []).map((p) => {
-    const rawNet = p.result_nettime != null ? String(p.result_nettime) : "";
-    const rawGun = p.result_guntime != null ? String(p.result_guntime) : "";
-    const nNet = normTime(rawNet);
-    const nGun = normTime(rawGun);
-    return {
-    name: p.name || memberName,
-    bib: String(p.num || ""),
-    distance: normDist(p.course_cd || ""),
-    netTime: nNet || nGun,
-    gunTime: nGun,
-    overallRank: null, genderRank: null, ageGroupRank: null,
-    gender: p.gender ? p.gender.toUpperCase() : null,
-    splits: [],
-    pace: p.pace_nettime || "",
-    };
-  });
+/**
+ * 검색 API(/player?q=)는 배번·이름만 준다.
+ * 넷타임·구간은 소켓 선수 상세(fetchMyResultPlayer)에서 읽는다.
+ * 숫자 쿼리는 배번으로 보고 검색 HTTP를 건너뛴다.
+ * @param {string|number} eventId
+ * @param {string} memberName bib 또는 이름
+ * @param {{ fetchPlayer?: Function, fetchImpl?: typeof fetch }} [deps]
+ */
+async function searchMyResult(eventId, memberName, deps = {}) {
+  const fetchPlayer = deps.fetchPlayer || fetchMyResultPlayer;
+  const fetchImpl = deps.fetchImpl || fetch;
+  const query = String(memberName ?? "").trim();
+  if (!query) return [];
+
+  let bibs;
+  if (/^\d+$/.test(query)) {
+    bibs = [query];
+  } else {
+    const url = `https://myresult.co.kr/api/event/${encodeURIComponent(eventId)}/player?q=${encodeURIComponent(query)}`;
+    const res = await fetchImpl(url, {
+      headers: {
+        ...browserHeaders("myresult"),
+        Accept: "application/json, text/plain, */*",
+      },
+    });
+    if (!res.ok) return [];
+    const players = await res.json();
+    const seen = new Set();
+    bibs = [];
+    for (const p of Array.isArray(players) ? players : []) {
+      const bib = String(p?.num ?? "").trim();
+      if (!bib || seen.has(bib)) continue;
+      seen.add(bib);
+      bibs.push(bib);
+    }
+  }
+
+  const results = [];
+  for (const bib of bibs) {
+    const player = await fetchPlayer(eventId, bib);
+    const rec = myResultPlayerToRecord(player);
+    if (rec) results.push(rec);
+  }
+  return results;
 }
 
 async function getMyResultEventInfo(eventId) {
@@ -1301,6 +1320,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         overallRank: r.overallRank || null,
         genderRank: r.genderRank || null,
         pace: r.pace || "",
+        splits: Array.isArray(r.splits) ? r.splits : [],
         memberRealName: m.realName,
         memberNickname: m.nickname,
         memberGender: m.gender || "",
@@ -1609,7 +1629,7 @@ async function crawlAllUpcomingEvents() {
 
 module.exports = {
   normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
-  searchMember, getEventInfo,
+  searchMyResult, searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,
   discoverGoRunningMonthly, discoverGoRunningThisAndNextMonth, discoverGoRunningYear, enrichMissingDatesFromGoRunning,
