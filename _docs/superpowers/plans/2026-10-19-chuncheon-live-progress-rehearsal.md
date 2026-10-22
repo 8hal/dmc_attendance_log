@@ -48,7 +48,7 @@
 | 스크랩 | `groupEventAutoScrape`는 10분 유지. 세션이 없으면 당일 15:00–15:09 원샷뿐이라 경기 중 칩을 받지 못한다. 주기를 줄이지 않는다 |
 | D-day | `functions/lib/chunbaek-handlers.js`의 `SEASON_RACE_DATES.chuncheon`은 `2026-10-26`. 응원 보드는 `race_events.eventDate`와 `waves.startAt`만 본다. 춘백 카드가 월요일에야 “당일”이 되어도 이 리허설의 실패가 아니다 |
 | 대회 문서 | 2026-10-21에 만들었다: `evt_2026-10-25_2026` (`eventDate` `2026-10-25`). 고러닝 캐시의 춘천 행 날짜는 25일이 맞다. 26일은 `scripts/discover-events.js`가 붙인 `matchedEvent` 날짜뿐이다. 다시 만들지 않는다 |
-| 참가자 | 명단은 `group.html` 카드 **⋮ → 참가자 편집** (`POST` `subAction=participants`). `event-admin` 버스 패널은 버스 명단만 쓴다. 2026-10-22부터 서버가 `memberId`로 기존 `waveId`·`goalFinishSec`를 이어 붙여, 다시 저장해도 풀코스 조·목표가 남는다. 단 `update-bib`·참가자 저장은 트랜잭션이 아니라 같은 순간 두 저장이 겹치면 한쪽이 덮일 수 있다(원래 있던 동작). 목표 입력 안내는 한꺼번에 몰리지 않게 시험 참가자에게만 보낸다 |
+| 참가자 | 명단은 `group.html` 카드 **⋮ → 참가자 편집** (`POST` `subAction=participants`). `event-admin` 버스 패널은 버스 명단만 쓴다. 2026-10-22부터 서버가 `memberId`로 기존 `waveId`·`goalFinishSec`를 이어 붙여, 다시 저장해도 풀코스 조·목표가 남는다. `update-bib`·참가자 저장은 2026-10-22부터 Firestore 트랜잭션이다. 고치기 전 에뮬에서 3명 동시 저장 10회 중 9회가 한 명 이상 유실됐고, 고친 뒤 QA 5회 모두 유실 없음. 목표 입력 안내는 여전히 시험 참가자에게만 보낸다 |
 
 추정 거리:
 

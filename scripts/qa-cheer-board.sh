@@ -158,6 +158,58 @@ check "출발 전이면 전원 0 km" "$(get --data-urlencode subAction=cheer-boa
 post "$(jq -n --arg id "$EVENT_ID" --arg pw "$ADMIN_PW" --arg w "$WAVE_ID" --arg s "$START" \
   '{subAction:"waves",ownerPw:$pw,eventId:$id,waves:[{id:$w,name:"출발",startAt:$s}]}')" > /dev/null
 
+participant_bibs() {
+  get --data-urlencode subAction=detail --data-urlencode "eventId=$EVENT_ID" \
+    | jq -r '[.event.participants[] | .bib] | sort | join(",")'
+}
+LOST=0
+for round in 1 2 3 4 5; do
+  for k in 0 1 3; do
+    bib "${NICK[$k]}" --arg bib "8${k}0${round}" > /dev/null &
+  done
+  wait
+  [ "$(participant_bibs)" = "$(printf '%s\n' "800$round" "810$round" 2001 "830$round" | sort | paste -sd,)" ] \
+    || LOST=$((LOST + 1))
+done
+check "버스: 3명 동시 배번 저장 5회 모두 유실 없음" "$LOST" "0"
+bib "${NICK[0]}" --arg bib 1009 > /dev/null
+bib "${NICK[1]}" --arg bib 1002 > /dev/null
+bib "$BUS_NICK" --arg bib 3001 --arg distance full --argjson goalFinishSec 14100 > /dev/null
+BEFORE=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID" | jq '.runners | length')
+check "버스 인원 풀로 되돌리면 보드 3명" "$BEFORE" "3"
+
+NEW_WAVE=$(post "$(jq -n --arg id "$EVENT_ID" --arg pw "$ADMIN_PW" --arg s "$START" \
+  '{subAction:"waves",ownerPw:$pw,eventId:$id,waves:[{id:"",name:"새 출발",startAt:$s}]}')" \
+  | jq -r '.waves[0].id // empty')
+BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
+check "조를 지우고 새로 만들어도 보드 인원 유지" "$(echo "$BOARD" | jq '.runners | length')" "$BEFORE"
+check "지워진 조를 고른 인원은 새 첫 출발로" "$(echo "$BOARD" | jq -r --arg n "${NICK[0]}" --arg w "$NEW_WAVE" \
+  '.runners[] | select(.nickname==$n) | .waveId==$w')" "true"
+
+(cd "$REPO_ROOT/functions" && FIRESTORE_EMULATOR_HOST="${FIRESTORE_EMULATOR_HOST:-127.0.0.1:8080}" node -e '
+  const admin = require("firebase-admin");
+  admin.initializeApp({ projectId: "dmc-attendance" });
+  const db = admin.firestore();
+  const [eventId] = process.argv.slice(1);
+  const jobId = "qa-cheer-job-" + eventId;
+  Promise.all([
+    db.collection("scrape_jobs").doc(jobId).set({ results: [
+      { bib: "1009", distance: "full", netTime: "03:29:10", splits: [] },
+      { bib: "1002", distance: "full", netTime: "", splits: [{ label: "10K", time: "00:20:00" }] },
+    ] }),
+    db.collection("race_events").doc(eventId).update({ groupScrapeJobId: jobId }),
+  ]).then(() => process.exit(0), (e) => { console.error(e); process.exit(1); });
+' "$EVENT_ID")
+BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
+check "기록(netTime)이 오면 완주 42.195 km·칩" "$(echo "$BOARD" | jq -r --arg n "${NICK[0]}" \
+  '.runners[] | select(.nickname==$n) | "\(.km) \(.chip)"')" "42.195 true"
+check "구간 기록(10K)이 오면 칩 기준으로 10 km 이상" "$(echo "$BOARD" | jq -r --arg n "${NICK[1]}" \
+  '.runners[] | select(.nickname==$n) | "\(.km >= 10) \(.chip)"')" "true true"
+check "기록 없는 인원은 추정 유지" "$(echo "$BOARD" | jq -r --arg n "$BUS_NICK" \
+  '.runners[] | select(.nickname==$n) | .chip')" "false"
+check "완주 상세 기록" "$(get --data-urlencode subAction=cheer-runner --data-urlencode "eventId=$EVENT_ID" \
+  --data-urlencode "runnerNickname=${NICK[0]}" | jq -r '.runner.km')" "42.195"
+
 echo
 echo "통과 $PASS / 실패 $FAIL"
 echo "화면: http://127.0.0.1:5000/lab/cheer/index.html?eventId=$EVENT_ID"

@@ -3421,9 +3421,11 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
 
       const eventRef = db.collection("race_events").doc(canonicalEventId);
-      const prevDoc = await eventRef.get();
-      const prevParticipants = prevDoc.exists ? (prevDoc.data() || {}).participants : [];
-      await eventRef.update({ participants: mergeParticipantProgress(prevParticipants, participants) });
+      await db.runTransaction(async (tx) => {
+        const prevDoc = await tx.get(eventRef);
+        const prevParticipants = prevDoc.exists ? (prevDoc.data() || {}).participants : [];
+        tx.update(eventRef, { participants: mergeParticipantProgress(prevParticipants, participants) });
+      });
       return res.json({ ok: true });
     }
 
@@ -4113,64 +4115,58 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
       
       try {
-        // 2. 대회 조회
-        const eventDoc = await db.collection("race_events").doc(eventId).get();
-        if (!eventDoc.exists) {
-          return res.status(404).json({ ok: false, error: "event not found" });
-        }
-        
-        const event = eventDoc.data();
-        
-        // 3. 참가자 찾기
-        const participantIndex = event.participants.findIndex(
-          p => p.nickname === nickname
-        );
-        
-        if (participantIndex === -1) {
-          return res.status(403).json({ 
-            ok: false, 
-            error: "not a participant" 
-          });
-        }
-        
-        // 4. 배번 중복 검증
-        const duplicate = event.participants.find(
-          p => p.nickname !== nickname && p.bib === trimmedBib
-        );
-        
-        if (duplicate) {
-          return res.status(400).json({ 
-            ok: false, 
-            error: `이미 ${duplicate.nickname}님이 사용 중인 배번입니다` 
-          });
-        }
-        
-        // 5. 배번(·종목) 업데이트
-        event.participants[participantIndex].bib = trimmedBib;
-        if (canonicalDistance !== null) {
-          event.participants[participantIndex].distance = canonicalDistance;
-        }
+        // 2~5. 조회·검증·저장 — 버스에서 동시에 저장해도 서로 덮어쓰지 않도록 트랜잭션
+        const eventRef = db.collection("race_events").doc(eventId);
+        const outcome = await db.runTransaction(async (tx) => {
+          const eventDoc = await tx.get(eventRef);
+          if (!eventDoc.exists) {
+            return { status: 404, error: "event not found" };
+          }
 
-        const progress = resolveProgressPatch({
-          distance: event.participants[participantIndex].distance || "",
-          body: req.body,
-          waves: Array.isArray(event.waves) ? event.waves : [],
-        });
-        if (!progress.ok) {
-          return res.status(400).json({ ok: false, error: progress.error });
-        }
-        if (progress.clearProgress) {
-          delete event.participants[participantIndex].waveId;
-          delete event.participants[participantIndex].goalFinishSec;
-        } else if (progress.patch) {
-          Object.assign(event.participants[participantIndex], progress.patch);
-        }
-        
-        await db.collection("race_events").doc(eventId).update({
-          participants: event.participants
+          const event = eventDoc.data();
+
+          const participantIndex = event.participants.findIndex(
+            p => p.nickname === nickname
+          );
+          if (participantIndex === -1) {
+            return { status: 403, error: "not a participant" };
+          }
+
+          const duplicate = event.participants.find(
+            p => p.nickname !== nickname && p.bib === trimmedBib
+          );
+          if (duplicate) {
+            return { status: 400, error: `이미 ${duplicate.nickname}님이 사용 중인 배번입니다` };
+          }
+
+          event.participants[participantIndex].bib = trimmedBib;
+          if (canonicalDistance !== null) {
+            event.participants[participantIndex].distance = canonicalDistance;
+          }
+
+          const progress = resolveProgressPatch({
+            distance: event.participants[participantIndex].distance || "",
+            body: req.body,
+            waves: Array.isArray(event.waves) ? event.waves : [],
+          });
+          if (!progress.ok) {
+            return { status: 400, error: progress.error };
+          }
+          if (progress.clearProgress) {
+            delete event.participants[participantIndex].waveId;
+            delete event.participants[participantIndex].goalFinishSec;
+          } else if (progress.patch) {
+            Object.assign(event.participants[participantIndex], progress.patch);
+          }
+
+          tx.update(eventRef, { participants: event.participants });
+          return { event, savedParticipant: event.participants[participantIndex] };
         });
 
-        const savedParticipant = event.participants[participantIndex];
+        if (outcome.error) {
+          return res.status(outcome.status).json({ ok: false, error: outcome.error });
+        }
+        const { event, savedParticipant } = outcome;
         if (isSessionActive(event.groupScrapeSession, Date.now())) {
           const src = event.groupSource && event.groupSource.source;
           const sid = event.groupSource && event.groupSource.sourceId;

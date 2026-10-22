@@ -132,4 +132,18 @@ describe("cheer board page", () => {
   it("refreshes an open runner detail on each poll", () => {
     assert.match(html, /view === "detail" && selected/);
   });
+
+  it("shows load errors in Korean, including offline fetch failures", () => {
+    assert.match(html, /"event not found": "대회를 찾지 못했습니다/);
+    assert.match(html, /"Failed to fetch": "인터넷 연결/);
+    assert.match(html, /"Load failed": "인터넷 연결/);
+  });
+});
+
+describe("cheer waves page", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../../lab/cheer/waves.html"), "utf8");
+  it("says a deleted wave falls back to the first start", () => {
+    assert.match(html, /첫 출발 시각으로 계산합니다/);
+    assert.doesNotMatch(html, /보드에서 빠집니다/);
+  });
 });

@@ -97,10 +97,23 @@
         .replace(/"/g, "&quot;");
     }
 
+    const LOAD_ERRORS = {
+      "event not found": "대회를 찾지 못했습니다. 받은 링크가 맞는지 확인해 주세요.",
+      "runner not on board": "응원 보드에 없는 선수입니다.",
+      "server error": "서버 오류입니다. 잠시 뒤 다시 시도해 주세요.",
+      "Failed to fetch": "인터넷 연결을 확인하고 다시 시도해 주세요.",
+      "Load failed": "인터넷 연결을 확인하고 다시 시도해 주세요.",
+    };
+
     function showError(message) {
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("error").classList.remove("hidden");
-      document.getElementById("errorMessage").textContent = message || "불러오지 못했습니다.";
+      document.getElementById("errorMessage").textContent = LOAD_ERRORS[message] || message || "불러오지 못했습니다.";
+      if (!board) {
+        ["views", "courseView", "rankView", "detailView"].forEach(function (id) {
+          document.getElementById(id).classList.add("hidden");
+        });
+      }
     }
 
     const BOX = { left: 10, right: 90, top: 12, gap: 16 };
