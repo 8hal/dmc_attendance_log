@@ -1105,11 +1105,11 @@ exports.weeklyDiscoverAndScrape = onSchedule(
 );
 
 /**
- * 그룹 대회 당일 자동 스크랩 (10분마다 KST).
+ * 그룹 대회 당일 자동 스크랩 (매 1분 KST, MyResult는 1분 간격 / 타 소스는 10분 간격).
  * 세션 중이면 미완주만 재시도. 세션이 한 번도 없는 당일 대회만 15:00 원샷.
  */
 exports.groupEventAutoScrape = onSchedule(
-  { schedule: "*/10 * * * *", timeZone: "Asia/Seoul", region: "asia-northeast3" },
+  { schedule: "* * * * *", timeZone: "Asia/Seoul", region: "asia-northeast3" },
   async () => {
     const nowMs = Date.now();
     const now = new Date(nowMs);
@@ -3470,7 +3470,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
 
       await db.collection("race_events").doc(canonicalEventId).update({
-        groupScrapeSession: startSession(Date.now()),
+        groupScrapeSession: startSession(Date.now(), src),
       });
 
       triggerGroupScrape({

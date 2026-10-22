@@ -222,6 +222,17 @@ describe("myresult group scrape wiring", () => {
     assert.doesNotMatch(index, /smartchip·ohmyrace·spct만 지원합니다/);
     assert.match(index, /BIB_MODE_GROUP_SCRAPE_UNSUPPORTED_ERROR/);
   });
+
+  it("myresult 호출 간격(MYRESULT_DELAY_MS)은 실시간 조회를 위해 일반 DELAY_MS보다 짧게 설정된다", () => {
+    const scraper = require("../../functions/lib/scraper.js");
+    assert.equal(typeof scraper.MYRESULT_DELAY_MS, "number");
+    assert.ok(scraper.MYRESULT_DELAY_MS < scraper.DELAY_MS);
+    assert.ok(scraper.MYRESULT_DELAY_MS <= 30);
+    assert.equal(scraper.memberScrapeDelayMs("myresult", 0), scraper.MYRESULT_DELAY_MS);
+    assert.equal(scraper.memberScrapeDelayMs("myresult", 1), scraper.MYRESULT_DELAY_MS * 2);
+    assert.ok(scraper.memberScrapeDelayMs("smartchip", 0) >= 1800);
+    assert.ok(scraper.memberScrapeDelayMs("spct", 0) >= 100);
+  });
 });
 
 describe("2026 춘천 날짜", () => {

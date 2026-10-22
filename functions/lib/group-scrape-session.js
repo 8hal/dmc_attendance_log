@@ -34,11 +34,12 @@ function mergeJobResultsByBib(existing, incoming) {
   return out;
 }
 
-function startSession(nowMs) {
+function startSession(nowMs, source) {
+  const isMyResult = String(source || "").trim() === "myresult";
   return {
     startedAt: new Date(nowMs).toISOString(),
     until: new Date(nowMs + WINDOW_MS).toISOString(),
-    intervalMinutes: 10,
+    intervalMinutes: isMyResult ? 1 : 10,
   };
 }
 
@@ -89,6 +90,12 @@ function decideAutoScrapeTick(event, nowMs, kstHour, kstMinute) {
   const session = event && event.groupScrapeSession;
   if (isSessionActive(session, nowMs)) {
     if (event.groupScrapeStatus === "running") return "skip";
+    const src = event && event.groupSource && event.groupSource.source;
+    const interval =
+      src === "myresult" || (session && Number(session.intervalMinutes) === 1)
+        ? 1
+        : 10;
+    if (interval > 1 && Number(kstMinute) % interval !== 0) return "skip";
     return "session-retry";
   }
   if (hasEverStartedSession(session)) return "skip";
