@@ -63,6 +63,7 @@ const {
   mergeJobResultsByBib,
   restoreSubsetFailureStatuses,
   isStuckRunningJob,
+  MYRESULT_SUBTICK_DELAY_MS,
 } = require("./lib/group-scrape-session");
 const {
   buildSelfConfirmDocId,
@@ -1105,112 +1106,143 @@ exports.weeklyDiscoverAndScrape = onSchedule(
 );
 
 /**
- * 그룹 대회 당일 자동 스크랩 (매 1분 KST, MyResult는 1분 간격 / 타 소스는 10분 간격).
+ * 그룹 대회 당일 자동 스크랩 (매 1분 KST 기동, MyResult는 0초+30초 2회 = 30초 간격 / 타 소스는 10분 간격).
  * 세션 중이면 미완주만 재시도. 세션이 한 번도 없는 당일 대회만 15:00 원샷.
  */
 exports.groupEventAutoScrape = onSchedule(
-  { schedule: "* * * * *", timeZone: "Asia/Seoul", region: "asia-northeast3" },
+  { schedule: "* * * * *", timeZone: "Asia/Seoul", timeoutSeconds: 120, region: "asia-northeast3" },
   async () => {
-    const nowMs = Date.now();
-    const now = new Date(nowMs);
-    const todayKst = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
-    const kstParts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Seoul",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    }).formatToParts(now);
-    const kstHour = Number(kstParts.find((p) => p.type === "hour").value);
-    const kstMinute = Number(kstParts.find((p) => p.type === "minute").value);
-    console.log(`[groupEventAutoScrape] 오늘 KST: ${todayKst} ${kstHour}:${String(kstMinute).padStart(2, "0")}`);
-
-    const snap = await db.collection("race_events")
-      .where("isGroupEvent", "==", true)
-      .where("eventDate", "==", todayKst)
-      .get();
-
-    for (const doc of snap.docs) {
-      const event = doc.data();
-      const tick = decideAutoScrapeTick(event, nowMs, kstHour, kstMinute);
-      if (tick === "skip") {
-        continue;
-      }
-      if (!event.groupSource) {
-        console.log(`[groupEventAutoScrape] 소스 미입력 건너뜀: ${doc.id}`);
-        continue;
-      }
-      if (!event.participants || event.participants.length === 0) {
-        console.log(`[groupEventAutoScrape] 참가자 없음 건너뜀: ${doc.id}`);
-        continue;
+    const runPass = async (onlyMyResultSubtick = false) => {
+      const nowMs = Date.now();
+      const now = new Date(nowMs);
+      const todayKst = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+      const kstParts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Seoul",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }).formatToParts(now);
+      const kstHour = Number(kstParts.find((p) => p.type === "hour").value);
+      const kstMinute = Number(kstParts.find((p) => p.type === "minute").value);
+      if (!onlyMyResultSubtick) {
+        console.log(`[groupEventAutoScrape] 오늘 KST: ${todayKst} ${kstHour}:${String(kstMinute).padStart(2, "0")}`);
       }
 
-      const autoSource = event.groupSource && event.groupSource.source;
-      if (!isBibModeGroupScrapeSource(autoSource)) {
-        console.log(
-          `[groupEventAutoScrape] 배번 스크랩 미지원 소스 건너뜀: ${doc.id} (source=${autoSource})`
-        );
-        continue;
-      }
+      const snap = await db.collection("race_events")
+        .where("isGroupEvent", "==", true)
+        .where("eventDate", "==", todayKst)
+        .get();
 
-      let scrapeTargets;
-      if (tick === "session-retry") {
-        let jobResults = [];
-        if (event.groupScrapeJobId) {
-          const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
-          jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+      let hasActiveMyResult = false;
+      const runningPromises = [];
+
+      for (const doc of snap.docs) {
+        const event = doc.data();
+        const autoSource = event.groupSource && event.groupSource.source;
+        if (autoSource === "myresult" && isSessionActive(event.groupScrapeSession, nowMs)) {
+          hasActiveMyResult = true;
         }
-        const confirmedSnap = await db.collection("race_results")
-          .where("canonicalEventId", "==", doc.id)
-          .get();
-        const confirmedKeys = new Set();
-        confirmedSnap.forEach((row) => {
-          const r = row.data() || {};
-          const status = String(r.status || "").toLowerCase();
-          const dn = String(r.dnStatus || "").toLowerCase();
-          const confirmed =
-            status === "confirmed" ||
-            status === "dns" ||
-            status === "dnf" ||
-            dn === "dns" ||
-            dn === "dnf";
-          if (!confirmed) return;
-          const name = String(r.memberRealName || r.realName || "").trim();
-          const dist = String(r.distance || "").trim();
-          if (!name) return;
-          confirmedKeys.add(participantConfirmKey(name, dist));
-        });
-        scrapeTargets = pickRetryParticipants(event.participants, jobResults, confirmedKeys);
-      } else if (tick === "oneshot") {
-        scrapeTargets = pickBibScrapeTargets(event.participants);
-      } else {
-        continue;
+        if (onlyMyResultSubtick && autoSource !== "myresult") {
+          continue;
+        }
+        const tick = decideAutoScrapeTick(event, nowMs, kstHour, kstMinute);
+        if (tick === "skip") {
+          continue;
+        }
+        if (!event.groupSource) {
+          console.log(`[groupEventAutoScrape] 소스 미입력 건너뜀: ${doc.id}`);
+          continue;
+        }
+        if (!event.participants || event.participants.length === 0) {
+          console.log(`[groupEventAutoScrape] 참가자 없음 건너뜀: ${doc.id}`);
+          continue;
+        }
+
+        if (!isBibModeGroupScrapeSource(autoSource)) {
+          console.log(
+            `[groupEventAutoScrape] 배번 스크랩 미지원 소스 건너뜀: ${doc.id} (source=${autoSource})`
+          );
+          continue;
+        }
+
+        let scrapeTargets;
+        if (tick === "session-retry") {
+          let jobResults = [];
+          if (event.groupScrapeJobId) {
+            const jobDoc = await db.collection("scrape_jobs").doc(event.groupScrapeJobId).get();
+            jobResults = jobDoc.exists ? (jobDoc.data().results || []) : [];
+          }
+          const confirmedSnap = await db.collection("race_results")
+            .where("canonicalEventId", "==", doc.id)
+            .get();
+          const confirmedKeys = new Set();
+          confirmedSnap.forEach((row) => {
+            const r = row.data() || {};
+            const status = String(r.status || "").toLowerCase();
+            const dn = String(r.dnStatus || "").toLowerCase();
+            const confirmed =
+              status === "confirmed" ||
+              status === "dns" ||
+              status === "dnf" ||
+              dn === "dns" ||
+              dn === "dnf";
+            if (!confirmed) return;
+            const name = String(r.memberRealName || r.realName || "").trim();
+            const dist = String(r.distance || "").trim();
+            if (!name) return;
+            confirmedKeys.add(participantConfirmKey(name, dist));
+          });
+          scrapeTargets = pickRetryParticipants(event.participants, jobResults, confirmedKeys);
+        } else if (tick === "oneshot") {
+          if (onlyMyResultSubtick) continue;
+          scrapeTargets = pickBibScrapeTargets(event.participants);
+        } else {
+          continue;
+        }
+
+        if (scrapeTargets.length === 0) {
+          console.log(`[groupEventAutoScrape] ${tick} 대상 없음 건너뜀: ${doc.id}`);
+          continue;
+        }
+
+        console.log(`[groupEventAutoScrape] ${tick} 스크랩 시작: ${doc.id} (bib ${scrapeTargets.length}명)`);
+        const claim = await claimGroupScrapeRunning(db, doc.id);
+        if (!claim.claimed) {
+          console.log(`[groupEventAutoScrape] 이미 스크랩 진행 중 건너뜀: ${doc.id}`);
+          continue;
+        }
+
+        runningPromises.push(
+          triggerGroupScrape({
+            canonicalEventId: doc.id,
+            source: event.groupSource.source,
+            sourceId: event.groupSource.sourceId,
+            scrapeTargets,
+            queryBy: "bib",
+            event,
+            db,
+            scraper,
+            reuseExistingJob: tick === "session-retry",
+          }).catch((err) => console.error(`[groupEventAutoScrape] 오류 ${doc.id}:`, err))
+        );
       }
 
-      if (scrapeTargets.length === 0) {
-        console.log(`[groupEventAutoScrape] ${tick} 대상 없음 건너뜀: ${doc.id}`);
-        continue;
+      if (onlyMyResultSubtick) {
+        await Promise.all(runningPromises);
       }
+      return { count: snap.docs.length, hasActiveMyResult, runningPromises };
+    };
 
-      console.log(`[groupEventAutoScrape] ${tick} 스크랩 시작: ${doc.id} (bib ${scrapeTargets.length}명)`);
-      const claim = await claimGroupScrapeRunning(db, doc.id);
-      if (!claim.claimed) {
-        console.log(`[groupEventAutoScrape] 이미 스크랩 진행 중 건너뜀: ${doc.id}`);
-        continue;
-      }
-
-      triggerGroupScrape({
-        canonicalEventId: doc.id,
-        source: event.groupSource.source,
-        sourceId: event.groupSource.sourceId,
-        scrapeTargets,
-        queryBy: "bib",
-        event,
-        db,
-        scraper,
-        reuseExistingJob: tick === "session-retry",
-      }).catch((err) => console.error(`[groupEventAutoScrape] 오류 ${doc.id}:`, err));
+    const firstStartMs = Date.now();
+    const first = await runPass(false);
+    if (first.hasActiveMyResult) {
+      await Promise.all(first.runningPromises);
+      const elapsed = Date.now() - firstStartMs;
+      const waitMs = Math.max(1000, MYRESULT_SUBTICK_DELAY_MS - elapsed);
+      await scraper.sleep(waitMs);
+      await runPass(true);
     }
-    console.log(`[groupEventAutoScrape] 완료. 처리 대상: ${snap.docs.length}개 검사`);
+    console.log(`[groupEventAutoScrape] 완료. 처리 대상: ${first.count}개 검사`);
   }
 );
 
