@@ -1,6 +1,7 @@
 "use strict";
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("path");
 
 const {
@@ -407,6 +408,30 @@ describe("Task 3: 기록증 OCR 모듈(chunbaek/js/ocr.js) — 마라톤 시간 
     assert.ok(result.elapsedMs >= 0);
     assert.ok(result.bestMatch);
     assert.equal(result.bestMatch.label, "3:58:24");
+  });
+});
+
+describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [나] 탭 연결 마크업 및 스크립트 검증", () => {
+  it("chunbaek/index.html에 #view-report, 홈 마감 배너, [나] 탭 진입 버튼, OCR 입력 요소 및 ocr.js 로드가 포함되어 있다", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
+    assert.match(html, /id="view-report"/);
+    assert.match(html, /id="season-report-banner"/);
+    assert.match(html, /id="btn-open-report"/);
+    assert.match(html, /id="report-result-form"/);
+    assert.match(html, /id="report-ocr-file"/);
+    assert.match(html, /id="btn-report-ocr-sample"/);
+    assert.match(html, /id="report-attend-summary"/);
+    assert.match(html, /src="js\/ocr\.js"/);
+  });
+
+  it("chunbaek/js/app.js에 report 뷰 라우팅 및 시즌 성과 렌더링/저장 핸들러가 구현되어 있다", () => {
+    const appJs = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/app.js"), "utf8");
+    assert.match(appJs, /report:\s*"view-report"/);
+    assert.match(appJs, /function renderReport\(/);
+    assert.match(appJs, /function onSaveSeasonResult\(/);
+    assert.match(appJs, /ChunbaekOcr/);
+    // 목표 체중은 성과 페이지에서 제외되었는지 확인
+    assert.doesNotMatch(appJs, /report-weight/);
   });
 });
 

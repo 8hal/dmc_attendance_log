@@ -178,6 +178,36 @@ const PREVIEW_SCENARIOS = {
       endDate: "2026-10-27",
     },
   },
+  "season-end": {
+    profile: {
+      stats: {
+        seasonDayIndex: 100,
+        seasonAttendCount: 64,
+        seasonAttendRate: 74,
+        seasonTrainingDays: 90,
+        seasonExceptionCount: 4,
+        seasonDenom: 86,
+        seasonWeeksCount: 15,
+        seasonWeeksMetCount: 13,
+        weekAttendCount: 3,
+        weekExceptionCount: 0,
+        weekScore: 3,
+        weekTarget: 3,
+        weekTargetMet: true,
+        inBetaWeek: false,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: null,
+      beforeSeason: false,
+      afterSeason: true,
+      betaWeek: false,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-27",
+    },
+  },
 };
 
 function previewPayload() {
@@ -208,11 +238,26 @@ const MOCK = {
     goalRaceLabel: "JTBC 서울마라톤",
     goalRaceDate: "2026-11-01",
     resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
+    seasonResult: null,
     profileComplete: true,
     stats: {
       seasonDayIndex: 42,
       seasonAttendCount: 28,
       seasonAttendRate: 68,
+      seasonTrainingDays: 42,
+      seasonExceptionCount: 2,
+      seasonDenom: 40,
+      seasonWeeksCount: 7,
+      seasonWeeksMetCount: 6,
+      seasonWeekSummaries: [
+        { week: 1, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+        { week: 2, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+        { week: 3, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+        { week: 4, attendCount: 2, exceptionCount: 0, weekScore: 2, target: 3, met: false },
+        { week: 5, attendCount: 3, exceptionCount: 1, weekScore: 3.5, target: 3, met: true },
+        { week: 6, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+        { week: 7, attendCount: 2, exceptionCount: 2, weekScore: 3, target: 3, met: true },
+      ],
       weekAttendCount: 2,
       weekExceptionCount: 2,
       weekScore: 3,
@@ -620,20 +665,47 @@ function mockPost(action, body) {
     });
   }
   if (action === "update-profile") {
-    Object.assign(MOCK.profile, {
-      goalRace: body.goalRace,
-      goalRaceNote: body.goalRaceNote || null,
-      goalMarathonNetTime: body.goalMarathonNetTime,
-      existingPbNetTime: body.existingPbNetTime ?? null,
-      goalBodyWeightKg: body.goalBodyWeightKg ?? null,
-      goalBodyWeightPrivate: !!body.goalBodyWeightPrivate,
-      resolutionText: body.resolutionText || null,
-      goalRaceLabel: body.goalRace === "jtbc"
+    if (body.goalMarathonNetTime !== undefined || body.goalRace !== undefined) {
+      Object.assign(MOCK.profile, {
+        goalRace: body.goalRace,
+        goalRaceNote: body.goalRaceNote || null,
+        goalMarathonNetTime: body.goalMarathonNetTime,
+        existingPbNetTime: body.existingPbNetTime ?? null,
+        goalBodyWeightKg: body.goalBodyWeightKg ?? null,
+        goalBodyWeightPrivate: !!body.goalBodyWeightPrivate,
+        resolutionText: body.resolutionText || null,
+        goalRaceLabel: body.goalRace === "jtbc"
+          ? "JTBC 서울마라톤"
+          : body.goalRace === "other"
+            ? (body.goalRaceNote ? `기타: ${body.goalRaceNote}` : "기타")
+            : "춘천 마라톤",
+      });
+    }
+    if (body.seasonResult) {
+      const sr = body.seasonResult;
+      const race = sr.race || MOCK.profile.goalRace || "chuncheon";
+      const raceLabel = race === "jtbc"
         ? "JTBC 서울마라톤"
-        : body.goalRace === "other"
-          ? (body.goalRaceNote ? `기타: ${body.goalRaceNote}` : "기타")
-          : "춘천 마라톤",
-    });
+        : race === "other"
+          ? (sr.raceNote ? `기타: ${sr.raceNote}` : "기타")
+          : "춘천 마라톤";
+      const status = sr.status || "finisher";
+      const netTimeSec = status === "finisher" ? Number(sr.netTimeSec) : null;
+      const goalSec = Number(MOCK.profile.goalMarathonNetTime);
+      const pbSec = Number(MOCK.profile.existingPbNetTime);
+      MOCK.profile.seasonResult = {
+        status,
+        race,
+        raceNote: race === "other" ? (sr.raceNote || null) : null,
+        raceLabel,
+        netTimeSec,
+        photoUrl: sr.imageBase64 || sr.photoUrl || null,
+        note: sr.note || null,
+        goalMet: status === "finisher" && netTimeSec !== null && goalSec > 0 && netTimeSec <= goalSec,
+        pbAchieved: status === "finisher" && netTimeSec !== null && pbSec > 0 && netTimeSec < pbSec,
+        updatedAt: new Date().toISOString(),
+      };
+    }
     return Promise.resolve({ ok: true, ...MOCK.profile });
   }
   if (action === "request-exception") {
