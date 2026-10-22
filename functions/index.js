@@ -50,6 +50,7 @@ const {
   buildBibScrapeMembers,
   isBibModeGroupScrapeSource,
   matchResultByBib,
+  BIB_MODE_GROUP_SCRAPE_UNSUPPORTED_ERROR,
 } = require("./lib/group-scrape-bib");
 const { canWriteGroupEvents } = require("./lib/group-events-write-auth");
 const {
@@ -1584,7 +1585,7 @@ async function triggerGroupScrape({
   const bibMode = queryBy === "bib";
   try {
     if (bibMode && !isBibModeGroupScrapeSource(source)) {
-      throw new Error("배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다");
+      throw new Error(BIB_MODE_GROUP_SCRAPE_UNSUPPORTED_ERROR);
     }
     const membersSnap = await db.collection("members").get();
     const allMembers = [];
@@ -3459,7 +3460,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       if (!isBibModeGroupScrapeSource(src)) {
         return res.status(400).json({
           ok: false,
-          error: "배번 스크랩은 smartchip·ohmyrace·spct만 지원합니다",
+          error: BIB_MODE_GROUP_SCRAPE_UNSUPPORTED_ERROR,
         });
       }
 

@@ -11,11 +11,13 @@ const {
 } = require("../../functions/lib/group-scrape-bib.js");
 
 describe("isBibModeGroupScrapeSource", () => {
-  it("smartchip·ohmyrace·spct만 배번 단체 스크랩 허용 (API에 bib 전달)", () => {
+  it("smartchip·ohmyrace·spct·myresult 배번 단체 스크랩 허용", () => {
     assert.equal(isBibModeGroupScrapeSource("smartchip"), true);
     assert.equal(isBibModeGroupScrapeSource("ohmyrace"), true);
     assert.equal(isBibModeGroupScrapeSource("spct"), true);
+    assert.equal(isBibModeGroupScrapeSource("myresult"), true);
     assert.deepEqual([...BIB_MODE_GROUP_SCRAPE_SOURCES].sort(), [
+      "myresult",
       "ohmyrace",
       "smartchip",
       "spct",
@@ -26,8 +28,7 @@ describe("isBibModeGroupScrapeSource", () => {
     assert.equal(isBibModeGroupScrapeSource("marazone"), false);
   });
 
-  it("myresult·manual·빈값·대소문자 변형 불허", () => {
-    assert.equal(isBibModeGroupScrapeSource("myresult"), false);
+  it("manual·빈값·대소문자 변형 불허", () => {
     assert.equal(isBibModeGroupScrapeSource("manual"), false);
     assert.equal(isBibModeGroupScrapeSource(""), false);
     assert.equal(isBibModeGroupScrapeSource(null), false);

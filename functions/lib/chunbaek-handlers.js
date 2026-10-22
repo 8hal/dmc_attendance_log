@@ -48,7 +48,7 @@ const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
 const GOAL_RACE_NOTE_MAX = 80;
 const CHUNBAEK_SEASON_ID = "chunbaek-s3";
 const SEASON_RACE_DATES = {
-  chuncheon: "2026-10-26",
+  chuncheon: "2026-10-25",
   jtbc:      "2026-11-01",
 };
 const PHOTO_UPLOAD_MAX_BYTES = 2 * 1024 * 1024;
