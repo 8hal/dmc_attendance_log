@@ -307,3 +307,39 @@ describe("waves and bib progress", () => {
     assert.equal(noWaves.patch, null);
   });
 });
+
+describe("participants save keeps cheer progress", () => {
+  const { mergeParticipantProgress } = require("../../functions/lib/cheer-progress");
+
+  it("carries wave and goal over by memberId when group.html resends the roster", () => {
+    const prev = [
+      { memberId: "m1", nickname: "가", bib: "1", distance: "full", waveId: "w", goalFinishSec: GOAL },
+      { memberId: "m2", nickname: "나", bib: "2", distance: "full", goalFinishSec: GOAL },
+    ];
+    const next = [
+      { memberId: "m1", nickname: "가", realName: "김가", bib: "1", distance: "full" },
+      { memberId: "m2", nickname: "나", realName: "이나", bib: "2", distance: "half" },
+      { memberId: "m3", nickname: "다", realName: "박다" },
+    ];
+    const merged = mergeParticipantProgress(prev, next);
+    assert.equal(merged[0].waveId, "w");
+    assert.equal(merged[0].goalFinishSec, GOAL);
+    assert.equal(merged[0].realName, "김가");
+    assert.equal(merged[1].goalFinishSec, undefined, "not carried once distance is no longer full");
+    assert.deepEqual(merged[2], next[2]);
+  });
+
+  it("returns rows unchanged when nothing was saved before", () => {
+    const next = [{ memberId: "m1", nickname: "가", bib: "1", distance: "full" }];
+    assert.deepEqual(mergeParticipantProgress([], next), next);
+    assert.deepEqual(mergeParticipantProgress(undefined, next), next);
+  });
+
+  it("does not overwrite values the caller sent", () => {
+    const merged = mergeParticipantProgress(
+      [{ memberId: "m1", distance: "full", goalFinishSec: GOAL }],
+      [{ memberId: "m1", distance: "full", goalFinishSec: 5000 }]
+    );
+    assert.equal(merged[0].goalFinishSec, 5000);
+  });
+});

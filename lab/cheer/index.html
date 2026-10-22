@@ -212,8 +212,8 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "응원 보드를 불러오지 못했습니다");
       board = data;
-      if (view !== "detail") paint();
-      else paint();
+      paint();
+      if (view === "detail" && selected) await openRunner(selected);
     }
 
     function startPoll() {

@@ -30,6 +30,15 @@
     return body;
   }
 
+  function goalFieldsError(input) {
+    const parts = [input.goalH, input.goalM, input.goalS];
+    for (const part of parts) {
+      if (filled(part) && !/^\d{1,2}$/.test(String(part).trim())) return "시·분·초는 숫자로 넣어 주세요.";
+    }
+    if (num(input.goalM) > 59 || num(input.goalS) > 59) return "분·초는 0–59로 넣어 주세요.";
+    return "";
+  }
+
   function goalFieldsFromSec(sec) {
     const total = Number(sec);
     if (!Number.isFinite(total) || total <= 0) return null;
@@ -40,5 +49,5 @@
     };
   }
 
-  return { buildBibBody, goalFieldsFromSec };
+  return { buildBibBody, goalFieldsError, goalFieldsFromSec };
 });

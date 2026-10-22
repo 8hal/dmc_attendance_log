@@ -108,6 +108,14 @@
       "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
     };
 
+    function esc(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
     function showError(message) {
       const el = document.getElementById("error");
       el.textContent = message;
@@ -126,7 +134,7 @@
         return !q || String(row.nickname || "").indexOf(q) >= 0;
       });
       document.getElementById("nickList").innerHTML = list.map(function (row) {
-        return '<button type="button" class="nick-btn" data-nick="' + row.nickname + '">' + row.nickname + "</button>";
+        return '<button type="button" class="nick-btn" data-nick="' + esc(row.nickname) + '">' + esc(row.nickname) + "</button>";
       }).join("");
     }
 
@@ -154,7 +162,7 @@
       const waves = event.waves || [];
       document.getElementById("wave").innerHTML = '<option value="">고르지 않음 (첫 출발)</option>' + waves.map(function (wave) {
         const hhmm = String(wave.startAt || "").slice(11, 16);
-        return '<option value="' + wave.id + '">' + wave.name + " " + hhmm + "</option>";
+        return '<option value="' + esc(wave.id) + '">' + esc(wave.name) + " " + esc(hhmm) + "</option>";
       }).join("");
       document.getElementById("wave").value = waves.some(function (wave) { return wave.id === row.waveId; }) ? row.waveId : "";
       document.getElementById("waveField").classList.toggle("hidden", waves.length < 2);
@@ -201,6 +209,14 @@
         return;
       }
       const val = function (id) { return document.getElementById(id).value; };
+      const goalError = distance === "full"
+        ? EventBibForm.goalFieldsError({ goalH: val("goalH"), goalM: val("goalM"), goalS: val("goalS") })
+        : "";
+      if (goalError) {
+        formError.textContent = goalError;
+        formError.classList.remove("hidden");
+        return;
+      }
       const body = EventBibForm.buildBibBody({
         eventId: eventId,
         nickname: nickname,

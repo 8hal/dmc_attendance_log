@@ -128,7 +128,12 @@ BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EV
 check "조 없이도 첫 출발로 보드에" "$(echo "$BOARD" | jq -r --arg n "$BUS_NICK" --arg w "$WAVE_ID" \
   '.runners[] | select(.nickname==$n) | "\(.waveId==$w) \(.goalFinishSec)"')" "true 14100"
 bib "$BUS_NICK" --arg bib 3001 --arg distance 10K > /dev/null
+BEFORE=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID" | jq '.runners | length')
+check "group.html 참가자 편집 재저장 (조·목표 없이 전송)" "$(post "$(get --data-urlencode subAction=detail \
+  --data-urlencode "eventId=$EVENT_ID" | jq --arg id "$EVENT_ID" '{subAction:"participants", canonicalEventId:$id,
+    participants:[.event.participants[] | {memberId, realName, nickname, bib, distance}]}')" | jq -r .ok)" "true"
 BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
+check "재저장 후에도 보드 인원 유지" "$(echo "$BOARD" | jq '.runners | length')" "$BEFORE"
 check "옛 저장 후에도 목표 유지" "$(echo "$BOARD" | jq -r --arg n "${NICK[0]}" \
   '.runners[] | select(.nickname==$n) | "\(.bib) \(.goalFinishSec)"')" "1009 12600"
 check "km = 경과 × 42.195 / 목표 (±0.05)" "$(echo "$BOARD" | jq '[.runners[] |

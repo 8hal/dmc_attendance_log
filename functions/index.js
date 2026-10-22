@@ -79,6 +79,7 @@ const {
   buildCheerRunner,
   normalizeWaves,
   resolveProgressPatch,
+  mergeParticipantProgress,
 } = require("./lib/cheer-progress");
 const { google } = require("googleapis");
 
@@ -3419,7 +3420,10 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.status(400).json({ ok: false, error: `유효하지 않은 memberId: ${invalid.join(", ")}` });
       }
 
-      await db.collection("race_events").doc(canonicalEventId).update({ participants });
+      const eventRef = db.collection("race_events").doc(canonicalEventId);
+      const prevDoc = await eventRef.get();
+      const prevParticipants = prevDoc.exists ? (prevDoc.data() || {}).participants : [];
+      await eventRef.update({ participants: mergeParticipantProgress(prevParticipants, participants) });
       return res.json({ ok: true });
     }
 

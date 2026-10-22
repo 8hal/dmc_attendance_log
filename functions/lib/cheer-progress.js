@@ -327,7 +327,26 @@ function resolveProgressPatch(input) {
   return { ok: true, clearProgress: false, patch };
 }
 
+// group.html rebuilds each row from memberId/nickname/realName/bib/distance only.
+function mergeParticipantProgress(prevList, nextList) {
+  const prevById = new Map();
+  for (const row of Array.isArray(prevList) ? prevList : []) {
+    if (row && row.memberId) prevById.set(String(row.memberId), row);
+  }
+  return (nextList || []).map((row) => {
+    const prev = row && row.memberId ? prevById.get(String(row.memberId)) : null;
+    if (!prev || String(row.distance || "") !== "full") return row;
+    const merged = { ...row };
+    if (merged.waveId === undefined && prev.waveId !== undefined) merged.waveId = prev.waveId;
+    if (merged.goalFinishSec === undefined && prev.goalFinishSec !== undefined) {
+      merged.goalFinishSec = prev.goalFinishSec;
+    }
+    return merged;
+  });
+}
+
 module.exports = {
+  mergeParticipantProgress,
   FULL_KM,
   GOAL_MIN_SEC,
   GOAL_MAX_SEC,
