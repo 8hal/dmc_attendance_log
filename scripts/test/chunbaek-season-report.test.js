@@ -351,3 +351,62 @@ describe("Task 2: parseSeasonResult 및 update-profile / my-profile / team-summa
   });
 });
 
+describe("Task 3: 기록증 OCR 모듈(chunbaek/js/ocr.js) — 마라톤 시간 추출 및 어댑터", () => {
+  it("스마트칩 기록증 텍스트에서 GUN TIME과 10km 구간 기록 대신 NET TIME을 최우선(bestMatch)으로 추출한다", () => {
+    const ocr = require(path.join(__dirname, "../../chunbaek/js/ocr.js"));
+    const sampleSmartchip = `
+      2026 조선일보 춘천마라톤
+      참가부문: 풀코스 (Full)  배번: 10425
+      10km: 00:52:10   Half: 01:51:20
+      GUN TIME: 03:48:05
+      NET TIME (순수기록): 03:45:12
+    `;
+    const parsed = ocr.parseMarathonTimesFromText(sampleSmartchip);
+    assert.ok(parsed.bestMatch);
+    assert.equal(parsed.bestMatch.h, 3);
+    assert.equal(parsed.bestMatch.m, 45);
+    assert.equal(parsed.bestMatch.s, 12);
+    assert.equal(parsed.bestMatch.totalSec, 3 * 3600 + 45 * 60 + 12);
+    // 10km(00:52:10), Half(01:51:20)는 풀코스 범위(2:00:00~8:00:00) 밖이므로 제외되고,
+    // 후보에는 03:45:12와 03:48:05가 포함되어야 한다.
+    assert.equal(parsed.candidates.length, 2);
+    assert.equal(parsed.candidates[0].label, "3:45:12");
+    assert.equal(parsed.candidates[1].label, "3:48:05");
+  });
+
+  it("한글 시간 표기(4시간 12분 05초)와 점 구분자(04.25.48)도 정확히 파싱한다", () => {
+    const ocr = require(path.join(__dirname, "../../chunbaek/js/ocr.js"));
+    const sampleKo = "2026 JTBC 서울마라톤 완주 기록 4시간 12분 05초 축하합니다!";
+    const parsedKo = ocr.parseMarathonTimesFromText(sampleKo);
+    assert.ok(parsedKo.bestMatch);
+    assert.equal(parsedKo.bestMatch.label, "4:12:05");
+    assert.equal(parsedKo.bestMatch.totalSec, 4 * 3600 + 12 * 60 + 5);
+
+    const sampleDot = "FINISH TIME 04.25.48";
+    const parsedDot = ocr.parseMarathonTimesFromText(sampleDot);
+    assert.ok(parsedDot.bestMatch);
+    assert.equal(parsedDot.bestMatch.label, "4:25:48");
+  });
+
+  it("흔한 OCR 오인식 문자(O->0, l/I->1)가 섞인 시간 문자열(03:4S:l2, O4:12:O8)도 보정하여 추출한다", () => {
+    const ocr = require(path.join(__dirname, "../../chunbaek/js/ocr.js"));
+    const noisyText = "NET TIME O4:12:O8";
+    const parsed = ocr.parseMarathonTimesFromText(noisyText);
+    assert.ok(parsed.bestMatch);
+    assert.equal(parsed.bestMatch.label, "4:12:08");
+  });
+
+  it("extractRaceRecord는 플러그인 엔진(1번 tesseract / 2번 custom vision)을 통해 소요시간(elapsedMs)과 결과를 반환한다", async () => {
+    const ocr = require(path.join(__dirname, "../../chunbaek/js/ocr.js"));
+    const fakeFile = { name: "certificate.jpg" };
+    const result = await ocr.extractRaceRecord(fakeFile, {
+      engine: async () => "춘천마라톤 풀코스 완주기록 03:58:24",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(typeof result.elapsedMs, "number");
+    assert.ok(result.elapsedMs >= 0);
+    assert.ok(result.bestMatch);
+    assert.equal(result.bestMatch.label, "3:58:24");
+  });
+});
+
