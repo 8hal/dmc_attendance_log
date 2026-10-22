@@ -83,7 +83,7 @@
 
 #### (3) 100일 출석 성과 카드 (A안)
 - **3대 핵심 지표**:
-  1. **시즌 출석 일수**: `{seasonAttendCount}일` (전체 훈련일 `{seasonDenom}일` 중, 예외 `{seasonExceptionCount}일`)
+  1. **시즌 출석 일수**: `{seasonAttendCount}일` (전체 훈련일 `{seasonTrainingDays}일` 중, 예외 `{seasonExceptionCount}일`, 출석률 산정 대상 `{seasonDenom}일`)
   2. **시즌 출석률**: `{seasonAttendRate}%` + 프로그레스 바
   3. **주간 목표(3점) 달성**: `{seasonWeeksMetCount} / {seasonWeeksCount}주 달성` (`{weekMetRate}%`)
 - **주차별 달성 미니 보드**:
@@ -162,15 +162,17 @@ chunbaekS3: {
 
 ### 4.3 `computeMemberStats` 확장 (`functions/lib/chunbaek-stats.js`)
 기존 `computeMemberStats` 반환값에 개인 성과 리포트(A안)용 시즌 누적 지표를 추가한다:
-- `seasonTrainingDays`: 오늘까지(또는 시즌 전체) 프로그램 휴무 제외 훈련일 수
+- `seasonTrainingDays`: 오늘까지 프로그램 휴무 제외 훈련일 수 (`!isProgramOff`)
+- `seasonDenom`: 출석률 산정 분모 (`seasonTrainingDays - seasonExceptionCount`)
 - `seasonExceptionCount`: 시즌 중 예외 승인된 슬롯 수
 - `seasonWeeksCount`: 지금까지 진행된 본시즌 주차 수 (`week >= 1`)
 - `seasonWeeksMetCount`: 주간 목표(`weekScore >= weekTarget`)를 달성한 주차 수
 - `seasonWeekSummaries`: 주차별 `{ week, weekScore, target, met, attendCount, exceptionCount }` 배열
 
-### 4.4 `update-profile` 확장 (`functions/lib/chunbaek-handlers.js`)
+### 4.4 `update-profile` 및 `my-profile` 확장 (`functions/lib/chunbaek-handlers.js`)
+- `memberProfilePayload`: `seasonResult` 객체(`updatedAt`은 `timestampToIso`로 직렬화)를 포함하여 반환한다.
 - `POST /api/chunbaek?action=update-profile` 요청 시:
-  - 기존 프로필 수정 요청(`goalMarathonNetTime` 등)은 그대로 동작
+  - 기존 프로필 수정 요청(`goalMarathonNetTime` 등)은 그대로 동작하며, `seasonResult` 단독 수정 요청(`body.seasonResult`만 전달된 경우)도 기존 프로필 필드를 유지한 채 처리한다.
   - `body.seasonResult`가 전달된 경우:
     - `seasonResult` 유효성 검증 (`status` in `["finisher", "dnf", "dns"]`, `finisher`일 때 `netTimeSec` 7200~28800 필수, `dnf`/`dns`일 때 `netTimeSec = null`)
     - `body.seasonResult.imageBase64`가 포함된 경우 서버에서 기존 `saveAttendancePhotoToStorage` 헬퍼를 재사용해 `chunbaek/season-results/chunbaek-s3/${memberId}.jpg` 경로에 업로드하고 `photoUrl` 생성
