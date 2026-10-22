@@ -14,6 +14,8 @@ const { myResultPlayerToRecord } = require("./myresult-player");
 const { fetchMyResultPlayer } = require("./myresult-socket");
 
 const DELAY_MS = 200;
+// MyResult는 공개 소켓/JSON API를 사용하므로 실시간성을 위해 20ms 간격 사용
+const MYRESULT_DELAY_MS = 20;
 // SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
 const SMARTCHIP_DELAY_MS = 3000;
 /** discover / main.html 은 이 호스트 + Referer 조합으로만 전체 HTML 제공 */
@@ -26,6 +28,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function randomDelay(baseMs, jitterMs = baseMs * 0.4) {
   const delta = (Math.random() * 2 - 1) * jitterMs;
   return Math.max(100, Math.round(baseMs + delta));
+}
+
+function memberScrapeDelayMs(source, attempt = 0) {
+  if (source === "myresult") {
+    return attempt > 0 ? MYRESULT_DELAY_MS * 2 : MYRESULT_DELAY_MS;
+  }
+  const baseDelay = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
+  return randomDelay(attempt > 0 ? baseDelay * 1.5 : baseDelay);
 }
 
 // User-Agent 풀: 실제 브라우저 UA 로테이션
@@ -1187,8 +1197,6 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     }
   }
 
-  // SmartChip은 차단 방지를 위해 긴 딜레이 + 랜덤 지터 사용
-  const baseDelay = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
   let smartchipSession = "";
   if (source === "smartchip") {
     smartchipSession = await getSmartChipSession();
@@ -1208,12 +1216,9 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     let lastErr = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
+        await sleep(memberScrapeDelayMs(source, attempt));
         if (attempt > 0) {
-          // 재시도 전 약간 더 기다림
-          await sleep(randomDelay(baseDelay * 1.5));
           console.warn(`[scrapeEvent] 재시도 ${attempt}회 (${m.realName})`);
-        } else {
-          await sleep(randomDelay(baseDelay));
         }
 
         // bib 있으면 bib 조회(이름 fallback 없음); 없으면 realName (개인/ops)
@@ -1224,7 +1229,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         if (found === null && source === "smartchip") {
           console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName || searchQuery})`);
           smartchipSession = await getSmartChipSession();
-          await sleep(randomDelay(baseDelay));
+          await sleep(memberScrapeDelayMs(source, 0));
           found = await searchMember(source, sourceId, searchQuery, { session: smartchipSession });
           if (found === null) found = [];
         }
@@ -1638,7 +1643,7 @@ module.exports = {
   WEEKLY_LOOKBACK_DAYS, WEEKLY_LOOKAHEAD_DAYS, WEEKLY_MAX_JOBS_PER_RUN,
   scrapeEvent, getSmartChipSession,
   resolveMemberSearchQuery, resultBibFromSearch,
-  sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
+  sleep, DELAY_MS, MYRESULT_DELAY_MS, SMARTCHIP_DELAY_MS, memberScrapeDelayMs,
   crawlGorunningEvents,
   crawlRunningwikiiEvents,
   crawlAllUpcomingEvents,
