@@ -349,6 +349,25 @@ describe("Task 2: parseSeasonResult 및 update-profile / my-profile / team-summa
     assert.equal(teamRes.body.members[0].seasonResult.status, "finisher");
     assert.equal(teamRes.body.members[0].seasonResult.netTimeSec, 15948);
     assert.equal(teamRes.body.members[0].seasonResult.goalMet, true);
+
+    // 기존 seasonResult를 DNF 및 photoUrl: null로 재저장 시 정상 갱신되는지 검증
+    const updateDnfRes = await runAction("update-profile", {
+      method: "POST",
+      query: { token: "tok" },
+      body: {
+        seasonResult: {
+          status: "dnf",
+          race: "chuncheon",
+          photoUrl: null,
+          note: "아쉽게 35km DNF",
+        },
+      },
+    }, db);
+    assert.equal(updateDnfRes.statusCode, 200);
+    assert.equal(updateDnfRes.body.seasonResult.status, "dnf");
+    assert.equal(updateDnfRes.body.seasonResult.netTimeSec, null);
+    assert.equal(updateDnfRes.body.seasonResult.photoUrl, null);
+    assert.equal(updateDnfRes.body.seasonResult.goalMet, false);
   });
 });
 

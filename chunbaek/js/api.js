@@ -189,6 +189,23 @@ const PREVIEW_SCENARIOS = {
         seasonDenom: 86,
         seasonWeeksCount: 15,
         seasonWeeksMetCount: 13,
+        seasonWeekSummaries: [
+          { week: 1, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 2, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+          { week: 3, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 4, attendCount: 2, exceptionCount: 0, weekScore: 2, target: 3, met: false },
+          { week: 5, attendCount: 3, exceptionCount: 1, weekScore: 3.5, target: 3, met: true },
+          { week: 6, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 7, attendCount: 2, exceptionCount: 2, weekScore: 3, target: 3, met: true },
+          { week: 8, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+          { week: 9, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 10, attendCount: 2, exceptionCount: 1, weekScore: 2.5, target: 3, met: false },
+          { week: 11, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 12, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+          { week: 13, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 14, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 15, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 2, met: true },
+        ],
         weekAttendCount: 3,
         weekExceptionCount: 0,
         weekScore: 3,
@@ -706,7 +723,7 @@ function mockPost(action, body) {
         updatedAt: new Date().toISOString(),
       };
     }
-    return Promise.resolve({ ok: true, ...MOCK.profile });
+    return Promise.resolve({ ok: true, ...previewPayload().profile });
   }
   if (action === "request-exception") {
     const preview = mockExceptionPreview();

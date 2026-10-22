@@ -23,9 +23,12 @@
     exceptionPanelLoadId: 0,
     exceptionPreviewLoadId: 0,
     reportEditing: false,
+    reportReturnView: "me",
+    reportExistingPhotoUrl: null,
     reportPhotoDataUrl: null,
     reportPhotoObjectUrl: null,
     reportOcrCandidates: [],
+    reportOcrLoadId: 0,
   };
 
   // ── 모달 스택 (안드로이드 뒤로 가기 지원) ──────────────────────────────────
@@ -114,6 +117,10 @@
     state.futureExceptionCount = null;
     state.exceptionPanelLoadId += 1;
     state.exceptionPreviewLoadId += 1;
+    state.profileDate = null;
+    state.reportEditing = false;
+    state.reportReturnView = "me";
+    clearReportPhoto();
   }
 
   function clearAllCache() {
@@ -2262,10 +2269,12 @@
   }
 
   function clearReportPhoto() {
+    state.reportOcrLoadId += 1;
     if (state.reportPhotoObjectUrl) {
       URL.revokeObjectURL(state.reportPhotoObjectUrl);
       state.reportPhotoObjectUrl = null;
     }
+    state.reportExistingPhotoUrl = null;
     state.reportPhotoDataUrl = null;
     state.reportOcrCandidates = [];
     const fileInput = document.getElementById("report-ocr-file");
@@ -2279,12 +2288,17 @@
   }
 
   async function processReportCertificateBlob(fileOrBlob, sourceLabel = "사진") {
+    const loadId = state.reportOcrLoadId + 1;
+    state.reportOcrLoadId = loadId;
     try {
       const resizedBlob = await resizeImageFile(fileOrBlob, 1200);
+      if (loadId !== state.reportOcrLoadId) return;
       const dataUrl = await readBlobAsDataUrl(resizedBlob);
+      if (loadId !== state.reportOcrLoadId) return;
       if (state.reportPhotoObjectUrl) URL.revokeObjectURL(state.reportPhotoObjectUrl);
       state.reportPhotoObjectUrl = URL.createObjectURL(resizedBlob);
       state.reportPhotoDataUrl = dataUrl;
+      state.reportExistingPhotoUrl = null;
 
       const thumbWrap = document.getElementById("report-ocr-thumb-wrap");
       const thumbImg = document.getElementById("report-ocr-thumb");
@@ -2301,9 +2315,11 @@
       setReportOcrStatus(`🔍 ${sourceLabel}에서 완주 기록을 OCR로 분석 중…`, "loading");
       const ocrRes = await window.ChunbaekOcr.extractRaceRecord(fileOrBlob, {
         onProgress: (pct) => {
+          if (loadId !== state.reportOcrLoadId) return;
           setReportOcrStatus(`🔍 기록증 문자 인식 중… (${pct}%)`, "loading");
         },
       });
+      if (loadId !== state.reportOcrLoadId) return;
 
       if (!ocrRes.ok) {
         setReportOcrStatus(`⚠️ 자동 인식 실패 (${ocrRes.elapsedMs}ms): 아래에 직접 시간을 입력해 주세요.`, "warn");
@@ -2326,6 +2342,7 @@
         );
       }
     } catch (err) {
+      if (loadId !== state.reportOcrLoadId) return;
       setReportOcrStatus(err?.message || "사진 처리 중 오류가 발생했습니다", "warn");
     }
   }
@@ -2386,6 +2403,7 @@
 
     clearReportPhoto();
     if (sr?.photoUrl) {
+      state.reportExistingPhotoUrl = sr.photoUrl;
       const thumbWrap = document.getElementById("report-ocr-thumb-wrap");
       const thumbImg = document.getElementById("report-ocr-thumb");
       const clearBtn = document.getElementById("btn-report-photo-clear");
@@ -2615,14 +2633,13 @@
       }
     }
 
-    const p = state.profile || MOCK.profile;
     const seasonResultPayload = {
       status,
       race,
       raceNote: race === "other" ? (raceNote || null) : null,
       netTimeSec,
       note: note || null,
-      photoUrl: (!state.reportPhotoDataUrl && p?.seasonResult?.photoUrl) ? p.seasonResult.photoUrl : null,
+      photoUrl: state.reportPhotoDataUrl ? null : (state.reportExistingPhotoUrl || null),
     };
     if (state.reportPhotoDataUrl) {
       seasonResultPayload.imageBase64 = state.reportPhotoDataUrl;
@@ -2679,14 +2696,16 @@
     document.getElementById("btn-profile-cancel").addEventListener("click", () => showView("me"));
     document.getElementById("btn-open-report")?.addEventListener("click", () => {
       state.reportEditing = false;
+      state.reportReturnView = "me";
       showView("report");
     });
     document.getElementById("btn-home-open-report")?.addEventListener("click", () => {
       state.reportEditing = false;
+      state.reportReturnView = "today";
       showView("report");
     });
     document.getElementById("btn-report-back")?.addEventListener("click", () => {
-      showView("me");
+      showView(state.reportReturnView || "me");
     });
     document.getElementById("btn-edit-season-result")?.addEventListener("click", () => {
       state.reportEditing = true;
