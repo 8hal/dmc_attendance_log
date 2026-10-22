@@ -12,7 +12,6 @@ describe("event-bib request body", () => {
       ...base,
       distance: "full",
       waveId: "",
-      goalMode: "finish",
       goalH: "",
       goalM: "",
       goalS: "",
@@ -31,7 +30,6 @@ describe("event-bib request body", () => {
       ...base,
       distance: "full",
       waveId: "",
-      goalMode: "finish",
       goalH: "4",
       goalM: "0",
       goalS: "0",
@@ -45,12 +43,12 @@ describe("event-bib request body", () => {
       ...base,
       distance: "full",
       waveId: "w1",
-      goalMode: "pace",
-      paceM: "",
-      paceS: "",
+      goalH: "",
+      goalM: "",
+      goalS: "",
     });
     assert.equal(body.waveId, "w1");
-    assert.equal(body.goalPaceSecPerKm, undefined);
+    assert.equal(body.goalFinishSec, undefined);
   });
 
   it("sends wave and finish seconds when a goal is typed", () => {
@@ -58,7 +56,6 @@ describe("event-bib request body", () => {
       ...base,
       distance: "full",
       waveId: "w1",
-      goalMode: "finish",
       goalH: "3",
       goalM: "30",
       goalS: "",
@@ -67,7 +64,7 @@ describe("event-bib request body", () => {
     assert.equal(body.goalFinishSec, 12600);
   });
 
-  it("sends pace seconds in pace mode", () => {
+  it("only ever sends a finish time, never a pace", () => {
     const body = buildBibBody({
       ...base,
       distance: "full",
@@ -75,9 +72,10 @@ describe("event-bib request body", () => {
       goalMode: "pace",
       paceM: "5",
       paceS: "41",
+      goalH: "4",
     });
-    assert.equal(body.goalPaceSecPerKm, 341);
-    assert.equal(body.goalFinishSec, undefined);
+    assert.equal(body.goalPaceSecPerKm, undefined);
+    assert.equal(body.goalFinishSec, 14400);
   });
 
   it("never sends wave or goal for 10K", () => {
@@ -85,7 +83,6 @@ describe("event-bib request body", () => {
       ...base,
       distance: "10K",
       waveId: "w1",
-      goalMode: "finish",
       goalH: "1",
     });
     assert.equal(body.distance, "10K");
@@ -104,5 +101,10 @@ describe("event-bib page wiring", () => {
   it("loads the form helper and uses it to build the request", () => {
     assert.match(html, /\.\.\/\.\.\/assets\/event-bib-form\.js/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
+  });
+
+  it("offers one goal input labelled 완주 목표 시간", () => {
+    assert.match(html, /완주 목표 시간/);
+    assert.doesNotMatch(html, /id="goalMode"|id="paceM"|페이스 \(분:초/);
   });
 });

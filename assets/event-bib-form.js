@@ -24,11 +24,7 @@
     };
     if (input.distance !== "full") return body;
     if (filled(input.waveId)) body.waveId = input.waveId;
-    if (input.goalMode === "pace") {
-      if (filled(input.paceM) || filled(input.paceS)) {
-        body.goalPaceSecPerKm = num(input.paceM) * 60 + num(input.paceS);
-      }
-    } else if (filled(input.goalH) || filled(input.goalM) || filled(input.goalS)) {
+    if (filled(input.goalH) || filled(input.goalM) || filled(input.goalS)) {
       body.goalFinishSec = num(input.goalH) * 3600 + num(input.goalM) * 60 + num(input.goalS);
     }
     return body;

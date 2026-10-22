@@ -79,7 +79,7 @@ page_body() {
 BUS_NICK="${NICK[3]}"
 check "버스: 조 등록 전 풀 배번+목표 저장 (event-bib 본문)" "$(post "$(page_body "$(jq -n \
   --arg id "$EVENT_ID" --arg n "$BUS_NICK" \
-  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:"",goalMode:"finish",goalH:"4",goalM:"0",goalS:"0"}')")" \
+  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:"",goalH:"4",goalM:"0",goalS:"0"}')")" \
   | jq -r .ok)" "true"
 check "조 등록 전에는 목표가 있어도 보드 0명" "$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID" \
   | jq '.runners | length')" "0"
@@ -111,7 +111,7 @@ check "풀 목표 0초는 400" "$(bib "${NICK[3]}" --arg bib 3001 --arg distance
   --arg waveId "$WAVE_ID" --argjson goalFinishSec 0 | jq -r .error)" "goal out of range"
 check "버스: 목표 칸을 비우고 다시 저장해도 목표 유지" "$(post "$(page_body "$(jq -n \
   --arg id "$EVENT_ID" --arg n "$BUS_NICK" --arg w "$WAVE_ID" \
-  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:$w,goalMode:"finish",goalH:"",goalM:"",goalS:""}')")" \
+  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:$w,goalH:"",goalM:"",goalS:""}')")" \
   | jq -r .ok)" "true"
 check "옛 my-bib(배번만)이 조·목표를 지우지 않음" "$(bib "${NICK[0]}" --arg bib 1009 | jq -r .ok)" "true"
 
@@ -120,13 +120,13 @@ check "보드 3명 (목표 있는 풀 전원, 10K 제외)" "$(echo "$BOARD" | jq
 check "버스 인원 목표 4:00:00 유지" "$(echo "$BOARD" | jq -r --arg n "$BUS_NICK" \
   '.runners[] | select(.nickname==$n) | .goalFinishSec')" "14400"
 
-check "버스 인원이 조 없이 페이스로 목표를 바꿈" "$(post "$(page_body "$(jq -n \
+check "버스 인원이 조 없이 목표를 3:55:00으로 바꿈" "$(post "$(page_body "$(jq -n \
   --arg id "$EVENT_ID" --arg n "$BUS_NICK" \
-  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:"",goalMode:"pace",paceM:"5",paceS:"41"}')")" \
+  '{eventId:$id,nickname:$n,bib:"3001",distance:"full",waveId:"",goalH:"3",goalM:"55",goalS:"0"}')")" \
   | jq -r .ok)" "true"
 BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
 check "조 없이도 첫 출발로 보드에" "$(echo "$BOARD" | jq -r --arg n "$BUS_NICK" --arg w "$WAVE_ID" \
-  '.runners[] | select(.nickname==$n) | "\(.waveId==$w) \(.goalFinishSec)"')" "true 14388"
+  '.runners[] | select(.nickname==$n) | "\(.waveId==$w) \(.goalFinishSec)"')" "true 14100"
 bib "$BUS_NICK" --arg bib 3001 --arg distance 10K > /dev/null
 BOARD=$(get --data-urlencode subAction=cheer-board --data-urlencode "eventId=$EVENT_ID")
 check "옛 저장 후에도 목표 유지" "$(echo "$BOARD" | jq -r --arg n "${NICK[0]}" \
