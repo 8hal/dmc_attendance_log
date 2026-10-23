@@ -7,6 +7,7 @@ const {
   buildExpelledMap,
   computeSyncPlan,
   firestoreListFromBaseline,
+  firestoreListFromMcpExport,
   planToOperations,
 } = require(path.join(__dirname, "../lib/member-sync-plan"));
 
@@ -66,6 +67,58 @@ describe("member-sync-plan · 6/30 vs 3/31 baseline", () => {
     assert.equal(leaveOp.before.realName, "이경주");
     assert.ok(leaveOp.memberUpdate._archivedRealName);
     assert.equal(leaveOp.relatedUpdates.length, 3);
+  });
+});
+
+describe("member-sync-plan · 8/31 vs 2026-09-02 snapshot", () => {
+  const roster = JSON.parse(
+    fs.readFileSync(path.join(dataDir, "members-2026-08-31-cleaned.json"), "utf8")
+  );
+  const baseline = JSON.parse(
+    fs.readFileSync(path.join(dataDir, "members-firestore-snapshot-2026-09-02.json"), "utf8")
+  );
+  const firestoreList = firestoreListFromMcpExport(baseline.members);
+  const plan = computeSyncPlan(roster, firestoreList, new Map(), "2026-08-31");
+
+  it("roster 179명, snapshot 179명(활성 178+숨김 1)", () => {
+    assert.equal(roster.length, 179);
+    assert.equal(baseline.members.length, 179);
+    assert.equal(firestoreList.filter((m) => !m.hidden).length, 178);
+  });
+
+  it("신규 2, 닉변경 0, 퇴회 1, 경고 0", () => {
+    assert.equal(plan.toAdd.length, 2);
+    assert.equal(plan.toUpdateNickname.length, 0);
+    assert.equal(plan.toUnhide.length, 0);
+    assert.equal(plan.toLeave.length, 1);
+    assert.equal(plan.warnings.length, 0);
+  });
+
+  it("신규: 이승호(제영아빠), 이서호(Siho)", () => {
+    const byReal = Object.fromEntries(plan.toAdd.map((m) => [m.realName, m.nickname]));
+    assert.equal(byReal["이승호"], "제영아빠");
+    assert.equal(byReal["이서호"], "Siho");
+  });
+
+  it("퇴회 후보: 박병규(PBK) withdrawn", () => {
+    const leave = plan.toLeave[0];
+    assert.equal(leave.realName, "박병규");
+    assert.equal(leave.nickname, "PBK");
+    assert.equal(leave.leaveReason, "withdrawn");
+    assert.equal(leave.leftAt, "2026-08-31");
+    assert.equal(leave.id, "gw9qdf1yxXQYONMYNPxU");
+  });
+
+  it("가족 prefix가 제거된 닉으로 기존 회원과 매칭", () => {
+    const nicks = new Set(roster.map((m) => m.nickname));
+    assert.ok(nicks.has("블랙스왈로"));
+    assert.ok(nicks.has("동동"));
+    assert.ok(nicks.has("초초긍정"));
+    assert.ok(nicks.has("Clint"));
+    assert.equal(
+      roster.filter((m) => m.nickname.startsWith("♥") || m.nickname.startsWith("★")).length,
+      0
+    );
   });
 });
 
