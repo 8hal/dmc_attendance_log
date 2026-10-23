@@ -191,6 +191,13 @@
     return tiles;
   }
 
+  function reportPhotoTileCaption(tile) {
+    if (tile?.kind === "result") return "기록";
+    const day = Number(tile?.dayIndex);
+    if (Number.isFinite(day) && day > 0) return `${day}일`;
+    return "";
+  }
+
   return {
     TEAM_SEASON_RESULT_START_DATE,
     formatNetTime,
@@ -202,6 +209,7 @@
     shouldShowTeamSeasonResults,
     photosFromMyTimeline,
     collectSeasonPhotoTiles,
+    reportPhotoTileCaption,
     teamNicknameInitial,
   };
 });

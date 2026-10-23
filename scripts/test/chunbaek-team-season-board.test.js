@@ -269,6 +269,12 @@ describe("collectSeasonPhotoTiles", () => {
     ]);
     assert.ok(photos.every((p) => p.memberId === "me"));
   });
+
+  it("개인 갤러리 캡션은 일차 또는 기록만 쓴다", () => {
+    assert.equal(teamSeason.reportPhotoTileCaption({ kind: "attendance", dayIndex: 96 }), "96일");
+    assert.equal(teamSeason.reportPhotoTileCaption({ kind: "result", nickname: "케이지" }), "기록");
+    assert.equal(teamSeason.reportPhotoTileCaption({ kind: "attendance" }), "");
+  });
 });
 
 describe("팀 탭 마크업 계약", () => {
@@ -310,6 +316,16 @@ describe("팀 탭 마크업 계약", () => {
     const boardHtml = html.slice(html.indexOf('id="report-photo-board"') - 280, html.indexOf('id="tab-bar"'));
     assert.match(boardHtml, /내가 올린 사진/);
     assert.match(boardHtml, /내가 올린 출석 사진과 기록 사진/);
+    const paint = appJs.slice(
+      appJs.indexOf("function paintReportPhotoBoard"),
+      appJs.indexOf("async function loadReportPhotoBoard"),
+    );
+    assert.match(paint, /reportPhotoTileCaption/);
+    assert.doesNotMatch(paint, /t\.nickname|· 나/);
+  });
+
+  it("사진 타일 캡션은 한 줄로 자른다", () => {
+    assert.match(css, /\.report-photo-tile-name[\s\S]*white-space:\s*nowrap/);
   });
 
   it("결과 행은 48px 아바타고 출석 행은 점 칸을 쓴다", () => {
