@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** `[팀]` 탭에서 주간 점과 출석 요약을 빼고, 시즌 결과 명단(등록/완주 요약 + 아바타 + 기록 한 줄)으로 바꾼다.
+**Goal:** 출석은 2026-10-24(97일차)에 마감한다. `[팀]`은 그 다음날부터 시즌 결과 명단이다. 성과 사진 보드는 출석·기록 사진을 모두 보여 준다.
 
-**Architecture:** 순수 함수는 `chunbaek/js/team-season.js`에 둔다 (`ocr.js`와 같이 Node/브라우저 양쪽). `app.js`의 `paintTeam` / `sortTeamMembersForDisplay` / `openTeamProfileModal` / `bindTeamListEvents`만 이 모듈을 쓴다. 신규 HTTP action 없음. `GET team-summary`의 `members[].seasonResult`만 읽는다.
+**Architecture:** 순수 함수는 `chunbaek/js/team-season.js`에 둔다. 신규 HTTP action 없음. `GET team-summary?includePhotos=1`이 출석 `photoUrls`와 기록 사진을 같이 돌려준다.
 
 **Tech Stack:** 정적 HTML/CSS/JS, `node:test`, 기존 `team-summary` API.
 

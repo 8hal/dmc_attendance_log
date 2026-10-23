@@ -81,10 +81,14 @@ function formatTeamFeedDayLabel(entry) {
 /** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
 function statsSlotsForToday(slots, today, config) {
   const seasonStart = effectiveSeasonStart(config, slots);
+  const seasonEnd = effectiveSeasonEnd(config, slots);
   if (seasonStart && today < seasonStart) {
     return slots.filter(isBetaSlot);
   }
-  return seasonSlotsOnly(slots);
+  return seasonSlotsOnly(slots).filter((s) => {
+    const date = s.date || "";
+    return !seasonEnd || !date || date <= seasonEnd;
+  });
 }
 
 function betaWeekBoundsFromConfig(config = {}) {
@@ -219,11 +223,25 @@ function effectiveSeasonStart(config, slots = []) {
   return seasonBounds(seasonSlotsOnly(slots)).startDate;
 }
 
+const S3_ATTENDANCE_END_DATE = "2026-10-24";
+
 function effectiveSeasonEnd(config, slots = []) {
-  if (config?.endDate) return config.endDate;
-  const start = effectiveSeasonStart(config, slots);
-  if (start) return addDaysIso(start, 99);
-  return seasonBounds(seasonSlotsOnly(slots)).endDate;
+  let end = config?.endDate || null;
+  if (!end) {
+    const start = effectiveSeasonStart(config, slots);
+    if (start) end = addDaysIso(start, 96);
+    else end = seasonBounds(seasonSlotsOnly(slots)).endDate;
+  }
+  if (end && end > S3_ATTENDANCE_END_DATE) return S3_ATTENDANCE_END_DATE;
+  return end;
+}
+
+function isAttendanceClosed({ slotDate, today, config, slots } = {}) {
+  const end = effectiveSeasonEnd(config, slots);
+  if (!end) return false;
+  if (today && today > end) return true;
+  if (slotDate && slotDate > end) return true;
+  return false;
 }
 
 function deriveSlotDate(slot, config = {}, slots = []) {
@@ -776,8 +794,10 @@ module.exports = {
   getAttendance,
   deriveSeasonDate,
   deriveSeasonWeek,
+  S3_ATTENDANCE_END_DATE,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  isAttendanceClosed,
   deriveSlotDate,
   resolveSlotDate,
   slotStatus,

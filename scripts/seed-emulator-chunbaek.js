@@ -106,7 +106,7 @@ function buildBetaSlots(today) {
     seasonId: "chunbaek-s3",
     title: "춘백 시즌3",
     startDate: SEASON_START,
-    endDate: "2026-10-27",
+    endDate: "2026-10-24",
     betaWeekStartDate,
     betaWeekEndDate,
     weeklyTarget: 3,

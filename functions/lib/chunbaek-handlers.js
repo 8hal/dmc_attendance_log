@@ -31,6 +31,7 @@ const {
   isDateInBetaWeek,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  isAttendanceClosed,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
   getAttendance,
@@ -809,6 +810,9 @@ async function handleSaveAttendance(req, res, db) {
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
+    if (isAttendanceClosed({ slotDate: slot.date, today, config, slots })) {
+      return res.status(403).json({ ok: false, error: "season ended" });
+    }
   }
   if (slot.isProgramOff) {
     return res.status(400).json({ ok: false, error: "program off day" });
@@ -972,6 +976,9 @@ async function handleUploadAttendancePhoto(req, res, db) {
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
+    if (isAttendanceClosed({ slotDate: slot.date, today, config, slots })) {
+      return res.status(403).json({ ok: false, error: "season ended" });
+    }
   }
   if (slot.isProgramOff) {
     return res.status(400).json({ ok: false, error: "program off day" });
@@ -1010,6 +1017,38 @@ async function handleUploadAttendancePhoto(req, res, db) {
   }
 }
 
+function collectTeamPhotosForMember(p, attendanceMap, slots, seasonResult) {
+  const photos = [];
+  const nickname = p.data.nickname || "";
+  for (const slot of slots) {
+    if (slot.isProgramOff) continue;
+    const urls = normalizePhotoUrls(getAttendance(attendanceMap, slot));
+    if (!urls.length) continue;
+    const display = displayDayIndex(slot);
+    for (const photoUrl of urls) {
+      photos.push({
+        memberId: p.memberId,
+        nickname,
+        photoUrl,
+        date: slot.date || "",
+        dayIndex: display,
+        kind: "attendance",
+      });
+    }
+  }
+  if (seasonResult?.photoUrl) {
+    photos.push({
+      memberId: p.memberId,
+      nickname,
+      photoUrl: seasonResult.photoUrl,
+      date: String(seasonResult.updatedAt || "").slice(0, 10),
+      dayIndex: null,
+      kind: "result",
+    });
+  }
+  return photos;
+}
+
 async function handleTeamSummary(req, res, db) {
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false, error: "GET only" });
@@ -1017,6 +1056,7 @@ async function handleTeamSummary(req, res, db) {
   const auth = await requireMember(req, res, db);
   if (!auth) return undefined;
 
+  const includePhotos = String(req.query.includePhotos || "") === "1";
   const [config, slots, participants] = await Promise.all([
     loadSeasonConfig(db),
     loadAllSlots(db),
@@ -1025,6 +1065,7 @@ async function handleTeamSummary(req, res, db) {
   const today = todayKstDate();
 
   const members = [];
+  const photos = [];
   let rateSum = 0;
   let weekMetCount = 0;
 
@@ -1037,6 +1078,10 @@ async function handleTeamSummary(req, res, db) {
     rateSum += stats.seasonAttendRate;
     if (stats.weekTargetMet) weekMetCount += 1;
     const currentWeek = stats.currentWeek;
+    const seasonResult = serializeSeasonResult(p.s3.seasonResult, p.s3);
+    if (includePhotos) {
+      photos.push(...collectTeamPhotosForMember(p, attendanceMap, slots, seasonResult));
+    }
     members.push({
       memberId: p.memberId,
       nickname: p.data.nickname || "",
@@ -1052,7 +1097,7 @@ async function handleTeamSummary(req, res, db) {
         ? p.s3.goalBodyWeightKg
         : null,
       goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
-      seasonResult: serializeSeasonResult(p.s3.seasonResult, p.s3),
+      seasonResult,
       bar: weekBar(Math.floor(stats.weekScore || 0), stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       weekPhotoCount: slots
@@ -1082,6 +1127,7 @@ async function handleTeamSummary(req, res, db) {
     weekMetCount,
     participantCount,
     members: sorted,
+    ...(includePhotos ? { photos } : {}),
   });
 }
 

@@ -146,6 +146,77 @@ describe("teamNicknameInitial", () => {
   });
 });
 
+describe("shouldShowTeamSeasonResults", () => {
+  it("출석 마감일(10월 24일)까지는 출석 명단, 다음 날부터 결과 명단이다", () => {
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-23"), false);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-24"), false);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-25"), true);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-27"), true);
+  });
+});
+
+describe("sortTeamMembersForAttendance", () => {
+  it("출석 명단은 나 다음 가나다다", () => {
+    const members = [
+      member({ memberId: "jung", nickname: "정○○" }),
+      member({ memberId: "me", nickname: "나중" }),
+      member({ memberId: "kang", nickname: "강○○" }),
+    ];
+    const ids = teamSeason.sortTeamMembersForAttendance(members, "me").map((m) => m.memberId);
+    assert.deepEqual(ids, ["me", "kang", "jung"]);
+  });
+});
+
+describe("collectSeasonPhotoTiles", () => {
+  it("출석 사진과 기록 사진을 합치고 날짜 역순으로 둔다", () => {
+    const tiles = teamSeason.collectSeasonPhotoTiles({
+      me: { memberId: "me" },
+      photos: [
+        {
+          memberId: "a",
+          nickname: "이○○",
+          photoUrl: "https://x/attend-old.jpg",
+          date: "2026-08-01",
+          dayIndex: 13,
+          kind: "attendance",
+        },
+        {
+          memberId: "me",
+          nickname: "김○○",
+          photoUrl: "https://x/attend-new.jpg",
+          date: "2026-10-20",
+          dayIndex: 93,
+          kind: "attendance",
+        },
+        {
+          memberId: "me",
+          nickname: "김○○",
+          photoUrl: "https://x/cert.jpg",
+          date: "2026-10-22",
+          dayIndex: null,
+          kind: "result",
+        },
+        {
+          memberId: "me",
+          nickname: "김○○",
+          photoUrl: "https://x/attend-new.jpg",
+          date: "2026-10-20",
+          dayIndex: 93,
+          kind: "attendance",
+        },
+      ],
+    });
+    assert.deepEqual(tiles.map((t) => t.photoUrl), [
+      "https://x/cert.jpg",
+      "https://x/attend-new.jpg",
+      "https://x/attend-old.jpg",
+    ]);
+    assert.equal(tiles[0].kind, "result");
+    assert.equal(tiles[1].isMe, true);
+    assert.equal(tiles[2].isMe, false);
+  });
+});
+
 describe("팀 탭 마크업 계약", () => {
   const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
   const appJs = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/app.js"), "utf8");
@@ -154,31 +225,38 @@ describe("팀 탭 마크업 계약", () => {
   const teamHtml = html.slice(html.indexOf('id="view-team"'), html.indexOf('id="team-profile-modal"'));
 
   it("#view-team에 시즌 최종 결과 캡션과 team-season.js 로드가 있다", () => {
+    assert.match(teamHtml, /id="team-season-caption"/);
     assert.match(teamHtml, /시즌 최종 결과/);
     assert.match(html, /src="js\/team-season\.js"/);
   });
 
-  it("paintTeam은 결과 등록·완주 요약과 아바타 행을 그리고 주간 점을 그리지 않는다", () => {
-    assert.match(appJs, /ChunbaekTeamSeason/);
+  it("paintTeam은 시즌 종료 전에는 출석 명단, 이후는 결과 명단이다", () => {
+    assert.match(appJs, /shouldShowTeamSeasonResults/);
     assert.match(appJs, /결과 등록/);
-    assert.match(appJs, /team-row-photo/);
-    assert.match(appJs, /team-row-main/);
-    assert.match(appJs, /시즌 최종 결과/);
-    assert.doesNotMatch(appJs, /이번 주 3점/);
-    const paintStart = appJs.indexOf("function paintTeam");
-    const paintEnd = appJs.indexOf("function renderExceptionRequestList");
-    const paint = appJs.slice(paintStart, paintEnd);
-    assert.doesNotMatch(paint, /week-progress|renderTeamWeekProgress|시즌 출석률/);
-    const modalStart = appJs.indexOf("function openTeamProfileModal");
-    const modalEnd = appJs.indexOf("function bindTeamListEvents");
-    const modal = appJs.slice(modalStart, modalEnd);
+    assert.match(appJs, /이번 주 3점/);
+    assert.match(appJs, /시즌 출석률/);
+    assert.match(appJs, /team-row--clickable/);
+    assert.match(appJs, /team-row--season/);
+    const modal = appJs.slice(
+      appJs.indexOf("function openTeamProfileModal"),
+      appJs.indexOf("function bindTeamListEvents"),
+    );
     assert.match(modal, /시즌 최종 결과/);
-    assert.doesNotMatch(modal, /<dt>이번 주<\/dt>/);
+    assert.match(modal, /<dt>이번 주<\/dt>/);
   });
 
-  it("행 그리드는 48px 아바타고 점 칸이 없다", () => {
-    assert.match(css, /48px/);
+  it("성과 사진 보드는 출석 사진을 포함하고 includePhotos를 요청한다", () => {
+    assert.match(appJs, /includePhotos/);
+    assert.match(appJs, /collectSeasonPhotoTiles/);
+    const boardHtml = html.slice(html.indexOf('id="report-photo-board"') - 280, html.indexOf('id="tab-bar"'));
+    assert.match(boardHtml, /올라온 사진/);
+    assert.match(boardHtml, /출석 사진과 기록 사진/);
+  });
+
+  it("결과 행은 48px 아바타고 출석 행은 점 칸을 쓴다", () => {
+    assert.match(css, /\.team-row--season/);
     assert.match(css, /\.team-row-photo/);
+    assert.match(css, /1fr auto/);
   });
 
   it("MOCK.team에 DNS와 미등록 멤버가 있다", () => {

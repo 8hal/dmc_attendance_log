@@ -1202,12 +1202,25 @@ body {
 
 .team-row {
   display: grid;
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 1fr auto;
   gap: 10px 12px;
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid var(--border-light);
   font-size: 14px;
+}
+.team-row--season {
+  grid-template-columns: 48px 1fr;
+}
+.team-row--clickable {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .team-row-photo {
   width: 48px;

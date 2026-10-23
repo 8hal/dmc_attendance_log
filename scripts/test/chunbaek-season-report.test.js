@@ -369,6 +369,79 @@ describe("Task 2: parseSeasonResult 및 update-profile / my-profile / team-summa
     assert.equal(updateDnfRes.body.seasonResult.photoUrl, null);
     assert.equal(updateDnfRes.body.seasonResult.goalMet, false);
   });
+
+  it("team-summary?includePhotos=1 은 출석 사진과 기록 사진을 함께 돌려준다", async () => {
+    const db = new FakeDb({
+      members: {
+        m1: {
+          nickname: "김러너",
+          chunbaekS3: {
+            participant: true,
+            profileComplete: true,
+            goalRace: "chuncheon",
+            goalMarathonNetTime: 16200,
+            seasonResult: {
+              status: "finisher",
+              race: "chuncheon",
+              raceLabel: "춘천 마라톤",
+              netTimeSec: 15948,
+              photoUrl: "https://example.com/cert.jpg",
+            },
+          },
+        },
+      },
+      chunbaek_sessions: {
+        tok: {
+          token: "tok",
+          memberId: "m1",
+          revoked: false,
+          expiresAt: new FakeTimestamp("2099-01-01T00:00:00.000Z"),
+        },
+      },
+      chunbaek_season_config: {
+        "chunbaek-s3": { startDate: "2026-07-20", weeklyTarget: 3 },
+      },
+      chunbaek_slots: {
+        "1": { dayIndex: 1, date: "2026-07-20", week: 1, isProgramOff: false },
+        "2": { dayIndex: 2, date: "2026-07-21", week: 1, isProgramOff: false },
+      },
+      chunbaek_attendance: {
+        m1_1: {
+          memberId: "m1",
+          slotId: 1,
+          attended: true,
+          photoUrls: ["https://example.com/day1.jpg"],
+        },
+        m1_2: {
+          memberId: "m1",
+          slotId: 2,
+          attended: true,
+        },
+      },
+    });
+
+    const defaultRes = await runAction("team-summary", {
+      method: "GET",
+      query: { token: "tok" },
+    }, db);
+    assert.equal(defaultRes.statusCode, 200);
+    assert.equal(defaultRes.body.photos, undefined);
+
+    const photoRes = await runAction("team-summary", {
+      method: "GET",
+      query: { token: "tok", includePhotos: "1" },
+    }, db);
+    assert.equal(photoRes.statusCode, 200);
+    const urls = (photoRes.body.photos || []).map((p) => p.photoUrl).sort();
+    assert.deepEqual(urls, [
+      "https://example.com/cert.jpg",
+      "https://example.com/day1.jpg",
+    ]);
+    const attend = photoRes.body.photos.find((p) => p.kind === "attendance");
+    assert.equal(attend.date, "2026-07-20");
+    assert.equal(attend.dayIndex, 1);
+    assert.equal(attend.nickname, "김러너");
+  });
 });
 
 describe("Task 3: 기록증 OCR 모듈(chunbaek/js/ocr.js) — 마라톤 시간 추출 및 어댑터", () => {
@@ -447,7 +520,7 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
     const reportHtml = html.slice(html.indexOf('id="view-report"'), html.indexOf('id="tab-bar"'));
     assert.match(reportHtml, /id="report-photo-board"/);
-    assert.match(reportHtml, /올라온 기록 사진/);
+    assert.match(reportHtml, /올라온 사진/);
     const boardPos = reportHtml.indexOf('id="report-photo-board"');
     const attendPos = reportHtml.indexOf('id="report-attend-summary"');
     assert.ok(boardPos > attendPos, "사진 타일은 출석 성과보다 아래에 있어야 한다");
@@ -468,7 +541,7 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.doesNotMatch(surface, /id="btn-report-ocr-sample"/);
     assert.doesNotMatch(surface, /Finisher/);
     assert.doesNotMatch(surface, /Net Time/);
-    assert.match(surface, /기록증 · 워치 사진/);
+    assert.match(surface, /출석 사진과 기록 사진/);
     assert.match(surface, /100일 출석 결산/);
   });
 
@@ -478,7 +551,8 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(appJs, /function renderReport\(/);
     assert.match(appJs, /function onSaveSeasonResult\(/);
     assert.match(appJs, /function paintReportPhotoBoard\(/);
-    assert.match(appJs, /function collectSeasonResultPhotoTiles\(/);
+    assert.match(appJs, /collectSeasonPhotoTiles/);
+    assert.match(appJs, /includePhotos/);
     assert.match(appJs, /team-summary/);
     assert.match(appJs, /ChunbaekOcr/);
     assert.doesNotMatch(appJs, /report-weight/);
