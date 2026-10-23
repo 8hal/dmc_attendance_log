@@ -2095,14 +2095,14 @@
           : sr.status.toUpperCase();
         ctaSub.textContent = `${sr.raceLabel || "대회"} · ${statusText} 등록됨`;
       } else {
-        ctaSub.textContent = "출석 달성 현황 확인 및 최종 대회 기록(필수) 업로드";
+        ctaSub.textContent = "출석과 대회 결과를 등록하세요";
       }
     }
     const srText = p.seasonResult
       ? (p.seasonResult.status === "finisher"
         ? `완주 (${formatNetTime(p.seasonResult.netTimeSec)})`
         : p.seasonResult.status.toUpperCase())
-      : "미등록 (성과 리포트에서 등록)";
+      : "아직 등록하지 않음";
     document.getElementById("me-dl").innerHTML = `
       <dt>닉네임</dt><dd>${p.nickname || "김러너"}</dd>
       <dt>목표 대회</dt><dd>${p.goalRaceLabel || "—"}</dd>
@@ -2133,12 +2133,12 @@
       const statusLabel = sr.status === "finisher"
         ? `완주 ${formatNetTime(sr.netTimeSec)}${sr.goalMet ? " (목표 달성 🎯)" : ""}`
         : sr.status.toUpperCase();
-      if (titleEl) titleEl.textContent = "내 시즌3 성과 리포트";
+      if (titleEl) titleEl.textContent = "내 시즌3 성과";
       if (descEl) descEl.textContent = `${sr.raceLabel || "목표 대회"} · ${statusLabel} · 출석률 ${prof?.stats?.seasonAttendRate || 0}%`;
-      if (btnEl) btnEl.textContent = "내 성과 리포트 보기 →";
+      if (btnEl) btnEl.textContent = "내 성과 보기 →";
     } else {
-      if (titleEl) titleEl.textContent = "대회 기록 등록 & 내 성과 리포트";
-      if (descEl) descEl.textContent = "시즌 목표 대회 결과(완주 기록 / DNF / DNS)를 필수로 등록하고 100일 달성 리포트를 확인하세요.";
+      if (titleEl) titleEl.textContent = "대회 기록 등록하고 성과 보기";
+      if (descEl) descEl.textContent = "목표 대회 결과(완주 · DNF · DNS)를 등록하고 100일 출석을 확인하세요.";
       if (btnEl) btnEl.textContent = "대회 기록 등록하기 →";
     }
   }
@@ -2201,7 +2201,7 @@
     const p = state.profile || MOCK.profile;
     const goalSec = Number(p?.goalMarathonNetTime);
     if (!sec || !Number.isFinite(goalSec) || goalSec <= 0) {
-      diffEl.textContent = "시간을 입력하면 목표 기록 대비 달성 여부를 바로 계산합니다.";
+      diffEl.textContent = "시간을 입력하면 목표와 비교합니다.";
       diffEl.className = "report-live-diff";
       return;
     }
@@ -2236,7 +2236,7 @@
     }
     wrap.hidden = false;
     wrap.innerHTML = `
-      <span class="report-ocr-cand-label">인식된 시간 선택:</span>
+      <span class="report-ocr-cand-label">읽은 시간:</span>
       ${candidates.map((c, idx) => `
         <button type="button" class="report-ocr-chip${c.totalSec === activeSec ? " active" : ""}" data-cand-idx="${idx}">
           ${escapeHtml(c.label)}${idx === 0 ? " (추천)" : ""}
@@ -2287,7 +2287,7 @@
     renderReportOcrCandidates([], null);
   }
 
-  async function processReportCertificateBlob(fileOrBlob, sourceLabel = "사진") {
+  async function processReportCertificateBlob(fileOrBlob) {
     const loadId = state.reportOcrLoadId + 1;
     state.reportOcrLoadId = loadId;
     try {
@@ -2308,21 +2308,21 @@
       if (clearBtn) clearBtn.hidden = false;
 
       if (!window.ChunbaekOcr) {
-        setReportOcrStatus("OCR 모듈이 준비되지 않아 시간을 직접 입력해 주세요.", "warn");
+        setReportOcrStatus("사진에서 시간을 읽지 못했습니다. 아래에 직접 입력해 주세요.", "warn");
         return;
       }
 
-      setReportOcrStatus(`🔍 ${sourceLabel}에서 완주 기록을 OCR로 분석 중…`, "loading");
+      setReportOcrStatus("사진에서 완주 기록을 읽는 중…", "loading");
       const ocrRes = await window.ChunbaekOcr.extractRaceRecord(fileOrBlob, {
         onProgress: (pct) => {
           if (loadId !== state.reportOcrLoadId) return;
-          setReportOcrStatus(`🔍 기록증 문자 인식 중… (${pct}%)`, "loading");
+          setReportOcrStatus(`사진에서 글자를 읽는 중… (${pct}%)`, "loading");
         },
       });
       if (loadId !== state.reportOcrLoadId) return;
 
       if (!ocrRes.ok) {
-        setReportOcrStatus(`⚠️ 자동 인식 실패 (${ocrRes.elapsedMs}ms): 아래에 직접 시간을 입력해 주세요.`, "warn");
+        setReportOcrStatus("사진에서 시간을 읽지 못했습니다. 아래에 직접 입력해 주세요.", "warn");
         return;
       }
 
@@ -2331,19 +2331,19 @@
         applyReportTimeCandidate(ocrRes.bestMatch);
         renderReportOcrCandidates(state.reportOcrCandidates, ocrRes.bestMatch.totalSec);
         setReportOcrStatus(
-          `✅ OCR 인식 완료 (${ocrRes.elapsedMs}ms) — ${ocrRes.bestMatch.label} 자동 입력됨! 맞는지 확인해 주세요.`,
+          `${ocrRes.bestMatch.label}을 입력했습니다. 맞는지 확인해 주세요.`,
           "ok",
         );
       } else {
         renderReportOcrCandidates([], null);
         setReportOcrStatus(
-          `ℹ️ 텍스트 인식 완료 (${ocrRes.elapsedMs}ms) — 풀코스 시간 포맷을 찾지 못했습니다. 직접 입력해 주세요.`,
+          "사진에서 풀코스 시간을 찾지 못했습니다. 직접 입력해 주세요.",
           "warn",
         );
       }
     } catch (err) {
       if (loadId !== state.reportOcrLoadId) return;
-      setReportOcrStatus(err?.message || "사진 처리 중 오류가 발생했습니다", "warn");
+      setReportOcrStatus("사진을 처리하지 못했습니다. 아래에 직접 입력해 주세요.", "warn");
     }
   }
 
@@ -2354,20 +2354,7 @@
       showToast("이미지 파일만 선택할 수 있습니다", true);
       return;
     }
-    await processReportCertificateBlob(file, "기록증 사진");
-  }
-
-  async function onReportSampleOcrTest() {
-    if (!window.ChunbaekOcr?.createSampleCertificateBlob) {
-      showToast("샘플 생성 기능을 사용할 수 없습니다", true);
-      return;
-    }
-    const blob = await window.ChunbaekOcr.createSampleCertificateBlob("03:45:12", "2026 CHUNCHEON MARATHON");
-    if (!blob) {
-      showToast("샘플 이미지 생성에 실패했습니다", true);
-      return;
-    }
-    await processReportCertificateBlob(blob, "샘플 기록증(03:45:12)");
+    await processReportCertificateBlob(file);
   }
 
   function fillReportResultForm(p) {
@@ -2470,7 +2457,7 @@
 
     const showForm = !sr || state.reportEditing;
     if (reqBadge) {
-      reqBadge.textContent = sr ? "등록 완료 ✓" : "필수 등록";
+      reqBadge.textContent = sr ? "등록 완료" : "등록 필요";
       reqBadge.classList.toggle("done", !!sr);
     }
     if (summaryEl) summaryEl.hidden = showForm;
@@ -2479,10 +2466,10 @@
 
     if (sr && !showForm) {
       const statusPill = sr.status === "finisher"
-        ? '<span class="report-status-pill report-status-pill--finisher">완주 (Finisher)</span>'
+        ? '<span class="report-status-pill report-status-pill--finisher">완주</span>'
         : sr.status === "dnf"
-          ? '<span class="report-status-pill report-status-pill--dnf">DNF (중도 포기)</span>'
-          : '<span class="report-status-pill report-status-pill--dns">DNS (미출전)</span>';
+          ? '<span class="report-status-pill report-status-pill--dnf">DNF · 중도 포기</span>'
+          : '<span class="report-status-pill report-status-pill--dns">DNS · 미출전</span>';
 
       document.getElementById("report-race-meta").innerHTML = `
         <strong>${escapeHtml(sr.raceLabel || p.goalRaceLabel || "춘천 마라톤")}</strong>
@@ -2587,7 +2574,7 @@
     if (weeksBoard) {
       if (summaries.length) {
         weeksBoard.innerHTML = `
-          <div class="report-weeks-title">주차별 목표(3.0점) 달성 현황</div>
+          <div class="report-weeks-title">주차별 3점 목표</div>
           <div class="report-weeks-grid">
             ${summaries.map((w) => `
               <div class="report-week-chip ${w.met ? "met" : "miss"}" title="${w.week}주차: ${Number(w.weekScore).toFixed(1)} / ${w.target}점">
@@ -2647,7 +2634,7 @@
 
     state.isProcessing = true;
     const saveBtn = document.getElementById("btn-save-season-result");
-    const origText = saveBtn?.textContent || "시즌 결과 저장하기";
+    const origText = saveBtn?.textContent || "결과 저장하기";
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.textContent = "저장 중…";
@@ -2657,7 +2644,7 @@
       state.profile = updated;
       state.reportEditing = false;
       writeCache(CACHE_KEYS.profile, updated);
-      showToast("시즌3 대회 결과가 저장되었습니다 🎉");
+      showToast("대회 결과를 저장했습니다");
       paintReportView(updated);
     } catch (e) {
       showToast(e.message || "결과 저장에 실패했습니다", true);
@@ -2717,7 +2704,6 @@
     });
     document.getElementById("btn-save-season-result")?.addEventListener("click", onSaveSeasonResult);
     document.getElementById("report-ocr-file")?.addEventListener("change", onReportOcrFileChange);
-    document.getElementById("btn-report-ocr-sample")?.addEventListener("click", onReportSampleOcrTest);
     document.getElementById("btn-report-photo-clear")?.addEventListener("click", clearReportPhoto);
     document.querySelectorAll('input[name="report-race"]').forEach((el) => {
       el.addEventListener("change", syncReportFormVisibility);

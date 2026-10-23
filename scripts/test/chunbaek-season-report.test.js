@@ -431,18 +431,33 @@ describe("Task 3: 기록증 OCR 모듈(chunbaek/js/ocr.js) — 마라톤 시간 
 });
 
 describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [나] 탭 연결 마크업 및 스크립트 검증", () => {
-  it("chunbaek/index.html에 #view-report, 홈 마감 배너, [나] 탭 진입 버튼, OCR 입력 요소 및 ocr.js 로드가 포함되어 있다", () => {
+  it("chunbaek/index.html에 #view-report, 홈 마감 배너, [나] 탭 진입 버튼, 사진 입력 및 ocr.js 로드가 포함되어 있다", () => {
     const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
     assert.match(html, /id="view-report"/);
     assert.match(html, /id="season-report-banner"/);
     assert.match(html, /id="btn-open-report"/);
     assert.match(html, /id="report-result-form"/);
     assert.match(html, /id="report-ocr-file"/);
-    assert.match(html, /id="btn-report-ocr-sample"/);
-    assert.match(html, /샘플 기록증으로 자동 인식/);
-    assert.doesNotMatch(html, /테스트/);
     assert.match(html, /id="report-attend-summary"/);
     assert.match(html, /src="js\/ocr\.js"/);
+  });
+
+  it("성과 페이지 운영 문구에는 샘플·테스트·영문 목업 헤더가 없다", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
+    const reportHtml = html.slice(html.indexOf('id="view-report"'), html.indexOf('id="tab-bar"'));
+    const homeBanner = html.slice(html.indexOf("season-report-banner"), html.indexOf("program-off-msg"));
+    const meCta = html.slice(html.indexOf("me-report-cta-card"), html.indexOf("me-dl"));
+    const surface = reportHtml + homeBanner + meCta;
+    assert.doesNotMatch(surface, /테스트/);
+    assert.doesNotMatch(surface, /샘플/);
+    assert.doesNotMatch(surface, /FINALE/);
+    assert.doesNotMatch(surface, /PERFORMANCE REPORT/);
+    assert.doesNotMatch(surface, /자동 시간 OCR/);
+    assert.doesNotMatch(surface, /id="btn-report-ocr-sample"/);
+    assert.doesNotMatch(surface, /Finisher/);
+    assert.doesNotMatch(surface, /Net Time/);
+    assert.match(surface, /기록증 · 워치 사진/);
+    assert.match(surface, /100일 출석 결산/);
   });
 
   it("chunbaek/js/app.js에 report 뷰 라우팅 및 시즌 성과 렌더링/저장 핸들러가 구현되어 있다", () => {
@@ -451,8 +466,14 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(appJs, /function renderReport\(/);
     assert.match(appJs, /function onSaveSeasonResult\(/);
     assert.match(appJs, /ChunbaekOcr/);
-    // 목표 체중은 성과 페이지에서 제외되었는지 확인
     assert.doesNotMatch(appJs, /report-weight/);
+    assert.doesNotMatch(appJs, /onReportSampleOcrTest/);
+    assert.doesNotMatch(appJs, /샘플/);
+    assert.doesNotMatch(appJs, /elapsedMs/);
+    assert.doesNotMatch(appJs, /OCR 인식/);
+    assert.doesNotMatch(appJs, /OCR로 분석/);
+    assert.doesNotMatch(appJs, /OCR 모듈/);
+    assert.doesNotMatch(appJs, /Finisher/);
   });
 });
 

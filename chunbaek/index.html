@@ -187,13 +187,13 @@
           <div class="season-report-banner" id="season-report-banner">
             <div class="season-report-banner-body">
               <div class="season-report-banner-eyebrow">🏁 춘백 S3 시즌 마감</div>
-              <div class="season-report-banner-title" id="season-report-banner-title">대회 기록 등록 &amp; 내 성과 리포트</div>
+              <div class="season-report-banner-title" id="season-report-banner-title">대회 기록 등록하고 성과 보기</div>
               <p class="season-report-banner-desc" id="season-report-banner-desc">
-                100일 출석률·출석일수 달성과 최고 대회 기록(완주/DNF/DNS)을 확인해 보세요.
+                100일 출석과 목표 대회 결과(완주 · DNF · DNS)를 한곳에서 확인하세요.
               </p>
             </div>
             <button type="button" class="btn btn-primary season-report-banner-btn" id="btn-home-open-report">
-              성과 리포트 보기 →
+              내 성과 보기 →
             </button>
           </div>
           <p class="program-off-msg" id="program-off-msg" hidden>오늘은 프로그램 휴무일입니다</p>
@@ -342,10 +342,10 @@
         <h2 class="section-title">나</h2>
         <div class="me-report-cta-card">
           <div>
-            <div class="me-report-cta-title">🏆 내 시즌3 성과 리포트</div>
-            <p class="me-report-cta-sub" id="me-report-cta-sub">출석 달성 현황 확인 및 최종 대회 기록 업로드</p>
+            <div class="me-report-cta-title">🏆 내 시즌3 성과</div>
+            <p class="me-report-cta-sub" id="me-report-cta-sub">출석과 대회 결과를 확인하세요</p>
           </div>
-          <button type="button" class="btn btn-primary" id="btn-open-report">성과 페이지 열기</button>
+          <button type="button" class="btn btn-primary" id="btn-open-report">내 성과 보기</button>
         </div>
         <dl class="profile-dl" id="me-dl"></dl>
         <button type="button" class="btn btn-outline" id="btn-edit-profile">프로필 수정</button>
@@ -390,11 +390,11 @@
       <section id="view-report" class="view">
         <div class="report-top-nav">
           <button type="button" class="btn btn-ghost report-back-btn" id="btn-report-back">← 돌아가기</button>
-          <span class="report-season-tag">CHUNBAEK S3 FINALE</span>
+          <span class="report-season-tag">춘백 S3 · 마감</span>
         </div>
 
         <div class="report-hero-card" id="report-hero-card">
-          <div class="report-hero-eyebrow">100 DAYS PERFORMANCE REPORT</div>
+          <div class="report-hero-eyebrow">100일 출석 결산</div>
           <h2 class="report-hero-title" id="report-hero-title">김러너님의 시즌3 성과</h2>
           <div class="report-badges" id="report-badges"></div>
           <blockquote class="report-resolution" id="report-resolution" hidden></blockquote>
@@ -403,8 +403,8 @@
         <!-- 1. 대회 기록 성과 (필수 업로드) -->
         <div class="card report-section-card">
           <div class="report-section-head">
-            <h3 class="section-subtitle">🎯 목표 대회 기록 성과</h3>
-            <span class="report-required-badge" id="report-result-badge">필수 등록</span>
+            <h3 class="section-subtitle">🎯 목표 대회 기록</h3>
+            <span class="report-required-badge" id="report-result-badge">등록 필요</span>
           </div>
 
           <!-- 등록된 결과 요약 뷰 -->
@@ -420,7 +420,6 @@
             </button>
           </div>
 
-          <!-- 대회 결과 업로드 & OCR 폼 -->
           <div id="report-result-form">
             <p class="section-sub">가장 기록이 좋았던 대회 1개의 결과를 등록해 주세요.</p>
 
@@ -432,33 +431,29 @@
             </div>
             <input type="text" class="input" id="report-race-note" maxlength="80" placeholder="기타 대회명 (예: 경주 마라톤)" hidden />
 
-            <div class="field-label">참가 결과 상태 *</div>
-            <div class="report-status-tabs" role="radiogroup" aria-label="참가 결과 상태">
+            <div class="field-label">참가 결과 *</div>
+            <div class="report-status-tabs" role="radiogroup" aria-label="참가 결과">
               <label class="report-status-tab">
                 <input type="radio" name="report-status" value="finisher" checked />
-                <span>🏁 완주 (Finisher)</span>
+                <span>🏁 완주</span>
               </label>
               <label class="report-status-tab">
                 <input type="radio" name="report-status" value="dnf" />
-                <span>🔥 DNF (중도 포기)</span>
+                <span>🔥 DNF · 중도 포기</span>
               </label>
               <label class="report-status-tab">
                 <input type="radio" name="report-status" value="dns" />
-                <span>🌧️ DNS (미출전)</span>
+                <span>🌧️ DNS · 미출전</span>
               </label>
             </div>
 
-            <!-- 완주 선택 시: 기록증 OCR + 시간 입력 -->
             <div id="report-finisher-fields">
               <div class="report-ocr-box">
                 <div class="report-ocr-head">
-                  <span class="field-label" style="margin:0">📷 기록증 / 워치 사진 (자동 시간 OCR)</span>
-                  <button type="button" class="report-ocr-sample-btn" id="btn-report-ocr-sample">
-                    ⚡ 샘플 기록증으로 자동 인식
-                  </button>
+                  <span class="field-label" style="margin:0">📷 기록증 · 워치 사진</span>
                 </div>
                 <p class="hint" style="margin:6px 0 10px">
-                  기록증이나 스마트칩·워치 캡처를 올리면 완주 시간을 자동으로 읽어 입력합니다.
+                  기록증이나 스마트칩·워치 화면을 올리면 완주 시간을 읽어 입력합니다. 틀리면 아래에서 고치면 됩니다.
                 </p>
                 <div class="report-ocr-actions">
                   <label class="btn btn-outline report-ocr-pick-btn">
@@ -470,13 +465,13 @@
                   </button>
                 </div>
                 <div class="report-ocr-thumb-wrap" id="report-ocr-thumb-wrap" hidden>
-                  <img id="report-ocr-thumb" src="" alt="선택한 기록증 미리보기" />
+                  <img id="report-ocr-thumb" src="" alt="선택한 기록 사진" />
                 </div>
                 <div class="report-ocr-status" id="report-ocr-status" aria-live="polite" hidden></div>
                 <div class="report-ocr-candidates" id="report-ocr-candidates" hidden></div>
               </div>
 
-              <div class="field-label">완주 기록 (Net Time) *</div>
+              <div class="field-label">완주 기록 *</div>
               <div class="time-row">
                 <input type="number" id="report-h" min="2" max="7" placeholder="3" aria-label="완주 시간" /> 시간
                 <input type="number" id="report-m" min="0" max="59" placeholder="45" aria-label="완주 분" /> 분
@@ -485,21 +480,20 @@
               <p class="report-live-diff" id="report-live-diff"></p>
             </div>
 
-            <div class="field-label">시즌 마감 한 줄 소감 / 메모 (선택)</div>
+            <div class="field-label">한 줄 소감 (선택)</div>
             <textarea class="input textarea-intro" id="report-note" rows="2" maxlength="200"
-              placeholder="완주 소감이나 DNF/DNS 사유 등을 자유롭게 남겨 주세요 (200자)"></textarea>
+              placeholder="완주 소감이나 못 나간 이유를 남겨 주세요"></textarea>
 
             <div class="report-form-btns">
-              <button type="button" class="btn btn-primary" id="btn-save-season-result">시즌 결과 저장하기</button>
+              <button type="button" class="btn btn-primary" id="btn-save-season-result">결과 저장하기</button>
               <button type="button" class="btn btn-ghost" id="btn-cancel-season-result" hidden style="margin-top:8px">취소</button>
             </div>
           </div>
         </div>
 
-        <!-- 2. 100일 출석 성과 (A안: 출석 일수 + 출석률 + 주간 3점 달성 주차) -->
         <div class="card report-section-card">
-          <h3 class="section-subtitle">📅 100일 출석 성과</h3>
-          <p class="section-sub">주 3.0점 이상 출석 목표 달성 리포트</p>
+          <h3 class="section-subtitle">📅 100일 출석</h3>
+          <p class="section-sub">주 3점 목표를 몇 주 달성했는지 봅니다</p>
           <div class="report-attend-grid" id="report-attend-summary"></div>
           <div class="report-attend-bar-wrap">
             <div class="report-attend-bar-labels">
