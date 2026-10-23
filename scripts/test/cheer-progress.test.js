@@ -78,11 +78,13 @@ describe("split labels", () => {
   it("does not map 15, 25, or 35 onto 5 km", () => {
     assert.equal(mapSplitLabelToKm("15"), 15);
     assert.equal(mapSplitLabelToKm("25km"), 25);
+    assert.equal(mapSplitLabelToKm("20K"), 20);
     assert.equal(mapSplitLabelToKm("35"), 35);
     assert.equal(mapSplitLabelToKm("5km"), 5);
     assert.equal(mapSplitLabelToKm("21.1"), 21.0975);
     assert.equal(mapSplitLabelToKm("하프"), 21.0975);
     assert.equal(mapSplitLabelToKm("완주"), FULL_KM);
+    assert.equal(mapSplitLabelToKm("도착"), FULL_KM);
     assert.equal(mapSplitLabelToKm("Section 3"), null);
   });
 });

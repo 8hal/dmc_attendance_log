@@ -27,7 +27,7 @@ function parseHms(value) {
 function mapSplitLabelToKm(label) {
   let text = String(label == null ? "" : label).toLowerCase().replace(/\s+/g, "");
   if (!text) return null;
-  if (text.includes("완주") || text === "finish") return FULL_KM;
+  if (text.includes("완주") || text.includes("도착") || text.includes("결승") || text === "finish") return FULL_KM;
   if (text === "half" || text === "하프" || text.includes("하프")) return 21.0975;
   text = text.replace(/km$/, "").replace(/k$/, "");
   const num = Number(text);
@@ -42,6 +42,7 @@ function mapSplitLabelToKm(label) {
     { n: 25, km: 25 },
     { n: 21.1, km: 21.0975 },
     { n: 21.0975, km: 21.0975 },
+    { n: 20, km: 20 },
     { n: 15, km: 15 },
     { n: 10, km: 10 },
     { n: 5, km: 5 },
