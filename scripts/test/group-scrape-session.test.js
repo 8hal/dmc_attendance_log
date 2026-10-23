@@ -101,11 +101,15 @@ function opsStuckBlock(src) {
 }
 
 describe("startSession / stopSession / isSessionActive", () => {
-  it("startSession sets startedAt, until = now+6h, intervalMinutes 10", () => {
+  it("startSession sets startedAt, until = now+6h, intervalMinutes 10 by default and 30s (0.5m) for myresult", () => {
     const session = startSession(0);
     assert.equal(session.startedAt, new Date(0).toISOString());
     assert.equal(session.until, new Date(WINDOW_MS).toISOString());
     assert.equal(session.intervalMinutes, 10);
+
+    const myresultSession = startSession(0, "myresult");
+    assert.equal(myresultSession.intervalMinutes, 0.5);
+    assert.equal(myresultSession.intervalSeconds, 30);
   });
 
   it("stopSession keeps startedAt and sets until to now", () => {
@@ -170,6 +174,38 @@ describe("decideAutoScrapeTick", () => {
     assert.equal(
       decideAutoScrapeTick({ groupScrapeSession: session, groupScrapeStatus: "running" }, 60_000, 10, 0),
       "skip"
+    );
+  });
+  it("myresult active session retries on every minute while non-myresult retries only on 10-minute marks", () => {
+    const scSession = startSession(0, "smartchip");
+    assert.equal(
+      decideAutoScrapeTick(
+        { groupSource: { source: "smartchip" }, groupScrapeSession: scSession, groupScrapeStatus: "done" },
+        60_000,
+        10,
+        3
+      ),
+      "skip"
+    );
+    assert.equal(
+      decideAutoScrapeTick(
+        { groupSource: { source: "smartchip" }, groupScrapeSession: scSession, groupScrapeStatus: "done" },
+        60_000,
+        10,
+        10
+      ),
+      "session-retry"
+    );
+
+    const mrSession = startSession(0, "myresult");
+    assert.equal(
+      decideAutoScrapeTick(
+        { groupSource: { source: "myresult" }, groupScrapeSession: mrSession, groupScrapeStatus: "done" },
+        60_000,
+        10,
+        3
+      ),
+      "session-retry"
     );
   });
 });
@@ -387,11 +423,12 @@ describe("scrape POST and auto-scrape wiring", () => {
     assert.doesNotMatch(src, /delete.*groupScrapeSession/);
   });
 
-  it("groupEventAutoScrape uses decideAutoScrapeTick and */10 cron", () => {
+  it("groupEventAutoScrape uses decideAutoScrapeTick and 1-minute cron with 30s sub-tick for myresult", () => {
     const block = autoScrapeBlock(src);
-    assert.match(block, /schedule:\s*"\*\/10 \* \* \* \*"/);
+    assert.match(block, /schedule:\s*"\* \* \* \* \*"/);
     assert.match(block, /timeZone:\s*"Asia\/Seoul"/);
     assert.match(block, /decideAutoScrapeTick/);
+    assert.match(block, /MYRESULT_SUBTICK_DELAY_MS|30\s*\*\s*1000|30000/);
     assert.doesNotMatch(
       block,
       /groupScrapeStatus === "done" \|\| event\.groupScrapeStatus === "running"/

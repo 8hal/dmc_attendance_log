@@ -227,7 +227,7 @@ async function discoverChuncheon(year) {
       source: "chuncheon",
       sourceId: `year=${year}`,
       name: `${year} 춘천마라톤`,
-      date: `${year}-10-26`,
+      date: `${year}-10-25`,
       distances: "full,half,10K,5K,3K",
       location: "춘천",
     },

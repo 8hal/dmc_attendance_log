@@ -3,6 +3,7 @@
 const { normalizeRaceDistance } = require("./raceDistance");
 
 const INTERVAL_MS = 10 * 60 * 1000;
+const MYRESULT_SUBTICK_DELAY_MS = 30 * 1000;
 const WINDOW_MS = 6 * 60 * 60 * 1000;
 
 function participantConfirmKey(realName, distance) {
@@ -34,7 +35,16 @@ function mergeJobResultsByBib(existing, incoming) {
   return out;
 }
 
-function startSession(nowMs) {
+function startSession(nowMs, source) {
+  const isMyResult = String(source || "").trim() === "myresult";
+  if (isMyResult) {
+    return {
+      startedAt: new Date(nowMs).toISOString(),
+      until: new Date(nowMs + WINDOW_MS).toISOString(),
+      intervalMinutes: 0.5,
+      intervalSeconds: 30,
+    };
+  }
   return {
     startedAt: new Date(nowMs).toISOString(),
     until: new Date(nowMs + WINDOW_MS).toISOString(),
@@ -89,6 +99,11 @@ function decideAutoScrapeTick(event, nowMs, kstHour, kstMinute) {
   const session = event && event.groupScrapeSession;
   if (isSessionActive(session, nowMs)) {
     if (event.groupScrapeStatus === "running") return "skip";
+    const src = event && event.groupSource && event.groupSource.source;
+    const isRealtimeMyResult =
+      src === "myresult" ||
+      (session && (Number(session.intervalSeconds) === 30 || Number(session.intervalMinutes) <= 1));
+    if (!isRealtimeMyResult && Number(kstMinute) % 10 !== 0) return "skip";
     return "session-retry";
   }
   if (hasEverStartedSession(session)) return "skip";
@@ -115,6 +130,7 @@ function isStuckRunningJob(job, oneHourAgoIso) {
 
 module.exports = {
   INTERVAL_MS,
+  MYRESULT_SUBTICK_DELAY_MS,
   WINDOW_MS,
   startSession,
   stopSession,

@@ -10,8 +10,12 @@ const {
   resolveMemberSearchQuery,
   resultBibFromSearch,
 } = require("./scrape-bib-query");
+const { myResultPlayerToRecord } = require("./myresult-player");
+const { fetchMyResultPlayer } = require("./myresult-socket");
 
 const DELAY_MS = 200;
+// MyResult는 공개 소켓/JSON API를 사용하므로 실시간성을 위해 20ms 간격 사용
+const MYRESULT_DELAY_MS = 20;
 // SmartChip은 대량 요청 시 IP 차단 → 별도 딜레이 (3초)
 const SMARTCHIP_DELAY_MS = 3000;
 /** discover / main.html 은 이 호스트 + Referer 조합으로만 전체 HTML 제공 */
@@ -24,6 +28,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function randomDelay(baseMs, jitterMs = baseMs * 0.4) {
   const delta = (Math.random() * 2 - 1) * jitterMs;
   return Math.max(100, Math.round(baseMs + delta));
+}
+
+function memberScrapeDelayMs(source, attempt = 0) {
+  if (source === "myresult") {
+    return attempt > 0 ? MYRESULT_DELAY_MS * 2 : MYRESULT_DELAY_MS;
+  }
+  const baseDelay = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
+  return randomDelay(attempt > 0 ? baseDelay * 1.5 : baseDelay);
 }
 
 // User-Agent 풀: 실제 브라우저 UA 로테이션
@@ -360,33 +372,50 @@ async function searchSmartChip(eventId, memberName, session = "") {
 
 // ─── MyResult 검색 ────────────────────────────────────────────
 
-async function searchMyResult(eventId, memberName) {
-  const url = `https://myresult.co.kr/api/event/${eventId}/player?q=${encodeURIComponent(memberName)}`;
-  const res = await fetch(url, {
-    headers: {
-      ...browserHeaders("myresult"),
-      "Accept": "application/json, text/plain, */*",
-    },
-  });
-  if (!res.ok) return [];
-  const players = await res.json();
-  return (players || []).map((p) => {
-    const rawNet = p.result_nettime != null ? String(p.result_nettime) : "";
-    const rawGun = p.result_guntime != null ? String(p.result_guntime) : "";
-    const nNet = normTime(rawNet);
-    const nGun = normTime(rawGun);
-    return {
-    name: p.name || memberName,
-    bib: String(p.num || ""),
-    distance: normDist(p.course_cd || ""),
-    netTime: nNet || nGun,
-    gunTime: nGun,
-    overallRank: null, genderRank: null, ageGroupRank: null,
-    gender: p.gender ? p.gender.toUpperCase() : null,
-    splits: [],
-    pace: p.pace_nettime || "",
-    };
-  });
+/**
+ * 검색 API(/player?q=)는 배번·이름만 준다.
+ * 넷타임·구간은 소켓 선수 상세(fetchMyResultPlayer)에서 읽는다.
+ * 숫자 쿼리는 배번으로 보고 검색 HTTP를 건너뛴다.
+ * @param {string|number} eventId
+ * @param {string} memberName bib 또는 이름
+ * @param {{ fetchPlayer?: Function, fetchImpl?: typeof fetch }} [deps]
+ */
+async function searchMyResult(eventId, memberName, deps = {}) {
+  const fetchPlayer = deps.fetchPlayer || fetchMyResultPlayer;
+  const fetchImpl = deps.fetchImpl || fetch;
+  const query = String(memberName ?? "").trim();
+  if (!query) return [];
+
+  let bibs;
+  if (/^\d+$/.test(query)) {
+    bibs = [query];
+  } else {
+    const url = `https://myresult.co.kr/api/event/${encodeURIComponent(eventId)}/player?q=${encodeURIComponent(query)}`;
+    const res = await fetchImpl(url, {
+      headers: {
+        ...browserHeaders("myresult"),
+        Accept: "application/json, text/plain, */*",
+      },
+    });
+    if (!res.ok) return [];
+    const players = await res.json();
+    const seen = new Set();
+    bibs = [];
+    for (const p of Array.isArray(players) ? players : []) {
+      const bib = String(p?.num ?? "").trim();
+      if (!bib || seen.has(bib)) continue;
+      seen.add(bib);
+      bibs.push(bib);
+    }
+  }
+
+  const results = [];
+  for (const bib of bibs) {
+    const player = await fetchPlayer(eventId, bib);
+    const rec = myResultPlayerToRecord(player);
+    if (rec) results.push(rec);
+  }
+  return results;
 }
 
 async function getMyResultEventInfo(eventId) {
@@ -1168,8 +1197,6 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     }
   }
 
-  // SmartChip은 차단 방지를 위해 긴 딜레이 + 랜덤 지터 사용
-  const baseDelay = source === "smartchip" ? SMARTCHIP_DELAY_MS : DELAY_MS;
   let smartchipSession = "";
   if (source === "smartchip") {
     smartchipSession = await getSmartChipSession();
@@ -1189,12 +1216,9 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
     let lastErr = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
+        await sleep(memberScrapeDelayMs(source, attempt));
         if (attempt > 0) {
-          // 재시도 전 약간 더 기다림
-          await sleep(randomDelay(baseDelay * 1.5));
           console.warn(`[scrapeEvent] 재시도 ${attempt}회 (${m.realName})`);
-        } else {
-          await sleep(randomDelay(baseDelay));
         }
 
         // bib 있으면 bib 조회(이름 fallback 없음); 없으면 realName (개인/ops)
@@ -1205,7 +1229,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         if (found === null && source === "smartchip") {
           console.warn(`[scrapeEvent] SmartChip 세션 재발급 시도 (${m.realName || searchQuery})`);
           smartchipSession = await getSmartChipSession();
-          await sleep(randomDelay(baseDelay));
+          await sleep(memberScrapeDelayMs(source, 0));
           found = await searchMember(source, sourceId, searchQuery, { session: smartchipSession });
           if (found === null) found = [];
         }
@@ -1301,6 +1325,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         overallRank: r.overallRank || null,
         genderRank: r.genderRank || null,
         pace: r.pace || "",
+        splits: Array.isArray(r.splits) ? r.splits : [],
         memberRealName: m.realName,
         memberNickname: m.nickname,
         memberGender: m.gender || "",
@@ -1609,7 +1634,7 @@ async function crawlAllUpcomingEvents() {
 
 module.exports = {
   normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
-  searchMember, getEventInfo,
+  searchMyResult, searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,
   discoverGoRunningMonthly, discoverGoRunningThisAndNextMonth, discoverGoRunningYear, enrichMissingDatesFromGoRunning,
@@ -1618,7 +1643,7 @@ module.exports = {
   WEEKLY_LOOKBACK_DAYS, WEEKLY_LOOKAHEAD_DAYS, WEEKLY_MAX_JOBS_PER_RUN,
   scrapeEvent, getSmartChipSession,
   resolveMemberSearchQuery, resultBibFromSearch,
-  sleep, DELAY_MS, SMARTCHIP_DELAY_MS,
+  sleep, DELAY_MS, MYRESULT_DELAY_MS, SMARTCHIP_DELAY_MS, memberScrapeDelayMs,
   crawlGorunningEvents,
   crawlRunningwikiiEvents,
   crawlAllUpcomingEvents,
