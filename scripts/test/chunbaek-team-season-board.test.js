@@ -147,11 +147,11 @@ describe("teamNicknameInitial", () => {
 });
 
 describe("shouldShowTeamSeasonResults", () => {
-  it("10월 25일 전부터는 출석 명단, 당일부터 결과 명단이다", () => {
+  it("시즌 마지막 날(10월 27일)까지는 출석 명단, 다음 날부터 결과 명단이다", () => {
     assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-23"), false);
-    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-24"), false);
-    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-25"), true);
-    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-27"), true);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-25"), false);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-27"), false);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-28"), true);
   });
 });
 
@@ -230,7 +230,7 @@ describe("팀 탭 마크업 계약", () => {
     assert.match(html, /src="js\/team-season\.js"/);
   });
 
-  it("paintTeam은 10월 25일 전에는 출석 명단, 이후는 결과 명단이다", () => {
+  it("paintTeam은 시즌 종료 전에는 출석 명단, 이후는 결과 명단이다", () => {
     assert.match(appJs, /shouldShowTeamSeasonResults/);
     assert.match(appJs, /결과 등록/);
     assert.match(appJs, /이번 주 3점/);

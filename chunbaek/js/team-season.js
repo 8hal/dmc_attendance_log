@@ -90,7 +90,7 @@
     return [...text][0];
   }
 
-  const TEAM_SEASON_RESULT_START_DATE = "2026-10-25";
+  const TEAM_SEASON_RESULT_START_DATE = "2026-10-28";
 
   function shouldShowTeamSeasonResults(todayIso) {
     return String(todayIso || "").slice(0, 10) >= TEAM_SEASON_RESULT_START_DATE;
