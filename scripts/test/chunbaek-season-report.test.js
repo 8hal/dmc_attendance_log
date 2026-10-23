@@ -439,7 +439,19 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(html, /id="report-result-form"/);
     assert.match(html, /id="report-ocr-file"/);
     assert.match(html, /id="report-attend-summary"/);
+    assert.match(html, /id="report-photo-board"/);
     assert.match(html, /src="js\/ocr\.js"/);
+  });
+
+  it("성과 페이지 하단에 올라온 기록 사진 타일 보드가 있고 샘플·테스트 문구가 없다", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
+    const reportHtml = html.slice(html.indexOf('id="view-report"'), html.indexOf('id="tab-bar"'));
+    assert.match(reportHtml, /id="report-photo-board"/);
+    assert.match(reportHtml, /올라온 기록 사진/);
+    const boardPos = reportHtml.indexOf('id="report-photo-board"');
+    const attendPos = reportHtml.indexOf('id="report-attend-summary"');
+    assert.ok(boardPos > attendPos, "사진 타일은 출석 성과보다 아래에 있어야 한다");
+    assert.doesNotMatch(reportHtml, /테스트|샘플/);
   });
 
   it("성과 페이지 운영 문구에는 샘플·테스트·영문 목업 헤더가 없다", () => {
@@ -465,6 +477,9 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(appJs, /report:\s*"view-report"/);
     assert.match(appJs, /function renderReport\(/);
     assert.match(appJs, /function onSaveSeasonResult\(/);
+    assert.match(appJs, /function paintReportPhotoBoard\(/);
+    assert.match(appJs, /function collectSeasonResultPhotoTiles\(/);
+    assert.match(appJs, /team-summary/);
     assert.match(appJs, /ChunbaekOcr/);
     assert.doesNotMatch(appJs, /report-weight/);
     assert.doesNotMatch(appJs, /onReportSampleOcrTest/);

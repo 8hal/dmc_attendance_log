@@ -29,6 +29,7 @@
     reportPhotoObjectUrl: null,
     reportOcrCandidates: [],
     reportOcrLoadId: 0,
+    reportPhotoLoadId: 0,
   };
 
   // ── 모달 스택 (안드로이드 뒤로 가기 지원) ──────────────────────────────────
@@ -120,6 +121,7 @@
     state.profileDate = null;
     state.reportEditing = false;
     state.reportReturnView = "me";
+    state.reportPhotoLoadId += 1;
     clearReportPhoto();
   }
 
@@ -2587,6 +2589,78 @@
       } else {
         weeksBoard.innerHTML = "";
       }
+    }
+
+    void loadReportPhotoBoard(p);
+  }
+
+  function collectSeasonResultPhotoTiles(members, me) {
+    const tiles = [];
+    const seen = new Set();
+    const pushTile = (memberId, nickname, sr, isMe) => {
+      const url = sr && sr.photoUrl;
+      if (!url) return;
+      const key = String(memberId || url);
+      if (seen.has(key)) return;
+      seen.add(key);
+      tiles.push({
+        memberId: memberId || "",
+        nickname: nickname || "",
+        photoUrl: url,
+        raceLabel: sr.raceLabel || "",
+        status: sr.status || "",
+        isMe: !!isMe,
+      });
+    };
+    if (me) {
+      pushTile(me.memberId, me.nickname, me.seasonResult, true);
+    }
+    (members || []).forEach((m) => {
+      pushTile(m.memberId, m.nickname, m.seasonResult, !!(me && m.memberId === me.memberId));
+    });
+    return tiles;
+  }
+
+  function paintReportPhotoBoard(tiles) {
+    const board = document.getElementById("report-photo-board");
+    if (!board) return;
+    if (!tiles.length) {
+      board.innerHTML = '<p class="report-photo-empty">아직 올라온 기록 사진이 없습니다</p>';
+      return;
+    }
+    board.innerHTML = tiles.map((t, idx) => `
+      <button type="button" class="report-photo-tile" data-photo-idx="${idx}" aria-label="${escapeHtml(t.nickname || "기록 사진")}">
+        <img src="${escapeAttr(t.photoUrl)}" alt="" />
+        <span class="report-photo-tile-name">${escapeHtml(t.nickname || "회원")}${t.isMe ? " · 나" : ""}</span>
+      </button>
+    `).join("");
+    const urls = tiles.map((t) => t.photoUrl);
+    board.querySelectorAll(".report-photo-tile").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        openLightbox(urls, Number(btn.dataset.photoIdx) || 0);
+      });
+    });
+  }
+
+  async function loadReportPhotoBoard(me) {
+    const loadId = state.reportPhotoLoadId + 1;
+    state.reportPhotoLoadId = loadId;
+    const board = document.getElementById("report-photo-board");
+    if (board && !board.childElementCount) {
+      board.innerHTML = '<p class="report-photo-empty">사진을 불러오는 중…</p>';
+    }
+    try {
+      let members = state.teamMembers;
+      if (!members || !members.length) {
+        const data = await apiGet("team-summary", {}, true);
+        members = (data.members || []).filter((m) => m.profileComplete !== false);
+        state.teamMembers = members;
+      }
+      if (loadId !== state.reportPhotoLoadId) return;
+      paintReportPhotoBoard(collectSeasonResultPhotoTiles(members, me));
+    } catch {
+      if (loadId !== state.reportPhotoLoadId) return;
+      paintReportPhotoBoard(collectSeasonResultPhotoTiles(MOCK.team.members, me));
     }
   }
 
