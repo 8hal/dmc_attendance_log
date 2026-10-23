@@ -1,6 +1,6 @@
 # 춘백 S3 v0.3.0 — 팀 탭 시즌 결과 명단
 
-> **상태:** 배포 진행  
+> **상태:** 로컬 테스트 통과. 이 Cloud Agent에는 `firebase login`/ADC가 없어 Hosting 배포·Firestore 백업이 막힘. 맥에서 Hosting만 올리거나 Actions **Deploy Chunbaek → hosting**.  
 > **대상:** 시즌3 마감(2026-10-27) — `[팀]`에서 동료 대회 결과를 본다  
 > **브랜치:** `cursor/chunbaek-season-report-762d`  
 > **Git 태그:** `chunbaek-v0.3.0` · 저장소 태그 `v0.21.0` (배포 성공 후)
