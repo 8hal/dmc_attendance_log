@@ -2695,11 +2695,7 @@
       }));
     } catch {
       if (loadId !== state.reportPhotoLoadId) return;
-      paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
-        photos: Team.photosFromMyTimeline(MOCK.timeline, me),
-        me,
-        mineOnly: true,
-      }));
+      paintReportPhotoBoard([]);
     }
   }
 

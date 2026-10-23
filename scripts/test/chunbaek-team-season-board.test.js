@@ -6,6 +6,10 @@ const path = require("path");
 
 const teamSeason = require(path.join(__dirname, "../../chunbaek/js/team-season.js"));
 
+function storagePhotoUrl(objectPath) {
+  return `https://firebasestorage.googleapis.com/v0/b/demo.appspot.com/o/${encodeURIComponent(objectPath)}?alt=media&token=t`;
+}
+
 function member(partial) {
   return {
     memberId: "x",
@@ -270,6 +274,65 @@ describe("collectSeasonPhotoTiles", () => {
     assert.ok(photos.every((p) => p.memberId === "me"));
   });
 
+  it("개인 갤러리는 스토리지 경로가 다른 회원인 사진을 버린다", () => {
+    const mineAttend = storagePhotoUrl("chunbaek/attendance/chunbaek-s3/96/me_0.jpg");
+    const otherAttend = storagePhotoUrl("chunbaek/attendance/chunbaek-s3/96/house_0.jpg");
+    const mineCert = storagePhotoUrl("chunbaek/season-results/chunbaek-s3/me.jpg");
+    const otherCert = storagePhotoUrl("chunbaek/season-results/chunbaek-s3/house.jpg");
+    const photos = teamSeason.photosFromMyTimeline(
+      [
+        {
+          slots: [
+            {
+              date: "2026-10-23",
+              displayDayIndex: 96,
+              photoUrls: [otherAttend, mineAttend],
+            },
+          ],
+        },
+      ],
+      {
+        memberId: "me",
+        nickname: "케이지",
+        seasonResult: { photoUrl: otherCert },
+      },
+    );
+    assert.deepEqual(photos.map((p) => p.photoUrl), [mineAttend]);
+
+    const tiles = teamSeason.collectSeasonPhotoTiles({
+      mineOnly: true,
+      me: { memberId: "me", nickname: "케이지", seasonResult: { photoUrl: mineCert } },
+      photos: [
+        {
+          memberId: "me",
+          nickname: "케이지",
+          photoUrl: otherAttend,
+          date: "2026-10-23",
+          dayIndex: 96,
+          kind: "attendance",
+        },
+        {
+          memberId: "house",
+          nickname: "하우쓰",
+          photoUrl: storagePhotoUrl("chunbaek/attendance/chunbaek-s3/94/house_0.jpg"),
+          date: "2026-10-21",
+          dayIndex: 94,
+          kind: "attendance",
+        },
+        {
+          memberId: "me",
+          nickname: "케이지",
+          photoUrl: mineAttend,
+          date: "2026-10-23",
+          dayIndex: 96,
+          kind: "attendance",
+        },
+      ],
+    });
+    assert.deepEqual(tiles.map((t) => t.photoUrl), [mineAttend]);
+    assert.equal(tiles.every((t) => t.nickname === "케이지" || !t.nickname), true);
+  });
+
   it("개인 갤러리 캡션은 일차 또는 기록만 쓴다", () => {
     assert.equal(teamSeason.reportPhotoTileCaption({ kind: "attendance", dayIndex: 96 }), "96일");
     assert.equal(teamSeason.reportPhotoTileCaption({ kind: "result", nickname: "케이지" }), "기록");
@@ -287,7 +350,7 @@ describe("팀 탭 마크업 계약", () => {
   it("#view-team에 시즌 최종 결과 캡션과 team-season.js 로드가 있다", () => {
     assert.match(teamHtml, /id="team-season-caption"/);
     assert.match(teamHtml, /시즌 최종 결과/);
-    assert.match(html, /src="js\/team-season\.js"/);
+    assert.match(html, /src="js\/team-season\.js(\?v=[^"]+)?"/);
   });
 
   it("paintTeam은 시즌 종료 전에는 출석 명단, 이후는 결과 명단이다", () => {
@@ -322,6 +385,31 @@ describe("팀 탭 마크업 계약", () => {
     );
     assert.match(paint, /reportPhotoTileCaption/);
     assert.doesNotMatch(paint, /t\.nickname|· 나/);
+    assert.doesNotMatch(load, /MOCK\.timeline|MOCK\.team/);
+  });
+
+  it("춘백 HTML·JS·CSS는 app-version 쿼리로 캐시를 끊는다", () => {
+    const versionMatch = html.match(/<meta name="app-version" content="([^"]+)"/);
+    assert.ok(versionMatch);
+    const version = versionMatch[1].replace(/\./g, "\\.");
+    assert.match(html, new RegExp(`href="css/chunbaek\\.css\\?v=${version}"`));
+    assert.match(html, new RegExp(`src="js/team-season\\.js\\?v=${version}"`));
+    assert.match(html, new RegExp(`src="js/api\\.js\\?v=${version}"`));
+    assert.match(html, new RegExp(`src="js/app\\.js\\?v=${version}"`));
+  });
+
+  it("Hosting은 춘백 HTML·JS를 no-cache로 둔다", () => {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "../../firebase.json"), "utf8"));
+    const headers = cfg.hosting.headers || [];
+    const cacheControlFor = (fragment) => {
+      const rule = headers.find((h) => String(h.source).includes(fragment));
+      assert.ok(rule, `missing hosting header for ${fragment}`);
+      const cc = (rule.headers || []).find((h) => h.key === "Cache-Control");
+      assert.ok(cc);
+      assert.match(String(cc.value), /no-cache/);
+    };
+    cacheControlFor("chunbaek/**/*.html");
+    cacheControlFor("chunbaek/js");
   });
 
   it("사진 타일 캡션은 한 줄로 자른다", () => {
