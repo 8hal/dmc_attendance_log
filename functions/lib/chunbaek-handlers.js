@@ -31,6 +31,7 @@ const {
   isDateInBetaWeek,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  isAttendanceClosed,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
   getAttendance,
@@ -809,6 +810,9 @@ async function handleSaveAttendance(req, res, db) {
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
+    if (isAttendanceClosed({ slotDate: slot.date, today, config, slots })) {
+      return res.status(403).json({ ok: false, error: "season ended" });
+    }
   }
   if (slot.isProgramOff) {
     return res.status(400).json({ ok: false, error: "program off day" });
@@ -971,6 +975,9 @@ async function handleUploadAttendancePhoto(req, res, db) {
     const seasonStart = effectiveSeasonStart(config, slots);
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
+    }
+    if (isAttendanceClosed({ slotDate: slot.date, today, config, slots })) {
+      return res.status(403).json({ ok: false, error: "season ended" });
     }
   }
   if (slot.isProgramOff) {

@@ -4,8 +4,10 @@ const {
   deriveSeasonDate,
   deriveSeasonWeek,
   deriveSlotDate,
+  computeMemberStats,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  S3_ATTENDANCE_END_DATE,
   todaySlotPayload,
   findTodaySlot,
   defaultWeekForAdmin,
@@ -45,7 +47,48 @@ test("deriveSlotDate coerces string dayIndex", () => {
 
 test("effectiveSeasonStart/End use config when present", () => {
   assert.equal(effectiveSeasonStart(config, []), "2026-07-20");
-  assert.equal(effectiveSeasonEnd(config, []), "2026-10-27");
+  assert.equal(S3_ATTENDANCE_END_DATE, "2026-10-24");
+  assert.equal(effectiveSeasonEnd(config, []), "2026-10-24");
+  assert.equal(effectiveSeasonEnd({ startDate: "2026-07-20", endDate: "2026-08-02" }, []), "2026-08-02");
+});
+
+test("todaySlotPayload is afterSeason from day 98 after attendance close", () => {
+  const slots = [
+    { id: "97", dayIndex: 97, week: 14, date: "2026-10-24", isProgramOff: false },
+    { id: "98", dayIndex: 98, week: 14, date: "2026-10-25", isProgramOff: false },
+    { id: "100", dayIndex: 100, week: 15, date: "2026-10-27", isProgramOff: false },
+  ];
+  const onClose = todaySlotPayload(slots, {}, "2026-10-24", config);
+  assert.equal(onClose.afterSeason, false);
+  assert.equal(onClose.endDate, "2026-10-24");
+  assert.equal(onClose.slot.dayIndex, 97);
+
+  const afterClose = todaySlotPayload(slots, {}, "2026-10-25", config);
+  assert.equal(afterClose.afterSeason, true);
+  assert.equal(afterClose.slot, null);
+  assert.equal(afterClose.endDate, "2026-10-24");
+});
+
+test("computeMemberStats ignores slots after attendance close", () => {
+  const slots = [
+    { id: "96", dayIndex: 96, week: 14, date: "2026-10-23", isProgramOff: false },
+    { id: "97", dayIndex: 97, week: 14, date: "2026-10-24", isProgramOff: false },
+    { id: "98", dayIndex: 98, week: 14, date: "2026-10-25", isProgramOff: false },
+    { id: "100", dayIndex: 100, week: 15, date: "2026-10-27", isProgramOff: false },
+  ];
+  const stats = computeMemberStats({
+    slots,
+    attendanceMap: {
+      "96": { slotId: 96, attended: true },
+      "97": { slotId: 97, attended: true },
+    },
+    config,
+    today: "2026-10-27",
+  });
+  assert.equal(stats.seasonDayIndex, 97);
+  assert.equal(stats.seasonAttendCount, 2);
+  assert.equal(stats.seasonTrainingDays, 2);
+  assert.equal(stats.seasonDenom, 2);
 });
 
 test("todaySlotPayload ignores polluted dayIndex1 date for beforeSeason", () => {

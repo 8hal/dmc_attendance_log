@@ -147,11 +147,11 @@ describe("teamNicknameInitial", () => {
 });
 
 describe("shouldShowTeamSeasonResults", () => {
-  it("시즌 마지막 날(10월 27일)까지는 출석 명단, 다음 날부터 결과 명단이다", () => {
+  it("출석 마감일(10월 24일)까지는 출석 명단, 다음 날부터 결과 명단이다", () => {
     assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-23"), false);
-    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-25"), false);
-    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-27"), false);
-    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-28"), true);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-24"), false);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-25"), true);
+    assert.equal(teamSeason.shouldShowTeamSeasonResults("2026-10-27"), true);
   });
 });
 
