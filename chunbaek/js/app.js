@@ -2658,7 +2658,7 @@
     const board = document.getElementById("report-photo-board");
     if (!board) return;
     if (!tiles.length) {
-      board.innerHTML = '<p class="report-photo-empty">아직 올라온 사진이 없습니다</p>';
+      board.innerHTML = '<p class="report-photo-empty">아직 올린 사진이 없습니다</p>';
       return;
     }
     board.innerHTML = tiles.map((t, idx) => {
@@ -2688,21 +2688,19 @@
     }
     const Team = window.ChunbaekTeamSeason;
     try {
-      const data = await apiGet("team-summary", { includePhotos: "1" }, true);
-      const members = (data.members || []).filter((m) => m.profileComplete !== false);
-      state.teamMembers = members;
+      const data = await apiGet("my-timeline", {}, true);
       if (loadId !== state.reportPhotoLoadId) return;
       paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
-        photos: data.photos,
-        members,
+        photos: Team.photosFromMyTimeline(data.weeks, me),
         me,
+        mineOnly: true,
       }));
     } catch {
       if (loadId !== state.reportPhotoLoadId) return;
       paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
-        photos: MOCK.team.photos,
-        members: MOCK.team.members,
+        photos: Team.photosFromMyTimeline(MOCK.timeline, me),
         me,
+        mineOnly: true,
       }));
     }
   }
