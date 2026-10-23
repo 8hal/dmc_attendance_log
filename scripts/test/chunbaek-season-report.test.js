@@ -513,7 +513,7 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(html, /id="report-ocr-file"/);
     assert.match(html, /id="report-attend-summary"/);
     assert.match(html, /id="report-photo-board"/);
-    assert.match(html, /src="js\/ocr\.js"/);
+    assert.match(html, /src="js\/ocr\.js(\?v=[^"]+)?"/);
   });
 
   it("성과 페이지 하단에 올라온 기록 사진 타일 보드가 있고 샘플·테스트 문구가 없다", () => {
