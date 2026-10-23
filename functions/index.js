@@ -76,6 +76,13 @@ const {
   filterPublicRosterRows,
   sortPublicRosterRows,
 } = require("./lib/public-roster");
+const {
+  buildCheerBoard,
+  buildCheerRunner,
+  normalizeWaves,
+  resolveProgressPatch,
+  mergeParticipantProgress,
+} = require("./lib/cheer-progress");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -83,6 +90,15 @@ const MEETING_TRAINING_COLLECTION = "meeting_training";
 // 초기화
 initializeApp();
 const db = getFirestore();
+
+async function loadGroupScrapeResults(firestore, event) {
+  const jobId = String((event && event.groupScrapeJobId) || "").trim();
+  if (!jobId) return [];
+  const jobDoc = await firestore.collection("scrape_jobs").doc(jobId).get();
+  if (!jobDoc.exists) return [];
+  const job = jobDoc.data() || {};
+  return Array.isArray(job.results) ? job.results : [];
+}
 
 /**
  * 이메일 발송 헬퍼
@@ -3437,7 +3453,12 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         return res.status(400).json({ ok: false, error: `유효하지 않은 memberId: ${invalid.join(", ")}` });
       }
 
-      await db.collection("race_events").doc(canonicalEventId).update({ participants });
+      const eventRef = db.collection("race_events").doc(canonicalEventId);
+      await db.runTransaction(async (tx) => {
+        const prevDoc = await tx.get(eventRef);
+        const prevParticipants = prevDoc.exists ? (prevDoc.data() || {}).participants : [];
+        tx.update(eventRef, { participants: mergeParticipantProgress(prevParticipants, participants) });
+      });
       return res.json({ ok: true });
     }
 
@@ -3455,6 +3476,28 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         groupSource: { source, sourceId },
       });
       return res.json({ ok: true });
+    }
+
+    if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "waves") {
+      const { ownerPw } = req.body;
+      if (!canWriteGroupEvents(ownerPw)) {
+        return res.status(403).json({ ok: false, error: "운영진 권한 필요" });
+      }
+      const eventId = String(req.body.canonicalEventId || req.body.eventId || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      const eventDoc = await db.collection("race_events").doc(eventId).get();
+      if (!eventDoc.exists) {
+        return res.status(404).json({ ok: false, error: "대회 없음" });
+      }
+      const eventRow = eventDoc.data() || {};
+      const normalized = normalizeWaves(req.body.waves, eventRow.eventDate || "");
+      if (!normalized.ok) {
+        return res.status(400).json({ ok: false, error: normalized.error });
+      }
+      await db.collection("race_events").doc(eventId).update({ waves: normalized.waves });
+      return res.json({ ok: true, waves: normalized.waves });
     }
 
     if (action === "group-events" && req.method === "POST" && req.body && req.body.subAction === "scrape") {
@@ -3721,6 +3764,57 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
         });
       } catch (error) {
         console.error("public-roster error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "cheer-board") {
+      const eventId = String(req.query.eventId || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists || eventDoc.data().isGroupEvent !== true) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        const jobResults = await loadGroupScrapeResults(db, event);
+        return res.json(buildCheerBoard({ event, jobResults, nowMs: Date.now() }));
+      } catch (error) {
+        console.error("cheer-board error:", error);
+        return res.status(500).json({ ok: false, error: "server error" });
+      }
+    }
+
+    if (action === "group-events" && req.method === "GET" && req.query.subAction === "cheer-runner") {
+      const eventId = String(req.query.eventId || "").trim();
+      const runnerNickname = String(req.query.runnerNickname || "").trim();
+      if (!eventId) {
+        return res.status(400).json({ ok: false, error: "eventId required" });
+      }
+      if (!runnerNickname) {
+        return res.status(400).json({ ok: false, error: "runnerNickname required" });
+      }
+      try {
+        const eventDoc = await db.collection("race_events").doc(eventId).get();
+        if (!eventDoc.exists || eventDoc.data().isGroupEvent !== true) {
+          return res.status(404).json({ ok: false, error: "event not found" });
+        }
+        const event = eventDoc.data() || {};
+        const jobResults = await loadGroupScrapeResults(db, event);
+        const detail = buildCheerRunner({
+          event,
+          jobResults,
+          nowMs: Date.now(),
+          runnerNickname,
+        });
+        if (!detail.ok) {
+          return res.status(detail.status || 404).json({ ok: false, error: detail.error || "runner not on board" });
+        }
+        return res.json(detail);
+      } catch (error) {
+        console.error("cheer-runner error:", error);
         return res.status(500).json({ ok: false, error: "server error" });
       }
     }
@@ -4054,49 +4148,58 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       }
       
       try {
-        // 2. 대회 조회
-        const eventDoc = await db.collection("race_events").doc(eventId).get();
-        if (!eventDoc.exists) {
-          return res.status(404).json({ ok: false, error: "event not found" });
-        }
-        
-        const event = eventDoc.data();
-        
-        // 3. 참가자 찾기
-        const participantIndex = event.participants.findIndex(
-          p => p.nickname === nickname
-        );
-        
-        if (participantIndex === -1) {
-          return res.status(403).json({ 
-            ok: false, 
-            error: "not a participant" 
+        // 2~5. 조회·검증·저장 — 버스에서 동시에 저장해도 서로 덮어쓰지 않도록 트랜잭션
+        const eventRef = db.collection("race_events").doc(eventId);
+        const outcome = await db.runTransaction(async (tx) => {
+          const eventDoc = await tx.get(eventRef);
+          if (!eventDoc.exists) {
+            return { status: 404, error: "event not found" };
+          }
+
+          const event = eventDoc.data();
+
+          const participantIndex = event.participants.findIndex(
+            p => p.nickname === nickname
+          );
+          if (participantIndex === -1) {
+            return { status: 403, error: "not a participant" };
+          }
+
+          const duplicate = event.participants.find(
+            p => p.nickname !== nickname && p.bib === trimmedBib
+          );
+          if (duplicate) {
+            return { status: 400, error: `이미 ${duplicate.nickname}님이 사용 중인 배번입니다` };
+          }
+
+          event.participants[participantIndex].bib = trimmedBib;
+          if (canonicalDistance !== null) {
+            event.participants[participantIndex].distance = canonicalDistance;
+          }
+
+          const progress = resolveProgressPatch({
+            distance: event.participants[participantIndex].distance || "",
+            body: req.body,
+            waves: Array.isArray(event.waves) ? event.waves : [],
           });
-        }
-        
-        // 4. 배번 중복 검증
-        const duplicate = event.participants.find(
-          p => p.nickname !== nickname && p.bib === trimmedBib
-        );
-        
-        if (duplicate) {
-          return res.status(400).json({ 
-            ok: false, 
-            error: `이미 ${duplicate.nickname}님이 사용 중인 배번입니다` 
-          });
-        }
-        
-        // 5. 배번(·종목) 업데이트
-        event.participants[participantIndex].bib = trimmedBib;
-        if (canonicalDistance !== null) {
-          event.participants[participantIndex].distance = canonicalDistance;
-        }
-        
-        await db.collection("race_events").doc(eventId).update({
-          participants: event.participants
+          if (!progress.ok) {
+            return { status: 400, error: progress.error };
+          }
+          if (progress.clearProgress) {
+            delete event.participants[participantIndex].waveId;
+            delete event.participants[participantIndex].goalFinishSec;
+          } else if (progress.patch) {
+            Object.assign(event.participants[participantIndex], progress.patch);
+          }
+
+          tx.update(eventRef, { participants: event.participants });
+          return { event, savedParticipant: event.participants[participantIndex] };
         });
 
-        const savedParticipant = event.participants[participantIndex];
+        if (outcome.error) {
+          return res.status(outcome.status).json({ ok: false, error: outcome.error });
+        }
+        const { event, savedParticipant } = outcome;
         if (isSessionActive(event.groupScrapeSession, Date.now())) {
           const src = event.groupSource && event.groupSource.source;
           const sid = event.groupSource && event.groupSource.sourceId;

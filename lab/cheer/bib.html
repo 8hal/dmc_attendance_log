@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>배번·목표 입력 (시험) - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../../assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg, #F8FAFC);
+      color: #0F172A;
+      font-family: var(--dmc-font-family, system-ui, sans-serif);
+      padding: 20px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+    .lab a { color: inherit; }
+    .wrap { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-top: 12px; }
+    label { display: block; font-size: 13px; font-weight: 700; margin: 12px 0 6px; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chips button, .btn {
+      border: 1px solid #E2E8F0;
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .chips button.active { background: #EFF6FF; color: #2563EB; border-color: #2563EB; }
+    .btn { width: 100%; border-radius: 8px; background: #2563EB; color: #fff; border: none; margin-top: 16px; }
+    .hint, .error { font-size: 13px; line-height: 1.45; }
+    .hint { color: #64748B; }
+    .error { color: #DC2626; }
+    .hidden { display: none !important; }
+    .nick-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin-top: 8px;
+      padding: 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      background: #fff;
+      color: #0F172A;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="lab">시험 중인 화면입니다. <a id="boardLink" href="index.html">응원 보드</a></p>
+    <h1>배번·목표 입력</h1>
+    <p class="hint" id="eventInfo">불러오는 중…</p>
+    <div id="error" class="error hidden"></div>
+    <div id="pick" class="card hidden">
+      <p class="hint">닉네임을 고르세요.</p>
+      <input id="nickSearch" type="search" placeholder="닉네임 검색" autocomplete="off" />
+      <div id="nickList"></div>
+    </div>
+    <form id="form" class="card hidden">
+      <p id="who"></p>
+      <div class="chips" id="distChips"></div>
+      <label for="bib">배번</label>
+      <input id="bib" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
+      <div id="fullFields" class="hidden">
+        <div id="waveField">
+          <label for="wave">조 (선택)</label>
+          <select id="wave"></select>
+          <p class="hint">조를 고르지 않으면 첫 출발 시각으로 계산합니다.</p>
+        </div>
+        <label for="goalH">완주 목표 시간 (선택)</label>
+        <div id="finishFields">
+          <label for="goalH">시</label>
+          <input id="goalH" inputmode="numeric" placeholder="4" />
+          <label for="goalM">분</label>
+          <input id="goalM" inputmode="numeric" placeholder="00" />
+          <label for="goalS">초</label>
+          <input id="goalS" inputmode="numeric" placeholder="00" />
+        </div>
+        <p class="hint" id="waveEmpty">아직 출발 시각이 등록되지 않았습니다. 지금 넣어 두면 등록 후 응원 보드에 나옵니다.</p>
+        <p class="hint">조와 목표를 비워도 배번은 저장됩니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.</p>
+      </div>
+      <p id="formError" class="error hidden"></p>
+      <button class="btn" type="submit" id="saveBtn">저장</button>
+    </form>
+    <p id="done" class="card hidden">저장했습니다.</p>
+  </div>
+  <script src="../../assets/event-home-action.js"></script>
+  <script src="../../assets/distance-utils.js"></script>
+  <script src="../../assets/event-bib-form.js"></script>
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+    const params = new URLSearchParams(location.search);
+    const eventId = params.get("eventId") || "";
+    let event = null;
+    let nickname = params.get("nickname") || "";
+    let distance = "";
+    let composing = false;
+    const SAVE_ERRORS = {
+      "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
+      "unknown waveId": "조 목록이 바뀌었습니다. 새로고침 후 다시 골라 주세요.",
+      "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
+    };
+
+    function esc(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showError(message) {
+      const el = document.getElementById("error");
+      el.textContent = message;
+      el.classList.remove("hidden");
+    }
+
+    function participant() {
+      return ((event && event.participants) || []).find(function (row) {
+        return row.nickname === nickname;
+      }) || null;
+    }
+
+    function renderNicks() {
+      const q = document.getElementById("nickSearch").value.trim();
+      const list = ((event && event.participants) || []).filter(function (row) {
+        return !q || String(row.nickname || "").indexOf(q) >= 0;
+      });
+      document.getElementById("nickList").innerHTML = list.map(function (row) {
+        return '<button type="button" class="nick-btn" data-nick="' + esc(row.nickname) + '">' + esc(row.nickname) + "</button>";
+      }).join("");
+    }
+
+    function renderForm() {
+      const row = participant();
+      if (!row) {
+        document.getElementById("form").classList.add("hidden");
+        document.getElementById("pick").classList.remove("hidden");
+        renderNicks();
+        return;
+      }
+      document.getElementById("pick").classList.add("hidden");
+      document.getElementById("form").classList.remove("hidden");
+      document.getElementById("who").textContent = row.nickname;
+      if (!document.getElementById("bib").value) {
+        document.getElementById("bib").value = row.bib || "";
+      }
+      if (EventHomeAction.PROFILE_DISTANCES.indexOf(distance) < 0) {
+        distance = EventHomeAction.PROFILE_DISTANCES.indexOf(row.distance) >= 0 ? row.distance : "";
+      }
+      document.getElementById("distChips").innerHTML = EventHomeAction.PROFILE_DISTANCES.map(function (dist) {
+        const on = dist === distance ? " active" : "";
+        return '<button type="button" class="dist' + on + '" data-dist="' + dist + '">' + formatDistance(dist) + "</button>";
+      }).join("");
+      const waves = event.waves || [];
+      document.getElementById("wave").innerHTML = '<option value="">고르지 않음 (첫 출발)</option>' + waves.map(function (wave) {
+        const hhmm = String(wave.startAt || "").slice(11, 16);
+        return '<option value="' + esc(wave.id) + '">' + esc(wave.name) + " " + esc(hhmm) + "</option>";
+      }).join("");
+      document.getElementById("wave").value = waves.some(function (wave) { return wave.id === row.waveId; }) ? row.waveId : "";
+      document.getElementById("waveField").classList.toggle("hidden", waves.length < 2);
+      const savedGoal = EventBibForm.goalFieldsFromSec(row.goalFinishSec);
+      if (savedGoal && !document.getElementById("goalH").value) {
+        document.getElementById("goalH").value = savedGoal.h;
+        document.getElementById("goalM").value = savedGoal.m;
+        document.getElementById("goalS").value = savedGoal.s;
+      }
+      document.getElementById("waveEmpty").classList.toggle("hidden", waves.length > 0);
+      document.getElementById("fullFields").classList.toggle("hidden", distance !== "full");
+    }
+
+    ["bib", "goalH", "goalM", "goalS"].forEach(function (id) {
+      const el = document.getElementById(id);
+      el.addEventListener("compositionstart", function () { composing = true; });
+      el.addEventListener("compositionend", function () { composing = false; });
+    });
+
+    document.getElementById("nickSearch").addEventListener("input", renderNicks);
+    document.getElementById("nickList").addEventListener("click", function (event) {
+      const btn = event.target.closest("[data-nick]");
+      if (!btn) return;
+      nickname = btn.getAttribute("data-nick");
+      renderForm();
+    });
+    document.getElementById("distChips").addEventListener("click", function (event) {
+      const btn = event.target.closest("[data-dist]");
+      if (!btn) return;
+      const typedBib = document.getElementById("bib").value;
+      distance = btn.getAttribute("data-dist");
+      renderForm();
+      document.getElementById("bib").value = typedBib;
+    });
+    document.getElementById("form").addEventListener("submit", async function (submitEvent) {
+      submitEvent.preventDefault();
+      if (composing) return;
+      const formError = document.getElementById("formError");
+      formError.classList.add("hidden");
+      const bib = document.getElementById("bib").value.trim();
+      if (!nickname || !distance || !bib) {
+        formError.textContent = "닉네임, 종목, 배번이 필요합니다.";
+        formError.classList.remove("hidden");
+        return;
+      }
+      const val = function (id) { return document.getElementById(id).value; };
+      const goalError = distance === "full"
+        ? EventBibForm.goalFieldsError({ goalH: val("goalH"), goalM: val("goalM"), goalS: val("goalS") })
+        : "";
+      if (goalError) {
+        formError.textContent = goalError;
+        formError.classList.remove("hidden");
+        return;
+      }
+      const body = EventBibForm.buildBibBody({
+        eventId: eventId,
+        nickname: nickname,
+        bib: bib,
+        distance: distance,
+        waveId: val("wave"),
+        goalH: val("goalH"),
+        goalM: val("goalM"),
+        goalS: val("goalS"),
+      });
+      const hasGoal = body.goalFinishSec != null || !!(participant() || {}).goalFinishSec;
+      const hasStart = ((event && event.waves) || []).length > 0;
+      document.getElementById("saveBtn").disabled = true;
+      try {
+        const res = await fetch(API_BASE + "?action=group-events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
+        document.getElementById("form").classList.add("hidden");
+        let doneText = "저장했습니다.";
+        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
+        else if (distance === "full" && !hasStart) doneText = "저장했습니다. 출발 시각이 등록되면 응원 보드에 나옵니다.";
+        document.getElementById("done").textContent = doneText;
+        document.getElementById("done").classList.remove("hidden");
+      } catch (err) {
+        formError.textContent = err.message || "저장 실패";
+        formError.classList.remove("hidden");
+      } finally {
+        document.getElementById("saveBtn").disabled = false;
+      }
+    });
+
+    async function load() {
+      if (!eventId) {
+        showError("eventId가 없습니다.");
+        return;
+      }
+      const res = await fetch(API_BASE + "?action=group-events&subAction=detail&eventId=" + encodeURIComponent(eventId));
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "대회를 찾지 못했습니다");
+      event = data.event;
+      document.getElementById("eventInfo").textContent = (event.primaryName || event.eventName || "대회") + " · " + (event.eventDate || "");
+      renderForm();
+    }
+
+    document.getElementById("boardLink").href = "index.html?eventId=" + encodeURIComponent(eventId);
+    load().catch(function (err) { showError(err.message); });
+  </script>
+</body>
+</html>

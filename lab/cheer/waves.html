@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>풀코스 조 (시험) - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../../assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg, #F8FAFC);
+      color: #0F172A;
+      font-family: var(--dmc-font-family, system-ui, sans-serif);
+      padding: 20px;
+    }
+    .wrap { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+    .lab a { color: inherit; }
+    .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-top: 12px; }
+    label { display: block; font-size: 13px; font-weight: 700; margin: 12px 0 6px; }
+    input { width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 16px; }
+    .wave-row { display: flex; gap: 8px; margin-top: 8px; }
+    .wave-row input { flex: 1; }
+    .btn { width: 100%; border-radius: 8px; border: none; padding: 12px; font-weight: 700; font-size: 15px; margin-top: 12px; cursor: pointer; }
+    .btn-primary { background: #2563EB; color: #fff; }
+    .btn-ghost { background: #fff; color: #2563EB; border: 1px solid #2563EB; }
+    .hint { color: #64748B; font-size: 13px; line-height: 1.45; }
+    .error { color: #DC2626; font-size: 13px; }
+    .ok { color: #047857; font-size: 13px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="lab">시험 중인 화면입니다. <a id="boardLink" href="index.html">응원 보드</a> · <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
+    <h1>풀코스 조</h1>
+    <p class="hint" id="eventInfo">불러오는 중…</p>
+    <div class="card">
+      <p class="hint" style="margin-top:0;">이름과 출발 시각. 러너가 배번 페이지에서 고릅니다. 이미 고른 조의 시각만 바꾸면 그대로 유지됩니다. 줄을 지우면 그 조를 고른 러너는 첫 출발 시각으로 계산합니다.</p>
+      <div id="rows"></div>
+      <button type="button" class="btn btn-ghost" id="addBtn">조 추가</button>
+      <label for="pw">운영 비밀번호</label>
+      <input id="pw" type="password" autocomplete="current-password" />
+      <button type="button" class="btn btn-primary" id="saveBtn">조 저장</button>
+      <p id="msg" class="hidden"></p>
+    </div>
+  </div>
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+    const eventId = new URLSearchParams(location.search).get("eventId") || "";
+    let eventDate = "";
+    let isSaving = false;
+
+    function esc(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showMsg(text, isError) {
+      const el = document.getElementById("msg");
+      el.textContent = text;
+      el.className = isError ? "error" : "ok";
+    }
+
+    function rowMarkup(wave) {
+      const hhmm = String((wave && wave.startAt) || "").slice(11, 16);
+      return '<div class="wave-row" data-wave-id="' + esc((wave && wave.id) || "") + '">' +
+        '<input class="wave-name" placeholder="A조" value="' + esc((wave && wave.name) || "") + '" />' +
+        '<input class="wave-time" type="time" value="' + esc(hhmm) + '" />' +
+        "</div>";
+    }
+
+    function render(waves) {
+      const list = waves.length ? waves : [{ id: "", name: "", startAt: "" }];
+      document.getElementById("rows").innerHTML = list.map(rowMarkup).join("");
+    }
+
+    function collect() {
+      return Array.from(document.querySelectorAll("#rows .wave-row")).map(function (row) {
+        const name = row.querySelector(".wave-name").value.trim();
+        const hhmm = row.querySelector(".wave-time").value;
+        const id = row.getAttribute("data-wave-id") || "";
+        return { id: id, name: name, hhmm: hhmm };
+      }).filter(function (row) { return row.name || row.hhmm; });
+    }
+
+    async function load() {
+      if (!eventId) throw new Error("eventId가 없습니다.");
+      const res = await fetch(API_BASE + "?action=group-events&subAction=detail&eventId=" + encodeURIComponent(eventId));
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "대회를 찾지 못했습니다");
+      eventDate = data.event.eventDate || "";
+      document.getElementById("eventInfo").textContent =
+        (data.event.primaryName || data.event.eventName || "대회") + " · " + (eventDate || "날짜 없음");
+      render(data.event.waves || []);
+    }
+
+    async function save() {
+      if (isSaving) return;
+      if (!eventDate) {
+        showMsg("대회 날짜가 없습니다.", true);
+        return;
+      }
+      const missingTime = collect().some(function (row) { return !row.name || !row.hhmm; });
+      if (missingTime) {
+        showMsg("조마다 이름과 출발 시각을 넣어 주세요.", true);
+        return;
+      }
+      const waves = collect().map(function (row) {
+        const item = { name: row.name, startAt: eventDate + "T" + row.hhmm + ":00+09:00" };
+        if (row.id) item.id = row.id;
+        return item;
+      });
+      isSaving = true;
+      document.getElementById("saveBtn").disabled = true;
+      try {
+        const res = await fetch(API_BASE + "?action=group-events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subAction: "waves",
+            ownerPw: document.getElementById("pw").value,
+            eventId: eventId,
+            waves: waves,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "조 저장 실패");
+        render(data.waves || []);
+        showMsg("조를 저장했습니다.", false);
+      } catch (err) {
+        showMsg(err.message || "조 저장 실패", true);
+      } finally {
+        isSaving = false;
+        document.getElementById("saveBtn").disabled = false;
+      }
+    }
+
+    document.getElementById("addBtn").addEventListener("click", function () {
+      document.getElementById("rows").insertAdjacentHTML("beforeend", rowMarkup({ id: "", name: "", startAt: "" }));
+    });
+    document.getElementById("saveBtn").addEventListener("click", save);
+
+    const q = "?eventId=" + encodeURIComponent(eventId);
+    document.getElementById("boardLink").href = "index.html" + q;
+    document.getElementById("bibLink").href = "bib.html" + q;
+    load().catch(function (err) { showMsg(err.message, true); });
+  </script>
+</body>
+</html>
