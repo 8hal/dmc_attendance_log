@@ -90,12 +90,77 @@
     return [...text][0];
   }
 
+  const TEAM_SEASON_RESULT_START_DATE = "2026-10-25";
+
+  function shouldShowTeamSeasonResults(todayIso) {
+    return String(todayIso || "").slice(0, 10) >= TEAM_SEASON_RESULT_START_DATE;
+  }
+
+  function sortTeamMembersForAttendance(members, meId) {
+    return [...(members || [])].sort((a, b) => {
+      if (meId) {
+        if (a.memberId === meId) return -1;
+        if (b.memberId === meId) return 1;
+      }
+      return (a.nickname || "").localeCompare(b.nickname || "", "ko");
+    });
+  }
+
+  function collectSeasonPhotoTiles({ photos, members, me } = {}) {
+    const meId = me?.memberId || null;
+    let list = [];
+    if (Array.isArray(photos)) {
+      list = photos.slice();
+    } else {
+      const pushCert = (memberId, nickname, sr) => {
+        if (!sr?.photoUrl) return;
+        list.push({
+          memberId: memberId || "",
+          nickname: nickname || "",
+          photoUrl: sr.photoUrl,
+          date: "",
+          dayIndex: null,
+          kind: "result",
+        });
+      };
+      if (me) pushCert(me.memberId, me.nickname, me.seasonResult);
+      (members || []).forEach((m) => pushCert(m.memberId, m.nickname, m.seasonResult));
+    }
+
+    const seen = new Set();
+    const tiles = [];
+    for (const p of list) {
+      const url = p && p.photoUrl;
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
+      tiles.push({
+        memberId: p.memberId || "",
+        nickname: p.nickname || "",
+        photoUrl: url,
+        date: p.date || "",
+        dayIndex: p.dayIndex ?? null,
+        kind: p.kind || "attendance",
+        isMe: p.isMe != null ? !!p.isMe : !!(meId && p.memberId === meId),
+      });
+    }
+    tiles.sort((a, b) => {
+      const dateCmp = String(b.date || "").localeCompare(String(a.date || ""));
+      if (dateCmp) return dateCmp;
+      return (Number(b.dayIndex) || 0) - (Number(a.dayIndex) || 0);
+    });
+    return tiles;
+  }
+
   return {
+    TEAM_SEASON_RESULT_START_DATE,
     formatNetTime,
     teamRowSecondLine,
     teamProfileResultLine,
     teamResultCounts,
     sortTeamMembersForDisplay,
+    sortTeamMembersForAttendance,
+    shouldShowTeamSeasonResults,
+    collectSeasonPhotoTiles,
     teamNicknameInitial,
   };
 });

@@ -1795,15 +1795,23 @@
     const goalTime = m.goalMarathonNetTime != null
       ? formatNetTime(m.goalMarathonNetTime)
       : (m.goal || "—");
+    const showResults = window.ChunbaekTeamSeason.shouldShowTeamSeasonResults(kstTodayIso());
     const resultLine = window.ChunbaekTeamSeason.teamProfileResultLine(m);
+    const resultDt = showResults
+      ? `<dt>시즌 최종 결과</dt><dd>${escapeHtml(resultLine)}</dd>`
+      : "";
+    const weekDt = showResults
+      ? ""
+      : `<dt>이번 주</dt><dd>${renderTeamWeekProgress(m, { showFraction: true })}</dd>`;
     document.getElementById("team-profile-dl").innerHTML = `
-      <dt>시즌 최종 결과</dt><dd>${escapeHtml(resultLine)}</dd>
+      ${resultDt}
       <dt>목표 대회</dt><dd>${m.goalRaceLabel ? escapeHtml(m.goalRaceLabel) : "—"}</dd>
       <dt>풀 목표</dt><dd>${escapeHtml(goalTime)}</dd>
       <dt>기존 PB</dt><dd>${m.existingPbNetTime != null ? escapeHtml(formatNetTime(m.existingPbNetTime)) : (m.existingPb && m.existingPb !== "—" ? escapeHtml(m.existingPb) : "—")}</dd>
       <dt>목표 몸무게</dt><dd>${escapeHtml(teamWeightDisplay(m, isMe))}</dd>
       <dt>각오</dt><dd class="profile-intro">${m.resolutionText ? escapeHtml(m.resolutionText) : "—"}</dd>
       <dt>시즌 출석</dt><dd>${m.seasonAttendCount ?? 0}회 (출석률 ${m.seasonAttendRate ?? 0}%)</dd>
+      ${weekDt}
     `;
     const feedEl = document.getElementById("team-profile-feed");
     const feedList = document.getElementById("team-profile-feed-list");
@@ -1844,19 +1852,57 @@
   }
 
   function sortTeamMembersForDisplay(members) {
-    return window.ChunbaekTeamSeason.sortTeamMembersForDisplay(
-      members,
-      state.profile?.memberId || null,
-    );
-  }
-
-  function paintTeam(t) {
     const Team = window.ChunbaekTeamSeason;
     const meId = state.profile?.memberId || null;
-    const members = sortTeamMembersForDisplay(
-      (t.members || []).filter((m) => m.profileComplete !== false),
-    );
-    state.teamMembers = members;
+    if (Team.shouldShowTeamSeasonResults(kstTodayIso())) {
+      return Team.sortTeamMembersForDisplay(members, meId);
+    }
+    return Team.sortTeamMembersForAttendance(members, meId);
+  }
+
+  function paintTeamAttendance(t, members) {
+    const count = members.length;
+    const weekMet = members.filter((m) => m.met).length;
+    const seasonRate = count > 0
+      ? Math.round(members.reduce((sum, m) => sum + (m.seasonAttendRate || 0), 0) / count)
+      : (t.seasonRate || 0);
+    const weekMetPct = count > 0 ? Math.round((weekMet / count) * 100) : 0;
+    document.getElementById("team-summary").innerHTML = `
+      <div class="team-summary-stat">
+        <div class="team-summary-label">시즌 출석률</div>
+        <div class="team-summary-value">${seasonRate}<span class="team-summary-value-unit">%</span></div>
+        <div class="team-summary-caption">팀 평균</div>
+      </div>
+      <div class="team-summary-stat">
+        <div class="team-summary-label">이번 주 3점</div>
+        <div class="team-summary-value team-summary-value--attend">${weekMet}<span class="team-summary-value-unit">명</span></div>
+        <div class="team-summary-caption">달성 · ${count}명 중</div>
+        <div class="team-summary-bar" role="presentation" aria-hidden="true">
+          <span class="team-summary-bar-fill${weekMet ? "" : " team-summary-bar-fill--empty"}" style="width:${weekMetPct}%"></span>
+        </div>
+      </div>
+    `;
+    if (!count) {
+      document.getElementById("team-list").innerHTML =
+        '<p class="section-sub">아직 프로필을 만든 멤버가 없습니다.</p>';
+      return;
+    }
+    document.getElementById("team-list").innerHTML = members.map((m) => `
+      <button type="button" class="team-row team-row--clickable" data-member-id="${escapeHtml(m.memberId || "")}" aria-label="${escapeHtml(m.nickname || "팀원")} 프로필 보기">
+        <div>
+          <strong>${escapeHtml(m.nickname || "")}</strong>
+          <div class="team-goal">목표 ${escapeHtml(m.goal || "")}${m.goalRaceLabel ? ` · ${escapeHtml(m.goalRaceLabel)}` : ""}</div>
+        </div>
+        <div style="text-align:right">
+          ${renderTeamWeekProgress(m, { showFraction: false })}
+        </div>
+      </button>
+    `).join("");
+  }
+
+  function paintTeamSeasonResults(members) {
+    const Team = window.ChunbaekTeamSeason;
+    const meId = state.profile?.memberId || null;
     const counts = Team.teamResultCounts(members);
     document.getElementById("team-summary").innerHTML = `
       <div class="team-summary-stat">
@@ -1884,7 +1930,7 @@
       const photoAttrs = photoUrl ? ` data-photo-url="${escapeAttr(photoUrl)}"` : "";
       const photoLabel = photoUrl ? `${nick} 기록 사진 보기` : `${nick} 프로필 보기`;
       return `
-      <div class="team-row" data-member-id="${escapeHtml(m.memberId || "")}">
+      <div class="team-row team-row--season" data-member-id="${escapeHtml(m.memberId || "")}">
         <button type="button" class="team-row-photo"${photoAttrs} aria-label="${escapeHtml(photoLabel)}">${photoInner}</button>
         <button type="button" class="team-row-main" aria-label="${escapeHtml(nick)} 프로필 보기">
           <strong>${escapeHtml(m.nickname || "")}${isMe ? '<span class="team-row-me"> · 나</span>' : ""}</strong>
@@ -1892,6 +1938,19 @@
         </button>
       </div>`;
     }).join("");
+  }
+
+  function paintTeam(t) {
+    const Team = window.ChunbaekTeamSeason;
+    const showResults = Team.shouldShowTeamSeasonResults(kstTodayIso());
+    const caption = document.getElementById("team-season-caption");
+    if (caption) caption.hidden = !showResults;
+    const members = sortTeamMembersForDisplay(
+      (t.members || []).filter((m) => m.profileComplete !== false),
+    );
+    state.teamMembers = members;
+    if (showResults) paintTeamSeasonResults(members);
+    else paintTeamAttendance(t, members);
     bindTeamListEvents();
   }
 
@@ -2595,46 +2654,23 @@
     void loadReportPhotoBoard(p);
   }
 
-  function collectSeasonResultPhotoTiles(members, me) {
-    const tiles = [];
-    const seen = new Set();
-    const pushTile = (memberId, nickname, sr, isMe) => {
-      const url = sr && sr.photoUrl;
-      if (!url) return;
-      const key = String(memberId || url);
-      if (seen.has(key)) return;
-      seen.add(key);
-      tiles.push({
-        memberId: memberId || "",
-        nickname: nickname || "",
-        photoUrl: url,
-        raceLabel: sr.raceLabel || "",
-        status: sr.status || "",
-        isMe: !!isMe,
-      });
-    };
-    if (me) {
-      pushTile(me.memberId, me.nickname, me.seasonResult, true);
-    }
-    (members || []).forEach((m) => {
-      pushTile(m.memberId, m.nickname, m.seasonResult, !!(me && m.memberId === me.memberId));
-    });
-    return tiles;
-  }
-
   function paintReportPhotoBoard(tiles) {
     const board = document.getElementById("report-photo-board");
     if (!board) return;
     if (!tiles.length) {
-      board.innerHTML = '<p class="report-photo-empty">아직 올라온 기록 사진이 없습니다</p>';
+      board.innerHTML = '<p class="report-photo-empty">아직 올라온 사진이 없습니다</p>';
       return;
     }
-    board.innerHTML = tiles.map((t, idx) => `
-      <button type="button" class="report-photo-tile" data-photo-idx="${idx}" aria-label="${escapeHtml(t.nickname || "기록 사진")}">
+    board.innerHTML = tiles.map((t, idx) => {
+      const dayLabel = t.kind === "attendance" && t.dayIndex
+        ? ` · ${t.dayIndex}일`
+        : (t.kind === "result" ? " · 기록" : "");
+      return `
+      <button type="button" class="report-photo-tile" data-photo-idx="${idx}" aria-label="${escapeHtml(t.nickname || "사진")}">
         <img src="${escapeAttr(t.photoUrl)}" alt="" />
-        <span class="report-photo-tile-name">${escapeHtml(t.nickname || "회원")}${t.isMe ? " · 나" : ""}</span>
-      </button>
-    `).join("");
+        <span class="report-photo-tile-name">${escapeHtml(t.nickname || "회원")}${t.isMe ? " · 나" : ""}${dayLabel}</span>
+      </button>`;
+    }).join("");
     const urls = tiles.map((t) => t.photoUrl);
     board.querySelectorAll(".report-photo-tile").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -2650,18 +2686,24 @@
     if (board && !board.childElementCount) {
       board.innerHTML = '<p class="report-photo-empty">사진을 불러오는 중…</p>';
     }
+    const Team = window.ChunbaekTeamSeason;
     try {
-      let members = state.teamMembers;
-      if (!members || !members.length) {
-        const data = await apiGet("team-summary", {}, true);
-        members = (data.members || []).filter((m) => m.profileComplete !== false);
-        state.teamMembers = members;
-      }
+      const data = await apiGet("team-summary", { includePhotos: "1" }, true);
+      const members = (data.members || []).filter((m) => m.profileComplete !== false);
+      state.teamMembers = members;
       if (loadId !== state.reportPhotoLoadId) return;
-      paintReportPhotoBoard(collectSeasonResultPhotoTiles(members, me));
+      paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
+        photos: data.photos,
+        members,
+        me,
+      }));
     } catch {
       if (loadId !== state.reportPhotoLoadId) return;
-      paintReportPhotoBoard(collectSeasonResultPhotoTiles(MOCK.team.members, me));
+      paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
+        photos: MOCK.team.photos,
+        members: MOCK.team.members,
+        me,
+      }));
     }
   }
 

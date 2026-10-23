@@ -683,6 +683,39 @@ async function apiPost(action, body, needToken = false) {
   return data;
 }
 
+function buildMockSeasonPhotos() {
+  const photos = [];
+  for (const week of MOCK.timeline || []) {
+    for (const slot of week.slots || []) {
+      const urls = Array.isArray(slot.photoUrls)
+        ? slot.photoUrls.filter(Boolean)
+        : (slot.photoUrl ? [slot.photoUrl] : []);
+      for (const photoUrl of urls) {
+        photos.push({
+          memberId: "mock_a",
+          nickname: "김○○",
+          photoUrl,
+          date: slot.date || "",
+          dayIndex: slot.displayDayIndex ?? slot.dayIndex ?? null,
+          kind: "attendance",
+        });
+      }
+    }
+  }
+  for (const m of MOCK.team.members || []) {
+    if (!m.seasonResult?.photoUrl) continue;
+    photos.push({
+      memberId: m.memberId,
+      nickname: m.nickname,
+      photoUrl: m.seasonResult.photoUrl,
+      date: "2026-10-22",
+      dayIndex: null,
+      kind: "result",
+    });
+  }
+  return photos;
+}
+
 function mockGet(action, params = {}) {
   const preview = previewPayload();
   if (action === "members-roster") return Promise.resolve({ ok: true, members: MOCK.roster });
@@ -694,7 +727,11 @@ function mockGet(action, params = {}) {
   if (action === "my-exception-requests") {
     return Promise.resolve({ ok: true, requests: MOCK.exceptionRequests || [] });
   }
-  if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
+  if (action === "team-summary") {
+    const payload = { ok: true, ...MOCK.team };
+    if (String(params.includePhotos) === "1") payload.photos = buildMockSeasonPhotos();
+    return Promise.resolve(payload);
+  }
   if (action === "team-member-attendance") {
     const entries = [];
     for (const week of MOCK.timeline) {
