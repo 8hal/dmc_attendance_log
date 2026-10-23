@@ -106,7 +106,42 @@
     });
   }
 
-  function collectSeasonPhotoTiles({ photos, members, me } = {}) {
+  function photosFromMyTimeline(weeks, me) {
+    const photos = [];
+    const memberId = me?.memberId || "";
+    const nickname = me?.nickname || "";
+    for (const week of weeks || []) {
+      for (const slot of week.slots || []) {
+        const urls = Array.isArray(slot.photoUrls)
+          ? slot.photoUrls.filter(Boolean)
+          : (slot.photoUrl ? [slot.photoUrl] : []);
+        const dayIndex = slot.displayDayIndex ?? slot.dayIndex ?? null;
+        for (const photoUrl of urls) {
+          photos.push({
+            memberId,
+            nickname,
+            photoUrl,
+            date: slot.date || "",
+            dayIndex,
+            kind: "attendance",
+          });
+        }
+      }
+    }
+    if (me?.seasonResult?.photoUrl) {
+      photos.push({
+        memberId,
+        nickname,
+        photoUrl: me.seasonResult.photoUrl,
+        date: "",
+        dayIndex: null,
+        kind: "result",
+      });
+    }
+    return photos;
+  }
+
+  function collectSeasonPhotoTiles({ photos, members, me, mineOnly = false } = {}) {
     const meId = me?.memberId || null;
     let list = [];
     if (Array.isArray(photos)) {
@@ -124,7 +159,12 @@
         });
       };
       if (me) pushCert(me.memberId, me.nickname, me.seasonResult);
-      (members || []).forEach((m) => pushCert(m.memberId, m.nickname, m.seasonResult));
+      if (!mineOnly) {
+        (members || []).forEach((m) => pushCert(m.memberId, m.nickname, m.seasonResult));
+      }
+    }
+    if (mineOnly && meId) {
+      list = list.filter((p) => p && p.memberId === meId);
     }
 
     const seen = new Set();
@@ -160,6 +200,7 @@
     sortTeamMembersForDisplay,
     sortTeamMembersForAttendance,
     shouldShowTeamSeasonResults,
+    photosFromMyTimeline,
     collectSeasonPhotoTiles,
     teamNicknameInitial,
   };

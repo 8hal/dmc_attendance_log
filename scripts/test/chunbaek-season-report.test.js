@@ -520,7 +520,7 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/index.html"), "utf8");
     const reportHtml = html.slice(html.indexOf('id="view-report"'), html.indexOf('id="tab-bar"'));
     assert.match(reportHtml, /id="report-photo-board"/);
-    assert.match(reportHtml, /올라온 사진/);
+    assert.match(reportHtml, /내가 올린 사진/);
     const boardPos = reportHtml.indexOf('id="report-photo-board"');
     const attendPos = reportHtml.indexOf('id="report-attend-summary"');
     assert.ok(boardPos > attendPos, "사진 타일은 출석 성과보다 아래에 있어야 한다");
@@ -541,7 +541,7 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.doesNotMatch(surface, /id="btn-report-ocr-sample"/);
     assert.doesNotMatch(surface, /Finisher/);
     assert.doesNotMatch(surface, /Net Time/);
-    assert.match(surface, /출석 사진과 기록 사진/);
+    assert.match(surface, /내가 올린 출석 사진과 기록 사진/);
     assert.match(surface, /100일 출석 결산/);
   });
 
@@ -552,7 +552,7 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(appJs, /function onSaveSeasonResult\(/);
     assert.match(appJs, /function paintReportPhotoBoard\(/);
     assert.match(appJs, /collectSeasonPhotoTiles/);
-    assert.match(appJs, /includePhotos/);
+    assert.match(appJs, /photosFromMyTimeline/);
     assert.match(appJs, /team-summary/);
     assert.match(appJs, /ChunbaekOcr/);
     assert.doesNotMatch(appJs, /report-weight/);

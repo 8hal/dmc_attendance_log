@@ -215,6 +215,60 @@ describe("collectSeasonPhotoTiles", () => {
     assert.equal(tiles[1].isMe, true);
     assert.equal(tiles[2].isMe, false);
   });
+
+  it("mineOnly면 내 사진만 남긴다", () => {
+    const tiles = teamSeason.collectSeasonPhotoTiles({
+      mineOnly: true,
+      me: { memberId: "me", nickname: "김○○" },
+      photos: [
+        {
+          memberId: "a",
+          nickname: "이○○",
+          photoUrl: "https://x/other.jpg",
+          date: "2026-10-20",
+          dayIndex: 93,
+          kind: "attendance",
+        },
+        {
+          memberId: "me",
+          nickname: "김○○",
+          photoUrl: "https://x/mine.jpg",
+          date: "2026-10-21",
+          dayIndex: 94,
+          kind: "attendance",
+        },
+      ],
+    });
+    assert.deepEqual(tiles.map((t) => t.photoUrl), ["https://x/mine.jpg"]);
+    assert.equal(tiles[0].isMe, true);
+  });
+
+  it("photosFromMyTimeline은 내 출석·기록 사진만 모은다", () => {
+    const photos = teamSeason.photosFromMyTimeline(
+      [
+        {
+          slots: [
+            {
+              date: "2026-10-20",
+              displayDayIndex: 93,
+              photoUrls: ["https://x/day93.jpg"],
+            },
+            { date: "2026-10-21", displayDayIndex: 94, photoUrl: "" },
+          ],
+        },
+      ],
+      {
+        memberId: "me",
+        nickname: "김○○",
+        seasonResult: { photoUrl: "https://x/cert.jpg" },
+      },
+    );
+    assert.deepEqual(photos.map((p) => p.photoUrl), [
+      "https://x/day93.jpg",
+      "https://x/cert.jpg",
+    ]);
+    assert.ok(photos.every((p) => p.memberId === "me"));
+  });
 });
 
 describe("팀 탭 마크업 계약", () => {
@@ -245,12 +299,17 @@ describe("팀 탭 마크업 계약", () => {
     assert.match(modal, /<dt>이번 주<\/dt>/);
   });
 
-  it("성과 사진 보드는 출석 사진을 포함하고 includePhotos를 요청한다", () => {
-    assert.match(appJs, /includePhotos/);
-    assert.match(appJs, /collectSeasonPhotoTiles/);
+  it("성과 사진 보드는 내 출석 사진만 모으고 my-timeline을 쓴다", () => {
+    assert.match(appJs, /photosFromMyTimeline/);
+    assert.match(appJs, /mineOnly:\s*true/);
+    assert.match(appJs, /my-timeline/);
+    const loadStart = appJs.indexOf("async function loadReportPhotoBoard");
+    const loadEnd = appJs.indexOf("async function renderReport");
+    const load = appJs.slice(loadStart, loadEnd);
+    assert.doesNotMatch(load, /includePhotos/);
     const boardHtml = html.slice(html.indexOf('id="report-photo-board"') - 280, html.indexOf('id="tab-bar"'));
-    assert.match(boardHtml, /올라온 사진/);
-    assert.match(boardHtml, /출석 사진과 기록 사진/);
+    assert.match(boardHtml, /내가 올린 사진/);
+    assert.match(boardHtml, /내가 올린 출석 사진과 기록 사진/);
   });
 
   it("결과 행은 48px 아바타고 출석 행은 점 칸을 쓴다", () => {
