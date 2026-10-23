@@ -384,11 +384,17 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
 
   let seasonAttendCount = 0;
   let seasonDenom = 0;
+  let seasonTrainingDays = 0;
+  let seasonExceptionCount = 0;
   for (const slot of statsSlots) {
     if (slot.date > todayDate) continue;
     if (slot.isProgramOff) continue;
+    seasonTrainingDays += 1;
     const att = getAttendance(attendanceMap, slot);
-    if (att?.exception) continue;
+    if (att?.exception) {
+      seasonExceptionCount += 1;
+      continue;
+    }
     seasonDenom += 1;
     if (att?.attended) seasonAttendCount += 1;
   }
@@ -396,6 +402,35 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
   const seasonAttendRate = seasonDenom > 0
     ? Math.round((seasonAttendCount / seasonDenom) * 100)
     : 0;
+
+  const weekMap = new Map();
+  for (const slot of statsSlots) {
+    if (isBetaSlot(slot)) continue;
+    if (slot.date > todayDate) continue;
+    if (!weekMap.has(slot.week)) weekMap.set(slot.week, []);
+    weekMap.get(slot.week).push(slot);
+  }
+  const activeWeekNums = [...weekMap.keys()].sort((a, b) => a - b);
+  const seasonWeekSummaries = activeWeekNums.map((weekNum) => {
+    const ws = computeWeekStatsFull(
+      slots,
+      attendanceMap,
+      weekNum,
+      weeklyTargetConfig,
+      todayDate,
+    );
+    const met = ws.target > 0 && ws.weekScore >= ws.target;
+    return {
+      week: weekNum,
+      attendCount: ws.attendCount,
+      exceptionCount: ws.exceptionCount,
+      weekScore: ws.weekScore,
+      target: ws.target,
+      met,
+    };
+  });
+  const seasonWeeksCount = seasonWeekSummaries.length;
+  const seasonWeeksMetCount = seasonWeekSummaries.filter((w) => w.met).length;
 
   const weekStats = computeWeekStats(
     slots,
@@ -409,6 +444,12 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonDayIndex,
     seasonAttendCount,
     seasonAttendRate,
+    seasonTrainingDays,
+    seasonExceptionCount,
+    seasonDenom,
+    seasonWeeksCount,
+    seasonWeeksMetCount,
+    seasonWeekSummaries,
     weekAttendCount: weekStats.weekAttendCount,
     weekExceptionCount: weekStats.weekExceptionCount,
     futureExceptionCount: weekStats.futureExceptionCount,

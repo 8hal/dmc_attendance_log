@@ -6,5 +6,10 @@ service firebase.storage {
       allow read: if fileName.matches('.*\\.jpg$');
       allow write: if false;
     }
+    // 춘백 시즌 마감 기록증 — 서버(Admin SDK)만 쓰기. 읽기는 download token URL로.
+    match /chunbaek/season-results/{seasonId}/{fileName} {
+      allow read: if fileName.matches('.*\\.jpg$');
+      allow write: if false;
+    }
   }
 }
