@@ -1202,13 +1202,41 @@ body {
 
 .team-row {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 12px;
+  grid-template-columns: 48px 1fr;
+  gap: 10px 12px;
+  align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid var(--border-light);
   font-size: 14px;
 }
-.team-row--clickable {
+.team-row-photo {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.team-row-photo img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  display: block;
+}
+.team-row-initial {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.team-row-main {
   cursor: pointer;
   border: none;
   background: none;
@@ -1216,9 +1244,12 @@ body {
   text-align: left;
   font: inherit;
   color: inherit;
+  padding: 0;
   -webkit-tap-highlight-color: transparent;
 }
-.team-row--clickable:active { opacity: 0.85; }
+.team-row-photo:active,
+.team-row-main:active { opacity: 0.85; }
+.team-row-me { font-weight: 500; color: var(--text-muted); }
 .team-goal { font-size: 12px; color: var(--text-muted); }
 .team-week-dots { font-size: 14px; letter-spacing: 0; }
 .team-profile-dl { margin-bottom: 0; }
