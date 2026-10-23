@@ -118,22 +118,28 @@
     }
   }
 
+  function photoFileOwnerId(fileName) {
+    const indexed = String(fileName || "").match(/^(.*)_(\d+)\.(?:jpe?g|png|webp)$/i);
+    if (indexed) return indexed[1];
+    const bare = String(fileName || "").match(/^(.*)\.(?:jpe?g|png|webp)$/i);
+    return bare ? bare[1] : "";
+  }
+
   function photoUrlOwnerMemberId(photoUrl) {
     const objectPath = decodedStorageObjectPath(photoUrl);
     const attend = objectPath.match(/chunbaek\/attendance\/[^/]+\/[^/]+\/([^/]+)$/i);
-    if (attend) {
-      const owned = attend[1].match(/^(.*)_(\d+)\.(?:jpe?g|png|webp)$/i);
-      return owned ? owned[1] : null;
-    }
-    const result = objectPath.match(/chunbaek\/season-results\/[^/]+\/([^/]+)\.(?:jpe?g|png|webp)$/i);
-    return result ? result[1] : null;
+    if (attend) return photoFileOwnerId(attend[1]);
+    const result = objectPath.match(/chunbaek\/season-results\/[^/]+\/([^/]+)$/i);
+    if (result) return photoFileOwnerId(result[1]);
+    if (/chunbaek\/(?:attendance|season-results)\//i.test(objectPath)) return "";
+    return null;
   }
 
   function photoUrlBelongsToMember(photoUrl, memberId) {
     const meId = String(memberId || "");
     if (!meId || !photoUrl) return false;
     const owner = photoUrlOwnerMemberId(photoUrl);
-    if (!owner) return true;
+    if (owner === null) return true;
     return owner === meId;
   }
 

@@ -333,6 +333,29 @@ describe("collectSeasonPhotoTiles", () => {
     assert.equal(tiles.every((t) => t.nickname === "케이지" || !t.nickname), true);
   });
 
+  it("출석 스토리지 경로는 파싱 실패하면 내 사진으로 보지 않는다", () => {
+    const me = { memberId: "me", nickname: "케이지" };
+    const legacyMine = storagePhotoUrl("chunbaek/attendance/chunbaek-s3/96/me.jpg");
+    const legacyOther = storagePhotoUrl("chunbaek/attendance/chunbaek-s3/96/house.jpg");
+    const junkAttend = storagePhotoUrl("chunbaek/attendance/chunbaek-s3/96/not-a-photo");
+    const preview = "https://firebasestorage.googleapis.com/v0/b/preview/o/chunbaek%2Fpreview_0.jpg?alt=media&token=preview-token";
+    assert.equal(teamSeason.photoUrlBelongsToMember(legacyMine, "me"), true);
+    assert.equal(teamSeason.photoUrlBelongsToMember(legacyOther, "me"), false);
+    assert.equal(teamSeason.photoUrlBelongsToMember(junkAttend, "me"), false);
+    assert.equal(teamSeason.photoUrlBelongsToMember(preview, "me"), true);
+    const emptyMe = teamSeason.collectSeasonPhotoTiles({
+      mineOnly: true,
+      me: { nickname: "케이지" },
+      photos: [{ memberId: "me", nickname: "케이지", photoUrl: legacyMine, kind: "attendance" }],
+    });
+    assert.deepEqual(emptyMe, []);
+    const photos = teamSeason.photosFromMyTimeline(
+      [{ slots: [{ date: "2026-10-23", displayDayIndex: 96, photoUrls: [legacyOther, legacyMine, junkAttend] }] }],
+      me,
+    );
+    assert.deepEqual(photos.map((p) => p.photoUrl), [legacyMine]);
+  });
+
   it("개인 갤러리 캡션은 일차 또는 기록만 쓴다", () => {
     assert.equal(teamSeason.reportPhotoTileCaption({ kind: "attendance", dayIndex: 96 }), "96일");
     assert.equal(teamSeason.reportPhotoTileCaption({ kind: "result", nickname: "케이지" }), "기록");
@@ -391,11 +414,16 @@ describe("팀 탭 마크업 계약", () => {
   it("춘백 HTML·JS·CSS는 app-version 쿼리로 캐시를 끊는다", () => {
     const versionMatch = html.match(/<meta name="app-version" content="([^"]+)"/);
     assert.ok(versionMatch);
+    const fileVersion = fs.readFileSync(path.join(__dirname, "../../chunbaek/VERSION"), "utf8").trim();
+    assert.equal(versionMatch[1], fileVersion);
     const version = versionMatch[1].replace(/\./g, "\\.");
     assert.match(html, new RegExp(`href="css/chunbaek\\.css\\?v=${version}"`));
     assert.match(html, new RegExp(`src="js/team-season\\.js\\?v=${version}"`));
     assert.match(html, new RegExp(`src="js/api\\.js\\?v=${version}"`));
     assert.match(html, new RegExp(`src="js/app\\.js\\?v=${version}"`));
+    const runner = fs.readFileSync(path.join(__dirname, "../pre-deploy-test-runner.sh"), "utf8");
+    assert.match(runner, /chunbaek\/VERSION/);
+    assert.doesNotMatch(runner, /content="0\.3\.0"/);
   });
 
   it("Hosting은 춘백 HTML·JS를 no-cache로 둔다", () => {
