@@ -77,6 +77,7 @@ PY
   export HOST="http://127.0.0.1:5100"
   export ATTENDANCE="http://127.0.0.1:5101/${PROJECT_ID}/asia-northeast3/attendance"
   export PROXY="http://127.0.0.1:5101/${PROJECT_ID}/asia-northeast3/scrapeProxy"
+  export CHUNBAEK="http://127.0.0.1:5101/${PROJECT_ID}/asia-northeast3/chunbaek"
 fi
 
 EMU_LOG="${TMPDIR:-/tmp}/dmc-emulators-exec-$$.log"
