@@ -439,6 +439,8 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(html, /id="report-result-form"/);
     assert.match(html, /id="report-ocr-file"/);
     assert.match(html, /id="btn-report-ocr-sample"/);
+    assert.match(html, /샘플 기록증으로 자동 인식/);
+    assert.doesNotMatch(html, /테스트/);
     assert.match(html, /id="report-attend-summary"/);
     assert.match(html, /src="js\/ocr\.js"/);
   });
