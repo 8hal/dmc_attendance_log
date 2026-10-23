@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>응원 (시험) - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../../assets/design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--dmc-color-bg, #F8FAFC);
+      color: var(--dmc-color-text, #0F172A);
+      font-family: var(--dmc-font-family, system-ui, sans-serif);
+      padding: 20px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+    .lab a { color: inherit; }
+    .wrap { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    .meta { margin: 0 0 14px; color: #64748B; font-size: 14px; }
+    .views { display: flex; gap: 8px; margin-bottom: 12px; }
+    .views button, .btn {
+      border: 1px solid #E2E8F0;
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .views button.active { background: #EFF6FF; color: #2563EB; border-color: #2563EB; }
+    .btn { border-radius: 8px; background: #2563EB; color: #fff; border: none; text-decoration: none; display: inline-block; }
+    .hint { color: #64748B; font-size: 14px; line-height: 1.5; }
+    .course { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 8px; }
+    .course svg { width: 100%; height: auto; display: block; }
+    .rank { display: flex; flex-direction: column; gap: 8px; }
+    .row, .detail {
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .row { width: 100%; text-align: left; cursor: pointer; }
+    .nick { font-weight: 800; font-size: 16px; }
+    .sub { color: #64748B; font-size: 13px; margin-top: 4px; }
+    .chip { color: #2563EB; font-weight: 700; }
+    .hidden { display: none !important; }
+    .status { text-align: center; padding: 32px 8px; color: #64748B; }
+    .back { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="lab">시험 중인 화면입니다. <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
+    <h1 id="title">응원</h1>
+    <p class="meta" id="meta">풀코스 추정 위치</p>
+    <div class="views" id="views">
+      <button type="button" id="viewCourse" class="active">코스</button>
+      <button type="button" id="viewRank">순위</button>
+    </div>
+    <p class="hint" id="emptyHint"></p>
+    <div id="courseView" class="course" aria-label="5km 단위 ㄹ자 코스"></div>
+    <div id="rankView" class="rank hidden"></div>
+    <div id="detailView" class="hidden">
+      <button type="button" class="btn back" id="backBtn">순위로</button>
+      <div class="detail" id="detailBody"></div>
+    </div>
+    <div id="loading" class="status">불러오는 중…</div>
+    <div id="error" class="status hidden">
+      <p id="errorMessage">불러오지 못했습니다.</p>
+      <button type="button" class="btn" id="retryBtn">다시 시도</button>
+    </div>
+  </div>
+  <script src="../../assets/cheer-course.js"></script>
+  <script>
+    const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const API_BASE = IS_LOCAL
+      ? "http://127.0.0.1:5001/dmc-attendance/asia-northeast3/race"
+      : "https://race-nszximpvtq-du.a.run.app";
+    const eventId = new URLSearchParams(location.search).get("eventId") || "";
+    const MARKS = [0, 5, 10, 15, 20, 25, 30, 35, 38, 40, 42.195];
+    let board = null;
+    let view = "course";
+    let pollTimer = null;
+    let selected = "";
+
+    function esc(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    const LOAD_ERRORS = {
+      "event not found": "대회를 찾지 못했습니다. 받은 링크가 맞는지 확인해 주세요.",
+      "runner not on board": "응원 보드에 없는 선수입니다.",
+      "server error": "서버 오류입니다. 잠시 뒤 다시 시도해 주세요.",
+      "Failed to fetch": "인터넷 연결을 확인하고 다시 시도해 주세요.",
+      "Load failed": "인터넷 연결을 확인하고 다시 시도해 주세요.",
+    };
+
+    function showError(message) {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("error").classList.remove("hidden");
+      document.getElementById("errorMessage").textContent = LOAD_ERRORS[message] || message || "불러오지 못했습니다.";
+      if (!board) {
+        ["views", "courseView", "rankView", "detailView"].forEach(function (id) {
+          document.getElementById(id).classList.add("hidden");
+        });
+      }
+    }
+
+    const BOX = { left: 10, right: 90, top: 12, gap: 16 };
+
+    function xy(km) {
+      const point = CheerCourse.coursePoint(km);
+      return { x: BOX.left + point.x * (BOX.right - BOX.left), y: BOX.top + point.y * BOX.gap, point: point };
+    }
+
+    function renderCourse() {
+      const runners = (board && board.runners) || [];
+      const parts = [];
+      parts.push('<svg viewBox="0 0 100 152" role="img" aria-label="42.195km ㄹ자 코스">');
+      parts.push('<path d="' + CheerCourse.snakePath(BOX) + '" fill="none" stroke="#CBD5E1" stroke-width="2.2" stroke-linecap="round"/>');
+      MARKS.forEach(function (km) {
+        const p = xy(km);
+        const label = km === 42.195 ? "42.2" : String(km);
+        parts.push('<circle cx="' + p.x + '" cy="' + p.y + '" r="1.3" fill="#64748B"/>');
+        parts.push('<text x="' + p.x + '" y="' + (p.y - 3) + '" font-size="3.2" text-anchor="middle" fill="#64748B">' + label + '</text>');
+      });
+      CheerCourse.clusterRunners(runners).forEach(function (group) {
+        const p = xy(group.km);
+        const label = group.runners.length === 1 ? group.runners[0].nickname : String(group.runners.length);
+        parts.push('<circle class="runner-dot" data-nicks="' + esc(group.runners.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
+        parts.push('<text x="' + p.x + '" y="' + (p.y + 7) + '" font-size="3.4" text-anchor="middle" fill="#0F172A">' + esc(label) + '</text>');
+      });
+      parts.push("</svg>");
+      document.getElementById("courseView").innerHTML = parts.join("");
+    }
+
+    function renderRank() {
+      const runners = (board && board.runners) || [];
+      const root = document.getElementById("rankView");
+      if (!runners.length) {
+        root.innerHTML = "";
+        return;
+      }
+      root.innerHTML = runners.map(function (runner) {
+        return '<button type="button" class="row" data-nick="' + esc(runner.nickname) + '">' +
+          '<div class="nick">' + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩</span>' : "") + "</div>" +
+          '<div class="sub">' + esc(runner.waveName) + " · " + CheerCourse.formatKm(runner.km) + " km · 경과 " +
+          CheerCourse.formatElapsed(runner.elapsedSec) + " · " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
+          "</button>";
+      }).join("");
+    }
+
+    function renderEmpty() {
+      const hint = document.getElementById("emptyHint");
+      const waves = (board && board.waves) || [];
+      const runners = (board && board.runners) || [];
+      if (!waves.length) {
+        hint.textContent = "총무가 조 출발을 등록하면 점이 생깁니다.";
+      } else if (!runners.length) {
+        hint.textContent = "배번과 완주 목표 시간을 넣은 풀코스가 없습니다.";
+      } else {
+        hint.textContent = "점은 출발 시각과 완주 목표 시간으로 추정합니다.";
+      }
+    }
+
+    function applyView() {
+      const detail = view === "detail";
+      document.getElementById("views").classList.toggle("hidden", detail);
+      document.getElementById("courseView").classList.toggle("hidden", view !== "course");
+      document.getElementById("rankView").classList.toggle("hidden", view !== "rank");
+      document.getElementById("detailView").classList.toggle("hidden", !detail);
+      document.getElementById("viewCourse").classList.toggle("active", view === "course");
+      document.getElementById("viewRank").classList.toggle("active", view === "rank");
+    }
+
+    async function openRunner(nickname) {
+      selected = nickname;
+      const url = API_BASE + "?action=group-events&subAction=cheer-runner&eventId=" +
+        encodeURIComponent(eventId) + "&runnerNickname=" + encodeURIComponent(nickname);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "선수를 찾지 못했습니다");
+      const runner = data.runner;
+      const splits = (data.splits || []).map(function (split) {
+        return "<li>" + esc(split.label) + " · " + esc(split.time) +
+          (split.km != null ? " · " + CheerCourse.formatKm(split.km) + " km" : "") + "</li>";
+      }).join("");
+      document.getElementById("detailBody").innerHTML =
+        "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩</span>" : "") + "</div>" +
+        "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
+        "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
+        " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
+        "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
+        " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
+        (splits ? "<ul>" + splits + "</ul>" : "<p class='hint'>칩 구간 없음</p>");
+      view = "detail";
+      applyView();
+    }
+
+    function paint() {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("error").classList.add("hidden");
+      renderEmpty();
+      renderCourse();
+      renderRank();
+      applyView();
+    }
+
+    async function loadBoard() {
+      if (!eventId) {
+        showError("eventId가 없습니다.");
+        return;
+      }
+      const res = await fetch(API_BASE + "?action=group-events&subAction=cheer-board&eventId=" + encodeURIComponent(eventId));
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "응원 보드를 불러오지 못했습니다");
+      board = data;
+      paint();
+      if (view === "detail" && selected) await openRunner(selected);
+    }
+
+    function startPoll() {
+      stopPoll();
+      if (document.hidden) return;
+      pollTimer = setInterval(function () {
+        if (document.hidden) return;
+        loadBoard().catch(function (err) { console.error(err); });
+      }, 30000);
+    }
+
+    function stopPoll() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = null;
+    }
+
+    document.getElementById("viewCourse").addEventListener("click", function () {
+      view = "course";
+      applyView();
+    });
+    document.getElementById("viewRank").addEventListener("click", function () {
+      view = "rank";
+      applyView();
+    });
+    document.getElementById("backBtn").addEventListener("click", function () {
+      view = "rank";
+      applyView();
+    });
+    document.getElementById("retryBtn").addEventListener("click", function () {
+      loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
+    });
+    document.getElementById("courseView").addEventListener("click", function (event) {
+      const dot = event.target.closest("[data-nicks]");
+      if (!dot) return;
+      const nicks = dot.getAttribute("data-nicks").split("|").filter(Boolean);
+      if (nicks.length === 1) {
+        openRunner(nicks[0]).catch(function (err) { showError(err.message); });
+        return;
+      }
+      const pick = window.prompt("누구를 볼까요?\n" + nicks.join(", "), nicks[0]);
+      if (pick && nicks.indexOf(pick) >= 0) {
+        openRunner(pick).catch(function (err) { showError(err.message); });
+      }
+    });
+    document.getElementById("rankView").addEventListener("click", function (event) {
+      const row = event.target.closest("[data-nick]");
+      if (!row) return;
+      openRunner(row.getAttribute("data-nick")).catch(function (err) { showError(err.message); });
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) stopPoll();
+      else {
+        loadBoard().catch(function (err) { console.error(err); });
+        startPoll();
+      }
+    });
+
+    document.getElementById("bibLink").href = "bib.html?eventId=" + encodeURIComponent(eventId);
+    loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
+  </script>
+</body>
+</html>
