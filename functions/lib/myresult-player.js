@@ -168,6 +168,8 @@ function myResultPlayerToRecord(player) {
     gender,
     splits,
     pace: player.pace_nettime || "",
+    // 칩 출발 시각(KST 시계, HH:MM:SS). 응원 보드가 조 출발 시각 대신 쓴다.
+    startClock: startMs != null ? formatElapsedMs(startMs) : "",
   };
 }
 

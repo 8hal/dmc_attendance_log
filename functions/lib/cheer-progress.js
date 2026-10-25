@@ -175,13 +175,28 @@ function isBoardRunner(participant, wave) {
   return Number.isFinite(goal) && goal >= GOAL_MIN_SEC && goal <= GOAL_MAX_SEC;
 }
 
-function toPublicRunner(participant, wave, projected) {
+// 칩에 찍힌 출발 시각이 있으면 조 출발 시각보다 우선한다 (같은 KST 날짜 기준).
+function chipStartMs(match, waveStartAt) {
+  const clock = parseHms(match && match.startClock);
+  const waveMs = Date.parse(waveStartAt);
+  if (clock == null || Number.isNaN(waveMs)) return null;
+  const dayKey = kstDateKey(waveMs);
+  const ms = Date.parse(`${dayKey}T00:00:00+09:00`) + clock * 1000;
+  return Number.isNaN(ms) ? null : ms;
+}
+
+function kstIso(ms) {
+  return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 19) + "+09:00";
+}
+
+function toPublicRunner(participant, wave, projected, startOverride) {
   return {
     nickname: participant.nickname == null ? "" : String(participant.nickname),
     bib: String(participant.bib).trim(),
     waveId: String(wave.id),
     waveName: wave.name == null ? "" : String(wave.name),
-    startAt: String(wave.startAt),
+    startAt: startOverride ? startOverride : String(wave.startAt),
+    startFromChip: !!startOverride,
     goalFinishSec: Number(participant.goalFinishSec),
     km: projected.km,
     elapsedSec: projected.elapsedSec,
@@ -201,8 +216,9 @@ function buildCheerBoard(input) {
   for (const participant of event.participants || []) {
     const wave = participant ? runnerWave(participant, wavesById, fallback) : null;
     if (!isBoardRunner(participant, wave)) continue;
-    const startMs = Date.parse(wave.startAt);
     const match = matchResultByBib(jobResults, participant.bib, participant.distance);
+    const chipMs = chipStartMs(match, wave.startAt);
+    const startMs = chipMs != null ? chipMs : Date.parse(wave.startAt);
     const lastSplit = pickLastSplit(match);
     const projected = projectRunner({
       startMs,
@@ -210,7 +226,7 @@ function buildCheerBoard(input) {
       nowMs,
       lastSplit,
     });
-    runners.push(toPublicRunner(participant, wave, projected));
+    runners.push(toPublicRunner(participant, wave, projected, chipMs != null ? kstIso(chipMs) : null));
   }
   runners.sort((a, b) => {
     if (b.km !== a.km) return b.km - a.km;
