@@ -1203,12 +1203,53 @@ body {
 .team-row {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 4px 12px;
+  gap: 10px 12px;
+  align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid var(--border-light);
   font-size: 14px;
 }
+.team-row--season {
+  grid-template-columns: 48px 1fr;
+}
 .team-row--clickable {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.team-row-photo {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.team-row-photo img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  display: block;
+}
+.team-row-initial {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.team-row-main {
   cursor: pointer;
   border: none;
   background: none;
@@ -1216,9 +1257,12 @@ body {
   text-align: left;
   font: inherit;
   color: inherit;
+  padding: 0;
   -webkit-tap-highlight-color: transparent;
 }
-.team-row--clickable:active { opacity: 0.85; }
+.team-row-photo:active,
+.team-row-main:active { opacity: 0.85; }
+.team-row-me { font-weight: 500; color: var(--text-muted); }
 .team-goal { font-size: 12px; color: var(--text-muted); }
 .team-week-dots { font-size: 14px; letter-spacing: 0; }
 .team-profile-dl { margin-bottom: 0; }
@@ -1844,7 +1888,515 @@ body {
   color-scheme: light;
 }
 
-/* 날짜 입력 필드: 다크 테마에서도 캘린더 아이콘·자리 표시가 보이도록 라이트 모드 강제 */
-#goal-race-date {
-  color-scheme: light;
+/* ── 시즌 마감 배너 (홈 & 나 탭) ── */
+.season-report-banner {
+  background: linear-gradient(135deg, #fff5f2 0%, #f0f9ff 100%);
+  border: 2px solid var(--chun-orange);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
+.season-report-banner-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--chun-orange);
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.season-report-banner-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.season-report-banner-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+.season-report-banner-btn {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.me-report-cta-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(255, 50, 20, 0.08), rgba(112, 209, 244, 0.16));
+  border: 1.5px solid rgba(255, 50, 20, 0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.me-report-cta-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+.me-report-cta-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+/* ── 개인 성과 리포트 뷰 (#view-report) ── */
+.report-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.report-back-btn {
+  width: auto;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.report-season-tag {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.report-hero-card {
+  background: var(--chun-black);
+  color: var(--chun-white);
+  border-radius: 16px;
+  padding: 20px 18px;
+  margin-bottom: 14px;
+}
+.report-hero-eyebrow {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--chun-cyan);
+  margin-bottom: 4px;
+}
+.report-hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+.report-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.report-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+.report-badge--goal {
+  background: var(--chun-orange);
+  color: #fff;
+}
+.report-badge--pb {
+  background: #f59e0b;
+  color: #111;
+}
+.report-badge--finish {
+  background: #10b981;
+  color: #fff;
+}
+.report-badge--attend {
+  background: var(--chun-cyan);
+  color: #111;
+}
+.report-badge--neutral {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.report-badge--pending {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+.report-resolution {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-left: 3px solid var(--chun-cyan);
+  border-radius: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.45;
+}
+
+.report-section-card {
+  padding: 18px 16px;
+  margin-bottom: 14px;
+}
+.report-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.report-required-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--primary-light);
+  color: var(--chun-orange-dark);
+}
+.report-required-badge.done {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.report-status-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.report-status-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  background: var(--card);
+}
+.report-status-tab input {
+  display: none;
+}
+.report-status-tab:has(input:checked) {
+  border-color: var(--chun-orange);
+  background: var(--primary-light);
+  color: var(--chun-orange-dark);
+}
+
+.report-ocr-box {
+  background: var(--surface-muted, #f8fafc);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.report-ocr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.report-ocr-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.report-ocr-pick-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.report-ocr-thumb-wrap {
+  margin-top: 10px;
+  text-align: center;
+}
+.report-ocr-thumb-wrap img,
+.report-cert-preview img {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: contain;
+  cursor: pointer;
+}
+.report-ocr-status {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.report-ocr-status--loading {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.report-ocr-status--ok {
+  background: var(--green-light);
+  color: var(--green);
+}
+.report-ocr-status--warn {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.report-ocr-candidates {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.report-ocr-cand-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.report-ocr-chip {
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.report-ocr-chip.active {
+  border-color: var(--chun-orange);
+  background: var(--primary-light);
+  color: var(--chun-orange-dark);
+}
+
+.report-live-diff {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: -6px 0 14px;
+  font-weight: 600;
+}
+.report-live-diff.achieved {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.report-race-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+.report-status-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.report-status-pill--finisher {
+  background: var(--green-light);
+  color: var(--green);
+}
+.report-status-pill--dnf {
+  background: #ffedd5;
+  color: #c2410c;
+}
+.report-status-pill--dns {
+  background: var(--border-light);
+  color: var(--text-muted);
+}
+
+.report-record-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.report-compare-box {
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+.report-compare-box--highlight {
+  background: var(--primary-light);
+  border-color: rgba(255, 50, 20, 0.35);
+}
+.report-compare-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.report-compare-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+.report-compare-val--main {
+  color: var(--chun-orange-dark);
+}
+.report-compare-detail {
+  grid-column: 1 / -1;
+  background: var(--surface-muted, #f8fafc);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.report-compare-detail > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.report-compare-detail span {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.text-success {
+  color: var(--green);
+}
+.report-result-note {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface-muted, #f8fafc);
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.report-attend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.report-stat-card {
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.report-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.report-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+.report-stat-unit {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+.report-stat-caption {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.report-attend-bar-wrap {
+  margin-bottom: 14px;
+}
+.report-attend-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.report-attend-bar {
+  height: 10px;
+  background: var(--border-light);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.report-attend-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--chun-orange), #10b981);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.report-weeks-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.report-weeks-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.report-week-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border-light);
+}
+.report-week-chip.met {
+  background: var(--green-light);
+  color: var(--green);
+  border-color: #a7f3d0;
+}
+.report-week-chip.miss {
+  background: var(--surface-muted, #f8fafc);
+  color: var(--text-muted);
+}
+.report-week-num {
+  font-size: 10px;
+  opacity: 0.85;
+}
+.report-week-mark {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.report-photo-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.report-photo-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.report-photo-tile {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-muted, #f8fafc);
+  cursor: pointer;
+}
+.report-photo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.report-photo-tile-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18px 8px 6px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.62));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+

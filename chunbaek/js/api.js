@@ -52,7 +52,7 @@ const PREVIEW_SCENARIOS = {
       betaWeek: true,
       photoRequired: false,
       startDate: "2026-07-20",
-      endDate: "2026-10-27",
+      endDate: "2026-10-24",
       betaWeekStartDate: "2026-07-13",
       betaWeekEndDate: "2026-07-19",
     },
@@ -87,7 +87,7 @@ const PREVIEW_SCENARIOS = {
       betaWeek: true,
       photoRequired: false,
       startDate: "2026-07-20",
-      endDate: "2026-10-27",
+      endDate: "2026-10-24",
       betaWeekStartDate: "2026-07-13",
       betaWeekEndDate: "2026-07-19",
     },
@@ -114,7 +114,7 @@ const PREVIEW_SCENARIOS = {
       betaNoSlotToday: true,
       photoRequired: false,
       startDate: "2026-07-20",
-      endDate: "2026-10-27",
+      endDate: "2026-10-24",
       betaWeekStartDate: "2026-07-13",
       betaWeekEndDate: "2026-07-19",
     },
@@ -140,7 +140,7 @@ const PREVIEW_SCENARIOS = {
       betaWeek: false,
       photoRequired: false,
       startDate: "2026-07-20",
-      endDate: "2026-10-27",
+      endDate: "2026-10-24",
       betaWeekStartDate: "2026-07-13",
       betaWeekEndDate: "2026-07-19",
     },
@@ -175,7 +175,64 @@ const PREVIEW_SCENARIOS = {
       betaWeek: false,
       photoRequired: false,
       startDate: "2026-07-20",
-      endDate: "2026-10-27",
+      endDate: "2026-10-24",
+    },
+  },
+  "season-end": {
+    profile: {
+      seasonResult: {
+        status: "finisher",
+        race: "chuncheon",
+        raceLabel: "춘천 마라톤",
+        netTimeSec: 15588,
+        photoUrl: "/chunbaek/screenshots/08-me.png",
+        note: "끝까지 달렸습니다",
+        goalMet: true,
+        pbAchieved: true,
+      },
+      stats: {
+        seasonDayIndex: 100,
+        seasonAttendCount: 64,
+        seasonAttendRate: 74,
+        seasonTrainingDays: 90,
+        seasonExceptionCount: 4,
+        seasonDenom: 86,
+        seasonWeeksCount: 15,
+        seasonWeeksMetCount: 13,
+        seasonWeekSummaries: [
+          { week: 1, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 2, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+          { week: 3, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 4, attendCount: 2, exceptionCount: 0, weekScore: 2, target: 3, met: false },
+          { week: 5, attendCount: 3, exceptionCount: 1, weekScore: 3.5, target: 3, met: true },
+          { week: 6, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 7, attendCount: 2, exceptionCount: 2, weekScore: 3, target: 3, met: true },
+          { week: 8, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+          { week: 9, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 10, attendCount: 2, exceptionCount: 1, weekScore: 2.5, target: 3, met: false },
+          { week: 11, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 12, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+          { week: 13, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 14, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+          { week: 15, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 2, met: true },
+        ],
+        weekAttendCount: 3,
+        weekExceptionCount: 0,
+        weekScore: 3,
+        weekTarget: 3,
+        weekTargetMet: true,
+        inBetaWeek: false,
+      },
+    },
+    todaySlot: {
+      ok: true,
+      slot: null,
+      beforeSeason: false,
+      afterSeason: true,
+      betaWeek: false,
+      photoRequired: false,
+      startDate: "2026-07-20",
+      endDate: "2026-10-24",
     },
   },
 };
@@ -208,11 +265,26 @@ const MOCK = {
     goalRaceLabel: "JTBC 서울마라톤",
     goalRaceDate: "2026-11-01",
     resolutionText: "100일 꾸준히 달려서 춘마 4:30 도전!",
+    seasonResult: null,
     profileComplete: true,
     stats: {
       seasonDayIndex: 42,
       seasonAttendCount: 28,
       seasonAttendRate: 68,
+      seasonTrainingDays: 42,
+      seasonExceptionCount: 2,
+      seasonDenom: 40,
+      seasonWeeksCount: 7,
+      seasonWeeksMetCount: 6,
+      seasonWeekSummaries: [
+        { week: 1, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+        { week: 2, attendCount: 4, exceptionCount: 0, weekScore: 4, target: 3, met: true },
+        { week: 3, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+        { week: 4, attendCount: 2, exceptionCount: 0, weekScore: 2, target: 3, met: false },
+        { week: 5, attendCount: 3, exceptionCount: 1, weekScore: 3.5, target: 3, met: true },
+        { week: 6, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true },
+        { week: 7, attendCount: 2, exceptionCount: 2, weekScore: 3, target: 3, met: true },
+      ],
       weekAttendCount: 2,
       weekExceptionCount: 2,
       weekScore: 3,
@@ -357,6 +429,15 @@ const MOCK = {
         met: true,
         seasonAttendCount: 12,
         seasonAttendRate: 80,
+        seasonResult: {
+          status: "finisher",
+          race: "chuncheon",
+          raceLabel: "춘천 마라톤",
+          netTimeSec: 15480,
+          photoUrl: "/chunbaek/screenshots/05-home.png",
+          goalMet: true,
+          pbAchieved: true,
+        },
       },
       {
         memberId: "mock_b",
@@ -377,6 +458,124 @@ const MOCK = {
         met: false,
         seasonAttendCount: 8,
         seasonAttendRate: 55,
+        seasonResult: {
+          status: "finisher",
+          race: "jtbc",
+          raceLabel: "JTBC 서울마라톤",
+          netTimeSec: 14700,
+          photoUrl: "/chunbaek/screenshots/06-timeline.png",
+          goalMet: false,
+          pbAchieved: true,
+        },
+      },
+      {
+        memberId: "mock_c",
+        nickname: "박○○",
+        profileComplete: true,
+        goal: "4:45",
+        goalMarathonNetTime: 17100,
+        existingPbNetTime: null,
+        existingPb: "",
+        goalBodyWeightKg: null,
+        goalBodyWeightPrivate: false,
+        goalRaceLabel: "춘천 마라톤",
+        resolutionText: "첫 풀코스!",
+        bar: "███",
+        weekDots: "◉●●○○",
+        weekPhotoCount: 1,
+        week: "3/3",
+        weekTarget: 3,
+        met: true,
+        seasonAttendCount: 18,
+        seasonAttendRate: 72,
+        seasonResult: {
+          status: "dnf",
+          race: "chuncheon",
+          raceLabel: "춘천 마라톤",
+          netTimeSec: null,
+          photoUrl: "/chunbaek/screenshots/07-team.png",
+          goalMet: false,
+          pbAchieved: false,
+        },
+      },
+      {
+        memberId: "mock_d",
+        nickname: "최○○",
+        profileComplete: true,
+        goal: "5:00",
+        goalMarathonNetTime: 18000,
+        existingPbNetTime: 19200,
+        existingPb: "5:20",
+        goalBodyWeightKg: null,
+        goalBodyWeightPrivate: false,
+        goalRaceLabel: "기타",
+        resolutionText: "끝까지",
+        bar: "██░",
+        weekDots: "●●○○○",
+        week: "2/3",
+        weekTarget: 3,
+        met: false,
+        seasonAttendCount: 10,
+        seasonAttendRate: 50,
+        seasonResult: {
+          status: "finisher",
+          race: "other",
+          raceLabel: "경주 마라톤",
+          netTimeSec: 17820,
+          photoUrl: "/chunbaek/screenshots/08-me.png",
+          goalMet: true,
+          pbAchieved: true,
+        },
+      },
+      {
+        memberId: "mock_e",
+        nickname: "한○○",
+        profileComplete: true,
+        goal: "4:20",
+        goalMarathonNetTime: 15600,
+        existingPbNetTime: null,
+        existingPb: "",
+        goalBodyWeightKg: null,
+        goalBodyWeightPrivate: false,
+        goalRaceLabel: "JTBC 서울마라톤",
+        resolutionText: "다음 시즌에",
+        bar: "██░",
+        weekDots: "●●○○○",
+        week: "2/3",
+        weekTarget: 3,
+        met: false,
+        seasonAttendCount: 9,
+        seasonAttendRate: 48,
+        seasonResult: {
+          status: "dns",
+          race: "jtbc",
+          raceLabel: "JTBC 서울마라톤",
+          netTimeSec: null,
+          photoUrl: null,
+          goalMet: false,
+          pbAchieved: false,
+        },
+      },
+      {
+        memberId: "mock_f",
+        nickname: "정○○",
+        profileComplete: true,
+        goal: "5:00",
+        goalMarathonNetTime: 18000,
+        existingPbNetTime: null,
+        existingPb: "",
+        goalBodyWeightKg: null,
+        goalBodyWeightPrivate: false,
+        goalRaceLabel: "춘천 마라톤",
+        resolutionText: "기록은 곧 올릴게요",
+        bar: "█░░",
+        weekDots: "●○○○○",
+        week: "1/3",
+        weekTarget: 3,
+        met: false,
+        seasonAttendCount: 6,
+        seasonAttendRate: 40,
+        seasonResult: null,
       },
     ],
   },
@@ -484,6 +683,39 @@ async function apiPost(action, body, needToken = false) {
   return data;
 }
 
+function buildMockSeasonPhotos() {
+  const photos = [];
+  for (const week of MOCK.timeline || []) {
+    for (const slot of week.slots || []) {
+      const urls = Array.isArray(slot.photoUrls)
+        ? slot.photoUrls.filter(Boolean)
+        : (slot.photoUrl ? [slot.photoUrl] : []);
+      for (const photoUrl of urls) {
+        photos.push({
+          memberId: "mock_a",
+          nickname: "김○○",
+          photoUrl,
+          date: slot.date || "",
+          dayIndex: slot.displayDayIndex ?? slot.dayIndex ?? null,
+          kind: "attendance",
+        });
+      }
+    }
+  }
+  for (const m of MOCK.team.members || []) {
+    if (!m.seasonResult?.photoUrl) continue;
+    photos.push({
+      memberId: m.memberId,
+      nickname: m.nickname,
+      photoUrl: m.seasonResult.photoUrl,
+      date: "2026-10-22",
+      dayIndex: null,
+      kind: "result",
+    });
+  }
+  return photos;
+}
+
 function mockGet(action, params = {}) {
   const preview = previewPayload();
   if (action === "members-roster") return Promise.resolve({ ok: true, members: MOCK.roster });
@@ -495,7 +727,11 @@ function mockGet(action, params = {}) {
   if (action === "my-exception-requests") {
     return Promise.resolve({ ok: true, requests: MOCK.exceptionRequests || [] });
   }
-  if (action === "team-summary") return Promise.resolve({ ok: true, ...MOCK.team });
+  if (action === "team-summary") {
+    const payload = { ok: true, ...MOCK.team };
+    if (String(params.includePhotos) === "1") payload.photos = buildMockSeasonPhotos();
+    return Promise.resolve(payload);
+  }
   if (action === "team-member-attendance") {
     const entries = [];
     for (const week of MOCK.timeline) {
@@ -620,21 +856,48 @@ function mockPost(action, body) {
     });
   }
   if (action === "update-profile") {
-    Object.assign(MOCK.profile, {
-      goalRace: body.goalRace,
-      goalRaceNote: body.goalRaceNote || null,
-      goalMarathonNetTime: body.goalMarathonNetTime,
-      existingPbNetTime: body.existingPbNetTime ?? null,
-      goalBodyWeightKg: body.goalBodyWeightKg ?? null,
-      goalBodyWeightPrivate: !!body.goalBodyWeightPrivate,
-      resolutionText: body.resolutionText || null,
-      goalRaceLabel: body.goalRace === "jtbc"
+    if (body.goalMarathonNetTime !== undefined || body.goalRace !== undefined) {
+      Object.assign(MOCK.profile, {
+        goalRace: body.goalRace,
+        goalRaceNote: body.goalRaceNote || null,
+        goalMarathonNetTime: body.goalMarathonNetTime,
+        existingPbNetTime: body.existingPbNetTime ?? null,
+        goalBodyWeightKg: body.goalBodyWeightKg ?? null,
+        goalBodyWeightPrivate: !!body.goalBodyWeightPrivate,
+        resolutionText: body.resolutionText || null,
+        goalRaceLabel: body.goalRace === "jtbc"
+          ? "JTBC 서울마라톤"
+          : body.goalRace === "other"
+            ? (body.goalRaceNote ? `기타: ${body.goalRaceNote}` : "기타")
+            : "춘천 마라톤",
+      });
+    }
+    if (body.seasonResult) {
+      const sr = body.seasonResult;
+      const race = sr.race || MOCK.profile.goalRace || "chuncheon";
+      const raceLabel = race === "jtbc"
         ? "JTBC 서울마라톤"
-        : body.goalRace === "other"
-          ? (body.goalRaceNote ? `기타: ${body.goalRaceNote}` : "기타")
-          : "춘천 마라톤",
-    });
-    return Promise.resolve({ ok: true, ...MOCK.profile });
+        : race === "other"
+          ? (sr.raceNote ? `기타: ${sr.raceNote}` : "기타")
+          : "춘천 마라톤";
+      const status = sr.status || "finisher";
+      const netTimeSec = status === "finisher" ? Number(sr.netTimeSec) : null;
+      const goalSec = Number(MOCK.profile.goalMarathonNetTime);
+      const pbSec = Number(MOCK.profile.existingPbNetTime);
+      MOCK.profile.seasonResult = {
+        status,
+        race,
+        raceNote: race === "other" ? (sr.raceNote || null) : null,
+        raceLabel,
+        netTimeSec,
+        photoUrl: sr.imageBase64 || sr.photoUrl || null,
+        note: sr.note || null,
+        goalMet: status === "finisher" && netTimeSec !== null && goalSec > 0 && netTimeSec <= goalSec,
+        pbAchieved: status === "finisher" && netTimeSec !== null && pbSec > 0 && netTimeSec < pbSec,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return Promise.resolve({ ok: true, ...previewPayload().profile });
   }
   if (action === "request-exception") {
     const preview = mockExceptionPreview();

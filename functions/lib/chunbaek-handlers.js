@@ -31,6 +31,7 @@ const {
   isDateInBetaWeek,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  isAttendanceClosed,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
   getAttendance,
@@ -42,6 +43,9 @@ const {
 
 const GOAL_MIN_SEC = 7200;
 const GOAL_MAX_SEC = 25200;
+const SEASON_RESULT_MIN_SEC = 7200;
+const SEASON_RESULT_MAX_SEC = 28800;
+const SEASON_RESULT_STATUSES = new Set(["finisher", "dnf", "dns"]);
 const GOAL_WEIGHT_MIN_KG = 30;
 const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
@@ -95,6 +99,12 @@ function emptyStats() {
     seasonAttendCount: 0,
     seasonAttendRate: 0,
     seasonDayIndex: 0,
+    seasonTrainingDays: 0,
+    seasonExceptionCount: 0,
+    seasonDenom: 0,
+    seasonWeeksCount: 0,
+    seasonWeeksMetCount: 0,
+    seasonWeekSummaries: [],
     weekAttendCount: 0,
     weekExceptionCount: 0,
     futureExceptionCount: 0,
@@ -158,6 +168,83 @@ async function loadMemberStatsContext(db, memberId) {
   return { config, slots, attendanceMap, today, stats };
 }
 
+function serializeSeasonResult(sr, s3 = {}) {
+  if (!sr || typeof sr !== "object" || !SEASON_RESULT_STATUSES.has(sr.status)) {
+    return null;
+  }
+  const status = sr.status;
+  const race = GOAL_RACES.has(sr.race) ? sr.race : (s3.goalRace || "chuncheon");
+  const raceNote = race === "other" ? (sr.raceNote || null) : null;
+  const netTimeSec = status === "finisher" && Number.isFinite(Number(sr.netTimeSec))
+    ? Math.round(Number(sr.netTimeSec))
+    : null;
+  const goalSec = Number(s3.goalMarathonNetTime);
+  const pbSec = Number(s3.existingPbNetTime);
+  const goalMet = status === "finisher"
+    && netTimeSec !== null
+    && Number.isFinite(goalSec)
+    && goalSec > 0
+    && netTimeSec <= goalSec;
+  const pbAchieved = status === "finisher"
+    && netTimeSec !== null
+    && Number.isFinite(pbSec)
+    && pbSec > 0
+    && netTimeSec < pbSec;
+
+  return {
+    status,
+    race,
+    raceNote,
+    raceLabel: formatGoalRaceLabel(race, raceNote),
+    netTimeSec,
+    photoUrl: sr.photoUrl || null,
+    note: sr.note || null,
+    goalMet,
+    pbAchieved,
+    updatedAt: timestampToIso(sr.updatedAt),
+  };
+}
+
+function parseSeasonResult(raw, fallbackRace = "chuncheon") {
+  if (!raw || typeof raw !== "object") {
+    return { error: "seasonResult must be an object" };
+  }
+  const status = String(raw.status || "").trim().toLowerCase();
+  if (!SEASON_RESULT_STATUSES.has(status)) {
+    return { error: "seasonResult.status must be finisher, dnf, or dns" };
+  }
+  const raceInput = String(raw.race || fallbackRace || "chuncheon").trim();
+  if (!GOAL_RACES.has(raceInput)) {
+    return { error: "seasonResult.race must be chuncheon, jtbc, or other" };
+  }
+  const raceNoteRaw = String(raw.raceNote || "").trim().slice(0, GOAL_RACE_NOTE_MAX);
+  const raceNote = raceInput === "other" ? (raceNoteRaw || null) : null;
+
+  let netTimeSec = null;
+  if (status === "finisher") {
+    const n = Number(raw.netTimeSec);
+    if (!Number.isFinite(n) || n < SEASON_RESULT_MIN_SEC || n > SEASON_RESULT_MAX_SEC) {
+      return {
+        error: `seasonResult.netTimeSec must be ${SEASON_RESULT_MIN_SEC}~${SEASON_RESULT_MAX_SEC} seconds`,
+      };
+    }
+    netTimeSec = Math.round(n);
+  }
+
+  const photoUrl = raw.photoUrl ? String(raw.photoUrl).trim().slice(0, 2000) : null;
+  const note = String(raw.note || "").trim().slice(0, 200) || null;
+
+  return {
+    status,
+    race: raceInput,
+    raceNote,
+    raceLabel: formatGoalRaceLabel(raceInput, raceNote),
+    netTimeSec,
+    photoUrl: photoUrl || null,
+    note,
+  };
+}
+
 function memberProfilePayload(memberId, data, s3, stats) {
   return {
     ok: true,
@@ -172,6 +259,7 @@ function memberProfilePayload(memberId, data, s3, stats) {
     goalRaceNote: s3.goalRaceNote ?? null,
     goalRaceLabel: formatGoalRaceLabel(s3.goalRace, s3.goalRaceNote),
     goalRaceDate: SEASON_RACE_DATES[s3.goalRace] ?? (s3.goalRaceDate || null),
+    seasonResult: serializeSeasonResult(s3.seasonResult, s3),
     profileComplete: !!s3.profileComplete,
     stats: stats || emptyStats(),
   };
@@ -337,11 +425,6 @@ async function handleUpdateProfile(req, res, db) {
   const auth = await requireMember(req, res, db);
   if (!auth) return undefined;
 
-  const parsed = parseProfileFields(req.body || {});
-  if (parsed.error) {
-    return res.status(400).json({ ok: false, error: parsed.error });
-  }
-
   const member = await loadParticipantMember(db, auth.memberId);
   if (!member) {
     return res.status(404).json({ ok: false, error: "participant not found" });
@@ -350,7 +433,58 @@ async function handleUpdateProfile(req, res, db) {
     return res.status(400).json({ ok: false, error: "profile not complete" });
   }
 
-  await member.ref.update(buildProfileUpdate(parsed));
+  const body = req.body || {};
+  const hasProfileFields = body.goalMarathonNetTime !== undefined || body.goalRace !== undefined;
+  const hasSeasonResult = body.seasonResult !== undefined && body.seasonResult !== null;
+
+  if (!hasProfileFields && !hasSeasonResult) {
+    return res.status(400).json({ ok: false, error: "profile fields or seasonResult required" });
+  }
+
+  let update = {};
+  if (hasProfileFields) {
+    const parsed = parseProfileFields(body);
+    if (parsed.error) {
+      return res.status(400).json({ ok: false, error: parsed.error });
+    }
+    update = buildProfileUpdate(parsed);
+  }
+
+  if (hasSeasonResult) {
+    const srRaw = body.seasonResult;
+    const srParsed = parseSeasonResult(srRaw, member.s3.goalRace || "chuncheon");
+    if (srParsed.error) {
+      return res.status(400).json({ ok: false, error: srParsed.error });
+    }
+    let photoUrl = srParsed.photoUrl;
+    if (srRaw.imageBase64) {
+      const imgParsed = parseImageBase64({ imageBase64: srRaw.imageBase64 });
+      if (imgParsed.error) {
+        return res.status(400).json({ ok: false, error: imgParsed.error });
+      }
+      const storagePath = `chunbaek/season-results/${CHUNBAEK_SEASON_ID}/${auth.memberId}.jpg`;
+      try {
+        const bucket = resolveStorageBucket();
+        photoUrl = await saveAttendancePhotoToStorage(bucket, storagePath, imgParsed.buffer);
+      } catch (err) {
+        console.error("[chunbaek] seasonResult photo upload failed", err);
+        const detail = err?.message ? String(err.message).slice(0, 120) : "unknown";
+        return res.status(500).json({ ok: false, error: `photo upload failed: ${detail}` });
+      }
+    }
+    update["chunbaekS3.seasonResult"] = {
+      status: srParsed.status,
+      race: srParsed.race,
+      raceNote: srParsed.raceNote,
+      raceLabel: srParsed.raceLabel,
+      netTimeSec: srParsed.netTimeSec,
+      photoUrl: photoUrl || null,
+      note: srParsed.note,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+  }
+
+  await member.ref.update(update);
   const { stats } = await loadMemberStatsContext(db, auth.memberId);
   const fresh = await loadParticipantMember(db, auth.memberId);
   return res.json(memberProfilePayload(
@@ -676,6 +810,9 @@ async function handleSaveAttendance(req, res, db) {
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
+    if (isAttendanceClosed({ slotDate: slot.date, today, config, slots })) {
+      return res.status(403).json({ ok: false, error: "season ended" });
+    }
   }
   if (slot.isProgramOff) {
     return res.status(400).json({ ok: false, error: "program off day" });
@@ -839,6 +976,9 @@ async function handleUploadAttendancePhoto(req, res, db) {
     if (seasonStart && today < seasonStart) {
       return res.status(403).json({ ok: false, error: "season not started" });
     }
+    if (isAttendanceClosed({ slotDate: slot.date, today, config, slots })) {
+      return res.status(403).json({ ok: false, error: "season ended" });
+    }
   }
   if (slot.isProgramOff) {
     return res.status(400).json({ ok: false, error: "program off day" });
@@ -877,6 +1017,38 @@ async function handleUploadAttendancePhoto(req, res, db) {
   }
 }
 
+function collectTeamPhotosForMember(p, attendanceMap, slots, seasonResult) {
+  const photos = [];
+  const nickname = p.data.nickname || "";
+  for (const slot of slots) {
+    if (slot.isProgramOff) continue;
+    const urls = normalizePhotoUrls(getAttendance(attendanceMap, slot));
+    if (!urls.length) continue;
+    const display = displayDayIndex(slot);
+    for (const photoUrl of urls) {
+      photos.push({
+        memberId: p.memberId,
+        nickname,
+        photoUrl,
+        date: slot.date || "",
+        dayIndex: display,
+        kind: "attendance",
+      });
+    }
+  }
+  if (seasonResult?.photoUrl) {
+    photos.push({
+      memberId: p.memberId,
+      nickname,
+      photoUrl: seasonResult.photoUrl,
+      date: String(seasonResult.updatedAt || "").slice(0, 10),
+      dayIndex: null,
+      kind: "result",
+    });
+  }
+  return photos;
+}
+
 async function handleTeamSummary(req, res, db) {
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false, error: "GET only" });
@@ -884,6 +1056,7 @@ async function handleTeamSummary(req, res, db) {
   const auth = await requireMember(req, res, db);
   if (!auth) return undefined;
 
+  const includePhotos = String(req.query.includePhotos || "") === "1";
   const [config, slots, participants] = await Promise.all([
     loadSeasonConfig(db),
     loadAllSlots(db),
@@ -892,6 +1065,7 @@ async function handleTeamSummary(req, res, db) {
   const today = todayKstDate();
 
   const members = [];
+  const photos = [];
   let rateSum = 0;
   let weekMetCount = 0;
 
@@ -904,6 +1078,10 @@ async function handleTeamSummary(req, res, db) {
     rateSum += stats.seasonAttendRate;
     if (stats.weekTargetMet) weekMetCount += 1;
     const currentWeek = stats.currentWeek;
+    const seasonResult = serializeSeasonResult(p.s3.seasonResult, p.s3);
+    if (includePhotos) {
+      photos.push(...collectTeamPhotosForMember(p, attendanceMap, slots, seasonResult));
+    }
     members.push({
       memberId: p.memberId,
       nickname: p.data.nickname || "",
@@ -919,6 +1097,7 @@ async function handleTeamSummary(req, res, db) {
         ? p.s3.goalBodyWeightKg
         : null,
       goalBodyWeightPrivate: !!(p.s3.goalBodyWeightKg != null && p.s3.goalBodyWeightPrivate),
+      seasonResult,
       bar: weekBar(Math.floor(stats.weekScore || 0), stats.weekTarget),
       weekDots: weekDots(slots, attendanceMap, currentWeek, today),
       weekPhotoCount: slots
@@ -948,6 +1127,7 @@ async function handleTeamSummary(req, res, db) {
     weekMetCount,
     participantCount,
     members: sorted,
+    ...(includePhotos ? { photos } : {}),
   });
 }
 
@@ -1064,4 +1244,11 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
 }
 
-module.exports = { handleChunbaekRequest, formatGoalRaceLabel, parseGoalRace, GOAL_RACES };
+module.exports = {
+  handleChunbaekRequest,
+  formatGoalRaceLabel,
+  parseGoalRace,
+  parseSeasonResult,
+  serializeSeasonResult,
+  GOAL_RACES,
+};

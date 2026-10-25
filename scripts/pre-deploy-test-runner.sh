@@ -302,6 +302,26 @@ else
   RESULTS+=("${RED}✗${NC} report.html: 비밀번호 평문 노출됨!")
 fi
 
+curl -s "$HOST/chunbaek/" > "$TMP_DIR/chunbaek.html"
+curl -s "$HOST/chunbaek/js/ocr.js" > "$TMP_DIR/chunbaek-ocr.js"
+curl -s "$HOST/chunbaek/js/app.js" > "$TMP_DIR/chunbaek-app.js"
+assert_contains "chunbaek/: view-report" 'id="view-report"' "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/: season-report-banner" 'id="season-report-banner"' "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/: btn-open-report" 'id="btn-open-report"' "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/: ocr.js 로드" "js/ocr.js" "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/: app-version 0.3.0" 'content="0.3.0"' "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/: team-season.js 로드" "js/team-season.js" "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/: 시즌 최종 결과" "시즌 최종 결과" "$TMP_DIR/chunbaek.html"
+assert_contains "chunbaek/js/ocr.js: parser" "parseMarathonTimesFromText" "$TMP_DIR/chunbaek-ocr.js"
+assert_contains "chunbaek/js/app.js: 결과 저장" "onSaveSeasonResult" "$TMP_DIR/chunbaek-app.js"
+curl -s "$HOST/chunbaek/js/team-season.js" > "$TMP_DIR/chunbaek-team-season.js"
+assert_contains "chunbaek/js/team-season.js: 둘째 줄" "teamRowSecondLine" "$TMP_DIR/chunbaek-team-season.js"
+
+CHUNBAEK="${CHUNBAEK:-http://127.0.0.1:5001/${PROJECT_ID}/asia-northeast3/chunbaek}"
+resp=$(curl -s "$CHUNBAEK?action=ping")
+ok=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
+assert "chunbaek ping: ok=true" "True" "$ok"
+
 rm -rf "$TMP_DIR"
 
 echo ""

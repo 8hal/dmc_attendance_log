@@ -82,7 +82,7 @@ const db = getFirestore();
     process.exit(1);
   }
 
-  const endDate = getArg("end", rows[rows.length - 1].date);
+  const endDate = getArg("end", "2026-10-24");
   const target = useEmulator ? "에뮬레이터" : "프로덕션";
   const mode = dryRun ? "DRY RUN" : "실행";
 

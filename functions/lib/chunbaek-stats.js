@@ -81,10 +81,14 @@ function formatTeamFeedDayLabel(entry) {
 /** 베타 기간(본시즌 시작 전)에는 0주차만, 이후에는 본시즌 슬롯만 집계 */
 function statsSlotsForToday(slots, today, config) {
   const seasonStart = effectiveSeasonStart(config, slots);
+  const seasonEnd = effectiveSeasonEnd(config, slots);
   if (seasonStart && today < seasonStart) {
     return slots.filter(isBetaSlot);
   }
-  return seasonSlotsOnly(slots);
+  return seasonSlotsOnly(slots).filter((s) => {
+    const date = s.date || "";
+    return !seasonEnd || !date || date <= seasonEnd;
+  });
 }
 
 function betaWeekBoundsFromConfig(config = {}) {
@@ -219,11 +223,25 @@ function effectiveSeasonStart(config, slots = []) {
   return seasonBounds(seasonSlotsOnly(slots)).startDate;
 }
 
+const S3_ATTENDANCE_END_DATE = "2026-10-24";
+
 function effectiveSeasonEnd(config, slots = []) {
-  if (config?.endDate) return config.endDate;
-  const start = effectiveSeasonStart(config, slots);
-  if (start) return addDaysIso(start, 99);
-  return seasonBounds(seasonSlotsOnly(slots)).endDate;
+  let end = config?.endDate || null;
+  if (!end) {
+    const start = effectiveSeasonStart(config, slots);
+    if (start) end = addDaysIso(start, 96);
+    else end = seasonBounds(seasonSlotsOnly(slots)).endDate;
+  }
+  if (end && end > S3_ATTENDANCE_END_DATE) return S3_ATTENDANCE_END_DATE;
+  return end;
+}
+
+function isAttendanceClosed({ slotDate, today, config, slots } = {}) {
+  const end = effectiveSeasonEnd(config, slots);
+  if (!end) return false;
+  if (today && today > end) return true;
+  if (slotDate && slotDate > end) return true;
+  return false;
 }
 
 function deriveSlotDate(slot, config = {}, slots = []) {
@@ -384,11 +402,17 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
 
   let seasonAttendCount = 0;
   let seasonDenom = 0;
+  let seasonTrainingDays = 0;
+  let seasonExceptionCount = 0;
   for (const slot of statsSlots) {
     if (slot.date > todayDate) continue;
     if (slot.isProgramOff) continue;
+    seasonTrainingDays += 1;
     const att = getAttendance(attendanceMap, slot);
-    if (att?.exception) continue;
+    if (att?.exception) {
+      seasonExceptionCount += 1;
+      continue;
+    }
     seasonDenom += 1;
     if (att?.attended) seasonAttendCount += 1;
   }
@@ -396,6 +420,35 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
   const seasonAttendRate = seasonDenom > 0
     ? Math.round((seasonAttendCount / seasonDenom) * 100)
     : 0;
+
+  const weekMap = new Map();
+  for (const slot of statsSlots) {
+    if (isBetaSlot(slot)) continue;
+    if (slot.date > todayDate) continue;
+    if (!weekMap.has(slot.week)) weekMap.set(slot.week, []);
+    weekMap.get(slot.week).push(slot);
+  }
+  const activeWeekNums = [...weekMap.keys()].sort((a, b) => a - b);
+  const seasonWeekSummaries = activeWeekNums.map((weekNum) => {
+    const ws = computeWeekStatsFull(
+      slots,
+      attendanceMap,
+      weekNum,
+      weeklyTargetConfig,
+      todayDate,
+    );
+    const met = ws.target > 0 && ws.weekScore >= ws.target;
+    return {
+      week: weekNum,
+      attendCount: ws.attendCount,
+      exceptionCount: ws.exceptionCount,
+      weekScore: ws.weekScore,
+      target: ws.target,
+      met,
+    };
+  });
+  const seasonWeeksCount = seasonWeekSummaries.length;
+  const seasonWeeksMetCount = seasonWeekSummaries.filter((w) => w.met).length;
 
   const weekStats = computeWeekStats(
     slots,
@@ -409,6 +462,12 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     seasonDayIndex,
     seasonAttendCount,
     seasonAttendRate,
+    seasonTrainingDays,
+    seasonExceptionCount,
+    seasonDenom,
+    seasonWeeksCount,
+    seasonWeeksMetCount,
+    seasonWeekSummaries,
     weekAttendCount: weekStats.weekAttendCount,
     weekExceptionCount: weekStats.weekExceptionCount,
     futureExceptionCount: weekStats.futureExceptionCount,
@@ -735,8 +794,10 @@ module.exports = {
   getAttendance,
   deriveSeasonDate,
   deriveSeasonWeek,
+  S3_ATTENDANCE_END_DATE,
   effectiveSeasonStart,
   effectiveSeasonEnd,
+  isAttendanceClosed,
   deriveSlotDate,
   resolveSlotDate,
   slotStatus,
