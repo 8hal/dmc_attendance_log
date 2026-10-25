@@ -52,6 +52,10 @@
     .hidden { display: none !important; }
     .status { text-align: center; padding: 32px 8px; color: #64748B; }
     .back { margin-bottom: 10px; }
+    .picker { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+    .picker .hint { margin: 0 0 8px; }
+    .picker .nicks { display: flex; flex-wrap: wrap; gap: 8px; }
+    .picker .nicks button { border: 1px solid #2563EB; color: #2563EB; background: #EFF6FF; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -65,9 +69,10 @@
     </div>
     <p class="hint" id="emptyHint"></p>
     <div id="courseView" class="course" aria-label="5km 단위 ㄹ자 코스"></div>
+    <div id="picker" class="picker hidden"><p class="hint" id="pickerTitle"></p><div class="nicks" id="pickerNicks"></div></div>
     <div id="rankView" class="rank hidden"></div>
     <div id="detailView" class="hidden">
-      <button type="button" class="btn back" id="backBtn">순위로</button>
+      <button type="button" class="btn back" id="backBtn">뒤로</button>
       <div class="detail" id="detailBody"></div>
     </div>
     <div id="loading" class="status">불러오는 중…</div>
@@ -88,6 +93,7 @@
     let view = "course";
     let pollTimer = null;
     let selected = "";
+    let prevView = "course";
 
     function esc(value) {
       return String(value == null ? "" : value)
@@ -136,8 +142,10 @@
       });
       CheerCourse.clusterRunners(runners).forEach(function (group) {
         const p = xy(group.km);
-        const label = group.runners.length === 1 ? group.runners[0].nickname : String(group.runners.length);
-        parts.push('<circle class="runner-dot" data-nicks="' + esc(group.runners.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
+        const lead = group.runners.slice().reverse();
+        const n = lead.length;
+        const label = n === 1 ? lead[0].nickname : lead[0].nickname + " +" + (n - 1);
+        parts.push('<circle class="runner-dot" data-nicks="' + esc(lead.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
         parts.push('<text x="' + p.x + '" y="' + (p.y + 7) + '" font-size="3.4" text-anchor="middle" fill="#0F172A">' + esc(label) + '</text>');
       });
       parts.push("</svg>");
@@ -169,7 +177,7 @@
       } else if (!runners.length) {
         hint.textContent = "배번과 완주 목표 시간을 넣은 풀코스가 없습니다.";
       } else {
-        hint.textContent = "점은 출발 시각과 완주 목표 시간으로 추정합니다.";
+        hint.textContent = "칩 기록이 있으면 칩 출발 시각과 실제 페이스로, 없으면 조 출발 시각과 목표 페이스로 추정합니다. 점을 누르면 상세 기록을 봅니다.";
       }
     }
 
@@ -177,6 +185,7 @@
       const detail = view === "detail";
       document.getElementById("views").classList.toggle("hidden", detail);
       document.getElementById("courseView").classList.toggle("hidden", view !== "course");
+      if (view !== "course") document.getElementById("picker").classList.add("hidden");
       document.getElementById("rankView").classList.toggle("hidden", view !== "rank");
       document.getElementById("detailView").classList.toggle("hidden", !detail);
       document.getElementById("viewCourse").classList.toggle("active", view === "course");
@@ -203,8 +212,20 @@
         "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
         " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
         (splits ? "<ul>" + splits + "</ul>" : "<p class='hint'>칩 구간 없음</p>");
+      if (view !== "detail") prevView = view;
       view = "detail";
       applyView();
+      window.scrollTo(0, 0);
+    }
+
+    function showPicker(nicks) {
+      const box = document.getElementById("picker");
+      document.getElementById("pickerTitle").textContent = "이 지점에 " + nicks.length + "명 있어요. 누구를 볼까요?";
+      document.getElementById("pickerNicks").innerHTML = nicks.map(function (nick) {
+        return '<button type="button" data-nick="' + esc(nick) + '">' + esc(nick) + "</button>";
+      }).join("");
+      box.classList.remove("hidden");
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
     function paint() {
@@ -252,8 +273,13 @@
       applyView();
     });
     document.getElementById("backBtn").addEventListener("click", function () {
-      view = "rank";
+      view = prevView || "rank";
       applyView();
+    });
+    document.getElementById("picker").addEventListener("click", function (event) {
+      const btn = event.target.closest("[data-nick]");
+      if (!btn) return;
+      openRunner(btn.getAttribute("data-nick")).catch(function (err) { showError(err.message); });
     });
     document.getElementById("retryBtn").addEventListener("click", function () {
       loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
@@ -266,10 +292,7 @@
         openRunner(nicks[0]).catch(function (err) { showError(err.message); });
         return;
       }
-      const pick = window.prompt("누구를 볼까요?\n" + nicks.join(", "), nicks[0]);
-      if (pick && nicks.indexOf(pick) >= 0) {
-        openRunner(pick).catch(function (err) { showError(err.message); });
-      }
+      showPicker(nicks);
     });
     document.getElementById("rankView").addEventListener("click", function (event) {
       const row = event.target.closest("[data-nick]");
