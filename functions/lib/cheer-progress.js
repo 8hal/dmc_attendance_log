@@ -2,6 +2,7 @@
 
 const crypto = require("crypto");
 const { matchResultByBib } = require("./group-scrape-bib");
+const { publicReadyShotUrl } = require("./cheer-ready-shot");
 
 const FULL_KM = 42.195;
 const GOAL_MIN_SEC = 3600;
@@ -211,7 +212,7 @@ function kstIso(ms) {
 }
 
 function toPublicRunner(participant, wave, projected, startOverride) {
-  return {
+  const row = {
     nickname: participant.nickname == null ? "" : String(participant.nickname),
     bib: String(participant.bib).trim(),
     waveId: String(wave.id),
@@ -230,6 +231,9 @@ function toPublicRunner(participant, wave, projected, startOverride) {
       ? kstIso(projected.startMs + projected.projectedFinishSec * 1000)
       : null,
   };
+  const readyShotUrl = publicReadyShotUrl(participant && participant.readyShotUrl);
+  if (readyShotUrl) row.readyShotUrl = readyShotUrl;
+  return row;
 }
 
 function buildCheerBoard(input) {
@@ -383,8 +387,12 @@ function mergeParticipantProgress(prevList, nextList) {
   }
   return (nextList || []).map((row) => {
     const prev = row && row.memberId ? prevById.get(String(row.memberId)) : null;
-    if (!prev || String(row.distance || "") !== "full") return row;
+    if (!prev) return row;
     const merged = { ...row };
+    if (merged.readyShotUrl === undefined && prev.readyShotUrl) {
+      merged.readyShotUrl = prev.readyShotUrl;
+    }
+    if (String(row.distance || "") !== "full") return merged;
     if (merged.waveId === undefined && prev.waveId !== undefined) merged.waveId = prev.waveId;
     if (merged.goalFinishSec === undefined && prev.goalFinishSec !== undefined) {
       merged.goalFinishSec = prev.goalFinishSec;

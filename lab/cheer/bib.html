@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>배번·목표 입력 (시험) - 동탄 마라톤 클럽</title>
+  <meta name="app-version" content="0.21.0" />
+  <title>배번·목표 입력 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../../assets/design-tokens.css" />
   <style>
@@ -18,7 +19,11 @@
       padding: 20px;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
-    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+    .lab { background: #F1F5F9; color: #334155; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; line-height: 1.45; }
+    .shot { margin-top: 12px; }
+    .shot img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 8px; margin-top: 8px; background: #F8FAFC; }
+    .btn-ghost { background: #fff; color: #2563EB; border: 1px solid #2563EB; margin-top: 8px; }
+    .btn:disabled { opacity: 0.6; cursor: default; }
     .lab a { color: inherit; }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 8px; }
@@ -63,7 +68,7 @@
 </head>
 <body>
   <div class="wrap">
-    <p class="lab">시험 중인 화면입니다. <a id="boardLink" href="index.html">응원 보드</a></p>
+    <p class="lab"><a id="boardLink" href="index.html">응원 보드</a>로 돌아가기</p>
     <h1>배번·목표 입력</h1>
     <p class="hint" id="eventInfo">불러오는 중…</p>
     <div id="error" class="error hidden"></div>
@@ -75,6 +80,14 @@
     <form id="form" class="card hidden">
       <p id="who"></p>
       <div class="chips" id="distChips"></div>
+      <div class="shot">
+        <p class="hint" id="readyShotNotice">응원 보드 링크를 가진 누구나 사진을 볼 수 있어요</p>
+        <button type="button" class="btn btn-ghost" id="readyShotBtn">레디샷 올리기</button>
+        <input id="readyShotFile" class="hidden" type="file" accept="image/*" />
+        <img id="readyShotPreview" class="hidden" alt="레디샷 미리보기" />
+        <p id="readyShotStatus" class="hint hidden"></p>
+        <button type="button" class="btn btn-ghost hidden" id="readyShotClear">이 사진 빼기</button>
+      </div>
       <label for="bib">배번</label>
       <input id="bib" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
       <div id="fullFields" class="hidden">
@@ -103,6 +116,7 @@
   <script src="../../assets/event-home-action.js"></script>
   <script src="../../assets/distance-utils.js"></script>
   <script src="../../assets/event-bib-form.js"></script>
+  <script src="../../assets/cheer-bib-ocr.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -118,7 +132,14 @@
       "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
       "unknown waveId": "조 목록이 바뀌었습니다. 새로고침 후 다시 골라 주세요.",
       "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
+      "image must be jpeg": "사진 형식이 맞지 않습니다. 다시 올려 주세요.",
+      "image too large": "사진이 너무 큽니다. 더 작은 사진으로 올려 주세요.",
+      "invalid base64 image": "사진을 읽지 못했습니다. 다시 올려 주세요.",
+      "photoUrl too long": "사진 주소가 너무 깁니다. 다시 올려 주세요.",
     };
+    const READY_SHOT_EDGE = 1280;
+    let pendingShotDataUrl = "";
+    let readingShot = false;
 
     function esc(value) {
       return String(value == null ? "" : value)
@@ -186,6 +207,119 @@
       }
       document.getElementById("waveEmpty").classList.toggle("hidden", waves.length > 0);
       document.getElementById("fullFields").classList.toggle("hidden", distance !== "full");
+      if (pendingShotDataUrl) showShotPreview(pendingShotDataUrl);
+      else if (row.readyShotUrl) showShotPreview(row.readyShotUrl);
+      else showShotPreview("");
+      document.getElementById("readyShotClear").classList.toggle("hidden", !pendingShotDataUrl);
+    }
+
+    function showShotPreview(src) {
+      const img = document.getElementById("readyShotPreview");
+      if (!src) {
+        img.classList.add("hidden");
+        img.removeAttribute("src");
+        return;
+      }
+      img.src = src;
+      img.classList.remove("hidden");
+    }
+
+    function setShotStatus(message) {
+      const el = document.getElementById("readyShotStatus");
+      el.textContent = message || "";
+      el.classList.toggle("hidden", !message);
+    }
+
+    function loadBitmap(file) {
+      if (typeof createImageBitmap === "function") {
+        return createImageBitmap(file, { imageOrientation: "from-image" }).catch(function () {
+          return createImageBitmap(file);
+        });
+      }
+      return new Promise(function (resolve, reject) {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          reject(new Error("사진을 열지 못했습니다."));
+        };
+        img.src = url;
+      });
+    }
+
+    function resizeToJpegBlob(file, maxEdge, quality) {
+      return loadBitmap(file).then(function (bitmap) {
+        const width0 = bitmap.width || bitmap.naturalWidth || 1;
+        const height0 = bitmap.height || bitmap.naturalHeight || 1;
+        const scale = Math.min(1, maxEdge / Math.max(width0, height0));
+        const width = Math.max(1, Math.round(width0 * scale));
+        const height = Math.max(1, Math.round(height0 * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+        if (bitmap.close) bitmap.close();
+        return new Promise(function (resolve) {
+          canvas.toBlob(function (blob) { resolve(blob); }, "image/jpeg", quality);
+        });
+      });
+    }
+
+    function blobToDataUrl(blob) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || "")); };
+        reader.onerror = function () { reject(new Error("사진을 읽지 못했습니다.")); };
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function fileToJpegDataUrl(file) {
+      const steps = [
+        { edge: READY_SHOT_EDGE, quality: 0.85 },
+        { edge: READY_SHOT_EDGE, quality: 0.7 },
+        { edge: 1024, quality: 0.6 },
+      ];
+      let blob = null;
+      for (let i = 0; i < steps.length; i++) {
+        blob = await resizeToJpegBlob(file, steps[i].edge, steps[i].quality);
+        if (blob && blob.size <= 1800 * 1024) break;
+      }
+      if (!blob) throw new Error("사진을 줄이지 못했습니다.");
+      if (blob.size > 2 * 1024 * 1024) throw new Error("사진이 너무 큽니다. 더 작은 사진으로 올려 주세요.");
+      return { dataUrl: await blobToDataUrl(blob), blob: blob };
+    }
+
+    async function onReadyShotFile(file) {
+      if (!file || readingShot) return;
+      readingShot = true;
+      document.getElementById("readyShotBtn").disabled = true;
+      document.getElementById("saveBtn").disabled = true;
+      setShotStatus("사진을 준비하고 있어요.");
+      try {
+        const prepared = await fileToJpegDataUrl(file);
+        pendingShotDataUrl = prepared.dataUrl;
+        showShotPreview(pendingShotDataUrl);
+        document.getElementById("readyShotClear").classList.remove("hidden");
+        const rosterBibs = ((event && event.participants) || []).map(function (row) { return row.bib; });
+        const read = await CheerBibOcr.recognizeBib(prepared.blob, { rosterBibs: rosterBibs });
+        if (read && read.bib) {
+          document.getElementById("bib").value = read.bib;
+          setShotStatus("사진에서 읽음, 맞는지 확인해 주세요");
+        } else {
+          setShotStatus("배번을 읽지 못했습니다. 숫자를 직접 입력해 주세요.");
+        }
+      } catch (err) {
+        setShotStatus(err.message || "사진을 올리지 못했습니다. 배번은 직접 입력할 수 있습니다.");
+      } finally {
+        readingShot = false;
+        document.getElementById("readyShotBtn").disabled = false;
+        document.getElementById("saveBtn").disabled = false;
+      }
     }
 
     ["bib", "goalH", "goalM", "goalS"].forEach(function (id) {
@@ -194,6 +328,19 @@
       el.addEventListener("compositionend", function () { composing = false; });
     });
 
+    document.getElementById("readyShotBtn").addEventListener("click", function () {
+      document.getElementById("readyShotFile").click();
+    });
+    document.getElementById("readyShotFile").addEventListener("change", function (changeEvent) {
+      const file = changeEvent.target.files && changeEvent.target.files[0];
+      changeEvent.target.value = "";
+      onReadyShotFile(file);
+    });
+    document.getElementById("readyShotClear").addEventListener("click", function () {
+      pendingShotDataUrl = "";
+      setShotStatus("");
+      renderForm();
+    });
     document.getElementById("nickSearch").addEventListener("input", renderNicks);
     document.getElementById("nickList").addEventListener("click", function (event) {
       const btn = event.target.closest("[data-nick]");
@@ -239,6 +386,7 @@
         goalM: val("goalM"),
         goalS: val("goalS"),
       });
+      if (pendingShotDataUrl) body.imageBase64 = pendingShotDataUrl;
       const hasGoal = body.goalFinishSec != null || !!(participant() || {}).goalFinishSec;
       const hasStart = ((event && event.waves) || []).length > 0;
       document.getElementById("saveBtn").disabled = true;
@@ -266,7 +414,7 @@
 
     async function load() {
       if (!eventId) {
-        showError("eventId가 없습니다.");
+        showError("대회 링크가 올바르지 않습니다.");
         return;
       }
       const res = await fetch(API_BASE + "?action=group-events&subAction=detail&eventId=" + encodeURIComponent(eventId));

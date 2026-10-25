@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>응원 (시험) - 동탄 마라톤 클럽</title>
+  <meta name="app-version" content="0.21.0" />
+  <title>응원 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../../assets/design-tokens.css" />
   <style>
@@ -18,7 +19,12 @@
       padding: 20px;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
-    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+    .lab { background: #F1F5F9; color: #334155; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; line-height: 1.45; }
+    .shot { display: block; width: 100%; margin: 8px 0 0; padding: 0; border: none; background: none; cursor: pointer; }
+    .shot img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; display: block; }
+    .lightbox { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    .lightbox img { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 8px; }
+    .lightbox .btn { margin-bottom: 12px; }
     .lab a { color: inherit; }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 6px; }
@@ -65,7 +71,7 @@
 </head>
 <body>
   <div class="wrap">
-    <p class="lab">시험 중인 화면입니다. <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
+    <p class="lab">링크를 받은 분만 보는 화면입니다. <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
     <h1 id="title">응원</h1>
     <p class="meta" id="meta">풀코스 추정 위치</p>
     <div class="views" id="views">
@@ -79,6 +85,10 @@
     <div id="detailView" class="hidden">
       <button type="button" class="btn back" id="backBtn">뒤로</button>
       <div class="detail" id="detailBody"></div>
+    </div>
+    <div id="shotLightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="레디샷">
+      <button type="button" class="btn" id="shotClose">닫기</button>
+      <img id="shotLarge" alt="레디샷" />
     </div>
     <div id="loading" class="status">불러오는 중…</div>
     <div id="error" class="status hidden">
@@ -172,7 +182,7 @@
           : CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) + " · " +
             CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km · 도착 예상 " + hhmm(runner.etaFinishAt);
         return '<button type="button" class="row" data-nick="' + esc(runner.nickname) + '">' +
-          '<div class="nick">' + (i + 1) + ". " + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩</span>' : "") + "</div>" +
+          '<div class="nick">' + (i + 1) + ". " + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩 기록</span>' : "") + "</div>" +
           '<div class="sub">' + sub + "</div>" +
           "</button>";
       }
@@ -238,8 +248,12 @@
         return "<tr><td>" + esc(split.label) + "</td><td>" + esc(split.time) + "</td><td>" + cum + "</td><td>" + seg + "</td></tr>";
       }).join("");
       const splits = splitRows ? "<table class='splits'><thead><tr><th>구간</th><th>누적기록</th><th>누적 페이스</th><th>구간 페이스</th></tr></thead><tbody>" + splitRows + "</tbody></table>" : "";
+      const shot = runner.readyShotUrl
+        ? "<button type='button' class='shot' id='shotOpen'><img src='" + esc(runner.readyShotUrl) + "' alt='레디샷'></button>"
+        : "";
       document.getElementById("detailBody").innerHTML =
-        "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩</span>" : "") + "</div>" +
+        "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩 기록</span>" : "") + "</div>" +
+        shot +
         "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
         "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
         " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
@@ -250,6 +264,13 @@
         "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
         " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
         (splits || "<p class='hint'>칩 구간 없음</p>");
+      const shotOpen = document.getElementById("shotOpen");
+      if (shotOpen) {
+        shotOpen.addEventListener("click", function () {
+          document.getElementById("shotLarge").src = runner.readyShotUrl;
+          document.getElementById("shotLightbox").classList.remove("hidden");
+        });
+      }
       if (view !== "detail") prevView = view;
       view = "detail";
       applyView();
@@ -277,7 +298,7 @@
 
     async function loadBoard() {
       if (!eventId) {
-        showError("eventId가 없습니다.");
+        showError("대회 링크가 올바르지 않습니다.");
         return;
       }
       const res = await fetch(API_BASE + "?action=group-events&subAction=cheer-board&eventId=" + encodeURIComponent(eventId));
@@ -345,6 +366,14 @@
       }
     });
 
+    document.getElementById("shotClose").addEventListener("click", function () {
+      document.getElementById("shotLightbox").classList.add("hidden");
+      document.getElementById("shotLarge").removeAttribute("src");
+    });
+    document.getElementById("shotLightbox").addEventListener("click", function (event) {
+      if (event.target.id !== "shotLightbox") return;
+      document.getElementById("shotClose").click();
+    });
     document.getElementById("bibLink").href = "bib.html?eventId=" + encodeURIComponent(eventId);
     loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
   </script>
