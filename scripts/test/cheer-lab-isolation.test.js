@@ -12,11 +12,11 @@ function rootHtmlFiles() {
 }
 
 describe("cheer pages are a public feature off the member tab bar", () => {
-  it("lives under cheer/ without a trial banner or noindex", () => {
+  it("lives under cheer/ without a trial banner and stays noindex", () => {
     assert.equal(fs.existsSync(path.join(root, "lab/cheer")), false);
     for (const page of pages) {
       const html = fs.readFileSync(path.join(cheerDir, page), "utf8");
-      assert.doesNotMatch(html, /noindex/, page);
+      assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/, page);
       assert.doesNotMatch(html, /시험|베타|class="lab"/, page);
       assert.match(html, /\.\.\/assets\//, page);
       assert.doesNotMatch(html, /(?:src|href)="assets\//, page);

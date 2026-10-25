@@ -38,7 +38,7 @@ describe("cheer pages for operators, cheerers, and runners", () => {
     assert.match(html, /아직 참가 명단이 없습니다/);
     assert.match(html, /본인이 없으면 운영진에게 알려 주세요/);
     assert.match(html, /응원 보드 링크를 가진 누구나 사진을 볼 수 있어요/);
-    assert.doesNotMatch(html, /noindex/);
+    assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
     assert.match(html, /사진에서 읽음, 맞는지 확인해 주세요/);
     assert.match(html, /cheer-bib-ocr\.js/);
     assert.match(html, /1280/);
@@ -60,12 +60,13 @@ describe("cheer pages for operators, cheerers, and runners", () => {
     assert.match(html, /기록 없음/);
     assert.match(html, /칩 기록이 없습니다/);
     assert.doesNotMatch(html, /시험|총무가 조 출발|링크를 받은 분만/);
-    assert.doesNotMatch(html, /noindex/);
+    assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
     assert.doesNotMatch(html, /eventId가 없습니다/);
   });
 
   it("uses operator wording without a test banner", () => {
     const html = read("cheer/waves.html");
+    assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
     assert.doesNotMatch(html, /시험/);
     assert.doesNotMatch(html, /러너/);
     assert.doesNotMatch(html, /eventId가 없습니다/);
