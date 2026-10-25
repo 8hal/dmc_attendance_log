@@ -77,11 +77,16 @@ function projectRunner(input) {
   }
 
   const chip = !!(lastSplit && Number(lastSplit.km) > 0);
+  // 칩 기록이 있으면 지금까지의 실제 평균 페이스로 다음 위치를 추정한다.
+  const chipPace = chip && Number(lastSplit.elapsedSec) > 0
+    ? Number(lastSplit.elapsedSec) / Number(lastSplit.km)
+    : null;
+  const projPace = chipPace && chipPace >= 120 && chipPace <= 1200 ? chipPace : goalPace;
   let km;
   if (!chip) {
     km = Math.min(FULL_KM, rawElapsed / goalPace);
   } else {
-    const extra = Math.max(0, rawElapsed - Number(lastSplit.elapsedSec)) / goalPace;
+    const extra = Math.max(0, rawElapsed - Number(lastSplit.elapsedSec)) / projPace;
     km = Math.min(FULL_KM, Number(lastSplit.km) + extra);
   }
 
@@ -97,7 +102,7 @@ function projectRunner(input) {
       elapsedSec = Math.round(goalFinishSec);
     } else {
       const remain = Math.max(0, FULL_KM - Number(lastSplit.km));
-      elapsedSec = Math.round(Number(lastSplit.elapsedSec) + remain * goalPace);
+      elapsedSec = Math.round(Number(lastSplit.elapsedSec) + remain * projPace);
     }
     avgPace = elapsedSec / FULL_KM;
   }
