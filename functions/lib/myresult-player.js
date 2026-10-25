@@ -106,8 +106,8 @@ function usableGunDuration(raw, netTime) {
  */
 function myResultPlayerToRecord(player) {
   if (!player || typeof player !== "object") return null;
-  const netTime = normNetTime(player.result_nettime);
-  if (!netTime || netTime === "00:00:00") return null;
+  const rawNet = normNetTime(player.result_nettime);
+  const netTime = rawNet && rawNet !== "00:00:00" ? rawNet : "";
 
   const records = Array.isArray(player.records) ? player.records : [];
   const points = records
@@ -141,6 +141,9 @@ function myResultPlayerToRecord(player) {
       splits.push({ label: p.label, time: formatElapsedMs(p.timeMs - startMs) });
     }
   }
+
+  // 레이스 중(완주 전)에도 구간 기록이 있으면 실시간 응원용으로 돌려준다.
+  if (!netTime && splits.length === 0) return null;
 
   const finish = points.find((p) => p.label === "도착")
     || points.slice().sort((a, b) => (b.distance || 0) - (a.distance || 0))[0];
