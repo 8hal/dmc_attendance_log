@@ -57,6 +57,10 @@
     .picker .hint { margin: 0 0 8px; }
     .picker .nicks { display: flex; flex-wrap: wrap; gap: 8px; }
     .picker .nicks button { border: 1px solid #2563EB; color: #2563EB; background: #EFF6FF; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
+      table.splits { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+    table.splits th, table.splits td { padding: 6px 4px; text-align: right; border-bottom: 1px solid #e5e7eb; }
+    table.splits th:first-child, table.splits td:first-child { text-align: left; }
+    table.splits th { font-size: 12px; color: #6b7280; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -207,6 +211,12 @@
       document.getElementById("viewRank").classList.toggle("active", view === "rank");
     }
 
+    function toSec(t) {
+      const m = String(t || "").trim().match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/);
+      if (!m) return null;
+      return m[3] != null ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : (+m[1]) * 60 + (+m[2]);
+    }
+
     async function openRunner(nickname) {
       selected = nickname;
       const url = API_BASE + "?action=group-events&subAction=cheer-runner&eventId=" +
@@ -215,10 +225,19 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "선수를 찾지 못했습니다");
       const runner = data.runner;
-      const splits = (data.splits || []).map(function (split) {
-        return "<li>" + esc(split.label) + " · " + esc(split.time) +
-          (split.km != null ? " · " + CheerCourse.formatKm(split.km) + " km" : "") + "</li>";
+      let prevKm = 0, prevSec = 0;
+      const splitRows = (data.splits || []).map(function (split) {
+        const sec = toSec(split.time);
+        const km = split.km != null ? Number(split.km) : null;
+        let cum = "-", seg = "-";
+        if (sec != null && km != null && km > 0) {
+          cum = CheerCourse.formatPace(sec / km);
+          if (km > prevKm && sec > prevSec) seg = CheerCourse.formatPace((sec - prevSec) / (km - prevKm));
+          prevKm = km; prevSec = sec;
+        }
+        return "<tr><td>" + esc(split.label) + "</td><td>" + esc(split.time) + "</td><td>" + cum + "</td><td>" + seg + "</td></tr>";
       }).join("");
+      const splits = splitRows ? "<table class='splits'><thead><tr><th>구간</th><th>누적기록</th><th>누적 페이스</th><th>구간 페이스</th></tr></thead><tbody>" + splitRows + "</tbody></table>" : "";
       document.getElementById("detailBody").innerHTML =
         "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩</span>" : "") + "</div>" +
         "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
@@ -230,7 +249,7 @@
             CheerCourse.formatElapsed(runner.projectedFinishSec) + ")</div>") +
         "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
         " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
-        (splits ? "<ul>" + splits + "</ul>" : "<p class='hint'>칩 구간 없음</p>");
+        (splits || "<p class='hint'>칩 구간 없음</p>");
       if (view !== "detail") prevView = view;
       view = "detail";
       applyView();
