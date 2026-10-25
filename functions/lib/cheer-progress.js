@@ -73,6 +73,8 @@ function projectRunner(input) {
       elapsedSec: 0,
       avgPaceSecPerKm: goalPace,
       chip: false,
+      finished: false,
+      projectedFinishSec: Math.round(goalFinishSec),
     };
   }
 
@@ -107,11 +109,25 @@ function projectRunner(input) {
     avgPace = elapsedSec / FULL_KM;
   }
 
+  const finished = !!(chip && (lastSplit.fromNet || Number(lastSplit.km) >= FULL_KM - 1e-9));
+  let projectedFinishSec;
+  if (finished) {
+    projectedFinishSec = Number(lastSplit.elapsedSec);
+  } else if (chip) {
+    projectedFinishSec = Math.round(
+      Number(lastSplit.elapsedSec) + Math.max(0, FULL_KM - Number(lastSplit.km)) * projPace
+    );
+  } else {
+    projectedFinishSec = Math.round(goalFinishSec);
+  }
+
   return {
     km,
     elapsedSec,
     avgPaceSecPerKm: avgPace,
     chip,
+    finished,
+    projectedFinishSec,
   };
 }
 
@@ -207,6 +223,12 @@ function toPublicRunner(participant, wave, projected, startOverride) {
     elapsedSec: projected.elapsedSec,
     avgPaceSecPerKm: projected.avgPaceSecPerKm,
     chip: projected.chip === true,
+    finished: projected.finished === true,
+    finishSec: projected.finished === true ? projected.elapsedSec : null,
+    projectedFinishSec: Number.isFinite(projected.projectedFinishSec) ? projected.projectedFinishSec : null,
+    etaFinishAt: Number.isFinite(projected.projectedFinishSec) && Number.isFinite(projected.startMs)
+      ? kstIso(projected.startMs + projected.projectedFinishSec * 1000)
+      : null,
   };
 }
 
@@ -231,9 +253,13 @@ function buildCheerBoard(input) {
       nowMs,
       lastSplit,
     });
+    projected.startMs = startMs;
     runners.push(toPublicRunner(participant, wave, projected, chipMs != null ? kstIso(chipMs) : null));
   }
   runners.sort((a, b) => {
+    // 레이스 중인 선수가 위, 완주자는 아래에 기록순.
+    if (a.finished !== b.finished) return a.finished ? 1 : -1;
+    if (a.finished && b.finished && a.finishSec !== b.finishSec) return a.finishSec - b.finishSec;
     if (b.km !== a.km) return b.km - a.km;
     return String(a.nickname).localeCompare(String(b.nickname), "ko");
   });

@@ -52,6 +52,7 @@
     .hidden { display: none !important; }
     .status { text-align: center; padding: 32px 8px; color: #64748B; }
     .back { margin-bottom: 10px; }
+    .section { font-weight: 800; color: #334155; font-size: 14px; margin: 8px 2px 0; }
     .picker { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
     .picker .hint { margin: 0 0 8px; }
     .picker .nicks { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -140,7 +141,7 @@
         parts.push('<circle cx="' + p.x + '" cy="' + p.y + '" r="1.3" fill="#64748B"/>');
         parts.push('<text x="' + p.x + '" y="' + (p.y - 3) + '" font-size="3.2" text-anchor="middle" fill="#64748B">' + label + '</text>');
       });
-      CheerCourse.clusterRunners(runners).forEach(function (group) {
+      CheerCourse.clusterRunners(runners.filter(function (r) { return !r.finished; })).forEach(function (group) {
         const p = xy(group.km);
         const lead = group.runners.slice().reverse();
         const n = lead.length;
@@ -159,13 +160,27 @@
         root.innerHTML = "";
         return;
       }
-      root.innerHTML = runners.map(function (runner) {
+      const racing = runners.filter(function (r) { return !r.finished; });
+      const done = runners.filter(function (r) { return r.finished; });
+      function row(runner, i) {
+        const sub = runner.finished
+          ? "완주 " + CheerCourse.formatElapsed(runner.finishSec) + " · " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km"
+          : CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) + " · " +
+            CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km · 도착 예상 " + hhmm(runner.etaFinishAt);
         return '<button type="button" class="row" data-nick="' + esc(runner.nickname) + '">' +
-          '<div class="nick">' + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩</span>' : "") + "</div>" +
-          '<div class="sub">' + esc(runner.waveName) + " · " + CheerCourse.formatKm(runner.km) + " km · 경과 " +
-          CheerCourse.formatElapsed(runner.elapsedSec) + " · " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
+          '<div class="nick">' + (i + 1) + ". " + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩</span>' : "") + "</div>" +
+          '<div class="sub">' + sub + "</div>" +
           "</button>";
-      }).join("");
+      }
+      let html = "";
+      if (racing.length) html += '<div class="section">레이스 중 ' + racing.length + "명</div>" + racing.map(row).join("");
+      if (done.length) html += '<div class="section">완주 ' + done.length + "명</div>" + done.map(row).join("");
+      root.innerHTML = html;
+    }
+
+    function hhmm(iso) {
+      const t = String(iso || "").slice(11, 16);
+      return t || "—";
     }
 
     function renderEmpty() {
@@ -209,6 +224,10 @@
         "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
         "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
         " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
+        (runner.finished
+          ? "<div class='sub'><b>완주 " + CheerCourse.formatElapsed(runner.finishSec) + "</b></div>"
+          : "<div class='sub'><b>피니시 도착 예상 " + hhmm(runner.etaFinishAt) + "</b> (예상 기록 " +
+            CheerCourse.formatElapsed(runner.projectedFinishSec) + ")</div>") +
         "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
         " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
         (splits ? "<ul>" + splits + "</ul>" : "<p class='hint'>칩 구간 없음</p>");
