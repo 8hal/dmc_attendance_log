@@ -846,6 +846,18 @@
           </div>
           <div id="bib-missing-list"></div>
           <p class="hint">갭(이름 매칭) 목록 없음. 독려만.</p>
+          <div class="qr-box" id="cheer-links">
+            <p class="hint" style="margin-top:14px;text-align:left;">대회 전에는 선수에게 배번 링크를, 당일에는 응원 보드 링크를 보내세요.</p>
+            <p class="hint" style="text-align:left;"><a id="cheer-waves-link" href="cheer/waves.html">조·출발 시각 입력</a></p>
+            <p style="font-weight:700;font-size:14px;margin:12px 0 4px;text-align:left;">선수용 배번·레디샷</p>
+            <img id="cheer-bib-qr" alt="배번·레디샷 QR" width="160" height="160" />
+            <div class="link-box" id="cheer-bib-link-text"></div>
+            <button type="button" class="btn btn-ghost" id="copy-cheer-bib">배번·레디샷 링크 복사</button>
+            <p style="font-weight:700;font-size:14px;margin:16px 0 4px;text-align:left;">응원 보드</p>
+            <img id="cheer-board-qr" alt="응원 보드 QR" width="160" height="160" />
+            <div class="link-box" id="cheer-board-link-text"></div>
+            <button type="button" class="btn btn-ghost" id="copy-cheer-board">응원 보드 링크 복사</button>
+          </div>
         </section>
 
         <!-- ④ 스크랩 -->
@@ -1024,6 +1036,29 @@
       return hasAdminAccess(sessionStorage);
     }
 
+    const CHEER_BIB_PATH = "cheer/bib.html";
+    const CHEER_BOARD_PATH = "cheer/index.html";
+    const CHEER_WAVES_PATH = "cheer/waves.html";
+
+    function cheerPageUrl(file) {
+      if (!eventId) return "";
+      return new URL(file + "?eventId=" + encodeURIComponent(eventId), window.location.href).href;
+    }
+
+    function setQrLink(textId, imgId, url) {
+      const text = document.getElementById(textId);
+      const img = document.getElementById(imgId);
+      if (text) text.textContent = url || "—";
+      if (!img) return;
+      if (url) {
+        img.src =
+          "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+          encodeURIComponent(url);
+      } else {
+        img.removeAttribute("src");
+      }
+    }
+
     function participantUrl() {
       if (!eventId) return "";
       return new URL(
@@ -1100,6 +1135,15 @@
           encodeURIComponent(abs);
       } else {
         qr.removeAttribute("src");
+      }
+
+      setQrLink("cheer-bib-link-text", "cheer-bib-qr", cheerPageUrl(CHEER_BIB_PATH));
+      setQrLink("cheer-board-link-text", "cheer-board-qr", cheerPageUrl(CHEER_BOARD_PATH));
+      const wavesLink = document.getElementById("cheer-waves-link");
+      if (wavesLink) {
+        wavesLink.href = eventId
+          ? CHEER_WAVES_PATH + "?eventId=" + encodeURIComponent(eventId)
+          : CHEER_WAVES_PATH;
       }
     }
 
@@ -2378,6 +2422,12 @@
     document.getElementById("guest-add-btn").addEventListener("click", addGuest);
     document.getElementById("copy-link-btn").addEventListener("click", () =>
       copyText(participantUrl(), "탑승 링크를 복사했습니다")
+    );
+    document.getElementById("copy-cheer-bib").addEventListener("click", () =>
+      copyText(cheerPageUrl(CHEER_BIB_PATH), "배번·레디샷 링크를 복사했습니다")
+    );
+    document.getElementById("copy-cheer-board").addEventListener("click", () =>
+      copyText(cheerPageUrl(CHEER_BOARD_PATH), "응원 보드 링크를 복사했습니다")
     );
     document.getElementById("refresh-all-btn").addEventListener("click", () => loadAll());
     document.getElementById("save-source-btn").addEventListener("click", saveGroupSource);

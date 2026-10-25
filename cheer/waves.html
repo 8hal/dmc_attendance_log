@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="robots" content="noindex, nofollow" />
   <meta name="app-version" content="0.21.0" />
   <title>조·출발 시각 - 동탄 마라톤 클럽</title>
-  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
-  <link rel="stylesheet" href="../../assets/design-tokens.css" />
+  <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../assets/design-tokens.css" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -19,8 +18,8 @@
     }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 8px; }
-    .lab { background: #F1F5F9; color: #334155; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; line-height: 1.45; }
-    .lab a { color: inherit; }
+    .nav { margin: 0 0 12px; font-size: 14px; }
+    .nav a { color: #2563EB; font-weight: 700; text-decoration: none; }
     .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-top: 12px; }
     label { display: block; font-size: 13px; font-weight: 700; margin: 12px 0 6px; }
     input { width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 16px; }
@@ -37,7 +36,7 @@
 </head>
 <body>
   <div class="wrap">
-    <p class="lab">조와 출발 시각을 등록하는 화면입니다. <a id="boardLink" href="index.html">응원 보드</a> · <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
+    <p class="nav"><a id="boardLink" href="index.html">응원 보드</a> · <a id="bibLink" href="bib.html">배번·레디샷</a></p>
     <h1>조·출발 시각</h1>
     <p class="hint" id="eventInfo">불러오는 중…</p>
     <div class="card">

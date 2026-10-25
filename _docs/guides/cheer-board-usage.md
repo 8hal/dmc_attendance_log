@@ -1,12 +1,12 @@
-# 응원 보드 사용 가이드 (춘천마라톤 시험판)
+# 응원 보드 사용 가이드
 
 **작성일**: 2026-10-22  
+**갱신**: 2026-10-25 — 정식 경로 `/cheer/`. 예전 `/lab/cheer/` 주소는 같은 쿼리로 이어집니다.  
 **대상**: 총무 · 참가자 · 응원자  
 **대회**: 2026 춘천마라톤 (2026-10-25 일요일 09:00 출발)  
 **대회 ID**: `evt_2026-10-25_2026`
 
-> 일반 회원 화면에는 연결되어 있지 않습니다.  
-> 아래 링크를 받은 분만 들어갈 수 있습니다.
+> 회원 홈 탭에는 없습니다. 운영 화면(단체 대회 운영 → 배번)에서 링크와 QR을 복사해 보냅니다.
 
 ---
 
@@ -14,9 +14,9 @@
 
 | 누가 쓰나요 | 용도 | 링크 (2026 춘천마라톤) |
 |---|---|---|
-| **총무** | 출발 시각(조) 등록 | https://dmc-attendance.web.app/lab/cheer/waves.html?eventId=evt_2026-10-25_2026 |
-| **참가자** | 배번 · 레디샷 · 완주 목표 시간 입력 | https://dmc-attendance.web.app/lab/cheer/bib.html?eventId=evt_2026-10-25_2026 |
-| **누구나 (응원)** | 실시간 추정 위치 보드 | https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026 |
+| **총무** | 출발 시각(조) 등록 | https://dmc-attendance.web.app/cheer/waves.html?eventId=evt_2026-10-25_2026 |
+| **참가자** | 배번 · 레디샷 · 완주 목표 시간 입력 | https://dmc-attendance.web.app/cheer/bib.html?eventId=evt_2026-10-25_2026 |
+| **누구나 (응원)** | 실시간 추정 위치 보드 | https://dmc-attendance.web.app/cheer/index.html?eventId=evt_2026-10-25_2026 |
 
 기존 전체 회원용 배번 입력(`my-bib.html`)은 평소와 똑같이 작동합니다. 응원 보드에 나올 참가자에게만 위 두 번째 링크를 보내면 됩니다.
 
@@ -31,16 +31,16 @@
 4. **기록 소스**: `event-admin.html`이나 `group.html`에서 기록 소스를 `myresult` · 대회 ID `176`으로 설정해 두면, 대회 당일 30초 간격 자동 스크랩과 연결되어 구간 기록·완주 기록(`칩` 표시)까지 응원 보드에 반영됩니다. 소스를 비워 두어도 출발 시각과 완주 목표 시간으로 위치 추정은 정상 작동합니다.
 
 ### 순서 2. 출발 시각 등록 (1분)
-1. [조 등록 페이지](https://dmc-attendance.web.app/lab/cheer/waves.html?eventId=evt_2026-10-25_2026)를 엽니다.
+1. [조 등록 페이지](https://dmc-attendance.web.app/cheer/waves.html?eventId=evt_2026-10-25_2026)를 엽니다.
 2. 기본 한 줄에 이름 `출발`, 시각 `09:00`을 넣습니다. (이번 춘천은 전원 같은 조로 진행합니다.)
 3. **운영 비밀번호**를 넣고 **조 저장**을 누릅니다.
 4. "저장했습니다 (1개 조)"가 뜨면 끝입니다.
 
 ### 순서 3. 내 폰으로 1분 리허설 (권장)
-시험 참가자에게 보내기 전에 본인 카카오톡으로 먼저 한 번 해 봅니다.
-1. 본인 나와의 채팅에 [배번·목표 입력 링크](https://dmc-attendance.web.app/lab/cheer/bib.html?eventId=evt_2026-10-25_2026)를 보내고 카카오톡 안에서 엽니다.
+선수에게 보내기 전에 본인 카카오톡으로 먼저 한 번 해 봅니다.
+1. 본인 나와의 채팅에 [배번·목표 입력 링크](https://dmc-attendance.web.app/cheer/bib.html?eventId=evt_2026-10-25_2026)를 보내고 카카오톡 안에서 엽니다.
 2. 본인 닉네임 선택 → `풀` 선택 → 배번과 완주 목표 시간(예: `3`시간 `50`분 `0`초) 입력 → **저장**.
-3. [응원 보드](https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026)를 열어 출발점(`0 km`)에 본인 닉네임 점이 찍히는지 확인합니다.
+3. [응원 보드](https://dmc-attendance.web.app/cheer/index.html?eventId=evt_2026-10-25_2026)를 열어 출발점(`0 km`)에 본인 닉네임 점이 찍히는지 확인합니다.
 
 ---
 
@@ -55,7 +55,7 @@
 아래 링크에서 배번과 완주 목표 시간을 넣어 주세요.
 
 👉 배번·목표 입력:
-https://dmc-attendance.web.app/lab/cheer/bib.html?eventId=evt_2026-10-25_2026
+https://dmc-attendance.web.app/cheer/bib.html?eventId=evt_2026-10-25_2026
 
 입력 방법:
 1. 본인 닉네임 선택
@@ -69,7 +69,7 @@ https://dmc-attendance.web.app/lab/cheer/bib.html?eventId=evt_2026-10-25_2026
 잘못 넣었으면 같은 링크에서 다시 저장하면 덮어써집니다.
 
 👉 일요일 응원 보드 보기:
-https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026
+https://dmc-attendance.web.app/cheer/index.html?eventId=evt_2026-10-25_2026
 ```
 
 ### 참가자가 알아두면 좋은 점
@@ -81,7 +81,7 @@ https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026
 
 ## 4. 일요일 대회 당일 보는 법 (응원자 · 운영)
 
-[응원 보드 열기](https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026)
+[응원 보드 열기](https://dmc-attendance.web.app/cheer/index.html?eventId=evt_2026-10-25_2026)
 
 - **출발 전 (09:00 이전)**: 목표 시간을 넣은 풀코스 참가자가 모두 출발점(`0 km`)에 모여 있습니다.
 - **출발 후 (09:00 이후)**: 출발 시각과 각자의 완주 목표 시간으로 계산한 추정 위치(km)가 30초마다 자동으로 움직입니다.
@@ -95,7 +95,7 @@ https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026
 
 ## 5. 대회 종료 후 기록 확정 (평소와 동일)
 
-응원 보드 시험과 별개로, 공식 기록 확정은 평소 방식 그대로 진행합니다.
+공식 기록 확정은 평소 방식 그대로 진행합니다.
 1. [리포트 페이지](https://dmc-attendance.web.app/report.html)에서 소스 `myresult`, 대회 ID `176`으로 스크랩합니다.
 2. 결과를 검수하고 확정합니다.
 
@@ -109,4 +109,4 @@ https://dmc-attendance.web.app/lab/cheer/index.html?eventId=evt_2026-10-25_2026
 | 목표 시간을 넣었는데 보드에 안 나와요 | ① 종목이 `풀`이 아님 ② 조(출발 시각)가 아직 등록 안 됨 ③ 목표 시간을 비우고 저장함 | 보드 안내 문구 확인. 조가 없으면 `waves.html`에서 `출발 09:00` 저장, 목표가 없으면 `bib.html`에서 목표 시간 입력 |
 | 목표 시간을 잘못 넣었어요 | 입력 실수 | `bib.html`에서 같은 닉네임으로 올바른 목표 시간을 다시 저장하면 바로 바뀜 |
 | 보드에 "대회를 찾지 못했습니다"가 떠요 | 링크 뒷부분(`?eventId=...`)이 잘림 | 링크 전체를 다시 복사해 열기 |
-| 다음에 배포할 때 응원 화면이 빠지나요? | 예전 `main`에는 응원 보드가 없었고, 프로덕션은 `v0.20.1` 시험 브랜치였음 | 응원 보드가 `main`에 합쳐진 커밋을 배포하세요. 그 전 `main`만 올리면 대회 중에 고친 응원 화면이 빠집니다. 레디샷은 Storage 규칙 배포가 함께 필요합니다. 절차는 `_docs/releases/v0.21.0.md` |
+| 다음에 배포할 때 응원 화면이 빠지나요? | 지금 프로덕션(`v0.20.1`)에는 이 화면이 없음 | 이 브랜치가 `main`에 합쳐진 뒤 배포하세요. 그 전 `main`만 올리면 응원 화면이 빠집니다. 레디샷은 Storage 규칙 배포가 함께 필요합니다. 절차는 `_docs/releases/v0.21.0.md` |

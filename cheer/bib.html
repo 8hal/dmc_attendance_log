@@ -4,11 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
-  <meta name="robots" content="noindex, nofollow" />
   <meta name="app-version" content="0.21.0" />
-  <title>배번·목표 입력 - 동탄 마라톤 클럽</title>
-  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
-  <link rel="stylesheet" href="../../assets/design-tokens.css" />
+  <title>배번·레디샷 - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../assets/design-tokens.css" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -19,12 +18,12 @@
       padding: 20px;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
-    .lab { background: #F1F5F9; color: #334155; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; line-height: 1.45; }
+    .nav { margin: 0 0 12px; font-size: 14px; }
     .shot { margin-top: 12px; }
     .shot img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 8px; margin-top: 8px; background: #F8FAFC; }
     .btn-ghost { background: #fff; color: #2563EB; border: 1px solid #2563EB; margin-top: 8px; }
     .btn:disabled { opacity: 0.6; cursor: default; }
-    .lab a { color: inherit; }
+    .nav a { color: #2563EB; font-weight: 700; text-decoration: none; }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 8px; }
     .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-top: 12px; }
@@ -68,12 +67,12 @@
 </head>
 <body>
   <div class="wrap">
-    <p class="lab"><a id="boardLink" href="index.html">응원 보드</a>로 돌아가기</p>
-    <h1>배번·목표 입력</h1>
+    <p class="nav"><a id="boardLink" href="index.html">응원 보드 보기</a></p>
+    <h1>배번·레디샷</h1>
     <p class="hint" id="eventInfo">불러오는 중…</p>
     <div id="error" class="error hidden"></div>
     <div id="pick" class="card hidden">
-      <p class="hint">닉네임을 고르세요.</p>
+      <p class="hint">참가자 명단에 있는 닉네임만 나옵니다. 본인이 없으면 운영진에게 알려 주세요.</p>
       <input id="nickSearch" type="search" placeholder="닉네임 검색" autocomplete="off" />
       <div id="nickList"></div>
     </div>
@@ -81,7 +80,7 @@
       <p id="who"></p>
       <div class="chips" id="distChips"></div>
       <div class="shot">
-        <p class="hint" id="readyShotNotice">응원 보드 링크를 가진 누구나 사진을 볼 수 있어요</p>
+        <p class="hint" id="readyShotNotice">응원 보드 링크를 가진 누구나 사진을 볼 수 있어요. 대회 전에는 배번만 저장하고, 레디샷은 당일 아침에 올려도 됩니다.</p>
         <button type="button" class="btn btn-ghost" id="readyShotBtn">레디샷 올리기</button>
         <input id="readyShotFile" class="hidden" type="file" accept="image/*" />
         <img id="readyShotPreview" class="hidden" alt="레디샷 미리보기" />
@@ -113,10 +112,10 @@
     </form>
     <p id="done" class="card hidden">저장했습니다.</p>
   </div>
-  <script src="../../assets/event-home-action.js"></script>
-  <script src="../../assets/distance-utils.js"></script>
-  <script src="../../assets/event-bib-form.js"></script>
-  <script src="../../assets/cheer-bib-ocr.js"></script>
+  <script src="../assets/event-home-action.js"></script>
+  <script src="../assets/distance-utils.js"></script>
+  <script src="../assets/event-bib-form.js"></script>
+  <script src="../assets/cheer-bib-ocr.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -162,13 +161,29 @@
     }
 
     function renderNicks() {
+      const all = (event && event.participants) || [];
       const q = document.getElementById("nickSearch").value.trim();
-      const list = ((event && event.participants) || []).filter(function (row) {
+      const list = all.filter(function (row) {
         return !q || String(row.nickname || "").indexOf(q) >= 0;
       });
-      document.getElementById("nickList").innerHTML = list.map(function (row) {
+      const root = document.getElementById("nickList");
+      if (!all.length) {
+        root.innerHTML = '<p class="hint">아직 참가 명단이 없습니다. 운영진에게 알려 주세요.</p>';
+        return;
+      }
+      if (!list.length) {
+        root.innerHTML = '<p class="hint">그 닉네임은 명단에 없습니다.</p>';
+        return;
+      }
+      root.innerHTML = list.map(function (row) {
         return '<button type="button" class="nick-btn" data-nick="' + esc(row.nickname) + '">' + esc(row.nickname) + "</button>";
       }).join("");
+    }
+
+    function refreshShotButton() {
+      const row = participant();
+      const hasShot = !!(pendingShotDataUrl || (row && row.readyShotUrl));
+      document.getElementById("readyShotBtn").textContent = hasShot ? "레디샷 바꾸기" : "레디샷 올리기";
     }
 
     function renderForm() {
@@ -211,6 +226,7 @@
       else if (row.readyShotUrl) showShotPreview(row.readyShotUrl);
       else showShotPreview("");
       document.getElementById("readyShotClear").classList.toggle("hidden", !pendingShotDataUrl);
+      refreshShotButton();
     }
 
     function showShotPreview(src) {
@@ -305,6 +321,7 @@
         pendingShotDataUrl = prepared.dataUrl;
         showShotPreview(pendingShotDataUrl);
         document.getElementById("readyShotClear").classList.remove("hidden");
+        refreshShotButton();
         const rosterBibs = ((event && event.participants) || []).map(function (row) { return row.bib; });
         const read = await CheerBibOcr.recognizeBib(prepared.blob, { rosterBibs: rosterBibs });
         if (read && read.bib) {
@@ -398,12 +415,15 @@
         });
         const data = await res.json();
         if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
-        document.getElementById("form").classList.add("hidden");
-        let doneText = "저장했습니다.";
-        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
+        pendingShotDataUrl = "";
+        let doneText = "저장했습니다. 같은 화면에서 배번이나 레디샷을 다시 바꿀 수 있습니다.";
+        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다. 레디샷은 나중에 올려도 됩니다.";
         else if (distance === "full" && !hasStart) doneText = "저장했습니다. 출발 시각이 등록되면 응원 보드에 나옵니다.";
-        document.getElementById("done").textContent = doneText;
-        document.getElementById("done").classList.remove("hidden");
+        const done = document.getElementById("done");
+        done.textContent = doneText;
+        done.classList.remove("hidden");
+        await load();
+        done.scrollIntoView({ block: "center" });
       } catch (err) {
         formError.textContent = err.message || "저장 실패";
         formError.classList.remove("hidden");
