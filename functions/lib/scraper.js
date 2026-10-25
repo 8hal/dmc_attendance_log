@@ -1326,6 +1326,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         genderRank: r.genderRank || null,
         pace: r.pace || "",
         splits: Array.isArray(r.splits) ? r.splits : [],
+        ...(r.startClock ? { startClock: r.startClock } : {}),
         memberRealName: m.realName,
         memberNickname: m.nickname,
         memberGender: m.gender || "",

@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>응원 (시험) - 동탄 마라톤 클럽</title>
-  <link rel="icon" type="image/png" sizes="150x150" href="../../assets/dmc_logo.png" />
-  <link rel="stylesheet" href="../../assets/design-tokens.css" />
+  <meta name="app-version" content="0.21.0" />
+  <title>응원 - 동탄 마라톤 클럽</title>
+  <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
+  <link rel="stylesheet" href="../assets/design-tokens.css" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -18,8 +19,13 @@
       padding: 20px;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
-    .lab { background: #FEF3C7; color: #92400E; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
-    .lab a { color: inherit; }
+    .nav { margin: 0 0 12px; font-size: 14px; }
+    .shot { display: block; width: 100%; margin: 8px 0 0; padding: 0; border: none; background: none; cursor: pointer; }
+    .shot img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; display: block; }
+    .lightbox { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    .lightbox img { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 8px; }
+    .lightbox .btn { margin-bottom: 12px; }
+    .nav a { color: #2563EB; font-weight: 700; text-decoration: none; }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 6px; }
     .meta { margin: 0 0 14px; color: #64748B; font-size: 14px; }
@@ -52,11 +58,20 @@
     .hidden { display: none !important; }
     .status { text-align: center; padding: 32px 8px; color: #64748B; }
     .back { margin-bottom: 10px; }
+    .section { font-weight: 800; color: #334155; font-size: 14px; margin: 8px 2px 0; }
+    .picker { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+    .picker .hint { margin: 0 0 8px; }
+    .picker .nicks { display: flex; flex-wrap: wrap; gap: 8px; }
+    .picker .nicks button { border: 1px solid #2563EB; color: #2563EB; background: #EFF6FF; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
+      table.splits { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+    table.splits th, table.splits td { padding: 6px 4px; text-align: right; border-bottom: 1px solid #e5e7eb; }
+    table.splits th:first-child, table.splits td:first-child { text-align: left; }
+    table.splits th { font-size: 12px; color: #6b7280; font-weight: 600; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <p class="lab">시험 중인 화면입니다. <a id="bibLink" href="bib.html">배번·목표 입력</a></p>
+    <p class="nav"><a id="bibLink" href="bib.html">배번·레디샷</a></p>
     <h1 id="title">응원</h1>
     <p class="meta" id="meta">풀코스 추정 위치</p>
     <div class="views" id="views">
@@ -65,10 +80,15 @@
     </div>
     <p class="hint" id="emptyHint"></p>
     <div id="courseView" class="course" aria-label="5km 단위 ㄹ자 코스"></div>
+    <div id="picker" class="picker hidden"><p class="hint" id="pickerTitle"></p><div class="nicks" id="pickerNicks"></div></div>
     <div id="rankView" class="rank hidden"></div>
     <div id="detailView" class="hidden">
-      <button type="button" class="btn back" id="backBtn">순위로</button>
+      <button type="button" class="btn back" id="backBtn">뒤로</button>
       <div class="detail" id="detailBody"></div>
+    </div>
+    <div id="shotLightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="레디샷">
+      <button type="button" class="btn" id="shotClose">닫기</button>
+      <img id="shotLarge" alt="레디샷" />
     </div>
     <div id="loading" class="status">불러오는 중…</div>
     <div id="error" class="status hidden">
@@ -76,7 +96,7 @@
       <button type="button" class="btn" id="retryBtn">다시 시도</button>
     </div>
   </div>
-  <script src="../../assets/cheer-course.js"></script>
+  <script src="../assets/cheer-course.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -88,6 +108,7 @@
     let view = "course";
     let pollTimer = null;
     let selected = "";
+    let prevView = "course";
 
     function esc(value) {
       return String(value == null ? "" : value)
@@ -134,10 +155,12 @@
         parts.push('<circle cx="' + p.x + '" cy="' + p.y + '" r="1.3" fill="#64748B"/>');
         parts.push('<text x="' + p.x + '" y="' + (p.y - 3) + '" font-size="3.2" text-anchor="middle" fill="#64748B">' + label + '</text>');
       });
-      CheerCourse.clusterRunners(runners).forEach(function (group) {
+      CheerCourse.clusterRunners(runners.filter(function (r) { return !r.finished; })).forEach(function (group) {
         const p = xy(group.km);
-        const label = group.runners.length === 1 ? group.runners[0].nickname : String(group.runners.length);
-        parts.push('<circle class="runner-dot" data-nicks="' + esc(group.runners.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
+        const lead = group.runners.slice().reverse();
+        const n = lead.length;
+        const label = n === 1 ? lead[0].nickname : lead[0].nickname + " +" + (n - 1);
+        parts.push('<circle class="runner-dot" data-nicks="' + esc(lead.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
         parts.push('<text x="' + p.x + '" y="' + (p.y + 7) + '" font-size="3.4" text-anchor="middle" fill="#0F172A">' + esc(label) + '</text>');
       });
       parts.push("</svg>");
@@ -151,13 +174,43 @@
         root.innerHTML = "";
         return;
       }
-      root.innerHTML = runners.map(function (runner) {
+      const noRecord = [];
+      const racing = [];
+      const done = [];
+      runners.forEach(function (runner) {
+        if (runner.finished) done.push(runner);
+        else if (!runner.chip && Number(runner.km) >= 42.19) noRecord.push(runner);
+        else racing.push(runner);
+      });
+      const beforeStart = racing.length > 0 && done.length === 0 && noRecord.length === 0 &&
+        racing.every(function (runner) { return Number(runner.km) === 0; });
+      function row(runner, i) {
+        let sub;
+        if (runner.finished) {
+          sub = "완주 " + CheerCourse.formatElapsed(runner.finishSec) + " · " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km";
+        } else if (!runner.chip && Number(runner.km) >= 42.19) {
+          sub = "칩 기록이 없습니다. 목표 " + CheerCourse.formatElapsed(runner.goalFinishSec);
+        } else {
+          sub = CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) + " · " +
+            CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km · 도착 예상 " + hhmm(runner.etaFinishAt);
+        }
         return '<button type="button" class="row" data-nick="' + esc(runner.nickname) + '">' +
-          '<div class="nick">' + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩</span>' : "") + "</div>" +
-          '<div class="sub">' + esc(runner.waveName) + " · " + CheerCourse.formatKm(runner.km) + " km · 경과 " +
-          CheerCourse.formatElapsed(runner.elapsedSec) + " · " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
+          '<div class="nick">' + (i + 1) + ". " + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩 기록</span>' : "") + "</div>" +
+          '<div class="sub">' + sub + "</div>" +
           "</button>";
-      }).join("");
+      }
+      let html = "";
+      if (racing.length) {
+        html += '<div class="section">' + (beforeStart ? "출발 전 " : "레이스 중 ") + racing.length + "명</div>" + racing.map(row).join("");
+      }
+      if (noRecord.length) html += '<div class="section">기록 없음 ' + noRecord.length + "명</div>" + noRecord.map(row).join("");
+      if (done.length) html += '<div class="section">완주 ' + done.length + "명</div>" + done.map(row).join("");
+      root.innerHTML = html;
+    }
+
+    function hhmm(iso) {
+      const t = String(iso || "").slice(11, 16);
+      return t || "—";
     }
 
     function renderEmpty() {
@@ -165,11 +218,17 @@
       const waves = (board && board.waves) || [];
       const runners = (board && board.runners) || [];
       if (!waves.length) {
-        hint.textContent = "총무가 조 출발을 등록하면 점이 생깁니다.";
+        hint.textContent = "출발 시각이 등록되면 코스에 점이 생깁니다.";
       } else if (!runners.length) {
-        hint.textContent = "배번과 완주 목표 시간을 넣은 풀코스가 없습니다.";
+        hint.textContent = "아직 목표 시간을 넣은 풀코스 선수가 없습니다.";
+      } else if (runners.every(function (runner) { return runner.finished; })) {
+        hint.textContent = "모두 완주했습니다.";
+      } else if (runners.every(function (runner) { return !runner.finished && Number(runner.km) === 0; })) {
+        hint.textContent = "출발 전입니다. 출발하면 코스 위에 점이 움직입니다. 배번과 목표를 넣은 풀코스만 보입니다.";
+      } else if (runners.some(function (runner) { return !runner.chip; })) {
+        hint.textContent = "칩 기록이 있는 선수는 실제 페이스로, 없는 선수는 목표 페이스로 위치를 추정합니다. 배번과 목표를 넣은 풀코스만 보입니다.";
       } else {
-        hint.textContent = "점은 출발 시각과 완주 목표 시간으로 추정합니다.";
+        hint.textContent = "칩 기록으로 위치를 보여 줍니다. 점을 누르면 상세 기록을 봅니다.";
       }
     }
 
@@ -177,10 +236,17 @@
       const detail = view === "detail";
       document.getElementById("views").classList.toggle("hidden", detail);
       document.getElementById("courseView").classList.toggle("hidden", view !== "course");
+      if (view !== "course") document.getElementById("picker").classList.add("hidden");
       document.getElementById("rankView").classList.toggle("hidden", view !== "rank");
       document.getElementById("detailView").classList.toggle("hidden", !detail);
       document.getElementById("viewCourse").classList.toggle("active", view === "course");
       document.getElementById("viewRank").classList.toggle("active", view === "rank");
+    }
+
+    function toSec(t) {
+      const m = String(t || "").trim().match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/);
+      if (!m) return null;
+      return m[3] != null ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : (+m[1]) * 60 + (+m[2]);
     }
 
     async function openRunner(nickname) {
@@ -191,20 +257,56 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "선수를 찾지 못했습니다");
       const runner = data.runner;
-      const splits = (data.splits || []).map(function (split) {
-        return "<li>" + esc(split.label) + " · " + esc(split.time) +
-          (split.km != null ? " · " + CheerCourse.formatKm(split.km) + " km" : "") + "</li>";
+      let prevKm = 0, prevSec = 0;
+      const splitRows = (data.splits || []).map(function (split) {
+        const sec = toSec(split.time);
+        const km = split.km != null ? Number(split.km) : null;
+        let cum = "-", seg = "-";
+        if (sec != null && km != null && km > 0) {
+          cum = CheerCourse.formatPace(sec / km);
+          if (km > prevKm && sec > prevSec) seg = CheerCourse.formatPace((sec - prevSec) / (km - prevKm));
+          prevKm = km; prevSec = sec;
+        }
+        return "<tr><td>" + esc(split.label) + "</td><td>" + esc(split.time) + "</td><td>" + cum + "</td><td>" + seg + "</td></tr>";
       }).join("");
+      const splits = splitRows ? "<table class='splits'><thead><tr><th>구간</th><th>누적기록</th><th>누적 페이스</th><th>구간 페이스</th></tr></thead><tbody>" + splitRows + "</tbody></table>" : "";
+      const shot = runner.readyShotUrl
+        ? "<button type='button' class='shot' id='shotOpen'><img src='" + esc(runner.readyShotUrl) + "' alt='레디샷'></button>"
+        : "";
       document.getElementById("detailBody").innerHTML =
-        "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩</span>" : "") + "</div>" +
+        "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩 기록</span>" : "") + "</div>" +
+        shot +
         "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
         "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
         " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
+        (runner.finished
+          ? "<div class='sub'><b>완주 " + CheerCourse.formatElapsed(runner.finishSec) + "</b></div>"
+          : "<div class='sub'><b>피니시 도착 예상 " + hhmm(runner.etaFinishAt) + "</b> (예상 기록 " +
+            CheerCourse.formatElapsed(runner.projectedFinishSec) + ")</div>") +
         "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
         " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
-        (splits ? "<ul>" + splits + "</ul>" : "<p class='hint'>칩 구간 없음</p>");
+        (splits || "<p class='hint'>아직 구간 기록이 없습니다.</p>");
+      const shotOpen = document.getElementById("shotOpen");
+      if (shotOpen) {
+        shotOpen.addEventListener("click", function () {
+          document.getElementById("shotLarge").src = runner.readyShotUrl;
+          document.getElementById("shotLightbox").classList.remove("hidden");
+        });
+      }
+      if (view !== "detail") prevView = view;
       view = "detail";
       applyView();
+      window.scrollTo(0, 0);
+    }
+
+    function showPicker(nicks) {
+      const box = document.getElementById("picker");
+      document.getElementById("pickerTitle").textContent = "이 지점에 " + nicks.length + "명 있어요. 누구를 볼까요?";
+      document.getElementById("pickerNicks").innerHTML = nicks.map(function (nick) {
+        return '<button type="button" data-nick="' + esc(nick) + '">' + esc(nick) + "</button>";
+      }).join("");
+      box.classList.remove("hidden");
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
     function paint() {
@@ -218,7 +320,7 @@
 
     async function loadBoard() {
       if (!eventId) {
-        showError("eventId가 없습니다.");
+        showError("대회 링크가 올바르지 않습니다.");
         return;
       }
       const res = await fetch(API_BASE + "?action=group-events&subAction=cheer-board&eventId=" + encodeURIComponent(eventId));
@@ -252,8 +354,13 @@
       applyView();
     });
     document.getElementById("backBtn").addEventListener("click", function () {
-      view = "rank";
+      view = prevView || "rank";
       applyView();
+    });
+    document.getElementById("picker").addEventListener("click", function (event) {
+      const btn = event.target.closest("[data-nick]");
+      if (!btn) return;
+      openRunner(btn.getAttribute("data-nick")).catch(function (err) { showError(err.message); });
     });
     document.getElementById("retryBtn").addEventListener("click", function () {
       loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
@@ -266,10 +373,7 @@
         openRunner(nicks[0]).catch(function (err) { showError(err.message); });
         return;
       }
-      const pick = window.prompt("누구를 볼까요?\n" + nicks.join(", "), nicks[0]);
-      if (pick && nicks.indexOf(pick) >= 0) {
-        openRunner(pick).catch(function (err) { showError(err.message); });
-      }
+      showPicker(nicks);
     });
     document.getElementById("rankView").addEventListener("click", function (event) {
       const row = event.target.closest("[data-nick]");
@@ -284,6 +388,14 @@
       }
     });
 
+    document.getElementById("shotClose").addEventListener("click", function () {
+      document.getElementById("shotLightbox").classList.add("hidden");
+      document.getElementById("shotLarge").removeAttribute("src");
+    });
+    document.getElementById("shotLightbox").addEventListener("click", function (event) {
+      if (event.target.id !== "shotLightbox") return;
+      document.getElementById("shotClose").click();
+    });
     document.getElementById("bibLink").href = "bib.html?eventId=" + encodeURIComponent(eventId);
     loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
   </script>

@@ -83,6 +83,10 @@ const {
   resolveProgressPatch,
   mergeParticipantProgress,
 } = require("./lib/cheer-progress");
+const {
+  uploadReadyShotForParticipant,
+  resolveStorageBucket,
+} = require("./lib/cheer-ready-shot");
 const { google } = require("googleapis");
 
 const MEETING_TRAINING_COLLECTION = "meeting_training";
@@ -4150,6 +4154,32 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
       try {
         // 2~5. 조회·검증·저장 — 버스에서 동시에 저장해도 서로 덮어쓰지 않도록 트랜잭션
         const eventRef = db.collection("race_events").doc(eventId);
+        let pendingShotUrl = null;
+        if (String((req.body && req.body.imageBase64) || "").trim()) {
+          const preDoc = await eventRef.get();
+          if (!preDoc.exists) {
+            return res.status(404).json({ ok: false, error: "event not found" });
+          }
+          const preRow = ((preDoc.data() || {}).participants || []).find(
+            (p) => p.nickname === nickname
+          );
+          if (!preRow) {
+            return res.status(403).json({ ok: false, error: "not a participant" });
+          }
+          const uploaded = await uploadReadyShotForParticipant({
+            bucket: resolveStorageBucket(),
+            eventId,
+            participant: preRow,
+            body: req.body,
+          });
+          if (!uploaded.ok) {
+            return res.status(uploaded.status || 400).json({
+              ok: false,
+              error: uploaded.error || "image must be jpeg",
+            });
+          }
+          if (uploaded.url) pendingShotUrl = uploaded.url;
+        }
         const outcome = await db.runTransaction(async (tx) => {
           const eventDoc = await tx.get(eventRef);
           if (!eventDoc.exists) {
@@ -4190,6 +4220,9 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             delete event.participants[participantIndex].goalFinishSec;
           } else if (progress.patch) {
             Object.assign(event.participants[participantIndex], progress.patch);
+          }
+          if (pendingShotUrl) {
+            event.participants[participantIndex].readyShotUrl = pendingShotUrl;
           }
 
           tx.update(eventRef, { participants: event.participants });
