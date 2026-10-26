@@ -125,6 +125,14 @@ describe("event-bib page wiring", () => {
     assert.match(html, /완주 목표 시간/);
     assert.doesNotMatch(html, /id="goalMode"|id="paceM"|페이스 \(분:초/);
   });
+
+  it("states the page purpose and drops the old start and optional-goal hints", () => {
+    assert.match(html, /배번과 완주 목표 시간을 입력해 주세요\. 실시간 응원과 기록 수집에 쓰입니다\./);
+    assert.doesNotMatch(html, /아직 출발 시각이 등록되지 않았습니다/);
+    assert.doesNotMatch(html, /조와 목표를 비워도 배번은 저장됩니다/);
+    assert.doesNotMatch(html, /id="waveEmpty"|getElementById\("waveEmpty"\)/);
+    assert.match(html, /EventBibForm\.buildBibBody\(/);
+  });
 });
 
 describe("cheer board page", () => {
