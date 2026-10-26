@@ -2,7 +2,6 @@
 
 const crypto = require("crypto");
 const { matchResultByBib } = require("./group-scrape-bib");
-const { publicReadyShotUrl } = require("./cheer-ready-shot");
 
 const FULL_KM = 42.195;
 const GOAL_MIN_SEC = 3600;
@@ -231,8 +230,6 @@ function toPublicRunner(participant, wave, projected, startOverride) {
       ? kstIso(projected.startMs + projected.projectedFinishSec * 1000)
       : null,
   };
-  const readyShotUrl = publicReadyShotUrl(participant && participant.readyShotUrl);
-  if (readyShotUrl) row.readyShotUrl = readyShotUrl;
   return row;
 }
 
@@ -380,6 +377,7 @@ function resolveProgressPatch(input) {
 }
 
 // group.html rebuilds each row from memberId/nickname/realName/bib/distance only.
+// 배번 사진 업로드는 제거했다. 이미 저장된 readyShotUrl은 명단 재저장 때 지우지 않는다.
 function mergeParticipantProgress(prevList, nextList) {
   const prevById = new Map();
   for (const row of Array.isArray(prevList) ? prevList : []) {

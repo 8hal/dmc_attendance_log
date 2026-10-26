@@ -849,10 +849,10 @@
           <div class="qr-box" id="cheer-links">
             <p class="hint" style="margin-top:14px;text-align:left;">대회 전에는 선수에게 배번 링크를, 당일에는 응원 보드 링크를 보내세요.</p>
             <p class="hint" style="text-align:left;"><a id="cheer-waves-link" href="cheer/waves.html">조·출발 시각 입력</a></p>
-            <p style="font-weight:700;font-size:14px;margin:12px 0 4px;text-align:left;">선수용 배번·레디샷</p>
-            <img id="cheer-bib-qr" alt="배번·레디샷 QR" width="160" height="160" />
+            <p style="font-weight:700;font-size:14px;margin:12px 0 4px;text-align:left;">선수용 배번</p>
+            <img id="cheer-bib-qr" alt="배번 QR" width="160" height="160" />
             <div class="link-box" id="cheer-bib-link-text"></div>
-            <button type="button" class="btn btn-ghost" id="copy-cheer-bib">배번·레디샷 링크 복사</button>
+            <button type="button" class="btn btn-ghost" id="copy-cheer-bib">배번 링크 복사</button>
             <p style="font-weight:700;font-size:14px;margin:16px 0 4px;text-align:left;">응원 보드</p>
             <img id="cheer-board-qr" alt="응원 보드 QR" width="160" height="160" />
             <div class="link-box" id="cheer-board-link-text"></div>
@@ -2424,7 +2424,7 @@
       copyText(participantUrl(), "탑승 링크를 복사했습니다")
     );
     document.getElementById("copy-cheer-bib").addEventListener("click", () =>
-      copyText(cheerPageUrl(CHEER_BIB_PATH), "배번·레디샷 링크를 복사했습니다")
+      copyText(cheerPageUrl(CHEER_BIB_PATH), "배번 링크를 복사했습니다")
     );
     document.getElementById("copy-cheer-board").addEventListener("click", () =>
       copyText(cheerPageUrl(CHEER_BOARD_PATH), "응원 보드 링크를 복사했습니다")
