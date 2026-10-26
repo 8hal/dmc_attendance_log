@@ -105,9 +105,9 @@ describe("event-bib request body", () => {
 });
 
 describe("event-bib page wiring", () => {
-  const html = fs.readFileSync(path.join(__dirname, "../../lab/cheer/bib.html"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "../../cheer/bib.html"), "utf8");
   it("loads the form helper and uses it to build the request", () => {
-    assert.match(html, /\.\.\/\.\.\/assets\/event-bib-form\.js/);
+    assert.match(html, /\.\.\/assets\/event-bib-form\.js/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
   });
 
@@ -128,7 +128,7 @@ describe("event-bib page wiring", () => {
 });
 
 describe("cheer board page", () => {
-  const html = fs.readFileSync(path.join(__dirname, "../../lab/cheer/index.html"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "../../cheer/index.html"), "utf8");
   it("refreshes an open runner detail on each poll", () => {
     assert.match(html, /view === "detail" && selected/);
   });
@@ -141,7 +141,7 @@ describe("cheer board page", () => {
 });
 
 describe("cheer waves page", () => {
-  const html = fs.readFileSync(path.join(__dirname, "../../lab/cheer/waves.html"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "../../cheer/waves.html"), "utf8");
   it("says a deleted wave falls back to the first start", () => {
     assert.match(html, /첫 출발 시각으로 계산합니다/);
     assert.doesNotMatch(html, /보드에서 빠집니다/);

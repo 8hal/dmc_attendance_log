@@ -106,8 +106,8 @@ function usableGunDuration(raw, netTime) {
  */
 function myResultPlayerToRecord(player) {
   if (!player || typeof player !== "object") return null;
-  const netTime = normNetTime(player.result_nettime);
-  if (!netTime || netTime === "00:00:00") return null;
+  const rawNet = normNetTime(player.result_nettime);
+  const netTime = rawNet && rawNet !== "00:00:00" ? rawNet : "";
 
   const records = Array.isArray(player.records) ? player.records : [];
   const points = records
@@ -142,6 +142,9 @@ function myResultPlayerToRecord(player) {
     }
   }
 
+  // 레이스 중(완주 전)에도 구간 기록이 있으면 실시간 응원용으로 돌려준다.
+  if (!netTime && splits.length === 0) return null;
+
   const finish = points.find((p) => p.label === "도착")
     || points.slice().sort((a, b) => (b.distance || 0) - (a.distance || 0))[0];
   let gunTime = usableGunDuration(player.result_guntime, netTime);
@@ -165,6 +168,8 @@ function myResultPlayerToRecord(player) {
     gender,
     splits,
     pace: player.pace_nettime || "",
+    // 칩 출발 시각(KST 시계, HH:MM:SS). 응원 보드가 조 출발 시각 대신 쓴다.
+    startClock: startMs != null ? formatElapsedMs(startMs) : "",
   };
 }
 

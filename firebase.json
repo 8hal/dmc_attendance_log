@@ -24,6 +24,23 @@
   ],
   "hosting": {
     "public": ".",
+    "redirects": [
+      {
+        "source": "/lab/cheer",
+        "destination": "/cheer/index.html",
+        "type": 301
+      },
+      {
+        "source": "/lab/cheer/",
+        "destination": "/cheer/index.html",
+        "type": 301
+      },
+      {
+        "source": "/lab/cheer/:file",
+        "destination": "/cheer/:file",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "/api/race",

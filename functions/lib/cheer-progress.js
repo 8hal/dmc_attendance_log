@@ -2,6 +2,7 @@
 
 const crypto = require("crypto");
 const { matchResultByBib } = require("./group-scrape-bib");
+const { publicReadyShotUrl } = require("./cheer-ready-shot");
 
 const FULL_KM = 42.195;
 const GOAL_MIN_SEC = 3600;
@@ -73,15 +74,22 @@ function projectRunner(input) {
       elapsedSec: 0,
       avgPaceSecPerKm: goalPace,
       chip: false,
+      finished: false,
+      projectedFinishSec: Math.round(goalFinishSec),
     };
   }
 
   const chip = !!(lastSplit && Number(lastSplit.km) > 0);
+  // 칩 기록이 있으면 지금까지의 실제 평균 페이스로 다음 위치를 추정한다.
+  const chipPace = chip && Number(lastSplit.elapsedSec) > 0
+    ? Number(lastSplit.elapsedSec) / Number(lastSplit.km)
+    : null;
+  const projPace = chipPace && chipPace >= 120 && chipPace <= 1200 ? chipPace : goalPace;
   let km;
   if (!chip) {
     km = Math.min(FULL_KM, rawElapsed / goalPace);
   } else {
-    const extra = Math.max(0, rawElapsed - Number(lastSplit.elapsedSec)) / goalPace;
+    const extra = Math.max(0, rawElapsed - Number(lastSplit.elapsedSec)) / projPace;
     km = Math.min(FULL_KM, Number(lastSplit.km) + extra);
   }
 
@@ -97,9 +105,21 @@ function projectRunner(input) {
       elapsedSec = Math.round(goalFinishSec);
     } else {
       const remain = Math.max(0, FULL_KM - Number(lastSplit.km));
-      elapsedSec = Math.round(Number(lastSplit.elapsedSec) + remain * goalPace);
+      elapsedSec = Math.round(Number(lastSplit.elapsedSec) + remain * projPace);
     }
     avgPace = elapsedSec / FULL_KM;
+  }
+
+  const finished = !!(chip && (lastSplit.fromNet || Number(lastSplit.km) >= FULL_KM - 1e-9));
+  let projectedFinishSec;
+  if (finished) {
+    projectedFinishSec = Number(lastSplit.elapsedSec);
+  } else if (chip) {
+    projectedFinishSec = Math.round(
+      Number(lastSplit.elapsedSec) + Math.max(0, FULL_KM - Number(lastSplit.km)) * projPace
+    );
+  } else {
+    projectedFinishSec = Math.round(goalFinishSec);
   }
 
   return {
@@ -107,6 +127,8 @@ function projectRunner(input) {
     elapsedSec,
     avgPaceSecPerKm: avgPace,
     chip,
+    finished,
+    projectedFinishSec,
   };
 }
 
@@ -175,19 +197,43 @@ function isBoardRunner(participant, wave) {
   return Number.isFinite(goal) && goal >= GOAL_MIN_SEC && goal <= GOAL_MAX_SEC;
 }
 
-function toPublicRunner(participant, wave, projected) {
-  return {
+// 칩에 찍힌 출발 시각이 있으면 조 출발 시각보다 우선한다 (같은 KST 날짜 기준).
+function chipStartMs(match, waveStartAt) {
+  const clock = parseHms(match && match.startClock);
+  const waveMs = Date.parse(waveStartAt);
+  if (clock == null || Number.isNaN(waveMs)) return null;
+  const dayKey = kstDateKey(waveMs);
+  const ms = Date.parse(`${dayKey}T00:00:00+09:00`) + clock * 1000;
+  return Number.isNaN(ms) ? null : ms;
+}
+
+function kstIso(ms) {
+  return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 19) + "+09:00";
+}
+
+function toPublicRunner(participant, wave, projected, startOverride) {
+  const row = {
     nickname: participant.nickname == null ? "" : String(participant.nickname),
     bib: String(participant.bib).trim(),
     waveId: String(wave.id),
     waveName: wave.name == null ? "" : String(wave.name),
-    startAt: String(wave.startAt),
+    startAt: startOverride ? startOverride : String(wave.startAt),
+    startFromChip: !!startOverride,
     goalFinishSec: Number(participant.goalFinishSec),
     km: projected.km,
     elapsedSec: projected.elapsedSec,
     avgPaceSecPerKm: projected.avgPaceSecPerKm,
     chip: projected.chip === true,
+    finished: projected.finished === true,
+    finishSec: projected.finished === true ? projected.elapsedSec : null,
+    projectedFinishSec: Number.isFinite(projected.projectedFinishSec) ? projected.projectedFinishSec : null,
+    etaFinishAt: Number.isFinite(projected.projectedFinishSec) && Number.isFinite(projected.startMs)
+      ? kstIso(projected.startMs + projected.projectedFinishSec * 1000)
+      : null,
   };
+  const readyShotUrl = publicReadyShotUrl(participant && participant.readyShotUrl);
+  if (readyShotUrl) row.readyShotUrl = readyShotUrl;
+  return row;
 }
 
 function buildCheerBoard(input) {
@@ -201,8 +247,9 @@ function buildCheerBoard(input) {
   for (const participant of event.participants || []) {
     const wave = participant ? runnerWave(participant, wavesById, fallback) : null;
     if (!isBoardRunner(participant, wave)) continue;
-    const startMs = Date.parse(wave.startAt);
     const match = matchResultByBib(jobResults, participant.bib, participant.distance);
+    const chipMs = chipStartMs(match, wave.startAt);
+    const startMs = chipMs != null ? chipMs : Date.parse(wave.startAt);
     const lastSplit = pickLastSplit(match);
     const projected = projectRunner({
       startMs,
@@ -210,9 +257,13 @@ function buildCheerBoard(input) {
       nowMs,
       lastSplit,
     });
-    runners.push(toPublicRunner(participant, wave, projected));
+    projected.startMs = startMs;
+    runners.push(toPublicRunner(participant, wave, projected, chipMs != null ? kstIso(chipMs) : null));
   }
   runners.sort((a, b) => {
+    // 레이스 중인 선수가 위, 완주자는 아래에 기록순.
+    if (a.finished !== b.finished) return a.finished ? 1 : -1;
+    if (a.finished && b.finished && a.finishSec !== b.finishSec) return a.finishSec - b.finishSec;
     if (b.km !== a.km) return b.km - a.km;
     return String(a.nickname).localeCompare(String(b.nickname), "ko");
   });
@@ -336,8 +387,12 @@ function mergeParticipantProgress(prevList, nextList) {
   }
   return (nextList || []).map((row) => {
     const prev = row && row.memberId ? prevById.get(String(row.memberId)) : null;
-    if (!prev || String(row.distance || "") !== "full") return row;
+    if (!prev) return row;
     const merged = { ...row };
+    if (merged.readyShotUrl === undefined && prev.readyShotUrl) {
+      merged.readyShotUrl = prev.readyShotUrl;
+    }
+    if (String(row.distance || "") !== "full") return merged;
     if (merged.waveId === undefined && prev.waveId !== undefined) merged.waveId = prev.waveId;
     if (merged.goalFinishSec === undefined && prev.goalFinishSec !== undefined) {
       merged.goalFinishSec = prev.goalFinishSec;
