@@ -213,7 +213,7 @@ describe("cheer board", () => {
     assert.equal(detail.status, 404);
   });
 
-  it("passes a storage download URL through cheer-runner and the board", () => {
+  it("does not expose a stored ready-shot URL on cheer-runner or the board", () => {
     const readyShotUrl = "https://firebasestorage.googleapis.com/v0/b/demo/o/cheer%2Fready.jpg?alt=media&token=abc";
     const withPhoto = {
       ...event,
@@ -227,28 +227,12 @@ describe("cheer board", () => {
       nowMs: START + 1000,
       runnerNickname: "가람",
     });
-    assert.equal(detail.runner.readyShotUrl, readyShotUrl);
+    assert.equal(detail.runner.readyShotUrl, undefined);
+    assert.equal(detail.runner.nickname, "가람");
     const board = buildCheerBoard({ event: withPhoto, jobResults: [], nowMs: START + 1000 });
     const garam = board.runners.find((row) => row.nickname === "가람");
-    const bada = board.runners.find((row) => row.nickname === "바다");
-    assert.equal(garam.readyShotUrl, readyShotUrl);
-    assert.equal(bada.readyShotUrl, undefined);
-  });
-
-  it("drops a ready-shot URL that is not a storage download link", () => {
-    const withPhoto = {
-      ...event,
-      participants: event.participants.map((row) => (
-        row.nickname === "가람" ? { ...row, readyShotUrl: "javascript:alert(1)" } : row
-      )),
-    };
-    const detail = buildCheerRunner({
-      event: withPhoto,
-      jobResults: [],
-      nowMs: START + 1000,
-      runnerNickname: "가람",
-    });
-    assert.equal(detail.runner.readyShotUrl, undefined);
+    assert.equal(garam.readyShotUrl, undefined);
+    assert.equal(Object.prototype.hasOwnProperty.call(garam, "readyShotUrl"), false);
   });
 });
 

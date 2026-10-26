@@ -11,11 +11,5 @@ service firebase.storage {
       allow read: if fileName.matches('.*\\.jpg$');
       allow write: if false;
     }
-    // 응원 레디샷 — 서버(Admin SDK)만 쓰기. 읽기는 jpg와 download token URL.
-    // 응원 보드 링크를 받은 사람이 사진을 볼 수 있게 읽기를 연다.
-    match /cheer/ready-shots/{eventId}/{fileName} {
-      allow read: if fileName.matches('.*\\.jpg$');
-      allow write: if false;
-    }
   }
 }

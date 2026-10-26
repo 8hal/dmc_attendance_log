@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.0" />
-  <title>배번·레디샷 - 동탄 마라톤 클럽</title>
+  <meta name="app-version" content="0.21.1" />
+  <title>배번 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
   <style>
@@ -20,9 +20,6 @@
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
     .nav { margin: 0 0 12px; font-size: 14px; }
-    .shot { margin-top: 12px; }
-    .shot img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 8px; margin-top: 8px; background: #F8FAFC; }
-    .btn-ghost { background: #fff; color: #2563EB; border: 1px solid #2563EB; margin-top: 8px; }
     .btn:disabled { opacity: 0.6; cursor: default; }
     .nav a { color: #2563EB; font-weight: 700; text-decoration: none; }
     .wrap { max-width: 480px; margin: 0 auto; }
@@ -69,7 +66,7 @@
 <body>
   <div class="wrap">
     <p class="nav"><a id="boardLink" href="index.html">응원 보드 보기</a></p>
-    <h1>배번·레디샷</h1>
+    <h1>배번</h1>
     <p class="hint" id="eventInfo">불러오는 중…</p>
     <div id="error" class="error hidden"></div>
     <div id="pick" class="card hidden">
@@ -80,14 +77,6 @@
     <form id="form" class="card hidden">
       <p id="who"></p>
       <div class="chips" id="distChips"></div>
-      <div class="shot">
-        <p class="hint" id="readyShotNotice">응원 보드 링크를 가진 누구나 사진을 볼 수 있어요. 대회 전에는 배번만 저장하고, 레디샷은 당일 아침에 올려도 됩니다.</p>
-        <button type="button" class="btn btn-ghost" id="readyShotBtn">레디샷 올리기</button>
-        <input id="readyShotFile" class="hidden" type="file" accept="image/*" />
-        <img id="readyShotPreview" class="hidden" alt="레디샷 미리보기" />
-        <p id="readyShotStatus" class="hint hidden"></p>
-        <button type="button" class="btn btn-ghost hidden" id="readyShotClear">이 사진 빼기</button>
-      </div>
       <label for="bib">배번</label>
       <input id="bib" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
       <div id="fullFields" class="hidden">
@@ -116,7 +105,6 @@
   <script src="../assets/event-home-action.js"></script>
   <script src="../assets/distance-utils.js"></script>
   <script src="../assets/event-bib-form.js"></script>
-  <script src="../assets/cheer-bib-ocr.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -132,14 +120,7 @@
       "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
       "unknown waveId": "조 목록이 바뀌었습니다. 새로고침 후 다시 골라 주세요.",
       "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
-      "image must be jpeg": "사진 형식이 맞지 않습니다. 다시 올려 주세요.",
-      "image too large": "사진이 너무 큽니다. 더 작은 사진으로 올려 주세요.",
-      "invalid base64 image": "사진을 읽지 못했습니다. 다시 올려 주세요.",
-      "photoUrl too long": "사진 주소가 너무 깁니다. 다시 올려 주세요.",
     };
-    const READY_SHOT_EDGE = 1280;
-    let pendingShotDataUrl = "";
-    let readingShot = false;
 
     function esc(value) {
       return String(value == null ? "" : value)
@@ -181,12 +162,6 @@
       }).join("");
     }
 
-    function refreshShotButton() {
-      const row = participant();
-      const hasShot = !!(pendingShotDataUrl || (row && row.readyShotUrl));
-      document.getElementById("readyShotBtn").textContent = hasShot ? "레디샷 바꾸기" : "레디샷 올리기";
-    }
-
     function renderForm() {
       const row = participant();
       if (!row) {
@@ -223,121 +198,6 @@
       }
       document.getElementById("waveEmpty").classList.toggle("hidden", waves.length > 0);
       document.getElementById("fullFields").classList.toggle("hidden", distance !== "full");
-      if (pendingShotDataUrl) showShotPreview(pendingShotDataUrl);
-      else if (row.readyShotUrl) showShotPreview(row.readyShotUrl);
-      else showShotPreview("");
-      document.getElementById("readyShotClear").classList.toggle("hidden", !pendingShotDataUrl);
-      refreshShotButton();
-    }
-
-    function showShotPreview(src) {
-      const img = document.getElementById("readyShotPreview");
-      if (!src) {
-        img.classList.add("hidden");
-        img.removeAttribute("src");
-        return;
-      }
-      img.src = src;
-      img.classList.remove("hidden");
-    }
-
-    function setShotStatus(message) {
-      const el = document.getElementById("readyShotStatus");
-      el.textContent = message || "";
-      el.classList.toggle("hidden", !message);
-    }
-
-    function loadBitmap(file) {
-      if (typeof createImageBitmap === "function") {
-        return createImageBitmap(file, { imageOrientation: "from-image" }).catch(function () {
-          return createImageBitmap(file);
-        });
-      }
-      return new Promise(function (resolve, reject) {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = function () {
-          URL.revokeObjectURL(url);
-          resolve(img);
-        };
-        img.onerror = function () {
-          URL.revokeObjectURL(url);
-          reject(new Error("사진을 열지 못했습니다."));
-        };
-        img.src = url;
-      });
-    }
-
-    function resizeToJpegBlob(file, maxEdge, quality) {
-      return loadBitmap(file).then(function (bitmap) {
-        const width0 = bitmap.width || bitmap.naturalWidth || 1;
-        const height0 = bitmap.height || bitmap.naturalHeight || 1;
-        const scale = Math.min(1, maxEdge / Math.max(width0, height0));
-        const width = Math.max(1, Math.round(width0 * scale));
-        const height = Math.max(1, Math.round(height0 * scale));
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
-        if (bitmap.close) bitmap.close();
-        return new Promise(function (resolve) {
-          canvas.toBlob(function (blob) { resolve(blob); }, "image/jpeg", quality);
-        });
-      });
-    }
-
-    function blobToDataUrl(blob) {
-      return new Promise(function (resolve, reject) {
-        const reader = new FileReader();
-        reader.onload = function () { resolve(String(reader.result || "")); };
-        reader.onerror = function () { reject(new Error("사진을 읽지 못했습니다.")); };
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    async function fileToJpegDataUrl(file) {
-      const steps = [
-        { edge: READY_SHOT_EDGE, quality: 0.85 },
-        { edge: READY_SHOT_EDGE, quality: 0.7 },
-        { edge: 1024, quality: 0.6 },
-      ];
-      let blob = null;
-      for (let i = 0; i < steps.length; i++) {
-        blob = await resizeToJpegBlob(file, steps[i].edge, steps[i].quality);
-        if (blob && blob.size <= 1800 * 1024) break;
-      }
-      if (!blob) throw new Error("사진을 줄이지 못했습니다.");
-      if (blob.size > 2 * 1024 * 1024) throw new Error("사진이 너무 큽니다. 더 작은 사진으로 올려 주세요.");
-      return { dataUrl: await blobToDataUrl(blob), blob: blob };
-    }
-
-    async function onReadyShotFile(file) {
-      if (!file || readingShot) return;
-      readingShot = true;
-      document.getElementById("readyShotBtn").disabled = true;
-      document.getElementById("saveBtn").disabled = true;
-      setShotStatus("사진을 준비하고 있어요.");
-      try {
-        const prepared = await fileToJpegDataUrl(file);
-        pendingShotDataUrl = prepared.dataUrl;
-        showShotPreview(pendingShotDataUrl);
-        document.getElementById("readyShotClear").classList.remove("hidden");
-        refreshShotButton();
-        const rosterBibs = ((event && event.participants) || []).map(function (row) { return row.bib; });
-        const read = await CheerBibOcr.recognizeBib(prepared.blob, { rosterBibs: rosterBibs });
-        if (read && read.bib) {
-          document.getElementById("bib").value = read.bib;
-          setShotStatus("사진에서 읽음, 맞는지 확인해 주세요");
-        } else {
-          setShotStatus("배번을 읽지 못했습니다. 숫자를 직접 입력해 주세요.");
-        }
-      } catch (err) {
-        setShotStatus(err.message || "사진을 올리지 못했습니다. 배번은 직접 입력할 수 있습니다.");
-      } finally {
-        readingShot = false;
-        document.getElementById("readyShotBtn").disabled = false;
-        document.getElementById("saveBtn").disabled = false;
-      }
     }
 
     ["bib", "goalH", "goalM", "goalS"].forEach(function (id) {
@@ -346,19 +206,6 @@
       el.addEventListener("compositionend", function () { composing = false; });
     });
 
-    document.getElementById("readyShotBtn").addEventListener("click", function () {
-      document.getElementById("readyShotFile").click();
-    });
-    document.getElementById("readyShotFile").addEventListener("change", function (changeEvent) {
-      const file = changeEvent.target.files && changeEvent.target.files[0];
-      changeEvent.target.value = "";
-      onReadyShotFile(file);
-    });
-    document.getElementById("readyShotClear").addEventListener("click", function () {
-      pendingShotDataUrl = "";
-      setShotStatus("");
-      renderForm();
-    });
     document.getElementById("nickSearch").addEventListener("input", renderNicks);
     document.getElementById("nickList").addEventListener("click", function (event) {
       const btn = event.target.closest("[data-nick]");
@@ -404,7 +251,6 @@
         goalM: val("goalM"),
         goalS: val("goalS"),
       });
-      if (pendingShotDataUrl) body.imageBase64 = pendingShotDataUrl;
       const hasGoal = body.goalFinishSec != null || !!(participant() || {}).goalFinishSec;
       const hasStart = ((event && event.waves) || []).length > 0;
       document.getElementById("saveBtn").disabled = true;
@@ -416,9 +262,8 @@
         });
         const data = await res.json();
         if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
-        pendingShotDataUrl = "";
-        let doneText = "저장했습니다. 같은 화면에서 배번이나 레디샷을 다시 바꿀 수 있습니다.";
-        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다. 레디샷은 나중에 올려도 됩니다.";
+        let doneText = "저장했습니다. 같은 화면에서 배번을 다시 바꿀 수 있습니다.";
+        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
         else if (distance === "full" && !hasStart) doneText = "저장했습니다. 출발 시각이 등록되면 응원 보드에 나옵니다.";
         const done = document.getElementById("done");
         done.textContent = doneText;

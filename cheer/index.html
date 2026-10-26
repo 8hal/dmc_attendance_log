@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.0" />
+  <meta name="app-version" content="0.21.1" />
   <title>응원 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -20,11 +20,6 @@
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
     .nav { margin: 0 0 12px; font-size: 14px; }
-    .shot { display: block; width: 100%; margin: 8px 0 0; padding: 0; border: none; background: none; cursor: pointer; }
-    .shot img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; display: block; }
-    .lightbox { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
-    .lightbox img { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 8px; }
-    .lightbox .btn { margin-bottom: 12px; }
     .nav a { color: #2563EB; font-weight: 700; text-decoration: none; }
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 6px; }
@@ -71,7 +66,7 @@
 </head>
 <body>
   <div class="wrap">
-    <p class="nav"><a id="bibLink" href="bib.html">배번·레디샷</a></p>
+    <p class="nav"><a id="bibLink" href="bib.html">배번</a></p>
     <h1 id="title">응원</h1>
     <p class="meta" id="meta">풀코스 추정 위치</p>
     <div class="views" id="views">
@@ -85,10 +80,6 @@
     <div id="detailView" class="hidden">
       <button type="button" class="btn back" id="backBtn">뒤로</button>
       <div class="detail" id="detailBody"></div>
-    </div>
-    <div id="shotLightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="레디샷">
-      <button type="button" class="btn" id="shotClose">닫기</button>
-      <img id="shotLarge" alt="레디샷" />
     </div>
     <div id="loading" class="status">불러오는 중…</div>
     <div id="error" class="status hidden">
@@ -270,12 +261,8 @@
         return "<tr><td>" + esc(split.label) + "</td><td>" + esc(split.time) + "</td><td>" + cum + "</td><td>" + seg + "</td></tr>";
       }).join("");
       const splits = splitRows ? "<table class='splits'><thead><tr><th>구간</th><th>누적기록</th><th>누적 페이스</th><th>구간 페이스</th></tr></thead><tbody>" + splitRows + "</tbody></table>" : "";
-      const shot = runner.readyShotUrl
-        ? "<button type='button' class='shot' id='shotOpen'><img src='" + esc(runner.readyShotUrl) + "' alt='레디샷'></button>"
-        : "";
       document.getElementById("detailBody").innerHTML =
         "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩 기록</span>" : "") + "</div>" +
-        shot +
         "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
         "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
         " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
@@ -286,13 +273,6 @@
         "<div class='sub'>목표 " + CheerCourse.formatElapsed(runner.goalFinishSec) +
         " · " + CheerCourse.formatPace(runner.goalFinishSec / CheerCourse.FULL_KM) + "/km</div>" +
         (splits || "<p class='hint'>아직 구간 기록이 없습니다.</p>");
-      const shotOpen = document.getElementById("shotOpen");
-      if (shotOpen) {
-        shotOpen.addEventListener("click", function () {
-          document.getElementById("shotLarge").src = runner.readyShotUrl;
-          document.getElementById("shotLightbox").classList.remove("hidden");
-        });
-      }
       if (view !== "detail") prevView = view;
       view = "detail";
       applyView();
@@ -388,14 +368,6 @@
       }
     });
 
-    document.getElementById("shotClose").addEventListener("click", function () {
-      document.getElementById("shotLightbox").classList.add("hidden");
-      document.getElementById("shotLarge").removeAttribute("src");
-    });
-    document.getElementById("shotLightbox").addEventListener("click", function (event) {
-      if (event.target.id !== "shotLightbox") return;
-      document.getElementById("shotClose").click();
-    });
     document.getElementById("bibLink").href = "bib.html?eventId=" + encodeURIComponent(eventId);
     loadBoard().then(startPoll).catch(function (err) { showError(err.message); });
   </script>
