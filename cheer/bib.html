@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.1" />
+  <meta name="app-version" content="0.21.2" />
   <title>배번 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -67,6 +67,7 @@
   <div class="wrap">
     <p class="nav"><a id="boardLink" href="index.html">응원 보드 보기</a></p>
     <h1>배번</h1>
+    <p class="hint" id="pagePurpose">배번과 완주 목표 시간을 입력해 주세요. 실시간 응원과 기록 수집에 쓰입니다.</p>
     <p class="hint" id="eventInfo">불러오는 중…</p>
     <div id="error" class="error hidden"></div>
     <div id="pick" class="card hidden">
@@ -94,8 +95,6 @@
           <label for="goalS">초</label>
           <input id="goalS" inputmode="numeric" placeholder="00" />
         </div>
-        <p class="hint" id="waveEmpty">아직 출발 시각이 등록되지 않았습니다. 지금 넣어 두면 등록 후 응원 보드에 나옵니다.</p>
-        <p class="hint">조와 목표를 비워도 배번은 저장됩니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.</p>
       </div>
       <p id="formError" class="error hidden"></p>
       <button class="btn" type="submit" id="saveBtn">저장</button>
@@ -196,7 +195,6 @@
         document.getElementById("goalM").value = savedGoal.m;
         document.getElementById("goalS").value = savedGoal.s;
       }
-      document.getElementById("waveEmpty").classList.toggle("hidden", waves.length > 0);
       document.getElementById("fullFields").classList.toggle("hidden", distance !== "full");
     }
 
