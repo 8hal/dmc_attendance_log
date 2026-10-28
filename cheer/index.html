@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.7" />
+  <meta name="app-version" content="0.21.9" />
   <title>응원 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -155,7 +155,7 @@
         const p = xy(group.km);
         const lead = group.runners.slice().reverse();
         const n = lead.length;
-        const name = runnerLabel(lead[0]);
+        const name = lead[0].nickname;
         const label = n === 1 ? name : name + " +" + (n - 1);
         parts.push('<circle class="runner-dot" data-nicks="' + esc(lead.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
         parts.push('<text x="' + p.x + '" y="' + (p.y + 7) + '" font-size="3.4" text-anchor="middle" fill="#0F172A">' + esc(label) + '</text>');
@@ -289,8 +289,7 @@
       const box = document.getElementById("picker");
       document.getElementById("pickerTitle").textContent = "이 지점에 " + nicks.length + "명 있어요. 누구를 볼까요?";
       document.getElementById("pickerNicks").innerHTML = nicks.map(function (nick) {
-        const runner = ((board && board.runners) || []).find(function (row) { return row.nickname === nick; }) || { nickname: nick };
-        return '<button type="button" data-nick="' + esc(nick) + '">' + esc(runnerLabel(runner)) + "</button>";
+        return '<button type="button" data-nick="' + esc(nick) + '">' + esc(nick) + "</button>";
       }).join("");
       box.classList.remove("hidden");
       box.scrollIntoView({ behavior: "smooth", block: "nearest" });

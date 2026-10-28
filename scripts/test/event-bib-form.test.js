@@ -354,14 +354,17 @@ describe("cheer board page", () => {
     assert.doesNotMatch(html, /출발 " \+/);
   });
 
-  it("shows nickname and real name on the map, rank, cluster picker, and detail", () => {
+  it("keeps real names on the rank and detail, and nicknames only on the course tab", () => {
     assert.match(html, /<script src="\.\.\/assets\/event-bib-form\.js"><\/script>/);
-    assert.match(html, /content="0\.21\.7"/);
+    assert.match(html, /content="0\.21\.9"/);
     assert.match(html, /function runnerLabel\(runner\)/);
     assert.match(html, /return EventBibForm\.bibIdentityLine\(runner\)/);
-    assert.match(html, /const name = runnerLabel\(lead\[0\]\)/);
+    assert.match(html, /const name = lead\[0\]\.nickname/);
+    assert.doesNotMatch(html, /runnerLabel\(lead\[0\]\)/);
     assert.match(html, /esc\(label\)/);
     assert.match(html, /esc\(runnerLabel\(runner\)\)/);
+    assert.match(html, /data-nick="' \+ esc\(nick\) \+ '">' \+ esc\(nick\) \+ "<\/button>"/);
+    assert.doesNotMatch(html, /runnerLabel\(runner\)\) \+ "<\/button>"/);
     assert.match(html, /data-nick="' \+ esc\(runner\.nickname\)/);
     assert.match(html, /data-nicks="' \+ esc\(lead\.map\(function \(r\) \{ return r\.nickname; \}\)\.join\("\|"\)\)/);
     assert.doesNotMatch(html, /startAt\)\.slice\(11/);
