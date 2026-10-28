@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.1" />
+  <meta name="app-version" content="0.21.7" />
   <title>응원 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -88,6 +88,7 @@
     </div>
   </div>
   <script src="../assets/cheer-course.js"></script>
+  <script src="../assets/event-bib-form.js"></script>
   <script>
     const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const API_BASE = IS_LOCAL
@@ -95,6 +96,10 @@
       : "https://race-nszximpvtq-du.a.run.app";
     const eventId = new URLSearchParams(location.search).get("eventId") || "";
     const MARKS = [0, 5, 10, 15, 20, 25, 30, 35, 38, 40, 42.195];
+
+    function runnerLabel(runner) {
+      return EventBibForm.bibIdentityLine(runner);
+    }
     let board = null;
     let view = "course";
     let pollTimer = null;
@@ -150,7 +155,8 @@
         const p = xy(group.km);
         const lead = group.runners.slice().reverse();
         const n = lead.length;
-        const label = n === 1 ? lead[0].nickname : lead[0].nickname + " +" + (n - 1);
+        const name = runnerLabel(lead[0]);
+        const label = n === 1 ? name : name + " +" + (n - 1);
         parts.push('<circle class="runner-dot" data-nicks="' + esc(lead.map(function (r) { return r.nickname; }).join("|")) + '" cx="' + p.x + '" cy="' + p.y + '" r="3.2" fill="#2563EB"/>');
         parts.push('<text x="' + p.x + '" y="' + (p.y + 7) + '" font-size="3.4" text-anchor="middle" fill="#0F172A">' + esc(label) + '</text>');
       });
@@ -186,7 +192,7 @@
             CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km · 도착 예상 " + hhmm(runner.etaFinishAt);
         }
         return '<button type="button" class="row" data-nick="' + esc(runner.nickname) + '">' +
-          '<div class="nick">' + (i + 1) + ". " + esc(runner.nickname) + (runner.chip ? ' <span class="chip">칩 기록</span>' : "") + "</div>" +
+          '<div class="nick">' + (i + 1) + ". " + esc(runnerLabel(runner)) + (runner.chip ? ' <span class="chip">칩 기록</span>' : "") + "</div>" +
           '<div class="sub">' + sub + "</div>" +
           "</button>";
       }
@@ -262,7 +268,7 @@
       }).join("");
       const splits = splitRows ? "<table class='splits'><thead><tr><th>구간</th><th>누적기록</th><th>누적 페이스</th><th>구간 페이스</th></tr></thead><tbody>" + splitRows + "</tbody></table>" : "";
       document.getElementById("detailBody").innerHTML =
-        "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩 기록</span>" : "") + "</div>" +
+        "<div class='nick'>" + esc(runnerLabel(runner)) + (runner.chip ? " <span class='chip'>칩 기록</span>" : "") + "</div>" +
         "<div class='sub'>배번 " + esc(runner.bib) + (runner.waveName ? " · " + esc(runner.waveName) : "") + "</div>" +
         "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
         " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
@@ -283,7 +289,8 @@
       const box = document.getElementById("picker");
       document.getElementById("pickerTitle").textContent = "이 지점에 " + nicks.length + "명 있어요. 누구를 볼까요?";
       document.getElementById("pickerNicks").innerHTML = nicks.map(function (nick) {
-        return '<button type="button" data-nick="' + esc(nick) + '">' + esc(nick) + "</button>";
+        const runner = ((board && board.runners) || []).find(function (row) { return row.nickname === nick; }) || { nickname: nick };
+        return '<button type="button" data-nick="' + esc(nick) + '">' + esc(runnerLabel(runner)) + "</button>";
       }).join("");
       box.classList.remove("hidden");
       box.scrollIntoView({ behavior: "smooth", block: "nearest" });

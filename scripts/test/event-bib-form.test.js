@@ -14,6 +14,7 @@ const {
   goalPaceLabel,
   goalFocusNext,
   savedBibSummary,
+  bibIdentityLine,
 } = require("../../assets/event-bib-form");
 
 const base = { eventId: "e1", nickname: "닉", bib: "1001" };
@@ -145,7 +146,7 @@ describe("event-bib page wiring", () => {
     assert.doesNotMatch(html, /id="waveEmpty"|getElementById\("waveEmpty"\)/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
     assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
-    assert.match(html, /content="0\.21\.6"/);
+    assert.match(html, /content="0\.21\.7"/);
   });
 
   it("treats the page as full course and explains a non-full participant", () => {
@@ -182,6 +183,28 @@ describe("event-bib page wiring", () => {
     assert.match(html, /id="goalPace"/);
     assert.match(html, /EventBibForm\.goalPaceLabel\(/);
     assert.match(html, /EventBibForm\.goalFocusNext\(/);
+  });
+});
+
+describe("bib page identity line", () => {
+  it("shows nickname and real name together", () => {
+    assert.equal(bibIdentityLine({ nickname: "게살볶음밥", realName: "문광명" }), "게살볶음밥 · 문광명");
+  });
+
+  it("shows only the nickname when the real name is missing", () => {
+    assert.equal(bibIdentityLine({ nickname: "게살볶음밥", realName: "" }), "게살볶음밥");
+    assert.equal(bibIdentityLine({ nickname: "게살볶음밥", realName: "   " }), "게살볶음밥");
+    assert.equal(bibIdentityLine({ nickname: "게살볶음밥" }), "게살볶음밥");
+    assert.equal(bibIdentityLine(null), "");
+  });
+
+  it("shows only the real name when the nickname is missing", () => {
+    assert.equal(bibIdentityLine({ nickname: "", realName: "문광명" }), "문광명");
+    assert.equal(bibIdentityLine({ realName: "문광명" }), "문광명");
+  });
+
+  it("trims both names before joining", () => {
+    assert.equal(bibIdentityLine({ nickname: " 게살볶음밥 ", realName: " 문광명 " }), "게살볶음밥 · 문광명");
   });
 });
 
@@ -248,6 +271,17 @@ describe("cheer bib saved card", () => {
     assert.match(html, /editing/);
     assert.doesNotMatch(html, /id="done"/);
     assert.doesNotMatch(html, /saved[\s\S]{0,400}startAt|savedWave[\s\S]{0,120}slice\(11/);
+  });
+
+  it("prints nickname and real name on the summary and the form, not on the nick list", () => {
+    assert.match(html, /id="savedIdentity"/);
+    assert.match(html, /getElementById\("savedIdentity"\)\.textContent = EventBibForm\.bibIdentityLine\(participant\(\)\)/);
+    assert.match(html, /getElementById\("who"\)\.textContent = EventBibForm\.bibIdentityLine\(row\)/);
+    assert.doesNotMatch(html, /savedIdentity[\s\S]{0,80}innerHTML|getElementById\("who"\)\.innerHTML/);
+    const nickLine = html.split("\n").find((line) => line.includes('class="nick-btn"'));
+    assert.ok(nickLine);
+    assert.equal(nickLine.includes("realName"), false);
+    assert.match(nickLine, /esc\(row\.nickname\)/);
   });
 });
 
@@ -318,6 +352,19 @@ describe("cheer board page", () => {
   it("does not print a wave start clock on the player board", () => {
     assert.doesNotMatch(html, /startAt\)\.slice\(11/);
     assert.doesNotMatch(html, /출발 " \+/);
+  });
+
+  it("shows nickname and real name on the map, rank, cluster picker, and detail", () => {
+    assert.match(html, /<script src="\.\.\/assets\/event-bib-form\.js"><\/script>/);
+    assert.match(html, /content="0\.21\.7"/);
+    assert.match(html, /function runnerLabel\(runner\)/);
+    assert.match(html, /return EventBibForm\.bibIdentityLine\(runner\)/);
+    assert.match(html, /const name = runnerLabel\(lead\[0\]\)/);
+    assert.match(html, /esc\(label\)/);
+    assert.match(html, /esc\(runnerLabel\(runner\)\)/);
+    assert.match(html, /data-nick="' \+ esc\(runner\.nickname\)/);
+    assert.match(html, /data-nicks="' \+ esc\(lead\.map\(function \(r\) \{ return r\.nickname; \}\)\.join\("\|"\)\)/);
+    assert.doesNotMatch(html, /startAt\)\.slice\(11/);
   });
 
   it("shows load errors in Korean, including offline fetch failures", () => {

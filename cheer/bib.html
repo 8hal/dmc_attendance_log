@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.6" />
+  <meta name="app-version" content="0.21.7" />
   <title>배번 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -164,6 +164,14 @@
       color: #64748b;
       line-height: 1.35;
     }
+    .saved-identity {
+      margin: 0 0 12px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+    #who { font-size: 18px; font-weight: 800; line-height: 1.35; }
     .saved-line {
       margin: 8px 0 0;
       text-align: center;
@@ -221,6 +229,7 @@
       <button class="btn" type="submit" id="saveBtn">저장</button>
     </form>
     <div id="saved" class="card hidden">
+      <p class="saved-identity" id="savedIdentity"></p>
       <div class="bib-face" aria-label="배번">
         <div class="bib-face-band">
           <span class="bib-face-dist" id="savedDist"></span>
@@ -306,6 +315,7 @@
       document.getElementById("pick").classList.add("hidden");
       document.getElementById("form").classList.add("hidden");
       document.getElementById("saved").classList.remove("hidden");
+      document.getElementById("savedIdentity").textContent = EventBibForm.bibIdentityLine(participant());
       document.querySelector(".nav").classList.add("hidden");
       document.getElementById("pagePurpose").classList.add("hidden");
       document.getElementById("savedBib").textContent = summary.bib;
@@ -359,7 +369,7 @@
       }
       document.getElementById("pick").classList.add("hidden");
       document.getElementById("form").classList.remove("hidden");
-      document.getElementById("who").textContent = row.nickname;
+      document.getElementById("who").textContent = EventBibForm.bibIdentityLine(row);
       if (!document.getElementById("bib").value) {
         document.getElementById("bib").value = row.bib || "";
       }
