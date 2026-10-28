@@ -349,6 +349,49 @@ describe("event-home bus card titles", () => {
   });
 });
 
+describe("cheerLinks", () => {
+  it("points the board at cheer/index.html with eventId only", () => {
+    const links = EventHomeAction.cheerLinks(
+      "evt_2026-11-01_2026_jtbc",
+      { nickname: "홍길동" },
+      { distance: "half" }
+    );
+    assert.equal(
+      links.boardHref,
+      "cheer/index.html?eventId=evt_2026-11-01_2026_jtbc"
+    );
+    assert.equal(links.showGoal, false);
+  });
+
+  it("shows the goal form link only for a full-marathon participant", () => {
+    const links = EventHomeAction.cheerLinks(
+      "evt_1",
+      { nickname: "홍 길동" },
+      { distance: "full" }
+    );
+    assert.equal(links.showGoal, true);
+    assert.equal(
+      links.goalHref,
+      "cheer/bib.html?eventId=evt_1&nickname=" + encodeURIComponent("홍 길동")
+    );
+  });
+
+  it("hides the goal link without a nickname or full distance", () => {
+    assert.equal(
+      EventHomeAction.cheerLinks("evt_1", { nickname: "" }, { distance: "full" }).showGoal,
+      false
+    );
+    assert.equal(
+      EventHomeAction.cheerLinks("evt_1", { nickname: "러너" }, null).showGoal,
+      false
+    );
+    assert.equal(
+      EventHomeAction.cheerLinks("evt_1", { nickname: "러너" }, { distance: "  full  " }).showGoal,
+      true
+    );
+  });
+});
+
 describe("bibStagePrompt", () => {
   it("distance stage asks which category", () => {
     assert.match(

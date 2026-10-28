@@ -47,7 +47,7 @@ describe("cheer pages are a public feature off the member tab bar", () => {
     assert.doesNotMatch(admin, /배번 입력 링크 복사/);
     assert.doesNotMatch(admin, /function bibUrl/);
     for (const name of rootHtmlFiles()) {
-      if (name === "event-admin.html") continue;
+      if (name === "event-admin.html" || name === "event-home.html") continue;
       const text = fs.readFileSync(path.join(root, name), "utf8");
       assert.doesNotMatch(text, /\/cheer\/|cheer\/(?:index|bib|waves)\.html/, name);
     }
@@ -57,5 +57,23 @@ describe("cheer pages are a public feature off the member tab bar", () => {
     assert.doesNotMatch(tabs, /cheer/);
     assert.doesNotMatch(home, /data-tab="cheer"/);
     assert.match(action, /"my-bib\.html" \+ q/);
+  });
+
+  it("links member home to the public board and full-marathon goal form", () => {
+    const home = fs.readFileSync(path.join(root, "event-home.html"), "utf8");
+    const homeStart = home.indexOf('id="home"');
+    const tabStart = home.indexOf('id="eventTabBar"');
+    assert.ok(homeStart >= 0 && tabStart > homeStart);
+    const homeBlock = home.slice(homeStart, tabStart);
+    assert.match(homeBlock, /id="cheerBoardLink"/);
+    assert.match(homeBlock, />응원 보드</);
+    assert.match(homeBlock, /cheer\/index\.html/);
+    assert.match(homeBlock, /id="cheerGoalLink"/);
+    assert.match(homeBlock, />풀코스 목표 입력</);
+    assert.match(homeBlock, /cheer\/bib\.html/);
+    assert.match(home, /EventHomeAction\.cheerLinks/);
+    assert.doesNotMatch(home, /cheer\/waves\.html/);
+    assert.doesNotMatch(home, /data-tab="cheer"/);
+    assert.doesNotMatch(home, /cheer-board|cheer-runner|subAction=waves/);
   });
 });

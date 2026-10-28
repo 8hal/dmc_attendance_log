@@ -225,6 +225,17 @@
     return nicks;
   }
 
+  function cheerLinks(eventId, identity, participant) {
+    const q = "?eventId=" + encodeURIComponent(eventId ? String(eventId) : "");
+    const nick = trimField(identity && identity.nickname);
+    const distance = trimField(participant && participant.distance);
+    return {
+      boardHref: "cheer/index.html" + q,
+      goalHref: "cheer/bib.html" + q + "&nickname=" + encodeURIComponent(nick),
+      showGoal: distance === "full" && nick !== "",
+    };
+  }
+
   function pageHref(hrefKey, eventId) {
     if (!eventId) return "#";
     const q = "?eventId=" + encodeURIComponent(eventId);
@@ -252,6 +263,7 @@
     resolveBusCard,
     pickNicknames,
     PROFILE_DISTANCES,
+    cheerLinks,
     pageHref,
     busRouteTitle,
     bibStagePrompt,

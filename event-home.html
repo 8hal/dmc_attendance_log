@@ -267,6 +267,11 @@
         <button type="button" class="today-cta hidden" id="busBoardBtn">탑승하기</button>
       </section>
 
+      <section class="today-card" id="cheerLinkCard" aria-label="응원">
+        <a class="today-cta" id="cheerBoardLink" href="cheer/index.html">응원 보드</a>
+        <a class="today-secondary hidden" id="cheerGoalLink" href="cheer/bib.html">풀코스 목표 입력</a>
+      </section>
+
       <button type="button" class="switch-user-btn" id="switchUserBtn">다른 사람 선택</button>
 
       <section id="timeline" class="timeline-section hidden">
@@ -364,6 +369,8 @@
     const busTitle = document.getElementById("busTitle");
     const busPrompt = document.getElementById("busPrompt");
     const busBoardBtn = document.getElementById("busBoardBtn");
+    const cheerBoardLink = document.getElementById("cheerBoardLink");
+    const cheerGoalLink = document.getElementById("cheerGoalLink");
     const boardDoneOverlay = document.getElementById("boardDoneOverlay");
     const boardDoneText = document.getElementById("boardDoneText");
 
@@ -778,9 +785,17 @@
       }
     }
 
+    function renderCheerLinks(identity) {
+      const links = EventHomeAction.cheerLinks(eventId, identity, matchParticipant(identity));
+      cheerBoardLink.href = links.boardHref;
+      cheerGoalLink.href = links.goalHref;
+      cheerGoalLink.classList.toggle("hidden", !links.showGoal);
+    }
+
     function renderHomeCards(identity) {
       renderProfileCard(identity);
       renderBusCard();
+      renderCheerLinks(identity);
     }
 
     function loadBusRow(identity) {
@@ -1155,6 +1170,7 @@
 
       renderTimeline(event);
       mountTabs();
+      renderCheerLinks(identity);
       showOnly(homeEl);
       const gen = homeGeneration;
       refreshHomeState(identity).then(function () {
