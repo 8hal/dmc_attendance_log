@@ -63,12 +63,6 @@
     });
   }
 
-  function waveClockLabel(startAt) {
-    const hhmm = String(startAt || "").slice(11, 16);
-    if (!/^\d{2}:\d{2}$/.test(hhmm)) return "";
-    return String(Number(hhmm.slice(0, 2))) + hhmm.slice(2);
-  }
-
   function goalPaceLabel(fields) {
     if (goalFieldsError(fields || {})) return "";
     const input = fields || {};
@@ -99,7 +93,6 @@
     goalFieldsFromSec,
     waveChoiceVisible,
     sortWaves,
-    waveClockLabel,
     goalPaceLabel,
     goalFocusNext,
   };

@@ -8,7 +8,6 @@ const {
   goalFieldsError,
   waveChoiceVisible,
   sortWaves,
-  waveClockLabel,
   goalPaceLabel,
   goalFocusNext,
 } = require("../../assets/event-bib-form");
@@ -151,7 +150,9 @@ describe("event-bib page wiring", () => {
     assert.match(html, /id="waveChips"/);
     assert.match(html, /data-wave-id/);
     assert.match(html, /class="wave-name"/);
-    assert.match(html, /class="wave-time"/);
+    assert.match(html, /배번에 적힌 출발 그룹을 고르세요\./);
+    assert.match(html, /고르지 않으면 앞쪽 그룹으로 봅니다\./);
+    assert.doesNotMatch(html, /class="wave-time"|waveClockLabel|출발 시각|시각은|가장 이른|7:30/);
     assert.doesNotMatch(html, /waves\.length < 2/);
     assert.doesNotMatch(html, /<select id="wave"/);
     assert.match(html, /id="waveNone"/);
@@ -179,14 +180,12 @@ describe("cheer bib wave and goal helpers", () => {
     assert.equal(waveChoiceVisible(8), true);
   });
 
-  it("sorts groups by start time and prints the clock as order, not the label", () => {
+  it("sorts groups by startAt for chip order without a clock label", () => {
     const sorted = sortWaves([
       { id: "h", name: "H", startAt: "2026-11-01T08:05:00+09:00" },
       { id: "a", name: "A", startAt: "2026-11-01T07:30:00+09:00" },
     ]);
     assert.deepEqual(sorted.map((wave) => wave.name), ["A", "H"]);
-    assert.equal(waveClockLabel("2026-11-01T07:30:00+09:00"), "7:30");
-    assert.equal(waveClockLabel("not-a-time"), "");
   });
 
   it("previews pace only inside the 1 to 10 hour goal", () => {
