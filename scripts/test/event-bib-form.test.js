@@ -2,7 +2,15 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { buildBibBody, goalFieldsFromSec, goalFieldsError } = require("../../assets/event-bib-form");
+const {
+  buildBibBody,
+  goalFieldsFromSec,
+  goalFieldsError,
+  waveChoiceVisible,
+  sortWaves,
+  goalPaceLabel,
+  goalFocusNext,
+} = require("../../assets/event-bib-form");
 
 const base = { eventId: "e1", nickname: "닉", bib: "1001" };
 
@@ -132,6 +140,68 @@ describe("event-bib page wiring", () => {
     assert.doesNotMatch(html, /조와 목표를 비워도 배번은 저장됩니다/);
     assert.doesNotMatch(html, /id="waveEmpty"|getElementById\("waveEmpty"\)/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
+    assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
+    assert.match(html, /content="0\.21\.4"/);
+  });
+
+  it("shows a wave chip for every registered group, including a single group", () => {
+    assert.match(html, /EventBibForm\.waveChoiceVisible\(/);
+    assert.match(html, /EventBibForm\.sortWaves\(/);
+    assert.match(html, /id="waveChips"/);
+    assert.match(html, /data-wave-id/);
+    assert.match(html, /class="wave-name"/);
+    assert.match(html, /배번에 적힌 출발 그룹을 고르세요\./);
+    assert.match(html, /고르지 않으면 앞쪽 그룹으로 봅니다\./);
+    assert.doesNotMatch(html, /class="wave-time"|waveClockLabel|출발 시각|시각은|가장 이른|7:30/);
+    assert.doesNotMatch(html, /waves\.length < 2/);
+    assert.doesNotMatch(html, /<select id="wave"/);
+    assert.match(html, /id="waveNone"/);
+    assert.match(html, /출발 그룹이 아직 없습니다/);
+  });
+
+  it("keeps the bib editable and puts the goal clock on one row", () => {
+    assert.match(html, /id="bib"[^>]*inputmode="numeric"/);
+    assert.doesNotMatch(html, /id="bib"[^>]*(?:readonly|disabled)/);
+    assert.doesNotMatch(html, /getElementById\("bib"\)\.disabled/);
+    assert.match(html, /class="goal-row"/);
+    assert.match(html, /id="goalH"[^>]*maxlength="2"/);
+    assert.match(html, /id="goalM"[^>]*inputmode="numeric"/);
+    assert.match(html, /id="goalS"[^>]*inputmode="numeric"/);
+    assert.match(html, /id="goalPace"/);
+    assert.match(html, /EventBibForm\.goalPaceLabel\(/);
+    assert.match(html, /EventBibForm\.goalFocusNext\(/);
+  });
+});
+
+describe("cheer bib wave and goal helpers", () => {
+  it("shows the wave choice whenever at least one group exists", () => {
+    assert.equal(waveChoiceVisible(0), false);
+    assert.equal(waveChoiceVisible(1), true);
+    assert.equal(waveChoiceVisible(8), true);
+  });
+
+  it("sorts groups by startAt for chip order without a clock label", () => {
+    const sorted = sortWaves([
+      { id: "h", name: "H", startAt: "2026-11-01T08:05:00+09:00" },
+      { id: "a", name: "A", startAt: "2026-11-01T07:30:00+09:00" },
+    ]);
+    assert.deepEqual(sorted.map((wave) => wave.name), ["A", "H"]);
+  });
+
+  it("previews pace only inside the 1 to 10 hour goal", () => {
+    assert.equal(goalPaceLabel({ goalH: "3", goalM: "0", goalS: "0" }), "4:16/km");
+    assert.equal(goalPaceLabel({ goalH: "", goalM: "", goalS: "" }), "");
+    assert.equal(goalPaceLabel({ goalH: "11", goalM: "0", goalS: "0" }), "");
+    assert.equal(goalPaceLabel({ goalH: "3", goalM: "75", goalS: "0" }), "");
+  });
+
+  it("moves focus across a one-line clock without skipping hour 10", () => {
+    assert.equal(goalFocusNext("goalH", "3"), "goalM");
+    assert.equal(goalFocusNext("goalH", "1"), "");
+    assert.equal(goalFocusNext("goalH", "10"), "goalM");
+    assert.equal(goalFocusNext("goalM", "5"), "");
+    assert.equal(goalFocusNext("goalM", "05"), "goalS");
+    assert.equal(goalFocusNext("goalS", "00"), "");
   });
 });
 
