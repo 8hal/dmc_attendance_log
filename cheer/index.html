@@ -263,7 +263,7 @@
       const splits = splitRows ? "<table class='splits'><thead><tr><th>구간</th><th>누적기록</th><th>누적 페이스</th><th>구간 페이스</th></tr></thead><tbody>" + splitRows + "</tbody></table>" : "";
       document.getElementById("detailBody").innerHTML =
         "<div class='nick'>" + esc(runner.nickname) + (runner.chip ? " <span class='chip'>칩 기록</span>" : "") + "</div>" +
-        "<div class='sub'>배번 " + esc(runner.bib) + " · " + esc(runner.waveName) + " 출발 " + esc(String(runner.startAt).slice(11, 16)) + "</div>" +
+        "<div class='sub'>배번 " + esc(runner.bib) + (runner.waveName ? " · " + esc(runner.waveName) : "") + "</div>" +
         "<div class='sub'>지금 " + CheerCourse.formatKm(runner.km) + " km · 경과 " + CheerCourse.formatElapsed(runner.elapsedSec) +
         " · 평균 " + CheerCourse.formatPace(runner.avgPaceSecPerKm) + "/km</div>" +
         (runner.finished

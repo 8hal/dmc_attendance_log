@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.4" />
+  <meta name="app-version" content="0.21.5" />
   <title>배번 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -129,7 +129,7 @@
     </div>
     <form id="form" class="card hidden">
       <p id="who"></p>
-      <div class="chips" id="distChips"></div>
+      <p id="notFullNote" class="hint hidden"></p>
       <label for="bib">배번</label>
       <input id="bib" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
       <div id="fullFields" class="hidden">
@@ -159,7 +159,6 @@
     </form>
     <p id="done" class="card hidden">저장했습니다.</p>
   </div>
-  <script src="../assets/event-home-action.js"></script>
   <script src="../assets/distance-utils.js"></script>
   <script src="../assets/event-bib-form.js"></script>
   <script>
@@ -171,7 +170,6 @@
     const eventId = params.get("eventId") || "";
     let event = null;
     let nickname = params.get("nickname") || "";
-    let distance = "";
     let composing = false;
     const SAVE_ERRORS = {
       "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
@@ -233,13 +231,12 @@
       if (!document.getElementById("bib").value) {
         document.getElementById("bib").value = row.bib || "";
       }
-      if (EventHomeAction.PROFILE_DISTANCES.indexOf(distance) < 0) {
-        distance = EventHomeAction.PROFILE_DISTANCES.indexOf(row.distance) >= 0 ? row.distance : "";
-      }
-      document.getElementById("distChips").innerHTML = EventHomeAction.PROFILE_DISTANCES.map(function (dist) {
-        const on = dist === distance ? " active" : "";
-        return '<button type="button" class="dist' + on + '" data-dist="' + dist + '">' + formatDistance(dist) + "</button>";
-      }).join("");
+      const saveDistance = EventBibForm.cheerBibSaveDistance(row);
+      const fullCourse = saveDistance === "full";
+      const note = document.getElementById("notFullNote");
+      note.textContent = fullCourse ? "" : EventBibForm.nonFullCourseNote(formatDistance(saveDistance));
+      note.classList.toggle("hidden", fullCourse);
+      document.getElementById("fullFields").classList.toggle("hidden", !fullCourse);
       const waves = EventBibForm.sortWaves(event.waves || []);
       const showWaves = EventBibForm.waveChoiceVisible(waves.length);
       const typedWave = document.getElementById("wave").value;
@@ -261,7 +258,6 @@
         document.getElementById("goalS").value = savedGoal.s.padStart(2, "0");
       }
       renderGoalPace();
-      document.getElementById("fullFields").classList.toggle("hidden", distance !== "full");
     }
 
     function renderGoalPace() {
@@ -310,27 +306,20 @@
       nickname = btn.getAttribute("data-nick");
       renderForm();
     });
-    document.getElementById("distChips").addEventListener("click", function (event) {
-      const btn = event.target.closest("[data-dist]");
-      if (!btn) return;
-      const typedBib = document.getElementById("bib").value;
-      distance = btn.getAttribute("data-dist");
-      renderForm();
-      document.getElementById("bib").value = typedBib;
-    });
     document.getElementById("form").addEventListener("submit", async function (submitEvent) {
       submitEvent.preventDefault();
       if (composing) return;
       const formError = document.getElementById("formError");
       formError.classList.add("hidden");
       const bib = document.getElementById("bib").value.trim();
-      if (!nickname || !distance || !bib) {
-        formError.textContent = "닉네임, 종목, 배번이 필요합니다.";
+      const saveDistance = EventBibForm.cheerBibSaveDistance(participant());
+      if (!nickname || !bib) {
+        formError.textContent = "닉네임과 배번이 필요합니다.";
         formError.classList.remove("hidden");
         return;
       }
       const val = function (id) { return document.getElementById(id).value; };
-      const goalError = distance === "full"
+      const goalError = saveDistance === "full"
         ? EventBibForm.goalFieldsError({ goalH: val("goalH"), goalM: val("goalM"), goalS: val("goalS") })
         : "";
       if (goalError) {
@@ -342,7 +331,7 @@
         eventId: eventId,
         nickname: nickname,
         bib: bib,
-        distance: distance,
+        distance: saveDistance,
         waveId: val("wave"),
         goalH: val("goalH"),
         goalM: val("goalM"),
@@ -360,8 +349,9 @@
         const data = await res.json();
         if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
         let doneText = "저장했습니다. 같은 화면에서 배번을 다시 바꿀 수 있습니다.";
-        if (distance === "full" && !hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
-        else if (distance === "full" && !hasStart) doneText = "저장했습니다. 출발 그룹이 등록되면 응원 보드에 나옵니다.";
+        if (saveDistance !== "full") doneText = "배번을 저장했습니다. 응원 보드는 풀코스만 나옵니다.";
+        else if (!hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
+        else if (!hasStart) doneText = "저장했습니다. 출발 그룹이 등록되면 응원 보드에 나옵니다.";
         const done = document.getElementById("done");
         done.textContent = doneText;
         done.classList.remove("hidden");
