@@ -211,8 +211,10 @@ function kstIso(ms) {
 }
 
 function toPublicRunner(participant, wave, projected, startOverride) {
+  // 현장 자원봉사자가 선수를 구분하도록 실명만 더한다. 그 외 회원 필드는 넣지 않는다.
   const row = {
     nickname: participant.nickname == null ? "" : String(participant.nickname),
+    realName: participant.realName == null ? "" : String(participant.realName).trim(),
     bib: String(participant.bib).trim(),
     waveId: String(wave.id),
     waveName: wave.name == null ? "" : String(wave.name),

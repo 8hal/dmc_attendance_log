@@ -128,7 +128,7 @@ describe("cheer board", () => {
     ],
   };
 
-  it("keeps only complete full runners and strips real names", () => {
+  it("keeps only complete full runners and includes their real names", () => {
     const board = buildCheerBoard({
       event,
       jobResults: [],
@@ -136,10 +136,30 @@ describe("cheer board", () => {
     });
     assert.equal(board.runners.length, 2);
     const blob = JSON.stringify(board);
-    assert.equal(blob.includes("김가람"), false);
-    assert.equal(blob.includes("이바다"), false);
-    assert.equal(board.runners[0].nickname, "가람");
+    assert.equal(blob.includes("박하프"), false);
+    assert.equal(blob.includes("최미완"), false);
+    const garam = board.runners.find((row) => row.nickname === "가람");
+    const bada = board.runners.find((row) => row.nickname === "바다");
+    assert.equal(garam.realName, "김가람");
+    assert.equal(bada.realName, "이바다");
     assert.ok(board.runners[0].km > board.runners[1].km);
+  });
+
+  it("trims a real name and uses an empty string when it is missing", () => {
+    const board = buildCheerBoard({
+      event: {
+        eventDate: "2026-10-19",
+        waves: [{ id: "a", name: "A", startAt: "2026-10-19T08:00:00+09:00" }],
+        participants: [
+          { nickname: "공백", realName: "  김공백  ", bib: "1", distance: "full", waveId: "a", goalFinishSec: GOAL },
+          { nickname: "없음", bib: "2", distance: "full", waveId: "a", goalFinishSec: GOAL },
+        ],
+      },
+      jobResults: [],
+      nowMs: START + 1000,
+    });
+    const byNick = Object.fromEntries(board.runners.map((row) => [row.nickname, row.realName]));
+    assert.deepEqual(byNick, { 공백: "김공백", 없음: "" });
   });
 
   it("attaches mapped splits on the runner detail", () => {
@@ -162,7 +182,7 @@ describe("cheer board", () => {
     });
     assert.equal(detail.ok, true);
     assert.equal(detail.runner.nickname, "가람");
-    assert.equal(detail.runner.realName, undefined);
+    assert.equal(detail.runner.realName, "김가람");
     assert.equal(detail.splits.length, 2);
     assert.equal(detail.splits[1].km, 15);
   });

@@ -110,6 +110,14 @@
     return pace ? clock + " · " + pace : "";
   }
 
+  // Bib page only. Other screens keep hiding real names.
+  function bibIdentityLine(participant) {
+    const nickname = String(participant && participant.nickname != null ? participant.nickname : "").trim();
+    const realName = String(participant && participant.realName != null ? participant.realName : "").trim();
+    if (nickname && realName) return nickname + " · " + realName;
+    return nickname || realName;
+  }
+
   // Saved bib screen. Wave clocks stay off the object so the page cannot print them.
   function savedBibSummary(participant, waves) {
     const bib = String(participant && participant.bib != null ? participant.bib : "").trim();
@@ -157,5 +165,6 @@
     goalPaceLabel,
     goalFocusNext,
     savedBibSummary,
+    bibIdentityLine,
   };
 });
