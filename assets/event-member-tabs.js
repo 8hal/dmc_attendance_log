@@ -45,6 +45,13 @@
       }
     }
 
+    const cheer = barEl.querySelector('[data-tab="cheer"]');
+    if (cheer) {
+      cheer.href = "cheer/index.html" + q;
+      cheer.classList.toggle("active", false);
+      cheer.removeAttribute("aria-current");
+    }
+
     barEl.classList.remove("hidden");
   }
 
