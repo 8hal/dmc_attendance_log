@@ -69,7 +69,8 @@ describe("cheer pages are a public feature off the member tab bar", () => {
     assert.match(homeBlock, />응원 보드</);
     assert.match(homeBlock, /cheer\/index\.html/);
     assert.match(homeBlock, /id="cheerGoalLink"/);
-    assert.match(homeBlock, />풀코스 목표 입력</);
+    assert.match(homeBlock, />목표·조 수정</);
+    assert.doesNotMatch(homeBlock, />풀코스 목표 입력</);
     assert.match(homeBlock, /cheer\/bib\.html/);
     assert.match(home, /EventHomeAction\.cheerLinks/);
     assert.doesNotMatch(home, /cheer\/waves\.html/);

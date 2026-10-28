@@ -6,6 +6,9 @@ const {
   buildBibBody,
   goalFieldsFromSec,
   goalFieldsError,
+  boardGoalError,
+  cheerBibSaveDistance,
+  nonFullCourseNote,
   waveChoiceVisible,
   sortWaves,
   goalPaceLabel,
@@ -141,7 +144,15 @@ describe("event-bib page wiring", () => {
     assert.doesNotMatch(html, /id="waveEmpty"|getElementById\("waveEmpty"\)/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
     assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
-    assert.match(html, /content="0\.21\.4"/);
+    assert.match(html, /content="0\.21\.5"/);
+  });
+
+  it("treats the page as full course and explains a non-full participant", () => {
+    assert.doesNotMatch(html, /id="distChips"|data-dist|PROFILE_DISTANCES/);
+    assert.match(html, /EventBibForm\.cheerBibSaveDistance\(/);
+    assert.match(html, /id="notFullNote"/);
+    assert.match(html, /EventBibForm\.nonFullCourseNote\(/);
+    assert.doesNotMatch(html, /<select[^>]*id="wave"/);
   });
 
   it("shows a wave chip for every registered group, including a single group", () => {
@@ -170,6 +181,32 @@ describe("event-bib page wiring", () => {
     assert.match(html, /id="goalPace"/);
     assert.match(html, /EventBibForm\.goalPaceLabel\(/);
     assert.match(html, /EventBibForm\.goalFocusNext\(/);
+  });
+});
+
+describe("cheer bib distance and required goal", () => {
+  it("saves a full course unless the participant is already another distance", () => {
+    assert.equal(cheerBibSaveDistance(null), "full");
+    assert.equal(cheerBibSaveDistance({}), "full");
+    assert.equal(cheerBibSaveDistance({ distance: "  full  " }), "full");
+    assert.equal(cheerBibSaveDistance({ distance: "half" }), "half");
+    assert.equal(cheerBibSaveDistance({ distance: " 10K " }), "10K");
+  });
+
+  it("explains that cheering is full course only", () => {
+    const note = nonFullCourseNote("하프");
+    assert.match(note, /풀코스/);
+    assert.match(note, /하프/);
+    assert.match(note, /배번/);
+    assert.match(nonFullCourseNote("?"), /다른 종목/);
+    assert.match(nonFullCourseNote(""), /다른 종목/);
+  });
+
+  it("requires a 1 to 10 hour goal before the home form can qualify a runner", () => {
+    assert.equal(boardGoalError({ goalH: "3", goalM: "30", goalS: "0" }), "");
+    assert.match(boardGoalError({ goalH: "", goalM: "", goalS: "" }), /완주 목표 시간/);
+    assert.match(boardGoalError({ goalH: "11", goalM: "0", goalS: "0" }), /1시간에서 10시간/);
+    assert.match(boardGoalError({ goalH: "3", goalM: "75", goalS: "0" }), /0–59/);
   });
 });
 
@@ -209,6 +246,11 @@ describe("cheer board page", () => {
   const html = fs.readFileSync(path.join(__dirname, "../../cheer/index.html"), "utf8");
   it("refreshes an open runner detail on each poll", () => {
     assert.match(html, /view === "detail" && selected/);
+  });
+
+  it("does not print a wave start clock on the player board", () => {
+    assert.doesNotMatch(html, /startAt\)\.slice\(11/);
+    assert.doesNotMatch(html, /출발 " \+/);
   });
 
   it("shows load errors in Korean, including offline fetch failures", () => {

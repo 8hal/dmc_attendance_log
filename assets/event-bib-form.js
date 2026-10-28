@@ -39,6 +39,33 @@
     return "";
   }
 
+  function boardGoalError(input) {
+    const fields = input || {};
+    const shape = goalFieldsError(fields);
+    if (shape) return shape;
+    if (!filled(fields.goalH) && !filled(fields.goalM) && !filled(fields.goalS)) {
+      return "완주 목표 시간을 넣어 주세요.";
+    }
+    const sec = num(fields.goalH) * 3600 + num(fields.goalM) * 60 + num(fields.goalS);
+    if (sec < GOAL_MIN_SEC || sec > GOAL_MAX_SEC) {
+      return "목표는 1시간에서 10시간 사이로 넣어 주세요.";
+    }
+    return "";
+  }
+
+  // This page is the full-course cheer form. A runner already saved as another distance keeps it.
+  function cheerBibSaveDistance(participant) {
+    const stored = String(participant && participant.distance != null ? participant.distance : "").trim();
+    if (!stored || stored === "full") return "full";
+    return stored;
+  }
+
+  function nonFullCourseNote(distanceLabel) {
+    const label = String(distanceLabel == null ? "" : distanceLabel).trim();
+    const shown = !label || label === "-" || label === "?" ? "다른 종목" : label;
+    return "응원은 풀코스만 할 수 있어요. 이 참가자는 " + shown + "입니다. 배번은 고칠 수 있어요.";
+  }
+
   function goalFieldsFromSec(sec) {
     const total = Number(sec);
     if (!Number.isFinite(total) || total <= 0) return null;
@@ -90,6 +117,9 @@
   return {
     buildBibBody,
     goalFieldsError,
+    boardGoalError,
+    cheerBibSaveDistance,
+    nonFullCourseNote,
     goalFieldsFromSec,
     waveChoiceVisible,
     sortWaves,

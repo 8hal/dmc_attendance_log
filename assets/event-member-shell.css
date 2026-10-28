@@ -526,6 +526,75 @@
   background: var(--dmc-color-primary-surface, #eff6ff);
 }
 
+.profile-hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--dmc-color-text-secondary, #64748b);
+  margin: 0 0 12px;
+}
+
+.profile-wave-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.profile-wave-chip {
+  min-height: 48px;
+  border: 1px solid var(--dmc-color-border, #e2e8f0);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 2px;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.profile-wave-chip.is-selected,
+.profile-wave-chip[aria-pressed="true"] {
+  background: var(--dmc-color-primary-surface, #eff6ff);
+  border-color: var(--dmc-color-primary, #2563eb);
+  color: var(--dmc-color-primary, #2563eb);
+}
+
+.profile-goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.profile-goal-head .profile-label {
+  margin: 0;
+}
+
+.profile-goal-pace {
+  min-height: 1.2em;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dmc-color-primary, #2563eb);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-goal-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.profile-goal-row .profile-time-part {
+  width: 64px;
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .profile-link-row {
   display: flex;
   flex-direction: row;

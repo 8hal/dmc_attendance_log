@@ -197,6 +197,24 @@
           <div id="profileBibNumberGroup" class="hidden">
             <label class="profile-label" for="profileBib">배번</label>
             <input id="profileBib" class="profile-input" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
+            <div id="profileFullFields" class="hidden">
+              <p class="profile-label" id="profileWaveLabel">출발 그룹</p>
+              <div class="profile-wave-chips" id="profileWaveChips" role="radiogroup" aria-labelledby="profileWaveLabel"></div>
+              <input type="hidden" id="profileWave" value="" />
+              <p class="profile-hint hidden" id="profileWaveNone">출발 그룹이 아직 없습니다.</p>
+              <p class="profile-hint" id="profileWaveHint">배번에 적힌 출발 그룹을 고르세요. 고르지 않으면 앞쪽 그룹으로 봅니다.</p>
+              <div class="profile-goal-head">
+                <span class="profile-label" id="profileGoalLabel">완주 목표 시간</span>
+                <span id="profileGoalPace" class="profile-goal-pace" aria-live="polite"></span>
+              </div>
+              <div class="profile-goal-row" role="group" aria-labelledby="profileGoalLabel">
+                <input id="profileGoalH" class="profile-input profile-time-part" inputmode="numeric" maxlength="2" placeholder="3" aria-label="시" enterkeyhint="next" autocomplete="off" />
+                <span class="profile-time-sep" aria-hidden="true">:</span>
+                <input id="profileGoalM" class="profile-input profile-time-part" inputmode="numeric" maxlength="2" placeholder="00" aria-label="분" enterkeyhint="next" autocomplete="off" />
+                <span class="profile-time-sep" aria-hidden="true">:</span>
+                <input id="profileGoalS" class="profile-input profile-time-part" inputmode="numeric" maxlength="2" placeholder="00" aria-label="초" enterkeyhint="done" autocomplete="off" />
+              </div>
+            </div>
             <button type="button" class="today-cta" id="profileBibSave">저장</button>
           </div>
         </form>
@@ -269,7 +287,7 @@
 
       <section class="today-card" id="cheerLinkCard" aria-label="응원">
         <a class="today-cta" id="cheerBoardLink" href="cheer/index.html">응원 보드</a>
-        <a class="today-secondary hidden" id="cheerGoalLink" href="cheer/bib.html">풀코스 목표 입력</a>
+        <a class="today-secondary hidden" id="cheerGoalLink" href="cheer/bib.html">목표·조 수정</a>
       </section>
 
       <button type="button" class="switch-user-btn" id="switchUserBtn">다른 사람 선택</button>
@@ -299,6 +317,7 @@
   <script src="assets/event-member-profile.js"></script>
   <script src="assets/event-home-badges.js"></script>
   <script src="assets/event-home-action.js"></script>
+  <script src="assets/event-bib-form.js"></script>
   <script src="assets/event-finish-time.js"></script>
   <script src="assets/event-member-tabs.js"></script>
   <script>
@@ -346,6 +365,15 @@
     const profileBib = document.getElementById("profileBib");
     const profileDistChips = document.getElementById("profileDistChips");
     const profileBibNumberGroup = document.getElementById("profileBibNumberGroup");
+    const profileFullFields = document.getElementById("profileFullFields");
+    const profileWaveChips = document.getElementById("profileWaveChips");
+    const profileWave = document.getElementById("profileWave");
+    const profileWaveNone = document.getElementById("profileWaveNone");
+    const profileWaveHint = document.getElementById("profileWaveHint");
+    const profileGoalH = document.getElementById("profileGoalH");
+    const profileGoalM = document.getElementById("profileGoalM");
+    const profileGoalS = document.getElementById("profileGoalS");
+    const profileGoalPace = document.getElementById("profileGoalPace");
     const profileBibSave = document.getElementById("profileBibSave");
     const profilePendingActions = document.getElementById("profilePendingActions");
     const profilePbWrap = document.getElementById("profilePbWrap");
@@ -541,6 +569,48 @@
       profileBib.value = bibDraft;
     }
 
+    function renderGoalPace() {
+      profileGoalPace.textContent = EventBibForm.goalPaceLabel({
+        goalH: profileGoalH.value,
+        goalM: profileGoalM.value,
+        goalS: profileGoalS.value,
+      });
+    }
+
+    function seedFullFields(participant) {
+      const savedGoal = EventBibForm.goalFieldsFromSec(participant && participant.goalFinishSec);
+      profileGoalH.value = savedGoal ? savedGoal.h : "";
+      profileGoalM.value = savedGoal ? String(savedGoal.m).padStart(2, "0") : "";
+      profileGoalS.value = savedGoal ? String(savedGoal.s).padStart(2, "0") : "";
+      const waves = EventBibForm.sortWaves((cachedEvent && cachedEvent.waves) || []);
+      const waveId = participant && participant.waveId ? String(participant.waveId) : "";
+      profileWave.value = waves.some(function (wave) { return wave.id === waveId; }) ? waveId : "";
+      renderGoalPace();
+    }
+
+    function renderWaveChips() {
+      const waves = EventBibForm.sortWaves((cachedEvent && cachedEvent.waves) || []);
+      const showWaves = EventBibForm.waveChoiceVisible(waves.length);
+      profileWaveChips.innerHTML = "";
+      profileWaveChips.classList.toggle("hidden", !showWaves);
+      profileWaveNone.classList.toggle("hidden", showWaves);
+      profileWaveHint.classList.toggle("hidden", !showWaves);
+      const picked = profileWave.value;
+      waves.forEach(function (wave) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const on = wave.id === picked;
+        btn.className = "profile-wave-chip" + (on ? " is-selected" : "");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        btn.textContent = wave.name == null ? "" : String(wave.name);
+        btn.addEventListener("click", function () {
+          profileWave.value = wave.id;
+          renderWaveChips();
+        });
+        profileWaveChips.appendChild(btn);
+      });
+    }
+
     function renderDistanceChips() {
       profileDistChips.innerHTML = "";
       EventHomeAction.PROFILE_DISTANCES.forEach(function (dist, idx) {
@@ -660,7 +730,10 @@
       }
 
       if (card.state === "bib") {
-        if (enteringBib && !profileBib.value) fillBibDraft(participant);
+        if (enteringBib) {
+          if (!profileBib.value) fillBibDraft(participant);
+          seedFullFields(participant);
+        }
         const stage =
           card.bibStage === "distance" && selectedDistance ? "bib" : card.bibStage;
         renderDistanceChips();
@@ -668,6 +741,10 @@
         profilePrompt.textContent = EventHomeAction.bibStagePrompt(stage);
         profilePrompt.classList.toggle("profile-prompt-question", stage === "distance");
         profileBibNumberGroup.classList.toggle("hidden", stage !== "bib");
+        const showFull = stage === "bib" && selectedDistance === "full";
+        profileFullFields.classList.toggle("hidden", !showFull);
+        if (showFull) renderWaveChips();
+        renderGoalPace();
         if (stage === "bib" && bibStageFocusPending) profileBib.focus();
         bibStageFocusPending = false;
         return;
@@ -999,26 +1076,50 @@
         if (!distance) renderProfileCard(identity);
         return;
       }
+      const goalFields = {
+        goalH: profileGoalH.value,
+        goalM: profileGoalM.value,
+        goalS: profileGoalS.value,
+      };
+      if (selectedDistance === "full") {
+        const goalError = EventBibForm.boardGoalError(goalFields);
+        if (goalError) {
+          showToast(goalError, true);
+          profileGoalH.focus();
+          return;
+        }
+      }
       if (isSavingBib) return;
       const gen = homeGeneration;
       isSavingBib = true;
       profileBibSave.disabled = true;
+      const body = EventBibForm.buildBibBody({
+        eventId: eventId,
+        nickname: identity.nickname,
+        bib: bib,
+        distance: distance,
+        waveId: profileWave.value,
+        goalH: goalFields.goalH,
+        goalM: goalFields.goalM,
+        goalS: goalFields.goalS,
+      });
       try {
         const res = await fetch(API_BASE + "?action=group-events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            subAction: "update-bib",
-            eventId: eventId,
-            nickname: identity.nickname,
-            bib: bib,
-            distance: distance,
-          }),
+          body: JSON.stringify(body),
         });
         if (homeGeneration !== gen) return;
         const data = await res.json();
         if (homeGeneration !== gen) return;
-        if (!data.ok) throw new Error(data.error || "배번 저장 실패");
+        if (!data.ok) {
+          const saveErrors = {
+            "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
+            "unknown waveId": "조 목록이 바뀌었습니다. 새로고침 후 다시 골라 주세요.",
+            "wave and goal are full marathon only": "조와 목표는 풀코스만 넣습니다.",
+          };
+          throw new Error(saveErrors[data.error] || data.error || "배번 저장 실패");
+        }
         showToast(data.message || "배번이 저장되었습니다");
         profileIntent = "";
         await reloadEvent();
@@ -1115,6 +1216,11 @@
       timeDraft = "";
       prevProfileState = "";
       profileBib.value = "";
+      profileGoalH.value = "";
+      profileGoalM.value = "";
+      profileGoalS.value = "";
+      profileWave.value = "";
+      profileGoalPace.textContent = "";
       profileTimeH.value = "";
       profileTimeM.value = "";
       profileTimeS.value = "";
@@ -1235,6 +1341,41 @@
     });
     profileBib.addEventListener("compositionend", function () {
       bibComposing = false;
+    });
+
+    function profileGoalLogical(id) {
+      if (id === "profileGoalH") return "goalH";
+      if (id === "profileGoalM") return "goalM";
+      return "goalS";
+    }
+
+    function profileGoalDomId(logical) {
+      if (logical === "goalM") return "profileGoalM";
+      if (logical === "goalS") return "profileGoalS";
+      return "";
+    }
+
+    function onProfileGoalInput(id) {
+      if (bibComposing) return;
+      const el = document.getElementById(id);
+      const cleaned = String(el.value || "").replace(/\D/g, "").slice(0, 2);
+      if (cleaned !== el.value) el.value = cleaned;
+      const nextId = profileGoalDomId(EventBibForm.goalFocusNext(profileGoalLogical(id), cleaned));
+      if (nextId) {
+        const next = document.getElementById(nextId);
+        if (next) next.focus();
+      }
+      renderGoalPace();
+    }
+
+    ["profileGoalH", "profileGoalM", "profileGoalS"].forEach(function (id) {
+      const el = document.getElementById(id);
+      el.addEventListener("compositionstart", function () { bibComposing = true; });
+      el.addEventListener("compositionend", function () {
+        bibComposing = false;
+        onProfileGoalInput(id);
+      });
+      el.addEventListener("input", function () { onProfileGoalInput(id); });
     });
 
     function readManualNetTime() {

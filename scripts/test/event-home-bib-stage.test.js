@@ -40,10 +40,11 @@ describe("event-home bib form markup", () => {
   });
 
   it("chip and save buttons stay type=button so they cannot submit the form", () => {
-    const groupStart = html.indexOf('id="profileBibNumberGroup"');
-    const groupEnd = html.indexOf("</div>", html.indexOf("</div>", groupStart) + 1);
-    const group = html.slice(groupStart, groupEnd);
-    assert.match(group, /id="profileBibSave"[^>]*type="button"|type="button"[^>]*id="profileBibSave"/);
+    const formStart = html.indexOf('id="profileBibForm"');
+    const formEnd = html.indexOf("</form>", formStart);
+    const form = html.slice(formStart, formEnd);
+    assert.match(form, /id="profileBibSave"[^>]*type="button"|type="button"[^>]*id="profileBibSave"/);
+    assert.doesNotMatch(form, /<button(?![^>]*type="button")/);
   });
 });
 
@@ -117,6 +118,40 @@ describe("event-home bib form submit is the single keypad-confirm save path", ()
     assert.ok(compIdx >= 0);
     assert.match(html, /profileBib\.addEventListener\(["']compositionstart["']/);
     assert.match(html, /profileBib\.addEventListener\(["']compositionend["']/);
+  });
+});
+
+describe("event-home full course collects the cheer goal and wave", () => {
+  const html = read("event-home.html");
+
+  it("shows a one-line goal clock and name-only wave chips inside the bib form", () => {
+    const formStart = html.indexOf('id="profileBibForm"');
+    const formEnd = html.indexOf("</form>", formStart);
+    const form = html.slice(formStart, formEnd);
+    assert.match(html, /assets\/event-bib-form\.js/);
+    assert.match(form, /id="profileFullFields"/);
+    assert.match(form, /id="profileWaveChips"/);
+    assert.match(form, /완주 목표 시간/);
+    assert.match(form, /id="profileGoalH"[^>]*maxlength="2"/);
+    assert.match(form, /id="profileGoalM"/);
+    assert.match(form, /id="profileGoalS"/);
+    assert.match(form, /id="profileGoalPace"/);
+    assert.match(form, /출발 그룹이 아직 없습니다/);
+    assert.doesNotMatch(form, /startAt|출발 시각|wave-time|7:30/);
+  });
+
+  it("saves full-course bib with the shared body builder and a required goal", () => {
+    const fn = extractFn(html, "submitUpdateBib");
+    assert.match(fn, /EventBibForm\.boardGoalError\(/);
+    assert.match(fn, /EventBibForm\.buildBibBody\(/);
+    assert.match(fn, /selectedDistance === ["']full["']/);
+  });
+
+  it("keeps the separate cheer page as an edit link and the board link", () => {
+    assert.match(html, /id="cheerBoardLink"/);
+    assert.match(html, />응원 보드</);
+    assert.match(html, /id="cheerGoalLink"[^>]*>목표·조 수정</);
+    assert.doesNotMatch(html, />풀코스 목표 입력</);
   });
 });
 
