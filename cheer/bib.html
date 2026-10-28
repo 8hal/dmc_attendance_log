@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.5" />
+  <meta name="app-version" content="0.21.6" />
   <title>배번 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -43,7 +43,7 @@
       cursor: pointer;
     }
     .chips button.active { background: #EFF6FF; color: #2563EB; border-color: #2563EB; }
-    .btn { width: 100%; border-radius: 8px; background: #2563EB; color: #fff; border: none; margin-top: 16px; }
+    .btn { display: block; width: 100%; border-radius: 8px; background: #2563EB; color: #fff; border: none; margin-top: 16px; text-align: center; text-decoration: none; }
     .hint, .error { font-size: 13px; line-height: 1.45; }
     .hint { color: #64748B; }
     .error { color: #DC2626; }
@@ -113,6 +113,69 @@
       font-variant-numeric: tabular-nums;
     }
     .goal-sep { font-size: 24px; font-weight: 700; color: #94A3B8; }
+    .bib-face {
+      position: relative;
+      margin: 0 0 12px;
+      padding: 16px 14px 12px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1px solid #dbe3f0;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .bib-face-band {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      margin: 0 0 10px;
+      padding: 14px 16px 12px;
+      border-radius: 4px;
+      background: var(--dmc-color-primary, #2563eb);
+      color: #0f172a;
+    }
+    .bib-face-dist {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--dmc-color-primary, #2563eb);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+    }
+    .bib-face-number {
+      font-size: 40px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: #0f172a;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .bib-face-event {
+      margin: 0 4px 2px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      line-height: 1.35;
+    }
+    .saved-line {
+      margin: 8px 0 0;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .btn-secondary {
+      background: #fff;
+      color: #0F172A;
+      border: 1px solid #E2E8F0;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -157,7 +220,20 @@
       <p id="formError" class="error hidden"></p>
       <button class="btn" type="submit" id="saveBtn">저장</button>
     </form>
-    <p id="done" class="card hidden">저장했습니다.</p>
+    <div id="saved" class="card hidden">
+      <div class="bib-face" aria-label="배번">
+        <div class="bib-face-band">
+          <span class="bib-face-dist" id="savedDist"></span>
+          <div class="bib-face-number" id="savedBib"></div>
+        </div>
+        <p class="bib-face-event" id="savedEvent"></p>
+      </div>
+      <p class="saved-line" id="savedWave"></p>
+      <p class="saved-line" id="savedGoal"></p>
+      <p class="hint" id="savedNote"></p>
+      <a class="btn" id="savedBoard" href="index.html">응원 보드 보기</a>
+      <button type="button" class="btn btn-secondary" id="savedEdit">배번·목표 수정</button>
+    </div>
   </div>
   <script src="../assets/distance-utils.js"></script>
   <script src="../assets/event-bib-form.js"></script>
@@ -171,6 +247,7 @@
     let event = null;
     let nickname = params.get("nickname") || "";
     let composing = false;
+    let editing = false;
     const SAVE_ERRORS = {
       "goal out of range": "목표는 1시간에서 10시간 사이로 넣어 주세요.",
       "unknown waveId": "조 목록이 바뀌었습니다. 새로고침 후 다시 골라 주세요.",
@@ -217,12 +294,67 @@
       }).join("");
     }
 
+    function clearFormFields() {
+      document.getElementById("bib").value = "";
+      document.getElementById("goalH").value = "";
+      document.getElementById("goalM").value = "";
+      document.getElementById("goalS").value = "";
+      document.getElementById("wave").value = "";
+    }
+
+    function renderSummary(summary) {
+      document.getElementById("pick").classList.add("hidden");
+      document.getElementById("form").classList.add("hidden");
+      document.getElementById("saved").classList.remove("hidden");
+      document.querySelector(".nav").classList.add("hidden");
+      document.getElementById("pagePurpose").classList.add("hidden");
+      document.getElementById("savedBib").textContent = summary.bib;
+      document.getElementById("savedDist").textContent = formatDistance(summary.distance);
+      document.getElementById("savedEvent").textContent = String((event && (event.primaryName || event.eventName)) || "").trim();
+      const waveEl = document.getElementById("savedWave");
+      waveEl.textContent = summary.waveName;
+      waveEl.classList.toggle("hidden", !summary.waveName);
+      const goalEl = document.getElementById("savedGoal");
+      goalEl.textContent = summary.goalLine;
+      goalEl.classList.toggle("hidden", !summary.goalLine);
+      let noteText = "";
+      if (!summary.full) noteText = EventBibForm.nonFullCourseNote(formatDistance(summary.distance));
+      else if (!summary.goalLine) noteText = "완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
+      else if (!((event.waves || []).length)) noteText = "출발 그룹이 등록되면 응원 보드에 나옵니다.";
+      const note = document.getElementById("savedNote");
+      note.textContent = noteText;
+      note.classList.toggle("hidden", !noteText);
+      document.getElementById("savedEdit").textContent = summary.full ? "배번·목표 수정" : "배번 수정";
+      document.getElementById("savedBoard").href = "index.html?eventId=" + encodeURIComponent(eventId);
+    }
+
+    function render() {
+      const row = participant();
+      if (!row) {
+        editing = false;
+        document.getElementById("form").classList.add("hidden");
+        document.getElementById("saved").classList.add("hidden");
+        document.getElementById("pick").classList.remove("hidden");
+        document.querySelector(".nav").classList.remove("hidden");
+        document.getElementById("pagePurpose").classList.remove("hidden");
+        renderNicks();
+        return;
+      }
+      const summary = editing ? null : EventBibForm.savedBibSummary(row, (event && event.waves) || []);
+      if (summary) {
+        renderSummary(summary);
+        return;
+      }
+      document.getElementById("saved").classList.add("hidden");
+      document.querySelector(".nav").classList.remove("hidden");
+      document.getElementById("pagePurpose").classList.remove("hidden");
+      renderForm();
+    }
+
     function renderForm() {
       const row = participant();
       if (!row) {
-        document.getElementById("form").classList.add("hidden");
-        document.getElementById("pick").classList.remove("hidden");
-        renderNicks();
+        render();
         return;
       }
       document.getElementById("pick").classList.add("hidden");
@@ -304,7 +436,9 @@
       const btn = event.target.closest("[data-nick]");
       if (!btn) return;
       nickname = btn.getAttribute("data-nick");
-      renderForm();
+      editing = false;
+      clearFormFields();
+      render();
     });
     document.getElementById("form").addEventListener("submit", async function (submitEvent) {
       submitEvent.preventDefault();
@@ -337,8 +471,6 @@
         goalM: val("goalM"),
         goalS: val("goalS"),
       });
-      const hasGoal = body.goalFinishSec != null || !!(participant() || {}).goalFinishSec;
-      const hasStart = ((event && event.waves) || []).length > 0;
       document.getElementById("saveBtn").disabled = true;
       try {
         const res = await fetch(API_BASE + "?action=group-events", {
@@ -348,15 +480,11 @@
         });
         const data = await res.json();
         if (!data.ok) throw new Error(SAVE_ERRORS[data.error] || data.error || "저장 실패");
-        let doneText = "저장했습니다. 같은 화면에서 배번을 다시 바꿀 수 있습니다.";
-        if (saveDistance !== "full") doneText = "배번을 저장했습니다. 응원 보드는 풀코스만 나옵니다.";
-        else if (!hasGoal) doneText = "배번을 저장했습니다. 완주 목표 시간을 넣으면 응원 보드에 나옵니다.";
-        else if (!hasStart) doneText = "저장했습니다. 출발 그룹이 등록되면 응원 보드에 나옵니다.";
-        const done = document.getElementById("done");
-        done.textContent = doneText;
-        done.classList.remove("hidden");
+        editing = false;
+        clearFormFields();
         await load();
-        done.scrollIntoView({ block: "center" });
+        const saved = document.getElementById("saved");
+        if (!saved.classList.contains("hidden")) saved.scrollIntoView({ block: "center" });
       } catch (err) {
         formError.textContent = err.message || "저장 실패";
         formError.classList.remove("hidden");
@@ -375,9 +503,15 @@
       if (!data.ok) throw new Error(data.error || "대회를 찾지 못했습니다");
       event = data.event;
       document.getElementById("eventInfo").textContent = (event.primaryName || event.eventName || "대회") + " · " + (event.eventDate || "");
-      renderForm();
+      render();
     }
 
+    document.getElementById("savedEdit").addEventListener("click", function () {
+      editing = true;
+      clearFormFields();
+      render();
+      document.getElementById("bib").focus();
+    });
     document.getElementById("boardLink").href = "index.html?eventId=" + encodeURIComponent(eventId);
     load().catch(function (err) { showError(err.message); });
   </script>

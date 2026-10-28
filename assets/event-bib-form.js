@@ -102,6 +102,37 @@
     return minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "/km";
   }
 
+  function goalClockLine(sec) {
+    const fields = goalFieldsFromSec(sec);
+    if (!fields) return "";
+    const pace = goalPaceLabel({ goalH: fields.h, goalM: fields.m, goalS: fields.s });
+    const clock = fields.h + ":" + String(fields.m).padStart(2, "0") + ":" + String(fields.s).padStart(2, "0");
+    return pace ? clock + " · " + pace : "";
+  }
+
+  // Saved bib screen. Wave clocks stay off the object so the page cannot print them.
+  function savedBibSummary(participant, waves) {
+    const bib = String(participant && participant.bib != null ? participant.bib : "").trim();
+    if (!bib) return null;
+    const distance = cheerBibSaveDistance(participant);
+    const full = distance === "full";
+    let waveName = "";
+    if (full) {
+      const waveId = participant && participant.waveId != null ? String(participant.waveId) : "";
+      const wave = sortWaves(waves).find(function (item) {
+        return item && String(item.id) === waveId;
+      });
+      waveName = wave && wave.name != null ? String(wave.name).trim() : "";
+    }
+    return {
+      bib: bib,
+      distance: distance,
+      full: full,
+      waveName: waveName,
+      goalLine: full ? goalClockLine(participant.goalFinishSec) : "",
+    };
+  }
+
   // Hours 2–9 are complete. 1 waits so 10 can be typed. Minutes and seconds wait for two digits.
   function goalFocusNext(id, value) {
     const text = String(value == null ? "" : value);
@@ -125,5 +156,6 @@
     sortWaves,
     goalPaceLabel,
     goalFocusNext,
+    savedBibSummary,
   };
 });

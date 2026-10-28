@@ -13,6 +13,7 @@ const {
   sortWaves,
   goalPaceLabel,
   goalFocusNext,
+  savedBibSummary,
 } = require("../../assets/event-bib-form");
 
 const base = { eventId: "e1", nickname: "닉", bib: "1001" };
@@ -144,7 +145,7 @@ describe("event-bib page wiring", () => {
     assert.doesNotMatch(html, /id="waveEmpty"|getElementById\("waveEmpty"\)/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
     assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
-    assert.match(html, /content="0\.21\.5"/);
+    assert.match(html, /content="0\.21\.6"/);
   });
 
   it("treats the page as full course and explains a non-full participant", () => {
@@ -181,6 +182,72 @@ describe("event-bib page wiring", () => {
     assert.match(html, /id="goalPace"/);
     assert.match(html, /EventBibForm\.goalPaceLabel\(/);
     assert.match(html, /EventBibForm\.goalFocusNext\(/);
+  });
+});
+
+describe("saved bib summary", () => {
+  const waves = [
+    { id: "c", name: "C", startAt: "2026-11-01T07:30:00+09:00" },
+    { id: "a", name: "A", startAt: "2026-11-01T07:00:00+09:00" },
+  ];
+
+  it("returns null until a bib is saved", () => {
+    assert.equal(savedBibSummary({ distance: "full", goalFinishSec: 12600 }, waves), null);
+    assert.equal(savedBibSummary({ bib: "  ", distance: "full" }, waves), null);
+    assert.equal(savedBibSummary(null, waves), null);
+  });
+
+  it("puts the group name and goal pace on the summary without a start clock", () => {
+    const summary = savedBibSummary({
+      bib: "10947",
+      distance: "full",
+      waveId: "c",
+      goalFinishSec: 12600,
+    }, waves);
+    assert.equal(summary.bib, "10947");
+    assert.equal(summary.full, true);
+    assert.equal(summary.waveName, "C");
+    assert.equal(summary.goalLine, "3:30:00 · 4:59/km");
+    assert.equal(JSON.stringify(summary).includes("07:30"), false);
+    assert.equal(JSON.stringify(summary).includes("startAt"), false);
+  });
+
+  it("omits group and goal when a non-full runner only has a bib", () => {
+    const summary = savedBibSummary({
+      bib: "1204",
+      distance: "half",
+      waveId: "c",
+      goalFinishSec: 12600,
+    }, waves);
+    assert.equal(summary.full, false);
+    assert.equal(summary.distance, "half");
+    assert.equal(summary.waveName, "");
+    assert.equal(summary.goalLine, "");
+  });
+
+  it("keeps a full runner's bib summary when the goal or group is still empty", () => {
+    const summary = savedBibSummary({ bib: "10", distance: "full" }, waves);
+    assert.equal(summary.full, true);
+    assert.equal(summary.waveName, "");
+    assert.equal(summary.goalLine, "");
+  });
+});
+
+describe("cheer bib saved card", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../../cheer/bib.html"), "utf8");
+
+  it("shows a bib face, board button, and edit button instead of leaving the form up", () => {
+    assert.match(html, /id="saved"/);
+    assert.match(html, /class="bib-face"/);
+    assert.match(html, /class="bib-face-number"/);
+    assert.match(html, /id="savedBib"/);
+    assert.match(html, /id="savedBoard"[^>]*>응원 보드 보기</);
+    assert.match(html, /id="savedEdit"[^>]*>배번·목표 수정</);
+    assert.match(html, /getElementById\("savedBoard"\)\.href = "index\.html\?eventId="/);
+    assert.match(html, /EventBibForm\.savedBibSummary\(/);
+    assert.match(html, /editing/);
+    assert.doesNotMatch(html, /id="done"/);
+    assert.doesNotMatch(html, /saved[\s\S]{0,400}startAt|savedWave[\s\S]{0,120}slice\(11/);
   });
 });
 
