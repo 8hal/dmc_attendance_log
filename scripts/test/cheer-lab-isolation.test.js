@@ -47,34 +47,48 @@ describe("cheer pages are a public feature off the member tab bar", () => {
     assert.doesNotMatch(admin, /배번 입력 링크 복사/);
     assert.doesNotMatch(admin, /function bibUrl/);
     for (const name of rootHtmlFiles()) {
-      if (name === "event-admin.html" || name === "event-home.html") continue;
+      if (
+        name === "event-admin.html" ||
+        name === "event-home.html" ||
+        name === "event-roster.html"
+      ) {
+        continue;
+      }
       const text = fs.readFileSync(path.join(root, name), "utf8");
       assert.doesNotMatch(text, /\/cheer\/|cheer\/(?:index|bib|waves)\.html/, name);
     }
     const tabs = fs.readFileSync(path.join(root, "assets/event-member-tabs.js"), "utf8");
     const home = fs.readFileSync(path.join(root, "event-home.html"), "utf8");
     const action = fs.readFileSync(path.join(root, "assets/event-home-action.js"), "utf8");
-    assert.doesNotMatch(tabs, /cheer/);
-    assert.doesNotMatch(home, /data-tab="cheer"/);
+    assert.match(tabs, /cheer\/index\.html/);
+    assert.doesNotMatch(tabs, /cheer\/bib\.html|cheer-board|cheer-runner/);
+    assert.match(home, /data-tab="cheer"/);
     assert.match(action, /"my-bib\.html" \+ q/);
+    assert.doesNotMatch(action, /function cheerLinks|cheerLinks:/);
   });
 
-  it("links member home to the public board and full-marathon goal form", () => {
+  it("puts the cheer board on the member tab bar and keeps goal edits off a home card", () => {
     const home = fs.readFileSync(path.join(root, "event-home.html"), "utf8");
+    const roster = fs.readFileSync(path.join(root, "event-roster.html"), "utf8");
     const homeStart = home.indexOf('id="home"');
     const tabStart = home.indexOf('id="eventTabBar"');
     assert.ok(homeStart >= 0 && tabStart > homeStart);
     const homeBlock = home.slice(homeStart, tabStart);
-    assert.match(homeBlock, /id="cheerBoardLink"/);
-    assert.match(homeBlock, />응원 보드</);
-    assert.match(homeBlock, /cheer\/index\.html/);
-    assert.match(homeBlock, /id="cheerGoalLink"/);
-    assert.match(homeBlock, />목표·조 수정</);
-    assert.doesNotMatch(homeBlock, />풀코스 목표 입력</);
-    assert.match(homeBlock, /cheer\/bib\.html/);
-    assert.match(home, /EventHomeAction\.cheerLinks/);
+    assert.doesNotMatch(homeBlock, /id="cheerLinkCard"|id="cheerBoardLink"|id="cheerGoalLink"/);
+    assert.doesNotMatch(homeBlock, /cheer\/index\.html|cheer\/bib\.html/);
+    assert.doesNotMatch(home, /목표·조 수정|풀코스 목표 입력|EventHomeAction\.cheerLinks/);
     assert.doesNotMatch(home, /cheer\/waves\.html/);
-    assert.doesNotMatch(home, /data-tab="cheer"/);
     assert.doesNotMatch(home, /cheer-board|cheer-runner|subAction=waves/);
+    const tab = home.slice(tabStart, home.indexOf("</nav>", tabStart));
+    assert.match(tab, /data-tab="cheer"/);
+    assert.match(tab, /cheer\/index\.html/);
+    assert.match(tab, /<span class="tab-icon">📣<\/span>응원/);
+    assert.match(home, /EventHomeAction\.profileEditLabel/);
+    const rosterTab = roster.slice(
+      roster.indexOf('id="eventTabBar"'),
+      roster.indexOf("</nav>", roster.indexOf('id="eventTabBar"'))
+    );
+    assert.match(rosterTab, /data-tab="cheer"/);
+    assert.match(rosterTab, /<span class="tab-icon">📣<\/span>응원/);
   });
 });

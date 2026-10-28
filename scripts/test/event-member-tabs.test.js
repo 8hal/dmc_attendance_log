@@ -64,16 +64,33 @@ describe("event-member-tabs", () => {
     assert.doesNotThrow(() => mount({ eventId: "evt_x", active: "roster", barEl: bar }));
   });
 
+  it("points an optional cheer tab at the board and never marks it active", () => {
+    const tabs = { home: fakeTab(), roster: fakeTab(), cheer: fakeTab() };
+    tabs.cheer.classList._active = true;
+    tabs.cheer.attrs["aria-current"] = "page";
+    const bar = fakeBar(tabs);
+    mount({ eventId: "evt_a b", active: "home", barEl: bar });
+    assert.equal(
+      tabs.cheer.href,
+      "cheer/index.html?eventId=" + encodeURIComponent("evt_a b")
+    );
+    assert.equal(tabs.cheer.classList._active, false);
+    assert.equal(tabs.cheer.attrs["aria-current"], undefined);
+    assert.equal(tabs.home.classList._active, true);
+  });
+
   it("event-home.html roster tab is labeled 대회 기록 without bus tab", () => {
     const html = read("event-home.html");
     assert.match(html, />대회 기록</);
     assert.doesNotMatch(html, /data-tab="bus"/);
+    assert.match(html, /data-tab="cheer"[^>]*>[\s\S]*📣[\s\S]*응원</);
   });
 
   it("event-roster.html roster tab is labeled 대회 기록 without bus tab", () => {
     const html = read("event-roster.html");
     assert.match(html, />대회 기록</);
     assert.doesNotMatch(html, /data-tab="bus"/);
+    assert.match(html, /data-tab="cheer"[^>]*>[\s\S]*📣[\s\S]*응원</);
   });
 
   it("event-roster.html does not probe bus-boarding for tabs", () => {

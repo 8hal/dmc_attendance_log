@@ -147,11 +147,14 @@ describe("event-home full course collects the cheer goal and wave", () => {
     assert.match(fn, /selectedDistance === ["']full["']/);
   });
 
-  it("keeps the separate cheer page as an edit link and the board link", () => {
-    assert.match(html, /id="cheerBoardLink"/);
-    assert.match(html, />응원 보드</);
-    assert.match(html, /id="cheerGoalLink"[^>]*>목표·조 수정</);
+  it("edits a saved bib from the profile button and does not keep a cheer card", () => {
+    assert.doesNotMatch(html, /id="cheerLinkCard"/);
+    assert.doesNotMatch(html, /id="cheerBoardLink"/);
+    assert.doesNotMatch(html, /id="cheerGoalLink"/);
+    assert.doesNotMatch(html, /목표·조 수정/);
     assert.doesNotMatch(html, />풀코스 목표 입력</);
+    const fn = extractFn(html, "renderProfileCard");
+    assert.match(fn, /profileEditBtn\.textContent\s*=\s*EventHomeAction\.profileEditLabel\(/);
   });
 });
 

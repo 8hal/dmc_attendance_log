@@ -225,15 +225,9 @@
     return nicks;
   }
 
-  function cheerLinks(eventId, identity, participant) {
-    const q = "?eventId=" + encodeURIComponent(eventId ? String(eventId) : "");
-    const nick = trimField(identity && identity.nickname);
+  function profileEditLabel(participant) {
     const distance = trimField(participant && participant.distance);
-    return {
-      boardHref: "cheer/index.html" + q,
-      goalHref: "cheer/bib.html" + q + "&nickname=" + encodeURIComponent(nick),
-      showGoal: distance === "full" && nick !== "",
-    };
+    return distance === "full" ? "배번·목표 수정" : "배번 수정";
   }
 
   function pageHref(hrefKey, eventId) {
@@ -263,7 +257,7 @@
     resolveBusCard,
     pickNicknames,
     PROFILE_DISTANCES,
-    cheerLinks,
+    profileEditLabel,
     pageHref,
     busRouteTitle,
     bibStagePrompt,

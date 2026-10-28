@@ -349,46 +349,23 @@ describe("event-home bus card titles", () => {
   });
 });
 
-describe("cheerLinks", () => {
-  it("points the board at cheer/index.html with eventId only", () => {
-    const links = EventHomeAction.cheerLinks(
-      "evt_2026-11-01_2026_jtbc",
-      { nickname: "홍길동" },
-      { distance: "half" }
+describe("profileEditLabel", () => {
+  it("names the bib button 배번·목표 수정 for a full-marathon participant", () => {
+    assert.equal(
+      EventHomeAction.profileEditLabel({ distance: "full" }),
+      "배번·목표 수정"
     );
     assert.equal(
-      links.boardHref,
-      "cheer/index.html?eventId=evt_2026-11-01_2026_jtbc"
-    );
-    assert.equal(links.showGoal, false);
-  });
-
-  it("shows the goal form link only for a full-marathon participant", () => {
-    const links = EventHomeAction.cheerLinks(
-      "evt_1",
-      { nickname: "홍 길동" },
-      { distance: "full" }
-    );
-    assert.equal(links.showGoal, true);
-    assert.equal(
-      links.goalHref,
-      "cheer/bib.html?eventId=evt_1&nickname=" + encodeURIComponent("홍 길동")
+      EventHomeAction.profileEditLabel({ distance: "  full  " }),
+      "배번·목표 수정"
     );
   });
 
-  it("hides the goal link without a nickname or full distance", () => {
-    assert.equal(
-      EventHomeAction.cheerLinks("evt_1", { nickname: "" }, { distance: "full" }).showGoal,
-      false
-    );
-    assert.equal(
-      EventHomeAction.cheerLinks("evt_1", { nickname: "러너" }, null).showGoal,
-      false
-    );
-    assert.equal(
-      EventHomeAction.cheerLinks("evt_1", { nickname: "러너" }, { distance: "  full  " }).showGoal,
-      true
-    );
+  it("keeps 배번 수정 for every other distance, including guests", () => {
+    assert.equal(EventHomeAction.profileEditLabel({ distance: "half" }), "배번 수정");
+    assert.equal(EventHomeAction.profileEditLabel({ distance: "10K" }), "배번 수정");
+    assert.equal(EventHomeAction.profileEditLabel({ distance: "" }), "배번 수정");
+    assert.equal(EventHomeAction.profileEditLabel(null), "배번 수정");
   });
 });
 
