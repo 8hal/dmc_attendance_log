@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#2563EB" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="app-version" content="0.21.7" />
+  <meta name="app-version" content="0.21.10" />
   <title>배번 - 동탄 마라톤 클럽</title>
   <link rel="icon" type="image/png" sizes="150x150" href="../assets/dmc_logo.png" />
   <link rel="stylesheet" href="../assets/design-tokens.css" />
@@ -46,6 +46,7 @@
     .btn { display: block; width: 100%; border-radius: 8px; background: #2563EB; color: #fff; border: none; margin-top: 16px; text-align: center; text-decoration: none; }
     .hint, .error { font-size: 13px; line-height: 1.45; }
     .hint { color: #64748B; }
+    #bibGuide, #savedBibGuide { margin: 6px 0 0; }
     .error { color: #DC2626; }
     .hidden { display: none !important; }
     .nick-btn {
@@ -202,7 +203,8 @@
       <p id="who"></p>
       <p id="notFullNote" class="hint hidden"></p>
       <label for="bib">배번</label>
-      <input id="bib" inputmode="numeric" enterkeyhint="done" autocomplete="off" />
+      <input id="bib" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" aria-describedby="bibGuide" />
+      <p class="hint" id="bibGuide">실물 배번에 A-1037처럼 글자가 있어도 숫자만 넣으세요. 예: 1037</p>
       <div id="fullFields" class="hidden">
         <div id="waveField">
           <p class="field-label" id="waveLabel">출발 그룹</p>
@@ -237,6 +239,7 @@
         </div>
         <p class="bib-face-event" id="savedEvent"></p>
       </div>
+      <p class="hint" id="savedBibGuide">숫자만 저장됩니다. A-1037이면 1037입니다.</p>
       <p class="saved-line" id="savedWave"></p>
       <p class="saved-line" id="savedGoal"></p>
       <p class="hint" id="savedNote"></p>
@@ -371,7 +374,7 @@
       document.getElementById("form").classList.remove("hidden");
       document.getElementById("who").textContent = EventBibForm.bibIdentityLine(row);
       if (!document.getElementById("bib").value) {
-        document.getElementById("bib").value = row.bib || "";
+        document.getElementById("bib").value = EventBibForm.bibDigits(row.bib || "");
       }
       const saveDistance = EventBibForm.cheerBibSaveDistance(row);
       const fullCourse = saveDistance === "full";
@@ -423,11 +426,22 @@
       renderGoalPace();
     }
 
+    function onBibInput() {
+      if (composing) return;
+      const el = document.getElementById("bib");
+      const cleaned = EventBibForm.bibDigits(el.value);
+      if (cleaned !== el.value) el.value = cleaned;
+    }
+
     ["bib", "goalH", "goalM", "goalS"].forEach(function (id) {
       const el = document.getElementById(id);
       el.addEventListener("compositionstart", function () { composing = true; });
-      el.addEventListener("compositionend", function () { composing = false; });
+      el.addEventListener("compositionend", function () {
+        composing = false;
+        if (id === "bib") onBibInput();
+      });
     });
+    document.getElementById("bib").addEventListener("input", onBibInput);
     ["goalH", "goalM", "goalS"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", function () { onGoalInput(id); });
     });
@@ -455,7 +469,8 @@
       if (composing) return;
       const formError = document.getElementById("formError");
       formError.classList.add("hidden");
-      const bib = document.getElementById("bib").value.trim();
+      const bib = EventBibForm.bibDigits(document.getElementById("bib").value);
+      document.getElementById("bib").value = bib;
       const saveDistance = EventBibForm.cheerBibSaveDistance(participant());
       if (!nickname || !bib) {
         formError.textContent = "닉네임과 배번이 필요합니다.";
