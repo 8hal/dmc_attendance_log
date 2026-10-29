@@ -9,6 +9,11 @@
     return String(value == null ? "" : value).trim() !== "";
   }
 
+  // Physical bibs may print a wave letter (A-1037). Store and type the digits only.
+  function bibDigits(raw) {
+    return String(raw == null ? "" : raw).replace(/\D/g, "");
+  }
+
   function num(value) {
     return filled(value) ? Number(value) : 0;
   }
@@ -166,5 +171,6 @@
     goalFocusNext,
     savedBibSummary,
     bibIdentityLine,
+    bibDigits,
   };
 });

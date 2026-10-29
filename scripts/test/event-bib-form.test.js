@@ -15,6 +15,7 @@ const {
   goalFocusNext,
   savedBibSummary,
   bibIdentityLine,
+  bibDigits,
 } = require("../../assets/event-bib-form");
 
 const base = { eventId: "e1", nickname: "닉", bib: "1001" };
@@ -146,7 +147,7 @@ describe("event-bib page wiring", () => {
     assert.doesNotMatch(html, /id="waveEmpty"|getElementById\("waveEmpty"\)/);
     assert.match(html, /EventBibForm\.buildBibBody\(/);
     assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
-    assert.match(html, /content="0\.21\.7"/);
+    assert.match(html, /content="0\.21\.10"/);
   });
 
   it("treats the page as full course and explains a non-full participant", () => {
@@ -183,6 +184,32 @@ describe("event-bib page wiring", () => {
     assert.match(html, /id="goalPace"/);
     assert.match(html, /EventBibForm\.goalPaceLabel\(/);
     assert.match(html, /EventBibForm\.goalFocusNext\(/);
+  });
+
+  it("tells runners to type only the number when the bib has a letter prefix", () => {
+    assert.match(html, /id="bib"[^>]*inputmode="numeric"/);
+    assert.match(html, /id="bib"[^>]*pattern="\[0-9\]\*"/);
+    assert.match(html, /aria-describedby="bibGuide"/);
+    assert.match(html, /id="bibGuide"/);
+    assert.match(html, /실물 배번에 A-1037처럼 글자가 있어도 숫자만 넣으세요\. 예: 1037/);
+    assert.match(html, /function onBibInput\(\)/);
+    assert.match(html, /EventBibForm\.bibDigits\(el\.value\)/);
+    assert.match(html, /EventBibForm\.bibDigits\(document\.getElementById\("bib"\)\.value\)/);
+    assert.match(html, /EventBibForm\.bibDigits\(row\.bib \|\| ""\)/);
+    assert.doesNotMatch(html, /id="bib"[^>]*type="text"/);
+  });
+});
+
+describe("bib digits", () => {
+  it("keeps only the number from a letter-prefixed bib", () => {
+    assert.equal(bibDigits("A-1037"), "1037");
+    assert.equal(bibDigits("a-1037"), "1037");
+    assert.equal(bibDigits("A1037"), "1037");
+    assert.equal(bibDigits("1037"), "1037");
+    assert.equal(bibDigits("  A-1037  "), "1037");
+    assert.equal(bibDigits(""), "");
+    assert.equal(bibDigits(null), "");
+    assert.equal(bibDigits(undefined), "");
   });
 });
 
@@ -266,6 +293,8 @@ describe("cheer bib saved card", () => {
     assert.match(html, /id="savedBib"/);
     assert.match(html, /id="savedBoard"[^>]*>응원 보드 보기</);
     assert.match(html, /id="savedEdit"[^>]*>배번·목표 수정</);
+    assert.match(html, /id="savedBibGuide"/);
+    assert.match(html, /숫자만 저장됩니다\. A-1037이면 1037입니다\./);
     assert.match(html, /getElementById\("savedBoard"\)\.href = "index\.html\?eventId="/);
     assert.match(html, /EventBibForm\.savedBibSummary\(/);
     assert.match(html, /editing/);
