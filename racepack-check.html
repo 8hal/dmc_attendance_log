@@ -1,0 +1,59 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><!-- apple-mobile-web-app-capable deprecated --><title>레이스팩 수령 체크 (시트)</title>
+<style>
+:root{--line:#e5e5ea;--acc:#0a84ff;--done:#8e8e93}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Gothic A1",sans-serif;background:#f2f2f7;color:#111;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{position:sticky;top:0;background:rgba(242,242,247,.95);backdrop-filter:blur(8px);padding:14px 16px 10px;border-bottom:1px solid var(--line);z-index:1}
+h1{font-size:20px;margin:0 0 6px}
+.bar{display:flex;align-items:center;gap:10px}
+progress{flex:1;height:10px;accent-color:var(--acc)}
+#cnt{font-size:15px;font-weight:600;min-width:64px;text-align:right}
+button{font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+main{padding:8px 12px 24px}
+.row{display:flex;align-items:center;gap:14px;background:#fff;padding:14px 16px;border-bottom:1px solid var(--line);font-size:18px}
+.row:first-child{border-radius:12px 12px 0 0}.row:last-child{border-radius:0 0 12px 12px;border-bottom:none}
+input{width:26px;height:26px;accent-color:var(--acc);flex:none}
+.nick{font-weight:700;flex:1}
+.real{color:#666;font-size:15px}
+.row:has(input:checked) .nick,.row:has(input:checked) .real{color:var(--done);text-decoration:line-through}
+.row:has(input:checked){background:#f7f7fa}
+#sync{font-size:12px;color:#666;margin-top:6px}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+#toast.on{opacity:1}
+</style></head><body>
+<header><h1>레이스팩 수령 체크</h1><div class="bar"><progress id="p" max="21" value="0"></progress><span id="cnt">0/21</span></div><div id="sync">로컬 모드</div></header>
+<main id="list"><label class="row"><input type="checkbox" data-k="바람요정"><span class="nick">바람요정</span><span class="real">김유정</span></label><label class="row"><input type="checkbox" data-k="롸져"><span class="nick">롸져</span><span class="real">설민태</span></label><label class="row"><input type="checkbox" data-k="치동런"><span class="nick">치동런</span><span class="real">강창기</span></label><label class="row"><input type="checkbox" data-k="된다"><span class="nick">된다</span><span class="real">황순길</span></label><label class="row"><input type="checkbox" data-k="써니형"><span class="nick">써니형</span><span class="real">이의선</span></label><label class="row"><input type="checkbox" data-k="지구인"><span class="nick">지구인</span><span class="real">김원겸</span></label><label class="row"><input type="checkbox" data-k="지디"><span class="nick">지디</span><span class="real">장봉근</span></label><label class="row"><input type="checkbox" data-k="말아톤"><span class="nick">말아톤</span><span class="real">조학구</span></label><label class="row"><input type="checkbox" data-k="클린트"><span class="nick">클린트</span><span class="real">이봉건</span></label><label class="row"><input type="checkbox" data-k="조으니"><span class="nick">조으니</span><span class="real">조은희</span></label><label class="row"><input type="checkbox" data-k="디모"><span class="nick">디모</span><span class="real">김성한</span></label><label class="row"><input type="checkbox" data-k="마운틴"><span class="nick">마운틴</span><span class="real">홍순기</span></label><label class="row"><input type="checkbox" data-k="하우스"><span class="nick">하우스</span><span class="real">강동원</span></label><label class="row"><input type="checkbox" data-k="바람"><span class="nick">바람</span><span class="real">김홍준</span></label><label class="row"><input type="checkbox" data-k="서비"><span class="nick">서비</span><span class="real">김경섭</span></label><label class="row"><input type="checkbox" data-k="예예"><span class="nick">예예</span><span class="real">서병수</span></label><label class="row"><input type="checkbox" data-k="501"><span class="nick">501</span><span class="real">김재연</span></label><label class="row"><input type="checkbox" data-k="바우돌"><span class="nick">바우돌</span><span class="real">서동욱</span></label><label class="row"><input type="checkbox" data-k="송송"><span class="nick">송송</span><span class="real">송진수</span></label><label class="row"><input type="checkbox" data-k="진달"><span class="nick">진달</span><span class="real">김진규</span></label><label class="row"><input type="checkbox" data-k="게살"><span class="nick">게살</span><span class="real">문광명</span></label></main>
+<div style="text-align:center;padding:16px"><button id="reset">전체 초기화</button></div>
+<div id="toast"></div>
+<script>
+// ▼ Apps Script 웹앱 URL을 여기에 붙여넣으세요 (비워두면 이 기기에만 저장)
+const ENDPOINT='https://script.google.com/macros/s/AKfycbwyHcW5INtGFd5S0F7YOLaGU1Mdbz-oXlc_9Dco64Y_xIOBZy73TdNWDnaavH4uyCOJ/exec';
+const K='racepack-check-2026',QK='racepack-queue-2026';
+let s=JSON.parse(localStorage.getItem(K)||'{}'),q=JSON.parse(localStorage.getItem(QK)||'[]');
+const box=[...document.querySelectorAll('input')],$=id=>document.getElementById(id);
+const save=()=>localStorage.setItem(K,JSON.stringify(s)),saveQ=()=>localStorage.setItem(QK,JSON.stringify(q));
+const dev=(navigator.userAgent.match(/iPhone|iPad|Android|Mac|Windows/)||['기기'])[0];
+function upd(){const v=box.filter(b=>b.checked).length;$('cnt').textContent=v+'/21';$('p').value=v;
+ $('sync').textContent=!ENDPOINT?'로컬 모드 (시트 미연결)':q.length?'전송 대기 '+q.length+'건':'시트 동기화됨'}
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2500)}
+function post(item){return fetch(ENDPOINT,{method:'POST',mode:'cors',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(item)})
+ .then(r=>r.json()).then(j=>{if(!j.ok)throw new Error(j.error||'fail')})}
+async function flush(){if(!ENDPOINT)return;while(q.length){try{await post(q[0]);q.shift();saveQ()}catch(e){break}}upd()}
+function rowOf(b){return b.closest('.row').querySelector('.real').textContent}
+box.forEach(b=>{b.checked=!!s[b.dataset.k];b.addEventListener('change',()=>{
+ const k=b.dataset.k,on=b.checked;s[k]=on;save();upd();
+ if(!ENDPOINT)return;
+ const item={nickname:k,realName:rowOf(b),status:on?'수령':'반납',device:dev};
+ post(item).then(()=>{toast(k+' '+item.status+' 기록됨');upd()}).catch(()=>{
+  q.push(item);saveQ();upd();toast('전송 실패 – 대기열에 저장, 자동 재시도');
+ })})});
+$('reset').onclick=()=>{if(confirm('이 기기의 체크를 모두 초기화할까요? (시트 기록은 유지)')){s={};save();box.forEach(b=>b.checked=false);upd()}};
+async function load(){if(!ENDPOINT)return;await flush();
+ try{const j=await (await fetch(ENDPOINT,{method:'GET',mode:'cors',cache:'no-store'})).json();if(j.ok&&j.state){
+  // 대기열 항목은 로컬 값 우선
+  const pend=new Set(q.map(x=>x.nickname));
+  box.forEach(b=>{const k=b.dataset.k;if(!pend.has(k)&&k in j.state){b.checked=j.state[k];s[k]=j.state[k]}});save();upd()}}
+ catch(e){toast('시트 불러오기 실패 – 로컬 상태 표시')}}
+upd();load();
+window.addEventListener('online',flush);setInterval(flush,30000);
+</script></body></html>
