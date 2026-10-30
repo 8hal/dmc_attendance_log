@@ -51,6 +51,38 @@
         "function": { "functionId": "chunbaek", "region": "asia-northeast3" }
       }
     ],
+    "headers": [
+      {
+        "source": "/chunbaek/",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "/chunbaek/index.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "/chunbaek/**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "/chunbaek/js/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "/chunbaek/css/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      }
+    ],
     "ignore": [
       "firebase.json",
       "firestore.rules",

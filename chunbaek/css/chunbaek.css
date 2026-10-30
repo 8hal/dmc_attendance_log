@@ -161,6 +161,7 @@ body {
   font-size: 13px;
   color: var(--text-muted);
   margin: 0 0 16px;
+  word-break: keep-all;
 }
 
 .section-subtitle {
@@ -168,6 +169,7 @@ body {
   font-weight: 800;
   margin: 0 0 8px;
   letter-spacing: -0.02em;
+  word-break: keep-all;
 }
 
 .hint {
@@ -2398,5 +2400,9 @@ body {
   font-size: 12px;
   font-weight: 700;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;
 }
 

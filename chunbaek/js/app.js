@@ -2662,13 +2662,11 @@
       return;
     }
     board.innerHTML = tiles.map((t, idx) => {
-      const dayLabel = t.kind === "attendance" && t.dayIndex
-        ? ` · ${t.dayIndex}일`
-        : (t.kind === "result" ? " · 기록" : "");
+      const caption = window.ChunbaekTeamSeason.reportPhotoTileCaption(t);
       return `
-      <button type="button" class="report-photo-tile" data-photo-idx="${idx}" aria-label="${escapeHtml(t.nickname || "사진")}">
+      <button type="button" class="report-photo-tile" data-photo-idx="${idx}" aria-label="${escapeHtml(caption || "사진")}">
         <img src="${escapeAttr(t.photoUrl)}" alt="" />
-        <span class="report-photo-tile-name">${escapeHtml(t.nickname || "회원")}${t.isMe ? " · 나" : ""}${dayLabel}</span>
+        <span class="report-photo-tile-name">${escapeHtml(caption)}</span>
       </button>`;
     }).join("");
     const urls = tiles.map((t) => t.photoUrl);
@@ -2697,11 +2695,7 @@
       }));
     } catch {
       if (loadId !== state.reportPhotoLoadId) return;
-      paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
-        photos: Team.photosFromMyTimeline(MOCK.timeline, me),
-        me,
-        mineOnly: true,
-      }));
+      paintReportPhotoBoard([]);
     }
   }
 
