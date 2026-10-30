@@ -174,6 +174,8 @@
             </div>
             <p class="bib-face-event" id="profileBibEvent"></p>
           </div>
+          <p class="profile-sub hidden" id="profileWaveLine"></p>
+          <p class="profile-sub hidden" id="profileGoalLine"></p>
           <div class="result-cert hidden" id="profileResultCert" aria-label="저장 기록">
             <div class="result-cert-pills" id="profileCertPills">
               <span class="result-cert-pill hidden" id="profileCertDist"></span>
@@ -345,6 +347,8 @@
     const profileBibDist = document.getElementById("profileBibDist");
     const profileBibLarge = document.getElementById("profileBibLarge");
     const profileBibEvent = document.getElementById("profileBibEvent");
+    const profileWaveLine = document.getElementById("profileWaveLine");
+    const profileGoalLine = document.getElementById("profileGoalLine");
     const profileResultCert = document.getElementById("profileResultCert");
     const profileCertDist = document.getElementById("profileCertDist");
     const profileCertPb = document.getElementById("profileCertPb");
@@ -637,6 +641,8 @@
       profileTimeDisplay.classList.add("hidden");
       profileBibFace.classList.add("hidden");
       profileResultCert.classList.add("hidden");
+      profileWaveLine.classList.add("hidden");
+      profileGoalLine.classList.add("hidden");
       profileCertDist.classList.add("hidden");
       profileCertPb.classList.add("hidden");
       profileCertBib.classList.add("hidden");
@@ -760,6 +766,17 @@
         profileBibEvent.textContent = EventMemberCopy.memberEventTitle(
           (cachedEvent && (cachedEvent.eventName || cachedEvent.primaryName)) || ""
         );
+        // Wave name only (A–H). Wave start clocks never show on player screens.
+        const savedSummary = EventBibForm.savedBibSummary(participant, (cachedEvent && cachedEvent.waves) || []);
+        const showFullLines = !!(savedSummary && savedSummary.full && participant.distance === "full");
+        profileWaveLine.textContent = showFullLines
+          ? "출발 그룹 " + (savedSummary.waveName || "미선택")
+          : "";
+        profileGoalLine.textContent = showFullLines
+          ? "완주 목표 " + (savedSummary.goalLine || "미입력")
+          : "";
+        profileWaveLine.classList.toggle("hidden", !showFullLines);
+        profileGoalLine.classList.toggle("hidden", !showFullLines);
         profileSub.textContent = "";
         profileEditBtn.textContent = EventHomeAction.profileEditLabel(participant);
         if (card.largeBib) profileEditBtn.classList.remove("hidden");
