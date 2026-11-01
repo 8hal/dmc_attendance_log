@@ -6,6 +6,10 @@ const { matchResultByBib } = require("./group-scrape-bib");
 const FULL_KM = 42.195;
 const GOAL_MIN_SEC = 3600;
 const GOAL_MAX_SEC = 36000;
+// 스크랩된 구간은 거리로만 온다. 반환점은 고정 km가 없어 기한 사다리에 넣지 않는다.
+const SPLIT_CHECKPOINTS_KM = [5, 10, 15, 20, 21.0975, 25, 30, 35, 40, FULL_KM];
+const ANOMALY_GRACE_FLOOR_SEC = 15 * 60;
+const ANOMALY_INTERVAL_FACTOR = 1.5;
 
 function goalFinishSecFromPace(paceSecPerKm) {
   const pace = Number(paceSecPerKm);
@@ -60,6 +64,29 @@ function kstDateKey(ms) {
   return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
+function nextCheckpointKm(lastKm) {
+  const km = Number(lastKm);
+  if (!Number.isFinite(km)) return SPLIT_CHECKPOINTS_KM[0];
+  for (const point of SPLIT_CHECKPOINTS_KM) {
+    if (point > km + 1e-6) return point;
+  }
+  return null;
+}
+
+// 다음 매트까지 예상 시간의 1.5배. 짧은 구간(하프, 40K→도착)은 마지막 통과 후 최소 15분.
+function anomalyWaitSec(intervalSec) {
+  return Math.max(ANOMALY_INTERVAL_FACTOR * intervalSec, ANOMALY_GRACE_FLOOR_SEC);
+}
+
+function missedNextSplit(lastSplit, projPace, rawElapsed) {
+  const nextKm = nextCheckpointKm(lastSplit && lastSplit.km);
+  if (nextKm == null) return false;
+  const gapKm = nextKm - Number(lastSplit.km);
+  if (!(gapKm > 0) || !(projPace > 0)) return false;
+  const since = rawElapsed - Number(lastSplit.elapsedSec);
+  return since > anomalyWaitSec(gapKm * projPace);
+}
+
 function projectRunner(input) {
   const startMs = Number(input && input.startMs);
   const goalFinishSec = Number(input && input.goalFinishSec);
@@ -74,6 +101,8 @@ function projectRunner(input) {
       avgPaceSecPerKm: goalPace,
       chip: false,
       finished: false,
+      status: "racing",
+      recordAnomaly: false,
       projectedFinishSec: Math.round(goalFinishSec),
     };
   }
@@ -121,12 +150,33 @@ function projectRunner(input) {
     projectedFinishSec = Math.round(goalFinishSec);
   }
 
+  let status = finished ? "finished" : "racing";
+  let recordAnomaly = false;
+  if (!finished && chip && missedNextSplit(lastSplit, projPace, rawElapsed)) {
+    recordAnomaly = true;
+    status = "recordAnomaly";
+    km = Number(lastSplit.km);
+    elapsedSec = Number(lastSplit.elapsedSec);
+    avgPace = km > 0 ? elapsedSec / km : goalPace;
+    projectedFinishSec = null;
+  } else if (!finished && !chip && rawElapsed > goalFinishSec + ANOMALY_GRACE_FLOOR_SEC) {
+    // 칩이 없으면 중간 매트 결측으로 보지 않고, 목표 시각이 지난 뒤에만 접는다.
+    recordAnomaly = true;
+    status = "recordAnomaly";
+    km = 0;
+    elapsedSec = rawElapsed;
+    avgPace = goalPace;
+    projectedFinishSec = null;
+  }
+
   return {
     km,
     elapsedSec,
     avgPaceSecPerKm: avgPace,
     chip,
     finished,
+    status,
+    recordAnomaly,
     projectedFinishSec,
   };
 }
@@ -226,9 +276,15 @@ function toPublicRunner(participant, wave, projected, startOverride) {
     avgPaceSecPerKm: projected.avgPaceSecPerKm,
     chip: projected.chip === true,
     finished: projected.finished === true,
+    status: projected.recordAnomaly ? "recordAnomaly" : (projected.finished ? "finished" : "racing"),
+    recordAnomaly: projected.recordAnomaly === true,
     finishSec: projected.finished === true ? projected.elapsedSec : null,
-    projectedFinishSec: Number.isFinite(projected.projectedFinishSec) ? projected.projectedFinishSec : null,
-    etaFinishAt: Number.isFinite(projected.projectedFinishSec) && Number.isFinite(projected.startMs)
+    projectedFinishSec: projected.recordAnomaly || !Number.isFinite(projected.projectedFinishSec)
+      ? null
+      : projected.projectedFinishSec,
+    etaFinishAt: !projected.recordAnomaly &&
+      Number.isFinite(projected.projectedFinishSec) &&
+      Number.isFinite(projected.startMs)
       ? kstIso(projected.startMs + projected.projectedFinishSec * 1000)
       : null,
   };
@@ -260,8 +316,11 @@ function buildCheerBoard(input) {
     runners.push(toPublicRunner(participant, wave, projected, chipMs != null ? kstIso(chipMs) : null));
   }
   runners.sort((a, b) => {
-    // 레이스 중인 선수가 위, 완주자는 아래에 기록순.
-    if (a.finished !== b.finished) return a.finished ? 1 : -1;
+    // 레이스 중, 기록 이상, 완주 순. 기록 이상은 마지막 거리로 순위를 밀지 않는다.
+    const group = (runner) => (runner.recordAnomaly ? 1 : (runner.finished ? 2 : 0));
+    const ga = group(a);
+    const gb = group(b);
+    if (ga !== gb) return ga - gb;
     if (a.finished && b.finished && a.finishSec !== b.finishSec) return a.finishSec - b.finishSec;
     if (b.km !== a.km) return b.km - a.km;
     return String(a.nickname).localeCompare(String(b.nickname), "ko");
