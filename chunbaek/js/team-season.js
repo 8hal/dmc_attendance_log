@@ -106,10 +106,56 @@
     });
   }
 
+  function decodedStorageObjectPath(photoUrl) {
+    const raw = String(photoUrl || "");
+    const marker = "/o/";
+    const idx = raw.indexOf(marker);
+    const encoded = (idx >= 0 ? raw.slice(idx + marker.length) : raw).split("?")[0];
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
+    }
+  }
+
+  function photoFileOwnerId(fileName) {
+    const indexed = String(fileName || "").match(/^(.*)_(\d+)\.(?:jpe?g|png|webp)$/i);
+    if (indexed) return indexed[1];
+    const bare = String(fileName || "").match(/^(.*)\.(?:jpe?g|png|webp)$/i);
+    return bare ? bare[1] : "";
+  }
+
+  function photoUrlOwnerMemberId(photoUrl) {
+    const objectPath = decodedStorageObjectPath(photoUrl);
+    const attend = objectPath.match(/chunbaek\/attendance\/[^/]+\/[^/]+\/([^/]+)$/i);
+    if (attend) return photoFileOwnerId(attend[1]);
+    const result = objectPath.match(/chunbaek\/season-results\/[^/]+\/([^/]+)$/i);
+    if (result) return photoFileOwnerId(result[1]);
+    if (/chunbaek\/(?:attendance|season-results)\//i.test(objectPath)) return "";
+    return null;
+  }
+
+  function photoUrlBelongsToMember(photoUrl, memberId) {
+    const meId = String(memberId || "");
+    if (!meId || !photoUrl) return false;
+    const owner = photoUrlOwnerMemberId(photoUrl);
+    if (owner === null) return true;
+    return owner === meId;
+  }
+
   function photosFromMyTimeline(weeks, me) {
     const photos = [];
     const memberId = me?.memberId || "";
     const nickname = me?.nickname || "";
+    const pushMine = (photoUrl, extra) => {
+      if (!photoUrl || !photoUrlBelongsToMember(photoUrl, memberId)) return;
+      photos.push({
+        memberId,
+        nickname,
+        photoUrl,
+        ...extra,
+      });
+    };
     for (const week of weeks || []) {
       for (const slot of week.slots || []) {
         const urls = Array.isArray(slot.photoUrls)
@@ -117,10 +163,7 @@
           : (slot.photoUrl ? [slot.photoUrl] : []);
         const dayIndex = slot.displayDayIndex ?? slot.dayIndex ?? null;
         for (const photoUrl of urls) {
-          photos.push({
-            memberId,
-            nickname,
-            photoUrl,
+          pushMine(photoUrl, {
             date: slot.date || "",
             dayIndex,
             kind: "attendance",
@@ -129,10 +172,7 @@
       }
     }
     if (me?.seasonResult?.photoUrl) {
-      photos.push({
-        memberId,
-        nickname,
-        photoUrl: me.seasonResult.photoUrl,
+      pushMine(me.seasonResult.photoUrl, {
         date: "",
         dayIndex: null,
         kind: "result",
@@ -163,8 +203,9 @@
         (members || []).forEach((m) => pushCert(m.memberId, m.nickname, m.seasonResult));
       }
     }
-    if (mineOnly && meId) {
-      list = list.filter((p) => p && p.memberId === meId);
+    if (mineOnly) {
+      if (!meId) return [];
+      list = list.filter((p) => p && p.memberId === meId && photoUrlBelongsToMember(p.photoUrl, meId));
     }
 
     const seen = new Set();
@@ -191,6 +232,13 @@
     return tiles;
   }
 
+  function reportPhotoTileCaption(tile) {
+    if (tile?.kind === "result") return "기록";
+    const day = Number(tile?.dayIndex);
+    if (Number.isFinite(day) && day > 0) return `${day}일`;
+    return "";
+  }
+
   return {
     TEAM_SEASON_RESULT_START_DATE,
     formatNetTime,
@@ -201,7 +249,9 @@
     sortTeamMembersForAttendance,
     shouldShowTeamSeasonResults,
     photosFromMyTimeline,
+    photoUrlBelongsToMember,
     collectSeasonPhotoTiles,
+    reportPhotoTileCaption,
     teamNicknameInitial,
   };
 });

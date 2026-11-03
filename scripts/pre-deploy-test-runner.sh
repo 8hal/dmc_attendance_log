@@ -309,7 +309,8 @@ assert_contains "chunbaek/: view-report" 'id="view-report"' "$TMP_DIR/chunbaek.h
 assert_contains "chunbaek/: season-report-banner" 'id="season-report-banner"' "$TMP_DIR/chunbaek.html"
 assert_contains "chunbaek/: btn-open-report" 'id="btn-open-report"' "$TMP_DIR/chunbaek.html"
 assert_contains "chunbaek/: ocr.js 로드" "js/ocr.js" "$TMP_DIR/chunbaek.html"
-assert_contains "chunbaek/: app-version 0.3.0" 'content="0.3.0"' "$TMP_DIR/chunbaek.html"
+CHUNBAEK_VERSION=$(tr -d '[:space:]' < "$ROOT_DIR/chunbaek/VERSION")
+assert_contains "chunbaek/: app-version ${CHUNBAEK_VERSION}" "content=\"${CHUNBAEK_VERSION}\"" "$TMP_DIR/chunbaek.html"
 assert_contains "chunbaek/: team-season.js 로드" "js/team-season.js" "$TMP_DIR/chunbaek.html"
 assert_contains "chunbaek/: 시즌 최종 결과" "시즌 최종 결과" "$TMP_DIR/chunbaek.html"
 assert_contains "chunbaek/js/ocr.js: parser" "parseMarathonTimesFromText" "$TMP_DIR/chunbaek-ocr.js"

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ff3214" />
   <meta name="color-scheme" content="light only" />
   <meta name="description" content="춘백 시즌3 100일 출석 — 동마클 춘천마라톤 준비방. 7/20(월) 시작, 지금 온보딩 가능." />
-  <meta name="app-version" content="0.3.0" />
+  <meta name="app-version" content="0.3.1" />
   <meta property="og:title" content="춘백 S3 — 100일 출석" />
   <meta property="og:description" content="동마클 춘백 시즌3 100일 출석 앱. 7/20(월) 시작 — 지금 명단 선택·프로필 등록해 두세요." />
   <meta property="og:type" content="website" />
@@ -17,10 +17,10 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <!-- tokens.css를 직접 로드해 chunbaek.css @import 체인(추가 RTT) 제거 -->
-  <link rel="stylesheet" href="css/tokens.css" />
-  <link rel="stylesheet" href="css/chunbaek.css" />
+  <link rel="stylesheet" href="css/tokens.css?v=0.3.1" />
+  <link rel="stylesheet" href="css/chunbaek.css?v=0.3.1" />
   <!-- intro: 시즌 종료 후 아래 줄 + js/intro.js 두 파일 삭제 -->
-  <link rel="stylesheet" href="css/intro.css" />
+  <link rel="stylesheet" href="css/intro.css?v=0.3.1" />
   <!-- Google Fonts: preconnect + 비동기 로드(렌더 블로킹 해제) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -545,13 +545,13 @@
     <button type="button" class="pwa-banner-close" id="pwa-dismiss-btn" aria-label="닫기">✕</button>
   </div>
 
-  <script src="js/ocr.js" defer></script>
-  <script src="js/team-season.js" defer></script>
-  <script src="js/api.js" defer></script>
-  <script src="js/app.js" defer></script>
+  <script src="js/ocr.js?v=0.3.1" defer></script>
+  <script src="js/team-season.js?v=0.3.1" defer></script>
+  <script src="js/api.js?v=0.3.1" defer></script>
+  <script src="js/app.js?v=0.3.1" defer></script>
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/chunbaek/sw.js");
+      navigator.serviceWorker.register("/chunbaek/sw.js?v=0.3.1");
     }
 
     // PWA 설치 배너
@@ -580,6 +580,6 @@
       banner.style.display = "none";
     });
   </script>
-  <script src="js/intro.js" defer></script>
+  <script src="js/intro.js?v=0.3.1" defer></script>
 </body>
 </html>
