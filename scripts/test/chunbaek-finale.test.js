@@ -12,6 +12,8 @@ const {
   activitySummary,
   formatImprovement,
   coffeeAward,
+  pendingResults,
+  PLACEHOLDER_NET_SEC,
 } = require("../../chunbaek/js/finale.js");
 
 test("목표 달성상은 완주 넷타임이 목표 이하인 사람 전부이고 100일 출석 수가 아니다", () => {
@@ -49,6 +51,30 @@ test("목표 달성상은 완주 넷타임이 목표 이하인 사람 전부이�
   assert.deepEqual(award.winners.map((w) => w.nickname), ["가", "라"]);
   assert.match(award.criterion, /완주/);
   assert.match(award.criterion, /100일 출석과 별개/);
+});
+
+test("2:00:00 자리표시는 수상에서 빠지고, 실제 기록이 오면 다시 계산된다", () => {
+  assert.equal(PLACEHOLDER_NET_SEC, 7200);
+  const dimo = {
+    memberId: "dimo",
+    nickname: "디모",
+    goalMarathonNetTime: 9359,
+    existingPbNetTime: 10800,
+    seasonResult: { status: "finisher", netTimeSec: 7200 },
+  };
+  assert.deepEqual(goalAward([dimo]).winners, []);
+  assert.deepEqual(improvementAward([dimo]).winners, []);
+  assert.deepEqual(pendingResults([dimo]).map((row) => row.label), [
+    "디모: 인천 마라톤 후 집계 예정",
+  ]);
+
+  const recorded = {
+    ...dimo,
+    seasonResult: { status: "finisher", netTimeSec: 9000 },
+  };
+  assert.deepEqual(goalAward([recorded]).winners.map((w) => w.nickname), ["디모"]);
+  assert.equal(improvementAward([recorded]).winners[0].nickname, "디모");
+  assert.deepEqual(pendingResults([recorded]), []);
 });
 
 test("최다 참여상은 출석 일수가 가장 많은 사람을 모두 보여 준다", () => {

@@ -82,6 +82,11 @@
             ${awardCard(model.goal, nameList(goalNames.map((nickname) => ({ nickname }))))}
             ${awardCard(model.coffee, `<p class="winner">${escapeHtml(model.coffee.winners[0].nickname)}</p><p class="meta">커피를 산 날 ${model.coffee.days}일</p>`)}
             ${awardCard(model.improvement, nameList(improveNames.map((nickname) => ({ nickname }))))}
+            ${(model.pending || []).length ? awardCard({
+              title: "집계 대기",
+              criterion: "2:00:00은 입력 하한이라 완주 기록으로 쓰지 않습니다. 저장값 자체는 지우지 않습니다. 실제 기록이 저장되면 목표 달성상과 최우수상에 자동으로 들어갑니다.",
+              winners: model.pending,
+            }, nameList(model.pending.map((row) => ({ nickname: row.label })))) : ""}
           </div>
         </section>
         <section class="section">

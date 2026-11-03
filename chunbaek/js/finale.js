@@ -13,6 +13,9 @@
   const PROGRAM_START_DATE = "2026-07-26";
   const ATTENDANCE_END_DATE = "2026-10-24";
   const LOW_ATTENDANCE_DAYS = 4;
+  /** 완주 입력 하한. 2:00:00은 아직 확정 기록이 아니다. */
+  const PLACEHOLDER_NET_SEC = 7200;
+  const PENDING_RESULT_NOTE = "인천 마라톤 후 집계 예정";
 
   /** 단톡 분석으로 확정. 앱에는 커피 지출이 없다. */
   const COFFEE_AWARD = {
@@ -50,7 +53,14 @@
     return parts.join(" ");
   }
 
+  function isPlaceholderFinish(member) {
+    const sr = member && member.seasonResult;
+    if (!sr || sr.status !== "finisher") return false;
+    return num(sr.netTimeSec) === PLACEHOLDER_NET_SEC;
+  }
+
   function goalAchieved(member) {
+    if (isPlaceholderFinish(member)) return false;
     const sr = member && member.seasonResult;
     if (!sr || sr.status !== "finisher") return false;
     const net = num(sr.netTimeSec);
@@ -69,7 +79,7 @@
       kind: "goal",
       title: "목표 달성상",
       winners,
-      criterion: `완주 넷타임이 출정식에 적은 풀코스 목표 이하인 사람 전부. 100일 출석과 별개이고, DNF·DNS·대회 취소·미등록은 뺍니다. 시즌 시작은 ${PROGRAM_START_DATE}입니다.`,
+      criterion: `완주 넷타임이 출정식에 적은 풀코스 목표 이하인 사람 전부. 100일 출석과 별개이고, DNF·DNS·대회 취소·미등록은 뺍니다. 2:00:00은 입력 하한이라 빼며, 실제 기록이 저장되면 다시 넣습니다. 시즌 시작은 ${PROGRAM_START_DATE}입니다.`,
     };
   }
 
@@ -98,7 +108,10 @@
   }
 
   function afterSeconds(member) {
-    if (num(member && member.pbAfterSec) != null) return num(member.pbAfterSec);
+    if (isPlaceholderFinish(member)) return null;
+    if (num(member && member.pbAfterSec) != null && num(member.pbAfterSec) !== PLACEHOLDER_NET_SEC) {
+      return num(member.pbAfterSec);
+    }
     const sr = member && member.seasonResult;
     if (!sr || sr.status !== "finisher") return null;
     return num(sr.netTimeSec);
@@ -134,8 +147,21 @@
       seconds: winners.length ? best : 0,
       excludedNoPb,
       winners,
-      criterion: `${PROGRAM_START_DATE} 전에 갖고 있던 풀코스 PB(프로필 기존 PB)와, 그 날짜 이후 시즌 최종 완주 기록의 차이. 가장 많이 앞당긴 사람. 기존 PB가 없으면 비교하지 않습니다.`,
+      criterion: `${PROGRAM_START_DATE} 전에 갖고 있던 풀코스 PB(프로필 기존 PB)와, 그 날짜 이후 시즌 최종 완주 기록의 차이. 가장 많이 앞당긴 사람. 기존 PB가 없거나 완주가 2:00:00이면 비교하지 않습니다. 실제 기록이 저장되면 다시 계산합니다.`,
     };
+  }
+
+  function pendingResults(members) {
+    return (members || [])
+      .filter(isPlaceholderFinish)
+      .sort(byName)
+      .map((member) => {
+        const nickname = member.nickname || "이름 없음";
+        return {
+          nickname,
+          label: `${nickname}: ${PENDING_RESULT_NOTE}`,
+        };
+      });
   }
 
   function coffeeAward() {
@@ -229,6 +255,17 @@
         seasonWeeksMetCount: 1,
         seasonResult: { status: "dns", raceLabel: "춘천 마라톤" },
       },
+      {
+        memberId: "preview-dimo",
+        nickname: "디모",
+        goalMarathonNetTime: 9359,
+        existingPbNetTime: 10800,
+        seasonAttendCount: 30,
+        seasonAttendRate: 60,
+        seasonWeeksCount: 13,
+        seasonWeeksMetCount: 10,
+        seasonResult: { status: "finisher", netTimeSec: PLACEHOLDER_NET_SEC, raceLabel: "인천 마라톤" },
+      },
     ];
   }
 
@@ -241,6 +278,7 @@
       improvement: improvementAward(members),
       coffee: coffeeAward(),
       thanks: thanksAward(),
+      pending: pendingResults(members),
       activity: activitySummary(members, weeklyTarget || WEEKLY_TARGET_POINTS),
     };
   }
@@ -254,6 +292,7 @@
     PROGRAM_START_DATE,
     ATTENDANCE_END_DATE,
     COFFEE_AWARD,
+    PLACEHOLDER_NET_SEC,
     formatClock,
     formatImprovement,
     goalAward,
@@ -261,6 +300,7 @@
     improvementAward,
     coffeeAward,
     thanksAward,
+    pendingResults,
     activitySummary,
     previewModel,
     modelFromMembers,
