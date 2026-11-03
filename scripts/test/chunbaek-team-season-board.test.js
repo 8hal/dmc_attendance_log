@@ -70,6 +70,15 @@ describe("teamRowSecondLine", () => {
       "JTBC 서울마라톤 DNS",
     );
   });
+
+  it("other는 대회명과 기타만 쓴다", () => {
+    assert.equal(
+      teamSeason.teamRowSecondLine(member({
+        seasonResult: { status: "other", raceLabel: "춘천 마라톤" },
+      })),
+      "춘천 마라톤 기타",
+    );
+  });
 });
 
 describe("teamProfileResultLine", () => {
@@ -92,19 +101,20 @@ describe("teamProfileResultLine", () => {
 });
 
 describe("teamResultCounts", () => {
-  it("등록은 완주·DNF·DNS, 완주는 finisher만 센다", () => {
+  it("등록은 완주·DNF·DNS·기타, 완주는 finisher만 센다", () => {
     const counts = teamSeason.teamResultCounts([
       member({ seasonResult: { status: "finisher", netTimeSec: 15480 } }),
       member({ seasonResult: { status: "dnf" } }),
       member({ seasonResult: { status: "dns" } }),
+      member({ seasonResult: { status: "other" } }),
       member({ seasonResult: null }),
     ]);
-    assert.deepEqual(counts, { total: 4, registered: 3, finishers: 1 });
+    assert.deepEqual(counts, { total: 5, registered: 4, finishers: 1 });
   });
 });
 
 describe("sortTeamMembersForDisplay", () => {
-  it("나 → 완주 빠른 순 → DNF → DNS → 미등록 가나다로 정렬한다", () => {
+  it("나 → 완주 빠른 순 → DNF → DNS → 기타 → 미등록 가나다로 정렬한다", () => {
     const members = [
       member({ memberId: "jung", nickname: "정○○", seasonResult: null }),
       member({
@@ -132,10 +142,24 @@ describe("sortTeamMembersForDisplay", () => {
         nickname: "최○○",
         seasonResult: { status: "dns", raceLabel: "춘천 마라톤" },
       }),
+      member({
+        memberId: "yoon",
+        nickname: "윤○○",
+        seasonResult: { status: "other", raceLabel: "춘천 마라톤" },
+      }),
       member({ memberId: "kang", nickname: "강○○", seasonResult: null }),
     ];
     const ids = teamSeason.sortTeamMembersForDisplay(members, "me").map((m) => m.memberId);
-    assert.deepEqual(ids, ["me", "lee", "kim", "park", "choi", "kang", "jung"]);
+    assert.deepEqual(ids, ["me", "lee", "kim", "park", "choi", "yoon", "kang", "jung"]);
+  });
+});
+
+describe("seasonResultStatusLabel", () => {
+  it("other는 짧은 기타와 긴 대회 취소 안내를 쓴다", () => {
+    assert.equal(teamSeason.seasonResultStatusLabel("other"), "기타");
+    assert.equal(teamSeason.seasonResultStatusLabel("other", "long"), "기타 · 대회 취소 등");
+    assert.equal(teamSeason.seasonResultStatusLabel("dnf"), "DNF");
+    assert.equal(teamSeason.seasonResultStatusLabel("dnf", "long"), "DNF · 중도 포기");
   });
 });
 

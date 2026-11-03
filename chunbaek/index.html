@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ff3214" />
   <meta name="color-scheme" content="light only" />
   <meta name="description" content="춘백 시즌3 100일 출석 — 동마클 춘천마라톤 준비방. 7/20(월) 시작, 지금 온보딩 가능." />
-  <meta name="app-version" content="0.3.0" />
+  <meta name="app-version" content="0.3.1" />
   <meta property="og:title" content="춘백 S3 — 100일 출석" />
   <meta property="og:description" content="동마클 춘백 시즌3 100일 출석 앱. 7/20(월) 시작 — 지금 명단 선택·프로필 등록해 두세요." />
   <meta property="og:type" content="website" />
@@ -189,7 +189,7 @@
               <div class="season-report-banner-eyebrow">🏁 춘백 S3 시즌 마감</div>
               <div class="season-report-banner-title" id="season-report-banner-title">대회 기록 등록하고 성과 보기</div>
               <p class="season-report-banner-desc" id="season-report-banner-desc">
-                100일 출석과 목표 대회 결과(완주 · DNF · DNS)를 한곳에서 확인하세요.
+                100일 출석과 목표 대회 결과(완주 · DNF · DNS · 기타)를 한곳에서 확인하세요.
               </p>
             </div>
             <button type="button" class="btn btn-primary season-report-banner-btn" id="btn-home-open-report">
@@ -446,7 +446,14 @@
                 <input type="radio" name="report-status" value="dns" />
                 <span>🌧️ DNS · 미출전</span>
               </label>
+              <label class="report-status-tab">
+                <input type="radio" name="report-status" value="other" />
+                <span>📌 기타 · 대회 취소 등</span>
+              </label>
             </div>
+            <p class="hint" id="report-other-hint" hidden>
+              대회 취소나 기록 무효처럼 완주·DNF·DNS에 넣기 어려운 경우입니다. 완주 시간은 없어도 됩니다.
+            </p>
 
             <div id="report-finisher-fields">
               <div class="report-ocr-box">
@@ -483,7 +490,7 @@
 
             <div class="field-label">한 줄 소감 (선택)</div>
             <textarea class="input textarea-intro" id="report-note" rows="2" maxlength="200"
-              placeholder="완주 소감이나 못 나간 이유를 남겨 주세요"></textarea>
+              placeholder="완주 소감, 못 나간 이유, 대회 취소 등을 남겨 주세요"></textarea>
 
             <div class="report-form-btns">
               <button type="button" class="btn btn-primary" id="btn-save-season-result">결과 저장하기</button>

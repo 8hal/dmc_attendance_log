@@ -45,7 +45,7 @@ const GOAL_MIN_SEC = 7200;
 const GOAL_MAX_SEC = 25200;
 const SEASON_RESULT_MIN_SEC = 7200;
 const SEASON_RESULT_MAX_SEC = 28800;
-const SEASON_RESULT_STATUSES = new Set(["finisher", "dnf", "dns"]);
+const SEASON_RESULT_STATUSES = new Set(["finisher", "dnf", "dns", "other"]);
 const GOAL_WEIGHT_MIN_KG = 30;
 const GOAL_WEIGHT_MAX_KG = 200;
 const GOAL_RACES = new Set(["chuncheon", "jtbc", "other"]);
@@ -211,7 +211,7 @@ function parseSeasonResult(raw, fallbackRace = "chuncheon") {
   }
   const status = String(raw.status || "").trim().toLowerCase();
   if (!SEASON_RESULT_STATUSES.has(status)) {
-    return { error: "seasonResult.status must be finisher, dnf, or dns" };
+    return { error: "seasonResult.status must be finisher, dnf, dns, or other" };
   }
   const raceInput = String(raw.race || fallbackRace || "chuncheon").trim();
   if (!GOAL_RACES.has(raceInput)) {

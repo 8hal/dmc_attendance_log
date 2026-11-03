@@ -280,6 +280,26 @@ describe("Task 2: parseSeasonResult 및 update-profile / my-profile / team-summa
     assert.equal(dns.raceLabel, "기타: 경주 동아마라톤");
   });
 
+  it("parseSeasonResult — other는 시간 없이 허용되고 netTimeSec은 null이다", () => {
+    const other = parseSeasonResult({
+      status: "other",
+      race: "chuncheon",
+      netTimeSec: 15000,
+      note: "대회 중 취소",
+    });
+    assert.equal(other.error, undefined);
+    assert.equal(other.status, "other");
+    assert.equal(other.netTimeSec, null);
+    assert.equal(other.note, "대회 중 취소");
+    assert.equal(other.raceLabel, "춘천 마라톤");
+  });
+
+  it("parseSeasonResult — 허용되지 않는 status는 other를 포함한 안내를 준다", () => {
+    const cancelled = parseSeasonResult({ status: "cancelled", race: "chuncheon" });
+    assert.ok(cancelled.error);
+    assert.match(cancelled.error, /other/);
+  });
+
   it("update-profile에서 seasonResult만 단독 전달해도 기존 프로필을 유지하며 저장하고 my-profile / team-summary에 반영된다", async () => {
     const db = new FakeDb({
       members: {
@@ -368,6 +388,30 @@ describe("Task 2: parseSeasonResult 및 update-profile / my-profile / team-summa
     assert.equal(updateDnfRes.body.seasonResult.netTimeSec, null);
     assert.equal(updateDnfRes.body.seasonResult.photoUrl, null);
     assert.equal(updateDnfRes.body.seasonResult.goalMet, false);
+
+    const updateOtherRes = await runAction("update-profile", {
+      method: "POST",
+      query: { token: "tok" },
+      body: {
+        seasonResult: {
+          status: "other",
+          race: "chuncheon",
+          note: "대회 중 취소",
+        },
+      },
+    }, db);
+    assert.equal(updateOtherRes.statusCode, 200);
+    assert.equal(updateOtherRes.body.seasonResult.status, "other");
+    assert.equal(updateOtherRes.body.seasonResult.netTimeSec, null);
+    assert.equal(updateOtherRes.body.seasonResult.goalMet, false);
+    assert.equal(updateOtherRes.body.seasonResult.note, "대회 중 취소");
+
+    const teamOtherRes = await runAction("team-summary", {
+      method: "GET",
+      query: { token: "tok" },
+    }, db);
+    assert.equal(teamOtherRes.statusCode, 200);
+    assert.equal(teamOtherRes.body.members[0].seasonResult.status, "other");
   });
 
   it("team-summary?includePhotos=1 은 출석 사진과 기록 사진을 함께 돌려준다", async () => {
@@ -514,6 +558,8 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(html, /id="report-attend-summary"/);
     assert.match(html, /id="report-photo-board"/);
     assert.match(html, /src="js\/ocr\.js"/);
+    assert.match(html, /name="report-status" value="other"/);
+    assert.match(html, /기타 · 대회 취소 등/);
   });
 
   it("성과 페이지 하단에 올라온 기록 사진 타일 보드가 있고 샘플·테스트 문구가 없다", () => {
@@ -550,6 +596,8 @@ describe("Task 4: 개인 성과 요약 뷰(#view-report), 홈 마감 배너, [�
     assert.match(appJs, /report:\s*"view-report"/);
     assert.match(appJs, /function renderReport\(/);
     assert.match(appJs, /function onSaveSeasonResult\(/);
+    assert.match(appJs, /seasonResultStatusLabel/);
+    assert.match(appJs, /report-status-pill--other/);
     assert.match(appJs, /function paintReportPhotoBoard\(/);
     assert.match(appJs, /collectSeasonPhotoTiles/);
     assert.match(appJs, /photosFromMyTimeline/);
