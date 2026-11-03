@@ -2152,10 +2152,7 @@
     if (ctaSub) {
       if (p.seasonResult) {
         const sr = p.seasonResult;
-        const statusText = sr.status === "finisher"
-          ? `완주 ${formatNetTime(sr.netTimeSec)}`
-          : sr.status.toUpperCase();
-        ctaSub.textContent = `${sr.raceLabel || "대회"} · ${statusText} 등록됨`;
+        ctaSub.textContent = `${sr.raceLabel || "대회"} · ${seasonResultDisplayText(sr)} 등록됨`;
       } else {
         ctaSub.textContent = "출석과 대회 결과를 등록하세요";
       }
@@ -2163,7 +2160,7 @@
     const srText = p.seasonResult
       ? (p.seasonResult.status === "finisher"
         ? `완주 (${formatNetTime(p.seasonResult.netTimeSec)})`
-        : p.seasonResult.status.toUpperCase())
+        : (seasonResultStatusLabel(p.seasonResult.status) || p.seasonResult.status))
       : "아직 등록하지 않음";
     document.getElementById("me-dl").innerHTML = `
       <dt>닉네임</dt><dd>${p.nickname || "김러너"}</dd>
@@ -2194,13 +2191,13 @@
     if (sr) {
       const statusLabel = sr.status === "finisher"
         ? `완주 ${formatNetTime(sr.netTimeSec)}${sr.goalMet ? " (목표 달성 🎯)" : ""}`
-        : sr.status.toUpperCase();
+        : (seasonResultStatusLabel(sr.status) || sr.status);
       if (titleEl) titleEl.textContent = "내 시즌3 성과";
       if (descEl) descEl.textContent = `${sr.raceLabel || "목표 대회"} · ${statusLabel} · 출석률 ${prof?.stats?.seasonAttendRate || 0}%`;
       if (btnEl) btnEl.textContent = "내 성과 보기 →";
     } else {
       if (titleEl) titleEl.textContent = "대회 기록 등록하고 성과 보기";
-      if (descEl) descEl.textContent = "목표 대회 결과(완주 · DNF · DNS)를 등록하고 100일 출석을 확인하세요.";
+      if (descEl) descEl.textContent = "목표 대회 결과(완주 · DNF · DNS · 기타)를 등록하고 100일 출석을 확인하세요.";
       if (btnEl) btnEl.textContent = "대회 기록 등록하기 →";
     }
   }
@@ -2227,6 +2224,30 @@
     return el ? el.value : "finisher";
   }
 
+  function seasonResultStatusLabel(status, variant) {
+    const fn = window.ChunbaekTeamSeason && ChunbaekTeamSeason.seasonResultStatusLabel;
+    return fn ? fn(status, variant) : "";
+  }
+
+  function seasonResultDisplayText(sr) {
+    if (!sr || !sr.status) return "";
+    if (sr.status === "finisher") return `완주 ${formatNetTime(sr.netTimeSec)}`;
+    return seasonResultStatusLabel(sr.status) || sr.status;
+  }
+
+  const REPORT_STATUS_PILL_CLASS = {
+    finisher: "report-status-pill--finisher",
+    dnf: "report-status-pill--dnf",
+    dns: "report-status-pill--dns",
+    other: "report-status-pill--other",
+  };
+
+  function reportStatusPillHtml(status) {
+    const cls = REPORT_STATUS_PILL_CLASS[status] || "report-status-pill";
+    const label = seasonResultStatusLabel(status, "long") || String(status || "");
+    return `<span class="report-status-pill ${cls}">${escapeHtml(label)}</span>`;
+  }
+
   function syncReportFormVisibility() {
     const isOther = selectedReportRace() === "other";
     const noteEl = document.getElementById("report-race-note");
@@ -2235,6 +2256,8 @@
     const status = selectedReportStatus();
     const finisherFields = document.getElementById("report-finisher-fields");
     if (finisherFields) finisherFields.hidden = status !== "finisher";
+    const otherHint = document.getElementById("report-other-hint");
+    if (otherHint) otherHint.hidden = status !== "other";
     updateReportLiveDiff();
   }
 
@@ -2489,6 +2512,8 @@
       badges.push({ text: "💪 아름다운 도전 (DNF)", cls: "report-badge--neutral" });
     } else if (sr?.status === "dns") {
       badges.push({ text: "🌱 다음 시즌 기약 (DNS)", cls: "report-badge--neutral" });
+    } else if (sr?.status === "other") {
+      badges.push({ text: "📌 기타 · 대회 취소 등", cls: "report-badge--neutral" });
     } else {
       badges.push({ text: "⏳ 대회 기록 등록 대기", cls: "report-badge--pending" });
     }
@@ -2527,11 +2552,7 @@
     if (cancelBtn) cancelBtn.hidden = !sr;
 
     if (sr && !showForm) {
-      const statusPill = sr.status === "finisher"
-        ? '<span class="report-status-pill report-status-pill--finisher">완주</span>'
-        : sr.status === "dnf"
-          ? '<span class="report-status-pill report-status-pill--dnf">DNF · 중도 포기</span>'
-          : '<span class="report-status-pill report-status-pill--dns">DNS · 미출전</span>';
+      const statusPill = reportStatusPillHtml(sr.status);
 
       document.getElementById("report-race-meta").innerHTML = `
         <strong>${escapeHtml(sr.raceLabel || p.goalRaceLabel || "춘천 마라톤")}</strong>
@@ -2562,7 +2583,7 @@
 
       const recordValue = sr.status === "finisher"
         ? formatNetTime(sr.netTimeSec)
-        : sr.status.toUpperCase();
+        : (seasonResultStatusLabel(sr.status) || sr.status);
 
       document.getElementById("report-record-compare").innerHTML = `
         <div class="report-compare-box">

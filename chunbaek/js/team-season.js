@@ -9,7 +9,15 @@
     root.ChunbaekTeamSeason = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
-  const REGISTERED = new Set(["finisher", "dnf", "dns"]);
+  const REGISTERED = new Set(["finisher", "dnf", "dns", "other"]);
+
+  function seasonResultStatusLabel(status, variant) {
+    if (status === "finisher") return "완주";
+    if (status === "dnf") return variant === "long" ? "DNF · 중도 포기" : "DNF";
+    if (status === "dns") return variant === "long" ? "DNS · 미출전" : "DNS";
+    if (status === "other") return variant === "long" ? "기타 · 대회 취소 등" : "대회 취소 등";
+    return "";
+  }
 
   function formatNetTime(seconds) {
     if (!seconds) return "—";
@@ -29,8 +37,9 @@
     const sr = m?.seasonResult;
     if (!sr || !sr.status) return goalLine(m);
     const race = sr.raceLabel || "";
-    if (sr.status === "dnf") return `${race} DNF`.trim();
-    if (sr.status === "dns") return `${race} DNS`.trim();
+    if (sr.status === "dnf" || sr.status === "dns" || sr.status === "other") {
+      return `${race} ${seasonResultStatusLabel(sr.status)}`.trim();
+    }
     if (sr.status !== "finisher") return goalLine(m);
     let line = `${race} 완주 ${formatNetTime(sr.netTimeSec)}`.trim();
     if (sr.goalMet) line += " · 목표 달성";
@@ -61,7 +70,8 @@
     if (status === "finisher") return 0;
     if (status === "dnf") return 1;
     if (status === "dns") return 2;
-    return 3;
+    if (status === "other") return 3;
+    return 4;
   }
 
   function sortTeamMembersForDisplay(members, meId) {
@@ -194,6 +204,7 @@
   return {
     TEAM_SEASON_RESULT_START_DATE,
     formatNetTime,
+    seasonResultStatusLabel,
     teamRowSecondLine,
     teamProfileResultLine,
     teamResultCounts,

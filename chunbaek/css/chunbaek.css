@@ -2053,7 +2053,7 @@ body {
 
 .report-status-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -2199,6 +2199,10 @@ body {
 .report-status-pill--dns {
   background: var(--border-light);
   color: var(--text-muted);
+}
+.report-status-pill--other {
+  background: #eef2ff;
+  color: #4338ca;
 }
 
 .report-record-compare {
