@@ -15,7 +15,7 @@
     if (status === "finisher") return "완주";
     if (status === "dnf") return variant === "long" ? "DNF · 중도 포기" : "DNF";
     if (status === "dns") return variant === "long" ? "DNS · 미출전" : "DNS";
-    if (status === "other") return variant === "long" ? "기타 · 대회 취소 등" : "기타";
+    if (status === "other") return variant === "long" ? "기타 · 대회 취소 등" : "대회 취소 등";
     return "";
   }
 

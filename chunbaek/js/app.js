@@ -2243,7 +2243,7 @@
   };
 
   function reportStatusPillHtml(status) {
-    const cls = REPORT_STATUS_PILL_CLASS[status] || REPORT_STATUS_PILL_CLASS.dns;
+    const cls = REPORT_STATUS_PILL_CLASS[status] || "report-status-pill";
     const label = seasonResultStatusLabel(status, "long") || String(status || "");
     return `<span class="report-status-pill ${cls}">${escapeHtml(label)}</span>`;
   }

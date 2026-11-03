@@ -76,7 +76,7 @@ describe("teamRowSecondLine", () => {
       teamSeason.teamRowSecondLine(member({
         seasonResult: { status: "other", raceLabel: "춘천 마라톤" },
       })),
-      "춘천 마라톤 기타",
+      "춘천 마라톤 대회 취소 등",
     );
   });
 });
@@ -156,7 +156,7 @@ describe("sortTeamMembersForDisplay", () => {
 
 describe("seasonResultStatusLabel", () => {
   it("other는 짧은 기타와 긴 대회 취소 안내를 쓴다", () => {
-    assert.equal(teamSeason.seasonResultStatusLabel("other"), "기타");
+    assert.equal(teamSeason.seasonResultStatusLabel("other"), "대회 취소 등");
     assert.equal(teamSeason.seasonResultStatusLabel("other", "long"), "기타 · 대회 취소 등");
     assert.equal(teamSeason.seasonResultStatusLabel("dnf"), "DNF");
     assert.equal(teamSeason.seasonResultStatusLabel("dnf", "long"), "DNF · 중도 포기");
