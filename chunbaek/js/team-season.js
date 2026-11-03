@@ -10,6 +10,21 @@
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const REGISTERED = new Set(["finisher", "dnf", "dns", "other"]);
+  const PROGRAM_START_DATE = "2026-07-26";
+
+  function canonicalChunbaekPhotoUrl(url) {
+    const text = typeof url === "string" ? url.trim() : "";
+    if (!text) return "";
+    return text.replace(/dmc-attendance\.appspot\.com/g, "dmc-attendance.firebasestorage.app");
+  }
+
+  function formatSeasonProgressLabel({ seasonDayIndex, inBetaWeek, attendanceClosed } = {}) {
+    if (attendanceClosed) return "출석 마감";
+    const dayIdx = Number(seasonDayIndex) || 0;
+    if (dayIdx <= 0) return "시작 전";
+    if (inBetaWeek) return `베타 ${dayIdx}일차`;
+    return `${dayIdx}일차 / 100일`;
+  }
 
   function seasonResultStatusLabel(status, variant) {
     if (status === "finisher") return "완주";
@@ -130,7 +145,7 @@
           photos.push({
             memberId,
             nickname,
-            photoUrl,
+            photoUrl: canonicalChunbaekPhotoUrl(photoUrl),
             date: slot.date || "",
             dayIndex,
             kind: "attendance",
@@ -142,7 +157,7 @@
       photos.push({
         memberId,
         nickname,
-        photoUrl: me.seasonResult.photoUrl,
+        photoUrl: canonicalChunbaekPhotoUrl(me.seasonResult.photoUrl),
         date: "",
         dayIndex: null,
         kind: "result",
@@ -202,7 +217,10 @@
   }
 
   return {
+    PROGRAM_START_DATE,
     TEAM_SEASON_RESULT_START_DATE,
+    canonicalChunbaekPhotoUrl,
+    formatSeasonProgressLabel,
     formatNetTime,
     seasonResultStatusLabel,
     teamRowSecondLine,

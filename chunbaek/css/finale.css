@@ -1,0 +1,94 @@
+body {
+  margin: 0;
+  background: var(--bg, #f6f3ef);
+  color: var(--text-primary, #1c1917);
+  font-family: "Noto Sans KR", sans-serif;
+}
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+.hero {
+  background: var(--brand-orange, #ff3214);
+  color: #fff;
+  border-radius: 20px;
+  padding: 28px 24px;
+}
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.25;
+}
+.hero p { margin: 10px 0 0; font-size: 15px; }
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-light { background: #fff; color: #111; }
+.btn-ghost { background: transparent; color: #fff; border: 1.5px solid #fff; }
+.banner, .gate {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+}
+.section { margin-top: 22px; }
+.section h2 { margin: 0 0 12px; font-size: 20px; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e7e5e4;
+  border-radius: 16px;
+  padding: 16px;
+}
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.criterion { margin: 0 0 12px; color: #57534e; font-size: 13px; line-height: 1.5; }
+.winner { font-size: 22px; font-weight: 800; margin: 0; }
+.meta { margin: 4px 0 0; color: #44403c; }
+.names { margin: 8px 0 0; padding-left: 1.1em; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.stat {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid #e7e5e4;
+}
+.stat b { display: block; font-size: 28px; }
+.stat span { font-size: 13px; color: #57534e; }
+@media (min-width: 720px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .stats { grid-template-columns: repeat(4, 1fr); }
+}
+@media print {
+  body { background: #fff; }
+  .toolbar, .banner, .gate, .no-print { display: none !important; }
+  .page { max-width: none; padding: 0; }
+  .hero { border-radius: 0; }
+  .card, .stat { break-inside: avoid; }
+}

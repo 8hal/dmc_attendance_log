@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ff3214" />
   <meta name="color-scheme" content="light only" />
   <meta name="description" content="춘백 시즌3 100일 출석 — 동마클 춘천마라톤 준비방. 7/20(월) 시작, 지금 온보딩 가능." />
-  <meta name="app-version" content="0.3.1" />
+  <meta name="app-version" content="0.3.2" />
   <meta property="og:title" content="춘백 S3 — 100일 출석" />
   <meta property="og:description" content="동마클 춘백 시즌3 100일 출석 앱. 7/20(월) 시작 — 지금 명단 선택·프로필 등록해 두세요." />
   <meta property="og:type" content="website" />
@@ -306,6 +306,7 @@
       <section id="view-team" class="view">
         <h2 class="section-title">팀</h2>
         <p class="section-sub" id="team-season-caption" hidden>시즌 최종 결과</p>
+        <p class="section-sub"><a href="finale.html">쫑파티 결산</a></p>
         <div class="team-summary" id="team-summary"></div>
         <div id="team-list"></div>
       </section>
@@ -350,7 +351,8 @@
         </div>
         <dl class="profile-dl" id="me-dl"></dl>
         <button type="button" class="btn btn-outline" id="btn-edit-profile">프로필 수정</button>
-        <p class="me-guide-link-wrap">
+          <p class="me-guide-link-wrap">
+          <a class="me-guide-link" href="finale.html">시즌3 결산 · 쫑파티</a>
           <a class="me-guide-link" href="/chunbaek/guide/">100일 훈련 가이드</a>
         </p>
         <section class="me-exception-section" id="me-exception-section" hidden>
@@ -413,7 +415,7 @@
             <div class="report-race-meta" id="report-race-meta"></div>
             <div class="report-record-compare" id="report-record-compare"></div>
             <div class="report-cert-preview" id="report-cert-preview" hidden>
-              <img id="report-cert-img" src="" alt="기록증 사진" />
+              <img id="report-cert-img" src="" alt="기록증 사진" referrerpolicy="no-referrer" />
             </div>
             <p class="report-result-note" id="report-result-note" hidden></p>
             <button type="button" class="btn btn-outline" id="btn-edit-season-result" style="margin-top:12px">
@@ -501,7 +503,7 @@
 
         <div class="card report-section-card">
           <h3 class="section-subtitle">📅 100일 출석</h3>
-          <p class="section-sub">주 3점 목표를 몇 주 달성했는지 봅니다</p>
+          <p class="section-sub" id="report-attend-note">주 3점 목표를 몇 주 달성했는지 봅니다</p>
           <div class="report-attend-grid" id="report-attend-summary"></div>
           <div class="report-attend-bar-wrap">
             <div class="report-attend-bar-labels">

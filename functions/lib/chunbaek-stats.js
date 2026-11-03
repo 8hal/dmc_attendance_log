@@ -5,16 +5,21 @@ const MS_PER_DAY = 86400000;
 
 const PHOTO_MAX_PER_SLOT = 5;
 
+function canonicalChunbaekPhotoUrl(url) {
+  const text = typeof url === "string" ? url.trim() : "";
+  if (!text) return "";
+  return text.replace(/dmc-attendance\.appspot\.com/g, "dmc-attendance.firebasestorage.app");
+}
+
 function normalizePhotoUrls(att) {
   if (!att) return [];
-  if (Array.isArray(att.photoUrls)) {
-    return att.photoUrls
-      .map((u) => (typeof u === "string" ? u.trim() : ""))
-      .filter(Boolean)
-      .slice(0, PHOTO_MAX_PER_SLOT);
-  }
-  const legacy = att.photoUrl ? String(att.photoUrl).trim() : "";
-  return legacy ? [legacy] : [];
+  const raw = Array.isArray(att.photoUrls)
+    ? att.photoUrls
+    : (att.photoUrl ? [att.photoUrl] : []);
+  return raw
+    .map((u) => canonicalChunbaekPhotoUrl(typeof u === "string" ? u : ""))
+    .filter(Boolean)
+    .slice(0, PHOTO_MAX_PER_SLOT);
 }
 
 const BETA_WEEK = 0;
@@ -87,6 +92,7 @@ function statsSlotsForToday(slots, today, config) {
   }
   return seasonSlotsOnly(slots).filter((s) => {
     const date = s.date || "";
+    if (date && date < S3_PROGRAM_START_DATE) return false;
     return !seasonEnd || !date || date <= seasonEnd;
   });
 }
@@ -223,7 +229,58 @@ function effectiveSeasonStart(config, slots = []) {
   return seasonBounds(seasonSlotsOnly(slots)).startDate;
 }
 
+const S3_PROGRAM_START_DATE = "2026-07-26";
 const S3_ATTENDANCE_END_DATE = "2026-10-24";
+
+function diffDaysIso(startIso, endIso) {
+  const [sy, sm, sd] = String(startIso).split("-").map(Number);
+  const [ey, em, ed] = String(endIso).split("-").map(Number);
+  if (![sy, sm, sd, ey, em, ed].every(Number.isFinite)) return 0;
+  return Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / MS_PER_DAY);
+}
+
+/** 공식 시즌 경과 일차. 시작 전 0, 출석 마감일 이후에는 마감일 기준. */
+function programDayIndex(today, start = S3_PROGRAM_START_DATE, end = S3_ATTENDANCE_END_DATE) {
+  if (!today || !start || today < start) return 0;
+  const capped = end && today > end ? end : today;
+  return diffDaysIso(start, capped) + 1;
+}
+
+function slotsWithDerivedSchedule(slots, config = {}) {
+  return (slots || []).map((slot) => {
+    const di = Number(slot?.dayIndex ?? slot?.id);
+    const beta = isBetaSlot(slot)
+      || (Number.isFinite(di)
+        && di >= BETA_DAY_INDEX_BASE
+        && di < BETA_DAY_INDEX_BASE + BETA_DAY_COUNT);
+    const date = deriveSlotDate(
+      beta ? { ...slot, week: BETA_WEEK } : slot,
+      config,
+      slots,
+    );
+    let week = slot.week;
+    if (beta) week = BETA_WEEK;
+    else if (Number.isFinite(di) && di >= 1 && di <= 100) {
+      const derivedWeek = deriveSeasonWeek(di);
+      if (derivedWeek) week = derivedWeek;
+    }
+    return {
+      ...slot,
+      date: date || normalizeSlotDate(slot.date) || "",
+      week,
+    };
+  });
+}
+
+function isBeforeProgramStart(slot) {
+  if (!slot || isBetaSlot(slot)) return false;
+  return !!(slot.date && slot.date < S3_PROGRAM_START_DATE);
+}
+
+function isAfterAttendanceWindow(slot, seasonEnd) {
+  if (!slot || isBetaSlot(slot)) return false;
+  return !!(seasonEnd && slot.date && slot.date > seasonEnd);
+}
 
 function effectiveSeasonEnd(config, slots = []) {
   let end = config?.endDate || null;
@@ -338,7 +395,14 @@ function computeWeekScoreHint({ weekScore, weekTarget, weekTargetMet, futureExce
   return null;
 }
 
-function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig) {
+function isOutsideOfficialAttendance(slot, seasonEnd, programStart) {
+  if (!slot || isBetaSlot(slot) || slot.isProgramOff) return false;
+  if (programStart && slot.date && slot.date < programStart) return true;
+  if (seasonEnd && slot.date && slot.date > seasonEnd) return true;
+  return false;
+}
+
+function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig, seasonEnd = "", programStart = "") {
   let weekAttendCount = 0;
   let weekExceptionCount = 0;
   let futureExceptionCount = 0;
@@ -348,6 +412,7 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
+    if (isOutsideOfficialAttendance(slot, seasonEnd, programStart)) continue;
     totalWeekTrainingCount += 1;
     const att = getAttendance(attendanceMap, slot);
     if (slot.date > today) {
@@ -388,17 +453,12 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig)
 function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
-  const statsSlots = statsSlotsForToday(slots, todayDate, config);
-  const currentWeek = findWeekForDate(slots, todayDate, config);
-  const inBetaWeek = currentWeek === BETA_WEEK && isDateInBetaWeek(config, slots, todayDate);
-
-  let seasonDayIndex = 0;
-  for (const slot of statsSlots) {
-    if (slot.date <= todayDate) {
-      const di = displayDayIndex(slot);
-      if (di > seasonDayIndex) seasonDayIndex = di;
-    }
-  }
+  const normalized = slotsWithDerivedSchedule(slots, config);
+  const seasonEnd = effectiveSeasonEnd(config, normalized);
+  const statsSlots = statsSlotsForToday(normalized, todayDate, config);
+  const currentWeek = findWeekForDate(normalized, todayDate, config);
+  const inBetaWeek = currentWeek === BETA_WEEK && isDateInBetaWeek(config, normalized, todayDate);
+  const seasonDayIndex = programDayIndex(todayDate, S3_PROGRAM_START_DATE, seasonEnd);
 
   let seasonAttendCount = 0;
   let seasonDenom = 0;
@@ -431,11 +491,13 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
   const activeWeekNums = [...weekMap.keys()].sort((a, b) => a - b);
   const seasonWeekSummaries = activeWeekNums.map((weekNum) => {
     const ws = computeWeekStatsFull(
-      slots,
+      normalized,
       attendanceMap,
       weekNum,
       weeklyTargetConfig,
       todayDate,
+      seasonEnd,
+      S3_PROGRAM_START_DATE,
     );
     const met = ws.target > 0 && ws.weekScore >= ws.target;
     return {
@@ -451,11 +513,13 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
   const seasonWeeksMetCount = seasonWeekSummaries.filter((w) => w.met).length;
 
   const weekStats = computeWeekStats(
-    slots,
+    normalized,
     attendanceMap,
     currentWeek,
     todayDate,
     weeklyTargetConfig,
+    seasonEnd,
+    S3_PROGRAM_START_DATE,
   );
 
   return {
@@ -477,10 +541,13 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     weekHint: weekStats.weekHint,
     inBetaWeek,
     currentWeek,
+    programStartDate: S3_PROGRAM_START_DATE,
+    attendanceEndDate: seasonEnd || null,
+    attendanceClosed: !!(seasonEnd && todayDate > seasonEnd),
   };
 }
 
-function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, today) {
+function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, today, seasonEnd = "", programStart = "") {
   let weekAttendCount = 0;
   let weekExceptionCount = 0;
   let trainingCount = 0;
@@ -489,6 +556,7 @@ function computeWeekStatsFull(slots, attendanceMap, week, weeklyTargetConfig, to
   for (const slot of slots) {
     if (slot.week !== week) continue;
     if (slot.isProgramOff) continue;
+    if (isOutsideOfficialAttendance(slot, seasonEnd, programStart)) continue;
     totalWeekTrainingCount += 1;
     if (today && slot.date > today) continue;
     trainingCount += 1;
@@ -522,14 +590,18 @@ function formatWeekScoreSummary({ weekScore, target }) {
 
 function formatIsoRange(startDate, endDate) {
   const fmt = (iso) => {
-    const [, m, d] = iso.split("-").map(Number);
+    const text = normalizeSlotDate(iso);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return "—";
+    const [, m, d] = text.split("-").map(Number);
     return `${m}/${d}`;
   };
   return `${fmt(startDate)} ~ ${fmt(endDate)}`;
 }
 
-function slotStatus(slot, attendanceMap, today) {
+function slotStatus(slot, attendanceMap, today, seasonEnd = "") {
   if (slot.isProgramOff) return "off";
+  if (isBeforeProgramStart(slot)) return "preseason";
+  if (isAfterAttendanceWindow(slot, seasonEnd)) return "closed";
   const att = getAttendance(attendanceMap, slot);
   if (att?.exception) return "exception";
   if (att?.attended) return "attend";
@@ -538,9 +610,10 @@ function slotStatus(slot, attendanceMap, today) {
   return "future";
 }
 
-function weekDots(slots, attendanceMap, week, today) {
+function weekDots(slots, attendanceMap, week, today, seasonEnd = "", programStart = "") {
   const training = slots
     .filter((s) => s.week === week && !s.isProgramOff)
+    .filter((s) => !isOutsideOfficialAttendance(s, seasonEnd, programStart))
     .sort((a, b) => a.dayIndex - b.dayIndex);
   return training.map((slot) => {
     const status = slotStatus(slot, attendanceMap, today);
@@ -556,16 +629,18 @@ function weekLabel(week) {
 }
 
 function buildTimelineWeeks(slots, attendanceMap, config, today) {
+  const normalized = slotsWithDerivedSchedule(slots, config);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
+  const seasonEnd = effectiveSeasonEnd(config, normalized) || "";
   const weekMap = new Map();
-  for (const slot of slots) {
+  for (const slot of normalized) {
     if (!weekMap.has(slot.week)) weekMap.set(slot.week, []);
     weekMap.get(slot.week).push(slot);
   }
 
-  const seasonStart = effectiveSeasonStart(config, slots);
+  const seasonStart = effectiveSeasonStart(config, normalized);
   const showBetaInTimeline = !!(seasonStart && today < seasonStart);
-  const currentWeek = findWeekForDate(slots, today, config);
+  const currentWeek = findWeekForDate(normalized, today, config);
 
   const weeks = [...weekMap.entries()]
     .filter(([week]) => {
@@ -577,32 +652,40 @@ function buildTimelineWeeks(slots, attendanceMap, config, today) {
     .map(([week, weekSlots]) => {
       weekSlots.sort((a, b) => a.dayIndex - b.dayIndex);
       const dates = weekSlots.map((s) => s.date);
+      const countable = weekSlots.filter((s) => !s.isProgramOff
+        && !isOutsideOfficialAttendance(s, seasonEnd, S3_PROGRAM_START_DATE));
       const { attendCount, exceptionCount, weekScore, target } = computeWeekStatsFull(
-        slots,
+        normalized,
         attendanceMap,
         week,
         weeklyTargetConfig,
         today,
+        seasonEnd,
+        S3_PROGRAM_START_DATE,
       );
       return {
         week,
         weekLabel: weekLabel(week),
         range: formatIsoRange(dates[0], dates[dates.length - 1]),
-        attendSummary: formatWeekScoreSummary({ attendCount, exceptionCount, weekScore, target }),
+        attendSummary: countable.length
+          ? formatWeekScoreSummary({ attendCount, exceptionCount, weekScore, target })
+          : "집계 제외",
         attendCount,
         exceptionCount,
         weekScore,
         target,
-        dots: weekDots(slots, attendanceMap, week, today),
+        dots: weekDots(normalized, attendanceMap, week, today, seasonEnd, S3_PROGRAM_START_DATE),
         collapsed: week < currentWeek,
         slots: weekSlots.map((slot) => {
           const att = getAttendance(attendanceMap, slot);
-          const status = slotStatus(slot, attendanceMap, today);
+          const status = slotStatus(slot, attendanceMap, today, seasonEnd);
           const editLocked = isMemberEditLocked(slot.date);
           const exception = !!att?.exception;
           const canEdit = !slot.isProgramOff
             && !exception
             && !editLocked
+            && status !== "preseason"
+            && status !== "closed"
             && slot.date <= today;
           return {
             slotId: slot.dayIndex ?? Number(slot.id),
@@ -794,7 +877,11 @@ module.exports = {
   getAttendance,
   deriveSeasonDate,
   deriveSeasonWeek,
+  S3_PROGRAM_START_DATE,
   S3_ATTENDANCE_END_DATE,
+  programDayIndex,
+  slotsWithDerivedSchedule,
+  canonicalChunbaekPhotoUrl,
   effectiveSeasonStart,
   effectiveSeasonEnd,
   isAttendanceClosed,

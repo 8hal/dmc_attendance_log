@@ -62,6 +62,10 @@ body.admin-body {
   flex-direction: column;
   gap: 4px;
 }
+a.admin-nav-btn {
+  text-decoration: none;
+  box-sizing: border-box;
+}
 .admin-nav-btn {
   display: flex;
   align-items: center;

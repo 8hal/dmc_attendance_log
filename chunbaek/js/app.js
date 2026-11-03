@@ -668,18 +668,19 @@
     return Math.round((b - a) / 86400000);
   }
 
-  function paintStatsHeader(prof) {
+  function paintStatsHeader(prof, extra = {}) {
     const s = prof.stats || {};
     document.getElementById("hdr-nickname").textContent = `${prof.nickname || "—"}님`;
-    const dayIdx = s.seasonDayIndex || 0;
     const dayEl = document.getElementById("hdr-day");
-    if (dayIdx > 0) {
-      dayEl.textContent = s.inBetaWeek
-        ? `베타 ${dayIdx}일차`
-        : `${dayIdx}일차 / 100일`;
-    } else {
-      dayEl.textContent = "시작 전";
-    }
+    const closed = !!(extra.attendanceClosed || s.attendanceClosed);
+    const label = window.ChunbaekTeamSeason
+      ? ChunbaekTeamSeason.formatSeasonProgressLabel({
+        seasonDayIndex: s.seasonDayIndex,
+        inBetaWeek: s.inBetaWeek,
+        attendanceClosed: closed,
+      })
+      : (closed ? "출석 마감" : `${s.seasonDayIndex || 0}일차 / 100일`);
+    dayEl.textContent = label;
     const attendSuffix = s.inBetaWeek ? " (0주차 체험)" : "";
     document.getElementById("hdr-attend").textContent =
       `출석 ${s.seasonAttendCount || 0}회 · 출석률 ${s.seasonAttendRate || 0}%${attendSuffix}`;
@@ -760,13 +761,11 @@
   }
 
   function paintAfterSeason(prof, slotRes) {
-    paintStatsHeader(prof);
+    paintStatsHeader(prof, { attendanceClosed: true });
     setTodayPanels({ beforeSeason: false, afterSeason: true, active: false, programOff: false });
-    const end = slotRes.endDate || "";
-    if (end) {
-      document.getElementById("after-season-desc").textContent =
-        `${formatIsoDateKo(end)}까지 100일 프로그램이 진행되었습니다. 출석 기록은 내 100일·나 탭에서 확인할 수 있습니다.`;
-    }
+    const end = slotRes.endDate || "2026-10-24";
+    document.getElementById("after-season-desc").textContent =
+      `출석 집계는 2026년 7월 26일부터 ${formatIsoDateKo(end)}까지입니다. 그 전·후 날은 미출석으로 세지 않습니다.`;
     state.todaySlot = null;
   }
 
@@ -1249,6 +1248,8 @@
   function timelineEditHint(slot) {
     if (slot.status === "future") return "아직 출석할 수 없는 날입니다.";
     if (slot.status === "off") return "프로그램 휴무일입니다.";
+    if (slot.status === "closed") return "이 날은 출석 마감(2026-10-24) 다음이라 미출석으로 세지 않습니다.";
+    if (slot.status === "preseason") return "공식 시즌은 2026-07-26에 시작했습니다. 이 날은 출석 집계에 넣지 않습니다.";
     if (slot.exception) return "예외 처리된 날입니다. 변경은 운영진에게 문의해 주세요.";
     if (slot.editLocked) return "이번 주 출석 수정 마감이 지났습니다 (일요일 23:59 KST).";
     return "이번 주 일요일 23:59까지 출석·메모·사진을 수정할 수 있습니다.";
@@ -1535,7 +1536,7 @@
 
   function weekSlotsToProgressHtml(slots) {
     return (slots || [])
-      .filter((s) => s.status !== "off")
+      .filter((s) => s.status !== "off" && s.status !== "closed" && s.status !== "preseason")
       .map((s) => {
         if (s.status === "exception") {
           return '<span class="week-pill week-pill--exception"></span>';
@@ -1564,6 +1565,12 @@
     if (status === "off") {
       return '<span class="status-badge status-badge--off" title="휴무">휴</span>';
     }
+    if (status === "closed") {
+      return '<span class="status-badge status-badge--closed" title="출석 집계 제외">마감</span>';
+    }
+    if (status === "preseason") {
+      return '<span class="status-badge status-badge--preseason" title="공식 시즌 시작 전">시작 전</span>';
+    }
     if (status === "today") {
       return '<span class="status-badge status-badge--today" title="오늘">오늘</span>';
     }
@@ -1587,6 +1594,8 @@
     if (status === "attend") return `출석 완료${photo ? " · 사진 있음" : ""}`;
     if (status === "exception") return "예외 처리됨";
     if (status === "off") return "프로그램 휴무";
+    if (status === "closed") return "출석 집계 제외";
+    if (status === "preseason") return "공식 시즌 시작 전";
     if (status === "today") return "오늘";
     if (status === "future") return "예정";
     return "미출석";
@@ -1921,7 +1930,9 @@
       return;
     }
     document.getElementById("team-list").innerHTML = members.map((m) => {
-      const photoUrl = m.seasonResult?.photoUrl || "";
+      const photoUrl = window.ChunbaekTeamSeason
+        ? ChunbaekTeamSeason.canonicalChunbaekPhotoUrl(m.seasonResult?.photoUrl || "")
+        : (m.seasonResult?.photoUrl || "");
       const isMe = !!(meId && m.memberId === meId);
       const nick = m.nickname || "팀원";
       const photoInner = photoUrl
@@ -2602,10 +2613,14 @@
 
       const certPreview = document.getElementById("report-cert-preview");
       const certImg = document.getElementById("report-cert-img");
-      if (sr.photoUrl && certPreview && certImg) {
-        certImg.src = sr.photoUrl;
+      const certUrl = window.ChunbaekTeamSeason
+        ? ChunbaekTeamSeason.canonicalChunbaekPhotoUrl(sr.photoUrl)
+        : sr.photoUrl;
+      if (certUrl && certPreview && certImg) {
+        certImg.referrerPolicy = "no-referrer";
+        certImg.src = certUrl;
         certPreview.hidden = false;
-        certImg.onclick = () => openLightbox([sr.photoUrl], 0);
+        certImg.onclick = () => openLightbox([certUrl], 0);
       } else if (certPreview) {
         certPreview.hidden = true;
       }
@@ -2621,6 +2636,15 @@
       }
     } else {
       fillReportResultForm(p);
+    }
+
+    const attendNote = document.getElementById("report-attend-note");
+    if (attendNote) {
+      const startLabel = s.programStartDate || "2026-07-26";
+      const endLabel = s.attendanceEndDate || "2026-10-24";
+      attendNote.textContent = s.attendanceClosed
+        ? `출석 집계는 ${startLabel}부터 ${endLabel}까지입니다. 그 전(시작 전)과 그 후(대회 주간)는 미출석으로 세지 않습니다. 일차는 ${startLabel}을 1일차로 셉니다.`
+        : "주 3점 목표를 몇 주 달성했는지 봅니다.";
     }
 
     // 2. 100일 출석 성과 (A안: 출석일수 + 출석률 + 주간 목표 3점 달성 주차)
@@ -2688,7 +2712,7 @@
         : (t.kind === "result" ? " · 기록" : "");
       return `
       <button type="button" class="report-photo-tile" data-photo-idx="${idx}" aria-label="${escapeHtml(t.nickname || "사진")}">
-        <img src="${escapeAttr(t.photoUrl)}" alt="" />
+        <img src="${escapeAttr(t.photoUrl)}" alt="" referrerpolicy="no-referrer" />
         <span class="report-photo-tile-name">${escapeHtml(t.nickname || "회원")}${t.isMe ? " · 나" : ""}${dayLabel}</span>
       </button>`;
     }).join("");
@@ -2719,7 +2743,7 @@
     } catch {
       if (loadId !== state.reportPhotoLoadId) return;
       paintReportPhotoBoard(Team.collectSeasonPhotoTiles({
-        photos: Team.photosFromMyTimeline(MOCK.timeline, me),
+        photos: Team.photosFromMyTimeline([], me),
         me,
         mineOnly: true,
       }));
@@ -2728,14 +2752,12 @@
 
   async function renderReport() {
     let p = state.profile;
-    if (!p || !p.stats) {
-      try {
-        p = await apiGet("my-profile", {}, true);
-        state.profile = p;
-        writeCache(CACHE_KEYS.profile, p);
-      } catch {
-        p = state.profile || MOCK.profile;
-      }
+    try {
+      p = await apiGet("my-profile", {}, true);
+      state.profile = p;
+      writeCache(CACHE_KEYS.profile, p);
+    } catch {
+      p = state.profile || MOCK.profile;
     }
     paintReportView(p || MOCK.profile);
   }
