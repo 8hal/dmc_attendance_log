@@ -11,6 +11,10 @@ const {
   todaySlotPayload,
   findTodaySlot,
   defaultWeekForAdmin,
+  formatIsoRange,
+  buildTimelineWeeks,
+  slotStatus,
+  canonicalChunbaekPhotoUrl,
 } = require("../../functions/lib/chunbaek-stats");
 const {
   slotWriteFieldsFromRow,
@@ -85,7 +89,7 @@ test("computeMemberStats ignores slots after attendance close", () => {
     config,
     today: "2026-10-27",
   });
-  assert.equal(stats.seasonDayIndex, 97);
+  assert.equal(stats.seasonDayIndex, 91);
   assert.equal(stats.seasonAttendCount, 2);
   assert.equal(stats.seasonTrainingDays, 2);
   assert.equal(stats.seasonDenom, 2);
@@ -192,6 +196,106 @@ test("correctImportRow fixes polluted season week", () => {
   assert.equal(warnings.length, 1);
   assert.equal(warnings[0].field, "week");
   assert.equal(warnings[0].to, 2);
+});
+
+test("polluted stored dates still count attendance inside the derived window", () => {
+  const slots = [
+    { id: "90", dayIndex: 90, week: 1, date: "2099-01-01", isProgramOff: false },
+  ];
+  const stats = computeMemberStats({
+    slots,
+    attendanceMap: { "90": { slotId: 90, attended: true } },
+    config,
+    today: "2026-11-03",
+  });
+  assert.equal(deriveSeasonDate(config, 90), "2026-10-17");
+  assert.equal(stats.seasonAttendCount, 1);
+  assert.equal(stats.seasonTrainingDays, 1);
+  assert.equal(stats.seasonDayIndex, 91);
+  assert.equal(stats.programStartDate, "2026-07-26");
+  assert.equal(stats.attendanceClosed, true);
+  assert.equal(stats.attendanceEndDate, "2026-10-24");
+});
+
+test("days after attendance close are 마감, not 미출석, and do not fail the week", () => {
+  const slots = [96, 97, 98, 99, 100].map((dayIndex) => ({
+    id: String(dayIndex),
+    dayIndex,
+    week: dayIndex === 100 ? 1 : 14,
+    date: "2099-01-01",
+    isProgramOff: false,
+  }));
+  const stats = computeMemberStats({
+    slots,
+    attendanceMap: {
+      "96": { slotId: 96, attended: true },
+      "97": { slotId: 97, attended: true },
+    },
+    config,
+    today: "2026-11-03",
+  });
+  assert.equal(stats.seasonAttendCount, 2);
+  assert.equal(stats.seasonTrainingDays, 2);
+  const week14 = stats.seasonWeekSummaries.find((w) => w.week === 14);
+  assert.ok(week14);
+  assert.equal(week14.attendCount, 2);
+  assert.equal(week14.target, 2);
+  assert.equal(week14.met, true);
+  assert.equal(stats.seasonWeekSummaries.some((w) => w.week === 15), false);
+
+  assert.equal(slotStatus(
+    { dayIndex: 98, date: "2026-10-25", isProgramOff: false },
+    {},
+    "2026-11-03",
+    S3_ATTENDANCE_END_DATE,
+  ), "closed");
+
+  const weeks = buildTimelineWeeks(slots, {
+    "98": { slotId: 98, attended: true, photoUrls: ["https://example.com/race.jpg"] },
+  }, config, "2026-11-03");
+  const flat = weeks.flatMap((w) => w.slots);
+  const day97 = flat.find((s) => s.dayIndex === 97);
+  const day98 = flat.find((s) => s.dayIndex === 98);
+  const day100 = flat.find((s) => s.dayIndex === 100);
+  assert.equal(day97.status, "miss");
+  assert.equal(day98.status, "closed");
+  assert.equal(day98.photoUrls[0], "https://example.com/race.jpg");
+  assert.equal(day100.status, "closed");
+  assert.equal(weeks.find((w) => w.week === 15).attendSummary, "집계 제외");
+});
+
+test("formatIsoRange accepts Firestore Timestamp dates", () => {
+  const ts = { toDate() { return new Date("2026-07-20T00:00:00.000Z"); } };
+  assert.equal(formatIsoRange(ts, "2026-07-26"), "7/20 ~ 7/26");
+});
+
+test("buildTimelineWeeks keeps photos when slot.date is a Timestamp", () => {
+  const slots = [{
+    id: "1",
+    dayIndex: 1,
+    week: 9,
+    date: { toDate() { return new Date("2099-01-01T00:00:00.000Z"); } },
+    isProgramOff: false,
+  }];
+  const weeks = buildTimelineWeeks(slots, {
+    "1": { slotId: 1, attended: true, photoUrl: "https://dmc-attendance.appspot.com/photo.jpg" },
+  }, config, "2026-07-20");
+  assert.equal(weeks.length, 1);
+  assert.equal(weeks[0].week, 1);
+  assert.equal(weeks[0].slots[0].status, "preseason");
+  assert.equal(weeks[0].attendSummary, "집계 제외");
+  assert.equal(
+    weeks[0].slots[0].photoUrls[0],
+    "https://dmc-attendance.firebasestorage.app/photo.jpg",
+  );
+});
+
+test("canonicalChunbaekPhotoUrl rewrites the legacy appspot bucket", () => {
+  assert.equal(
+    canonicalChunbaekPhotoUrl("https://firebasestorage.googleapis.com/v0/b/dmc-attendance.appspot.com/o/a.jpg?alt=media&token=t"),
+    "https://firebasestorage.googleapis.com/v0/b/dmc-attendance.firebasestorage.app/o/a.jpg?alt=media&token=t",
+  );
+  assert.equal(canonicalChunbaekPhotoUrl(""), "");
 });
 
 test("correctImportRow fixes beta date and forces week 0", () => {

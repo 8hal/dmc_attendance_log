@@ -331,6 +331,10 @@ describe("팀 탭 마크업 계약", () => {
     const loadEnd = appJs.indexOf("async function renderReport");
     const load = appJs.slice(loadStart, loadEnd);
     assert.doesNotMatch(load, /includePhotos/);
+    assert.doesNotMatch(load, /MOCK\.timeline/);
+    assert.match(load, /photosFromMyTimeline\(\[\]/);
+    assert.match(appJs, /canonicalChunbaekPhotoUrl/);
+    assert.match(appJs, /출석 마감/);
     const boardHtml = html.slice(html.indexOf('id="report-photo-board"') - 280, html.indexOf('id="tab-bar"'));
     assert.match(boardHtml, /내가 올린 사진/);
     assert.match(boardHtml, /내가 올린 출석 사진과 기록 사진/);

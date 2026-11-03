@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>춘백 S3 쫑파티 결산</title>
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/finale.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">춘백 시즌3 쫑파티 · 2026-11-27 (금) 저녁</p>
+      <h1>시즌3 활동 결산</h1>
+      <p>출석 집계는 2026-07-26부터 2026-10-24까지입니다. 시상 기준은 각 칸에 적었습니다.</p>
+      <div class="toolbar no-print">
+        <button type="button" class="btn btn-light" id="btn-print">인쇄 / PDF</button>
+        <a class="btn btn-ghost" href="./">춘백 앱</a>
+        <a class="btn btn-ghost" href="admin.html">운영</a>
+      </div>
+    </header>
+    <p class="banner" id="preview-banner" hidden>미리보기입니다. 출석·기록 이름은 예시이고, 카페인상만 확정 값입니다.</p>
+    <p class="gate" id="login-gate" hidden>결산 숫자는 춘백 앱에 로그인된 브라우저에서 불러옵니다. <a href="./">앱 열기</a></p>
+    <div id="finale-root"></div>
+  </main>
+  <script src="js/finale.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const F = window.ChunbaekFinale;
+    const root = document.getElementById("finale-root");
+    const previewBanner = document.getElementById("preview-banner");
+    const loginGate = document.getElementById("login-gate");
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function nameList(people) {
+      if (!people || !people.length) return "<p class=\"meta\">해당 없음</p>";
+      return `<ul class="names">${people.map((person) => `<li>${escapeHtml(person.nickname || "이름 없음")}</li>`).join("")}</ul>`;
+    }
+
+    function awardCard(award, bodyHtml) {
+      const tie = award.winners && award.winners.length > 1
+        ? `<p class="meta">동점 ${award.winners.length}명</p>`
+        : "";
+      return `<article class="card">
+        <h3>${escapeHtml(award.title)}</h3>
+        <p class="criterion">${escapeHtml(award.criterion)}</p>
+        ${bodyHtml}
+        ${tie}
+      </article>`;
+    }
+
+    function render(model) {
+      previewBanner.hidden = !model.preview;
+      loginGate.hidden = true;
+      const activity = model.activity;
+      const goalNames = model.goal.winners.map((member) => {
+        const net = F.formatClock(member.seasonResult && member.seasonResult.netTimeSec);
+        const goal = F.formatClock(member.goalMarathonNetTime);
+        return `${member.nickname} · 기록 ${net} / 목표 ${goal}`;
+      });
+      const attendNames = model.attendance.winners.map((member) =>
+        `${member.nickname} · ${model.attendance.value}일`);
+      const improveNames = model.improvement.winners.map((member) =>
+        `${member.nickname} · ${F.formatClock(member.pbBeforeSec)} → ${F.formatClock(member.pbAfterSec)} (${F.formatImprovement(member.improvementSeconds)} 단축)`);
+      root.innerHTML = `
+        <section class="section">
+          <h2>시상</h2>
+          <div class="grid">
+            ${awardCard(model.attendance, nameList(attendNames.map((nickname) => ({ nickname }))))}
+            ${awardCard(model.thanks, `<p class="winner">당일 발표</p>`)}
+            ${awardCard(model.goal, nameList(goalNames.map((nickname) => ({ nickname }))))}
+            ${awardCard(model.coffee, `<p class="winner">${escapeHtml(model.coffee.winners[0].nickname)}</p><p class="meta">커피를 산 날 ${model.coffee.days}일</p>`)}
+            ${awardCard(model.improvement, nameList(improveNames.map((nickname) => ({ nickname }))))}
+          </div>
+        </section>
+        <section class="section">
+          <h2>시즌3 활동 결산</h2>
+          <div class="stats">
+            <div class="stat"><b>${activity.participantCount}</b><span>프로필을 만든 참가자</span></div>
+            <div class="stat"><b>${activity.averageAttendRate}%</b><span>평균 출석률</span></div>
+            <div class="stat"><b>${activity.belowFourDays.length}</b><span>출석 ${activity.lowAttendanceDays}일 미만</span></div>
+            <div class="stat"><b>${activity.noPenalty.length}</b><span>매주 ${activity.weeklyTargetPoints}점 달성</span></div>
+          </div>
+          <div class="grid" style="margin-top:12px">
+            <article class="card">
+              <h3>주간 기준은 ${activity.weeklyTargetPoints}점</h3>
+              <p class="criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 출석 4일 미만은 안건의 인원 확인용이고 주간 점수와는 다릅니다. 집계 기간은 ${activity.programStartDate}~${activity.attendanceEndDate}입니다.</p>
+              <p class="meta">3점 미달 주 합계 ${activity.penaltyWeekCount}주 · 한 주라도 미달인 사람 ${activity.withPenalty.length}명</p>
+            </article>
+            <article class="card">
+              <h3>매주 ${activity.weeklyTargetPoints}점을 채운 사람</h3>
+              ${nameList(activity.noPenalty)}
+            </article>
+            <article class="card">
+              <h3>시즌 출석 ${activity.lowAttendanceDays}일 미만</h3>
+              ${nameList(activity.belowFourDays)}
+            </article>
+          </div>
+        </section>`;
+    }
+
+    document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+    const preview = new URLSearchParams(location.search).has("preview");
+    if (preview) {
+      render(F.previewModel());
+    } else if (typeof getToken !== "function" || !getToken()) {
+      loginGate.hidden = false;
+    } else {
+      apiGet("team-summary", {}, true)
+        .then((data) => {
+          const target = Number(data.weeklyTarget) || F.WEEKLY_TARGET_POINTS;
+          render(F.modelFromMembers(data.members || [], target));
+        })
+        .catch(() => {
+          loginGate.hidden = false;
+          loginGate.textContent = "결산을 불러오지 못했습니다. 춘백 앱에서 다시 로그인한 뒤 이 페이지를 열어 주세요.";
+        });
+    }
+  </script>
+</body>
+</html>

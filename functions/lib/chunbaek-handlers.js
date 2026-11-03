@@ -34,6 +34,7 @@ const {
   isAttendanceClosed,
   PHOTO_MAX_PER_SLOT,
   normalizePhotoUrls,
+  canonicalChunbaekPhotoUrl,
   getAttendance,
   displayDayIndex,
   sortTeamMemberAttendanceEntries,
@@ -197,7 +198,7 @@ function serializeSeasonResult(sr, s3 = {}) {
     raceNote,
     raceLabel: formatGoalRaceLabel(race, raceNote),
     netTimeSec,
-    photoUrl: sr.photoUrl || null,
+    photoUrl: canonicalChunbaekPhotoUrl(sr.photoUrl) || null,
     note: sr.note || null,
     goalMet,
     pbAchieved,
@@ -1112,6 +1113,12 @@ async function handleTeamSummary(req, res, db) {
       met: stats.weekTargetMet,
       seasonAttendCount: stats.seasonAttendCount,
       seasonAttendRate: stats.seasonAttendRate,
+      seasonWeeksCount: stats.seasonWeeksCount,
+      seasonWeeksMetCount: stats.seasonWeeksMetCount,
+      seasonTrainingDays: stats.seasonTrainingDays,
+      seasonExceptionCount: stats.seasonExceptionCount,
+      programStartDate: stats.programStartDate || null,
+      attendanceEndDate: stats.attendanceEndDate || null,
     });
   }
 
@@ -1126,6 +1133,9 @@ async function handleTeamSummary(req, res, db) {
     seasonRate,
     weekMetCount,
     participantCount,
+    weeklyTarget: config?.weeklyTarget ?? 3,
+    programStartDate: "2026-07-26",
+    attendanceEndDate: effectiveSeasonEnd(config, slots) || null,
     members: sorted,
     ...(includePhotos ? { photos } : {}),
   });

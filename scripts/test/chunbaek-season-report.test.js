@@ -51,23 +51,26 @@ describe("Task 1: computeMemberStats — 시즌 마감 출석 성과 (A안)", ()
       today: "2026-08-02", // 14일차 종료일
     });
 
-    assert.equal(stats.seasonDayIndex, 14);
-    assert.equal(stats.seasonTrainingDays, 13); // 14일 중 휴무 1일 제외
-    assert.equal(stats.seasonExceptionCount, 1); // 9일차 예외 1일
-    assert.equal(stats.seasonDenom, 12); // 13 - 1
-    assert.equal(stats.seasonAttendCount, 4); // 1,2,3,8일차
-    assert.equal(stats.seasonAttendRate, Math.round((4 / 12) * 100)); // 33%
+    // 공식 시즌 시작 2026-07-26. 7/20–7/25 출석은 집계하지 않는다.
+    // 8/2는 7/26부터 8일째. 집계 훈련일은 7/26–8/2(8일), 예외 1일, 출석 1일(7/27).
+    assert.equal(stats.seasonDayIndex, 8);
+    assert.equal(stats.programStartDate, "2026-07-26");
+    assert.equal(stats.seasonTrainingDays, 8);
+    assert.equal(stats.seasonExceptionCount, 1);
+    assert.equal(stats.seasonDenom, 7);
+    assert.equal(stats.seasonAttendCount, 1);
+    assert.equal(stats.seasonAttendRate, Math.round((1 / 7) * 100));
     assert.equal(stats.seasonWeeksCount, 2);
-    assert.equal(stats.seasonWeeksMetCount, 1);
+    assert.equal(stats.seasonWeeksMetCount, 0);
     assert.equal(Array.isArray(stats.seasonWeekSummaries), true);
     assert.equal(stats.seasonWeekSummaries.length, 2);
     assert.deepEqual(stats.seasonWeekSummaries[0], {
       week: 1,
-      attendCount: 3,
+      attendCount: 0,
       exceptionCount: 0,
-      weekScore: 3,
-      target: 3,
-      met: true,
+      weekScore: 0,
+      target: 1,
+      met: false,
     });
     assert.deepEqual(stats.seasonWeekSummaries[1], {
       week: 2,
@@ -369,6 +372,9 @@ describe("Task 2: parseSeasonResult 및 update-profile / my-profile / team-summa
     assert.equal(teamRes.body.members[0].seasonResult.status, "finisher");
     assert.equal(teamRes.body.members[0].seasonResult.netTimeSec, 15948);
     assert.equal(teamRes.body.members[0].seasonResult.goalMet, true);
+    assert.equal(typeof teamRes.body.members[0].seasonWeeksCount, "number");
+    assert.equal(typeof teamRes.body.members[0].seasonWeeksMetCount, "number");
+    assert.equal(typeof teamRes.body.weeklyTarget, "number");
 
     // 기존 seasonResult를 DNF 및 photoUrl: null로 재저장 시 정상 갱신되는지 검증
     const updateDnfRes = await runAction("update-profile", {
