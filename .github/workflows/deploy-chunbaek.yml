@@ -17,6 +17,7 @@ on:
           - hosting
           - functions-chunbaek
           - hosting-and-chunbaek
+          - storage
 
 concurrency:
   group: deploy-chunbaek-${{ github.ref }}
@@ -38,7 +39,7 @@ jobs:
           node-version: "22"
 
       - name: Install Functions dependencies
-        if: inputs.deploy_target != 'hosting'
+        if: inputs.deploy_target == 'functions-chunbaek' || inputs.deploy_target == 'hosting-and-chunbaek'
         working-directory: functions
         run: npm ci
 
@@ -54,6 +55,10 @@ jobs:
       - name: Deploy Hosting
         if: inputs.deploy_target == 'hosting' || inputs.deploy_target == 'hosting-and-chunbaek'
         run: npx firebase-tools@13.29.1 deploy --only hosting --project dmc-attendance --non-interactive
+
+      - name: Deploy Storage rules
+        if: inputs.deploy_target == 'storage'
+        run: npx firebase-tools@13.29.1 deploy --only storage --project dmc-attendance --non-interactive
 
       - name: Smoke test — chunbaek API ping
         if: inputs.deploy_target == 'functions-chunbaek' || inputs.deploy_target == 'hosting-and-chunbaek'

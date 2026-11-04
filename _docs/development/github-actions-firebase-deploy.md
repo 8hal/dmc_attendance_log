@@ -84,7 +84,7 @@ Repo → **Settings** → **Secrets and variables** → **Actions** → **New re
 ## 4. 모바일에서 배포 — 춘백만
 
 1. **Deploy Chunbaek (Firebase)**
-2. `hosting` / `functions-chunbaek` / `hosting-and-chunbaek`
+2. `hosting` / `functions-chunbaek` / `hosting-and-chunbaek` / `storage` (Storage rules만, `firebase deploy --only storage`)
 
 확인: https://dmc-attendance.web.app/chunbaek/
 
