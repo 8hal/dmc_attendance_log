@@ -264,6 +264,38 @@ test("days after attendance close are 마감, not 미출석, and do not fail the
   assert.equal(weeks.find((w) => w.week === 15).attendSummary, "집계 제외");
 });
 
+test("2026-11-05에도 베타 주차 뒤에 있어도 시즌 전체 주차가 보인다", () => {
+  const slots = [];
+  for (let dayIndex = 1; dayIndex <= 100; dayIndex += 1) {
+    slots.push({
+      id: String(dayIndex),
+      dayIndex,
+      week: Math.ceil(dayIndex / 7),
+      date: "2099-01-01",
+      isProgramOff: false,
+    });
+  }
+  for (let offset = 0; offset < 7; offset += 1) {
+    const dayIndex = 901 + offset;
+    slots.push({
+      id: String(dayIndex),
+      dayIndex,
+      week: 0,
+      date: "2026-07-13",
+      isProgramOff: false,
+    });
+  }
+  const today = "2026-11-05";
+  const weeks = buildTimelineWeeks(slots, {
+    "20": { slotId: 20, attended: true },
+  }, config, today);
+  const weekNums = weeks.map((w) => w.week).sort((a, b) => a - b);
+  assert.deepEqual(weekNums, Array.from({ length: 15 }, (_, i) => i + 1));
+  const day20 = weeks.flatMap((w) => w.slots).find((s) => s.dayIndex === 20);
+  assert.equal(day20.status, "attend");
+  assert.equal(day20.date >= "2026-07-26" && day20.date <= "2026-10-24", true);
+});
+
 test("formatIsoRange accepts Firestore Timestamp dates", () => {
   const ts = { toDate() { return new Date("2026-07-20T00:00:00.000Z"); } };
   assert.equal(formatIsoRange(ts, "2026-07-26"), "7/20 ~ 7/26");
