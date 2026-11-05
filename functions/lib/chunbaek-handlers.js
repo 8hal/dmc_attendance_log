@@ -6,6 +6,8 @@ const { getStorage } = require("firebase-admin/storage");
 const crypto = require("crypto");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
+const { handleThanksVote } = require("./chunbaek-thanks-vote");
+const { handleFinaleParty } = require("./chunbaek-finale-party");
 const {
   validateExceptionRequestInput,
   previewExceptionApplication,
@@ -1050,14 +1052,7 @@ function collectTeamPhotosForMember(p, attendanceMap, slots, seasonResult) {
   return photos;
 }
 
-async function handleTeamSummary(req, res, db) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ ok: false, error: "GET only" });
-  }
-  const auth = await requireMember(req, res, db);
-  if (!auth) return undefined;
-
-  const includePhotos = String(req.query.includePhotos || "") === "1";
+async function buildTeamSummary(db, { viewerMemberId = null, includePhotos = false } = {}) {
   const [config, slots, participants] = await Promise.all([
     loadSeasonConfig(db),
     loadAllSlots(db),
@@ -1122,14 +1117,13 @@ async function handleTeamSummary(req, res, db) {
     });
   }
 
-  const sorted = sortTeamMembers(members, auth.memberId);
+  const sorted = sortTeamMembers(members, viewerMemberId);
   const participantCount = sorted.length;
   const seasonRate = participantCount > 0
     ? Math.round(rateSum / participantCount)
     : 0;
 
-  return res.json({
-    ok: true,
+  return {
     seasonRate,
     weekMetCount,
     participantCount,
@@ -1138,7 +1132,22 @@ async function handleTeamSummary(req, res, db) {
     attendanceEndDate: effectiveSeasonEnd(config, slots) || null,
     members: sorted,
     ...(includePhotos ? { photos } : {}),
+  };
+}
+
+async function handleTeamSummary(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  const auth = await requireMember(req, res, db);
+  if (!auth) return undefined;
+
+  const includePhotos = String(req.query.includePhotos || "") === "1";
+  const summary = await buildTeamSummary(db, {
+    viewerMemberId: auth.memberId,
+    includePhotos,
   });
+  return res.json({ ok: true, ...summary });
 }
 
 const TEAM_MEMBER_ATTENDANCE_MAX = 50;
@@ -1251,11 +1260,18 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   if (action === "team-member-attendance") {
     return handleTeamMemberAttendance(req, res, db);
   }
+  if (action === "thanks-vote") {
+    return handleThanksVote(req, res, db);
+  }
+  if (action === "finale-party") {
+    return handleFinaleParty(req, res, db);
+  }
   return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
 }
 
 module.exports = {
   handleChunbaekRequest,
+  buildTeamSummary,
   formatGoalRaceLabel,
   parseGoalRace,
   parseSeasonResult,

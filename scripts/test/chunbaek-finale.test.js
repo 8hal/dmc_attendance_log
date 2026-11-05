@@ -162,22 +162,25 @@ test("카페인상은 단톡 분석으로 확정한 진달 김진규, 9일이다
   assert.match(award.criterion, /앱/);
 });
 
-test("결산 페이지는 앱과 운영 화면에서 열리고 시상 기준을 적는다", () => {
+test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 연결한다", () => {
   const root = path.join(__dirname, "../..");
-  const finale = fs.readFileSync(path.join(root, "chunbaek/finale.html"), "utf8");
   const finaleJs = fs.readFileSync(path.join(root, "chunbaek/js/finale.js"), "utf8");
   const index = fs.readFileSync(path.join(root, "chunbaek/index.html"), "utf8");
   const admin = fs.readFileSync(path.join(root, "chunbaek/admin.html"), "utf8");
-  assert.match(finale, /시즌3 활동 결산/);
-  assert.match(finale, /2026-11-27/);
-  assert.match(finale, /2026-07-26/);
+  const party = fs.readFileSync(path.join(root, "chunbaek/party.html"), "utf8");
+  assert.match(finaleJs, /시즌3 활동 결산/);
+  assert.match(finaleJs, /2026-07-26/);
   assert.match(finaleJs, /최다 참여상/);
   assert.match(finaleJs, /당신때문에 고마웠다상/);
   assert.match(finaleJs, /목표 달성상/);
   assert.match(finaleJs, /카페인상/);
   assert.match(finaleJs, /최우수상/);
-  assert.match(finaleJs, /익명 투표/);
+  assert.match(finaleJs, /운영진만/);
   assert.match(finaleJs, /진달 김진규/);
-  assert.match(index, /finale\.html/);
-  assert.match(admin, /finale\.html/);
+  assert.match(index, /party\.html/);
+  assert.equal(index.includes("finale.html"), false);
+  assert.match(admin, /id="panel-awards"/);
+  assert.equal(admin.includes("finale.html"), false);
+  assert.match(party, /2026-11-27/);
+  assert.equal(party.includes("목표 달성상"), false);
 });

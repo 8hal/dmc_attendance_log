@@ -1108,6 +1108,9 @@ const ADMIN_ACTIONS = new Set([
   "admin-set-participant",
   "admin-list-exception-requests",
   "admin-review-exception-request",
+  "admin-thanks-votes",
+  "admin-finale",
+  "admin-finale-party",
 ]);
 
 async function handleAdminRequest(req, res, db, action) {
@@ -1152,7 +1155,43 @@ async function handleAdminRequest(req, res, db, action) {
     await handleAdminReviewExceptionRequest(req, res, db);
     return true;
   }
+  if (action === "admin-thanks-votes") {
+    const { handleAdminThanksVotes } = require("./chunbaek-thanks-vote");
+    await handleAdminThanksVotes(req, res, db);
+    return true;
+  }
+  if (action === "admin-finale") {
+    await handleAdminFinale(req, res, db);
+    return true;
+  }
+  if (action === "admin-finale-party") {
+    const { handleAdminSaveFinaleParty } = require("./chunbaek-finale-party");
+    await handleAdminSaveFinaleParty(req, res, db);
+    return true;
+  }
   return false;
+}
+
+async function handleAdminFinale(req, res, db) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "GET only" });
+  }
+  const auth = requireAdmin(req);
+  if (!auth.ok) {
+    return res.status(auth.status).json({ ok: false, error: auth.error });
+  }
+  const { buildTeamSummary } = require("./chunbaek-handlers");
+  const { readFinaleParty } = require("./chunbaek-finale-party");
+  const [summary, party] = await Promise.all([
+    buildTeamSummary(db, { includePhotos: false }),
+    readFinaleParty(db),
+  ]);
+  return res.json({
+    ok: true,
+    weeklyTarget: summary.weeklyTarget,
+    members: summary.members,
+    party,
+  });
 }
 
 module.exports = {

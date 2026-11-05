@@ -584,6 +584,8 @@ const MOCK = {
   futureExceptionCount: 1,
 };
 
+let mockThanksVoted = false;
+
 function getToken() {
   return localStorage.getItem(TOKEN_KEY) || "";
 }
@@ -726,6 +728,25 @@ function mockGet(action, params = {}) {
   }
   if (action === "my-exception-requests") {
     return Promise.resolve({ ok: true, requests: MOCK.exceptionRequests || [] });
+  }
+  if (action === "finale-party") {
+    return Promise.resolve({
+      ok: true,
+      date: "2026-11-27",
+      place: "",
+      time: "",
+      note: "",
+    });
+  }
+  if (action === "thanks-vote") {
+    return Promise.resolve({
+      ok: true,
+      voted: mockThanksVoted,
+      candidates: [
+        { memberId: "mock_b", nickname: "이페이스" },
+        { memberId: "mock_c", nickname: "박풀코스" },
+      ],
+    });
   }
   if (action === "team-summary") {
     const payload = { ok: true, ...MOCK.team };
@@ -898,6 +919,16 @@ function mockPost(action, body) {
       };
     }
     return Promise.resolve({ ok: true, ...previewPayload().profile });
+  }
+  if (action === "thanks-vote") {
+    const nomineeMemberId = String(body?.nomineeMemberId || "");
+    if (!nomineeMemberId) {
+      const err = new Error("춘백 참가자를 선택해 주세요");
+      err.status = 400;
+      return Promise.reject(err);
+    }
+    mockThanksVoted = true;
+    return Promise.resolve({ ok: true, voted: true });
   }
   if (action === "request-exception") {
     const preview = mockExceptionPreview();
