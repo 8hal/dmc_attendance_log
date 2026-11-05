@@ -447,7 +447,21 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
     ],
   });
   assert.match(section, /당신 때문에 고마웠다/);
+  assert.match(section, /고마웠던 춘백방 회원 1명을 골라주세요/);
+  assert.equal(section.includes("자기 자신"), false);
   assert.match(section, /아직 투표하지 않았습니다/);
+  const ordered = memberSectionHtml({
+    voted: false,
+    candidates: [
+      { memberId: "c", nickname: "다온" },
+      { memberId: "a", nickname: "가람" },
+      { memberId: "b", nickname: "나래" },
+    ],
+  });
+  assert.deepEqual(
+    [...ordered.matchAll(/thanks-card-name">([^<]+)/g)].map((match) => match[1]),
+    ["가람", "나래", "다온"],
+  );
   assert.match(section, /value="b"/);
   assert.match(section, /class="thanks-card"/);
   assert.match(section, /class="thanks-card-name">나래</);

@@ -114,8 +114,8 @@ h1 {
 .thanks-vote .vote-form { display: flex; flex-direction: column; gap: 14px; }
 .thanks-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 .thanks-card[hidden] { display: none !important; }
 .thanks-card {
@@ -123,11 +123,11 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 72px;
+  min-height: 40px;
   margin: 0;
-  padding: 16px 12px;
+  padding: 8px 6px;
   border: 1.5px solid var(--border-default, #e8e4e0);
-  border-radius: 16px;
+  border-radius: 999px;
   background: #fff;
   cursor: pointer;
   text-align: center;
@@ -149,9 +149,9 @@ h1 {
   outline-offset: 2px;
 }
 .thanks-card-name {
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.35;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
   word-break: keep-all;
 }
 .thanks-empty { margin: 0; color: var(--text-secondary, #5c5c5c); }
@@ -159,7 +159,7 @@ h1 {
 .thanks-vote sl-button { width: 100%; }
 .thanks-vote sl-button::part(base) { width: 100%; border-radius: 999px; font-weight: 800; }
 @media (min-width: 720px) {
-  .thanks-grid { grid-template-columns: repeat(3, 1fr); }
+  .thanks-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 719px) {
   .page { padding: 0 0 40px; }

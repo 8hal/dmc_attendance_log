@@ -102,13 +102,12 @@
       mountVote({
         voted: false,
         candidates: [
-          { memberId: "preview-b", nickname: "예시페이스" },
-          { memberId: "preview-c", nickname: "예시쉼" },
-          { memberId: "preview-a", nickname: "예시러너" },
-          { memberId: "preview-d", nickname: "예시기록" },
-          { memberId: "preview-e", nickname: "예시응원" },
-          { memberId: "preview-f", nickname: "예시동행" },
-        ],
+          "경민", "하람", "나래", "오름", "다온", "페이스", "고은", "주원",
+          "라온", "시원", "바다", "응원", "마루", "지호", "보름", "예슬",
+          "사계절", "찬", "도윤", "하늘", "루나", "이안", "별하", "해달",
+          "새봄", "아린", "노을", "여름", "소율", "재이", "가람", "온유",
+          "서준", "연두", "수아", "웅", "가나", "자리", "모아", "봄날",
+        ].map((nickname, index) => ({ memberId: `preview-${index}`, nickname })),
       }, true);
     } else if (typeof getToken !== "function" || !getToken()) {
       loginGate.hidden = false;

@@ -26,7 +26,9 @@
   }
 
   function memberSectionHtml({ voted, candidates, selectedMemberId, draftReason } = {}) {
-    const people = candidates || [];
+    const people = [...(candidates || [])].sort((a, b) => (
+      String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko")
+    ));
     const selectedId = String(selectedMemberId || "");
     const hasSelection = people.some((person) => person.memberId === selectedId);
     const status = voted
@@ -49,7 +51,7 @@
         <h2 id="thanks-vote-title">당신 때문에 고마웠다</h2>
         <sl-badge id="thanks-vote-status" variant="${voted ? "success" : "neutral"}" pill>${status}</sl-badge>
       </div>
-      <p class="criterion">고마웠던 동료 1명을 고릅니다. 자기 자신은 빠지고, 다시 투표하면 이전 표를 덮어씁니다. 득표와 이유는 운영진만 봅니다.</p>
+      <p class="criterion">고마웠던 춘백방 회원 1명을 골라주세요</p>
       <form class="vote-form" id="thanks-vote-form">
         <sl-input id="thanks-search" label="동료 검색" placeholder="이름으로 찾기" clearable></sl-input>
         ${grid}
