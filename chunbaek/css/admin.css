@@ -350,6 +350,58 @@ a.admin-nav-btn {
 }
 
 /* ── 예외 요청 ── */
+.finale-party-form {
+  display: grid;
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 0 20px;
+}
+.finale-party-form input,
+.finale-party-form textarea {
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.awards-wrap { margin-top: 8px; }
+.finale-section { margin-top: 18px; }
+.finale-section h2 { margin: 0 0 12px; font-size: 20px; }
+.finale-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.finale-card {
+  background: #fff;
+  border: 1px solid #e7e5e4;
+  border-radius: 16px;
+  padding: 16px;
+}
+.finale-card h3 { margin: 0 0 6px; font-size: 18px; }
+.finale-criterion { margin: 0 0 12px; color: #57534e; font-size: 13px; line-height: 1.5; }
+.finale-winner { font-size: 22px; font-weight: 800; margin: 0; }
+.finale-meta { margin: 4px 0 0; color: #44403c; }
+.finale-names { margin: 8px 0 0; padding-left: 1.1em; }
+.finale-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.finale-stat {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid #e7e5e4;
+}
+.finale-stat b { display: block; font-size: 28px; }
+.finale-stat span { font-size: 13px; color: #57534e; }
+.thanks-admin-title { margin: 22px 0 8px; }
+.thanks-result {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 10px;
+}
+.thanks-result h3 { margin: 0 0 8px; }
+.thanks-reasons { margin: 0; padding-left: 1.1em; }
+@media (min-width: 900px) {
+  .finale-grid { grid-template-columns: 1fr 1fr; }
+  .finale-stats { grid-template-columns: repeat(4, 1fr); }
+}
 .exceptions-list {
   display: flex;
   flex-direction: column;

@@ -566,6 +566,83 @@ async function setCellStatus(status) {
   }
 }
 
+const PREVIEW_THANKS = {
+  ballotCount: 2,
+  tally: [
+    {
+      memberId: "m1",
+      nickname: "김러너",
+      votes: 2,
+      reasons: [
+        { voterNickname: "이페이스", reason: "페이스를 맞춰 줘서" },
+        { voterNickname: "박풀코스", reason: "" },
+      ],
+    },
+  ],
+};
+
+function fillFinalePartyForm(party) {
+  const info = party || {};
+  const place = document.getElementById("finale-place");
+  const time = document.getElementById("finale-time");
+  const note = document.getElementById("finale-note");
+  if (!place || !time || !note) return;
+  place.value = info.place || "";
+  time.value = info.time || "";
+  note.value = info.note || "";
+}
+
+async function refreshAwards() {
+  const awardsRoot = document.getElementById("awards-root");
+  const thanksRoot = document.getElementById("thanks-results");
+  if (!awardsRoot || !thanksRoot || !window.ChunbaekFinale || !window.ChunbaekThanks) return;
+  if (PREVIEW) {
+    awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(window.ChunbaekFinale.previewModel());
+    thanksRoot.innerHTML = window.ChunbaekThanks.adminResultsHtml(PREVIEW_THANKS);
+    fillFinalePartyForm({ place: "", time: "", note: "" });
+    return;
+  }
+  try {
+    const [finale, votes] = await Promise.all([
+      adminGet("admin-finale"),
+      adminGet("admin-thanks-votes"),
+    ]);
+    const target = Number(finale.weeklyTarget) || window.ChunbaekFinale.WEEKLY_TARGET_POINTS;
+    awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(
+      window.ChunbaekFinale.modelFromMembers(finale.members || [], target),
+    );
+    thanksRoot.innerHTML = window.ChunbaekThanks.adminResultsHtml(votes);
+    fillFinalePartyForm(finale.party);
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "시상을 불러오지 못했습니다", true);
+    awardsRoot.innerHTML = `<p class="roster-loading">시상을 불러오지 못했습니다.</p>`;
+  }
+}
+
+async function saveFinaleParty(event) {
+  event.preventDefault();
+  if (PREVIEW) {
+    showToast("목업에서는 안내를 저장하지 않습니다");
+    return;
+  }
+  if (isProcessing) return;
+  isProcessing = true;
+  try {
+    await adminPost("admin-finale-party", {
+      place: document.getElementById("finale-place").value,
+      time: document.getElementById("finale-time").value,
+      note: document.getElementById("finale-note").value,
+    });
+    showToast("쫑파티 안내를 저장했습니다");
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "안내 저장 실패", true);
+  } finally {
+    isProcessing = false;
+  }
+}
+
 function showToast(msg, isError) {
   const el = document.getElementById("toast");
   el.textContent = msg;
@@ -656,6 +733,7 @@ async function switchPanel(panel) {
   if (panel === "roster") await refreshRosterDirectory();
   if (panel === "training") await refreshTraining();
   if (panel === "exceptions") await refreshExceptionRequests();
+  if (panel === "awards") await refreshAwards();
 }
 
 function rosterMemberLabel(m) {
@@ -983,6 +1061,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btn-save-training").addEventListener("click", saveTraining);
   document.getElementById("btn-roster-refresh").addEventListener("click", refreshRosterDirectory);
+  document.getElementById("finale-party-form").addEventListener("submit", saveFinaleParty);
   document.getElementById("roster-search").addEventListener("input", renderRosterDirectory);
 
   document.querySelectorAll("[data-modal-action]").forEach((btn) => {

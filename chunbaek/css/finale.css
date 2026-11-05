@@ -81,6 +81,26 @@ h1 {
 }
 .stat b { display: block; font-size: 28px; }
 .stat span { font-size: 13px; color: #57534e; }
+.party-date { margin: 0 0 8px; font-size: 22px; font-weight: 800; }
+.party-facts { margin: 0; }
+.party-facts div { display: grid; grid-template-columns: 4em 1fr; gap: 8px; margin-top: 8px; }
+.party-facts dt { font-weight: 800; }
+.party-facts dd { margin: 0; }
+.vote-form { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
+.vote-form select, .vote-form textarea {
+  font: inherit;
+  border: 1px solid #d6d3d1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.vote-status { font-weight: 800; }
+.vote-error { color: #b91c1c; min-height: 1.2em; margin: 0; }
+.vote-submit {
+  align-self: flex-start;
+  background: var(--brand-orange, #ff3214);
+  color: #fff;
+}
 @media (min-width: 720px) {
   .grid { grid-template-columns: 1fr 1fr; }
   .stats { grid-template-columns: repeat(4, 1fr); }

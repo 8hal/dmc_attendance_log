@@ -21,6 +21,7 @@
       <option value="roster">④ 참가자 명단</option>
       <option value="training">② 훈련 입력</option>
       <option value="exceptions">③ 예외 요청</option>
+      <option value="awards">⑤ 시상</option>
     </select>
   </div>
 
@@ -57,7 +58,7 @@
         <button type="button" class="admin-nav-btn" data-panel="exceptions">
           예외 요청 <span class="admin-nav-badge" id="exceptions-pending-badge" hidden></span>
         </button>
-        <a class="admin-nav-btn" href="finale.html">쫑파티 결산</a>
+        <button type="button" class="admin-nav-btn" data-panel="awards">시상</button>
         <div class="admin-sidebar-foot">
           URL 비공개<br />
           단톡에 공유하지 마세요
@@ -146,6 +147,27 @@
           </div>
           <div class="exceptions-list" id="exceptions-list"></div>
         </section>
+
+        <section class="admin-panel" id="panel-awards">
+          <div class="admin-toolbar">
+            <div>
+              <h2>시상</h2>
+              <div class="admin-toolbar-sub">결산 숫자와 고마웠다 상 투표. 멤버 화면에는 없습니다.</div>
+            </div>
+          </div>
+          <form class="finale-party-form" id="finale-party-form">
+            <label for="finale-place">장소</label>
+            <input id="finale-place" name="place" maxlength="80" placeholder="운영진이 정하면 입력" autocomplete="off" />
+            <label for="finale-time">시간</label>
+            <input id="finale-time" name="time" maxlength="40" placeholder="운영진이 정하면 입력" autocomplete="off" />
+            <label for="finale-note">추가 안내</label>
+            <textarea id="finale-note" name="note" maxlength="300" rows="3" placeholder="없으면 비워 두세요"></textarea>
+            <button type="submit" class="admin-btn admin-btn-primary" id="btn-save-finale-party">안내 저장</button>
+          </form>
+          <div class="awards-wrap" id="awards-root"></div>
+          <h3 class="thanks-admin-title">당신 때문에 고마웠다</h3>
+          <div id="thanks-results"></div>
+        </section>
       </main>
     </div>
   </div>
@@ -178,6 +200,8 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <script src="js/finale.js"></script>
+  <script src="js/thanks-vote.js"></script>
   <script src="js/api.js"></script>
   <script src="js/admin.js"></script>
 </body>

@@ -63,5 +63,10 @@ service cloud.firestore {
       allow read: if false;
       allow write: if false;
     }
+
+    match /chunbaek_thanks_votes/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
   }
 }

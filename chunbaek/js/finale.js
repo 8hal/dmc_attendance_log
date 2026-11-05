@@ -179,7 +179,7 @@
       kind: "thanks",
       title: "당신때문에 고마웠다상",
       winners: [],
-      criterion: "쫑파티에서 익명 투표로 정합니다. 앱 기록으로 계산하지 않으며, 당일 발표합니다.",
+      criterion: "멤버가 동료 1명에게 투표합니다. 득표와 이유는 운영진만 보고, 당선자는 이 운영 화면에 모읍니다.",
     };
   }
 
@@ -287,6 +287,86 @@
     return { ...modelFromMembers(previewMembers(), WEEKLY_TARGET_POINTS), preview: true };
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function nameList(people) {
+    if (!people || !people.length) return "<p class=\"finale-meta\">해당 없음</p>";
+    return `<ul class="finale-names">${people.map((person) => `<li>${escapeHtml(person.nickname || "이름 없음")}</li>`).join("")}</ul>`;
+  }
+
+  function awardCard(award, bodyHtml) {
+    const tie = award.winners && award.winners.length > 1
+      ? `<p class="finale-meta">동점 ${award.winners.length}명</p>`
+      : "";
+    return `<article class="finale-card">
+      <h3>${escapeHtml(award.title)}</h3>
+      <p class="finale-criterion">${escapeHtml(award.criterion)}</p>
+      ${bodyHtml}
+      ${tie}
+    </article>`;
+  }
+
+  function awardsHtml(model) {
+    const activity = model.activity;
+    const goalNames = model.goal.winners.map((member) => {
+      const net = formatClock(member.seasonResult && member.seasonResult.netTimeSec);
+      const goal = formatClock(member.goalMarathonNetTime);
+      return `${member.nickname} · 기록 ${net} / 목표 ${goal}`;
+    });
+    const attendNames = model.attendance.winners.map((member) =>
+      `${member.nickname} · ${model.attendance.value}일`);
+    const improveNames = model.improvement.winners.map((member) =>
+      `${member.nickname} · ${formatClock(member.pbBeforeSec)} → ${formatClock(member.pbAfterSec)} (${formatImprovement(member.improvementSeconds)} 단축)`);
+    const pending = model.pending || [];
+    return `<div class="finale-awards">
+      <section class="finale-section">
+        <h2>시상</h2>
+        <div class="finale-grid">
+          ${awardCard(model.attendance, nameList(attendNames.map((nickname) => ({ nickname }))))}
+          ${awardCard(model.thanks, `<p class="finale-winner">투표 결과는 아래</p>`)}
+          ${awardCard(model.goal, nameList(goalNames.map((nickname) => ({ nickname }))))}
+          ${awardCard(model.coffee, `<p class="finale-winner">${escapeHtml(model.coffee.winners[0].nickname)}</p><p class="finale-meta">커피를 산 날 ${model.coffee.days}일</p>`)}
+          ${awardCard(model.improvement, nameList(improveNames.map((nickname) => ({ nickname }))))}
+          ${pending.length ? awardCard({
+            title: "집계 대기",
+            criterion: "2:00:00은 입력 하한이라 완주 기록으로 쓰지 않습니다. 저장값 자체는 지우지 않습니다. 실제 기록이 저장되면 목표 달성상과 최우수상에 자동으로 들어갑니다.",
+            winners: pending,
+          }, nameList(pending.map((row) => ({ nickname: row.label })))) : ""}
+        </div>
+      </section>
+      <section class="finale-section">
+        <h2>시즌3 활동 결산</h2>
+        <div class="finale-stats">
+          <div class="finale-stat"><b>${activity.participantCount}</b><span>프로필을 만든 참가자</span></div>
+          <div class="finale-stat"><b>${activity.averageAttendRate}%</b><span>평균 출석률</span></div>
+          <div class="finale-stat"><b>${activity.belowFourDays.length}</b><span>출석 ${activity.lowAttendanceDays}일 미만</span></div>
+          <div class="finale-stat"><b>${activity.noPenalty.length}</b><span>매주 ${activity.weeklyTargetPoints}점 달성</span></div>
+        </div>
+        <div class="finale-grid">
+          <article class="finale-card">
+            <h3>주간 기준은 ${activity.weeklyTargetPoints}점</h3>
+            <p class="finale-criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 출석 4일 미만은 안건의 인원 확인용이고 주간 점수와는 다릅니다. 집계 기간은 ${escapeHtml(activity.programStartDate)}~${escapeHtml(activity.attendanceEndDate)}입니다.</p>
+            <p class="finale-meta">3점 미달 주 합계 ${activity.penaltyWeekCount}주 · 한 주라도 미달인 사람 ${activity.withPenalty.length}명</p>
+          </article>
+          <article class="finale-card">
+            <h3>매주 ${activity.weeklyTargetPoints}점을 채운 사람</h3>
+            ${nameList(activity.noPenalty)}
+          </article>
+          <article class="finale-card">
+            <h3>시즌 출석 ${activity.lowAttendanceDays}일 미만</h3>
+            ${nameList(activity.belowFourDays)}
+          </article>
+        </div>
+      </section>
+    </div>`;
+  }
+
   return {
     WEEKLY_TARGET_POINTS,
     PROGRAM_START_DATE,
@@ -304,5 +384,6 @@
     activitySummary,
     previewModel,
     modelFromMembers,
+    awardsHtml,
   };
 });
