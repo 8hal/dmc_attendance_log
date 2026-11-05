@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <title>춘백 S3 쫑파티</title>
+  <title>춘백 S3 고마웠다 투표</title>
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/finale.css" />
   <!-- Shoelace 2.20.1, MIT https://github.com/shoelace-style/shoelace/blob/v2.20.1/LICENSE.md -->
@@ -16,15 +16,13 @@
 <body>
   <main class="page">
     <header class="hero">
-      <p class="eyebrow">춘백 시즌3 쫑파티</p>
-      <h1 id="party-heading">2026-11-27 (금)</h1>
-      <p>장소와 시간은 운영진이 저장한 값만 표시합니다.</p>
+      <p class="eyebrow">춘백 시즌3</p>
+      <h1>당신 때문에 고마웠다</h1>
       <div class="toolbar">
         <a class="btn btn-ghost" href="./">춘백 앱</a>
       </div>
     </header>
-    <p class="gate" id="login-gate" hidden>안내와 투표는 춘백 앱에 로그인된 브라우저에서 불러옵니다. <a href="./">앱 열기</a></p>
-    <div id="party-notice-host"></div>
+    <p class="gate" id="login-gate" hidden>투표는 춘백 앱에 로그인된 브라우저에서 불러옵니다. <a href="./">앱 열기</a></p>
     <div id="thanks-vote-host"></div>
   </main>
   <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
@@ -33,15 +31,8 @@
   <script>
     const T = window.ChunbaekThanks;
     const loginGate = document.getElementById("login-gate");
-    const noticeHost = document.getElementById("party-notice-host");
     const voteHost = document.getElementById("thanks-vote-host");
     const preview = new URLSearchParams(location.search).has("preview");
-
-    function showNotice(party) {
-      noticeHost.innerHTML = T.partyNoticeHtml(party || { date: "2026-11-27", place: "", time: "", note: "" });
-      const heading = document.getElementById("party-date");
-      if (heading) document.getElementById("party-heading").textContent = heading.textContent;
-    }
 
     function readNominee() {
       const picked = document.querySelector('#thanks-vote-form input[name="nomineeMemberId"]:checked');
@@ -96,8 +87,6 @@
       });
     }
 
-    showNotice({ date: "2026-11-27", place: "", time: "", note: "" });
-
     if (preview) {
       mountVote({
         voted: false,
@@ -112,15 +101,11 @@
     } else if (typeof getToken !== "function" || !getToken()) {
       loginGate.hidden = false;
     } else {
-      Promise.all([
-        apiGet("finale-party", {}, true),
-        apiGet("thanks-vote", {}, true),
-      ]).then(([party, vote]) => {
-        showNotice(party);
+      apiGet("thanks-vote", {}, true).then((vote) => {
         mountVote(vote, false);
       }).catch(() => {
         loginGate.hidden = false;
-        loginGate.textContent = "쫑파티 안내를 불러오지 못했습니다. 춘백 앱에서 다시 로그인한 뒤 열어 주세요.";
+        loginGate.textContent = "투표를 불러오지 못했습니다. 춘백 앱에서 다시 로그인한 뒤 열어 주세요.";
       });
     }
   </script>

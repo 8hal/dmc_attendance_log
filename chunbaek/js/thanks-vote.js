@@ -92,34 +92,6 @@
     search.addEventListener("input", applySearch);
   }
 
-  function finaleDateLabel(iso) {
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(iso || "")) ? String(iso) : "2026-11-27";
-    const [year, month, day] = date.split("-").map(Number);
-    const utc = new Date(Date.UTC(year, month - 1, day));
-    const weekday = ["일", "월", "화", "수", "목", "금", "토"][utc.getUTCDay()];
-    return `${date} (${weekday})`;
-  }
-
-  function partyNoticeHtml(party) {
-    const info = party || {};
-    const place = info.place
-      ? escapeHtml(info.place)
-      : "운영진이 정하면 여기에 표시됩니다";
-    const time = info.time
-      ? escapeHtml(info.time)
-      : "운영진이 정하면 여기에 표시됩니다";
-    const note = info.note ? `<p class="criterion" id="party-note">${escapeHtml(info.note)}</p>` : `<p class="criterion" id="party-note"></p>`;
-    return `<section class="section" id="party-facts">
-      <h2>안내</h2>
-      <p class="party-date" id="party-date">${escapeHtml(finaleDateLabel(info.date))}</p>
-      <dl class="party-facts">
-        <div><dt>장소</dt><dd id="party-place">${place}</dd></div>
-        <div><dt>시간</dt><dd id="party-time">${time}</dd></div>
-      </dl>
-      ${note}
-    </section>`;
-  }
-
   function adminResultsHtml(payload) {
     const tally = (payload && payload.tally) || [];
     const count = payload && Number.isFinite(payload.ballotCount) ? payload.ballotCount : 0;
@@ -142,8 +114,6 @@
   return {
     THANKS_REASON_MAX,
     candidateMatches,
-    finaleDateLabel,
-    partyNoticeHtml,
     memberSectionHtml,
     bindThanksVote,
     adminResultsHtml,

@@ -1110,7 +1110,6 @@ const ADMIN_ACTIONS = new Set([
   "admin-review-exception-request",
   "admin-thanks-votes",
   "admin-finale",
-  "admin-finale-party",
 ]);
 
 async function handleAdminRequest(req, res, db, action) {
@@ -1164,11 +1163,6 @@ async function handleAdminRequest(req, res, db, action) {
     await handleAdminFinale(req, res, db);
     return true;
   }
-  if (action === "admin-finale-party") {
-    const { handleAdminSaveFinaleParty } = require("./chunbaek-finale-party");
-    await handleAdminSaveFinaleParty(req, res, db);
-    return true;
-  }
   return false;
 }
 
@@ -1181,16 +1175,11 @@ async function handleAdminFinale(req, res, db) {
     return res.status(auth.status).json({ ok: false, error: auth.error });
   }
   const { buildTeamSummary } = require("./chunbaek-handlers");
-  const { readFinaleParty } = require("./chunbaek-finale-party");
-  const [summary, party] = await Promise.all([
-    buildTeamSummary(db, { includePhotos: false }),
-    readFinaleParty(db),
-  ]);
+  const summary = await buildTeamSummary(db, { includePhotos: false });
   return res.json({
     ok: true,
     weeklyTarget: summary.weeklyTarget,
     members: summary.members,
-    party,
   });
 }
 

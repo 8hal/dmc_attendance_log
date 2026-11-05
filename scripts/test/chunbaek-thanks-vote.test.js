@@ -15,7 +15,6 @@ const {
 const {
   memberSectionHtml,
   adminResultsHtml,
-  partyNoticeHtml,
   candidateMatches,
 } = require("../../chunbaek/js/thanks-vote");
 const { awardsHtml, previewModel } = require("../../chunbaek/js/finale");
@@ -373,50 +372,6 @@ test("투표 결과와 이유는 운영진 비밀번호로만 볼 수 있다", a
   assert.equal(admin.body.tally[0].reasons.some((row) => row.reason === "응원 고마워요" && row.voterNickname === "가람"), true);
 });
 
-test("회원 안내는 날짜만 확정하고 장소·시간은 빈 값으로 둔다", async () => {
-  const db = seedDb();
-  const before = await callChunbaek(db, { action: "finale-party", token: "token_a" });
-  assert.equal(before.statusCode, 200);
-  assert.deepEqual(Object.keys(before.body).sort(), ["date", "note", "ok", "place", "time"]);
-  assert.equal(before.body.date, "2026-11-27");
-  assert.equal(before.body.place, "");
-  assert.equal(before.body.time, "");
-  assert.equal(JSON.stringify(before.body).includes("members"), false);
-
-  await db.collection("chunbaek_season_config").doc("chunbaek-s3").set({
-    weeklyTarget: 3,
-    startDate: "2026-07-20",
-  });
-
-  const denied = await callChunbaek(db, {
-    method: "POST",
-    action: "admin-finale-party",
-    token: "token_a",
-    body: { place: "비밀 장소", time: "18:30" },
-  });
-  assert.equal(denied.statusCode, 401);
-
-  const saved = await callChunbaek(db, {
-    method: "POST",
-    action: "admin-finale-party",
-    adminPw: ADMIN_PW,
-    body: { place: "추후 공지", time: "", note: "준비물 없음" },
-  });
-  assert.equal(saved.statusCode, 200);
-  assert.equal(saved.body.place, "추후 공지");
-  assert.equal(saved.body.time, "");
-
-  const after = await callChunbaek(db, { action: "finale-party", token: "token_b" });
-  assert.equal(after.body.place, "추후 공지");
-  assert.equal(after.body.note, "준비물 없음");
-  assert.equal(after.body.date, "2026-11-27");
-
-  const config = db.collections.get("chunbaek_season_config").get("chunbaek-s3");
-  assert.equal(config.weeklyTarget, 3);
-  assert.equal(config.startDate, "2026-07-20");
-  assert.equal(config.finaleParty.place, "추후 공지");
-});
-
 test("시상 명단은 운영진 비밀번호가 있을 때만 내려온다", async () => {
   const db = seedDb();
   const denied = await callChunbaek(db, { action: "admin-finale", token: "token_a" });
@@ -425,9 +380,7 @@ test("시상 명단은 운영진 비밀번호가 있을 때만 내려온다", as
 
   const admin = await callChunbaek(db, { action: "admin-finale", adminPw: ADMIN_PW });
   assert.equal(admin.statusCode, 200);
-  assert.equal(admin.body.party.place, "");
-  assert.equal(admin.body.party.time, "");
-  assert.equal(admin.body.party.date, "2026-11-27");
+  assert.equal(Object.hasOwn(admin.body, "party"), false);
   assert.ok(admin.body.members.some((member) => member.nickname === "가람"));
   assert.equal(JSON.stringify(admin.body).includes("tally"), false);
 });
@@ -486,12 +439,6 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.match(picked, /다시 투표하기/);
   assert.match(memberSectionHtml({ voted: true, candidates: [] }), /투표했습니다/);
 
-  const notice = partyNoticeHtml({ date: "2026-11-27", place: "", time: "", note: "" });
-  assert.match(notice, /2026-11-27 \(금\)/);
-  assert.match(notice, /운영진이 정하면 여기에 표시됩니다/);
-  assert.equal(notice.includes("저녁"), false);
-  assert.equal(notice.includes("강남"), false);
-
   const awards = awardsHtml(previewModel());
   assert.match(awards, /목표 달성상/);
   assert.match(awards, /카페인상/);
@@ -510,8 +457,11 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.match(adminHtml, /가람/);
   assert.match(adminHtml, /응원/);
 
-  assert.match(party, /2026-11-27/);
+  assert.match(party, /당신 때문에 고마웠다/);
   assert.match(party, /thanks-vote-host/);
+  assert.equal(party.includes("2026-11-27"), false);
+  assert.equal(party.includes("장소"), false);
+  assert.equal(party.includes("finale-party"), false);
   assert.match(party, /js\/thanks-vote\.js/);
   assert.match(party, /shoelace@2\.20\.1/);
   assert.equal(party.includes("목표 달성상"), false);
@@ -526,6 +476,8 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.match(admin, /data-panel="awards"/);
   assert.match(admin, /id="panel-awards"/);
   assert.match(admin, /id="awards-root"/);
+  assert.equal(admin.includes("finale-place"), false);
+  assert.equal(admin.includes("안내 저장"), false);
   assert.match(admin, /js\/finale\.js/);
   assert.match(admin, /js\/thanks-vote\.js/);
   assert.equal(admin.includes("finale.html"), false);
