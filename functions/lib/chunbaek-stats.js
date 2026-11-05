@@ -349,10 +349,13 @@ function findTodaySlot(slots, today, config = {}) {
 
 function findWeekForDate(slots, today, config = {}) {
   const slot = findTodaySlot(slots, today, config);
-  if (slot) return slot.week;
+  if (slot && (!isBetaSlot(slot) || isDateInBetaWeek(config, slots, today))) {
+    return slot.week;
+  }
 
-  // 슬롯을 찾지 못한 경우: startDate 기반으로 날짜 계산
-  // (예: 새 주차 슬롯이 아직 없을 때 날짜 기반으로 정확한 주차 반환)
+  // 오늘 슬롯이 없을 때: 시작일부터의 경과. 100일을 넘기면 마지막 시즌 주차.
+  // 베타 슬롯(dayIndex 901+)이 뒤에 있으면 date <= today 인 마지막 값이 0주차가 되어
+  // 마감 이후 타임라인이 통째로 비었다.
   const start = effectiveSeasonStart(config, slots);
   if (start && today >= start) {
     const [sy, sm, sd] = start.split("-").map(Number);
@@ -363,12 +366,16 @@ function findWeekForDate(slots, today, config = {}) {
     if (offset >= 0 && offset < 100) {
       return Math.ceil((offset + 1) / 7);
     }
+    if (offset >= 100) {
+      return Math.ceil(100 / 7);
+    }
   }
 
-  // 최후 fallback: 슬롯의 date 필드 기반
   let week = 1;
   for (const s of slots) {
-    if (s.date <= today) week = s.week;
+    if (isBetaSlot(s)) continue;
+    const date = normalizeSlotDate(s.date);
+    if (date && date <= today && Number(s.week) > week) week = Number(s.week);
   }
   return week;
 }
