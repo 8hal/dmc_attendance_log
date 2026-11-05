@@ -10,7 +10,6 @@
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const THANKS_REASON_MAX = 80;
-  const AVATAR_COLORS = ["#ff3214", "#e02a10", "#4db8e0", "#1a1a1a", "#d97706", "#059669"];
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -18,20 +17,6 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
-  }
-
-  function thanksInitial(nickname) {
-    const chars = Array.from(String(nickname || "").trim());
-    if (!chars.length) return "?";
-    if (chars.length <= 2) return chars.join("");
-    return chars[0] + chars[chars.length - 1];
-  }
-
-  function thanksAvatarColor(memberId) {
-    const text = String(memberId || "");
-    let hash = 0;
-    for (let i = 0; i < text.length; i += 1) hash += text.charCodeAt(i);
-    return AVATAR_COLORS[hash % AVATAR_COLORS.length];
   }
 
   function candidateMatches(nickname, query) {
@@ -50,11 +35,8 @@
     const cards = people.map((person) => {
       const nickname = person.nickname || "이름 없음";
       const checked = person.memberId === selectedId ? " checked" : "";
-      const color = thanksAvatarColor(person.memberId);
       return `<label class="thanks-card" data-name="${escapeHtml(nickname)}">
         <input type="radio" name="nomineeMemberId" value="${escapeHtml(person.memberId)}"${checked} />
-        <span class="thanks-initial" style="background:${color}" aria-hidden="true">${escapeHtml(thanksInitial(nickname))}</span>
-        <sl-avatar initials="${escapeHtml(thanksInitial(nickname))}" label="${escapeHtml(nickname)}" style="--sl-color-neutral-400:${color}"></sl-avatar>
         <span class="thanks-card-name">${escapeHtml(nickname)}</span>
       </label>`;
     }).join("");
@@ -158,7 +140,6 @@
   return {
     THANKS_REASON_MAX,
     candidateMatches,
-    thanksInitial,
     finaleDateLabel,
     partyNoticeHtml,
     memberSectionHtml,

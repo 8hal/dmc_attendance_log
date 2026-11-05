@@ -121,12 +121,11 @@ h1 {
 .thanks-card {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  min-height: 118px;
+  justify-content: center;
+  min-height: 72px;
   margin: 0;
-  padding: 14px 10px 12px;
+  padding: 16px 12px;
   border: 1.5px solid var(--border-default, #e8e4e0);
   border-radius: 16px;
   background: #fff;
@@ -149,26 +148,10 @@ h1 {
   outline: 3px solid rgb(255 50 20 / 35%);
   outline-offset: 2px;
 }
-.thanks-initial,
-.thanks-card sl-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-}
-.thanks-initial {
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 22px;
-  font-weight: 800;
-}
-.thanks-card sl-avatar { display: none; }
-.thanks-card sl-avatar:defined { display: inline-flex; }
-.thanks-card:has(sl-avatar:defined) .thanks-initial { display: none; }
 .thanks-card-name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.35;
   word-break: keep-all;
 }
 .thanks-empty { margin: 0; color: var(--text-secondary, #5c5c5c); }

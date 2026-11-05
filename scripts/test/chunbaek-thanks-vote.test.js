@@ -450,7 +450,8 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.match(section, /아직 투표하지 않았습니다/);
   assert.match(section, /value="b"/);
   assert.match(section, /class="thanks-card"/);
-  assert.match(section, /sl-avatar/);
+  assert.match(section, /class="thanks-card-name">나래</);
+  assert.equal(section.includes("sl-avatar"), false);
   assert.match(section, /id="thanks-search"/);
   assert.match(section, /id="thanks-vote-submit"[^>]*disabled/);
   assert.equal(section.includes("<script>"), false);
