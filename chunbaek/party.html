@@ -7,6 +7,8 @@
   <title>춘백 S3 쫑파티</title>
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/finale.css" />
+  <!-- Shoelace 2.20.1, MIT https://github.com/shoelace-style/shoelace/blob/v2.20.1/LICENSE.md -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -25,6 +27,7 @@
     <div id="party-notice-host"></div>
     <div id="thanks-vote-host"></div>
   </main>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
   <script src="js/thanks-vote.js"></script>
   <script src="js/api.js"></script>
   <script>
@@ -40,8 +43,19 @@
       if (heading) document.getElementById("party-heading").textContent = heading.textContent;
     }
 
+    function readNominee() {
+      const picked = document.querySelector('#thanks-vote-form input[name="nomineeMemberId"]:checked');
+      return picked ? picked.value : "";
+    }
+
+    function readReason() {
+      const field = document.getElementById("thanks-reason");
+      return field ? String(field.value || "") : "";
+    }
+
     function mountVote(view, previewMode) {
       voteHost.innerHTML = T.memberSectionHtml(view);
+      if (typeof T.bindThanksVote === "function") T.bindThanksVote(voteHost);
       const form = document.getElementById("thanks-vote-form");
       if (!form) return;
       let submitting = false;
@@ -49,15 +63,21 @@
         event.preventDefault();
         if (submitting) return;
         const errorEl = document.getElementById("thanks-vote-error");
-        const nomineeMemberId = document.getElementById("thanks-nominee").value;
-        const reason = document.getElementById("thanks-reason").value;
+        const nomineeMemberId = readNominee();
+        const reason = readReason();
         errorEl.textContent = "";
         if (!nomineeMemberId) {
           errorEl.textContent = "동료를 선택해 주세요";
           return;
         }
+        const nextView = {
+          ...view,
+          voted: true,
+          selectedMemberId: nomineeMemberId,
+          draftReason: reason,
+        };
         if (previewMode) {
-          mountVote({ ...view, voted: true }, true);
+          mountVote(nextView, true);
           return;
         }
         submitting = true;
@@ -66,7 +86,7 @@
         try {
           await apiPost("thanks-vote", { nomineeMemberId, reason }, true);
           const next = await apiGet("thanks-vote", {}, true);
-          mountVote(next, false);
+          mountVote({ ...next, selectedMemberId: nomineeMemberId, draftReason: reason }, false);
         } catch (err) {
           console.error(err);
           errorEl.textContent = err.message || "투표에 실패했습니다";
@@ -84,6 +104,10 @@
         candidates: [
           { memberId: "preview-b", nickname: "예시페이스" },
           { memberId: "preview-c", nickname: "예시쉼" },
+          { memberId: "preview-a", nickname: "예시러너" },
+          { memberId: "preview-d", nickname: "예시기록" },
+          { memberId: "preview-e", nickname: "예시응원" },
+          { memberId: "preview-f", nickname: "예시동행" },
         ],
       }, true);
     } else if (typeof getToken !== "function" || !getToken()) {

@@ -12,7 +12,12 @@ const {
   memberVoteResponse,
   tallyThanksVotes,
 } = require("../../functions/lib/chunbaek-thanks-vote");
-const { memberSectionHtml, adminResultsHtml, partyNoticeHtml } = require("../../chunbaek/js/thanks-vote");
+const {
+  memberSectionHtml,
+  adminResultsHtml,
+  partyNoticeHtml,
+  candidateMatches,
+} = require("../../chunbaek/js/thanks-vote");
 const { awardsHtml, previewModel } = require("../../chunbaek/js/finale");
 
 const ADMIN_PW = process.env.DMC_ADMIN_PW || "dmc2008";
@@ -444,7 +449,26 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.match(section, /당신 때문에 고마웠다/);
   assert.match(section, /아직 투표하지 않았습니다/);
   assert.match(section, /value="b"/);
+  assert.match(section, /class="thanks-card"/);
+  assert.match(section, /sl-avatar/);
+  assert.match(section, /id="thanks-search"/);
+  assert.match(section, /id="thanks-vote-submit"[^>]*disabled/);
   assert.equal(section.includes("<script>"), false);
+  assert.equal(memberSectionHtml({
+    voted: false,
+    candidates: [],
+    draftReason: "<script>",
+  }).includes("<script>"), false);
+  assert.equal(candidateMatches("나래", "나"), true);
+  assert.equal(candidateMatches("나래", "페이스"), false);
+  const picked = memberSectionHtml({
+    voted: true,
+    selectedMemberId: "b",
+    candidates: [{ memberId: "b", nickname: "나래" }],
+  });
+  assert.match(picked, /투표했습니다/);
+  assert.match(picked, /checked/);
+  assert.match(picked, /다시 투표하기/);
   assert.match(memberSectionHtml({ voted: true, candidates: [] }), /투표했습니다/);
 
   const notice = partyNoticeHtml({ date: "2026-11-27", place: "", time: "", note: "" });
@@ -474,6 +498,7 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.match(party, /2026-11-27/);
   assert.match(party, /thanks-vote-host/);
   assert.match(party, /js\/thanks-vote\.js/);
+  assert.match(party, /shoelace@2\.20\.1/);
   assert.equal(party.includes("목표 달성상"), false);
   assert.equal(party.includes("최우수상"), false);
   assert.equal(party.includes("카페인상"), false);
