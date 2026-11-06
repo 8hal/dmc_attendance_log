@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=20261106g" />
+  <link rel="stylesheet" href="css/admin.css?v=20261106h" />
 </head>
 <body class="admin-body">
   <div class="admin-demo-nav" id="admin-demo-nav" style="display:none">
@@ -170,10 +170,8 @@
               <div class="review-tools">
                 <input id="attendance-search" type="search" placeholder="닉네임 검색" autocomplete="off" />
                 <select id="attendance-filter" aria-label="출석 필터">
-                  <option value="all">전체</option>
-                  <option value="missed">미달 있음</option>
-                  <option value="clear">전 주차 달성</option>
-                  <option value="low-days">출석 4일 미만</option>
+                  <option value="missed" selected>미달 회원</option>
+                  <option value="all">전체 회원</option>
                 </select>
               </div>
               <div id="attendance-review-table"></div>
@@ -251,7 +249,7 @@
   <script src="js/api.js?v=20261106a"></script>
   <script src="js/admin-grid-csv.js?v=20261106f"></script>
   <script src="js/team-season.js?v=20261106a"></script>
-  <script src="js/admin-awards-review.js?v=20261106k"></script>
-  <script src="js/admin.js?v=20261106o"></script>
+  <script src="js/admin-awards-review.js?v=20261106l"></script>
+  <script src="js/admin.js?v=20261106p"></script>
 </body>
 </html>
