@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=20261106f" />
+  <link rel="stylesheet" href="css/admin.css?v=20261106g" />
 </head>
 <body class="admin-body">
   <div class="admin-demo-nav" id="admin-demo-nav" style="display:none">
@@ -155,6 +155,12 @@
               <div class="admin-toolbar-sub">출석·목표·커피 검수와 개인 시상. 멤버 화면에는 없습니다.</div>
             </div>
           </div>
+          <div id="awards-status" class="awards-status" role="status" aria-live="polite">
+            <div class="awards-spinner" id="awards-spinner" aria-hidden="true"></div>
+            <p id="awards-status-text">시즌 마감을 불러오는 중입니다</p>
+            <button type="button" class="admin-btn admin-btn-secondary" id="awards-retry" hidden>다시 불러오기</button>
+          </div>
+          <div id="awards-ready" hidden>
           <div class="awards-wrap" id="awards-root"></div>
           <div id="awards-review">
             <p id="review-example" class="review-example" hidden>예시 데이터입니다. 실제 회원이 아닙니다.</p>
@@ -198,6 +204,7 @@
               <div id="coffee-member-table"></div>
             </section>
           </div>
+          </div>
         </section>
       </main>
     </div>
@@ -230,12 +237,21 @@
     </div>
   </div>
 
+  <div class="finale-info-layer" id="finale-info-layer" hidden>
+    <button type="button" class="finale-info-backdrop" data-finale-info-close aria-label="설명 닫기"></button>
+    <div class="finale-info-card" role="dialog" aria-modal="true" aria-labelledby="finale-info-title">
+      <h3 id="finale-info-title"></h3>
+      <p id="finale-info-body"></p>
+      <button type="button" class="finale-info-close" data-finale-info-close>닫기</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
-  <script src="js/finale.js?v=20261106j"></script>
+  <script src="js/finale.js?v=20261106k"></script>
   <script src="js/api.js?v=20261106a"></script>
-  <script src="js/admin-grid-csv.js?v=20261106e"></script>
+  <script src="js/admin-grid-csv.js?v=20261106f"></script>
   <script src="js/team-season.js?v=20261106a"></script>
   <script src="js/admin-awards-review.js?v=20261106k"></script>
-  <script src="js/admin.js?v=20261106n"></script>
+  <script src="js/admin.js?v=20261106o"></script>
 </body>
 </html>

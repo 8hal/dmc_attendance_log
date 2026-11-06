@@ -300,16 +300,21 @@
     return `<ul class="finale-names">${people.map((person) => `<li>${escapeHtml(person.nickname || "이름 없음")}</li>`).join("")}</ul>`;
   }
 
+  function awardInfoButton(title, criterion) {
+    if (!criterion) return "";
+    return `<button type="button" class="finale-info" aria-expanded="false" aria-controls="finale-info-layer" aria-label="${escapeHtml(title)} 집계 기준">ⓘ</button>
+      <p class="finale-info-source" hidden>${escapeHtml(criterion)}</p>`;
+  }
+
   function awardCard(award, bodyHtml) {
     const tie = award.winners && award.winners.length > 1
       ? `<p class="finale-meta">동점 ${award.winners.length}명</p>`
       : "";
-    const criterion = award.criterion
-      ? `<p class="finale-criterion">${escapeHtml(award.criterion)}</p>`
-      : "";
     return `<article class="finale-card">
-      <h3>${escapeHtml(award.title)}</h3>
-      ${criterion}
+      <div class="finale-card-head">
+        <h3>${escapeHtml(award.title)}</h3>
+        ${awardInfoButton(award.title, award.criterion)}
+      </div>
       ${bodyHtml}
       ${tie}
     </article>`;
@@ -350,8 +355,10 @@
         </div>
         <div class="finale-grid">
           <article class="finale-card">
-            <h3>주간 기준은 ${activity.weeklyTargetPoints}점</h3>
-            <p class="finale-criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 주간 집계는 2026-07-27~${escapeHtml(activity.attendanceEndDate)}입니다. 7/20~7/26은 0주차라 집계에서 제외하고, 1주차는 7/27~8/2입니다.</p>
+            <div class="finale-card-head">
+              <h3>주간 기준은 ${activity.weeklyTargetPoints}점</h3>
+              ${awardInfoButton("주간 기준", `출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 주간 집계는 2026-07-27~${activity.attendanceEndDate}입니다. 7/20~7/26은 0주차라 집계에서 제외하고, 1주차는 7/27~8/2입니다.`)}
+            </div>
             <p class="finale-meta">3점 미달 주 합계 ${activity.penaltyWeekCount}주 · 한 주라도 미달인 사람 ${activity.withPenalty.length}명</p>
           </article>
           <article class="finale-card">

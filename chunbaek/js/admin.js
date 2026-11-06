@@ -633,25 +633,85 @@ function paintAwardsReview(payload) {
   if (coffeeMemberTable) coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members);
 }
 
+const awardsLoadGate = window.ChunbaekAdminCsv.createAwardsLoadGate();
+let finaleInfoOpener = null;
+
+function showAwardsLoad(phase) {
+  const view = window.ChunbaekAdminCsv.awardsPanelView(phase);
+  const status = document.getElementById("awards-status");
+  const ready = document.getElementById("awards-ready");
+  const spinner = document.getElementById("awards-spinner");
+  const text = document.getElementById("awards-status-text");
+  const retry = document.getElementById("awards-retry");
+  if (status) status.hidden = view.statusHidden;
+  if (ready) ready.hidden = view.readyHidden;
+  if (spinner) spinner.hidden = !view.spinner;
+  if (text) text.textContent = view.text;
+  if (retry) retry.hidden = !view.retry;
+}
+
+function closeFinaleInfo() {
+  const layer = document.getElementById("finale-info-layer");
+  if (!layer || layer.hidden) return;
+  layer.hidden = true;
+  document.querySelectorAll(".finale-info[aria-expanded='true']").forEach((button) => {
+    button.setAttribute("aria-expanded", "false");
+  });
+  const opener = finaleInfoOpener;
+  finaleInfoOpener = null;
+  if (opener && typeof opener.focus === "function") opener.focus();
+}
+
+function openFinaleInfo(button) {
+  const source = button && button.parentElement
+    ? button.parentElement.querySelector(".finale-info-source")
+    : null;
+  const layer = document.getElementById("finale-info-layer");
+  const title = document.getElementById("finale-info-title");
+  const body = document.getElementById("finale-info-body");
+  if (!source || !layer || !title || !body) return;
+  closeFinaleInfo();
+  document.querySelectorAll(".finale-info[aria-expanded='true']").forEach((item) => {
+    item.setAttribute("aria-expanded", "false");
+  });
+  title.textContent = button.getAttribute("aria-label") || "집계 기준";
+  body.textContent = source.textContent || "";
+  layer.hidden = false;
+  button.setAttribute("aria-expanded", "true");
+  finaleInfoOpener = button;
+  const closeButton = layer.querySelector(".finale-info-close");
+  if (closeButton) closeButton.focus();
+}
+
 async function refreshAwards() {
   const awardsRoot = document.getElementById("awards-root");
   if (!awardsRoot || !window.ChunbaekFinale) return;
-  if (PREVIEW) {
-    awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(window.ChunbaekFinale.previewModel());
-    paintAwardsReview(window.ChunbaekAwardsReview && window.ChunbaekAwardsReview.exampleAwardsReview());
-    return;
-  }
+  const requestId = awardsLoadGate.start();
+  showAwardsLoad("loading");
   try {
-    const finale = await adminGet("admin-finale");
+    const finale = PREVIEW
+      ? {
+        weeklyTarget: window.ChunbaekFinale.WEEKLY_TARGET_POINTS,
+        preview: true,
+        review: window.ChunbaekAwardsReview && window.ChunbaekAwardsReview.exampleAwardsReview(),
+      }
+      : await adminGet("admin-finale");
+    if (!awardsLoadGate.isCurrent(requestId)) return;
+    const review = finale && finale.review;
+    if (!review) throw new Error("시즌 마감을 불러오지 못했습니다");
     const target = Number(finale.weeklyTarget) || window.ChunbaekFinale.WEEKLY_TARGET_POINTS;
-    awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(
-      window.ChunbaekFinale.modelFromMembers(finale.members || [], target),
-    );
-    paintAwardsReview(finale.review);
+    const model = finale.preview
+      ? window.ChunbaekFinale.previewModel()
+      : window.ChunbaekFinale.modelFromMembers(finale.members || [], target);
+    awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(model);
+    paintAwardsReview(review);
+    if (!awardsLoadGate.isCurrent(requestId)) return;
+    showAwardsLoad("ready");
   } catch (err) {
+    if (!awardsLoadGate.isCurrent(requestId)) return;
     console.error(err);
     showToast(err.message || "시즌 마감을 불러오지 못했습니다", true);
-    awardsRoot.innerHTML = `<p class="roster-loading">시즌 마감을 불러오지 못했습니다.</p>`;
+    showAwardsLoad("error");
   }
 }
 
@@ -1132,6 +1192,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   document.getElementById("btn-download-attendance-csv").addEventListener("click", downloadAttendanceCsv);
+  const awardsRetry = document.getElementById("awards-retry");
+  if (awardsRetry) awardsRetry.addEventListener("click", () => { refreshAwards(); });
+  document.addEventListener("click", (event) => {
+    const info = event.target.closest && event.target.closest(".finale-info");
+    if (info) {
+      event.preventDefault();
+      openFinaleInfo(info);
+      return;
+    }
+    if (event.target.closest && event.target.closest("[data-finale-info-close]")) closeFinaleInfo();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeFinaleInfo();
+  });
   document.getElementById("roster-search").addEventListener("input", renderRosterDirectory);
 
   document.querySelectorAll("[data-modal-action]").forEach((btn) => {
