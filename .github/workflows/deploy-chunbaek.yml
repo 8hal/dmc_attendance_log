@@ -18,6 +18,7 @@ on:
           - functions-chunbaek
           - hosting-and-chunbaek
           - storage
+          - firestore-rules
 
 concurrency:
   group: deploy-chunbaek-${{ github.ref }}
@@ -59,6 +60,10 @@ jobs:
       - name: Deploy Storage rules
         if: inputs.deploy_target == 'storage'
         run: npx firebase-tools@13.29.1 deploy --only storage --project dmc-attendance --non-interactive
+
+      - name: Deploy Firestore rules
+        if: inputs.deploy_target == 'firestore-rules'
+        run: npx firebase-tools@13.29.1 deploy --only firestore:rules --project dmc-attendance --non-interactive
 
       - name: Smoke test — chunbaek API ping
         if: inputs.deploy_target == 'functions-chunbaek' || inputs.deploy_target == 'hosting-and-chunbaek'
