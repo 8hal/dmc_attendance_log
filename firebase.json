@@ -51,6 +51,16 @@
         "function": { "functionId": "chunbaek", "region": "asia-northeast3" }
       }
     ],
+    "headers": [
+      {
+        "source": "/chunbaek/*.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "/chunbaek/**/*.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ],
     "ignore": [
       "firebase.json",
       "firestore.rules",

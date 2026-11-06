@@ -462,8 +462,14 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.equal(party.includes("2026-11-27"), false);
   assert.equal(party.includes("장소"), false);
   assert.equal(party.includes("finale-party"), false);
-  assert.match(party, /js\/thanks-vote\.js/);
+  assert.match(party, /js\/thanks-vote\.js\?v=20261106a/);
+  assert.match(party, /css\/finale\.css\?v=20261106a/);
   assert.match(party, /shoelace@2\.20\.1/);
+  const thanksJs = fs.readFileSync(path.join(root, "chunbaek/js/thanks-vote.js"), "utf8");
+  assert.match(thanksJs, /class="thanks-card"/);
+  assert.match(thanksJs, /고마웠던 춘백방 회원 1명을 골라주세요/);
+  assert.equal(thanksJs.includes('id="thanks-nominee"'), false);
+  assert.equal(thanksJs.includes("<select"), false);
   assert.equal(party.includes("목표 달성상"), false);
   assert.equal(party.includes("최우수상"), false);
   assert.equal(party.includes("카페인상"), false);
@@ -479,7 +485,7 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.equal(admin.includes("finale-place"), false);
   assert.equal(admin.includes("안내 저장"), false);
   assert.match(admin, /js\/finale\.js/);
-  assert.match(admin, /js\/thanks-vote\.js/);
+  assert.match(admin, /js\/thanks-vote\.js\?v=20261106a/);
   assert.equal(admin.includes("finale.html"), false);
   assert.match(rules, /match \/chunbaek_thanks_votes\/\{docId\}/);
   assert.match(rules, /chunbaek_thanks_votes[\s\S]*allow read: if false/);

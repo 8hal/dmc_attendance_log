@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <title>춘백 S3 고마웠다 투표</title>
   <link rel="stylesheet" href="css/tokens.css" />
-  <link rel="stylesheet" href="css/finale.css" />
+  <link rel="stylesheet" href="css/finale.css?v=20261106a" />
   <!-- Shoelace 2.20.1, MIT https://github.com/shoelace-style/shoelace/blob/v2.20.1/LICENSE.md -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,11 +23,12 @@
       </div>
     </header>
     <p class="gate" id="login-gate" hidden>투표는 춘백 앱에 로그인된 브라우저에서 불러옵니다. <a href="./">앱 열기</a></p>
+    <!-- 투표 폼(이름 칩·검색)은 js/thanks-vote.js 가 그린다. 이 파일은 껍질이다. -->
     <div id="thanks-vote-host"></div>
   </main>
   <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
-  <script src="js/thanks-vote.js"></script>
-  <script src="js/api.js"></script>
+  <script src="js/thanks-vote.js?v=20261106a"></script>
+  <script src="js/api.js?v=20261106a"></script>
   <script>
     const T = window.ChunbaekThanks;
     const loginGate = document.getElementById("login-gate");
