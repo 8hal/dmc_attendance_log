@@ -474,9 +474,11 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.equal(party.includes("최우수상"), false);
   assert.equal(party.includes("카페인상"), false);
   assert.equal(party.includes("저녁"), false);
-  assert.match(index, /party\.html/);
+  assert.equal(index.includes("party.html"), false);
+  assert.equal(index.includes("고마웠다 투표"), false);
   assert.equal(index.includes("finale.html"), false);
-  assert.match(finale, /party\.html/);
+  assert.equal(finale.includes("party.html"), false);
+  assert.equal(finale.includes("http-equiv=\"refresh\""), false);
   assert.equal(finale.includes("목표 달성상"), false);
   assert.equal(finale.includes("team-summary"), false);
   assert.match(admin, /data-panel="awards"/);
@@ -485,7 +487,8 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.equal(admin.includes("finale-place"), false);
   assert.equal(admin.includes("안내 저장"), false);
   assert.match(admin, /js\/finale\.js/);
-  assert.match(admin, /js\/thanks-vote\.js\?v=20261106a/);
+  assert.equal(admin.includes("thanks-vote.js"), false);
+  assert.equal(admin.includes("admin-thanks-votes"), false);
   assert.equal(admin.includes("finale.html"), false);
   assert.match(rules, /match \/chunbaek_thanks_votes\/\{docId\}/);
   assert.match(rules, /chunbaek_thanks_votes[\s\S]*allow read: if false/);

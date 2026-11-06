@@ -147,7 +147,7 @@
       seconds: winners.length ? best : 0,
       excludedNoPb,
       winners,
-      criterion: `${PROGRAM_START_DATE} 전에 갖고 있던 풀코스 PB(프로필 기존 PB)와, 그 날짜 이후 시즌 최종 완주 기록의 차이. 가장 많이 앞당긴 사람. 기존 PB가 없거나 완주가 2:00:00이면 비교하지 않습니다. 실제 기록이 저장되면 다시 계산합니다.`,
+      criterion: `${PROGRAM_START_DATE} 전에 갖고 있던 풀코스 PB(프로필 기존 PB)와, 그 날짜 이후 시즌 최종 완주 기록의 차이. 가장 많이 앞당긴 사람.`,
     };
   }
 
@@ -304,9 +304,12 @@
     const tie = award.winners && award.winners.length > 1
       ? `<p class="finale-meta">동점 ${award.winners.length}명</p>`
       : "";
+    const criterion = award.criterion
+      ? `<p class="finale-criterion">${escapeHtml(award.criterion)}</p>`
+      : "";
     return `<article class="finale-card">
       <h3>${escapeHtml(award.title)}</h3>
-      <p class="finale-criterion">${escapeHtml(award.criterion)}</p>
+      ${criterion}
       ${bodyHtml}
       ${tie}
     </article>`;
@@ -326,18 +329,16 @@
     const pending = model.pending || [];
     return `<div class="finale-awards">
       <section class="finale-section">
-        <h2>시상</h2>
         <div class="finale-grid">
           ${awardCard(model.attendance, nameList(attendNames.map((nickname) => ({ nickname }))))}
-          ${awardCard(model.thanks, `<p class="finale-winner">투표 결과는 아래</p>`)}
           ${awardCard(model.goal, nameList(goalNames.map((nickname) => ({ nickname }))))}
           ${awardCard(model.coffee, `<p class="finale-winner">${escapeHtml(model.coffee.winners[0].nickname)}</p><p class="finale-meta">커피를 산 날 ${model.coffee.days}일</p>`)}
           ${awardCard(model.improvement, nameList(improveNames.map((nickname) => ({ nickname }))))}
           ${pending.length ? awardCard({
             title: "집계 대기",
-            criterion: "2:00:00은 입력 하한이라 완주 기록으로 쓰지 않습니다. 저장값 자체는 지우지 않습니다. 실제 기록이 저장되면 목표 달성상과 최우수상에 자동으로 들어갑니다.",
+            criterion: "",
             winners: pending,
-          }, nameList(pending.map((row) => ({ nickname: row.label })))) : ""}
+          }, `<p class="finale-meta">${pending.length}명</p>`) : ""}
         </div>
       </section>
       <section class="finale-section">
