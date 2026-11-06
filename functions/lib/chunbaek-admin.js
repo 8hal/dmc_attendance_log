@@ -7,6 +7,7 @@ const {
   loadAllSlots,
   loadMemberAttendance,
   computeWeekStats,
+  computeMemberStats,
   todayKstDate,
   defaultWeekForAdmin,
   formatIsoRange,
@@ -1166,6 +1167,53 @@ async function handleAdminRequest(req, res, db, action) {
   return false;
 }
 
+async function loadAwardsReview(db) {
+  const [config, slots, participants] = await Promise.all([
+    loadSeasonConfig(db),
+    loadAllSlots(db),
+    loadAllParticipants(db),
+  ]);
+  const today = todayKstDate();
+  const members = [];
+  let programStartDate = null;
+  let attendanceEndDate = null;
+  for (const participant of participants) {
+    const attendanceMap = await loadMemberAttendance(db, participant.memberId);
+    const stats = computeMemberStats({
+      slots,
+      attendanceMap,
+      config,
+      today,
+    });
+    programStartDate = stats.programStartDate;
+    attendanceEndDate = stats.attendanceEndDate;
+    const s3 = participant.s3 || {};
+    members.push({
+      memberId: participant.memberId,
+      nickname: participant.data.nickname || "",
+      profileComplete: !!s3.profileComplete,
+      goalMarathonNetTime: s3.goalMarathonNetTime ?? null,
+      goalRace: s3.goalRace ?? null,
+      goalRaceNote: s3.goalRaceNote ?? null,
+      goalRaceDate: s3.goalRace === "other" ? (s3.goalRaceDate || null) : null,
+      existingPbNetTime: s3.existingPbNetTime ?? null,
+      resolutionText: s3.resolutionText ?? null,
+      seasonAttendCount: stats.seasonAttendCount,
+      seasonExceptionCount: stats.seasonExceptionCount,
+      seasonAttendRate: stats.seasonAttendRate,
+      seasonWeeksCount: stats.seasonWeeksCount,
+      seasonWeeksMetCount: stats.seasonWeeksMetCount,
+      weeks: stats.seasonWeekSummaries,
+    });
+  }
+  return {
+    programStartDate,
+    attendanceEndDate,
+    weeklyTarget: config?.weeklyTarget ?? 3,
+    members,
+  };
+}
+
 async function handleAdminFinale(req, res, db) {
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false, error: "GET only" });
@@ -1175,11 +1223,15 @@ async function handleAdminFinale(req, res, db) {
     return res.status(auth.status).json({ ok: false, error: auth.error });
   }
   const { buildTeamSummary } = require("./chunbaek-handlers");
-  const summary = await buildTeamSummary(db, { includePhotos: false });
+  const [summary, review] = await Promise.all([
+    buildTeamSummary(db, { includePhotos: false }),
+    loadAwardsReview(db),
+  ]);
   return res.json({
     ok: true,
     weeklyTarget: summary.weeklyTarget,
     members: summary.members,
+    review,
   });
 }
 

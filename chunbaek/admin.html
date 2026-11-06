@@ -158,6 +158,38 @@
           <div class="awards-wrap" id="awards-root"></div>
           <h3 class="thanks-admin-title">당신 때문에 고마웠다</h3>
           <div id="thanks-results"></div>
+          <div id="awards-review">
+            <p id="review-example" class="review-example" hidden>예시 데이터입니다. 실제 회원이 아닙니다.</p>
+            <section class="review-block" id="attendance-review">
+              <h3>시즌 출석 검수</h3>
+              <p class="review-note" id="attendance-window"></p>
+              <div class="review-tools">
+                <input id="attendance-search" type="search" placeholder="닉네임 검색" autocomplete="off" />
+                <select id="attendance-filter" aria-label="출석 필터">
+                  <option value="all">전체</option>
+                  <option value="missed">미달 있음</option>
+                  <option value="clear">전 주차 달성</option>
+                  <option value="low-days">출석 4일 미만</option>
+                </select>
+              </div>
+              <div id="attendance-review-table"></div>
+            </section>
+            <section class="review-block" id="goal-review">
+              <h3>목표 입력 현황</h3>
+              <p class="review-note" id="goal-window"></p>
+              <div class="review-tools">
+                <input id="goal-search" type="search" placeholder="닉네임 검색" autocomplete="off" />
+                <select id="goal-filter" aria-label="목표 필터">
+                  <option value="all">전체</option>
+                  <option value="missing">미입력</option>
+                  <option value="complete">입력 완료</option>
+                  <option value="no-race">대회 없음</option>
+                  <option value="no-pb">PB 없음</option>
+                </select>
+              </div>
+              <div id="goal-review-table"></div>
+            </section>
+          </div>
         </section>
       </main>
     </div>
@@ -195,6 +227,7 @@
   <script src="js/thanks-vote.js?v=20261106a"></script>
   <script src="js/api.js?v=20261106a"></script>
   <script src="js/admin-grid-csv.js?v=20261106a"></script>
+  <script src="js/admin-awards-review.js?v=20261106a"></script>
   <script src="js/admin.js?v=20261106a"></script>
 </body>
 </html>
