@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=20261106h" />
+  <link rel="stylesheet" href="css/admin.css?v=20261106i" />
 </head>
 <body class="admin-body">
   <div class="admin-demo-nav" id="admin-demo-nav" style="display:none">
@@ -164,7 +164,12 @@
           <div class="awards-wrap" id="awards-root"></div>
           <div id="awards-review">
             <p id="review-example" class="review-example" hidden>예시 데이터입니다. 실제 회원이 아닙니다.</p>
-            <section class="review-block" id="attendance-review">
+            <div class="close-tabs" role="tablist" aria-label="시즌 마감 검수">
+              <button type="button" class="close-tab" id="close-tab-attendance" role="tab" aria-selected="true" aria-controls="attendance-review" tabindex="0">출석 검수</button>
+              <button type="button" class="close-tab" id="close-tab-goals" role="tab" aria-selected="false" aria-controls="goal-review" tabindex="-1">입력 현황</button>
+              <button type="button" class="close-tab" id="close-tab-coffee" role="tab" aria-selected="false" aria-controls="coffee-review" tabindex="-1">커피 내역</button>
+            </div>
+            <section class="review-block" id="attendance-review" role="tabpanel" aria-labelledby="close-tab-attendance">
               <h3>시즌 출석 검수</h3>
               <p class="review-note" id="attendance-window"></p>
               <div class="review-tools">
@@ -176,7 +181,7 @@
               </div>
               <div id="attendance-review-table"></div>
             </section>
-            <section class="review-block" id="goal-review">
+            <section class="review-block" id="goal-review" role="tabpanel" aria-labelledby="close-tab-goals" hidden>
               <h3>목표 입력 현황</h3>
               <p class="review-note" id="goal-window"></p>
               <div class="review-tools">
@@ -191,7 +196,7 @@
               </div>
               <div id="goal-review-table"></div>
             </section>
-            <section class="review-block" id="coffee-review">
+            <section class="review-block" id="coffee-review" role="tabpanel" aria-labelledby="close-tab-coffee" hidden>
               <h3>커피를 산 날</h3>
               <p class="review-note" id="coffee-window"></p>
               <p class="review-example" id="coffee-warning" hidden></p>
@@ -247,9 +252,9 @@
   <div class="toast" id="toast"></div>
   <script src="js/finale.js?v=20261106k"></script>
   <script src="js/api.js?v=20261106a"></script>
-  <script src="js/admin-grid-csv.js?v=20261106f"></script>
+  <script src="js/admin-grid-csv.js?v=20261106g"></script>
   <script src="js/team-season.js?v=20261106a"></script>
   <script src="js/admin-awards-review.js?v=20261106l"></script>
-  <script src="js/admin.js?v=20261106p"></script>
+  <script src="js/admin.js?v=20261106q"></script>
 </body>
 </html>

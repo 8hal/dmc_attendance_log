@@ -635,6 +635,29 @@ function paintAwardsReview(payload) {
 
 const awardsLoadGate = window.ChunbaekAdminCsv.createAwardsLoadGate();
 let finaleInfoOpener = null;
+const CLOSE_TAB_PANELS = {
+  attendance: "attendance-review",
+  goals: "goal-review",
+  coffee: "coffee-review",
+};
+
+function showCloseTab(tab, options = {}) {
+  const name = CLOSE_TAB_PANELS[tab] ? tab : "attendance";
+  Object.keys(CLOSE_TAB_PANELS).forEach((key) => {
+    const selected = key === name;
+    const button = document.getElementById(`close-tab-${key}`);
+    const panel = document.getElementById(CLOSE_TAB_PANELS[key]);
+    if (button) {
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+      button.tabIndex = selected ? 0 : -1;
+    }
+    if (panel) panel.hidden = !selected;
+  });
+  if (!options.updateHash) return;
+  const nextHash = window.ChunbaekAdminCsv.closeTabHash(name);
+  if (location.hash === nextHash) return;
+  history.replaceState(null, "", `${location.pathname}${location.search}${nextHash}`);
+}
 
 function showAwardsLoad(phase) {
   const view = window.ChunbaekAdminCsv.awardsPanelView(phase);
@@ -1194,6 +1217,28 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-download-attendance-csv").addEventListener("click", downloadAttendanceCsv);
   const awardsRetry = document.getElementById("awards-retry");
   if (awardsRetry) awardsRetry.addEventListener("click", () => { refreshAwards(); });
+  showCloseTab(window.ChunbaekAdminCsv.closeTabFromHash(location.hash));
+  const closeTabs = document.querySelector(".close-tabs");
+  if (closeTabs) {
+    closeTabs.addEventListener("click", (event) => {
+      const button = event.target.closest("[role='tab']");
+      if (!button || !closeTabs.contains(button)) return;
+      const tab = button.id.replace("close-tab-", "");
+      showCloseTab(tab, { updateHash: true });
+    });
+    closeTabs.addEventListener("keydown", (event) => {
+      if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+      const current = Object.keys(CLOSE_TAB_PANELS).find((key) => {
+        const button = document.getElementById(`close-tab-${key}`);
+        return button && button.getAttribute("aria-selected") === "true";
+      }) || "attendance";
+      const next = window.ChunbaekAdminCsv.nextCloseTab(current, event.key);
+      event.preventDefault();
+      showCloseTab(next, { updateHash: true });
+      const nextButton = document.getElementById(`close-tab-${next}`);
+      if (nextButton) nextButton.focus();
+    });
+  }
   document.addEventListener("click", (event) => {
     const info = event.target.closest && event.target.closest(".finale-info");
     if (info) {

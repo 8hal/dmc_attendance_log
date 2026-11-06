@@ -459,6 +459,34 @@ a.admin-nav-btn {
 .finale-stat b { display: block; font-size: 28px; }
 .finale-stat span { font-size: 13px; color: #57534e; }
 .thanks-admin-title { margin: 22px 0 8px; }
+.close-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.close-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 6px;
+  border: 1px solid #d6d3d1;
+  border-radius: 10px;
+  background: #fff;
+  color: #44403c;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.close-tab[aria-selected="true"] {
+  background: #1c1917;
+  border-color: #1c1917;
+  color: #fff;
+}
+.review-block[hidden] { display: none !important; }
 .review-block { margin-top: 28px; }
 .review-block h3 { margin: 0 0 8px; font-size: 18px; }
 .review-block h4 { margin: 18px 0 8px; font-size: 15px; }

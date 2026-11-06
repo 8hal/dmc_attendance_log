@@ -81,6 +81,30 @@
     return requested || "awards";
   }
 
+  const CLOSE_TABS = ["attendance", "goals", "coffee"];
+
+  function closeTabFromHash(hash) {
+    const name = String(hash || "").replace(/^#/, "").split("&")[0].split("?")[0];
+    if (name === "close-goals" || name === "goals") return "goals";
+    if (name === "close-coffee" || name === "coffee") return "coffee";
+    if (name === "close-attendance" || name === "attendance") return "attendance";
+    return "attendance";
+  }
+
+  function closeTabHash(tab) {
+    const name = CLOSE_TABS.includes(tab) ? tab : "attendance";
+    return `#close-${name}`;
+  }
+
+  function nextCloseTab(current, key) {
+    const index = Math.max(0, CLOSE_TABS.indexOf(current));
+    if (key === "Home") return CLOSE_TABS[0];
+    if (key === "End") return CLOSE_TABS[CLOSE_TABS.length - 1];
+    if (key === "ArrowRight") return CLOSE_TABS[(index + 1) % CLOSE_TABS.length];
+    if (key === "ArrowLeft") return CLOSE_TABS[(index - 1 + CLOSE_TABS.length) % CLOSE_TABS.length];
+    return CLOSE_TABS.includes(current) ? current : "attendance";
+  }
+
   function sheetWeekLabel(week, options = {}) {
     const n = Number(week);
     if (!Number.isFinite(n)) return "";
@@ -206,6 +230,9 @@
     sheetWeekLabel,
     trainingSavedMessage,
     initialAdminPanel,
+    closeTabFromHash,
+    closeTabHash,
+    nextCloseTab,
     awardsPanelView,
     createAwardsLoadGate,
   };
