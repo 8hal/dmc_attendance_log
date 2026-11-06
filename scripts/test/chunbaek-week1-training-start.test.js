@@ -11,7 +11,13 @@ const {
   S3_SEASON_CLOSE_WEEK_START_DATE,
 } = require("../../functions/lib/chunbaek-stats");
 const { SEASON_START } = require("../../functions/lib/chunbaek-coffee-review");
-const { attendanceTableHtml, reviewSectionHtml } = require("../../chunbaek/js/admin-awards-review");
+const {
+  attendanceTableHtml,
+  reviewSectionHtml,
+  weekDetailText,
+  opsWeekNumber,
+  seasonCloseWeekNote,
+} = require("../../chunbaek/js/admin-awards-review");
 
 function seasonSlots() {
   const slots = [];
@@ -101,13 +107,34 @@ test("시즌 마감 주간 미달은 7/20~7/26 0주차를 빼고 7/27부터 세�
   assert.equal(handlers.includes("weekScoreProgramStart"), false);
   const teamSummary = handlers.slice(handlers.indexOf("async function handleTeamSummary"));
   assert.equal(teamSummary.includes("omitWeeksEndingBefore"), false);
-  assert.match(review, /7\/20~7\/26\(0주차\)/);
-  assert.match(review, /7\/27 월요일부터/);
+  assert.match(review, /1주차는 7\/27~8\/2/);
+  assert.equal(review.includes("훈련표와 같습니다"), false);
   assert.equal(review.includes("2026-07-20부터"), false);
-  assert.match(finale, /7\/20~7\/26은 0주차/);
-  assert.match(finale, /7\/27 월요일부터/);
+  assert.match(finale, /0주차\(7\/20~7\/26\)/);
+  assert.match(finale, /1주차는 7\/27~8\/2/);
+  assert.equal(finale.includes("7/27 주를 2주"), false);
   assert.match(finale, /2026-07-26/);
+  assert.equal(opsWeekNumber(weekOfJuly27), 1);
+  assert.equal(opsWeekNumber({ startDate: "2026-07-20", endDate: "2026-07-26", week: 1 }), 0);
+  assert.equal(opsWeekNumber({ startDate: "2026-08-03", endDate: "2026-08-09", week: 3 }), 2);
+  const note = seasonCloseWeekNote("2026-07-26", "2026-10-24");
+  assert.match(note, /0주차는 7\/20~7\/26/);
+  assert.match(note, /1주차는 7\/27~8\/2/);
+  assert.equal(note.includes("2주로"), false);
+  const adminJs = fs.readFileSync(path.join(root, "chunbaek/js/admin.js"), "utf8");
+  assert.match(adminJs, /seasonCloseWeekNote/);
+  assert.equal(adminJs.includes("훈련표와 같습니다"), false);
 
+  const nextWeek = {
+    week: 3,
+    startDate: "2026-08-03",
+    endDate: "2026-08-09",
+    attendCount: 1,
+    exceptionCount: 0,
+    weekScore: 1,
+    target: 3,
+    met: false,
+  };
   const html = attendanceTableHtml([{
     memberId: "m1",
     nickname: "예시",
@@ -115,17 +142,21 @@ test("시즌 마감 주간 미달은 7/20~7/26 0주차를 빼고 7/27부터 세�
     seasonExceptionCount: 1,
     seasonAttendRate: 50,
     seasonWeeksMetCount: 0,
-    seasonWeeksCount: 1,
-    weeks: [weekOfJuly27],
+    seasonWeeksCount: 2,
+    weeks: [weekOfJuly27, nextWeek],
   }]);
   assert.match(html, /data-open-week="2"/);
-  assert.match(html, /2주 7\/27~8\/2/);
-  assert.equal(html.includes(">1주"), false);
+  assert.match(html, /data-open-week="3"/);
+  assert.match(html, />1주 7\/27~8\/2</);
+  assert.match(html, />2주 8\/3~8\/9</);
+  assert.match(weekDetailText(weekOfJuly27), /^1주 7\/27~8\/2 /);
+  assert.equal(html.includes("2주 7/27"), false);
   const section = reviewSectionHtml({
     programStartDate: "2026-07-26",
     attendanceEndDate: "2026-10-24",
     members: [],
   }, "all", "all", "");
-  assert.match(section, /0주차/);
-  assert.match(section, /7\/27 월요일부터/);
+  assert.match(section, /0주차는 7\/20~7\/26/);
+  assert.match(section, /1주차는 7\/27~8\/2/);
+  assert.equal(section.includes("훈련표와 같습니다"), false);
 });

@@ -351,7 +351,7 @@
         <div class="finale-grid">
           <article class="finale-card">
             <h3>주간 기준은 ${activity.weeklyTargetPoints}점</h3>
-            <p class="finale-criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 7/20~7/26은 0주차라 이 합계에서 빼고, 주간 점수는 7/27 월요일부터입니다. 출석 일수는 ${escapeHtml(activity.programStartDate)}~${escapeHtml(activity.attendanceEndDate)}입니다.</p>
+            <p class="finale-criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 0주차(7/20~7/26)는 이 합계에서 뺍니다. 1주차는 7/27~8/2입니다. 출석 일수는 ${escapeHtml(activity.programStartDate)}~${escapeHtml(activity.attendanceEndDate)}입니다.</p>
             <p class="finale-meta">3점 미달 주 합계 ${activity.penaltyWeekCount}주 · 한 주라도 미달인 사람 ${activity.withPenalty.length}명</p>
           </article>
           <article class="finale-card">
