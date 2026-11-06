@@ -14,6 +14,9 @@ const {
   initialAdminPanel,
   awardsPanelView,
   createAwardsLoadGate,
+  closeTabFromHash,
+  closeTabHash,
+  nextCloseTab,
 } = require("../../chunbaek/js/admin-grid-csv.js");
 const { isSeasonCloseScoredWeek } = require("../../functions/lib/chunbaek-stats");
 
@@ -158,6 +161,32 @@ test("시즌 마감은 전부 준비되기 전 로딩만 보이고 늦은 응답
   const readyAt = refresh.indexOf('showAwardsLoad("ready")');
   const paintAt = refresh.indexOf("paintAwardsReview(review)");
   assert.ok(paintAt >= 0 && readyAt > paintAt);
+});
+
+test("시즌 마감 하위 탭은 출석이 기본이고 상위 주소는 유지한다", () => {
+  assert.equal(closeTabFromHash(""), "attendance");
+  assert.equal(closeTabFromHash("#close-goals"), "goals");
+  assert.equal(closeTabFromHash("#close-coffee"), "coffee");
+  assert.equal(closeTabFromHash("#roster"), "attendance");
+  assert.equal(initialAdminPanel({ search: "?panel=grid", hash: "#close-coffee" }), "grid");
+  assert.equal(initialAdminPanel({ hash: "#roster" }), "roster");
+  assert.equal(initialAdminPanel({ hash: "#close-coffee" }), "awards");
+  assert.equal(nextCloseTab("attendance", "ArrowRight"), "goals");
+  assert.equal(nextCloseTab("attendance", "ArrowLeft"), "coffee");
+  assert.equal(nextCloseTab("coffee", "Home"), "attendance");
+  assert.equal(nextCloseTab("goals", "End"), "coffee");
+  assert.equal(closeTabHash("goals"), "#close-goals");
+  const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/admin.html"), "utf8");
+  const js = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/admin.js"), "utf8");
+  assert.match(html, /role="tablist"/);
+  assert.match(html, /id="close-tab-attendance"/);
+  assert.match(html, /id="goal-review"[^>]*hidden|hidden[^>]*id="goal-review"/);
+  assert.match(html, /id="coffee-review"[^>]*hidden|hidden[^>]*id="coffee-review"/);
+  assert.match(js, /history\.replaceState/);
+  assert.equal(js.includes("location.reload"), false);
+  assert.match(js, /showCloseTab\(tab, \{ updateHash: true \}\)/);
+  const show = js.slice(js.indexOf("function showCloseTab"), js.indexOf("function showAwardsLoad"));
+  assert.equal(show.includes(".value = \"\""), false);
 });
 
 test("운영 화면의 처음 탭은 시즌 마감이고 주소의 탭 지정은 유지한다", () => {
