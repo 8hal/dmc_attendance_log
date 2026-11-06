@@ -757,7 +757,7 @@ function populateWeekSelects() {
   });
 }
 
-async function switchPanel(panel) {
+function showPanel(panel) {
   currentPanel = panel;
   const demo = document.getElementById("demo-screen");
   if (demo && demo.querySelector(`option[value="${panel}"]`)) demo.value = panel;
@@ -767,6 +767,10 @@ async function switchPanel(panel) {
   document.querySelectorAll(".admin-panel").forEach((p) => {
     p.classList.toggle("active", p.id === `panel-${panel}`);
   });
+}
+
+async function switchPanel(panel) {
+  showPanel(panel);
   if (panel === "grid") await refreshGrid();
   if (panel === "roster") await refreshRosterDirectory();
   if (panel === "training") await refreshTraining();
@@ -954,7 +958,13 @@ async function tryAuth() {
 }
 
 async function init() {
-  await resolveDefaultWeek();
+  showPanel(currentPanel);
+  try {
+    await resolveDefaultWeek();
+  } catch (err) {
+    console.error(err);
+    if (currentWeek == null) currentWeek = 1;
+  }
   populateWeekSelects();
   syncWeekSelects();
 

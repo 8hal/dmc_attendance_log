@@ -204,6 +204,10 @@ test("좁은 화면 카드는 긴 다짐과 소감을 라벨과 전체 폭 칸�
   assert.match(mobile, /word-break:\s*keep-all/);
   assert.match(mobile, /attr\(data-label\)/);
   assert.match(mobile, /\.admin-grid td\.cell::before/);
+  const cardRule = mobile.indexOf(".review-table tr {");
+  const missingRule = mobile.indexOf(".review-table tr.goal-missing");
+  assert.ok(cardRule >= 0 && missingRule > cardRule);
+  assert.match(mobile.slice(missingRule, missingRule + 80), /#fff7ed/);
   const hint = fs.readFileSync(path.join(__dirname, "../../chunbaek/admin.html"), "utf8");
   assert.equal(hint.includes("PC 권장"), false);
 });

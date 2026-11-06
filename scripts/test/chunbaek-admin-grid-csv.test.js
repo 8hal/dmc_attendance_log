@@ -142,6 +142,9 @@ test("운영 화면의 처음 탭은 시즌 마감이고 주소의 탭 지정은
   assert.equal(/id="panel-grid"[^>]*active|class="admin-panel active" id="panel-grid"/.test(html), false);
   assert.match(html, /data-panel="awards"[^>]*active|class="admin-nav-btn active" data-panel="awards"/);
   assert.match(js, /initialAdminPanel\(\{/);
+  const init = js.slice(js.indexOf("async function init()"), js.indexOf("async function saveTraining"));
+  assert.match(init, /showPanel\(currentPanel\);\s*try \{\s*await resolveDefaultWeek\(\)/);
+  assert.match(init, /catch \(err\)[\s\S]*await switchPanel\(currentPanel\)/);
   assert.match(js, /switchPanel\(btn\.dataset\.panel\)/);
   assert.match(js, /switchPanel\("grid"\)/);
 });

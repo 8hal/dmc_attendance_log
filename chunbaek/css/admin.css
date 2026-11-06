@@ -829,6 +829,9 @@ a.admin-nav-btn {
     background: #fff;
     overflow: hidden;
   }
+  .review-table tr.goal-missing {
+    background: #fff7ed;
+  }
   .review-table td {
     min-width: 0;
     border: 0;
