@@ -459,6 +459,18 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig,
   };
 }
 
+/** 7/20~7/26 훈련표 1주차만 주간 집계에서 뺀다. 2주차(7/27~)와 다른 날짜는 그대로다. */
+function isSeasonCloseScoredWeek(slots) {
+  const dates = (slots || [])
+    .map((slot) => String(slot && slot.date || "").slice(0, 10))
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort();
+  if (!dates.length) return true;
+  const start = dates[0];
+  const end = dates[dates.length - 1];
+  return !(start >= "2026-07-20" && end < S3_SEASON_CLOSE_WEEK_START_DATE);
+}
+
 function weekDateSpan(slots, weekNum) {
   let startDate = "";
   let endDate = "";
@@ -911,6 +923,7 @@ module.exports = {
   S3_PROGRAM_START_DATE,
   S3_ATTENDANCE_END_DATE,
   S3_SEASON_CLOSE_WEEK_START_DATE,
+  isSeasonCloseScoredWeek,
   programDayIndex,
   slotsWithDerivedSchedule,
   canonicalChunbaekPhotoUrl,

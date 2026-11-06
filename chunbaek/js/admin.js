@@ -143,6 +143,11 @@ function weekData(week) {
 }
 
 function apiCellStatus(cell) {
+  if (cell.status === "preseason") {
+    if (cell.attended) return "attend";
+    if (cell.exception) return "exception";
+    return "preseason";
+  }
   if (cell.status === "attend" && cell.photoUrl) return "attend-photo";
   return cell.status;
 }
@@ -264,6 +269,7 @@ function trainingDayCount(slots) {
 function cellClass(status) {
   if (status === "attend" || status === "attend-photo") return "cell-attend";
   if (status === "exception") return "cell-exception";
+  if (status === "preseason") return "cell-off";
   if (status === "miss" || status === "today" || status === "future") return "cell-miss";
   return "cell-miss";
 }
@@ -283,10 +289,11 @@ function renderGrid() {
   const tbody = document.getElementById("grid-body");
   tbody.innerHTML = "";
 
+  const weekScored = window.ChunbaekAdminCsv.gridWeekScored(allSlots);
   data.members.forEach((m) => {
     const score = m.weekScore != null ? Number(m.weekScore) : Number(m.weekCount ?? 0);
     const target = m.weekTarget ?? 3;
-    const under = target > 0 && score < target;
+    const under = weekScored && target > 0 && score < target;
     if (filterUnderTarget && !under) return;
 
     const tr = document.createElement("tr");
@@ -301,7 +308,7 @@ function renderGrid() {
     });
     missCount += rowMiss;
 
-    const scoreLabel = `${score.toFixed(1)}/${target}점`;
+    const scoreLabel = weekScored ? `${score.toFixed(1)}/${target}점` : "집계 제외";
     tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${scoreLabel}</small></td>`;
     allSlots.forEach((slot) => {
       const td = document.createElement("td");
@@ -330,7 +337,9 @@ function renderGrid() {
   document.getElementById("grid-week-title").textContent = weekOptionLabel(currentWeek);
   document.getElementById("grid-range").textContent = data.range;
   document.getElementById("grid-miss-chip").textContent = `미출석 셀 ${missCount}개`;
-  document.getElementById("grid-under-chip").textContent = `주 3점 미달 ${data.underTargetCount}명`;
+  document.getElementById("grid-under-chip").textContent = weekScored
+    ? `주 3점 미달 ${data.underTargetCount}명`
+    : "주간 집계 제외";
 
   const head = document.getElementById("grid-head-row");
   head.innerHTML = "<th>회원</th>";

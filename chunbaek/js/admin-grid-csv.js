@@ -19,6 +19,17 @@
     return fields.map(csvField).join(",");
   }
 
+  function gridWeekScored(slots) {
+    const dates = (slots || [])
+      .map((slot) => String(slot && slot.date || "").slice(0, 10))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+      .sort();
+    if (!dates.length) return true;
+    const start = dates[0];
+    const end = dates[dates.length - 1];
+    return !(start >= "2026-07-20" && end < "2026-07-27");
+  }
+
   function weekLabel(week) {
     if (week == null || week === "") return "";
     return `${week}주차`;
@@ -36,7 +47,8 @@
     return String(n);
   }
 
-  function targetText(member) {
+  function targetText(member, slots) {
+    if (!gridWeekScored(slots)) return "제외";
     if (typeof member.weekTargetMet === "boolean") {
       return member.weekTargetMet ? "달성" : "미달";
     }
@@ -62,6 +74,7 @@
     if (status === "attend" || status === "attend-photo") return "출석";
     if (status === "exception") return "예외";
     if (status === "future") return "예정";
+    if (status === "preseason") return "제외";
     return "미출석";
   }
 
@@ -90,7 +103,7 @@
       member.weekExceptionCount != null ? String(member.weekExceptionCount) : "0",
       scoreText(member),
       member.weekTarget != null ? String(member.weekTarget) : "",
-      targetText(member),
+      targetText(member, columns),
       ...columns.map((slot) => cellText(
         member.cells ? member.cells[slot.slotId] : "",
         !!slot.isProgramOff,
@@ -104,5 +117,6 @@
     buildAttendanceCsv,
     attendanceCsvFilename,
     cellText,
+    gridWeekScored,
   };
 });

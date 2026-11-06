@@ -26,6 +26,7 @@ const {
   BETA_WEEK,
   normalizePhotoUrls,
   S3_SEASON_CLOSE_WEEK_START_DATE,
+  isSeasonCloseScoredWeek,
 } = require("./chunbaek-stats");
 const {
   previewExceptionApplication,
@@ -409,6 +410,7 @@ async function handleAdminGrid(req, res, db) {
 
   const members = [];
   let underTargetCount = 0;
+  const weekScored = isSeasonCloseScoredWeek(weekSlotList);
 
   for (const p of participants) {
     const attendanceMap = await loadMemberAttendance(db, p.memberId);
@@ -421,7 +423,7 @@ async function handleAdminGrid(req, res, db) {
     );
 
     const profileComplete = !!p.s3.profileComplete;
-    if (profileComplete && !weekStats.weekTargetMet) underTargetCount += 1;
+    if (weekScored && profileComplete && !weekStats.weekTargetMet) underTargetCount += 1;
 
     const cells = weekSlotList.map((slot) => {
       if (slot.isProgramOff) {
@@ -475,6 +477,7 @@ async function handleAdminGrid(req, res, db) {
       trainingDayCount,
       weeklyTarget,
       underTargetCount,
+      weekScored,
     },
     slots: gridSlots,
     members,
