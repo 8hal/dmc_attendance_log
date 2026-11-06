@@ -172,6 +172,7 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   const index = fs.readFileSync(path.join(root, "chunbaek/index.html"), "utf8");
   const admin = fs.readFileSync(path.join(root, "chunbaek/admin.html"), "utf8");
   const party = fs.readFileSync(path.join(root, "chunbaek/party.html"), "utf8");
+  const finalePage = fs.readFileSync(path.join(root, "chunbaek/finale.html"), "utf8");
   assert.match(finaleJs, /시즌3 활동 결산/);
   assert.match(finaleJs, /2026-07-26/);
   assert.match(finaleJs, /최다 참여상/);
@@ -182,7 +183,6 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.match(finaleJs, /운영진만/);
   assert.match(finaleJs, /Josh조상현/);
   assert.equal(finaleJs.includes("진달 김진규"), false);
-  assert.match(index, /party\.html/);
   assert.equal(index.includes("finale.html"), false);
   assert.match(admin, /id="panel-awards"/);
   assert.match(admin, /⑤ 시즌 마감/);
@@ -200,7 +200,12 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.equal(awards.includes("당신때문에 고마웠다상"), false);
   assert.equal(admin.includes("finale.html"), false);
   assert.match(party, /당신 때문에 고마웠다/);
-  assert.match(index, /고마웠다 투표/);
+  assert.match(party, /thanks-vote-host/);
+  assert.equal(index.includes("party.html"), false);
+  assert.equal(index.includes("고마웠다 투표"), false);
+  assert.equal(index.includes("당신 때문에 고마웠다"), false);
+  assert.equal(finalePage.includes("party.html"), false);
+  assert.equal(finalePage.includes("http-equiv=\"refresh\""), false);
   assert.equal(party.includes("2026-11-27"), false);
   assert.equal(party.includes("목표 달성상"), false);
 });
