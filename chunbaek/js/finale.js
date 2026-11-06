@@ -326,10 +326,8 @@
     const pending = model.pending || [];
     return `<div class="finale-awards">
       <section class="finale-section">
-        <h2>시상</h2>
         <div class="finale-grid">
           ${awardCard(model.attendance, nameList(attendNames.map((nickname) => ({ nickname }))))}
-          ${awardCard(model.thanks, `<p class="finale-winner">투표 결과는 아래</p>`)}
           ${awardCard(model.goal, nameList(goalNames.map((nickname) => ({ nickname }))))}
           ${awardCard(model.coffee, `<p class="finale-winner">${escapeHtml(model.coffee.winners[0].nickname)}</p><p class="finale-meta">커피를 산 날 ${model.coffee.days}일</p>`)}
           ${awardCard(model.improvement, nameList(improveNames.map((nickname) => ({ nickname }))))}

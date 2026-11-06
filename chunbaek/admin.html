@@ -21,7 +21,7 @@
       <option value="roster">④ 참가자 명단</option>
       <option value="training">② 훈련 입력</option>
       <option value="exceptions">③ 예외 요청</option>
-      <option value="awards">⑤ 시상</option>
+      <option value="awards">⑤ 시즌 마감</option>
     </select>
   </div>
 
@@ -58,7 +58,7 @@
         <button type="button" class="admin-nav-btn" data-panel="exceptions">
           예외 요청 <span class="admin-nav-badge" id="exceptions-pending-badge" hidden></span>
         </button>
-        <button type="button" class="admin-nav-btn" data-panel="awards">시상</button>
+        <button type="button" class="admin-nav-btn" data-panel="awards">시즌 마감</button>
         <div class="admin-sidebar-foot">
           URL 비공개<br />
           단톡에 공유하지 마세요
@@ -151,13 +151,11 @@
         <section class="admin-panel" id="panel-awards">
           <div class="admin-toolbar">
             <div>
-              <h2>시상</h2>
-              <div class="admin-toolbar-sub">결산 숫자와 고마웠다 상 투표. 멤버 화면에는 없습니다.</div>
+              <h2>시즌 마감</h2>
+              <div class="admin-toolbar-sub">출석·목표·커피 검수와 개인 시상. 멤버 화면에는 없습니다.</div>
             </div>
           </div>
           <div class="awards-wrap" id="awards-root"></div>
-          <h3 class="thanks-admin-title">당신 때문에 고마웠다</h3>
-          <div id="thanks-results"></div>
           <div id="awards-review">
             <p id="review-example" class="review-example" hidden>예시 데이터입니다. 실제 회원이 아닙니다.</p>
             <section class="review-block" id="attendance-review">
@@ -235,12 +233,11 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="js/finale.js?v=20261106a"></script>
-  <script src="js/thanks-vote.js?v=20261106a"></script>
+  <script src="js/finale.js?v=20261106b"></script>
   <script src="js/api.js?v=20261106a"></script>
   <script src="js/admin-grid-csv.js?v=20261106a"></script>
   <script src="js/team-season.js?v=20261106a"></script>
   <script src="js/admin-awards-review.js?v=20261106a"></script>
-  <script src="js/admin.js?v=20261106a"></script>
+  <script src="js/admin.js?v=20261106b"></script>
 </body>
 </html>

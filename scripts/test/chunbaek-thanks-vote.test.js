@@ -485,7 +485,8 @@ test("화면은 회원에게 투표와 안내만, 시상은 운영 화면에 둔
   assert.equal(admin.includes("finale-place"), false);
   assert.equal(admin.includes("안내 저장"), false);
   assert.match(admin, /js\/finale\.js/);
-  assert.match(admin, /js\/thanks-vote\.js\?v=20261106a/);
+  assert.equal(admin.includes("thanks-vote.js"), false);
+  assert.equal(admin.includes("admin-thanks-votes"), false);
   assert.equal(admin.includes("finale.html"), false);
   assert.match(rules, /match \/chunbaek_thanks_votes\/\{docId\}/);
   assert.match(rules, /chunbaek_thanks_votes[\s\S]*allow read: if false/);

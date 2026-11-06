@@ -566,21 +566,6 @@ async function setCellStatus(status) {
   }
 }
 
-const PREVIEW_THANKS = {
-  ballotCount: 2,
-  tally: [
-    {
-      memberId: "m1",
-      nickname: "김러너",
-      votes: 2,
-      reasons: [
-        { voterNickname: "이페이스", reason: "페이스를 맞춰 줘서" },
-        { voterNickname: "박풀코스", reason: "" },
-      ],
-    },
-  ],
-};
-
 let awardsReviewPayload = null;
 
 function paintAwardsReview(payload) {
@@ -639,29 +624,23 @@ function paintAwardsReview(payload) {
 
 async function refreshAwards() {
   const awardsRoot = document.getElementById("awards-root");
-  const thanksRoot = document.getElementById("thanks-results");
-  if (!awardsRoot || !thanksRoot || !window.ChunbaekFinale || !window.ChunbaekThanks) return;
+  if (!awardsRoot || !window.ChunbaekFinale) return;
   if (PREVIEW) {
     awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(window.ChunbaekFinale.previewModel());
-    thanksRoot.innerHTML = window.ChunbaekThanks.adminResultsHtml(PREVIEW_THANKS);
     paintAwardsReview(window.ChunbaekAwardsReview && window.ChunbaekAwardsReview.exampleAwardsReview());
     return;
   }
   try {
-    const [finale, votes] = await Promise.all([
-      adminGet("admin-finale"),
-      adminGet("admin-thanks-votes"),
-    ]);
+    const finale = await adminGet("admin-finale");
     const target = Number(finale.weeklyTarget) || window.ChunbaekFinale.WEEKLY_TARGET_POINTS;
     awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(
       window.ChunbaekFinale.modelFromMembers(finale.members || [], target),
     );
-    thanksRoot.innerHTML = window.ChunbaekThanks.adminResultsHtml(votes);
     paintAwardsReview(finale.review);
   } catch (err) {
     console.error(err);
-    showToast(err.message || "시상을 불러오지 못했습니다", true);
-    awardsRoot.innerHTML = `<p class="roster-loading">시상을 불러오지 못했습니다.</p>`;
+    showToast(err.message || "시즌 마감을 불러오지 못했습니다", true);
+    awardsRoot.innerHTML = `<p class="roster-loading">시즌 마감을 불러오지 못했습니다.</p>`;
   }
 }
 
