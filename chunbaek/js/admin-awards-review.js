@@ -345,31 +345,28 @@
 
   function exampleAwardsReview() {
     const weekNumbers = [];
-    for (let week = 1; week <= 13; week += 1) weekNumbers.push(week);
+    for (let week = 2; week <= 14; week += 1) weekNumbers.push(week);
+    const sheetStart = Date.UTC(2026, 6, 20);
+    const aggEnd = "2026-10-24";
     const members = [];
     for (let i = 1; i <= 40; i += 1) {
       const missWeeks = i % 5 === 0 ? [3, 7] : (i % 5 === 1 ? [2] : []);
       const weeks = weekNumbers.map((week) => {
-        const startDate = new Date(Date.UTC(2026, 6, 20) + (week - 1) * 7 * 86400000)
-          .toISOString()
-          .slice(0, 10);
-        const endDate = new Date(Date.UTC(2026, 6, 20) + ((week - 1) * 7 + 6) * 86400000)
-          .toISOString()
-          .slice(0, 10);
+        const startDate = new Date(sheetStart + (week - 1) * 7 * 86400000).toISOString().slice(0, 10);
+        let endDate = new Date(sheetStart + ((week - 1) * 7 + 6) * 86400000).toISOString().slice(0, 10);
+        if (endDate > aggEnd) endDate = aggEnd;
         if (!missWeeks.includes(week)) {
           return { week, startDate, endDate, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true };
         }
         return { week, startDate, endDate, attendCount: 1, exceptionCount: 1, weekScore: 1.5, target: 3, met: false };
       });
       if (i === 8) {
-        weeks[0] = {
-          ...weeks[0],
-          attendCount: 2,
-          exceptionCount: 0,
-          weekScore: 2,
-          target: 2,
-          met: true,
-        };
+        const opening = weeks.find((week) => week.week === 2);
+        opening.attendCount = 2;
+        opening.exceptionCount = 0;
+        opening.weekScore = 2;
+        opening.target = 2;
+        opening.met = true;
       }
       const missing = i <= 6;
       const goalSec = missing ? null : 10800 + i * 60;

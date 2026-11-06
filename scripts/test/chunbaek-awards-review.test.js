@@ -183,6 +183,24 @@ test("목표 시간, 기존 PB, 대회 결과는 서로 다른 칸에 있다", (
   assert.match(missing, /아직 없음/);
 });
 
+test("예시 주간 집계는 7/27~10/24의 훈련표 2~14주만 보여 준다", () => {
+  const sample = exampleAwardsReview();
+  const weeks = sample.members[0].weeks;
+  assert.deepEqual(weeks.map((week) => week.week), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+  assert.equal(weeks[0].startDate, "2026-07-27");
+  assert.equal(weeks[0].endDate, "2026-08-02");
+  assert.equal(weeks[weeks.length - 1].week, 14);
+  assert.equal(weeks[weeks.length - 1].startDate, "2026-10-19");
+  assert.equal(weeks[weeks.length - 1].endDate, "2026-10-24");
+  assert.equal(weeks.some((week) => week.startDate < "2026-07-27" || week.endDate > "2026-10-24"), false);
+  const html = attendanceTableHtml([sample.members.find((member) => member.memberId === "example-1")]);
+  assert.match(html, /data-open-week="2"/);
+  assert.match(html, /2주 7\/27~8\/2/);
+  assert.match(html, /14주 10\/19~10\/24/);
+  assert.equal(html.includes("7/20"), false);
+  assert.equal(html.includes(">1주"), false);
+});
+
 test("대회 소감은 seasonResult.note만 다짐 옆에 보여 준다", () => {
   const sample = exampleAwardsReview();
   const indexed = sample.members.find((member) => member.memberId === "example-7");
