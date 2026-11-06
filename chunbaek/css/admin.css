@@ -391,6 +391,8 @@ a.admin-nav-btn {
 .review-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; }
 .review-table th, .review-table td { border-bottom: 1px solid #e7e5e4; padding: 8px 10px; text-align: left; vertical-align: top; }
 .review-table th { font-size: 12px; color: #57534e; background: #faf8f6; position: sticky; top: 0; }
+#goal-review-table { overflow-x: auto; }
+.goal-columns .col-time { min-width: 7.5em; white-space: nowrap; }
 .review-row { cursor: pointer; }
 .review-chip { display: inline-block; margin: 0 4px 4px 0; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 700; }
 .review-chip.miss { border: 1px solid #fdba74; background: #fff7ed; color: #9a3412; cursor: pointer; }

@@ -185,6 +185,17 @@
     return lib && lib.seasonResultStatusLabel(status) || "";
   }
 
+  function raceResultLabel(member) {
+    const sr = member && member.seasonResult;
+    if (!sr || !sr.status) return "아직 없음";
+    const net = Number(sr.netTimeSec);
+    if (sr.status === "finisher" && net === placeholderNetSec()) return "집계 대기";
+    if (sr.status === "finisher" && Number.isFinite(net) && net > 0) {
+      return `완주 ${formatHms(net)}`;
+    }
+    return seasonStatusLabel(sr.status) || "아직 없음";
+  }
+
   function goalOutcomeLabel(member) {
     if (!isValidGoalTime(member && member.goalMarathonNetTime)) return "목표 없음";
     const sr = member && member.seasonResult;
@@ -199,29 +210,32 @@
   function goalTableHtml(members) {
     const rows = sortGoalRows(members);
     if (!rows.length) return `<p class="review-empty">해당하는 회원이 없습니다.</p>`;
-    return `<table class="review-table">
+    return `<table class="review-table goal-columns">
       <thead>
         <tr>
           <th>닉네임</th>
           <th>입력</th>
           <th>대회</th>
-          <th>목표 시간</th>
+          <th class="col-time">목표 시간</th>
+          <th class="col-time">기존 PB</th>
+          <th class="col-time">대회 결과</th>
           <th>달성 여부</th>
-          <th>PB</th>
           <th>다짐</th>
         </tr>
       </thead>
       <tbody>
         ${rows.map((member) => {
           const missing = isGoalMissing(member);
+          const goal = isValidGoalTime(member.goalMarathonNetTime) ? formatHms(member.goalMarathonNetTime) : "";
           const pb = formatStoredTime(member.existingPbNetTime);
           return `<tr class="${missing ? "goal-missing" : ""}">
             <td>${escapeHtml(member.nickname || "이름 없음")}</td>
             <td>${missing ? "미입력" : "입력"}</td>
             <td>${escapeHtml(raceLabel(member) || "없음")}</td>
-            <td>${escapeHtml(isValidGoalTime(member.goalMarathonNetTime) ? formatHms(member.goalMarathonNetTime) : "없음")}</td>
+            <td class="col-time">${escapeHtml(goal ? goal : "목표 없음")}</td>
+            <td class="col-time">${escapeHtml(pb ? pb : "PB 없음")}</td>
+            <td class="col-time">${escapeHtml(raceResultLabel(member))}</td>
             <td>${escapeHtml(goalOutcomeLabel(member))}</td>
-            <td>${pb ? escapeHtml(pb) : "없음"}</td>
             <td>${escapeHtml(member.resolutionText || "")}</td>
           </tr>`;
         }).join("")}
@@ -403,6 +417,7 @@
     attendanceTableHtml,
     goalTableHtml,
     goalOutcomeLabel,
+    raceResultLabel,
     coffeeNoteText,
     filterCoffee,
     coffeeDailyTableHtml,

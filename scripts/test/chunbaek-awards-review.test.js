@@ -20,6 +20,7 @@ const {
   attendanceTableHtml,
   goalTableHtml,
   goalOutcomeLabel,
+  raceResultLabel,
 } = require("../../chunbaek/js/admin-awards-review");
 const { serializeSeasonResult } = require("../../functions/lib/chunbaek-handlers");
 const { goalAward } = require("../../chunbaek/js/finale");
@@ -93,9 +94,91 @@ test("목표 시간은 2:00:00~7:00:00만 유효하고, PB가 없어도 입력 �
     goalRace: null,
     existingPbNetTime: null,
   }]);
-  assert.match(html, /예시완료[\s\S]*없음/);
+  assert.match(html, /예시완료[\s\S]*PB 없음/);
   assert.match(html, /미입력/);
+  assert.match(html, /<th class="col-time">목표 시간<\/th>/);
+  assert.match(html, /<th class="col-time">기존 PB<\/th>/);
+  assert.match(html, /<th class="col-time">대회 결과<\/th>/);
   assert.equal(html.includes("목표 거리"), false);
+});
+
+test("목표 시간, 기존 PB, 대회 결과는 서로 다른 칸에 있다", () => {
+  const rows = [
+    {
+      nickname: "예시없음",
+      profileComplete: false,
+      goalMarathonNetTime: null,
+      existingPbNetTime: null,
+      seasonResult: null,
+    },
+    {
+      nickname: "예시달성",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "chuncheon",
+      existingPbNetTime: 12000,
+      seasonResult: { status: "finisher", netTimeSec: 10700, goalMet: true },
+    },
+    {
+      nickname: "예시미달",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "jtbc",
+      existingPbNetTime: null,
+      seasonResult: { status: "finisher", netTimeSec: 11000, goalMet: false },
+    },
+    {
+      nickname: "예시포기",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "chuncheon",
+      existingPbNetTime: 13000,
+      seasonResult: serializeSeasonResult({ status: "dnf", race: "chuncheon" }, { goalMarathonNetTime: 10800 }),
+    },
+    {
+      nickname: "예시미출전",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "chuncheon",
+      existingPbNetTime: 13000,
+      seasonResult: serializeSeasonResult({ status: "dns", race: "chuncheon" }, { goalMarathonNetTime: 10800 }),
+    },
+    {
+      nickname: "예시취소",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "other",
+      existingPbNetTime: 13000,
+      seasonResult: serializeSeasonResult({ status: "other", race: "chuncheon" }, { goalMarathonNetTime: 10800 }),
+    },
+    {
+      nickname: "예시대기",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "jtbc",
+      existingPbNetTime: 12000,
+      seasonResult: serializeSeasonResult({ status: "finisher", race: "jtbc", netTimeSec: 7200 }, { goalMarathonNetTime: 10800 }),
+    },
+  ];
+  assert.equal(raceResultLabel(rows[0]), "아직 없음");
+  assert.equal(raceResultLabel(rows[1]), "완주 2:58:20");
+  assert.equal(goalOutcomeLabel(rows[1]), "달성");
+  assert.equal(goalOutcomeLabel(rows[2]), "미달");
+  assert.equal(raceResultLabel(rows[3]), "DNF");
+  assert.equal(raceResultLabel(rows[4]), "DNS");
+  assert.equal(raceResultLabel(rows[5]), "대회 취소 등");
+  assert.equal(raceResultLabel(rows[6]), "집계 대기");
+  assert.equal(goalOutcomeLabel(rows[6]), "집계 대기");
+  const html = goalTableHtml(rows);
+  const achieved = html.split("<tr").find((row) => row.includes("예시달성"));
+  assert.match(achieved, /<td class="col-time">3:00:00<\/td>/);
+  assert.match(achieved, /<td class="col-time">3:20:00<\/td>/);
+  assert.match(achieved, /<td class="col-time">완주 2:58:20<\/td>/);
+  assert.equal(achieved.includes("3:00:00 3:20:00"), false);
+  const missing = html.split("<tr").find((row) => row.includes("예시없음"));
+  assert.match(missing, /목표 없음/);
+  assert.match(missing, /PB 없음/);
+  assert.match(missing, /아직 없음/);
 });
 
 test("목표 미입력은 명단 앞에 오고, 프로필이 없어도 행이 남는다", () => {
