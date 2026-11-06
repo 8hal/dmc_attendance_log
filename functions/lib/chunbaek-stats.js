@@ -231,6 +231,8 @@ function effectiveSeasonStart(config, slots = []) {
 
 const S3_PROGRAM_START_DATE = "2026-07-26";
 const S3_ATTENDANCE_END_DATE = "2026-10-24";
+/** 시즌 마감 주간 점수만 쓰는 실제 훈련 시작일. 출석 일수와 커피 집계는 위 공식 기간을 유지한다. */
+const S3_TRAINING_WEEK_START_DATE = "2026-07-20";
 
 function diffDaysIso(startIso, endIso) {
   const [sy, sm, sd] = String(startIso).split("-").map(Number);
@@ -457,7 +459,14 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig,
   };
 }
 
-function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
+function computeMemberStats({
+  slots,
+  attendanceMap,
+  config,
+  today,
+  now = Date.now(),
+  weekScoreProgramStart,
+} = {}) {
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
   const normalized = slotsWithDerivedSchedule(slots, config);
@@ -504,7 +513,7 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
       weeklyTargetConfig,
       todayDate,
       seasonEnd,
-      S3_PROGRAM_START_DATE,
+      weekScoreProgramStart || S3_PROGRAM_START_DATE,
     );
     const met = ws.target > 0 && ws.weekScore >= ws.target;
     return {
@@ -886,6 +895,7 @@ module.exports = {
   deriveSeasonWeek,
   S3_PROGRAM_START_DATE,
   S3_ATTENDANCE_END_DATE,
+  S3_TRAINING_WEEK_START_DATE,
   programDayIndex,
   slotsWithDerivedSchedule,
   canonicalChunbaekPhotoUrl,

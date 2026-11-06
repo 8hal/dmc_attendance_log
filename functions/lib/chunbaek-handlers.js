@@ -1051,7 +1051,11 @@ function collectTeamPhotosForMember(p, attendanceMap, slots, seasonResult) {
   return photos;
 }
 
-async function buildTeamSummary(db, { viewerMemberId = null, includePhotos = false } = {}) {
+async function buildTeamSummary(db, {
+  viewerMemberId = null,
+  includePhotos = false,
+  weekScoreProgramStart,
+} = {}) {
   const [config, slots, participants] = await Promise.all([
     loadSeasonConfig(db),
     loadAllSlots(db),
@@ -1068,7 +1072,7 @@ async function buildTeamSummary(db, { viewerMemberId = null, includePhotos = fal
     if (!p.s3.profileComplete) continue;
     const attendanceMap = await loadMemberAttendance(db, p.memberId);
     const stats = slots.length
-      ? computeMemberStats({ slots, attendanceMap, config, today })
+      ? computeMemberStats({ slots, attendanceMap, config, today, weekScoreProgramStart })
       : emptyStats();
     rateSum += stats.seasonAttendRate;
     if (stats.weekTargetMet) weekMetCount += 1;
