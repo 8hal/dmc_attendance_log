@@ -394,6 +394,11 @@ a.admin-nav-btn {
 #goal-review-table { overflow-x: auto; }
 .goal-columns .col-time { min-width: 7.5em; white-space: nowrap; }
 .goal-columns .col-note { min-width: 8em; }
+.col-prose {
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
 .review-row { cursor: pointer; }
 .review-chip { display: inline-block; margin: 0 4px 4px 0; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 700; }
 .review-chip.miss { border: 1px solid #fdba74; background: #fff7ed; color: #9a3412; cursor: pointer; }
@@ -544,7 +549,7 @@ a.admin-nav-btn {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 400;
+  z-index: 800;
 }
 .modal-backdrop.show { display: flex; }
 .modal-card {
@@ -658,26 +663,47 @@ a.admin-nav-btn {
 
   .admin-toolbar {
     gap: 8px;
+    align-items: stretch;
   }
   .admin-toolbar h2 { font-size: 17px; }
+  .admin-toolbar > div:first-child { flex: 1 1 100%; }
   .admin-toolbar-spacer { display: none; }
-  .admin-chip { font-size: 11px; padding: 5px 10px; }
+  .admin-select,
+  .admin-btn,
+  .admin-chip {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .admin-btn { flex: 1 1 140px; }
+  .review-tools { flex-direction: column; }
+  .review-tools input,
+  .review-tools select {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+  }
 
   .admin-layout { flex-direction: column; }
+  .admin-topbar-badge { display: none; }
   .admin-sidebar {
     width: 100%;
     flex-direction: row;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    overflow: visible;
     padding: 8px;
-    -webkit-overflow-scrolling: touch;
+    gap: 6px;
   }
   .admin-sidebar-foot { display: none; }
   .admin-nav-btn {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
     border-left: none;
     border-bottom: 3px solid transparent;
-    white-space: nowrap;
-    padding: 10px 14px;
-    font-size: 13px;
+    white-space: normal;
+    text-align: center;
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 14px;
   }
   .admin-nav-btn.active { border-bottom-color: var(--chun-orange); }
 
@@ -694,27 +720,53 @@ a.admin-nav-btn {
     flex: 1;
   }
 
-  .grid-wrap {
-    margin: 0 -4px;
-    border-radius: 8px;
-    -webkit-overflow-scrolling: touch;
+  .grid-wrap { overflow: visible; }
+  .admin-grid { font-size: 14px; min-width: 0; }
+  .admin-grid thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
   }
-  .admin-grid {
-    font-size: 11px;
-  }
-  .admin-grid th,
-  .admin-grid td {
-    padding: 10px 8px;
-    min-width: 48px;
-    min-height: 44px;
+  .admin-grid,
+  .admin-grid tbody { display: block; }
+  .admin-grid tr {
+    display: block;
+    margin: 0 0 12px;
+    border: 1px solid var(--border, #e7e5e4);
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
   }
   .admin-grid td.member-cell {
-    min-width: 72px;
-    font-size: 11px;
+    display: block;
+    position: static;
+    min-width: 0;
+    width: auto;
+    box-shadow: none;
+    font-size: 16px;
+    padding: 12px 14px;
   }
-  .admin-grid th.slot-head {
-    min-width: 44px;
-    font-size: 10px;
+  .admin-grid td.cell {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 25%;
+    min-width: 72px;
+    min-height: 64px;
+    box-sizing: border-box;
+    vertical-align: top;
+  }
+  .admin-grid td.cell::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #78716c;
+    line-height: 1.2;
   }
 
   .training-card {
@@ -748,9 +800,64 @@ a.admin-nav-btn {
     border-radius: 16px 16px 0 0;
     padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
   .modal-actions button {
     min-height: 48px;
+    width: 100%;
   }
+  .review-table { display: block; }
+  .review-table caption,
+  .review-table thead,
+  .review-table tbody,
+  .review-table tr,
+  .review-table td { display: block; width: 100%; }
+  .review-table thead { display: none; }
+  .review-table tr[hidden] { display: none !important; }
+  .review-table caption {
+    margin: 0 0 8px;
+    font-weight: 800;
+    text-align: left;
+  }
+  .review-table tr {
+    margin: 0 0 12px;
+    border: 1px solid #e7e5e4;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .review-table td {
+    min-width: 0;
+    border: 0;
+    border-top: 1px solid #f3f1ef;
+    padding: 10px 14px 12px;
+    white-space: normal;
+  }
+  .review-table tr td:first-child { border-top: 0; }
+  .review-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #78716c;
+  }
+  .review-table td.review-span::before { content: none; }
+  .goal-columns .col-time,
+  .goal-columns .col-note,
+  .review-table .col-prose {
+    min-width: 0;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+  }
+  #goal-review-table,
+  #attendance-review-table,
+  #coffee-member-table { overflow: visible; }
 
   .auth-card {
     margin: 16px;

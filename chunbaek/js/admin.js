@@ -309,10 +309,12 @@ function renderGrid() {
     missCount += rowMiss;
 
     const scoreLabel = weekScored ? `${score.toFixed(1)}/${target}점` : "집계 제외";
-    tr.innerHTML = `<td class="member-cell">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${scoreLabel}</small></td>`;
+    tr.innerHTML = `<td class="member-cell" data-label="회원">${m.nickname}<br><small style="color:var(--text-muted);font-weight:600">${scoreLabel}</small></td>`;
     allSlots.forEach((slot) => {
       const td = document.createElement("td");
       td.className = "cell";
+      const shortDate = slot.date ? slot.date.slice(5).replace("-", "/") : "";
+      td.dataset.label = slot.dayIndex != null ? `${slot.dayIndex}일 ${shortDate}` : shortDate;
       if (slot.isProgramOff) {
         td.classList.add("cell-off");
         td.textContent = "—";
