@@ -15,7 +15,6 @@
   const LOW_ATTENDANCE_DAYS = 4;
   /** 완주 입력 하한. 2:00:00은 아직 확정 기록이 아니다. */
   const PLACEHOLDER_NET_SEC = 7200;
-  const PENDING_RESULT_NOTE = "인천 마라톤 후 집계 예정";
 
   /** 제공 CSV buyer는 "*Josh조상현*"이다. 별표는 이 이름만 앞뒤를 감싸서, 카드에는 빼 둔다. */
   const COFFEE_AWARD = {
@@ -151,19 +150,6 @@
     };
   }
 
-  function pendingResults(members) {
-    return (members || [])
-      .filter(isPlaceholderFinish)
-      .sort(byName)
-      .map((member) => {
-        const nickname = member.nickname || "이름 없음";
-        return {
-          nickname,
-          label: `${nickname}: ${PENDING_RESULT_NOTE}`,
-        };
-      });
-  }
-
   function coffeeAward() {
     return {
       kind: "coffee",
@@ -278,7 +264,6 @@
       improvement: improvementAward(members),
       coffee: coffeeAward(),
       thanks: thanksAward(),
-      pending: pendingResults(members),
       activity: activitySummary(members, weeklyTarget || WEEKLY_TARGET_POINTS),
     };
   }
@@ -331,7 +316,6 @@
       `${member.nickname} · ${model.attendance.value}일`);
     const improveNames = model.improvement.winners.map((member) =>
       `${member.nickname} · ${formatClock(member.pbBeforeSec)} → ${formatClock(member.pbAfterSec)} (${formatImprovement(member.improvementSeconds)} 단축)`);
-    const pending = model.pending || [];
     return `<div class="finale-awards">
       <section class="finale-section">
         <div class="finale-grid">
@@ -339,17 +323,12 @@
           ${awardCard(model.goal, nameList(goalNames.map((nickname) => ({ nickname }))))}
           ${awardCard(model.coffee, `<p class="finale-winner">${escapeHtml(model.coffee.winners[0].nickname)}</p><p class="finale-meta">커피를 산 날 ${model.coffee.days}일</p>`)}
           ${awardCard(model.improvement, nameList(improveNames.map((nickname) => ({ nickname }))))}
-          ${pending.length ? awardCard({
-            title: "집계 대기",
-            criterion: "",
-            winners: pending,
-          }, `<p class="finale-meta">${pending.length}명</p>`) : ""}
         </div>
       </section>
       <section class="finale-section">
         <h2>시즌3 활동 결산</h2>
         <div class="finale-stats">
-          <div class="finale-stat"><b>${activity.participantCount}</b><span>프로필을 만든 참가자</span></div>
+          <div class="finale-stat"><b>${activity.participantCount}</b><span><span class="stat-line">프로필을 만든 </span><span class="stat-line">참가자</span></span></div>
           <div class="finale-stat"><b>${activity.averageAttendRate}%</b><span>평균 출석률</span></div>
           <div class="finale-stat"><b>${activity.noPenalty.length}</b><span>매주 ${activity.weeklyTargetPoints}점 달성</span></div>
         </div>
@@ -383,7 +362,6 @@
     improvementAward,
     coffeeAward,
     thanksAward,
-    pendingResults,
     activitySummary,
     previewModel,
     modelFromMembers,
