@@ -25,7 +25,7 @@ const {
   deriveSeasonWeek,
   BETA_WEEK,
   normalizePhotoUrls,
-  S3_TRAINING_WEEK_START_DATE,
+  S3_SEASON_CLOSE_WEEK_START_DATE,
 } = require("./chunbaek-stats");
 const {
   previewExceptionApplication,
@@ -1187,7 +1187,7 @@ async function loadAwardsReview(db) {
       attendanceMap,
       config,
       today,
-      weekScoreProgramStart: S3_TRAINING_WEEK_START_DATE,
+      omitWeeksEndingBefore: S3_SEASON_CLOSE_WEEK_START_DATE,
     });
     programStartDate = stats.programStartDate;
     attendanceEndDate = stats.attendanceEndDate;
@@ -1232,7 +1232,7 @@ async function handleAdminFinale(req, res, db) {
   const [summary, review] = await Promise.all([
     buildTeamSummary(db, {
       includePhotos: false,
-      weekScoreProgramStart: S3_TRAINING_WEEK_START_DATE,
+      omitWeeksEndingBefore: S3_SEASON_CLOSE_WEEK_START_DATE,
     }),
     loadAwardsReview(db),
   ]);
