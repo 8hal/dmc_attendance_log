@@ -32,6 +32,7 @@ const {
   buildSlotExceptionPatch,
   trainingSlotsInDateRange,
 } = require("./chunbaek-exception-requests");
+const { buildCoffeeReview, loadCoffeeRecords } = require("./chunbaek-coffee-review");
 
 const MS_PER_DAY = 86400000;
 const TITLE_MAX = 80;
@@ -1211,6 +1212,7 @@ async function loadAwardsReview(db) {
     attendanceEndDate,
     weeklyTarget: config?.weeklyTarget ?? 3,
     members,
+    coffee: buildCoffeeReview(loadCoffeeRecords()),
   };
 }
 

@@ -621,6 +621,20 @@ function paintAwardsReview(payload) {
       review.filterGoals(matchName(members, goalQuery), goalFilter ? goalFilter.value : "all"),
     );
   }
+  const coffeeNote = document.getElementById("coffee-window");
+  const coffeeWarning = document.getElementById("coffee-warning");
+  const coffeeDayTable = document.getElementById("coffee-day-table");
+  const coffeeMemberTable = document.getElementById("coffee-member-table");
+  const coffee = payload && payload.coffee;
+  if (coffeeNote) coffeeNote.textContent = review.coffeeNoteText(coffee);
+  if (coffeeWarning) {
+    coffeeWarning.hidden = !(coffee && coffee.warning);
+    coffeeWarning.textContent = coffee && coffee.warning ? coffee.warning : "";
+  }
+  const coffeeQuery = document.getElementById("coffee-search");
+  const filteredCoffee = review.filterCoffee(coffee, coffeeQuery ? coffeeQuery.value : "");
+  if (coffeeDayTable) coffeeDayTable.innerHTML = review.coffeeDailyTableHtml(filteredCoffee.days);
+  if (coffeeMemberTable) coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members);
 }
 
 async function refreshAwards() {
@@ -1093,7 +1107,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btn-save-training").addEventListener("click", saveTraining);
   document.getElementById("btn-roster-refresh").addEventListener("click", refreshRosterDirectory);
-  ["attendance-search", "goal-search", "attendance-filter", "goal-filter"].forEach((id) => {
+  ["attendance-search", "goal-search", "coffee-search", "attendance-filter", "goal-filter"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener("input", () => paintAwardsReview(awardsReviewPayload));

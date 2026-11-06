@@ -377,6 +377,7 @@ a.admin-nav-btn {
 .thanks-admin-title { margin: 22px 0 8px; }
 .review-block { margin-top: 28px; }
 .review-block h3 { margin: 0 0 8px; font-size: 18px; }
+.review-block h4 { margin: 18px 0 8px; font-size: 15px; }
 .review-note, .review-example { margin: 0 0 12px; color: var(--text-secondary, #5c5c5c); font-size: 13px; line-height: 1.5; }
 .review-example { color: #9a3412; font-weight: 700; }
 .review-tools { display: flex; gap: 8px; margin-bottom: 10px; }

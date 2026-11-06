@@ -1,6 +1,6 @@
 /**
- * 운영진 시상 화면 — 시즌 출석 검수와 목표 입력 현황.
- * 앱에 있는 출석 집계와 프로필 필드만 보여 준다.
+ * 운영진 시상 화면 — 시즌 출석 검수, 목표 입력 현황, 커피 집계.
+ * 커피 원문과 입력 기능은 없다. 집계는 서버가 시즌 기간으로 걸러 보낸다.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -224,6 +224,64 @@
       </section>`;
   }
 
+  function coffeeNoteText(coffee) {
+    if (!coffee) return "커피 요약이 없습니다.";
+    if (coffee.example) return "예시 데이터입니다. 실제 회원이 아닙니다.";
+    const warning = coffee.warning ? `${coffee.warning} ` : "";
+    return `${warning}제공 자료의 coffee 날짜는 ${coffee.sourceMinDate}~${coffee.sourceMaxDate}입니다. 표는 공식 시즌3 ${coffee.seasonStart}~${coffee.seasonEnd} coffee ${coffee.seasonCoffeeRows}건입니다. 기간 밖 ${coffee.seasonCoffeeOutsideRows}건은 날짜를 바꾸지 않고 빼 두었습니다. 바나나 ${coffee.bananaRowsExcluded}건은 목록과 집계에서 제외했습니다. 단톡 원문은 포함하지 않습니다.`;
+  }
+
+  function filterCoffee(coffee, query) {
+    const days = (coffee && coffee.days) || [];
+    const members = (coffee && coffee.members) || [];
+    const needle = String(query || "").trim().toLowerCase();
+    if (!needle) return { days, members };
+    const matched = members.filter((member) => String(member.buyer || "").toLowerCase().includes(needle));
+    const names = new Set(matched.map((member) => member.buyer));
+    return {
+      days: days
+        .map((day) => ({
+          date: day.date,
+          buyers: (day.buyers || []).filter((buyer) => names.has(buyer)),
+        }))
+        .filter((day) => day.buyers.length),
+      members: matched,
+    };
+  }
+
+  function coffeeDailyTableHtml(days) {
+    const rows = days || [];
+    if (!rows.length) {
+      return `<p class="review-note">이 조건의 커피 기록이 없습니다.</p>`;
+    }
+    return `<table class="review-table">
+      <thead><tr><th>날짜</th><th>커피를 산 회원</th></tr></thead>
+      <tbody>
+        ${rows.map((day) => `<tr>
+          <td>${escapeHtml(day.date)}</td>
+          <td>${escapeHtml((day.buyers || []).join(", "))}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+  }
+
+  function coffeeMemberTableHtml(members) {
+    const rows = members || [];
+    if (!rows.length) {
+      return `<p class="review-note">이 조건의 커피 기록이 없습니다.</p>`;
+    }
+    return `<table class="review-table">
+      <thead><tr><th>회원</th><th>커피를 산 날</th><th>날짜</th></tr></thead>
+      <tbody>
+        ${rows.map((member) => `<tr>
+          <td>${escapeHtml(member.buyer)}</td>
+          <td>${escapeHtml(member.dayCount)}</td>
+          <td>${escapeHtml((member.dates || []).join(", "))}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+  }
+
   function exampleAwardsReview() {
     const weekNumbers = [];
     for (let week = 1; week <= 13; week += 1) weekNumbers.push(week);
@@ -264,6 +322,27 @@
       attendanceEndDate: ATTENDANCE_END_DATE,
       weeklyTarget: 3,
       members,
+      coffee: {
+        example: true,
+        seasonStart: PROGRAM_START_DATE,
+        seasonEnd: ATTENDANCE_END_DATE,
+        sourceMinDate: PROGRAM_START_DATE,
+        sourceMaxDate: ATTENDANCE_END_DATE,
+        sourceCoffeeRows: 2,
+        bananaRowsExcluded: 1,
+        seasonCoffeeRows: 2,
+        seasonCoffeeOutsideRows: 0,
+        matchesSeason: true,
+        warning: null,
+        days: [
+          { date: "2026-08-01", buyers: ["예시커피"] },
+          { date: "2026-08-08", buyers: ["예시커피", "예시다른"] },
+        ],
+        members: [
+          { buyer: "예시커피", dayCount: 2, dates: ["2026-08-01", "2026-08-08"] },
+          { buyer: "예시다른", dayCount: 1, dates: ["2026-08-08"] },
+        ],
+      },
     };
   }
 
@@ -283,6 +362,10 @@
     filterGoals,
     attendanceTableHtml,
     goalTableHtml,
+    coffeeNoteText,
+    filterCoffee,
+    coffeeDailyTableHtml,
+    coffeeMemberTableHtml,
     reviewSectionHtml,
     exampleAwardsReview,
   };
