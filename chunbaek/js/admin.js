@@ -339,7 +339,7 @@ function renderGrid() {
   document.getElementById("grid-miss-chip").textContent = `미출석 셀 ${missCount}개`;
   document.getElementById("grid-under-chip").textContent = weekScored
     ? `주 3점 미달 ${data.underTargetCount}명`
-    : "주간 집계 제외";
+    : "0주차 · 주간 집계 제외";
 
   const head = document.getElementById("grid-head-row");
   head.innerHTML = "<th>회원</th>";
@@ -605,7 +605,7 @@ function paintAwardsReview(payload) {
     return list.filter((member) => String(member.nickname || "").toLowerCase().includes(needle));
   };
   if (attendanceTable) {
-    attendanceTable.innerHTML = review.attendanceTableHtml(
+    attendanceTable.innerHTML = review.missRosterHtml(members) + review.attendanceTableHtml(
       review.filterAttendance(matchName(members, attendanceQuery), attendanceFilter ? attendanceFilter.value : "all"),
     );
   }
@@ -732,7 +732,7 @@ async function refreshExceptionRequests(options = {}) {
 }
 
 function weekOptionLabel(w) {
-  return w === 0 ? "0주차 (베타)" : `${w}주차`;
+  return window.ChunbaekAdminCsv.sheetWeekLabel(w, { preview: PREVIEW });
 }
 
 function populateWeekSelects() {
@@ -967,7 +967,7 @@ async function init() {
 
 async function saveTraining() {
   if (PREVIEW) {
-    showToast(`${currentWeek}주차 훈련 저장됨 (목업)`);
+    showToast(window.ChunbaekAdminCsv.trainingSavedMessage(currentWeek, { preview: true, mock: true }));
     return;
   }
   if (isProcessing) return;
@@ -990,7 +990,7 @@ async function saveTraining() {
       });
     });
     const result = await adminPost("admin-save-week-slots", { week: currentWeek, rows });
-    showToast(`${currentWeek}주차 훈련 ${result.saved}건 저장됨`);
+    showToast(window.ChunbaekAdminCsv.trainingSavedMessage(currentWeek, { saved: result.saved }));
     if (result.warnings?.length) showToast(result.warnings[0], true);
     await refreshTraining();
   } catch (err) {

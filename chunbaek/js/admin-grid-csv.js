@@ -30,9 +30,43 @@
     return !(start >= "2026-07-20" && end < "2026-07-27");
   }
 
+  function sheetWeekLabel(week, options = {}) {
+    const n = Number(week);
+    if (!Number.isFinite(n)) return "";
+    if (n === 0) return "0주차 (베타)";
+    if (options.preview) return `${n}주차`;
+    if (n === 1) return "0주차";
+    if (n >= 2) return `${n - 1}주차`;
+    return `${n}주차`;
+  }
+
+  function trainingSavedMessage(week, options = {}) {
+    const label = sheetWeekLabel(week, options);
+    if (options.mock) return `${label} 훈련 저장됨 (목업)`;
+    return `${label} 훈련 ${options.saved}건 저장됨`;
+  }
+
   function weekLabel(week) {
     if (week == null || week === "") return "";
     return `${week}주차`;
+  }
+
+  function displayWeekLabel(week, slots) {
+    const dates = (slots || [])
+      .map((slot) => String(slot && slot.date || "").slice(0, 10))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+      .sort();
+    if (dates.length) {
+      const start = dates[0];
+      const end = dates[dates.length - 1];
+      if (start >= "2026-07-20" && end < "2026-07-27") return "0주차";
+      if (start >= "2026-07-27") {
+        const [y, m, d] = start.split("-").map(Number);
+        const diff = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2026, 6, 27)) / 86400000);
+        if (diff >= 0) return `${Math.floor(diff / 7) + 1}주차`;
+      }
+    }
+    return weekLabel(week);
   }
 
   function attendanceCsvFilename(week) {
@@ -94,7 +128,7 @@
       ...columns.map(slotHeading),
     ];
     const rows = (members || []).map((member) => [
-      weekLabel(week),
+      displayWeekLabel(week, columns),
       range || "",
       member.nickname || "",
       member.id || member.memberId || "",
@@ -118,5 +152,7 @@
     attendanceCsvFilename,
     cellText,
     gridWeekScored,
+    sheetWeekLabel,
+    trainingSavedMessage,
   };
 });
