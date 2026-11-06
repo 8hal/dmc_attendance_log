@@ -574,12 +574,11 @@ function paintAwardsReview(payload) {
   awardsReviewPayload = payload;
   const example = document.getElementById("review-example");
   if (example) example.hidden = !(payload && payload.example);
-  const start = (payload && payload.programStartDate) || review.PROGRAM_START_DATE;
   const end = (payload && payload.attendanceEndDate) || review.ATTENDANCE_END_DATE;
   const attendanceNote = document.getElementById("attendance-window");
   const goalNote = document.getElementById("goal-window");
   if (attendanceNote) {
-    attendanceNote.textContent = review.seasonCloseWeekNote(start, end);
+    attendanceNote.textContent = review.seasonCloseWeekNote(end);
   }
   if (goalNote) {
     goalNote.textContent = `목표 시간은 풀코스 넷타임 ${review.formatHms(review.GOAL_TIME_MIN_SEC)}~${review.formatHms(review.GOAL_TIME_MAX_SEC)}입니다. PB는 없어도 입력 완료입니다. 목표 거리 항목은 없습니다. 달성 여부는 저장된 goalMet입니다. 완주 넷타임이 목표 이하면 달성, 넘으면 미달입니다. DNF·DNS·대회 취소·결과 없음·목표 없음은 미달이 아니고, 2:00:00은 집계 대기입니다.`;

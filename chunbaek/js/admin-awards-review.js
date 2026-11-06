@@ -76,26 +76,9 @@
     return Number.isInteger(n) ? String(n) : n.toFixed(1);
   }
 
-  const SEASON_CLOSE_WEEK_ONE_START = "2026-07-27";
-
-  function opsWeekNumber(week) {
-    const start = String(week && week.startDate || "");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
-    if (start < SEASON_CLOSE_WEEK_ONE_START) return 0;
-    const [y, m, d] = start.split("-").map(Number);
-    const diff = Math.round(
-      (Date.UTC(y, m - 1, d) - Date.UTC(2026, 6, 27)) / 86400000,
-    );
-    return Math.floor(diff / 7) + 1;
-  }
-
-  function opsWeekLabel(week) {
-    const n = opsWeekNumber(week);
-    return n == null ? "" : `${n}주`;
-  }
-
-  function seasonCloseWeekNote(start, end) {
-    return `출석 일수는 ${start} ~ ${end}입니다. 0주차는 7/20~7/26이고 주간 미달에서 제외합니다. 1주차는 7/27~8/2이며, 그 다음 주는 2주차입니다. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다.`;
+  function seasonCloseWeekNote(end) {
+    const until = end || "2026-10-24";
+    return `주간 출석 집계는 2026-07-27 ~ ${until}입니다. 주차 이름은 훈련표와 같습니다. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다.`;
   }
 
   function weekRangeText(week) {
@@ -111,7 +94,7 @@
 
   function weekDetailText(week) {
     const range = weekRangeText(week);
-    const label = opsWeekLabel(week) || "주차";
+    const label = `${week.week}주`;
     if (!week || !(Number(week.target) > 0)) {
       return `${label}${range} 유효 훈련일 없음`;
     }
@@ -185,10 +168,7 @@
         ${rows.map((member) => {
           const missed = missedWeeks(member);
           const chips = missed.length
-            ? missed.map((week) => {
-              const label = `${opsWeekLabel(week)}${weekRangeText(week)}`.trim() || "주차";
-              return `<button type="button" class="review-chip miss" data-open-week="${week.week}">${escapeHtml(label)}</button>`;
-            }).join("")
+            ? missed.map((week) => `<button type="button" class="review-chip miss" data-open-week="${week.week}">${week.week}주${escapeHtml(weekRangeText(week))}</button>`).join("")
             : `<span class="review-chip ok">전 주차 달성</span>`;
           const details = (member.weeks || []).map((week) => (
             `<li class="${week.met ? "met" : "miss"}">${escapeHtml(weekDetailText(week))}</li>`
@@ -291,7 +271,6 @@
 
   function reviewSectionHtml(payload, attendanceMode, goalMode, query) {
     const members = (payload && payload.members) || [];
-    const start = (payload && payload.programStartDate) || PROGRAM_START_DATE;
     const end = (payload && payload.attendanceEndDate) || ATTENDANCE_END_DATE;
     const example = payload && payload.example
       ? `<p class="review-example">예시 데이터입니다. 실제 회원이 아닙니다.</p>`
@@ -301,7 +280,7 @@
     return `${example}
       <section class="review-block" id="attendance-review">
         <h3>시즌 출석 검수</h3>
-        <p class="review-note">${escapeHtml(seasonCloseWeekNote(start, end))}</p>
+        <p class="review-note">${escapeHtml(seasonCloseWeekNote(end))}</p>
         ${attendanceTableHtml(attendance)}
       </section>
       <section class="review-block" id="goal-review">
@@ -371,10 +350,10 @@
     for (let i = 1; i <= 40; i += 1) {
       const missWeeks = i % 5 === 0 ? [3, 7] : (i % 5 === 1 ? [2] : []);
       const weeks = weekNumbers.map((week) => {
-        const startDate = new Date(Date.UTC(2026, 6, 27) + (week - 1) * 7 * 86400000)
+        const startDate = new Date(Date.UTC(2026, 6, 20) + (week - 1) * 7 * 86400000)
           .toISOString()
           .slice(0, 10);
-        const endDate = new Date(Date.UTC(2026, 6, 27) + ((week - 1) * 7 + 6) * 86400000)
+        const endDate = new Date(Date.UTC(2026, 6, 20) + ((week - 1) * 7 + 6) * 86400000)
           .toISOString()
           .slice(0, 10);
         if (!missWeeks.includes(week)) {
@@ -452,7 +431,6 @@
     isGoalMissing,
     formatHms,
     weekDetailText,
-    opsWeekNumber,
     seasonCloseWeekNote,
     missedWeeks,
     sortAttendanceRows,
