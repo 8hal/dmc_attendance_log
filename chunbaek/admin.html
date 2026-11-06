@@ -10,18 +10,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=20261106d" />
+  <link rel="stylesheet" href="css/admin.css?v=20261106f" />
 </head>
 <body class="admin-body">
   <div class="admin-demo-nav" id="admin-demo-nav" style="display:none">
     <div>화면 전환</div>
     <select id="demo-screen" aria-label="목업 화면">
       <option value="auth">⓪ 비밀번호</option>
-      <option value="grid" selected>① 출석 그리드</option>
+      <option value="grid">① 출석 그리드</option>
       <option value="roster">④ 참가자 명단</option>
       <option value="training">② 훈련 입력</option>
       <option value="exceptions">③ 예외 요청</option>
-      <option value="awards">⑤ 시즌 마감</option>
+      <option value="awards" selected>⑤ 시즌 마감</option>
     </select>
   </div>
 
@@ -47,18 +47,18 @@
     </div>
 
     <div class="admin-mobile-hint" id="admin-mobile-hint">
-      모바일 간이 보기 — 출석 수정·훈련 입력은 <strong>PC 권장</strong>
+      좁은 화면에서는 시즌 마감 표를 회원 카드로 봅니다. 출석과 훈련 입력도 이 화면에서 할 수 있습니다.
     </div>
 
     <div class="admin-layout">
       <nav class="admin-sidebar" aria-label="운영 메뉴">
-        <button type="button" class="admin-nav-btn active" data-panel="grid">출석 그리드</button>
+        <button type="button" class="admin-nav-btn" data-panel="grid">출석 그리드</button>
         <button type="button" class="admin-nav-btn" data-panel="roster">참가자 명단</button>
         <button type="button" class="admin-nav-btn" data-panel="training">훈련 입력</button>
         <button type="button" class="admin-nav-btn" data-panel="exceptions">
           예외 요청 <span class="admin-nav-badge" id="exceptions-pending-badge" hidden></span>
         </button>
-        <button type="button" class="admin-nav-btn" data-panel="awards">시즌 마감</button>
+        <button type="button" class="admin-nav-btn active" data-panel="awards">시즌 마감</button>
         <div class="admin-sidebar-foot">
           URL 비공개<br />
           단톡에 공유하지 마세요
@@ -67,7 +67,7 @@
 
       <main class="admin-main">
         <!-- 출석 그리드 -->
-        <section class="admin-panel active" id="panel-grid">
+        <section class="admin-panel" id="panel-grid">
           <div class="admin-toolbar">
             <div>
               <h2 id="grid-week-title">7주차</h2>
@@ -148,7 +148,7 @@
           <div class="exceptions-list" id="exceptions-list"></div>
         </section>
 
-        <section class="admin-panel" id="panel-awards">
+        <section class="admin-panel active" id="panel-awards">
           <div class="admin-toolbar">
             <div>
               <h2>시즌 마감</h2>
@@ -233,9 +233,9 @@
   <div class="toast" id="toast"></div>
   <script src="js/finale.js?v=20261106j"></script>
   <script src="js/api.js?v=20261106a"></script>
-  <script src="js/admin-grid-csv.js?v=20261106d"></script>
+  <script src="js/admin-grid-csv.js?v=20261106e"></script>
   <script src="js/team-season.js?v=20261106a"></script>
-  <script src="js/admin-awards-review.js?v=20261106j"></script>
-  <script src="js/admin.js?v=20261106k"></script>
+  <script src="js/admin-awards-review.js?v=20261106k"></script>
+  <script src="js/admin.js?v=20261106n"></script>
 </body>
 </html>

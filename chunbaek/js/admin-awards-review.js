@@ -180,8 +180,8 @@
       <thead><tr><th>닉네임</th><th>미달 주</th></tr></thead>
       <tbody>
         ${rows.map((member) => `<tr>
-          <td>${escapeHtml(member.nickname || "이름 없음")}</td>
-          <td>${missedWeeks(member).map((week) => escapeHtml(missWeekText(week))).join(", ")}</td>
+          <td data-label="닉네임">${escapeHtml(member.nickname || "이름 없음")}</td>
+          <td class="col-prose" data-label="미달 주">${missedWeeks(member).map((week) => escapeHtml(missWeekText(week))).join(", ")}</td>
         </tr>`).join("")}
       </tbody>
     </table>`;
@@ -211,15 +211,15 @@
             `<li class="${week.met ? "met" : "miss"}">${escapeHtml(weekDetailText(week))}</li>`
           )).join("");
           return `<tr class="review-row" data-review-toggle="${escapeHtml(member.memberId)}">
-            <td>${escapeHtml(member.nickname || "이름 없음")}</td>
-            <td>${Number(member.seasonAttendCount) || 0}</td>
-            <td>${Number(member.seasonExceptionCount) || 0}</td>
-            <td>${Number(member.seasonAttendRate) || 0}%</td>
-            <td>${Number(member.seasonWeeksMetCount) || 0}/${Number(member.seasonWeeksCount) || 0}</td>
-            <td>${chips}</td>
+            <td data-label="닉네임">${escapeHtml(member.nickname || "이름 없음")}</td>
+            <td data-label="출석 일수">${Number(member.seasonAttendCount) || 0}</td>
+            <td data-label="예외 일수">${Number(member.seasonExceptionCount) || 0}</td>
+            <td data-label="출석률">${Number(member.seasonAttendRate) || 0}%</td>
+            <td data-label="달성 주차">${Number(member.seasonWeeksMetCount) || 0}/${Number(member.seasonWeeksCount) || 0}</td>
+            <td class="col-prose" data-label="미달 주차">${chips}</td>
           </tr>
           <tr class="review-detail" data-review-detail="${escapeHtml(member.memberId)}" hidden>
-            <td colspan="6"><ul class="review-weeks">${details}</ul></td>
+            <td class="review-span col-prose" colspan="6" data-label="주차 상세"><ul class="review-weeks">${details}</ul></td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -291,15 +291,15 @@
           const goal = isValidGoalTime(member.goalMarathonNetTime) ? formatHms(member.goalMarathonNetTime) : "";
           const pb = formatStoredTime(member.existingPbNetTime);
           return `<tr class="${missing ? "goal-missing" : ""}">
-            <td>${escapeHtml(member.nickname || "이름 없음")}</td>
-            <td>${missing ? "미입력" : "입력"}</td>
-            <td>${escapeHtml(raceLabel(member) || "없음")}</td>
-            <td class="col-time">${escapeHtml(goal ? goal : "목표 없음")}</td>
-            <td class="col-time">${escapeHtml(pb ? pb : "PB 없음")}</td>
-            <td class="col-time">${escapeHtml(raceResultLabel(member))}</td>
-            <td>${escapeHtml(goalOutcomeLabel(member))}</td>
-            <td>${escapeHtml(member.resolutionText || "")}</td>
-            <td class="col-note">${escapeHtml(seasonNoteText(member))}</td>
+            <td data-label="닉네임">${escapeHtml(member.nickname || "이름 없음")}</td>
+            <td data-label="입력">${missing ? "미입력" : "입력"}</td>
+            <td data-label="대회">${escapeHtml(raceLabel(member) || "없음")}</td>
+            <td class="col-time" data-label="목표 시간">${escapeHtml(goal ? goal : "목표 없음")}</td>
+            <td class="col-time" data-label="기존 PB">${escapeHtml(pb ? pb : "PB 없음")}</td>
+            <td class="col-time" data-label="대회 결과">${escapeHtml(raceResultLabel(member))}</td>
+            <td data-label="달성 여부">${escapeHtml(goalOutcomeLabel(member))}</td>
+            <td class="col-prose" data-label="다짐">${escapeHtml(member.resolutionText || "")}</td>
+            <td class="col-note col-prose" data-label="대회 소감">${escapeHtml(seasonNoteText(member))}</td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -361,9 +361,9 @@
       <thead><tr><th>회원</th><th>커피를 산 날</th><th>날짜</th></tr></thead>
       <tbody>
         ${rows.map((member) => `<tr>
-          <td>${escapeHtml(member.buyer)}</td>
-          <td>${escapeHtml(member.dayCount)}</td>
-          <td>${escapeHtml((member.dates || []).join(", "))}</td>
+          <td data-label="회원">${escapeHtml(member.buyer)}</td>
+          <td data-label="커피를 산 날">${escapeHtml(member.dayCount)}</td>
+          <td class="col-prose" data-label="날짜">${escapeHtml((member.dates || []).join(", "))}</td>
         </tr>`).join("")}
       </tbody>
     </table>`;
@@ -417,7 +417,9 @@
         goalRaceNote: null,
         goalRaceDate: null,
         existingPbNetTime: !missing && i % 4 === 0 ? null : (missing ? null : 12000),
-        resolutionText: missing ? null : "예시 다짐",
+        resolutionText: missing ? null : (i === 8
+          ? "예시 다짐입니다. 위험한 나 일기를 전 시기 전에는 작은 상자에 몇 개 유품과 유서를 담곤 했다. 오래전을 답습하는 것이긴 해도 나는 얼마 전에 11월의 관을 짜 놓았다. 내일을 생각하면 오늘 나를 내던지기가 어렵다."
+          : "예시 다짐"),
         seasonAttendCount: 40 - missWeeks.length * 2,
         seasonExceptionCount: missWeeks.length,
         seasonAttendRate: 80,

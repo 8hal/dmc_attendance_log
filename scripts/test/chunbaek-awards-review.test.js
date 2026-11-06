@@ -173,14 +173,43 @@ test("목표 시간, 기존 PB, 대회 결과는 서로 다른 칸에 있다", (
   assert.equal(goalOutcomeLabel(rows[6]), "집계 대기");
   const html = goalTableHtml(rows);
   const achieved = html.split("<tr").find((row) => row.includes("예시달성"));
-  assert.match(achieved, /<td class="col-time">3:00:00<\/td>/);
-  assert.match(achieved, /<td class="col-time">3:20:00<\/td>/);
-  assert.match(achieved, /<td class="col-time">완주 2:58:20<\/td>/);
+  assert.match(achieved, /data-label="목표 시간">3:00:00</);
+  assert.match(achieved, /data-label="기존 PB">3:20:00</);
+  assert.match(achieved, /data-label="대회 결과">완주 2:58:20</);
   assert.equal(achieved.includes("3:00:00 3:20:00"), false);
   const missing = html.split("<tr").find((row) => row.includes("예시없음"));
   assert.match(missing, /목표 없음/);
   assert.match(missing, /PB 없음/);
   assert.match(missing, /아직 없음/);
+});
+
+test("좁은 화면 카드는 긴 다짐과 소감을 라벨과 전체 폭 칸에 둔다", () => {
+  const sample = exampleAwardsReview();
+  const longMember = sample.members.find((member) => member.memberId === "example-8");
+  assert.match(longMember.resolutionText, /예시 다짐입니다/);
+  const html = goalTableHtml([longMember]);
+  assert.match(html, /data-label="다짐"/);
+  assert.match(html, /data-label="대회 소감"/);
+  assert.match(html, /data-label="대회 결과"/);
+  assert.match(html, /예시 다짐입니다\. 위험한 나 일기/);
+  const roster = require("../../chunbaek/js/admin-awards-review").missRosterHtml([{
+    memberId: "m1",
+    nickname: "예시미달",
+    weeks: [{ week: 2, startDate: "2026-07-27", endDate: "2026-08-02", target: 3, weekScore: 1, met: false, attendCount: 1, exceptionCount: 0 }],
+  }]);
+  assert.match(roster, /data-label="미달 주"/);
+  const css = fs.readFileSync(path.join(__dirname, "../../chunbaek/css/admin.css"), "utf8");
+  const mobile = css.slice(css.indexOf("@media (max-width: 768px)"));
+  assert.match(mobile, /\.review-table td::before/);
+  assert.match(mobile, /word-break:\s*keep-all/);
+  assert.match(mobile, /attr\(data-label\)/);
+  assert.match(mobile, /\.admin-grid td\.cell::before/);
+  const cardRule = mobile.indexOf(".review-table tr {");
+  const missingRule = mobile.indexOf(".review-table tr.goal-missing");
+  assert.ok(cardRule >= 0 && missingRule > cardRule);
+  assert.match(mobile.slice(missingRule, missingRule + 80), /#fff7ed/);
+  const hint = fs.readFileSync(path.join(__dirname, "../../chunbaek/admin.html"), "utf8");
+  assert.equal(hint.includes("PC 권장"), false);
 });
 
 test("예시 주간 집계는 7/27~10/24의 훈련표 2~14주만 보여 준다", () => {
@@ -232,10 +261,11 @@ test("대회 소감은 seasonResult.note만 다짐 옆에 보여 준다", () => 
   const noted = html.split("<tr").find((row) => row.includes("예시소감"));
   assert.ok(noted.indexOf("예시 다짐") < noted.indexOf("&lt;script&gt;alert(1)&lt;/script&gt;"));
   assert.equal(noted.includes("<script>"), false);
-  assert.match(noted, /<td class="col-time">3:20:00<\/td>/);
+  assert.match(noted, /data-label="기존 PB">3:20:00</);
   const empty = html.split("<tr").find((row) => row.includes("예시빈소감"));
   assert.match(empty, /다짐만/);
-  assert.match(empty, /<td class="col-note">없음<\/td>/);
+  assert.match(empty, /<td class="col-note col-prose" data-label="대회 소감">없음<\/td>/);
+  assert.match(empty, /data-label="다짐"/);
   assert.match(empty, /PB 없음/);
 });
 

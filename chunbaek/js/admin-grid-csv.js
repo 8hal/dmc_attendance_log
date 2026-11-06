@@ -30,6 +30,16 @@
     return !(start >= "2026-07-20" && end < "2026-07-27");
   }
 
+  const ADMIN_PANELS = ["grid", "roster", "training", "exceptions", "awards"];
+
+  function initialAdminPanel(loc = {}) {
+    const params = new URLSearchParams(String(loc.search || "").replace(/^\?/, ""));
+    const queryPanel = params.get("panel");
+    const hash = String(loc.hash || "").replace(/^#/, "").split("&")[0].split("?")[0];
+    const requested = [queryPanel, hash].find((name) => ADMIN_PANELS.includes(name));
+    return requested || "awards";
+  }
+
   function sheetWeekLabel(week, options = {}) {
     const n = Number(week);
     if (!Number.isFinite(n)) return "";
@@ -154,5 +164,6 @@
     gridWeekScored,
     sheetWeekLabel,
     trainingSavedMessage,
+    initialAdminPanel,
   };
 });
