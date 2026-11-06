@@ -30,6 +30,22 @@
     return !(start >= "2026-07-20" && end < "2026-07-27");
   }
 
+  function sheetWeekLabel(week, options = {}) {
+    const n = Number(week);
+    if (!Number.isFinite(n)) return "";
+    if (n === 0) return "0주차 (베타)";
+    if (options.preview) return `${n}주차`;
+    if (n === 1) return "0주차";
+    if (n >= 2) return `${n - 1}주차`;
+    return `${n}주차`;
+  }
+
+  function trainingSavedMessage(week, options = {}) {
+    const label = sheetWeekLabel(week, options);
+    if (options.mock) return `${label} 훈련 저장됨 (목업)`;
+    return `${label} 훈련 ${options.saved}건 저장됨`;
+  }
+
   function weekLabel(week) {
     if (week == null || week === "") return "";
     return `${week}주차`;
@@ -136,5 +152,7 @@
     attendanceCsvFilename,
     cellText,
     gridWeekScored,
+    sheetWeekLabel,
+    trainingSavedMessage,
   };
 });

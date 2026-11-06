@@ -732,11 +732,7 @@ async function refreshExceptionRequests(options = {}) {
 }
 
 function weekOptionLabel(w) {
-  if (w === 0) return "0주차 (베타)";
-  if (PREVIEW) return `${w}주차`;
-  if (w === 1) return "0주차";
-  if (w >= 2) return `${w - 1}주차`;
-  return `${w}주차`;
+  return window.ChunbaekAdminCsv.sheetWeekLabel(w, { preview: PREVIEW });
 }
 
 function populateWeekSelects() {
@@ -971,7 +967,7 @@ async function init() {
 
 async function saveTraining() {
   if (PREVIEW) {
-    showToast(`${currentWeek}주차 훈련 저장됨 (목업)`);
+    showToast(window.ChunbaekAdminCsv.trainingSavedMessage(currentWeek, { preview: true, mock: true }));
     return;
   }
   if (isProcessing) return;
@@ -994,7 +990,7 @@ async function saveTraining() {
       });
     });
     const result = await adminPost("admin-save-week-slots", { week: currentWeek, rows });
-    showToast(`${currentWeek}주차 훈련 ${result.saved}건 저장됨`);
+    showToast(window.ChunbaekAdminCsv.trainingSavedMessage(currentWeek, { saved: result.saved }));
     if (result.warnings?.length) showToast(result.warnings[0], true);
     await refreshTraining();
   } catch (err) {

@@ -4,7 +4,14 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("path");
-const { buildAttendanceCsv, attendanceCsvFilename, gridWeekScored, cellText } = require("../../chunbaek/js/admin-grid-csv.js");
+const {
+  buildAttendanceCsv,
+  attendanceCsvFilename,
+  gridWeekScored,
+  cellText,
+  sheetWeekLabel,
+  trainingSavedMessage,
+} = require("../../chunbaek/js/admin-grid-csv.js");
 const { isSeasonCloseScoredWeek } = require("../../functions/lib/chunbaek-stats");
 
 const week = {
@@ -118,6 +125,17 @@ test("7/27~8/2 그리드는 1주차로 보이고 8~14일 칸은 유지한다", (
   assert.equal(attendanceCsvFilename(2), "chunbaek-s3-week2-attendance.csv");
 });
 
+test("훈련 저장 알림은 화면 주차와 같고 저장 요청 주차 번호는 바꾸지 않는다", () => {
+  assert.equal(sheetWeekLabel(14, { preview: true }), "14주차");
+  assert.equal(trainingSavedMessage(14, { preview: true, mock: true }), "14주차 훈련 저장됨 (목업)");
+  assert.equal(sheetWeekLabel(14), "13주차");
+  assert.equal(trainingSavedMessage(14, { saved: 7 }), "13주차 훈련 7건 저장됨");
+  assert.equal(sheetWeekLabel(2), "1주차");
+  assert.equal(sheetWeekLabel(1), "0주차");
+  assert.equal(sheetWeekLabel(0), "0주차 (베타)");
+  assert.equal(trainingSavedMessage(2, { saved: 7 }), "1주차 훈련 7건 저장됨");
+});
+
 test("출석 결과 CSV 버튼이 현재 그리드 내려받기에 연결된다", () => {
   const root = path.join(__dirname, "../..");
   const html = fs.readFileSync(path.join(root, "chunbaek/admin.html"), "utf8");
@@ -128,6 +146,10 @@ test("출석 결과 CSV 버튼이 현재 그리드 내려받기에 연결된다"
   assert.match(js, /btn-download-attendance-csv/);
   assert.match(js, /buildAttendanceCsv/);
   assert.match(js, /gridWeekScored/);
+  assert.match(js, /trainingSavedMessage\(currentWeek, \{ preview: true, mock: true \}\)/);
+  assert.match(js, /trainingSavedMessage\(currentWeek, \{ saved: result\.saved \}\)/);
+  assert.equal(js.includes("${currentWeek}주차"), false);
+  assert.match(js, /admin-save-week-slots", \{ week: currentWeek, rows \}/);
   assert.match(js, /status === "preseason"\) return "cell-off"/);
   assert.match(js, /viewGrid\(\)/);
 });
