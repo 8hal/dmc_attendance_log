@@ -92,7 +92,10 @@ let exceptionRequestItems = [
 ];
 
 let currentWeek = PREVIEW ? 7 : null;
-let currentPanel = "grid";
+let currentPanel = window.ChunbaekAdminCsv.initialAdminPanel({
+  search: location.search,
+  hash: location.hash,
+});
 let filterUnderTarget = false;
 let modalContext = null;
 let isProcessing = false;
@@ -756,6 +759,8 @@ function populateWeekSelects() {
 
 async function switchPanel(panel) {
   currentPanel = panel;
+  const demo = document.getElementById("demo-screen");
+  if (demo && demo.querySelector(`option[value="${panel}"]`)) demo.value = panel;
   document.querySelectorAll(".admin-nav-btn").forEach((b) => {
     b.classList.toggle("active", b.dataset.panel === panel);
   });

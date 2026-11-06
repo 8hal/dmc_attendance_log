@@ -11,6 +11,7 @@ const {
   cellText,
   sheetWeekLabel,
   trainingSavedMessage,
+  initialAdminPanel,
 } = require("../../chunbaek/js/admin-grid-csv.js");
 const { isSeasonCloseScoredWeek } = require("../../functions/lib/chunbaek-stats");
 
@@ -123,6 +124,26 @@ test("7/27~8/2 그리드는 1주차로 보이고 8~14일 칸은 유지한다", (
   assert.match(body, /14일 2026-08-02/);
   assert.match(body, /^1주차,7\/27 ~ 8\/2,김러너,m1,예,1,0,1,3,미달,출석,미출석/m);
   assert.equal(attendanceCsvFilename(2), "chunbaek-s3-week2-attendance.csv");
+});
+
+test("운영 화면의 처음 탭은 시즌 마감이고 주소의 탭 지정은 유지한다", () => {
+  assert.equal(initialAdminPanel({}), "awards");
+  assert.equal(initialAdminPanel({ search: "?preview=1" }), "awards");
+  assert.equal(initialAdminPanel({ search: "?preview=1&panel=grid" }), "grid");
+  assert.equal(initialAdminPanel({ hash: "#training" }), "training");
+  assert.equal(initialAdminPanel({ hash: "#roster" }), "roster");
+  assert.equal(initialAdminPanel({ hash: "#exceptions" }), "exceptions");
+  assert.equal(initialAdminPanel({ search: "?panel=nope", hash: "#grid" }), "grid");
+  assert.equal(initialAdminPanel({ search: "?panel=awards" }), "awards");
+  const root = path.join(__dirname, "../..");
+  const html = fs.readFileSync(path.join(root, "chunbaek/admin.html"), "utf8");
+  const js = fs.readFileSync(path.join(root, "chunbaek/js/admin.js"), "utf8");
+  assert.match(html, /id="panel-awards" class="admin-panel active"|class="admin-panel active" id="panel-awards"/);
+  assert.equal(/id="panel-grid"[^>]*active|class="admin-panel active" id="panel-grid"/.test(html), false);
+  assert.match(html, /data-panel="awards"[^>]*active|class="admin-nav-btn active" data-panel="awards"/);
+  assert.match(js, /initialAdminPanel\(\{/);
+  assert.match(js, /switchPanel\(btn\.dataset\.panel\)/);
+  assert.match(js, /switchPanel\("grid"\)/);
 });
 
 test("훈련 저장 알림은 화면 주차와 같고 저장 요청 주차 번호는 바꾸지 않는다", () => {
