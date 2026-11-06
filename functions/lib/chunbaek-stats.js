@@ -231,6 +231,8 @@ function effectiveSeasonStart(config, slots = []) {
 
 const S3_PROGRAM_START_DATE = "2026-07-26";
 const S3_ATTENDANCE_END_DATE = "2026-10-24";
+/** 시즌 마감 주간 미달의 첫 월요일. 이 날짜보다 앞에서 끝나는 주(7/20~7/26, 운영 0주차)는 합계에서 뺀다. */
+const S3_SEASON_CLOSE_WEEK_START_DATE = "2026-07-27";
 
 function diffDaysIso(startIso, endIso) {
   const [sy, sm, sd] = String(startIso).split("-").map(Number);
@@ -457,7 +459,25 @@ function computeWeekStats(slots, attendanceMap, week, today, weeklyTargetConfig,
   };
 }
 
-function computeMemberStats({ slots, attendanceMap, config, today, now = Date.now() }) {
+function weekDateSpan(slots, weekNum) {
+  let startDate = "";
+  let endDate = "";
+  for (const slot of slots) {
+    if (slot.week !== weekNum || slot.isProgramOff || !slot.date) continue;
+    if (!startDate || slot.date < startDate) startDate = slot.date;
+    if (!endDate || slot.date > endDate) endDate = slot.date;
+  }
+  return { startDate, endDate };
+}
+
+function computeMemberStats({
+  slots,
+  attendanceMap,
+  config,
+  today,
+  now = Date.now(),
+  omitWeeksEndingBefore,
+} = {}) {
   const todayDate = today || todayKstDate(now);
   const weeklyTargetConfig = config?.weeklyTarget ?? 3;
   const normalized = slotsWithDerivedSchedule(slots, config);
@@ -496,7 +516,9 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
     weekMap.get(slot.week).push(slot);
   }
   const activeWeekNums = [...weekMap.keys()].sort((a, b) => a - b);
-  const seasonWeekSummaries = activeWeekNums.map((weekNum) => {
+  const seasonWeekSummaries = activeWeekNums.flatMap((weekNum) => {
+    const span = weekDateSpan(normalized, weekNum);
+    if (omitWeeksEndingBefore && span.endDate && span.endDate < omitWeeksEndingBefore) return [];
     const ws = computeWeekStatsFull(
       normalized,
       attendanceMap,
@@ -507,14 +529,16 @@ function computeMemberStats({ slots, attendanceMap, config, today, now = Date.no
       S3_PROGRAM_START_DATE,
     );
     const met = ws.target > 0 && ws.weekScore >= ws.target;
-    return {
+    return [{
       week: weekNum,
+      startDate: span.startDate || null,
+      endDate: span.endDate || null,
       attendCount: ws.attendCount,
       exceptionCount: ws.exceptionCount,
       weekScore: ws.weekScore,
       target: ws.target,
       met,
-    };
+    }];
   });
   const seasonWeeksCount = seasonWeekSummaries.length;
   const seasonWeeksMetCount = seasonWeekSummaries.filter((w) => w.met).length;
@@ -886,6 +910,7 @@ module.exports = {
   deriveSeasonWeek,
   S3_PROGRAM_START_DATE,
   S3_ATTENDANCE_END_DATE,
+  S3_SEASON_CLOSE_WEEK_START_DATE,
   programDayIndex,
   slotsWithDerivedSchedule,
   canonicalChunbaekPhotoUrl,

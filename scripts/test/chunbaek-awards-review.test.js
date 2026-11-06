@@ -401,6 +401,7 @@ test("출석 검수 목록은 computeMemberStats 주차 집계를 다시 계산�
   for (const week of stats.seasonWeekSummaries) {
     assert.match(html, new RegExp(weekDetailText(week).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.equal(html.includes("0주"), false);
+  assert.match(html, /0주/);
   assert.equal(html.includes("20주"), false);
+  assert.match(html, /data-open-week="1"/);
 });

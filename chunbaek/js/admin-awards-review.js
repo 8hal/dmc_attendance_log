@@ -76,12 +76,47 @@
     return Number.isInteger(n) ? String(n) : n.toFixed(1);
   }
 
+  const SEASON_CLOSE_WEEK_ONE_START = "2026-07-27";
+
+  function opsWeekNumber(week) {
+    const start = String(week && week.startDate || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
+    if (start < SEASON_CLOSE_WEEK_ONE_START) return 0;
+    const [y, m, d] = start.split("-").map(Number);
+    const diff = Math.round(
+      (Date.UTC(y, m - 1, d) - Date.UTC(2026, 6, 27)) / 86400000,
+    );
+    return Math.floor(diff / 7) + 1;
+  }
+
+  function opsWeekLabel(week) {
+    const n = opsWeekNumber(week);
+    return n == null ? "" : `${n}주`;
+  }
+
+  function seasonCloseWeekNote(start, end) {
+    return `출석 일수는 ${start} ~ ${end}입니다. 0주차는 7/20~7/26이고 주간 미달에서 제외합니다. 1주차는 7/27~8/2이며, 그 다음 주는 2주차입니다. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다.`;
+  }
+
+  function weekRangeText(week) {
+    const short = (iso) => {
+      const text = String(iso || "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return "";
+      return `${Number(text.slice(5, 7))}/${Number(text.slice(8, 10))}`;
+    };
+    const start = short(week && week.startDate);
+    const end = short(week && week.endDate);
+    return start && end ? ` ${start}~${end}` : "";
+  }
+
   function weekDetailText(week) {
+    const range = weekRangeText(week);
+    const label = opsWeekLabel(week) || "주차";
     if (!week || !(Number(week.target) > 0)) {
-      return `${week.week}주 유효 훈련일 없음`;
+      return `${label}${range} 유효 훈련일 없음`;
     }
     const score = Number(week.weekScore).toFixed(1);
-    const head = `${week.week}주 ${score}/${targetText(week.target)}점`;
+    const head = `${label}${range} ${score}/${targetText(week.target)}점`;
     if (week.met) return `${head} 달성`;
     return `${head} 미달 · 출석 ${week.attendCount}일 · 예외 ${week.exceptionCount}일`;
   }
@@ -150,7 +185,10 @@
         ${rows.map((member) => {
           const missed = missedWeeks(member);
           const chips = missed.length
-            ? missed.map((week) => `<button type="button" class="review-chip miss" data-open-week="${week.week}">${week.week}주</button>`).join("")
+            ? missed.map((week) => {
+              const label = `${opsWeekLabel(week)}${weekRangeText(week)}`.trim() || "주차";
+              return `<button type="button" class="review-chip miss" data-open-week="${week.week}">${escapeHtml(label)}</button>`;
+            }).join("")
             : `<span class="review-chip ok">전 주차 달성</span>`;
           const details = (member.weeks || []).map((week) => (
             `<li class="${week.met ? "met" : "miss"}">${escapeHtml(weekDetailText(week))}</li>`
@@ -263,7 +301,7 @@
     return `${example}
       <section class="review-block" id="attendance-review">
         <h3>시즌 출석 검수</h3>
-        <p class="review-note">공식 출석 ${escapeHtml(start)} ~ ${escapeHtml(end)}. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다. 베타 주, 휴무, 이 기간 밖은 유효 주차에 넣지 않습니다.</p>
+        <p class="review-note">${escapeHtml(seasonCloseWeekNote(start, end))}</p>
         ${attendanceTableHtml(attendance)}
       </section>
       <section class="review-block" id="goal-review">
@@ -333,13 +371,26 @@
     for (let i = 1; i <= 40; i += 1) {
       const missWeeks = i % 5 === 0 ? [3, 7] : (i % 5 === 1 ? [2] : []);
       const weeks = weekNumbers.map((week) => {
+        const startDate = new Date(Date.UTC(2026, 6, 27) + (week - 1) * 7 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        const endDate = new Date(Date.UTC(2026, 6, 27) + ((week - 1) * 7 + 6) * 86400000)
+          .toISOString()
+          .slice(0, 10);
         if (!missWeeks.includes(week)) {
-          return { week, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true };
+          return { week, startDate, endDate, attendCount: 3, exceptionCount: 0, weekScore: 3, target: 3, met: true };
         }
-        return { week, attendCount: 1, exceptionCount: 1, weekScore: 1.5, target: 3, met: false };
+        return { week, startDate, endDate, attendCount: 1, exceptionCount: 1, weekScore: 1.5, target: 3, met: false };
       });
       if (i === 8) {
-        weeks[0] = { week: 1, attendCount: 2, exceptionCount: 0, weekScore: 2, target: 2, met: true };
+        weeks[0] = {
+          ...weeks[0],
+          attendCount: 2,
+          exceptionCount: 0,
+          weekScore: 2,
+          target: 2,
+          met: true,
+        };
       }
       const missing = i <= 6;
       const goalSec = missing ? null : 10800 + i * 60;
@@ -401,6 +452,8 @@
     isGoalMissing,
     formatHms,
     weekDetailText,
+    opsWeekNumber,
+    seasonCloseWeekNote,
     missedWeeks,
     sortAttendanceRows,
     sortGoalRows,
