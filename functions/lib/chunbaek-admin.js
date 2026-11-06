@@ -1169,6 +1169,7 @@ async function handleAdminRequest(req, res, db, action) {
 }
 
 async function loadAwardsReview(db) {
+  const { serializeSeasonResult } = require("./chunbaek-handlers");
   const [config, slots, participants] = await Promise.all([
     loadSeasonConfig(db),
     loadAllSlots(db),
@@ -1199,6 +1200,7 @@ async function loadAwardsReview(db) {
       goalRaceDate: s3.goalRace === "other" ? (s3.goalRaceDate || null) : null,
       existingPbNetTime: s3.existingPbNetTime ?? null,
       resolutionText: s3.resolutionText ?? null,
+      seasonResult: serializeSeasonResult(s3.seasonResult, s3),
       seasonAttendCount: stats.seasonAttendCount,
       seasonExceptionCount: stats.seasonExceptionCount,
       seasonAttendRate: stats.seasonAttendRate,

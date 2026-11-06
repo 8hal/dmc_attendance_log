@@ -597,7 +597,7 @@ function paintAwardsReview(payload) {
     attendanceNote.textContent = `공식 출석 ${start} ~ ${end}. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다. 베타 주, 휴무, 이 기간 밖은 유효 주차에 넣지 않습니다.`;
   }
   if (goalNote) {
-    goalNote.textContent = `목표 시간은 풀코스 넷타임 ${review.formatHms(review.GOAL_TIME_MIN_SEC)}~${review.formatHms(review.GOAL_TIME_MAX_SEC)}입니다. PB는 없어도 입력 완료입니다. 목표 거리 항목은 없습니다.`;
+    goalNote.textContent = `목표 시간은 풀코스 넷타임 ${review.formatHms(review.GOAL_TIME_MIN_SEC)}~${review.formatHms(review.GOAL_TIME_MAX_SEC)}입니다. PB는 없어도 입력 완료입니다. 목표 거리 항목은 없습니다. 달성 여부는 저장된 goalMet입니다. 완주 넷타임이 목표 이하면 달성, 넘으면 미달입니다. DNF·DNS·대회 취소·결과 없음·목표 없음은 미달이 아니고, 2:00:00은 집계 대기입니다.`;
   }
   const members = (payload && payload.members) || [];
   const attendanceQuery = document.getElementById("attendance-search");

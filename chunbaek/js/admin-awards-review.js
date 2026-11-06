@@ -171,6 +171,31 @@
     </table>`;
   }
 
+  function placeholderNetSec() {
+    if (typeof module === "object" && module.exports) {
+      return require("./finale").PLACEHOLDER_NET_SEC;
+    }
+    return window.ChunbaekFinale.PLACEHOLDER_NET_SEC;
+  }
+
+  function seasonStatusLabel(status) {
+    const lib = typeof module === "object" && module.exports
+      ? require("./team-season")
+      : window.ChunbaekTeamSeason;
+    return lib && lib.seasonResultStatusLabel(status) || "";
+  }
+
+  function goalOutcomeLabel(member) {
+    if (!isValidGoalTime(member && member.goalMarathonNetTime)) return "목표 없음";
+    const sr = member && member.seasonResult;
+    if (!sr || !sr.status) return "아직 없음";
+    const net = Number(sr.netTimeSec);
+    if (sr.status === "finisher" && net === placeholderNetSec()) return "집계 대기";
+    if (sr.status === "finisher" && sr.goalMet === true) return "달성";
+    if (sr.status === "finisher" && sr.goalMet === false && Number.isFinite(net)) return "미달";
+    return seasonStatusLabel(sr.status) || "아직 없음";
+  }
+
   function goalTableHtml(members) {
     const rows = sortGoalRows(members);
     if (!rows.length) return `<p class="review-empty">해당하는 회원이 없습니다.</p>`;
@@ -181,6 +206,7 @@
           <th>입력</th>
           <th>대회</th>
           <th>목표 시간</th>
+          <th>달성 여부</th>
           <th>PB</th>
           <th>다짐</th>
         </tr>
@@ -194,6 +220,7 @@
             <td>${missing ? "미입력" : "입력"}</td>
             <td>${escapeHtml(raceLabel(member) || "없음")}</td>
             <td>${escapeHtml(isValidGoalTime(member.goalMarathonNetTime) ? formatHms(member.goalMarathonNetTime) : "없음")}</td>
+            <td>${escapeHtml(goalOutcomeLabel(member))}</td>
             <td>${pb ? escapeHtml(pb) : "없음"}</td>
             <td>${escapeHtml(member.resolutionText || "")}</td>
           </tr>`;
@@ -282,6 +309,17 @@
     </table>`;
   }
 
+  function exampleSeasonResult(index, goalSec) {
+    if (!goalSec) return null;
+    if (index === 7) return { status: "finisher", netTimeSec: goalSec - 60, goalMet: true };
+    if (index === 8) return { status: "finisher", netTimeSec: goalSec + 60, goalMet: false };
+    if (index === 9) return { status: "dnf", netTimeSec: null, goalMet: false };
+    if (index === 10) return { status: "dns", netTimeSec: null, goalMet: false };
+    if (index === 11) return { status: "other", netTimeSec: null, goalMet: false };
+    if (index === 13) return { status: "finisher", netTimeSec: 7200, goalMet: true };
+    return null;
+  }
+
   function exampleAwardsReview() {
     const weekNumbers = [];
     for (let week = 1; week <= 13; week += 1) weekNumbers.push(week);
@@ -298,11 +336,13 @@
         weeks[0] = { week: 1, attendCount: 2, exceptionCount: 0, weekScore: 2, target: 2, met: true };
       }
       const missing = i <= 6;
+      const goalSec = missing ? null : 10800 + i * 60;
       members.push({
         memberId: `example-${i}`,
         nickname: `예시${String(i).padStart(2, "0")}`,
         profileComplete: !missing,
-        goalMarathonNetTime: missing ? null : 10800 + i * 60,
+        goalMarathonNetTime: goalSec,
+        seasonResult: exampleSeasonResult(i, goalSec),
         goalRace: missing ? null : (i % 3 === 0 ? "jtbc" : "chuncheon"),
         goalRaceNote: null,
         goalRaceDate: null,
@@ -362,6 +402,7 @@
     filterGoals,
     attendanceTableHtml,
     goalTableHtml,
+    goalOutcomeLabel,
     coffeeNoteText,
     filterCoffee,
     coffeeDailyTableHtml,

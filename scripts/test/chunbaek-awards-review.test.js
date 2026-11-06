@@ -19,7 +19,9 @@ const {
   sortAttendanceRows,
   attendanceTableHtml,
   goalTableHtml,
+  goalOutcomeLabel,
 } = require("../../chunbaek/js/admin-awards-review");
+const { serializeSeasonResult } = require("../../functions/lib/chunbaek-handlers");
 
 test("공식 시즌 밖과 베타 주는 유효 주차에 들어가지 않고, 짧은 주는 목표를 3으로 올리지 않는다", () => {
   assert.equal(S3_PROGRAM_START_DATE, "2026-07-26");
@@ -147,4 +149,52 @@ test("출석 검수 표는 미달 주차를 먼저 보여 주고 이유를 펼�
   assert.match(html, /data-open-week="3"/);
   assert.match(html, /1\.5\/3점 미달 · 출석 1일 · 예외 1일/);
   assert.match(html, /data-review-detail="miss"/);
+});
+
+test("목표 달성 여부는 저장된 goalMet와 기존 상태 문구만 보여 준다", () => {
+  const withGoal = (seasonResult) => ({
+    profileComplete: true,
+    goalMarathonNetTime: 10800,
+    goalRace: "chuncheon",
+    seasonResult,
+  });
+  const missed = serializeSeasonResult(
+    { status: "finisher", race: "chuncheon", netTimeSec: 11000 },
+    { goalMarathonNetTime: 10800 },
+  );
+  assert.equal(missed.goalMet, false);
+  assert.equal(goalOutcomeLabel(withGoal(missed)), "미달");
+  assert.equal(goalOutcomeLabel(withGoal({ ...missed, goalMet: true })), "달성");
+
+  const placeholder = serializeSeasonResult(
+    { status: "finisher", race: "jtbc", netTimeSec: 7200 },
+    { goalMarathonNetTime: 10800 },
+  );
+  assert.equal(placeholder.goalMet, true);
+  assert.equal(goalOutcomeLabel(withGoal(placeholder)), "집계 대기");
+
+  assert.equal(goalOutcomeLabel(withGoal(serializeSeasonResult(
+    { status: "dnf", race: "chuncheon" },
+    { goalMarathonNetTime: 10800 },
+  ))), "DNF");
+  assert.equal(goalOutcomeLabel(withGoal(serializeSeasonResult(
+    { status: "dns", race: "chuncheon" },
+    { goalMarathonNetTime: 10800 },
+  ))), "DNS");
+  assert.equal(goalOutcomeLabel(withGoal(serializeSeasonResult(
+    { status: "other", race: "chuncheon" },
+    { goalMarathonNetTime: 10800 },
+  ))), "대회 취소 등");
+  assert.equal(goalOutcomeLabel(withGoal(null)), "아직 없음");
+  assert.equal(goalOutcomeLabel({
+    profileComplete: false,
+    goalMarathonNetTime: null,
+    seasonResult: missed,
+  }), "목표 없음");
+
+  const table = goalTableHtml([withGoal(missed)]);
+  assert.match(table, /달성 여부/);
+  assert.match(table, /미달/);
+  const admin = fs.readFileSync(path.join(__dirname, "../../functions/lib/chunbaek-admin.js"), "utf8");
+  assert.match(admin, /seasonResult: serializeSeasonResult\(s3\.seasonResult, s3\)/);
 });
