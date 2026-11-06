@@ -607,6 +607,30 @@ async function refreshAwards() {
   }
 }
 
+function downloadAttendanceCsv() {
+  const data = viewGrid();
+  if (!data.members || !data.members.length) {
+    showToast("내보낼 출석 결과가 없습니다", true);
+    return;
+  }
+  const csv = window.ChunbaekAdminCsv.buildAttendanceCsv({
+    week: currentWeek,
+    range: data.range,
+    slots: data.slots,
+    members: data.members,
+  });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = window.ChunbaekAdminCsv.attendanceCsvFilename(currentWeek);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast("출석 결과 CSV를 저장했습니다");
+}
+
 function showToast(msg, isError) {
   const el = document.getElementById("toast");
   el.textContent = msg;
@@ -1025,6 +1049,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btn-save-training").addEventListener("click", saveTraining);
   document.getElementById("btn-roster-refresh").addEventListener("click", refreshRosterDirectory);
+  document.getElementById("btn-download-attendance-csv").addEventListener("click", downloadAttendanceCsv);
   document.getElementById("roster-search").addEventListener("input", renderRosterDirectory);
 
   document.querySelectorAll("[data-modal-action]").forEach((btn) => {
