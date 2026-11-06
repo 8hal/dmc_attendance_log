@@ -154,12 +154,16 @@ test("활동 결산은 주 3점 미달 주와 출석 4일 미만을 구분한다
   assert.deepEqual(summary.withPenalty.map((m) => m.nickname), ["가", "나"]);
 });
 
-test("카페인상은 단톡 분석으로 확정한 진달 김진규, 9일이다", () => {
+test("카페인상은 시즌3 coffee 집계의 Josh조상현, 8일이다", () => {
   const award = coffeeAward();
-  assert.equal(award.winners[0].nickname, "진달 김진규");
-  assert.equal(award.days, 9);
-  assert.match(award.criterion, /단톡/);
-  assert.match(award.criterion, /앱/);
+  assert.equal(award.winners[0].nickname, "Josh조상현");
+  assert.equal(award.winners[0].nickname.includes("*"), false);
+  assert.equal(award.days, 8);
+  assert.match(award.criterion, /8일/);
+  assert.match(award.criterion, /2026-07-26/);
+  assert.match(award.criterion, /2026-10-24/);
+  assert.equal(award.criterion.includes("진달"), false);
+  assert.equal(award.criterion.includes("9일"), false);
 });
 
 test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 연결한다", () => {
@@ -176,7 +180,8 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.match(finaleJs, /카페인상/);
   assert.match(finaleJs, /최우수상/);
   assert.match(finaleJs, /운영진만/);
-  assert.match(finaleJs, /진달 김진규/);
+  assert.match(finaleJs, /Josh조상현/);
+  assert.equal(finaleJs.includes("진달 김진규"), false);
   assert.match(index, /party\.html/);
   assert.equal(index.includes("finale.html"), false);
   assert.match(admin, /id="panel-awards"/);

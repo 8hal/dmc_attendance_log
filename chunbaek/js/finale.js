@@ -17,10 +17,10 @@
   const PLACEHOLDER_NET_SEC = 7200;
   const PENDING_RESULT_NOTE = "인천 마라톤 후 집계 예정";
 
-  /** 단톡 분석으로 확정. 앱에는 커피 지출이 없다. */
+  /** 제공 CSV buyer는 "*Josh조상현*"이다. 별표는 이 이름만 앞뒤를 감싸서, 카드에는 빼 둔다. */
   const COFFEE_AWARD = {
-    nickname: "진달 김진규",
-    days: 9,
+    nickname: "Josh조상현",
+    days: 8,
   };
 
   function num(value) {
@@ -170,7 +170,7 @@
       title: "카페인상",
       days: COFFEE_AWARD.days,
       winners: [{ nickname: COFFEE_AWARD.nickname, memberId: "" }],
-      criterion: `시즌3 동안 커피를 산 날이 ${COFFEE_AWARD.days}일로 가장 많습니다. 단톡 분석으로 정했고, 앱에는 커피 지출이 없습니다.`,
+      criterion: `시즌3(2026-07-26~2026-10-24) coffee 집계에서 커피를 산 날이 ${COFFEE_AWARD.days}일로 가장 많습니다.`,
     };
   }
 

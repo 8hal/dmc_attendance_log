@@ -113,11 +113,11 @@ test("제공 CSV에서 만든 자료는 시즌3 coffee 78건이고 원문 필드
   assert.equal(html.includes("잘마셨"), false);
 });
 
-test("카페인상 하드코딩은 이 자료의 시즌 집계로 바꾸지 않는다", () => {
-  assert.equal(COFFEE_AWARD.nickname, "진달 김진규");
-  assert.equal(COFFEE_AWARD.days, 9);
+test("카페인상 이름은 CSV buyer의 별표를 뺀 Josh조상현이고 시즌3 날 수는 8일이다", () => {
   const review = buildCoffeeReview(JSON.parse(fs.readFileSync(DATA_PATH, "utf8")));
-  const jindal = review.members.find((member) => member.buyer === "진달 김진규");
-  assert.equal(jindal.dayCount, 6);
-  assert.notEqual(jindal.dayCount, COFFEE_AWARD.days);
+  assert.equal(review.members[0].buyer, "*Josh조상현*");
+  assert.equal(review.members[0].dayCount, 8);
+  assert.equal(COFFEE_AWARD.nickname, "Josh조상현");
+  assert.equal(COFFEE_AWARD.days, review.members[0].dayCount);
+  assert.equal(COFFEE_AWARD.nickname.includes("*"), false);
 });
