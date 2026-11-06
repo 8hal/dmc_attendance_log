@@ -608,7 +608,6 @@ function paintAwardsReview(payload) {
   }
   const coffeeNote = document.getElementById("coffee-window");
   const coffeeWarning = document.getElementById("coffee-warning");
-  const coffeeDayTable = document.getElementById("coffee-day-table");
   const coffeeMemberTable = document.getElementById("coffee-member-table");
   const coffee = payload && payload.coffee;
   if (coffeeNote) coffeeNote.textContent = review.coffeeNoteText(coffee);
@@ -618,7 +617,6 @@ function paintAwardsReview(payload) {
   }
   const coffeeQuery = document.getElementById("coffee-search");
   const filteredCoffee = review.filterCoffee(coffee, coffeeQuery ? coffeeQuery.value : "");
-  if (coffeeDayTable) coffeeDayTable.innerHTML = review.coffeeDailyTableHtml(filteredCoffee.days);
   if (coffeeMemberTable) coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members);
 }
 

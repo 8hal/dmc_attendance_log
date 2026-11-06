@@ -21,6 +21,8 @@ const {
   goalTableHtml,
   goalOutcomeLabel,
   raceResultLabel,
+  seasonNoteText,
+  exampleAwardsReview,
 } = require("../../chunbaek/js/admin-awards-review");
 const { serializeSeasonResult } = require("../../functions/lib/chunbaek-handlers");
 const { goalAward } = require("../../chunbaek/js/finale");
@@ -179,6 +181,44 @@ test("목표 시간, 기존 PB, 대회 결과는 서로 다른 칸에 있다", (
   assert.match(missing, /목표 없음/);
   assert.match(missing, /PB 없음/);
   assert.match(missing, /아직 없음/);
+});
+
+test("대회 소감은 seasonResult.note만 다짐 옆에 보여 준다", () => {
+  const sample = exampleAwardsReview();
+  const indexed = sample.members.find((member) => member.memberId === "example-7");
+  assert.equal(indexed.resolutionText, "예시 다짐");
+  assert.equal(indexed.seasonResult.note, "예시 소감");
+  assert.equal(seasonNoteText({ seasonResult: null }), "없음");
+  assert.equal(seasonNoteText({ seasonResult: { note: "   " } }), "없음");
+  const html = goalTableHtml([
+    {
+      nickname: "예시소감",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "chuncheon",
+      resolutionText: "예시 다짐",
+      existingPbNetTime: 12000,
+      seasonResult: { status: "finisher", netTimeSec: 10000, goalMet: true, note: "<script>alert(1)</script>" },
+    },
+    {
+      nickname: "예시빈소감",
+      profileComplete: true,
+      goalMarathonNetTime: 10800,
+      goalRace: "chuncheon",
+      resolutionText: "다짐만",
+      existingPbNetTime: null,
+      seasonResult: { status: "dns", note: "" },
+    },
+  ]);
+  assert.match(html, /<th>다짐<\/th>\s*<th class="col-note">대회 소감<\/th>/);
+  const noted = html.split("<tr").find((row) => row.includes("예시소감"));
+  assert.ok(noted.indexOf("예시 다짐") < noted.indexOf("&lt;script&gt;alert(1)&lt;/script&gt;"));
+  assert.equal(noted.includes("<script>"), false);
+  assert.match(noted, /<td class="col-time">3:20:00<\/td>/);
+  const empty = html.split("<tr").find((row) => row.includes("예시빈소감"));
+  assert.match(empty, /다짐만/);
+  assert.match(empty, /<td class="col-note">없음<\/td>/);
+  assert.match(empty, /PB 없음/);
 });
 
 test("목표 미입력은 명단 앞에 오고, 프로필이 없어도 행이 남는다", () => {
