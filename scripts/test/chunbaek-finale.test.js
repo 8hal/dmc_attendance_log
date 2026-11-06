@@ -198,6 +198,21 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.match(awards, /목표 달성상/);
   assert.equal(awards.includes("투표 결과는 아래"), false);
   assert.equal(awards.includes("당신때문에 고마웠다상"), false);
+  assert.match(awards, /집계 대기/);
+  assert.match(awards, /1명/);
+  assert.equal(awards.includes("인천 마라톤 후 집계 예정"), false);
+  assert.equal(awards.includes("디모"), false);
+  assert.equal(awards.includes("기존 PB가 없거나 완주가 2:00:00이면 비교하지 않습니다"), false);
+  assert.equal(awards.includes("저장값 자체는 지우지 않습니다"), false);
+  const placeholder = {
+    nickname: "자리",
+    goalMarathonNetTime: 10800,
+    existingPbNetTime: 12000,
+    seasonResult: { status: "finisher", netTimeSec: 7200 },
+  };
+  assert.equal(goalAward([placeholder]).winners.length, 0);
+  assert.equal(improvementAward([placeholder]).winners.length, 0);
+  assert.equal(pendingResults([placeholder])[0].label, "자리: 인천 마라톤 후 집계 예정");
   assert.equal(admin.includes("finale.html"), false);
   assert.match(party, /당신 때문에 고마웠다/);
   assert.match(party, /thanks-vote-host/);
