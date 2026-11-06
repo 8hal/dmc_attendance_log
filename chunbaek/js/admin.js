@@ -339,7 +339,7 @@ function renderGrid() {
   document.getElementById("grid-miss-chip").textContent = `미출석 셀 ${missCount}개`;
   document.getElementById("grid-under-chip").textContent = weekScored
     ? `주 3점 미달 ${data.underTargetCount}명`
-    : "주간 집계 제외";
+    : "0주차 · 주간 집계 제외";
 
   const head = document.getElementById("grid-head-row");
   head.innerHTML = "<th>회원</th>";
@@ -605,7 +605,7 @@ function paintAwardsReview(payload) {
     return list.filter((member) => String(member.nickname || "").toLowerCase().includes(needle));
   };
   if (attendanceTable) {
-    attendanceTable.innerHTML = review.attendanceTableHtml(
+    attendanceTable.innerHTML = review.missRosterHtml(members) + review.attendanceTableHtml(
       review.filterAttendance(matchName(members, attendanceQuery), attendanceFilter ? attendanceFilter.value : "all"),
     );
   }
@@ -732,7 +732,11 @@ async function refreshExceptionRequests(options = {}) {
 }
 
 function weekOptionLabel(w) {
-  return w === 0 ? "0주차 (베타)" : `${w}주차`;
+  if (w === 0) return "0주차 (베타)";
+  if (PREVIEW) return `${w}주차`;
+  if (w === 1) return "0주차";
+  if (w >= 2) return `${w - 1}주차`;
+  return `${w}주차`;
 }
 
 function populateWeekSelects() {

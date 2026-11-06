@@ -78,7 +78,25 @@
 
   function seasonCloseWeekNote(end) {
     const until = end || "2026-10-24";
-    return `주간 출석 집계는 2026-07-27 ~ ${until}입니다. 주차 이름은 훈련표와 같습니다. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다.`;
+    return `주간 출석 집계는 2026-07-27 ~ ${until}입니다. 7/20~7/26은 0주차라 집계에서 제외하고, 7/27~8/2는 1주차입니다. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다.`;
+  }
+
+  function opsWeekNumber(week) {
+    const start = String(week && week.startDate || "");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(start)) {
+      if (start < "2026-07-27") return 0;
+      const [y, m, d] = start.split("-").map(Number);
+      const diff = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2026, 6, 27)) / 86400000);
+      return Math.floor(diff / 7) + 1;
+    }
+    const stored = Number(week && week.week);
+    if (!Number.isFinite(stored)) return null;
+    return stored <= 0 ? stored : stored - 1;
+  }
+
+  function opsWeekLabel(week) {
+    const n = opsWeekNumber(week);
+    return n == null ? "" : `${n}주`;
   }
 
   function weekRangeText(week) {
@@ -94,7 +112,7 @@
 
   function weekDetailText(week) {
     const range = weekRangeText(week);
-    const label = `${week.week}주`;
+    const label = opsWeekLabel(week) || `${week.week}주`;
     if (!week || !(Number(week.target) > 0)) {
       return `${label}${range} 유효 훈련일 없음`;
     }
@@ -150,6 +168,25 @@
     });
   }
 
+  function missWeekText(week) {
+    return `${opsWeekLabel(week)}${weekRangeText(week)}`.trim();
+  }
+
+  function missRosterHtml(members) {
+    const rows = sortAttendanceRows(members).filter((member) => missedWeeks(member).length);
+    if (!rows.length) return `<p class="review-note" id="miss-roster">주간 미달 인원이 없습니다.</p>`;
+    return `<table class="review-table" id="miss-roster">
+      <caption>주간 미달 ${rows.length}명. 1주차는 7/27~8/2입니다.</caption>
+      <thead><tr><th>닉네임</th><th>미달 주</th></tr></thead>
+      <tbody>
+        ${rows.map((member) => `<tr>
+          <td>${escapeHtml(member.nickname || "이름 없음")}</td>
+          <td>${missedWeeks(member).map((week) => escapeHtml(missWeekText(week))).join(", ")}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+  }
+
   function attendanceTableHtml(members) {
     const rows = sortAttendanceRows(members);
     if (!rows.length) return `<p class="review-empty">해당하는 회원이 없습니다.</p>`;
@@ -168,7 +205,7 @@
         ${rows.map((member) => {
           const missed = missedWeeks(member);
           const chips = missed.length
-            ? missed.map((week) => `<button type="button" class="review-chip miss" data-open-week="${week.week}">${week.week}주${escapeHtml(weekRangeText(week))}</button>`).join("")
+            ? missed.map((week) => `<button type="button" class="review-chip miss" data-open-week="${week.week}">${opsWeekLabel(week)}${escapeHtml(weekRangeText(week))}</button>`).join("")
             : `<span class="review-chip ok">전 주차 달성</span>`;
           const details = (member.weeks || []).map((week) => (
             `<li class="${week.met ? "met" : "miss"}">${escapeHtml(weekDetailText(week))}</li>`
@@ -435,6 +472,8 @@
     filterAttendance,
     filterGoals,
     attendanceTableHtml,
+    missRosterHtml,
+    opsWeekNumber,
     goalTableHtml,
     goalOutcomeLabel,
     raceResultLabel,

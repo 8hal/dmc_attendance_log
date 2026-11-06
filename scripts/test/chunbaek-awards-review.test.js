@@ -195,10 +195,10 @@ test("예시 주간 집계는 7/27~10/24의 훈련표 2~14주만 보여 준다",
   assert.equal(weeks.some((week) => week.startDate < "2026-07-27" || week.endDate > "2026-10-24"), false);
   const html = attendanceTableHtml([sample.members.find((member) => member.memberId === "example-1")]);
   assert.match(html, /data-open-week="2"/);
-  assert.match(html, /2주 7\/27~8\/2/);
-  assert.match(html, /14주 10\/19~10\/24/);
+  assert.match(html, /1주 7\/27~8\/2/);
+  assert.match(html, /13주 10\/19~10\/24/);
   assert.equal(html.includes("7/20"), false);
-  assert.equal(html.includes(">1주"), false);
+  assert.equal(html.includes(">2주 7/27"), false);
 });
 
 test("대회 소감은 seasonResult.note만 다짐 옆에 보여 준다", () => {
@@ -419,8 +419,7 @@ test("출석 검수 목록은 computeMemberStats 주차 집계를 다시 계산�
   for (const week of stats.seasonWeekSummaries) {
     assert.match(html, new RegExp(weekDetailText(week).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.equal(html.includes("0주"), false);
+  assert.match(html, /0주/);
   assert.equal(html.includes("20주"), false);
   assert.match(html, /data-open-week="1"/);
-  assert.match(html, /1주/);
 });

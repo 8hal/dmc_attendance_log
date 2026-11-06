@@ -35,6 +35,24 @@
     return `${week}주차`;
   }
 
+  function displayWeekLabel(week, slots) {
+    const dates = (slots || [])
+      .map((slot) => String(slot && slot.date || "").slice(0, 10))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+      .sort();
+    if (dates.length) {
+      const start = dates[0];
+      const end = dates[dates.length - 1];
+      if (start >= "2026-07-20" && end < "2026-07-27") return "0주차";
+      if (start >= "2026-07-27") {
+        const [y, m, d] = start.split("-").map(Number);
+        const diff = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2026, 6, 27)) / 86400000);
+        if (diff >= 0) return `${Math.floor(diff / 7) + 1}주차`;
+      }
+    }
+    return weekLabel(week);
+  }
+
   function attendanceCsvFilename(week) {
     const n = week == null || week === "" ? "current" : String(week);
     return `chunbaek-s3-week${n}-attendance.csv`;
@@ -94,7 +112,7 @@
       ...columns.map(slotHeading),
     ];
     const rows = (members || []).map((member) => [
-      weekLabel(week),
+      displayWeekLabel(week, columns),
       range || "",
       member.nickname || "",
       member.id || member.memberId || "",

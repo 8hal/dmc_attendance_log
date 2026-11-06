@@ -57,7 +57,7 @@ test("현재 주차 출석 CSV는 회원별 출석·예외·점수와 날짜 칸
   assert.equal(attendanceCsvFilename(0), "chunbaek-s3-week0-attendance.csv");
 });
 
-test("7/20~7/26 그리드는 1주차 이름을 유지하고 주간 미달로 내보내지 않는다", () => {
+test("7/20~7/26 그리드는 0주차로 보이고 주간 미달로 내보내지 않는다", () => {
   const slots = [
     { slotId: 1, dayIndex: 1, date: "2026-07-20" },
     { slotId: 7, dayIndex: 7, date: "2026-07-26" },
@@ -83,12 +83,12 @@ test("7/20~7/26 그리드는 1주차 이름을 유지하고 주간 미달로 내
     }],
   });
   const line = csv.slice(1).trim().split("\r\n")[1];
-  assert.match(line, /^1주차,7\/20 ~ 7\/26,/);
+  assert.match(line, /^0주차,7\/20 ~ 7\/26,/);
   assert.match(line, /,제외,제외,미출석/);
   assert.equal(line.includes("미달"), false);
 });
 
-test("7/27~8/2 그리드는 2주차와 8~14일 칸을 유지한다", () => {
+test("7/27~8/2 그리드는 1주차로 보이고 8~14일 칸은 유지한다", () => {
   const slots = [
     { slotId: 8, dayIndex: 8, date: "2026-07-27" },
     { slotId: 14, dayIndex: 14, date: "2026-08-02" },
@@ -114,7 +114,8 @@ test("7/27~8/2 그리드는 2주차와 8~14일 칸을 유지한다", () => {
   const body = csv.slice(1);
   assert.match(body, /8일 2026-07-27/);
   assert.match(body, /14일 2026-08-02/);
-  assert.match(body, /^2주차,7\/27 ~ 8\/2,김러너,m1,예,1,0,1,3,미달,출석,미출석/m);
+  assert.match(body, /^1주차,7\/27 ~ 8\/2,김러너,m1,예,1,0,1,3,미달,출석,미출석/m);
+  assert.equal(attendanceCsvFilename(2), "chunbaek-s3-week2-attendance.csv");
 });
 
 test("출석 결과 CSV 버튼이 현재 그리드 내려받기에 연결된다", () => {
