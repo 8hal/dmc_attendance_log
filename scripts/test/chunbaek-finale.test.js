@@ -12,7 +12,6 @@ const {
   activitySummary,
   formatImprovement,
   coffeeAward,
-  pendingResults,
   PLACEHOLDER_NET_SEC,
 } = require("../../chunbaek/js/finale.js");
 
@@ -64,9 +63,6 @@ test("2:00:00 자리표시는 수상에서 빠지고, 실제 기록이 오면 �
   };
   assert.deepEqual(goalAward([dimo]).winners, []);
   assert.deepEqual(improvementAward([dimo]).winners, []);
-  assert.deepEqual(pendingResults([dimo]).map((row) => row.label), [
-    "디모: 인천 마라톤 후 집계 예정",
-  ]);
 
   const recorded = {
     ...dimo,
@@ -74,7 +70,6 @@ test("2:00:00 자리표시는 수상에서 빠지고, 실제 기록이 오면 �
   };
   assert.deepEqual(goalAward([recorded]).winners.map((w) => w.nickname), ["디모"]);
   assert.equal(improvementAward([recorded]).winners[0].nickname, "디모");
-  assert.deepEqual(pendingResults([recorded]), []);
 });
 
 test("최다 참여상은 출석 일수가 가장 많은 사람을 모두 보여 준다", () => {
@@ -213,8 +208,17 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
     seasonWeeksMetCount: 0,
   }], 3);
   assert.equal(hiddenLow.belowFourDays[0].nickname, "가");
-  assert.match(awards, /집계 대기/);
-  assert.match(awards, /1명/);
+  assert.equal(awards.includes("집계 대기"), false);
+  assert.equal((awards.match(/class="finale-stat"/g) || []).length, 3);
+  assert.match(awards, /프로필을 만든/);
+  assert.match(awards, /참가자/);
+  assert.match(awards, /평균 출석률/);
+  assert.match(awards, /매주 3점 달성/);
+  const finale = require("../../chunbaek/js/finale.js");
+  assert.equal(finale.pendingResults, undefined);
+  const adminCss = fs.readFileSync(path.join(root, "chunbaek/css/admin.css"), "utf8");
+  assert.match(adminCss, /\.finale-stats\s*\{[^}]*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  assert.equal(adminCss.includes("finale-stats { grid-template-columns: repeat(4, 1fr); }"), false);
   assert.equal(awards.includes("인천 마라톤 후 집계 예정"), false);
   assert.equal(awards.includes("디모"), false);
   assert.equal(awards.includes("기존 PB가 없거나 완주가 2:00:00이면 비교하지 않습니다"), false);
@@ -227,7 +231,6 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   };
   assert.equal(goalAward([placeholder]).winners.length, 0);
   assert.equal(improvementAward([placeholder]).winners.length, 0);
-  assert.equal(pendingResults([placeholder])[0].label, "자리: 인천 마라톤 후 집계 예정");
   assert.equal(admin.includes("finale.html"), false);
   assert.match(party, /당신 때문에 고마웠다/);
   assert.match(party, /thanks-vote-host/);

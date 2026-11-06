@@ -449,15 +449,24 @@ a.admin-nav-btn {
 .finale-winner { font-size: 22px; font-weight: 800; margin: 0; }
 .finale-meta { margin: 4px 0 0; color: #44403c; }
 .finale-names { margin: 8px 0 0; padding-left: 1.1em; }
-.finale-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.finale-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .finale-stat {
   background: #fff;
   border-radius: 14px;
-  padding: 14px;
+  padding: 14px 10px;
   border: 1px solid #e7e5e4;
+  min-width: 0;
 }
-.finale-stat b { display: block; font-size: 28px; }
-.finale-stat span { font-size: 13px; color: #57534e; }
+.finale-stat b { display: block; font-size: 28px; line-height: 1.1; }
+.finale-stat > span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #57534e;
+  word-break: keep-all;
+}
+.finale-stat .stat-line { display: block; min-height: 0; }
 .thanks-admin-title { margin: 22px 0 8px; }
 .close-tabs {
   display: flex;
@@ -530,7 +539,11 @@ a.admin-nav-btn {
 .thanks-reasons { margin: 0; padding-left: 1.1em; }
 @media (min-width: 900px) {
   .finale-grid { grid-template-columns: 1fr 1fr; }
-  .finale-stats { grid-template-columns: repeat(4, 1fr); }
+  .finale-stats { gap: 10px; }
+  .finale-stat { padding: 16px; }
+  .finale-stat b { font-size: 28px; }
+  .finale-stat > span { font-size: 13px; }
+  .finale-stat .stat-line { display: inline; }
 }
 .exceptions-list {
   display: flex;
