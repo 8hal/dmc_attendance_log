@@ -360,8 +360,92 @@ a.admin-nav-btn {
   border-radius: 16px;
   padding: 16px;
 }
+.finale-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .finale-card h3 { margin: 0 0 6px; font-size: 18px; }
-.finale-criterion { margin: 0 0 12px; color: #57534e; font-size: 13px; line-height: 1.5; }
+.finale-info {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid #d6d3d1;
+  border-radius: 999px;
+  background: #fff;
+  color: #44403c;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.finale-info-source { display: none; }
+.finale-info-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 850;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.finale-info-layer[hidden] { display: none; }
+.finale-info-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+.finale-info-card {
+  position: relative;
+  z-index: 1;
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+.finale-info-card h3 { margin: 0 0 8px; font-size: 18px; }
+.finale-info-card p {
+  margin: 0 0 14px;
+  color: #44403c;
+  font-size: 15px;
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.finale-info-close {
+  min-height: 44px;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: #1c1917;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.awards-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 240px;
+  padding: 28px 16px;
+  text-align: center;
+}
+.awards-status[hidden] { display: none; }
+.awards-status p { margin: 0; font-size: 16px; font-weight: 700; }
+.awards-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e7e5e4;
+  border-top-color: var(--chun-orange, #ff3214);
+  border-radius: 50%;
+  animation: awards-spin 0.8s linear infinite;
+}
+.awards-spinner[hidden] { display: none; }
+@keyframes awards-spin { to { transform: rotate(360deg); } }
 .finale-winner { font-size: 22px; font-weight: 800; margin: 0; }
 .finale-meta { margin: 4px 0 0; color: #44403c; }
 .finale-names { margin: 8px 0 0; padding-left: 1.1em; }

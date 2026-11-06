@@ -32,6 +32,47 @@
 
   const ADMIN_PANELS = ["grid", "roster", "training", "exceptions", "awards"];
 
+  function awardsPanelView(phase) {
+    if (phase === "ready") {
+      return {
+        statusHidden: true,
+        readyHidden: false,
+        spinner: false,
+        text: "",
+        retry: false,
+      };
+    }
+    if (phase === "error") {
+      return {
+        statusHidden: false,
+        readyHidden: true,
+        spinner: false,
+        text: "시즌 마감을 불러오지 못했습니다.",
+        retry: true,
+      };
+    }
+    return {
+      statusHidden: false,
+      readyHidden: true,
+      spinner: true,
+      text: "시즌 마감을 불러오는 중입니다",
+      retry: false,
+    };
+  }
+
+  function createAwardsLoadGate() {
+    let latest = 0;
+    return {
+      start() {
+        latest += 1;
+        return latest;
+      },
+      isCurrent(id) {
+        return id === latest;
+      },
+    };
+  }
+
   function initialAdminPanel(loc = {}) {
     const params = new URLSearchParams(String(loc.search || "").replace(/^\?/, ""));
     const queryPanel = params.get("panel");
@@ -165,5 +206,7 @@
     sheetWeekLabel,
     trainingSavedMessage,
     initialAdminPanel,
+    awardsPanelView,
+    createAwardsLoadGate,
   };
 });

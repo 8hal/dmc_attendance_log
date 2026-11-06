@@ -200,6 +200,9 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.equal(awards.includes("당신때문에 고마웠다상"), false);
   assert.equal(awards.includes("출석 4일 미만"), false);
   assert.equal(awards.includes("시즌 출석 4일 미만"), false);
+  assert.match(awards, /class="finale-info"/);
+  assert.match(awards, /class="finale-info-source" hidden/);
+  assert.equal(awards.includes("class=\"finale-criterion\""), false);
   assert.match(awards, /3점 미달/);
   assert.match(awards, /매주 3점을 채운 사람/);
   const hiddenLow = activitySummary([{
