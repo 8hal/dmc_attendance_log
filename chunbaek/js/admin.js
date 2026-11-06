@@ -581,6 +581,62 @@ const PREVIEW_THANKS = {
   ],
 };
 
+let awardsReviewPayload = null;
+
+function paintAwardsReview(payload) {
+  const review = window.ChunbaekAwardsReview;
+  if (!review) return;
+  awardsReviewPayload = payload;
+  const example = document.getElementById("review-example");
+  if (example) example.hidden = !(payload && payload.example);
+  const start = (payload && payload.programStartDate) || review.PROGRAM_START_DATE;
+  const end = (payload && payload.attendanceEndDate) || review.ATTENDANCE_END_DATE;
+  const attendanceNote = document.getElementById("attendance-window");
+  const goalNote = document.getElementById("goal-window");
+  if (attendanceNote) {
+    attendanceNote.textContent = `공식 출석 ${start} ~ ${end}. 출석 1점, 예외 0.5점. 그 주 목표는 3점과 그 주 훈련일 수 중 작은 값입니다. 베타 주, 휴무, 이 기간 밖은 유효 주차에 넣지 않습니다.`;
+  }
+  if (goalNote) {
+    goalNote.textContent = `목표 시간은 풀코스 넷타임 ${review.formatHms(review.GOAL_TIME_MIN_SEC)}~${review.formatHms(review.GOAL_TIME_MAX_SEC)}입니다. PB는 없어도 입력 완료입니다. 목표 거리 항목은 없습니다. 달성 여부는 저장된 goalMet입니다. 완주 넷타임이 목표 이하면 달성, 넘으면 미달입니다. DNF·DNS·대회 취소·결과 없음·목표 없음은 미달이 아니고, 2:00:00은 집계 대기입니다.`;
+  }
+  const members = (payload && payload.members) || [];
+  const attendanceQuery = document.getElementById("attendance-search");
+  const goalQuery = document.getElementById("goal-search");
+  const attendanceFilter = document.getElementById("attendance-filter");
+  const goalFilter = document.getElementById("goal-filter");
+  const attendanceTable = document.getElementById("attendance-review-table");
+  const goalTable = document.getElementById("goal-review-table");
+  const matchName = (list, input) => {
+    const needle = String(input && input.value || "").trim().toLowerCase();
+    if (!needle) return list;
+    return list.filter((member) => String(member.nickname || "").toLowerCase().includes(needle));
+  };
+  if (attendanceTable) {
+    attendanceTable.innerHTML = review.attendanceTableHtml(
+      review.filterAttendance(matchName(members, attendanceQuery), attendanceFilter ? attendanceFilter.value : "all"),
+    );
+  }
+  if (goalTable) {
+    goalTable.innerHTML = review.goalTableHtml(
+      review.filterGoals(matchName(members, goalQuery), goalFilter ? goalFilter.value : "all"),
+    );
+  }
+  const coffeeNote = document.getElementById("coffee-window");
+  const coffeeWarning = document.getElementById("coffee-warning");
+  const coffeeDayTable = document.getElementById("coffee-day-table");
+  const coffeeMemberTable = document.getElementById("coffee-member-table");
+  const coffee = payload && payload.coffee;
+  if (coffeeNote) coffeeNote.textContent = review.coffeeNoteText(coffee);
+  if (coffeeWarning) {
+    coffeeWarning.hidden = !(coffee && coffee.warning);
+    coffeeWarning.textContent = coffee && coffee.warning ? coffee.warning : "";
+  }
+  const coffeeQuery = document.getElementById("coffee-search");
+  const filteredCoffee = review.filterCoffee(coffee, coffeeQuery ? coffeeQuery.value : "");
+  if (coffeeDayTable) coffeeDayTable.innerHTML = review.coffeeDailyTableHtml(filteredCoffee.days);
+  if (coffeeMemberTable) coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members);
+}
+
 async function refreshAwards() {
   const awardsRoot = document.getElementById("awards-root");
   const thanksRoot = document.getElementById("thanks-results");
@@ -588,6 +644,7 @@ async function refreshAwards() {
   if (PREVIEW) {
     awardsRoot.innerHTML = window.ChunbaekFinale.awardsHtml(window.ChunbaekFinale.previewModel());
     thanksRoot.innerHTML = window.ChunbaekThanks.adminResultsHtml(PREVIEW_THANKS);
+    paintAwardsReview(window.ChunbaekAwardsReview && window.ChunbaekAwardsReview.exampleAwardsReview());
     return;
   }
   try {
@@ -600,6 +657,7 @@ async function refreshAwards() {
       window.ChunbaekFinale.modelFromMembers(finale.members || [], target),
     );
     thanksRoot.innerHTML = window.ChunbaekThanks.adminResultsHtml(votes);
+    paintAwardsReview(finale.review);
   } catch (err) {
     console.error(err);
     showToast(err.message || "시상을 불러오지 못했습니다", true);
@@ -1049,6 +1107,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btn-save-training").addEventListener("click", saveTraining);
   document.getElementById("btn-roster-refresh").addEventListener("click", refreshRosterDirectory);
+  ["attendance-search", "goal-search", "coffee-search", "attendance-filter", "goal-filter"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => paintAwardsReview(awardsReviewPayload));
+    el.addEventListener("change", () => paintAwardsReview(awardsReviewPayload));
+  });
+  const reviewRoot = document.getElementById("awards-review");
+  if (reviewRoot) {
+    reviewRoot.addEventListener("click", (event) => {
+      const weekButton = event.target.closest("[data-open-week]");
+      if (weekButton) {
+        event.stopPropagation();
+        currentWeek = Number(weekButton.dataset.openWeek);
+        switchPanel("grid");
+        return;
+      }
+      const row = event.target.closest("[data-review-toggle]");
+      if (!row) return;
+      const detail = reviewRoot.querySelector(`[data-review-detail="${row.dataset.reviewToggle}"]`);
+      if (detail) detail.hidden = !detail.hidden;
+    });
+  }
   document.getElementById("btn-download-attendance-csv").addEventListener("click", downloadAttendanceCsv);
   document.getElementById("roster-search").addEventListener("input", renderRosterDirectory);
 

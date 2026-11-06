@@ -375,6 +375,30 @@ a.admin-nav-btn {
 .finale-stat b { display: block; font-size: 28px; }
 .finale-stat span { font-size: 13px; color: #57534e; }
 .thanks-admin-title { margin: 22px 0 8px; }
+.review-block { margin-top: 28px; }
+.review-block h3 { margin: 0 0 8px; font-size: 18px; }
+.review-block h4 { margin: 18px 0 8px; font-size: 15px; }
+.review-note, .review-example { margin: 0 0 12px; color: var(--text-secondary, #5c5c5c); font-size: 13px; line-height: 1.5; }
+.review-example { color: #9a3412; font-weight: 700; }
+.review-tools { display: flex; gap: 8px; margin-bottom: 10px; }
+.review-tools input, .review-tools select {
+  font: inherit;
+  border: 1px solid var(--border, #e7e5e4);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+.review-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; }
+.review-table th, .review-table td { border-bottom: 1px solid #e7e5e4; padding: 8px 10px; text-align: left; vertical-align: top; }
+.review-table th { font-size: 12px; color: #57534e; background: #faf8f6; position: sticky; top: 0; }
+.review-row { cursor: pointer; }
+.review-chip { display: inline-block; margin: 0 4px 4px 0; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 700; }
+.review-chip.miss { border: 1px solid #fdba74; background: #fff7ed; color: #9a3412; cursor: pointer; }
+.review-chip.ok { background: #d1fae5; color: #047857; }
+.goal-missing { background: #fff7ed; }
+.review-weeks { margin: 0; padding-left: 1.1em; }
+.review-weeks .miss { color: #9a3412; }
+.review-empty { margin: 0; color: #57534e; }
 .thanks-result {
   background: #fff;
   border: 1px solid var(--border);
