@@ -17,7 +17,7 @@ const {
   weekDetailText,
   seasonCloseWeekNote,
   opsWeekNumber,
-  missRosterHtml,
+  attendanceTotalsHtml,
 } = require("../../chunbaek/js/admin-awards-review");
 
 function seasonSlots() {
@@ -150,15 +150,14 @@ test("시즌 마감 주간 미달은 7/20~7/26 0주차를 빼고 7/27부터 세�
   assert.match(html, />2주 8\/3~8\/9</);
   assert.match(weekDetailText(weekOfJuly27), /^1주 7\/27~8\/2 /);
   assert.equal(html.includes(">2주 7/27"), false);
-  const roster = missRosterHtml([{
-    memberId: "m1",
-    nickname: "예시",
-    weeks: [weekOfJuly27],
-  }]);
-  assert.match(roster, /id="miss-roster"/);
-  assert.match(roster, /예시/);
-  assert.match(roster, /1주 7\/27~8\/2/);
-  assert.equal(roster.includes("data-open-week"), false);
+  assert.match(html, /class="review-card-title"/);
+  assert.match(html, /class="review-chip miss review-week-line"/);
+  const totals = attendanceTotalsHtml([
+    { memberId: "m1", nickname: "예시", weeks: [weekOfJuly27] },
+    { memberId: "m2", nickname: "예시달성", weeks: [{ ...weekOfJuly27, met: true, weekScore: 3 }] },
+  ]);
+  assert.match(totals, /전체 2명 · 미달 1명 · 미달 1주/);
+  assert.equal(html.includes("id=\"miss-roster\""), false);
   const section = reviewSectionHtml({
     programStartDate: "2026-07-26",
     attendanceEndDate: "2026-10-24",

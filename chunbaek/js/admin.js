@@ -610,8 +610,8 @@ function paintAwardsReview(payload) {
     return list.filter((member) => String(member.nickname || "").toLowerCase().includes(needle));
   };
   if (attendanceTable) {
-    attendanceTable.innerHTML = review.missRosterHtml(members) + review.attendanceTableHtml(
-      review.filterAttendance(matchName(members, attendanceQuery), attendanceFilter ? attendanceFilter.value : "all"),
+    attendanceTable.innerHTML = review.attendanceTotalsHtml(members) + review.attendanceTableHtml(
+      review.filterAttendance(matchName(members, attendanceQuery), attendanceFilter ? attendanceFilter.value : "missed"),
     );
   }
   if (goalTable) {

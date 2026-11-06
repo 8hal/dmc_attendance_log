@@ -172,19 +172,22 @@
     return `${opsWeekLabel(week)}${weekRangeText(week)}`.trim();
   }
 
-  function missRosterHtml(members) {
-    const rows = sortAttendanceRows(members).filter((member) => missedWeeks(member).length);
-    if (!rows.length) return `<p class="review-note" id="miss-roster">주간 미달 인원이 없습니다.</p>`;
-    return `<table class="review-table" id="miss-roster">
-      <caption>주간 미달 ${rows.length}명. 1주차는 7/27~8/2입니다.</caption>
-      <thead><tr><th>닉네임</th><th>미달 주</th></tr></thead>
-      <tbody>
-        ${rows.map((member) => `<tr>
-          <td data-label="닉네임">${escapeHtml(member.nickname || "이름 없음")}</td>
-          <td class="col-prose" data-label="미달 주">${missedWeeks(member).map((week) => escapeHtml(missWeekText(week))).join(", ")}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>`;
+  function attendanceTotals(members) {
+    const list = members || [];
+    let missedPeople = 0;
+    let missedWeekCount = 0;
+    list.forEach((member) => {
+      const count = missedWeeks(member).length;
+      if (!count) return;
+      missedPeople += 1;
+      missedWeekCount += count;
+    });
+    return { total: list.length, missedPeople, missedWeekCount };
+  }
+
+  function attendanceTotalsHtml(members) {
+    const totals = attendanceTotals(members);
+    return `<p class="review-note" id="attendance-totals">전체 ${totals.total}명 · 미달 ${totals.missedPeople}명 · 미달 ${totals.missedWeekCount}주</p>`;
   }
 
   function attendanceTableHtml(members) {
@@ -205,13 +208,13 @@
         ${rows.map((member) => {
           const missed = missedWeeks(member);
           const chips = missed.length
-            ? missed.map((week) => `<button type="button" class="review-chip miss" data-open-week="${week.week}">${opsWeekLabel(week)}${escapeHtml(weekRangeText(week))}</button>`).join("")
+            ? missed.map((week) => `<button type="button" class="review-chip miss review-week-line" data-open-week="${week.week}">${opsWeekLabel(week)}${escapeHtml(weekRangeText(week))}</button>`).join("")
             : `<span class="review-chip ok">전 주차 달성</span>`;
           const details = (member.weeks || []).map((week) => (
             `<li class="${week.met ? "met" : "miss"}">${escapeHtml(weekDetailText(week))}</li>`
           )).join("");
           return `<tr class="review-row" data-review-toggle="${escapeHtml(member.memberId)}">
-            <td data-label="닉네임">${escapeHtml(member.nickname || "이름 없음")}</td>
+            <td class="review-card-title" data-label="닉네임">${escapeHtml(member.nickname || "이름 없음")}</td>
             <td data-label="출석 일수">${Number(member.seasonAttendCount) || 0}</td>
             <td data-label="예외 일수">${Number(member.seasonExceptionCount) || 0}</td>
             <td data-label="출석률">${Number(member.seasonAttendRate) || 0}%</td>
@@ -474,7 +477,8 @@
     filterAttendance,
     filterGoals,
     attendanceTableHtml,
-    missRosterHtml,
+    attendanceTotals,
+    attendanceTotalsHtml,
     opsWeekNumber,
     goalTableHtml,
     goalOutcomeLabel,

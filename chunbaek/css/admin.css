@@ -932,7 +932,16 @@ a.admin-nav-btn {
     font-weight: 800;
     color: #78716c;
   }
-  .review-table td.review-span::before { content: none; }
+  .review-table td.review-span::before,
+  .review-table td.review-card-title::before { content: none; }
+  .review-table td.review-card-title { font-size: 17px; font-weight: 800; }
+  .review-week-line {
+    display: block;
+    width: 100%;
+    margin: 0 0 6px;
+    text-align: left;
+    white-space: normal;
+  }
   .goal-columns .col-time,
   .goal-columns .col-note,
   .review-table .col-prose {

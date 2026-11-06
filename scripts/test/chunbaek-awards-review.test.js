@@ -18,6 +18,8 @@ const {
   sortGoalRows,
   sortAttendanceRows,
   attendanceTableHtml,
+  attendanceTotalsHtml,
+  filterAttendance,
   goalTableHtml,
   goalOutcomeLabel,
   raceResultLabel,
@@ -192,18 +194,43 @@ test("좁은 화면 카드는 긴 다짐과 소감을 라벨과 전체 폭 칸�
   assert.match(html, /data-label="대회 소감"/);
   assert.match(html, /data-label="대회 결과"/);
   assert.match(html, /예시 다짐입니다\. 위험한 나 일기/);
-  const roster = require("../../chunbaek/js/admin-awards-review").missRosterHtml([{
-    memberId: "m1",
-    nickname: "예시미달",
-    weeks: [{ week: 2, startDate: "2026-07-27", endDate: "2026-08-02", target: 3, weekScore: 1, met: false, attendCount: 1, exceptionCount: 0 }],
-  }]);
-  assert.match(roster, /data-label="미달 주"/);
+  const oneWeek = { week: 2, startDate: "2026-07-27", endDate: "2026-08-02", target: 3, weekScore: 1, met: false, attendCount: 1, exceptionCount: 0 };
+  const clearWeek = { ...oneWeek, met: true, weekScore: 3, attendCount: 3 };
+  const missedOnly = filterAttendance([
+    { memberId: "miss", nickname: "예시미달", weeks: [oneWeek] },
+    { memberId: "clear", nickname: "예시달성", weeks: [clearWeek] },
+  ], "missed");
+  assert.deepEqual(missedOnly.map((member) => member.nickname), ["예시미달"]);
+  const searched = filterAttendance([
+    { memberId: "miss", nickname: "예시미달", weeks: [oneWeek] },
+    { memberId: "other", nickname: "다른미달", weeks: [oneWeek] },
+  ].filter((member) => member.nickname.includes("예시")), "missed");
+  assert.deepEqual(searched.map((member) => member.nickname), ["예시미달"]);
+  const everyone = filterAttendance([
+    { memberId: "miss", nickname: "예시미달", weeks: [oneWeek] },
+    { memberId: "clear", nickname: "예시달성", weeks: [clearWeek] },
+  ], "all");
+  assert.equal(everyone.length, 2);
+  const clearHtml = attendanceTableHtml([{ memberId: "clear", nickname: "예시달성", seasonAttendCount: 10, seasonExceptionCount: 0, seasonAttendRate: 100, seasonWeeksMetCount: 1, seasonWeeksCount: 1, weeks: [clearWeek] }]);
+  assert.match(clearHtml, /전 주차 달성/);
+  assert.match(clearHtml, /class="review-card-title"/);
+  const none = attendanceTableHtml([]);
+  assert.match(none, /해당하는 회원이 없습니다/);
+  const totals = attendanceTotalsHtml([
+    { weeks: [oneWeek] },
+    { weeks: [clearWeek] },
+  ]);
+  assert.match(totals, /전체 2명 · 미달 1명 · 미달 1주/);
+  const adminJs = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/admin.js"), "utf8");
+  assert.equal(adminJs.includes("missRosterHtml"), false);
   const css = fs.readFileSync(path.join(__dirname, "../../chunbaek/css/admin.css"), "utf8");
   const mobile = css.slice(css.indexOf("@media (max-width: 768px)"));
   assert.match(mobile, /\.review-table td::before/);
   assert.match(mobile, /word-break:\s*keep-all/);
   assert.match(mobile, /attr\(data-label\)/);
   assert.match(mobile, /\.admin-grid td\.cell::before/);
+  assert.match(mobile, /\.review-table td\.review-card-title::before/);
+  assert.match(mobile, /\.review-week-line/);
   const cardRule = mobile.indexOf(".review-table tr {");
   const missingRule = mobile.indexOf(".review-table tr.goal-missing");
   assert.ok(cardRule >= 0 && missingRule > cardRule);
