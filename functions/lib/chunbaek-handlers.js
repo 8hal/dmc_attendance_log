@@ -7,7 +7,6 @@ const crypto = require("crypto");
 const { issueSession, resolveMemberFromToken } = require("./chunbaek-auth");
 const { handleAdminRequest } = require("./chunbaek-admin");
 const { handleThanksVote } = require("./chunbaek-thanks-vote");
-const { handleFinaleParty } = require("./chunbaek-finale-party");
 const {
   validateExceptionRequestInput,
   previewExceptionApplication,
@@ -1262,9 +1261,6 @@ async function handleChunbaekRequest(req, res, { db, action }) {
   }
   if (action === "thanks-vote") {
     return handleThanksVote(req, res, db);
-  }
-  if (action === "finale-party") {
-    return handleFinaleParty(req, res, db);
   }
   return res.status(400).json({ ok: false, error: `unknown action: ${action}` });
 }

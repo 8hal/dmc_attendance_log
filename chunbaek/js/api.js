@@ -729,15 +729,6 @@ function mockGet(action, params = {}) {
   if (action === "my-exception-requests") {
     return Promise.resolve({ ok: true, requests: MOCK.exceptionRequests || [] });
   }
-  if (action === "finale-party") {
-    return Promise.resolve({
-      ok: true,
-      date: "2026-11-27",
-      place: "",
-      time: "",
-      note: "",
-    });
-  }
   if (action === "thanks-vote") {
     return Promise.resolve({
       ok: true,

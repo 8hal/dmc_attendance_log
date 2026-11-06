@@ -350,20 +350,6 @@ a.admin-nav-btn {
 }
 
 /* ── 예외 요청 ── */
-.finale-party-form {
-  display: grid;
-  gap: 8px;
-  max-width: 480px;
-  margin: 0 0 20px;
-}
-.finale-party-form input,
-.finale-party-form textarea {
-  font: inherit;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #fff;
-}
 .awards-wrap { margin-top: 8px; }
 .finale-section { margin-top: 18px; }
 .finale-section h2 { margin: 0 0 12px; font-size: 20px; }

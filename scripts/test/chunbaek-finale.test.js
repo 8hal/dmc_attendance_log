@@ -181,6 +181,8 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.equal(index.includes("finale.html"), false);
   assert.match(admin, /id="panel-awards"/);
   assert.equal(admin.includes("finale.html"), false);
-  assert.match(party, /2026-11-27/);
+  assert.match(party, /당신 때문에 고마웠다/);
+  assert.match(index, /고마웠다 투표/);
+  assert.equal(party.includes("2026-11-27"), false);
   assert.equal(party.includes("목표 달성상"), false);
 });
