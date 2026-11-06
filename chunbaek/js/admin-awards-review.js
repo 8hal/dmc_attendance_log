@@ -185,6 +185,17 @@
     return lib && lib.seasonResultStatusLabel(status) || "";
   }
 
+  function raceResultLabel(member) {
+    const sr = member && member.seasonResult;
+    if (!sr || !sr.status) return "아직 없음";
+    const net = Number(sr.netTimeSec);
+    if (sr.status === "finisher" && net === placeholderNetSec()) return "집계 대기";
+    if (sr.status === "finisher" && Number.isFinite(net) && net > 0) {
+      return `완주 ${formatHms(net)}`;
+    }
+    return seasonStatusLabel(sr.status) || "아직 없음";
+  }
+
   function goalOutcomeLabel(member) {
     if (!isValidGoalTime(member && member.goalMarathonNetTime)) return "목표 없음";
     const sr = member && member.seasonResult;
@@ -196,33 +207,44 @@
     return seasonStatusLabel(sr.status) || "아직 없음";
   }
 
+  function seasonNoteText(member) {
+    const note = member && member.seasonResult && member.seasonResult.note;
+    const text = String(note || "").trim();
+    return text || "없음";
+  }
+
   function goalTableHtml(members) {
     const rows = sortGoalRows(members);
     if (!rows.length) return `<p class="review-empty">해당하는 회원이 없습니다.</p>`;
-    return `<table class="review-table">
+    return `<table class="review-table goal-columns">
       <thead>
         <tr>
           <th>닉네임</th>
           <th>입력</th>
           <th>대회</th>
-          <th>목표 시간</th>
+          <th class="col-time">목표 시간</th>
+          <th class="col-time">기존 PB</th>
+          <th class="col-time">대회 결과</th>
           <th>달성 여부</th>
-          <th>PB</th>
           <th>다짐</th>
+          <th class="col-note">대회 소감</th>
         </tr>
       </thead>
       <tbody>
         ${rows.map((member) => {
           const missing = isGoalMissing(member);
+          const goal = isValidGoalTime(member.goalMarathonNetTime) ? formatHms(member.goalMarathonNetTime) : "";
           const pb = formatStoredTime(member.existingPbNetTime);
           return `<tr class="${missing ? "goal-missing" : ""}">
             <td>${escapeHtml(member.nickname || "이름 없음")}</td>
             <td>${missing ? "미입력" : "입력"}</td>
             <td>${escapeHtml(raceLabel(member) || "없음")}</td>
-            <td>${escapeHtml(isValidGoalTime(member.goalMarathonNetTime) ? formatHms(member.goalMarathonNetTime) : "없음")}</td>
+            <td class="col-time">${escapeHtml(goal ? goal : "목표 없음")}</td>
+            <td class="col-time">${escapeHtml(pb ? pb : "PB 없음")}</td>
+            <td class="col-time">${escapeHtml(raceResultLabel(member))}</td>
             <td>${escapeHtml(goalOutcomeLabel(member))}</td>
-            <td>${pb ? escapeHtml(pb) : "없음"}</td>
             <td>${escapeHtml(member.resolutionText || "")}</td>
+            <td class="col-note">${escapeHtml(seasonNoteText(member))}</td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -276,22 +298,6 @@
     };
   }
 
-  function coffeeDailyTableHtml(days) {
-    const rows = days || [];
-    if (!rows.length) {
-      return `<p class="review-note">이 조건의 커피 기록이 없습니다.</p>`;
-    }
-    return `<table class="review-table">
-      <thead><tr><th>날짜</th><th>커피를 산 회원</th></tr></thead>
-      <tbody>
-        ${rows.map((day) => `<tr>
-          <td>${escapeHtml(day.date)}</td>
-          <td>${escapeHtml((day.buyers || []).join(", "))}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>`;
-  }
-
   function coffeeMemberTableHtml(members) {
     const rows = members || [];
     if (!rows.length) {
@@ -311,7 +317,7 @@
 
   function exampleSeasonResult(index, goalSec) {
     if (!goalSec) return null;
-    if (index === 7) return { status: "finisher", netTimeSec: goalSec - 60, goalMet: true };
+    if (index === 7) return { status: "finisher", netTimeSec: goalSec - 60, goalMet: true, note: "예시 소감" };
     if (index === 8) return { status: "finisher", netTimeSec: goalSec + 60, goalMet: false };
     if (index === 9) return { status: "dnf", netTimeSec: null, goalMet: false };
     if (index === 10) return { status: "dns", netTimeSec: null, goalMet: false };
@@ -403,9 +409,10 @@
     attendanceTableHtml,
     goalTableHtml,
     goalOutcomeLabel,
+    raceResultLabel,
+    seasonNoteText,
     coffeeNoteText,
     filterCoffee,
-    coffeeDailyTableHtml,
     coffeeMemberTableHtml,
     reviewSectionHtml,
     exampleAwardsReview,

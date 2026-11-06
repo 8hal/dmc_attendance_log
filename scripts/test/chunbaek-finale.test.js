@@ -198,6 +198,18 @@ test("시상 계산은 운영 화면용이고 회원 앱은 쫑파티 안내로 
   assert.match(awards, /목표 달성상/);
   assert.equal(awards.includes("투표 결과는 아래"), false);
   assert.equal(awards.includes("당신때문에 고마웠다상"), false);
+  assert.equal(awards.includes("출석 4일 미만"), false);
+  assert.equal(awards.includes("시즌 출석 4일 미만"), false);
+  assert.match(awards, /3점 미달/);
+  assert.match(awards, /매주 3점을 채운 사람/);
+  const hiddenLow = activitySummary([{
+    nickname: "가",
+    seasonAttendCount: 2,
+    seasonAttendRate: 10,
+    seasonWeeksCount: 2,
+    seasonWeeksMetCount: 0,
+  }], 3);
+  assert.equal(hiddenLow.belowFourDays[0].nickname, "가");
   assert.match(awards, /집계 대기/);
   assert.match(awards, /1명/);
   assert.equal(awards.includes("인천 마라톤 후 집계 예정"), false);

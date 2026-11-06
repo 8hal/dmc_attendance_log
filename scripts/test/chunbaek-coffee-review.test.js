@@ -7,7 +7,6 @@ const path = require("path");
 const { buildCoffeeReview } = require("../../functions/lib/chunbaek-coffee-review");
 const { COFFEE_AWARD } = require("../../chunbaek/js/finale");
 const {
-  coffeeDailyTableHtml,
   coffeeMemberTableHtml,
   coffeeNoteText,
 } = require("../../chunbaek/js/admin-awards-review");
@@ -107,7 +106,12 @@ test("제공 CSV에서 만든 자료는 시즌3 coffee 78건이고 원문 필드
   const choHtml = coffeeMemberTableHtml([cho]);
   assert.match(choHtml, /2026-08-11/);
   assert.equal(choHtml.includes("2026-08-05"), false);
-  const html = `${coffeeNoteText(review)}${coffeeDailyTableHtml(review.days)}${coffeeMemberTableHtml(review.members)}`;
+  const html = `${coffeeNoteText(review)}${coffeeMemberTableHtml(review.members)}`;
+  const adminPage = fs.readFileSync(path.join(__dirname, "../../chunbaek/admin.html"), "utf8");
+  const adminJs = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/admin.js"), "utf8");
+  assert.equal(adminPage.includes("coffee-day-table"), false);
+  assert.equal(adminPage.includes("일자별"), false);
+  assert.equal(adminJs.includes("coffeeDailyTableHtml"), false);
   assert.match(html, /2025-07-14/);
   assert.match(html, /바나나 127건/);
   assert.equal(html.includes("잘마셨"), false);

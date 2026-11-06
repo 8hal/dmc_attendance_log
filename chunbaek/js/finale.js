@@ -346,22 +346,17 @@
         <div class="finale-stats">
           <div class="finale-stat"><b>${activity.participantCount}</b><span>프로필을 만든 참가자</span></div>
           <div class="finale-stat"><b>${activity.averageAttendRate}%</b><span>평균 출석률</span></div>
-          <div class="finale-stat"><b>${activity.belowFourDays.length}</b><span>출석 ${activity.lowAttendanceDays}일 미만</span></div>
           <div class="finale-stat"><b>${activity.noPenalty.length}</b><span>매주 ${activity.weeklyTargetPoints}점 달성</span></div>
         </div>
         <div class="finale-grid">
           <article class="finale-card">
             <h3>주간 기준은 ${activity.weeklyTargetPoints}점</h3>
-            <p class="finale-criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 출석 4일 미만은 안건의 인원 확인용이고 주간 점수와는 다릅니다. 집계 기간은 ${escapeHtml(activity.programStartDate)}~${escapeHtml(activity.attendanceEndDate)}입니다.</p>
+            <p class="finale-criterion">출석 1점, 승인 예외 0.5점, 한 주 ${activity.weeklyTargetPoints}점 이상이면 달성입니다. 앱에는 벌금 금액이 없어서, 3점 미달 주를 벌금 해당 주로 셉니다. 집계 기간은 ${escapeHtml(activity.programStartDate)}~${escapeHtml(activity.attendanceEndDate)}입니다.</p>
             <p class="finale-meta">3점 미달 주 합계 ${activity.penaltyWeekCount}주 · 한 주라도 미달인 사람 ${activity.withPenalty.length}명</p>
           </article>
           <article class="finale-card">
             <h3>매주 ${activity.weeklyTargetPoints}점을 채운 사람</h3>
             ${nameList(activity.noPenalty)}
-          </article>
-          <article class="finale-card">
-            <h3>시즌 출석 ${activity.lowAttendanceDays}일 미만</h3>
-            ${nameList(activity.belowFourDays)}
           </article>
         </div>
       </section>
