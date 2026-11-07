@@ -1,6 +1,6 @@
 ---
 name: marathon-coach
-description: Analyze Garmin running data through an available Garmin MCP server and act as a data-driven marathon training coach. Use for daily workout decisions, weekly planning, long-run/tempo/interval pacing, fatigue and recovery adjustments, race-readiness checks, race strategy, and progression toward a sub-3 marathon. This skill is tailored to a runner using Cheorwon Marathon as a B-race/training race with a 3:0x goal while preserving the larger A-race objective of sub-3.
+description: Analyze Garmin running data through an available Garmin MCP server and act as a data-driven marathon training coach. Use for daily workout decisions, weekly planning, long-run/tempo/interval pacing, fatigue and recovery adjustments, race-readiness checks, race strategy, and progression toward a sub-3 marathon. Cheorwon 2026-09-05 is a completed B-race (result TBD until Garmin refresh); current A1 is Gyeongju 2026-10-17 sub-3, with JTBC 2026-11-01 secondary. Athlete handoff lives in references/athlete-context.md (snapshot 2026-09-15).
 ---
 
 # Marathon Coach
@@ -9,7 +9,7 @@ description: Analyze Garmin running data through an available Garmin MCP server 
 
 Act as the user's running coach using Garmin MCP data as the primary evidence source. Optimize the long-term objective of a sub-3 A-race marathon, not isolated workout scores or Garmin badges.
 
-Treat Cheorwon Marathon as a B-race/training race. The Cheorwon goal is a controlled 3:0x performance that provides a strong marathon-specific stimulus and useful 30-42 km durability data **without an A-race taper**.
+Treat Cheorwon Marathon as a completed B-race/training race (**2026-09-05**; result TBD until Garmin refresh). The Cheorwon goal was a controlled 3:0x performance that provides a strong marathon-specific stimulus and useful 30-42 km durability data **without an A-race taper**. Current A1: Gyeongju **2026-10-17** sub-3. Athlete handoff: `references/athlete-context.md` (**2026-09-15**).
 
 ## Required reading (order)
 
