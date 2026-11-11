@@ -215,6 +215,11 @@
     return `<p class="review-note" id="attendance-totals">전체 ${totals.total}명 · 미달 ${totals.missedPeople}명 · 미달 ${totals.missedWeekCount}주</p>`;
   }
 
+  function reviewSearched(query, namedCount) {
+    const hasQuery = String(query || "").replace(/\s+/g, "") !== "";
+    return hasQuery && Number(namedCount) === 0;
+  }
+
   function emptyReviewText(options) {
     return options && options.searched ? "검색 결과가 없습니다." : "해당하는 회원이 없습니다.";
   }
@@ -507,6 +512,7 @@
     filterAttendance,
     filterGoals,
     filterMembersByName,
+    reviewSearched,
     closeTabBadges,
     attendanceTableHtml,
     attendanceTotals,

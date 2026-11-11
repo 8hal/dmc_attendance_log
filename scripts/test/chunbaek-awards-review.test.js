@@ -576,3 +576,21 @@ test("회원 검색은 공백과 대소문자를 무시하고 부분 일치한�
   assert.match(long, /소감 전체/);
   assert.equal(long.includes("더보기"), false);
 });
+
+test("이름 검색이 맞고 필터만 비면 검색 실패로 보이지 않는다", () => {
+  const review = require("../../chunbaek/js/admin-awards-review");
+  const week = { week: 2, startDate: "2026-07-27", endDate: "2026-08-02", target: 3, met: true, weekScore: 3 };
+  const clear = { memberId: "clear", nickname: "예시달성", weeks: [week] };
+  const named = filterMembersByName([clear], "예시 달성");
+  const rows = filterAttendance(named, "missed");
+  assert.equal(named.length, 1);
+  assert.equal(rows.length, 0);
+  assert.equal(review.reviewSearched("예시 달성", named.length), false);
+  const filteredOut = attendanceTableHtml(rows, { searched: review.reviewSearched("예시 달성", named.length) });
+  assert.match(filteredOut, /해당하는 회원이 없습니다/);
+  assert.equal(filteredOut.includes("검색 결과가 없습니다"), false);
+  assert.equal(review.reviewSearched("없는사람", 0), true);
+  assert.match(attendanceTableHtml([], { searched: review.reviewSearched("없는사람", 0) }), /검색 결과가 없습니다/);
+  const adminJs = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/admin.js"), "utf8");
+  assert.match(adminJs, /reviewSearched\(/);
+});

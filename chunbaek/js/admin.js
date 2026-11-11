@@ -604,23 +604,18 @@ function paintAwardsReview(payload) {
   const goalFilter = document.getElementById("goal-filter");
   const attendanceTable = document.getElementById("attendance-review-table");
   const goalTable = document.getElementById("goal-review-table");
-  const searched = (input) => String(input && input.value || "").replace(/\s+/g, "") !== "";
+  const attendanceNamed = review.filterMembersByName(members, attendanceQuery && attendanceQuery.value);
+  const goalNamed = review.filterMembersByName(members, goalQuery && goalQuery.value);
   if (attendanceTable) {
     attendanceTable.innerHTML = review.attendanceTotalsHtml(members) + review.attendanceTableHtml(
-      review.filterAttendance(
-        review.filterMembersByName(members, attendanceQuery && attendanceQuery.value),
-        attendanceFilter ? attendanceFilter.value : "missed",
-      ),
-      { searched: searched(attendanceQuery) },
+      review.filterAttendance(attendanceNamed, attendanceFilter ? attendanceFilter.value : "missed"),
+      { searched: review.reviewSearched(attendanceQuery && attendanceQuery.value, attendanceNamed.length) },
     );
   }
   if (goalTable) {
     goalTable.innerHTML = review.goalTableHtml(
-      review.filterGoals(
-        review.filterMembersByName(members, goalQuery && goalQuery.value),
-        goalFilter ? goalFilter.value : "all",
-      ),
-      { searched: searched(goalQuery) },
+      review.filterGoals(goalNamed, goalFilter ? goalFilter.value : "all"),
+      { searched: review.reviewSearched(goalQuery && goalQuery.value, goalNamed.length) },
     );
   }
   paintCloseBadges(payload);
@@ -637,7 +632,7 @@ function paintAwardsReview(payload) {
   const filteredCoffee = review.filterCoffee(coffee, coffeeQuery ? coffeeQuery.value : "");
   if (coffeeMemberTable) {
     coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members, {
-      searched: searched(coffeeQuery),
+      searched: review.reviewSearched(coffeeQuery && coffeeQuery.value, filteredCoffee.members.length),
     });
   }
 }
