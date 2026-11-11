@@ -25,6 +25,10 @@ const {
   raceResultLabel,
   seasonNoteText,
   exampleAwardsReview,
+  closeTabBadges,
+  filterMembersByName,
+  filterCoffee,
+  coffeeMemberTableHtml,
 } = require("../../chunbaek/js/admin-awards-review");
 const { serializeSeasonResult } = require("../../functions/lib/chunbaek-handlers");
 const { goalAward } = require("../../chunbaek/js/finale");
@@ -479,4 +483,114 @@ test("출석 검수 목록은 computeMemberStats 주차 집계를 다시 계산�
   assert.match(html, /0주/);
   assert.equal(html.includes("20주"), false);
   assert.match(html, /data-open-week="1"/);
+});
+
+test("시즌 마감 탭 배지는 확인이 필요한 건만 센다", () => {
+  const week = { week: 2, startDate: "2026-07-27", endDate: "2026-08-02", target: 3, met: false, weekScore: 1 };
+  const clearWeek = { ...week, met: true, weekScore: 3 };
+  const missed = {
+    memberId: "miss",
+    nickname: "미달",
+    profileComplete: true,
+    goalMarathonNetTime: 10800,
+    goalRace: "chuncheon",
+    weeks: [week],
+  };
+  const clear = {
+    memberId: "clear",
+    nickname: "달성",
+    profileComplete: true,
+    goalMarathonNetTime: 10800,
+    goalRace: "chuncheon",
+    weeks: [clearWeek],
+  };
+  const pending = {
+    memberId: "wait",
+    nickname: "대기",
+    profileComplete: true,
+    goalMarathonNetTime: 10800,
+    goalRace: "chuncheon",
+    seasonResult: { status: "finisher", netTimeSec: 7200, goalMet: true },
+    weeks: [],
+  };
+  const missing = {
+    memberId: "blank",
+    nickname: "미입력",
+    profileComplete: false,
+    goalMarathonNetTime: null,
+    goalRace: null,
+    weeks: [],
+  };
+  const badges = closeTabBadges({
+    members: [missed, clear, pending, missing],
+    coffee: { warning: "시즌 coffee 기록이 없습니다.", members: [] },
+  });
+  assert.deepEqual(badges, { attendance: 1, goals: 2, coffee: 1 });
+  const both = closeTabBadges({
+    members: [{ ...missing, seasonResult: pending.seasonResult }],
+    coffee: { warning: null, matchesSeason: true, members: [] },
+  });
+  assert.equal(both.goals, 1);
+  assert.equal(both.coffee, 0);
+  assert.deepEqual(closeTabBadges({ members: [clear], coffee: { warning: null } }), {
+    attendance: 0,
+    goals: 0,
+    coffee: 0,
+  });
+  const html = fs.readFileSync(path.join(__dirname, "../../chunbaek/admin.html"), "utf8");
+  const js = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/admin.js"), "utf8");
+  assert.match(html, /id="close-badge-attendance"/);
+  assert.match(html, /id="close-badge-goals"/);
+  assert.match(html, /id="close-badge-coffee"/);
+  assert.match(js, /closeTabBadges/);
+  assert.match(js, /badge\.hidden = count < 1/);
+});
+
+test("회원 검색은 공백과 대소문자를 무시하고 부분 일치한다", () => {
+  const members = [
+    { memberId: "1", nickname: "예시05", weeks: [] },
+    { memberId: "2", nickname: "ExampleRunner", weeks: [] },
+  ];
+  assert.deepEqual(filterMembersByName(members, "예시 05").map((member) => member.nickname), ["예시05"]);
+  assert.deepEqual(filterMembersByName(members, "  eXaMpLe ").map((member) => member.nickname), ["ExampleRunner"]);
+  assert.deepEqual(filterMembersByName(members, "없는사람"), []);
+  assert.match(attendanceTableHtml([], { searched: true }), /검색 결과가 없습니다/);
+  assert.match(goalTableHtml([], { searched: true }), /검색 결과가 없습니다/);
+  assert.match(attendanceTableHtml([]), /해당하는 회원이 없습니다/);
+  const coffee = filterCoffee({
+    members: [{ buyer: "예시커피", dayCount: 1, dates: ["2026-08-01"] }],
+    days: [{ date: "2026-08-01", buyers: ["예시커피"] }],
+  }, "예시 커피");
+  assert.equal(coffee.members.length, 1);
+  assert.match(coffeeMemberTableHtml([], { searched: true }), /검색 결과가 없습니다/);
+  const long = goalTableHtml([{
+    memberId: "long",
+    nickname: "긴글",
+    profileComplete: true,
+    goalMarathonNetTime: 10800,
+    goalRace: "chuncheon",
+    resolutionText: "다짐 전체",
+    seasonResult: { status: "finisher", netTimeSec: 10000, goalMet: true, note: "소감 전체" },
+  }]);
+  assert.match(long, /다짐 전체/);
+  assert.match(long, /소감 전체/);
+  assert.equal(long.includes("더보기"), false);
+});
+
+test("이름 검색이 맞고 필터만 비면 검색 실패로 보이지 않는다", () => {
+  const review = require("../../chunbaek/js/admin-awards-review");
+  const week = { week: 2, startDate: "2026-07-27", endDate: "2026-08-02", target: 3, met: true, weekScore: 3 };
+  const clear = { memberId: "clear", nickname: "예시달성", weeks: [week] };
+  const named = filterMembersByName([clear], "예시 달성");
+  const rows = filterAttendance(named, "missed");
+  assert.equal(named.length, 1);
+  assert.equal(rows.length, 0);
+  assert.equal(review.reviewSearched("예시 달성", named.length), false);
+  const filteredOut = attendanceTableHtml(rows, { searched: review.reviewSearched("예시 달성", named.length) });
+  assert.match(filteredOut, /해당하는 회원이 없습니다/);
+  assert.equal(filteredOut.includes("검색 결과가 없습니다"), false);
+  assert.equal(review.reviewSearched("없는사람", 0), true);
+  assert.match(attendanceTableHtml([], { searched: review.reviewSearched("없는사람", 0) }), /검색 결과가 없습니다/);
+  const adminJs = fs.readFileSync(path.join(__dirname, "../../chunbaek/js/admin.js"), "utf8");
+  assert.match(adminJs, /reviewSearched\(/);
 });
