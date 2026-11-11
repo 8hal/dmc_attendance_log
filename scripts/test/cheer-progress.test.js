@@ -92,6 +92,18 @@ describe("split labels", () => {
     assert.equal(mapSplitLabelToKm("도착"), FULL_KM);
     assert.equal(mapSplitLabelToKm("Section 3"), null);
   });
+
+  it("maps decimal km labels, including ones that are not on the 5 km grid", () => {
+    assert.equal(mapSplitLabelToKm("30.5km"), 30.5);
+    assert.equal(mapSplitLabelToKm("38.3km"), 38.3);
+    assert.equal(mapSplitLabelToKm("18.0km"), 18);
+    assert.equal(mapSplitLabelToKm("25.9km"), 25.9);
+    assert.equal(mapSplitLabelToKm("32.2km"), 32.2);
+    assert.equal(mapSplitLabelToKm("30.9km"), 30.9);
+    assert.equal(mapSplitLabelToKm("42.2km"), 42.2);
+    assert.equal(mapSplitLabelToKm("42"), FULL_KM);
+    assert.equal(mapSplitLabelToKm("42.195"), FULL_KM);
+  });
 });
 
 describe("cheer board", () => {
@@ -670,5 +682,42 @@ describe("record anomaly", () => {
     assert.equal(row.km, FULL_KM);
     assert.equal(row.elapsedSec, 3 * 3600 + 40 * 60);
     assert.equal(row.finishSec, 3 * 3600 + 40 * 60);
+  });
+
+  it("does not finish a runner from a 42.2 split when the net time is missing", () => {
+    const board = buildCheerBoard({
+      event,
+      nowMs: START + 8 * 3600 * 1000,
+      jobResults: [
+        { bib: "1", distance: "full", netTime: "", splits: [{ label: "42.2km", time: "03:10:00" }] },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.finished, false);
+    assert.notEqual(row.status, "finished");
+    assert.equal(row.chip, true);
+  });
+
+  it("moves a runner using a decimal smartchip split", () => {
+    const board = buildCheerBoard({
+      event,
+      nowMs: START + (3 * 3600 + 40 * 60) * 1000,
+      jobResults: [
+        {
+          bib: "1",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "30.5km", time: "02:49:35" },
+            { label: "38.3km", time: "03:34:59" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.finished, false);
+    assert.equal(row.chip, true);
+    assert.ok(row.km >= 38.3);
+    assert.ok(row.km < FULL_KM);
   });
 });

@@ -1,0 +1,2208 @@
+
+
+<html>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-gov.css" />
+
+	<head>
+	
+	  <meta charset="utf-8"> 
+	  <title>스마트칩 마라톤기록조회 </title>
+	   <meta name="robots" content="noindex, nofollow">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	  <meta name="referrer" content="no-referrer-when-downgrade">
+	  
+	  <link rel="stylesheet" href="css/font-awesome.min.css">
+	  <link rel="stylesheet" href="css/animate.css">
+	  <link href='https://fonts.googleapis.com/css?family=Raleway:400,100,200,300,500,600,700,800,900|Montserrat:400,700' rel='stylesheet' type='text/css'>	
+	  <link rel="stylesheet" href="css/bootstrap.min.css">
+	  
+	  <link rel="stylesheet" href="css/main.css">
+
+	  <script src="js/modernizr-2.7.1.js"></script>
+
+	  <script type="text/javascript" src="//wcs.naver.net/wcslog.js"></script>
+
+	  
+		<script type="text/javascript">
+		if(!wcs_add) var wcs_add = {};
+		wcs_add["wa"] = "19e5bb1326386e0";
+		if(window.wcs) {
+		  wcs_do();
+		}
+		</script>
+	
+<style>
+/* 상단 BACK / 언어 / 새로고침 버튼 */
+.top-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 29px;
+    padding: 0 15px;
+}
+
+.top-back-area {
+    width: 70px;
+    height: 29px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.top-lang-area {
+    width: 70px;
+    height: 29px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+}
+
+.top-back-button,
+.top-lang-button,
+.top-refresh-button {
+    position: relative;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+    transition:
+        background 0.22s ease,
+        border-color 0.22s ease,
+        box-shadow 0.22s ease,
+        transform 0.14s ease;
+}
+
+/* BACK pill */
+.top-back-button {
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+    width: 70px;
+    height: 29px;
+    padding: 0 9px 0 8px;
+    background: rgba(120, 20, 20, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.08),
+        inset 0 0 10px rgba(255,255,255,0.05),
+        inset 0 -8px 14px rgba(0, 0, 0, 0.18),
+        0 3px 8px rgba(0, 0, 0, 0.28);
+}
+
+.top-back-button:hover,
+.top-back-button:focus {
+    background: rgba(145, 26, 26, 0.84);
+    border-color: rgba(255,255,255,0.58);
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.12),
+        inset 0 0 10px rgba(255,255,255,0.06),
+        inset 0 -8px 14px rgba(0,0,0,0.20),
+        0 5px 12px rgba(0,0,0,0.34);
+    transform: translateY(-1px);
+}
+
+.top-back-button:active,
+.top-lang-button:active,
+.top-refresh-button:active {
+    transform: scale(0.98);
+}
+
+.top-back-icon,
+.top-back-text,
+.top-refresh-button img {
+    position: relative;
+    z-index: 1;
+}
+
+.top-back-icon {
+    flex: 0 0 17px;
+    width: 17px;
+    height: 29px;
+    align-self: stretch;
+}
+
+.top-back-icon::before {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 4px;
+    top: 8.5px;
+    border-left: 3px solid #ffffff;
+    border-bottom: 3px solid #ffffff;
+    box-sizing: border-box;
+    transform: rotate(45deg);
+}
+
+.top-back-text {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 29px;
+    font-family: Inter, 'The Jamsil', 'Raleway', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 1;
+    color: #ffffff;
+    letter-spacing: 0;
+    transform: translate(-2px, 0.5px);
+}
+
+/* ENG/KOR 회색 원형 버튼 */
+.top-lang-button {
+    width: 29px;
+    height: 29px;
+    flex: none;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.30);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.15),
+        0 3px 8px rgba(0,0,0,0.24);
+    font-family: 'The Jamsil', 'Raleway', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 11px;
+}
+
+.top-lang-button:hover,
+.top-lang-button:focus {
+    background: rgba(255, 255, 255, 0.38);
+    border-color: rgba(255,255,255,0.28);
+    transform: translateY(-1px);
+}
+
+/* refresh 원형 버튼 */
+.top-refresh-button {
+    width: 29px;
+    height: 29px;
+    flex: none;
+    padding: 0;
+    background: rgba(120, 20, 20, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.08),
+        inset 0 0 9px rgba(255,255,255,0.05),
+        inset 0 -7px 12px rgba(0, 0, 0, 0.18),
+        0 3px 8px rgba(0, 0, 0, 0.28);
+}
+
+.top-refresh-button:hover,
+.top-refresh-button:focus {
+    background: rgba(145, 26, 26, 0.84);
+    border-color: rgba(255,255,255,0.58);
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.12),
+        inset 0 0 9px rgba(255,255,255,0.06),
+        inset 0 -7px 12px rgba(0,0,0,0.20),
+        0 5px 12px rgba(0,0,0,0.34);
+    transform: translateY(-1px);
+}
+
+.top-refresh-button img {
+    width: 15px;
+    height: 15px;
+    display: block;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+</style>
+
+	</head>
+
+
+	<body>
+ 
+<div class="navbar navbar-inverse navbar-fixed-top" style="background-color: #000; border: none; min-height: 40px;">
+    <div class="top-nav-inner">
+
+        <div class="top-back-area">
+            <a href="javascript:void(0);" id="btnBack" class="top-back-button" aria-label="Back">
+                <span class="top-back-icon" aria-hidden="true"></span>
+                <span class="top-back-text">BACK</span>
+            </a>
+        </div>
+
+        <div style="flex-grow: 1; text-align: center;">
+            <a href="/main.html">
+                <img src="img/smartchip_logo5.png" alt="SmartChip" style="height: 25px; width: auto; vertical-align: middle;">
+            </a>
+        </div>
+
+        <div class="top-lang-area">
+            <a href="javascript:goToEnglish();" class="top-lang-button">ENG</a>
+            <a href="javascript:location.reload();" class="top-refresh-button" aria-label="Refresh">
+                <img src="img/refresh1.png" alt="새로고침" draggable="false">
+            </a>
+        </div>
+    </div>
+</div>
+ <script type="text/javascript">
+function goLivePhotoBack() {
+    var usedata = "";
+    try {
+        usedata = new URLSearchParams(window.location.search || "").get("usedata") || "";
+    } catch (e) {}
+
+    var searchPage = (String(usedata || "").trim() === "202650000130") ? "/Search_Ballyno_namebib.html" : "/Search_Ballyno.html";
+    var backPath = searchPage + (usedata ? ("?usedata=" + encodeURIComponent(usedata)) : "");
+    var backUrl = "https://smartchip.co.kr" + backPath;
+
+    function findFrameIn(doc) {
+        if (!doc) return null;
+        return doc.getElementById("myFrame") || doc.getElementById("mainFrame");
+    }
+
+    try { sessionStorage.setItem("iframeUrl", backUrl); } catch (e) {}
+
+    // 1) 현재 문서에 iframe이 있으면 그 iframe만 조회 페이지로 이동
+    try {
+        var iframe = findFrameIn(document);
+        if (iframe) {
+            iframe.src = backUrl;
+            return;
+        }
+    } catch (e) {}
+
+    // 2) 현재 페이지가 iframe 안이면 부모의 iframe만 조회 페이지로 이동
+    if (window.self !== window.top) {
+        try {
+            var topFrame = findFrameIn(window.top.document);
+            if (topFrame) {
+                try { window.top.sessionStorage.setItem("iframeUrl", backUrl); } catch (e2) {}
+                topFrame.src = backUrl;
+                return;
+            }
+        } catch (e) {}
+    }
+
+    // 3) 단독 페이지면 현재 창 이동
+    try {
+        window.location.href = backPath;
+    } catch (e) {
+        window.location.replace(backPath);
+    }
+}
+
+(function () {
+    var btnBack = document.getElementById("btnBack");
+    if (!btnBack) return;
+
+    btnBack.setAttribute("href", "javascript:void(0);");
+    btnBack.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        goLivePhotoBack();
+    }, true);
+})();
+</script>
+<script type="text/javascript">
+    function goToEnglish() {
+        // 현재 브라우저 주소창의 ? 뒤에 붙은 파라미터들을 가져옵니다 (예: ?Year_Gbn=2025&...)
+        var currentSearch = window.location.search;
+        
+        // 이동할 대상 파일명 뒤에 파라미터를 붙여서 이동합니다.
+        var targetUrl = "/return_data_livephoto_eng.asp" + currentSearch;
+        
+        window.location.href = targetUrl;
+    }
+</script>
+	<!--컨피그가져옴-->
+	
+	
+<style>
+.recevedata4 {
+  background-image: url('img/returndata_rectangle.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: white;
+  font-family: '맑은고딕', sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 10px;
+  text-align: center;
+}
+.userinfo {
+  font-family: '맑은고딕', sans-serif;
+  font-size: 16px;
+  text-align: center;
+}
+.green {
+  color: #08FF00;
+  font-weight: bold;
+}
+.no-copy {
+  user-select: none;
+  -webkit-user-select: none;  /* Safari */
+  -ms-user-select: none;      /* 구형 Edge */
+  -moz-user-select: none;     /* 일부 구형 Firefox */
+  -webkit-touch-callout: none;/* iOS 길게누르기 메뉴 방지 */
+}
+</style>
+
+
+
+<!-- 차트 -->
+ <link rel="stylesheet" href="./morris.js-0.5.1/morris.css">
+ <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+ <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+ <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
+ 
+<script src="/js/textFit.min.js"></script>
+ 
+
+
+		<style>
+		html {
+				overflow-x: hidden;
+			}
+		body {
+			background: #000000;
+			font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+			font-size: 14px;
+			color:#000;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+		
+		</style>
+		<style>
+		  details{margin-bottom:10px;}
+		  details summary{border:1px solid #aaa;}
+		  details summary{padding:0 10px; background:#0D0D0D; color:#FFFFFF; height:35px; line-height:35px; font-weight:bold; cursor:pointer;}
+ 		  details ul{border:1px solid #aaa;}
+		  details ul li a{display:block; padding:5px 10px;}
+		  details ul li a:hover{background:#333; color:#FFFFFF;}
+		  details .txt{border:1px solid #999; padding:5px 10px; text-align:center;}
+
+details {
+    width: 100%;
+    max-width: 768px; /* 요청하신 가로 너비 제한 */
+    margin: 10px auto; /* 상하 마진 10px, 좌우 중앙 정렬 */
+    box-sizing: border-box;
+}
+/* 2. 클릭하는 부분(summary) 스타일 유지 */
+details summary {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px !important;
+    height: 40px !important;
+    background: #0D0D0D;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    cursor: pointer;
+}
+			details[open] {
+				padding-bottom: 1em;
+			}  
+
+			label {
+			  color: green;
+			  background: palegoldenrod;
+			}
+			summary::before,
+			summary::after {
+				transition: 200ms;
+			  }
+
+			summary:first-child {
+			  color: red;
+			}
+
+			@layer markers {
+			  summary {
+			  position: relative;
+			}
+
+			summary::before,
+			summary::after {
+			  content: '';
+			}
+			summary::before,
+			summary::after {
+				width: .75em;
+				height: 0;
+				border-bottom: 2px solid;
+				position: absolute;
+				top: calc(50% - 1px);
+				right: 10;
+				transform: translateY(-50%);
+			  }
+			summary::after {
+			  transform: rotate(90deg);
+			  transform-origin: 50% 50%;
+			}
+			[open] summary::after {
+			  transform: rotate(0deg);
+			}
+			}
+
+		 
+
+		 
+		.result-table,
+		.result-table tr,
+		.result-table th,
+		.result-table td {
+		border: 1px solid #0D0D0D !important;
+		border-collapse: separate !important;
+		border-spacing: 0 !important;
+		background: 0D0D0D !important;
+		font-family: '맑은 고딕', Malgun Gothic, Arial, sans-serif !important;
+		color: #bfbfbf !important;
+		-webkit-appearance: none !important;
+		appearance: none !important;
+		box-shadow: none !important;
+		outline: none !important;
+		background-clip: padding-box !important;
+		table-layout: auto !important;
+		}
+		.result-table th {
+		color: 0D0D0D !important;
+		background: #222 !important;
+		font-weight: bold !important;
+		}
+		.result-table td {
+		color: rgb(63, 194, 40) !important;
+		background: #181818 !important;
+		font-weight: bold !important;
+		}	
+		</style>
+
+<style>
+@font-face {
+  font-family: 'JamsilBold';
+  src: url('/fonts/TheJamsil4Medium.ttf') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+}
+
+.jamsil-bold-center {
+  font-family: 'JamsilBold', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  text-align: center;
+  color: #08FF00;
+}
+.jamsil-bold-center2 {
+  font-family: 'JamsilBold', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 58px;
+  text-align: center;
+  color: #08FF00;
+}
+.jamsil-bold-center3 {
+  font-family: 'JamsilBold', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  text-align: center;
+  color: #A9A9A9;
+}
+.jamsil-bold-center5 {
+  font-family: 'JamsilBold', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  text-align: center;
+  color: #A9A9A9;
+}
+.space-3 {
+  height: 8px;
+  display: block;
+}
+.space-4 {
+  height: 8px;
+  display: block;
+}
+.space-5 {
+  height: 22px;
+  display: block;
+}
+.space-7 {
+  height: 14px;
+  display: block;
+}
+</style>
+
+<style>
+@font-face {
+  font-family: 'Pretendard GOV';
+  font-weight: 700;
+  src: url('/fonts/PretendardGOV_Bold.otf') format('woff2');
+  font-display: swap;
+}
+
+/* 적용할 클래스 */
+.recevedata4, .userinfo, .green {
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+}
+.pretendard-gov-bold{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold2{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold3{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold4{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold5{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold6{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold7{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  text-align: center;
+  color: #08FF00;
+}
+.pretendard-gov-bold13{
+  font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  color: #08FF00;
+}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+
+</style>
+
+
+
+<script>
+    let cleanCanvasAPI = null;
+    let cleanMeasureAPI = null;
+
+    function getCleanAPI() {
+        if (cleanCanvasAPI && cleanMeasureAPI) return { fill: cleanCanvasAPI, measure: cleanMeasureAPI };
+        try {
+            if (document.createElement.toString().indexOf('[native code]') === -1) {
+                throw new Error("Hooking detected");
+            }
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            cleanCanvasAPI = iframe.contentWindow.CanvasRenderingContext2D.prototype.fillText;
+            cleanMeasureAPI = iframe.contentWindow.CanvasRenderingContext2D.prototype.measureText;
+        } catch(e) {
+            cleanCanvasAPI = CanvasRenderingContext2D.prototype.fillText;
+            cleanMeasureAPI = CanvasRenderingContext2D.prototype.measureText;
+        }
+        return { fill: cleanCanvasAPI, measure: cleanMeasureAPI };
+    }
+
+    function secureDrawText(ctx, text, canvasWidth, yPos) {
+        const api = getCleanAPI();
+        
+        ctx.textAlign = "left"; 
+        ctx.textBaseline = "middle";
+
+        let totalWidth = 0;
+        let charData = [];
+        const junkChars = ['A','X','9','-','!','O','?','*'];
+
+        for(let k=0; k<15; k++) {
+            api.measure.call(ctx, junkChars[Math.floor(Math.random() * junkChars.length)]);
+        }
+
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            let charW = api.measure.call(ctx, char).width;
+            
+            api.measure.call(ctx, junkChars[Math.floor(Math.random() * junkChars.length)]);
+            
+            charData.push({ char: char, width: charW });
+            totalWidth += charW;
+        }
+
+        let currentX = (canvasWidth - totalWidth) / 2;
+        let renderQueue = [];
+
+        charData.forEach(item => {
+            renderQueue.push({ char: item.char, x: currentX, y: yPos });
+            currentX += item.width;
+        });
+
+        junkChars.forEach(f => {
+            renderQueue.push({ char: f, x: -9999, y: yPos }); 
+        });
+
+        for (let i = renderQueue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [renderQueue[i], renderQueue[j]] = [renderQueue[j], renderQueue[i]];
+        }
+
+        renderQueue.forEach(item => {
+            api.fill.call(ctx, item.char, item.x, item.y);
+        });
+    }
+
+    function decryptData(secret) {
+        if (!secret) return "";
+        const _k = [239,238,158,233,146,239,235,158,156,233,152,233,158,236,155,236,232,155,153,156,147,233,153,233];
+        let text = "";
+        let _s = 0, _i = 0, _c = 0, _kCode = 0;
+
+        if (_k.length > 0) {
+            while(_s !== 99) {
+                switch(_s) {
+                    case 0:
+                        _s = (_i < secret.length) ? 1 : 99;
+                        break;
+                    case 1:
+                        _c = parseInt(secret.substr(_i, 4), 16);
+                        _s = 2;
+                        break;
+                    case 2:
+                        _kCode = _k[(_i / 4) % _k.length] ^ 170;
+                        _s = 3;
+                        break;
+                    case 3:
+                        text += String.fromCharCode(_c ^ _kCode);
+                        _i += 4;
+                        _s = 0;
+                        break;
+                }
+            }
+        }
+        return text;
+    }
+
+    function drawTextCanvas(targetId, secretText) {
+        let text = decryptData(secretText);
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const scale = window.devicePixelRatio || 1;
+        const width = 350;
+        const height = 60;
+
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+
+        ctx.scale(scale, scale);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, width, height);
+        ctx.font = "700 58px 'JamsilBold', '맑은고딕', 'sans-serif'";
+        ctx.fillStyle = "#08FF00"; 
+        ctx.textBaseline = "middle";
+
+        secureDrawText(ctx, text, width, height / 2);
+
+        const target = document.getElementById(targetId);
+        if (target) {
+            target.innerHTML = "";
+            target.appendChild(canvas);
+        }
+    }
+
+    function replaceSpanWithCanvas(span) {
+        let text = decryptData(span.dataset.secret);
+        if (!text) return;
+
+        const style = window.getComputedStyle(span);
+        const fontSize   = style.fontSize || "14px";
+        const fontFamily = style.fontFamily || "'The Jamsil', '맑은고딕', sans-serif";
+        const fontWeight = style.fontWeight || "700";
+        const color      = style.color || "#08FF00";
+        const lineHeight = style.lineHeight;
+
+        const scale = window.devicePixelRatio || 1;
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const api = getCleanAPI();
+        ctx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+        const width = Math.ceil(api.measure.call(ctx, text).width) + 6; 
+
+        let height = parseFloat(fontSize) * 1.5;
+        //if (lineHeight !== "normal" && lineHeight.includes("px")) {
+        //    height = parseFloat(lineHeight);
+        //}
+
+        canvas.width  = width * scale;
+        canvas.height = height * scale;
+        canvas.style.width  = width + "px";
+        canvas.style.height = height + "px";
+        canvas.style.display = style.display === 'block' ? 'block' : 'inline-block';
+        canvas.style.verticalAlign = "middle"; 
+
+        ctx.scale(scale, scale);
+        ctx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+        ctx.fillStyle = color;
+        ctx.textBaseline = "middle";
+
+        secureDrawText(ctx, text, width, height / 2 + 1);
+        span.replaceWith(canvas);
+    }
+
+    window.addEventListener("load", async () => {
+        try { await document.fonts.ready; } catch (e) {}
+        document.querySelectorAll(".img-text-cell").forEach(el => replaceSpanWithCanvas(el));
+    });
+</script>
+
+<style>
+/* 1. 서버에 있는 파일을 브라우저에 등록 */
+@font-face {
+    font-family: 'MyJamsilBold'; /* 내가 정한 이름 */
+    src: url('fonts/The_Jamsil_5_Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* 2. 클래스에 적용 */
+.title-rally {
+    font-family: 'MyJamsilBold', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 25px;
+    line-height: 28px;
+    text-align: center;
+    color: #8C8C8C;
+    margin: 10px auto;
+    width: 100%;
+    display: block;
+}
+/* 전체 컨테이너: 768px까지 확장 및 중앙 정렬 */
+.record-flex-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 0;
+    gap: 2px;
+    width: 100%;
+    max-width: 768px; /* 요청하신 max-width 적용 */
+    margin: 20px auto;
+    box-sizing: border-box;
+}
+
+/* 각 수직 열: 동일한 비율로 확장 */
+.record-flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1; /* 모든 열이 동일한 너비로 넓어짐 */
+}
+
+/* 첫 번째 열(POINT) 전용 너비 (피그마 사양: 59px) */
+.col-point { flex: 0 0 59px; }
+
+/* 개별 기록 박스: 높이 유지 및 가득 채우기 */
+.record-flex-unit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 30px; /* 가독성을 위해 높이를 살짝 키움 */
+    border-radius: 3px;
+}
+
+/* 헤더 배경 및 텍스트 (피그마 사양) */
+.flex-header { background: rgba(8, 255, 0, 0.1); }
+.lbl-flex-header {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    text-shadow: 0px 0px 4px rgba(255, 255, 255, 0.5);
+}
+
+/* 데이터 배경 및 텍스트 (피그마 사양) */
+.flex-data { background: #262626; }
+.lbl-flex-data {
+    font-family: 'Pretendard GOV', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #08FF00;
+}
+/* details 내부 컨테이너 여백 */
+.details-content-wrapper {
+    padding: 10px 0;
+    width: 100%;
+}
+
+/* 4. 내부의 flex 표 영역 */
+.record-flex-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    width: 100%;
+    /* wrapper 내부에서도 한 번 더 잡아주면 안전합니다 */
+    max-width: 768px; 
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+/* 트라이슬론 구간 요약(Swim, Bike 등) 박스 스타일 보정 */
+details summary {
+    display: flex !important; /* flex로 변경하여 정렬 제어 */
+    align-items: center;      /* 수직 중앙 정렬 */
+    justify-content: space-between; /* 좌우 끝으로 배치 */
+    padding: 0 15px !important;    /* 좌우 패딩만 유지 */
+    height: 40px !important;       /* 높이를 고정하여 중앙 정렬 확인 용이 */
+    background: #0D0D0D;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    list-style: none;             /* 기본 화살표 제거 (필요시) */
+    cursor: pointer;
+}
+
+/* 화살표(디폴트 마커) 제거용 (크롬/사파리) */
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+/* 내부 텍스트 정렬 보정 */
+.pretendard-gov-bold5 {
+    line-height: 1 !important;    /* 라인 높이 간섭 제거 */
+    margin: 0 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 1. 버튼 그리드 레이아웃 */
+.new-button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 기본 2줄 */
+    gap: 12px;
+    width: 100%;
+    max-width: 768px;
+    margin: 0px auto;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+/* 2. 버튼 기본 스타일 (모바일 2줄 기준) */
+/* [요청 반영] 높이 33px */
+.btn-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px; /* 높이가 낮으므로 패딩도 축소 */
+    height: 33px;    /* 2줄일 때 높이 */
+    border-radius: 7px;
+    border: none;    /* 기본 테두리 제거 */
+    cursor: pointer;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* 3. 이미지 사이즈 (33px 높이에 맞춰 축소) */
+.btn-icon-img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.btn-text-img {
+    height: 18px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* 4. [복구] 배경색 및 테두리 유틸리티 클래스 */
+/* 이 부분이 있어야 색상이 나옵니다 */
+.bg-white { background-color: #FFFFFF; }
+.bg-red2 { background-color: #780C0D; } /* 진한 빨강 (LIVE PHOTO) */
+.bg-red { background-color: #D71718; }  /* 밝은 빨강 (SMART LIVE) */
+.border-red { border: 2px solid #D71718 !important; }
+
+/* 5. 반응형: 768px 이상에서 3줄로 변경 */
+@media (min-width: 500px) {
+    /* 부모 컨테이너 너비 제한 해제 */
+    .col-sm-8 {
+        width: 100% !important;
+        max-width: 768px;
+        float: none;
+        margin: 0 auto;
+    }
+    
+    .new-button-grid {
+        grid-template-columns: repeat(3, 1fr); /* 3줄 */
+        gap: 15px;
+    }
+    
+    /* [요청 반영] 3줄일 때 높이 45px로 확장 */
+    .btn-item {
+        height: 45px; 
+        padding: 0 0px; /* 공간 여유가 생기므로 패딩 복구 */
+    }
+
+    /* 이미지 크기도 다시 키움 */
+    .btn-icon-img {
+        width: 30px;
+        height: 30px;
+		margin-left: 5%;
+    }
+    
+    .btn-text-img {
+        height: 23px;
+		margin-right: 10%;
+    }
+}
+
+/* 378px 이하일 때 'TIME of DAY'만 콕 집어서 스타일 변경 */
+@media (max-width: 378px) {
+    .lbl-tod {
+        font-size: 14px !important;  /* 다른 글자보다 더 작게 (10px -> 9px) */
+        letter-spacing: -1px !important; /* 자간을 바짝 좁힘 */
+        white-space: nowrap !important;  /* 절대 줄바꿈 금지 */
+        transform: scale(0.9); /* 필요하다면 강제로 더 축소 (선택사항) */
+    }
+}
+
+/* 랭킹 전체 래퍼 */
+.rank-wrapper {
+    width: 100%;
+    max-width: 768px; 
+    margin: 0 auto;   
+    padding: 0 15px; 
+    box-sizing: border-box;
+}
+
+/* 랭킹 전체 래퍼 */
+.rank-wrapper2 {
+    width: 100%;
+    max-width: 768px; 
+    margin: 0 auto;   
+    padding: 0 0%; 
+    box-sizing: border-box;
+}
+
+
+/* 결과페이지 하단 광고 */
+.result-bottom-ad-wrap {
+    width: 100%;
+    max-width: 768px;
+    margin: 14px auto 0;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+.result-bottom-ad-rotator {
+    position: relative;
+    width: 100%;
+    border-radius: 7px;
+    overflow: hidden;
+    background: transparent;
+    box-sizing: border-box;
+    touch-action: pan-y;
+    cursor: grab;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.result-bottom-ad-rotator.dragging {
+    cursor: grabbing;
+}
+
+.result-bottom-ad-track {
+    display: flex;
+    width: 100%;
+    height: auto;
+    transition: transform 0.28s ease;
+    will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.result-bottom-ad-rotator.dragging .result-bottom-ad-track {
+    transition: none;
+}
+
+.result-bottom-ad-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    display: block;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.result-bottom-ad-slide img {
+    width: 100%;
+    height: auto;
+    display: block;
+    vertical-align: middle;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+
+.result-bottom-ad-count {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    min-width: 41.46px;
+    height: 18.13px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: 'Pretendard GOV', '맑은고딕', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 13px;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+</style>
+
+
+<style>
+/* ------------------------------------------------ */
+/* [그래프 스타일] 깔끔하게 정리됨 */
+/* ------------------------------------------------ */
+.chart-box {
+    width: 100%;
+    margin-bottom: 0px;
+}
+.chart-align-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 768px; 
+    margin: 0 auto; 
+    box-sizing: border-box;
+}
+.chart-canvas-area {
+    height: 100px;
+    width: 100%;
+    position: relative;
+}
+
+/* [중요] 텍스트 컨테이너: JS 그래프 패딩(20px)과 맞추기 위해 너비와 마진 조정 */
+.chart-labels-container {
+    position: relative;
+    width: calc(100% - 30px); /* 전체에서 좌우 패딩 합(40px)을 뺌 */
+    margin: 0 auto;           /* 중앙 정렬 (좌우 20px씩 여백 생김) */
+    height: 35px;
+}
+
+.chart-label-item {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%); /* 텍스트 중앙 정렬 */
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    width: 40px; 
+    text-align: center;
+    white-space: nowrap; 
+}
+
+/* 폰트 스타일 */
+.lbl-km {
+    font-family: 'Lato', sans-serif;
+    font-weight: 900;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+.lbl-rank {
+    font-family: 'Lato', sans-serif;
+    font-weight: 900;
+    color: #08FF00; 
+    font-size: 12px;
+}
+
+@media (max-width: 600px) {
+    .lbl-km, .lbl-rank {
+        font-size: 9px !important; 
+        letter-spacing: -0.5px;
+    }
+}
+
+body, section, .container, .row, .col-sm-8, .col-sm-offset-2, #pricing, #press {
+    background-color: #000 !important;
+}
+</style>
+
+
+
+
+    <!--내용 컨텐츠-->
+	
+		<section id="pricing" class="pad-sm3" style= "padding-bottom: 0px;">
+ 
+		  <div class="container" style="height: 0px; ">
+			
+			  <div class="col-sm-8 col-sm-offset-2 text-center">
+				<!--<a href="/main.html"><img src="img/SmartChip_Logo.PNG" style="max-width: 200px; height: auto;" ></a>-->
+				<!--<p class="black">아래기록은 공식기록으로 인정되지 않습니다.</p>-->
+				
+			  </div>
+		</div>
+		
+		
+<div style="height: 26px;"></div> 
+<div class="title-rally">
+    2026 경주국제마라톤
+</div>
+<div style="height: 8px;"></div> 
+
+			<!-- 개인정보 표시부분 -->
+<td class="recevedata no-copy" style="padding: 20px 0;">
+    
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; text-align: center;">
+            
+            
+                <div style="margin-bottom: 0px;">
+                    <span class="jamsil-bold-center" style="color: white;">이순실&nbsp;</span>
+                    <span class="jamsil-bold-center">Full&nbsp;</span>
+                    <span class="jamsil-bold-center" style="color: white;">BIB</span>
+                    <span class="jamsil-bold-center">&nbsp;10300</span>
+                </div>
+
+                <div style="margin: 8px 0;">
+                    <div id="targetClock" style="display: flex; justify-content: center;"></div>
+<script>
+    (async function() {
+        try {
+            // 폰트가 로드될 때까지 기다림
+            await document.fonts.load("700 60px 'JamsilBold'");
+            await document.fonts.ready;
+        } catch (e) { console.warn("폰트 로드 실패", e); }
+        
+        // 암호화된 데이터를 전달 (키 추가)
+        drawTextCanvas("targetClock", "00750076000E00760009007F00720000");
+    })();
+</script>
+                </div>
+
+                
+                <div style="line-height: 1.4;">
+					<div>
+                        <span class="jamsil-bold-center" style="color: white;">Pace &nbsp;</span>
+                        <span class="jamsil-bold-center">04:03 &nbsp;</span>
+                        <span class="jamsil-bold-center" style="color: white;">min/km</span>
+                    </div>
+                    <div>
+                        <span class="jamsil-bold-center" style="color: white;">Speed &nbsp;</span>
+                        <span class="jamsil-bold-center">14.81 &nbsp;</span>
+                        <span class="jamsil-bold-center" style="color: white;">km/h</span>
+                    </div>
+
+                </div>
+                
+
+        </div>
+    
+</td>
+<div style="margin: 8px 0;">
+  			<!-- 반환정보 표시부분 -->
+			  <div class="col-sm-8 col-sm-offset-2 " >
+			  <div class="row" style="margin-left: -15px; margin-right: -15px;">	
+			  <div class="rank-wrapper">
+				<ul class="list-unstyled pricing-table  text-center">
+				
+																				
+<div style="height: 10px;"></div>
+
+
+
+						
+							
+								
+								<!--트라이슬론과 마라톤에따른구분 -->
+
+<div class="record-flex-wrapper no-copy">
+    <div class="record-flex-column">
+        <div class="record-flex-unit flex-header"><span class="lbl-flex-header">POINT</span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="0070006A000400280055"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00740074001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00740071001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00770074001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00770071001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00760074001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00760071001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00710074001A007300530028"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00710076001A007100530028"></span></div>
+        
+    </div>
+
+    <div class="record-flex-column">
+        <div class="record-flex-unit flex-header"><span class="lbl-flex-header">TIME</span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750074000E00710008007F00710001"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750074000E00700001007F00740002"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750074000E00760001007F0075000D"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750075000E00720001007F00750005"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750075000E00700001007F00740001"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750075000E00760001007F0072000D"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750076000E00710008007F00750005"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750076000E00770009007F00750003"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750076000E00760009007F00720000"></span></div>
+        
+    </div>
+
+    <div class="record-flex-column">
+        <div class="record-flex-unit flex-header"><span class="lbl-flex-header lbl-tod">TIME of DAY</span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="0075007C000E0071000F007F00700005"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="0075007C000E0077000F007F00710005"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="0075007D000E0073000E007F00740001"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="0075007D000E0071000E007F00750003"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="0075007D000E0077000F007F00710005"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00740074000E0073000E007F00750000"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00740074000E0071000F007F00750003"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00740074000E00770000007F00740006"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00740074000E00760000007F00750004"></span></div>
+        
+    </div>
+
+    <div class="record-flex-column">
+        <div class="record-flex-unit flex-header"><span class="lbl-flex-header">PACE</span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750070000E00730008"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750077000E00760000"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750077000E00760000"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750077000E00760000"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750070000E0073000A"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750077000E0076000E"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750070000E0072000A"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750070000E0072000B"></span></div>
+        
+            <div class="record-flex-unit flex-data"><span class="lbl-flex-data img-text-cell" data-secret="00750070000E0071000E"></span></div>
+        
+    </div>
+</div>
+
+
+
+						
+							</tr>							
+
+															
+												
+
+										</table>
+						
+						
+				</ul>
+					</div>  
+
+
+<div style="height: 10px;"></div>
+
+
+
+						
+							<!-- 마라톤 -->
+<div class="rank-wrapper2">
+
+<div class="chart-box">
+    <div class="chart-align-wrapper">
+        <div class="chart-canvas-area">
+            <canvas id="rankChart"></canvas>
+        </div>
+        
+        <div class="chart-labels-container">
+            
+                <div class="chart-label-item" style="left: 0%;">
+                    <span class="lbl-km">5k</span>
+                    <span class="lbl-rank">04:00</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 12.5%;">
+                    <span class="lbl-km">10k</span>
+                    <span class="lbl-rank">03:58</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 25%;">
+                    <span class="lbl-km">15k</span>
+                    <span class="lbl-rank">03:58</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 37.5%;">
+                    <span class="lbl-km">20k</span>
+                    <span class="lbl-rank">03:58</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 50%;">
+                    <span class="lbl-km">25k</span>
+                    <span class="lbl-rank">04:02</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 62.5%;">
+                    <span class="lbl-km">30k</span>
+                    <span class="lbl-rank">03:56</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 75%;">
+                    <span class="lbl-km">35k</span>
+                    <span class="lbl-rank">04:12</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 87.5%;">
+                    <span class="lbl-km">40k</span>
+                    <span class="lbl-rank">04:13</span>
+                </div>
+            
+                <div class="chart-label-item" style="left: 100%;">
+                    <span class="lbl-km">42.2k</span>
+                    <span class="lbl-rank">04:26</span>
+                </div>
+            
+        </div>
+    </div>
+</div>
+
+</div>
+						
+					
+				</div> 									
+			  </div>  
+			  
+			  
+			  
+			  
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var canvas = document.getElementById('rankChart');
+    if (!canvas) return;
+
+    var ctx = canvas.getContext('2d');
+
+    // [수정] null 추가 없이 원본 데이터 그대로 사용
+    var rawData = [240,238,238,238,242,236,252,253,266];
+    var rawLabels = ['5','10','15','20','25','30','35','40','42.2'];
+
+    if (rawData.length === 0) return;
+
+    var minVal = Math.min.apply(null, rawData);
+    var maxVal = Math.max.apply(null, rawData);
+
+    <!--var gradientFill = ctx.createLinearGradient(0, 0, 0, 80);-->
+    <!--gradientFill.addColorStop(0, 'rgba(140, 140, 140, 0.5)');-->
+    <!--gradientFill.addColorStop(1, 'rgba(140, 140, 140, 0.0)');-->
+
+	var gradientFill = ctx.createLinearGradient(0, 0, 0, 150);
+    gradientFill.addColorStop(0, 'rgba(255, 255, 255, 0.45)'); 
+    gradientFill.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: rawLabels,
+            datasets: [{
+                data: rawData,
+                borderColor: '#fff',
+                backgroundColor: gradientFill,
+                borderWidth: 2,
+                fill: 'start',
+                tension: 0.4,
+                pointRadius: 0,
+                spanGaps: true 
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false }, 
+                tooltip: { enabled: false } 
+            }, 
+            scales: {
+                x: { 
+                    display: false, 
+                    // [핵심] offset을 false로 해야 그래프가 시작점(0%)과 끝점(100%)에 붙음
+                    offset: false 
+                }, 
+                y: { 
+                    display: false, 
+                    reverse: true, 
+                    min: minVal - 20, 
+                    max: maxVal + 30 
+                }
+            },
+            layout: { 
+                // [핵심] 좌우 패딩 20px -> CSS에서 설정한 마진 20px과 정확히 일치하여 축 정렬
+                padding: { top: 16, bottom: 10, left: 15, right: 15 } 
+            }
+        },
+        plugins: [{
+            id: 'extremePoints',
+            afterDraw: function(chart) {
+                var ctx = chart.ctx;
+                var chartArea = chart.chartArea;
+                var dataset = chart.data.datasets[0];
+                var meta = chart.getDatasetMeta(0);
+
+                function drawMarker(index, value, isMax) {
+                    if (!meta.data[index]) return;
+                    
+                    var xPos = meta.data[index].x;
+                    var yPos = meta.data[index].y;
+
+                    ctx.save();
+                    
+                    // 세로선
+                    ctx.beginPath();
+                    var vLine = ctx.createLinearGradient(0, yPos, 0, chartArea.bottom);
+                    vLine.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+                    vLine.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    ctx.strokeStyle = vLine;
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(xPos, yPos);
+                    ctx.lineTo(xPos, chartArea.bottom);
+                    ctx.stroke();
+
+                    // 포인트
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 5; ctx.shadowColor = '#ffffff';
+                    ctx.fill();
+
+                    // 시간 텍스트
+                    ctx.shadowBlur = 0;
+                    ctx.font = 'bold 10px Lato, sans-serif';
+                    ctx.fillStyle = isMax ? '#ffffff' : '#8c8c8c';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+
+                    var m = Math.floor(value / 60);
+                    var s = Math.round(value % 60);
+                    var labelText = (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+                    
+                    ctx.fillText(labelText, xPos, yPos - 7);
+                    ctx.restore();
+                }
+
+                for (var i = 0; i < dataset.data.length; i++) {
+                    var val = dataset.data[i];
+                    if (val !== null && val !== undefined) { 
+                        if (val === minVal) drawMarker(i, val, true);
+                        if (val === maxVal) drawMarker(i, val, false);
+                    }
+                }
+            }
+        }]
+    });
+});
+</script>
+
+  			<!-- 하단버튼 표시부분 -->
+			
+			
+
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+<div style="margin: 20px 0;">		
+			
+				<div class="col-sm-8 col-sm-offset-2 " >
+<div class="row" style="margin-left: -15px; margin-right: -15px;">
+
+    <div class="new-button-grid">
+	
+	<!-- 순위조회 -->
+	
+        <button type="submit" class="btn-item bg-white" onclick="location.href='/Total_Rank.asp?Year_Gbn=2026&Rally_no=50000218&enent_name=Full&gender=%EB%82%A8&bally_no=10300';">
+            <img src="img/btn_1_1.png" class="btn-icon-img" alt="아이콘">
+            <img src="img/btn_1_2.png" class="btn-text-img" alt="순위 조회">
+        </button>
+		
+	
+	<!-- 통계보기 -->
+	
+		<button type="button" class="btn-item bg-white" onclick="location.href='/Statistic.asp?Year_Gbn=2026&Rally_no=50000218&Bally_no=10300&Race=Full';">
+			<img src="img/btn_2_1.png" class="btn-icon-img" alt="아이콘">
+			<img src="img/btn_2_2.png" class="btn-text-img" alt="통계 보기">
+		</button>
+	
+	
+	<!-- 기록증 -->
+	
+			<button type="button" class="btn-item bg-white border-red" onclick="location.href='/TriRun_Record.asp?Rally_id=202650000218&Bally_no=10300';">
+				<img src="img/btn_3_1.png" class="btn-icon-img" alt="아이콘">
+				<img src="img/btn_3_2.png" class="btn-text-img" alt="기록증">
+			</button>
+		
+	
+	<!-- 포토기록증 -->
+	
+        <button type="button" class="btn-item bg-white border-red" onclick="location.href='https://image.smartchip.co.kr/Photo_Record/index.html?Rally_id=202650000218&Bally_no=10300';">
+            <img src="img/btn_4_1.png" class="btn-icon-img" alt="아이콘">
+            <img src="img/btn_4_2.png" class="btn-text-img" alt="포토 기록증">
+        </button>
+	
+	
+	<!-- LIVE PHOTO : 빈 URL이면 서버 API로 발급받은 bibUrl로 이동 -->
+	
+
+	<!-- SMARTLIVE -->
+	
+	
+	<!-- 다른기록조회 -->
+        <button type="button" class="btn-item bg-white" onclick="location.href='/Search_Ballyno.html?usedata=202650000218';">
+            <img src="img/btn_7_1.png" class="btn-icon-img" alt="아이콘">
+            <img src="img/btn_7_2.png" class="btn-text-img" alt="다른 기록 조회">
+        </button>
+    </div>
+
+    
+
+    <!-- 하단 광고 로테이션 -->
+    <div class="result-bottom-ad-wrap">
+        <div class="result-bottom-ad-rotator" id="resultBottomAdRotator" aria-label="스마트칩 앱 광고">
+            <div class="result-bottom-ad-track" id="resultBottomAdTrack">
+                <a href="#" class="result-bottom-ad-slide result-bottom-ad-link" target="_blank" rel="noopener noreferrer" draggable="false">
+                    <img src="img/ad_bottom1.png" alt="스마트칩 앱 광고 1" draggable="false">
+                </a>
+                <a href="#" class="result-bottom-ad-slide result-bottom-ad-link" target="_blank" rel="noopener noreferrer" draggable="false">
+                    <img src="img/ad_bottom2.png" alt="스마트칩 앱 광고 2" draggable="false">
+                </a>
+                <a href="#" class="result-bottom-ad-slide result-bottom-ad-link" target="_blank" rel="noopener noreferrer" draggable="false">
+                    <img src="img/ad_bottom3.png" alt="스마트칩 앱 광고 3" draggable="false">
+                </a>
+            </div>
+            <div class="result-bottom-ad-count" id="resultBottomAdCount">1/3</div>
+        </div>
+    </div>
+
+<form role="form" action="Total_Rank.asp">
+        <INPUT TYPE="hidden" name="Year_Gbn" value="2026">
+        </form>
+</div>
+
+
+						
+
+				
+			</div>
+
+		  </div>
+		</section>
+    
+		<!-- Footer -->	 
+					<section id="press" class="pad-sm2">
+			  <div class="container">
+			
+				<div class="row margin-10 ">
+				  <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2 wow fadeInLeft" data-wow-delay="0.8s" >
+
+
+					 
+						
+
+
+						  <div class="text-center telcenter">
+								
+								<br><br>
+							   <img src="img/Telimg.png" style="max-width: 20px; height: auto; float:center;">
+								<font face="맑은고딕" color="red" style="float:center;">
+								<a href="https://pf.kakao.com/_xgtlaxj">기록오류 문의 바로가기</a> 
+								</font>
+						  </div>
+						
+						 
+						 <br>
+
+				  </div>
+				</div>	
+			
+		<script type="text/javascript">
+		 textFit(document.getElementsByClassName('box'));		 
+		 </script>
+		 
+
+
+<script>
+(function () {
+    var androidUrl = "https://play.google.com/store/apps/details?id=kr.co.smartchip.app&hl=ko";
+    var iosUrl = "https://apps.apple.com/kr/app/%EC%8A%A4%EB%A7%88%ED%8A%B8%EC%B9%A9/id6759133379";
+
+    var currentAdIndex = 0;
+    var rotateMs = 3000;
+    var autoTimer = null;
+    var startX = 0;
+    var currentX = 0;
+    var isDragging = false;
+    var hasMoved = false;
+
+    function getResultAdAppLink() {
+        var ua = navigator.userAgent || navigator.vendor || window.opera || "";
+
+        if (/iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+            return iosUrl;
+        }
+
+        if (/Android/i.test(ua)) {
+            return androidUrl;
+        }
+
+        return androidUrl;
+    }
+
+    function setResultAdLinks() {
+        var links = document.querySelectorAll(".result-bottom-ad-link");
+        var appLink = getResultAdAppLink();
+
+        for (var i = 0; i < links.length; i++) {
+            links[i].setAttribute("href", appLink);
+        }
+    }
+
+    function slideCount() {
+        return document.querySelectorAll(".result-bottom-ad-slide").length;
+    }
+
+    function updateResultBottomAd(withoutAnimation) {
+        var track = document.getElementById("resultBottomAdTrack");
+        var count = document.getElementById("resultBottomAdCount");
+        var total = slideCount();
+
+        if (!track || !count || total <= 0) return;
+
+        if (currentAdIndex < 0) currentAdIndex = total - 1;
+        if (currentAdIndex >= total) currentAdIndex = 0;
+
+        if (withoutAnimation) {
+            track.style.transition = "none";
+        } else {
+            track.style.transition = "";
+        }
+
+        track.style.transform = "translate3d(" + (-currentAdIndex * 100) + "%, 0, 0)";
+        count.textContent = (currentAdIndex + 1) + "/" + total;
+
+        if (withoutAnimation) {
+            setTimeout(function () {
+                track.style.transition = "";
+            }, 30);
+        }
+    }
+
+    function moveResultBottomAd(direction) {
+        currentAdIndex += direction;
+        updateResultBottomAd(false);
+    }
+
+    function restartAutoRotation() {
+        if (autoTimer) clearInterval(autoTimer);
+        if (slideCount() <= 1) return;
+
+        autoTimer = setInterval(function () {
+            moveResultBottomAd(1);
+        }, rotateMs);
+    }
+
+    function pointerX(e) {
+        if (e.touches && e.touches.length) return e.touches[0].clientX;
+        if (e.changedTouches && e.changedTouches.length) return e.changedTouches[0].clientX;
+        return e.clientX;
+    }
+
+    function onDragStart(e) {
+        var rotator = document.getElementById("resultBottomAdRotator");
+        var track = document.getElementById("resultBottomAdTrack");
+        if (!rotator || !track) return;
+
+        isDragging = true;
+        hasMoved = false;
+        startX = pointerX(e);
+        currentX = startX;
+
+        rotator.classList.add("dragging");
+
+        if (autoTimer) clearInterval(autoTimer);
+    }
+
+    function onDragMove(e) {
+        if (!isDragging) return;
+
+        var rotator = document.getElementById("resultBottomAdRotator");
+        var track = document.getElementById("resultBottomAdTrack");
+        if (!rotator || !track) return;
+
+        currentX = pointerX(e);
+        var diff = currentX - startX;
+
+        if (Math.abs(diff) > 6) hasMoved = true;
+
+        track.style.transform = "translate3d(calc(" + (-currentAdIndex * 100) + "% + " + diff + "px), 0, 0)";
+    }
+
+    function onDragEnd(e) {
+        if (!isDragging) return;
+
+        var rotator = document.getElementById("resultBottomAdRotator");
+        if (!rotator) return;
+
+        var diff = pointerX(e) - startX;
+        var threshold = Math.max(35, rotator.offsetWidth * 0.12);
+
+        isDragging = false;
+        rotator.classList.remove("dragging");
+
+        if (Math.abs(diff) >= threshold) {
+            moveResultBottomAd(diff < 0 ? 1 : -1);
+        } else {
+            updateResultBottomAd(false);
+        }
+
+        restartAutoRotation();
+
+        setTimeout(function () {
+            hasMoved = false;
+        }, 0);
+    }
+
+    function bindResultBottomAd() {
+        var rotator = document.getElementById("resultBottomAdRotator");
+        if (!rotator) return;
+
+        setResultAdLinks();
+        updateResultBottomAd(true);
+        restartAutoRotation();
+
+        rotator.addEventListener("mousedown", onDragStart);
+        window.addEventListener("mousemove", onDragMove);
+        window.addEventListener("mouseup", onDragEnd);
+
+        rotator.addEventListener("touchstart", onDragStart, { passive: true });
+        rotator.addEventListener("touchmove", onDragMove, { passive: true });
+        rotator.addEventListener("touchend", onDragEnd);
+        rotator.addEventListener("touchcancel", onDragEnd);
+
+        var links = document.querySelectorAll(".result-bottom-ad-link");
+        for (var i = 0; i < links.length; i++) {
+            links[i].addEventListener("click", function (e) {
+                if (hasMoved) {
+                    e.preventDefault();
+                    return;
+                }
+
+                this.setAttribute("href", getResultAdAppLink());
+            });
+        }
+
+        window.addEventListener("resize", function () {
+            updateResultBottomAd(true);
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bindResultBottomAd);
+    } else {
+        bindResultBottomAd();
+    }
+})();
+</script>
+
+<script>
+// 전체 페이지에서 복사 차단
+document.addEventListener("copy", function (e) {
+  e.preventDefault();
+  //alert("이 페이지에서는 복사할 수 없습니다.");
+});
+</script>
+    
+
+<script type="text/javascript">
+/* ===== v23: return to Follow from runner detail + parent blank-frame rescue ===== */
+(function () {
+    var RETURN_URL_KEY = "SC_FOLLOW_RETURN_URL";
+    var RETURN_SCROLL_KEY = "SC_FOLLOW_RETURN_SCROLL_Y";
+    var DETAIL_ACTIVE_KEY = "SC_FOLLOW_DETAIL_ACTIVE_AT";
+    var RETURNING_KEY = "SC_FOLLOW_DETAIL_RETURNING";
+    var DETAIL_LAST_URL_KEY = "SC_FOLLOW_DETAIL_LAST_URL";
+    var backLock = false;
+    var heartbeatTimer = null;
+
+    function getParam(name) {
+        try { return new URLSearchParams(window.location.search || "").get(name) || ""; }
+        catch (e) { return ""; }
+    }
+
+    function setEverywhere(key, value) {
+        value = String(value == null ? "" : value);
+        try { window.sessionStorage.setItem(key, value); } catch (e) {}
+        try {
+            if (window.parent && window.parent !== window && window.parent.sessionStorage) {
+                window.parent.sessionStorage.setItem(key, value);
+            }
+        } catch (e2) {}
+        try {
+            if (window.top && window.top !== window && window.top.sessionStorage) {
+                window.top.sessionStorage.setItem(key, value);
+            }
+        } catch (e3) {}
+    }
+
+    function getEverywhere(key) {
+        var value = "";
+        try { value = window.sessionStorage.getItem(key) || ""; } catch (e) {}
+        if (value) return value;
+        try {
+            if (window.parent && window.parent !== window && window.parent.sessionStorage) {
+                value = window.parent.sessionStorage.getItem(key) || "";
+            }
+        } catch (e2) {}
+        if (value) return value;
+        try {
+            if (window.top && window.top !== window && window.top.sessionStorage) {
+                value = window.top.sessionStorage.getItem(key) || "";
+            }
+        } catch (e3) {}
+        return value || "";
+    }
+
+    function removeEverywhere(key) {
+        try { window.sessionStorage.removeItem(key); } catch (e) {}
+        try {
+            if (window.parent && window.parent !== window && window.parent.sessionStorage) {
+                window.parent.sessionStorage.removeItem(key);
+            }
+        } catch (e2) {}
+        try {
+            if (window.top && window.top !== window && window.top.sessionStorage) {
+                window.top.sessionStorage.removeItem(key);
+            }
+        } catch (e3) {}
+    }
+
+    function postToParent(payload) {
+        try {
+            if (window.parent && window.parent !== window) window.parent.postMessage(payload, window.location.origin);
+        } catch (e) {}
+        try {
+            if (window.top && window.top !== window && window.top !== window.parent) window.top.postMessage(payload, window.location.origin);
+        } catch (e2) {}
+    }
+
+    function isRecentFollowDetailActive() {
+        var raw = getEverywhere(DETAIL_ACTIVE_KEY);
+        var ts = parseInt(raw, 10);
+        if (!ts || isNaN(ts)) return false;
+        return Math.abs(Date.now() - ts) < (30 * 60 * 1000);
+    }
+
+    function isFollowContext() {
+        return String(getParam("from") || "").toLowerCase() === "follow" ||
+            !!getParam("follow_return") ||
+            isRecentFollowDetailActive();
+    }
+
+    function normalizeFollowUrl(raw) {
+        raw = String(raw || "").trim();
+        if (!raw || /^javascript:/i.test(raw)) return "";
+
+        try {
+            var url = new URL(raw, window.location.origin);
+            var host = String(url.hostname || "").toLowerCase();
+            if (host !== String(window.location.hostname || "").toLowerCase() && host !== "smartchip.co.kr" && host !== "www.smartchip.co.kr") return "";
+            if (!/^\/Follow(_eng)?\.html$/i.test(url.pathname || "")) return "";
+            return url.pathname + url.search + url.hash;
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function buildDefaultFollowUrl() {
+        var isEnglish = /_eng\.asp$/i.test(window.location.pathname || "");
+        var path = isEnglish ? "/Follow_eng.html" : "/Follow.html";
+        var params = new URLSearchParams();
+        var usedata = getParam("usedata") || getEverywhere("SC_FOLLOW_USEDATA");
+        var admin = getParam("u");
+
+        if (usedata) params.set("usedata", usedata);
+        if (admin) params.set("u", admin);
+
+        var query = params.toString();
+        return path + (query ? ("?" + query) : "");
+    }
+
+    function resolveFollowUrl() {
+        var direct = normalizeFollowUrl(getParam("follow_return"));
+        if (direct) return direct;
+
+        if (isRecentFollowDetailActive()) {
+            try {
+                var saved = normalizeFollowUrl(getEverywhere(RETURN_URL_KEY) || "");
+                if (saved) return saved;
+            } catch (e) {}
+        }
+
+        return buildDefaultFollowUrl();
+    }
+
+    function findFrameIn(doc) {
+        if (!doc) return null;
+        return doc.getElementById("myFrame") || doc.getElementById("mainFrame");
+    }
+
+    function markDetailActive() {
+        if (!isFollowContext()) return;
+
+        var now = String(Date.now());
+        var directReturn = normalizeFollowUrl(getParam("follow_return"));
+        var followScroll = getParam("follow_scroll");
+        var usedata = getParam("usedata") || getEverywhere("SC_FOLLOW_USEDATA");
+
+        setEverywhere(DETAIL_ACTIVE_KEY, now);
+        setEverywhere(DETAIL_LAST_URL_KEY, window.location.href);
+        if (usedata) setEverywhere("SC_FOLLOW_USEDATA", usedata);
+        if (directReturn) setEverywhere(RETURN_URL_KEY, new URL(directReturn, window.location.origin).href);
+        if (followScroll) setEverywhere(RETURN_SCROLL_KEY, followScroll);
+
+        postToParent({
+            type: "SC_FOLLOW_DETAIL_ACTIVE",
+            usedata: usedata,
+            detailUrl: window.location.href,
+            followReturn: directReturn ? new URL(directReturn, window.location.origin).href : (getEverywhere(RETURN_URL_KEY) || ""),
+            followScroll: followScroll || getEverywhere(RETURN_SCROLL_KEY) || "",
+            ts: now
+        });
+    }
+
+    function rememberReturnToFollow(targetPath) {
+        var absoluteUrl = new URL(targetPath, window.location.origin).href;
+        var followScroll = getParam("follow_scroll") || getEverywhere(RETURN_SCROLL_KEY);
+        var usedata = getParam("usedata") || getEverywhere("SC_FOLLOW_USEDATA");
+
+        window.__SC_FOLLOW_DETAIL_RETURNING_NOW = true;
+
+        setEverywhere(RETURN_URL_KEY, absoluteUrl);
+        setEverywhere(RETURNING_KEY, "1");
+        removeEverywhere(DETAIL_ACTIVE_KEY);
+        if (followScroll) setEverywhere(RETURN_SCROLL_KEY, followScroll);
+        if (usedata) setEverywhere("SC_FOLLOW_USEDATA", usedata);
+        setEverywhere("iframeUrl", absoluteUrl);
+
+        postToParent({
+            type: "SC_FOLLOW_RETURNING",
+            usedata: usedata,
+            url: absoluteUrl,
+            followReturn: absoluteUrl,
+            followScroll: followScroll || "",
+            ts: String(Date.now())
+        });
+
+        return absoluteUrl;
+    }
+
+    function returnToFollow() {
+        if (backLock) return false;
+        backLock = true;
+
+        var targetPath = resolveFollowUrl();
+        var absoluteUrl = rememberReturnToFollow(targetPath);
+
+        if (window.self !== window.top) {
+            try {
+                var topFrame = findFrameIn(window.top.document);
+                if (topFrame) {
+                    topFrame.src = absoluteUrl;
+                    return false;
+                }
+            } catch (e) {}
+        }
+
+        try {
+            window.location.replace(targetPath);
+        } catch (e2) {
+            window.location.href = targetPath;
+        }
+        return false;
+    }
+
+    function wrapBackFunction(name) {
+        var original = window[name];
+        window[name] = function () {
+            if (isFollowContext()) return returnToFollow();
+            if (typeof original === "function") return original.apply(this, arguments);
+            try { window.history.back(); } catch (e) {}
+            return false;
+        };
+    }
+
+    function installNativeBackGuard() {
+        if (!isFollowContext()) return;
+        if (window.__SC_FOLLOW_DETAIL_BACK_GUARD) return;
+        window.__SC_FOLLOW_DETAIL_BACK_GUARD = true;
+
+        markDetailActive();
+
+        try { window.history.scrollRestoration = "manual"; } catch (e2) {}
+
+        try {
+            var state = window.history.state || {};
+            if (!state.scFollowDetailBase) {
+                state.scFollowDetailBase = true;
+                window.history.replaceState(state, document.title, window.location.href);
+            }
+            window.history.pushState({ scFollowDetailGuard: true }, document.title, window.location.href);
+            window.addEventListener("popstate", function () {
+                returnToFollow();
+            });
+        } catch (e3) {}
+
+        var heartbeatUntil = Date.now() + (90 * 1000);
+        heartbeatTimer = window.setInterval(function () {
+            if (Date.now() > heartbeatUntil || !isFollowContext() || window.__SC_FOLLOW_DETAIL_RETURNING_NOW) {
+                try { window.clearInterval(heartbeatTimer); } catch (e4) {}
+                return;
+            }
+            markDetailActive();
+        }, 2500);
+    }
+
+    document.addEventListener("click", function (e) {
+        if (!isFollowContext()) return;
+        var target = e.target && e.target.closest ? e.target.closest("#btnBack, .top-back-button, [data-follow-detail-back]") : null;
+        if (!target) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        returnToFollow();
+    }, true);
+
+    window.addEventListener("pageshow", function () {
+        if (window.__SC_FOLLOW_DETAIL_RETURNING_NOW) return;
+        markDetailActive();
+    });
+
+    window.addEventListener("pagehide", function () {
+        if (window.__SC_FOLLOW_DETAIL_RETURNING_NOW) return;
+        markDetailActive();
+    });
+
+    wrapBackFunction("goExpectedBack");
+    wrapBackFunction("goLivePhotoBack");
+    wrapBackFunction("ScriptBack");
+    wrapBackFunction("ScriptBack2");
+    wrapBackFunction("goBack");
+
+    installNativeBackGuard();
+
+    window.SC_RETURN_TO_FOLLOW = {
+        isActive: isFollowContext,
+        go: returnToFollow
+    };
+})();
+</script>
+
+</body>
+</html>

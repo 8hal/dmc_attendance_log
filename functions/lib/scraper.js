@@ -239,6 +239,90 @@ function scDecrypt(secret, html) {
   return text;
 }
 
+function blankSmartChipTime(raw) {
+  const text = String(raw == null ? "" : raw).trim();
+  if (!text || text === "--:--:--" || text === "-") return true;
+  const norm = normTime(text);
+  return !norm || norm === "--:--:--" || norm === "-";
+}
+
+function usableSmartChipHms(raw) {
+  if (blankSmartChipTime(raw)) return "";
+  const norm = normTime(raw);
+  return /^\d{2}:\d{2}:\d{2}$/.test(norm) ? norm : "";
+}
+
+function smartChipPointKm(label) {
+  const text = String(label || "").toLowerCase().replace(/\s+/g, "").replace(/km$/, "");
+  const num = Number(text);
+  return Number.isFinite(num) ? num : null;
+}
+
+function parseSmartChipSplitRows(html) {
+  const $ = cheerioLoad(html);
+  const units = [];
+  $(".record-flex-unit").each((_, el) => {
+    const cls = $(el).attr("class") || "";
+    const header = $(el).find(".lbl-flex-header").first().text().replace(/\s+/g, " ").trim();
+    const secretNode = $(el).find("[data-secret]").first();
+    const secret = secretNode.length ? String(secretNode.attr("data-secret") ?? "") : null;
+    units.push({
+      kind: cls.includes("flex-header") ? "header" : "data",
+      header,
+      secret,
+    });
+  });
+
+  const columns = [];
+  let current = null;
+  for (const unit of units) {
+    if (unit.kind === "header") {
+      current = { header: unit.header || "?", values: [] };
+      columns.push(current);
+    } else if (current) {
+      current.values.push(unit.secret == null ? "" : scDecrypt(unit.secret, html));
+    }
+  }
+
+  const valuesOf = (header) => (columns.find((col) => col.header === header) || { values: [] }).values;
+  const points = valuesOf("POINT");
+  const times = valuesOf("TIME");
+  const clocks = valuesOf("TIME of DAY");
+  const paces = valuesOf("PACE");
+  const count = Math.max(points.length, times.length, clocks.length, paces.length);
+  const rows = [];
+  for (let i = 0; i < count; i++) {
+    const label = String(points[i] || "").trim();
+    if (!label) continue;
+    const pace = String(paces[i] || "").trim();
+    rows.push({
+      label,
+      km: smartChipPointKm(label),
+      time: usableSmartChipHms(times[i]),
+      clockTime: usableSmartChipHms(clocks[i]),
+      pace: !pace || pace === "--:--:--" || pace === "-" ? "" : pace,
+    });
+  }
+  return rows;
+}
+
+function smartChipSplitsForRecord(rows, netTime) {
+  const hasEmpty = rows.some((row) => !row.time);
+  const hasLateFinish = rows.some((row) => row.time && row.km != null && row.km >= 42);
+  // 넷이 없고 중간이 비어 있는데 42.2만 찍힌 도착은 앞뒤가 맞지 않아 버린다.
+  const dropFinish = !netTime && hasEmpty && hasLateFinish;
+  const splits = [];
+  for (const row of rows) {
+    if (!row.time) continue;
+    if (dropFinish && row.km != null && row.km >= 42) continue;
+    const split = { label: row.label, time: row.time };
+    if (row.clockTime) split.clockTime = row.clockTime;
+    if (row.pace) split.pace = row.pace;
+    splits.push(split);
+  }
+  return splits;
+}
+
 function parseSmartChipResult(html, memberName) {
   const $ = cheerioLoad(html);
   const jamsil = [];
@@ -255,7 +339,8 @@ function parseSmartChipResult(html, memberName) {
   }
 
   const enc = html.match(/drawTextCanvas\s*\(\s*"targetClock"\s*,\s*"([0-9a-fA-F]+)"\s*\)/);
-  const netTime = enc ? scDecrypt(enc[1], html) : "";
+  const netRaw = enc ? scDecrypt(enc[1], html) : "";
+  const netTime = usableSmartChipHms(netRaw);
   const rankData = html.match(/var rawData\s*=\s*\[([^\]]*)\]/);
   const overallRank = rankData ? parseInt(rankData[1].split(",")[0]) : null;
 
@@ -268,11 +353,12 @@ function parseSmartChipResult(html, memberName) {
     else if (genderRaw === "여" || genderRaw.toLowerCase() === "female" || genderRaw.toLowerCase() === "f") gender = "F";
   }
 
-  if (!netTime) return null;
+  const splits = smartChipSplitsForRecord(parseSmartChipSplitRows(html), netTime);
+  if (!netTime && splits.length === 0) return null;
   return {
-    name, bib, distance, netTime: normTime(netTime), gunTime: "",
+    name, bib, distance, netTime, gunTime: "",
     overallRank, genderRank: null, ageGroupRank: null,
-    gender, splits: [], pace: "",
+    gender, splits, pace: "",
   };
 }
 
@@ -1635,6 +1721,7 @@ async function crawlAllUpcomingEvents() {
 
 module.exports = {
   normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
+  parseSmartChipResult,
   searchMyResult, searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,

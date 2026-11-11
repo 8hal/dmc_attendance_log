@@ -28,6 +28,17 @@ function parseHms(value) {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
+function isOfficialFinishKm(km) {
+  return Math.abs(Number(km) - FULL_KM) < 1e-6;
+}
+
+// 넷타임 또는 도착/완주/42/42.195 라벨만 완주다. 42.2km 숫자는 구간일 뿐 완주가 아니다.
+function chipCountsAsFinish(lastSplit) {
+  if (!lastSplit) return false;
+  if (lastSplit.fromNet) return true;
+  return isOfficialFinishKm(lastSplit.km);
+}
+
 function mapSplitLabelToKm(label) {
   let text = String(label == null ? "" : label).toLowerCase().replace(/\s+/g, "");
   if (!text) return null;
@@ -57,7 +68,11 @@ function mapSplitLabelToKm(label) {
     if (delta > 0.051) continue;
     if (!best || delta < best.delta) best = { km: row.km, delta };
   }
-  return best ? best.km : null;
+  // 42와 42.195만 완주 거리로 접는다. 42.2km는 그 자체 거리로 둔다.
+  const exactMarathonAlias = Math.abs(num - 42) < 1e-6 || Math.abs(num - 42.195) < 1e-6;
+  if (best && (best.km !== FULL_KM || exactMarathonAlias)) return best.km;
+  if (num > 0 && num <= 250) return num;
+  return null;
 }
 
 function kstDateKey(ms) {
@@ -127,7 +142,7 @@ function projectRunner(input) {
     km = FULL_KM;
     if (lastSplit && lastSplit.fromNet && Number(lastSplit.elapsedSec) > 0) {
       elapsedSec = Number(lastSplit.elapsedSec);
-    } else if (lastSplit && Number(lastSplit.km) >= FULL_KM - 1e-9) {
+    } else if (chipCountsAsFinish(lastSplit)) {
       elapsedSec = Number(lastSplit.elapsedSec);
     } else if (!chip) {
       elapsedSec = Math.round(goalFinishSec);
@@ -138,7 +153,7 @@ function projectRunner(input) {
     avgPace = elapsedSec / FULL_KM;
   }
 
-  const finished = !!(chip && (lastSplit.fromNet || Number(lastSplit.km) >= FULL_KM - 1e-9));
+  const finished = !!(chip && chipCountsAsFinish(lastSplit));
   let projectedFinishSec;
   if (finished) {
     projectedFinishSec = Number(lastSplit.elapsedSec);
