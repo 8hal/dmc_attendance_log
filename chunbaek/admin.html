@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=20261106l" />
+  <link rel="stylesheet" href="css/admin.css?v=20261106m" />
 </head>
 <body class="admin-body">
   <div class="admin-demo-nav" id="admin-demo-nav" style="display:none">
@@ -165,9 +165,9 @@
           <div id="awards-review">
             <p id="review-example" class="review-example" hidden>예시 데이터입니다. 실제 회원이 아닙니다.</p>
             <div class="close-tabs" role="tablist" aria-label="시즌 마감 검수">
-              <button type="button" class="close-tab" id="close-tab-attendance" role="tab" aria-selected="true" aria-controls="attendance-review" tabindex="0">출석 검수</button>
-              <button type="button" class="close-tab" id="close-tab-goals" role="tab" aria-selected="false" aria-controls="goal-review" tabindex="-1">입력 현황</button>
-              <button type="button" class="close-tab" id="close-tab-coffee" role="tab" aria-selected="false" aria-controls="coffee-review" tabindex="-1">커피 내역</button>
+              <button type="button" class="close-tab" id="close-tab-attendance" role="tab" aria-selected="true" aria-controls="attendance-review" tabindex="0">출석 검수<span class="close-tab-badge" id="close-badge-attendance" hidden>0</span></button>
+              <button type="button" class="close-tab" id="close-tab-goals" role="tab" aria-selected="false" aria-controls="goal-review" tabindex="-1">입력 현황<span class="close-tab-badge" id="close-badge-goals" hidden>0</span></button>
+              <button type="button" class="close-tab" id="close-tab-coffee" role="tab" aria-selected="false" aria-controls="coffee-review" tabindex="-1">커피 내역<span class="close-tab-badge" id="close-badge-coffee" hidden>0</span></button>
             </div>
             <section class="review-block" id="attendance-review" role="tabpanel" aria-labelledby="close-tab-attendance">
               <h3>시즌 출석 검수</h3>
@@ -254,7 +254,7 @@
   <script src="js/api.js?v=20261106a"></script>
   <script src="js/admin-grid-csv.js?v=20261106g"></script>
   <script src="js/team-season.js?v=20261106a"></script>
-  <script src="js/admin-awards-review.js?v=20261106l"></script>
-  <script src="js/admin.js?v=20261106q"></script>
+  <script src="js/admin-awards-review.js?v=20261106m"></script>
+  <script src="js/admin.js?v=20261106r"></script>
 </body>
 </html>

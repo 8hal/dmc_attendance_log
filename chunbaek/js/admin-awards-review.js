@@ -142,10 +142,35 @@
     });
   }
 
-  function matchesQuery(member, query) {
-    const needle = String(query || "").trim().toLowerCase();
+  function normalizeName(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, "");
+  }
+
+  function nameMatches(name, query) {
+    const needle = normalizeName(query);
     if (!needle) return true;
-    return String(member.nickname || "").toLowerCase().includes(needle);
+    return normalizeName(name).includes(needle);
+  }
+
+  function filterMembersByName(members, query) {
+    return (members || []).filter((member) => nameMatches(member.nickname || member.buyer || "", query));
+  }
+
+  function matchesQuery(member, query) {
+    return nameMatches(member && (member.nickname || member.buyer), query);
+  }
+
+  function closeTabBadges(payload) {
+    const members = (payload && payload.members) || [];
+    const coffee = payload && payload.coffee;
+    const attendance = members.filter((member) => missedWeeks(member).length > 0).length;
+    const goals = members.filter((member) => (
+      isGoalMissing(member)
+      || goalOutcomeLabel(member) === "집계 대기"
+      || raceResultLabel(member) === "집계 대기"
+    )).length;
+    const coffeeCount = coffee && coffee.warning ? 1 : 0;
+    return { attendance, goals, coffee: coffeeCount };
   }
 
   function filterAttendance(members, mode) {
@@ -190,9 +215,13 @@
     return `<p class="review-note" id="attendance-totals">전체 ${totals.total}명 · 미달 ${totals.missedPeople}명 · 미달 ${totals.missedWeekCount}주</p>`;
   }
 
-  function attendanceTableHtml(members) {
+  function emptyReviewText(options) {
+    return options && options.searched ? "검색 결과가 없습니다." : "해당하는 회원이 없습니다.";
+  }
+
+  function attendanceTableHtml(members, options) {
     const rows = sortAttendanceRows(members);
-    if (!rows.length) return `<p class="review-empty">해당하는 회원이 없습니다.</p>`;
+    if (!rows.length) return `<p class="review-empty">${emptyReviewText(options)}</p>`;
     return `<table class="review-table">
       <thead>
         <tr>
@@ -271,9 +300,9 @@
     return text || "없음";
   }
 
-  function goalTableHtml(members) {
+  function goalTableHtml(members, options) {
     const rows = sortGoalRows(members);
-    if (!rows.length) return `<p class="review-empty">해당하는 회원이 없습니다.</p>`;
+    if (!rows.length) return `<p class="review-empty">${emptyReviewText(options)}</p>`;
     return `<table class="review-table goal-columns">
       <thead>
         <tr>
@@ -340,9 +369,9 @@
   function filterCoffee(coffee, query) {
     const days = (coffee && coffee.days) || [];
     const members = (coffee && coffee.members) || [];
-    const needle = String(query || "").trim().toLowerCase();
+    const needle = normalizeName(query);
     if (!needle) return { days, members };
-    const matched = members.filter((member) => String(member.buyer || "").toLowerCase().includes(needle));
+    const matched = members.filter((member) => nameMatches(member.buyer, query));
     const names = new Set(matched.map((member) => member.buyer));
     return {
       days: days
@@ -355,10 +384,11 @@
     };
   }
 
-  function coffeeMemberTableHtml(members) {
+  function coffeeMemberTableHtml(members, options) {
     const rows = members || [];
     if (!rows.length) {
-      return `<p class="review-note">이 조건의 커피 기록이 없습니다.</p>`;
+      const text = options && options.searched ? "검색 결과가 없습니다." : "이 조건의 커피 기록이 없습니다.";
+      return `<p class="review-note">${text}</p>`;
     }
     return `<table class="review-table">
       <thead><tr><th>회원</th><th>커피를 산 날</th><th>날짜</th></tr></thead>
@@ -476,6 +506,8 @@
     sortGoalRows,
     filterAttendance,
     filterGoals,
+    filterMembersByName,
+    closeTabBadges,
     attendanceTableHtml,
     attendanceTotals,
     attendanceTotalsHtml,

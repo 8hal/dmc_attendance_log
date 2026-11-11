@@ -604,21 +604,26 @@ function paintAwardsReview(payload) {
   const goalFilter = document.getElementById("goal-filter");
   const attendanceTable = document.getElementById("attendance-review-table");
   const goalTable = document.getElementById("goal-review-table");
-  const matchName = (list, input) => {
-    const needle = String(input && input.value || "").trim().toLowerCase();
-    if (!needle) return list;
-    return list.filter((member) => String(member.nickname || "").toLowerCase().includes(needle));
-  };
+  const searched = (input) => String(input && input.value || "").replace(/\s+/g, "") !== "";
   if (attendanceTable) {
     attendanceTable.innerHTML = review.attendanceTotalsHtml(members) + review.attendanceTableHtml(
-      review.filterAttendance(matchName(members, attendanceQuery), attendanceFilter ? attendanceFilter.value : "missed"),
+      review.filterAttendance(
+        review.filterMembersByName(members, attendanceQuery && attendanceQuery.value),
+        attendanceFilter ? attendanceFilter.value : "missed",
+      ),
+      { searched: searched(attendanceQuery) },
     );
   }
   if (goalTable) {
     goalTable.innerHTML = review.goalTableHtml(
-      review.filterGoals(matchName(members, goalQuery), goalFilter ? goalFilter.value : "all"),
+      review.filterGoals(
+        review.filterMembersByName(members, goalQuery && goalQuery.value),
+        goalFilter ? goalFilter.value : "all",
+      ),
+      { searched: searched(goalQuery) },
     );
   }
+  paintCloseBadges(payload);
   const coffeeNote = document.getElementById("coffee-window");
   const coffeeWarning = document.getElementById("coffee-warning");
   const coffeeMemberTable = document.getElementById("coffee-member-table");
@@ -630,7 +635,24 @@ function paintAwardsReview(payload) {
   }
   const coffeeQuery = document.getElementById("coffee-search");
   const filteredCoffee = review.filterCoffee(coffee, coffeeQuery ? coffeeQuery.value : "");
-  if (coffeeMemberTable) coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members);
+  if (coffeeMemberTable) {
+    coffeeMemberTable.innerHTML = review.coffeeMemberTableHtml(filteredCoffee.members, {
+      searched: searched(coffeeQuery),
+    });
+  }
+}
+
+function paintCloseBadges(payload) {
+  const review = window.ChunbaekAwardsReview;
+  if (!review || typeof review.closeTabBadges !== "function") return;
+  const counts = review.closeTabBadges(payload || {});
+  ["attendance", "goals", "coffee"].forEach((key) => {
+    const badge = document.getElementById(`close-badge-${key}`);
+    if (!badge) return;
+    const count = Number(counts[key]) || 0;
+    badge.hidden = count < 1;
+    badge.textContent = count > 0 ? String(count) : "";
+  });
 }
 
 const awardsLoadGate = window.ChunbaekAdminCsv.createAwardsLoadGate();
@@ -1195,7 +1217,15 @@ document.addEventListener("DOMContentLoaded", () => {
   ["attendance-search", "goal-search", "coffee-search", "attendance-filter", "goal-filter"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener("input", () => paintAwardsReview(awardsReviewPayload));
+    el.addEventListener("compositionstart", () => { el.dataset.composing = "1"; });
+    el.addEventListener("compositionend", () => {
+      delete el.dataset.composing;
+      paintAwardsReview(awardsReviewPayload);
+    });
+    el.addEventListener("input", () => {
+      if (el.dataset.composing === "1") return;
+      paintAwardsReview(awardsReviewPayload);
+    });
     el.addEventListener("change", () => paintAwardsReview(awardsReviewPayload));
   });
   const reviewRoot = document.getElementById("awards-review");
