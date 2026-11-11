@@ -720,4 +720,76 @@ describe("record anomaly", () => {
     assert.ok(row.km >= 38.3);
     assert.ok(row.km < FULL_KM);
   });
+
+  it("keeps projecting after an off-grid split when the next 5 km mat is not on that course", () => {
+    const pace = 360;
+    const lastKm = 18;
+    const lastSec = lastKm * pace;
+    const falseGap = 20 - lastKm;
+    const nowMs = START + (lastSec + overdueAfterSec(falseGap * pace) + 1) * 1000;
+    const row = projectRunner({
+      startMs: START,
+      goalFinishSec: GOAL,
+      nowMs,
+      lastSplit: { km: lastKm, elapsedSec: lastSec },
+    });
+    assert.equal(row.recordAnomaly, false);
+    assert.equal(row.status, "racing");
+    assert.ok(row.km > lastKm);
+    assert.equal(Number.isFinite(row.projectedFinishSec), true);
+  });
+
+  it("still flags a missed 35 km mat after an incheon 30.5 split", () => {
+    const pace = 360;
+    const lastSec = 30.5 * pace;
+    const gap = 35 - 30.5;
+    const nowMs = START + (lastSec + overdueAfterSec(gap * pace) + 1) * 1000;
+    const board = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        {
+          bib: "1",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "30km", time: "03:00:00" },
+            { label: "30.5km", time: "03:03:00" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.status, "recordAnomaly");
+    assert.equal(row.km, 30.5);
+    assert.equal(row.elapsedSec, 3 * 3600 + 3 * 60);
+    assert.equal(row.projectedFinishSec, null);
+  });
+
+  it("keeps projecting from 30.9 when the course skipped the 35 km mat", () => {
+    const pace = 360;
+    const lastSec = 30.9 * pace;
+    const falseGap = 35 - 30.9;
+    const nowMs = START + (lastSec + overdueAfterSec(falseGap * pace) + 1) * 1000;
+    const board = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        {
+          bib: "1",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "18.0km", time: "01:48:00" },
+            { label: "30.9km", time: "03:05:24" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.recordAnomaly, false);
+    assert.equal(row.status, "racing");
+    assert.ok(row.km > 30.9);
+    assert.ok(row.km < FULL_KM);
+  });
 });

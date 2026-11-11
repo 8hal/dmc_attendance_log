@@ -88,16 +88,58 @@ function nextCheckpointKm(lastKm) {
   return null;
 }
 
+function onStandardLadder(km) {
+  const value = Number(km);
+  if (!Number.isFinite(value)) return false;
+  return SPLIT_CHECKPOINTS_KM.some((point) => Math.abs(value - point) <= 0.051);
+}
+
+function recordedSplitKms(lastSplit) {
+  const raw = lastSplit && Array.isArray(lastSplit.splitKms) ? lastSplit.splitKms : [];
+  const kms = [];
+  for (const km of raw) {
+    const value = Number(km);
+    if (Number.isFinite(value) && value > 0) kms.push(value);
+  }
+  const last = Number(lastSplit && lastSplit.km);
+  if (Number.isFinite(last) && last > 0 && !kms.some((km) => Math.abs(km - last) < 1e-6)) {
+    kms.push(last);
+  }
+  kms.sort((a, b) => a - b);
+  return kms;
+}
+
+// 표준 5km 매트가 있는 코스는 그 사다리를 기다린다.
+// 18km·30.9km처럼 사다리 밖의 기록만 있으면, 없는 20km·35km를 다음 매트로 보지 않는다.
+function anomalyGapKm(lastSplit) {
+  const lastKm = Number(lastSplit && lastSplit.km);
+  const nextKm = nextCheckpointKm(lastKm);
+  if (nextKm == null) return null;
+  const ladderGap = nextKm - lastKm;
+  if (!(ladderGap > 0)) return null;
+  if (onStandardLadder(lastKm)) return ladderGap;
+
+  const recorded = recordedSplitKms(lastSplit);
+  const ladderBehind = recorded.filter((km) => km < lastKm - 1e-6 && onStandardLadder(km));
+  const nearest = ladderBehind.length ? ladderBehind[ladderBehind.length - 1] : null;
+  if (nearest != null && lastKm - nearest <= 5.051) return ladderGap;
+
+  let observed = 0;
+  for (let i = 1; i < recorded.length; i++) {
+    observed = Math.max(observed, recorded[i] - recorded[i - 1]);
+  }
+  const irregularGap = observed > 0 ? observed : lastKm;
+  return Math.max(ladderGap, irregularGap);
+}
+
 // 다음 매트까지 예상 시간의 1.5배. 짧은 구간(하프, 40K→도착)은 마지막 통과 후 최소 15분.
 function anomalyWaitSec(intervalSec) {
   return Math.max(ANOMALY_INTERVAL_FACTOR * intervalSec, ANOMALY_GRACE_FLOOR_SEC);
 }
 
 function missedNextSplit(lastSplit, projPace, rawElapsed) {
-  const nextKm = nextCheckpointKm(lastSplit && lastSplit.km);
-  if (nextKm == null) return false;
-  const gapKm = nextKm - Number(lastSplit.km);
-  if (!(gapKm > 0) || !(projPace > 0)) return false;
+  const gapKm = anomalyGapKm(lastSplit);
+  if (gapKm == null || !(gapKm > 0) || !(projPace > 0)) return false;
   const since = rawElapsed - Number(lastSplit.elapsedSec);
   return since > anomalyWaitSec(gapKm * projPace);
 }
@@ -204,12 +246,14 @@ function pickLastSplit(result) {
   }
   const splits = Array.isArray(result.splits) ? result.splits : [];
   let best = null;
+  const splitKms = [];
   for (const split of splits) {
     const km = mapSplitLabelToKm(split && split.label);
     const elapsedSec = parseHms(split && split.time);
     if (km == null || elapsedSec == null) continue;
+    splitKms.push(km);
     if (!best || km > best.km) {
-      best = { km, elapsedSec, fromNet: false };
+      best = { km, elapsedSec, fromNet: false, splitKms };
     }
   }
   return best;
