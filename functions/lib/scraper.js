@@ -239,6 +239,130 @@ function scDecrypt(secret, html) {
   return text;
 }
 
+function blankSmartChipTime(raw) {
+  const text = String(raw == null ? "" : raw).trim();
+  if (!text || text === "--:--:--" || text === "-") return true;
+  const norm = normTime(text);
+  return !norm || norm === "--:--:--" || norm === "-";
+}
+
+function usableSmartChipHms(raw) {
+  if (blankSmartChipTime(raw)) return "";
+  const norm = normTime(raw);
+  return /^\d{2}:\d{2}:\d{2}$/.test(norm) ? norm : "";
+}
+
+function smartChipPointKm(label) {
+  const text = String(label || "").toLowerCase().replace(/\s+/g, "").replace(/km$/, "");
+  const num = Number(text);
+  return Number.isFinite(num) ? num : null;
+}
+
+function parseSmartChipSplitRows(html) {
+  const $ = cheerioLoad(html);
+  const units = [];
+  $(".record-flex-unit").each((_, el) => {
+    const cls = $(el).attr("class") || "";
+    const header = $(el).find(".lbl-flex-header").first().text().replace(/\s+/g, " ").trim();
+    const secretNode = $(el).find("[data-secret]").first();
+    const secret = secretNode.length ? String(secretNode.attr("data-secret") ?? "") : null;
+    units.push({
+      kind: cls.includes("flex-header") ? "header" : "data",
+      header,
+      secret,
+    });
+  });
+
+  const columns = [];
+  let current = null;
+  for (const unit of units) {
+    if (unit.kind === "header") {
+      current = { header: unit.header || "?", values: [] };
+      columns.push(current);
+    } else if (current) {
+      current.values.push(unit.secret == null ? "" : scDecrypt(unit.secret, html));
+    }
+  }
+
+  const valuesOf = (header) => (columns.find((col) => col.header === header) || { values: [] }).values;
+  const points = valuesOf("POINT");
+  const times = valuesOf("TIME");
+  const clocks = valuesOf("TIME of DAY");
+  const paces = valuesOf("PACE");
+  const count = Math.max(points.length, times.length, clocks.length, paces.length);
+  const rows = [];
+  for (let i = 0; i < count; i++) {
+    const label = String(points[i] || "").trim();
+    if (!label) continue;
+    const pace = String(paces[i] || "").trim();
+    rows.push({
+      label,
+      km: smartChipPointKm(label),
+      time: usableSmartChipHms(times[i]),
+      clockTime: usableSmartChipHms(clocks[i]),
+      pace: !pace || pace === "--:--:--" || pace === "-" ? "" : pace,
+    });
+  }
+  return rows;
+}
+
+const SPLIT_PACE_MIN_SEC = 120;
+const SPLIT_PACE_MAX_SEC = 1200;
+
+function hmsToSec(value) {
+  const match = String(value || "").match(/^(\d{2}):(\d{2}):(\d{2})$/);
+  if (!match) return null;
+  return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+}
+
+function segmentPaceSec(earlier, later) {
+  const dt = hmsToSec(later.time) - hmsToSec(earlier.time);
+  const dk = Number(later.km) - Number(earlier.km);
+  if (!(dt > 0) || !(dk > 0)) return null;
+  return dt / dk;
+}
+
+// 중간이 빈 기록은 여기 오지 않는다. 42.2가 직전 구간 페이스와 사람 속도로 맞을 때만 넷을 대신한다.
+function consistentFinishNet(rows) {
+  const filled = rows
+    .filter((row) => row.time && row.km != null)
+    .slice()
+    .sort((a, b) => a.km - b.km);
+  const finish = filled.filter((row) => row.km >= 42).pop();
+  if (!finish) return "";
+  const before = filled.filter((row) => row.km < finish.km - 1e-6);
+  if (before.length === 0) return "";
+  const prev = before[before.length - 1];
+  const finishPace = segmentPaceSec(prev, finish);
+  if (finishPace == null || finishPace < SPLIT_PACE_MIN_SEC || finishPace > SPLIT_PACE_MAX_SEC) {
+    return "";
+  }
+  if (before.length >= 2) {
+    const priorPace = segmentPaceSec(before[before.length - 2], prev);
+    if (priorPace == null) return "";
+    const ratio = finishPace / priorPace;
+    if (ratio < 0.5 || ratio > 2.5) return "";
+  }
+  return finish.time;
+}
+
+function smartChipSplitsForRecord(rows, netTime) {
+  const hasEmpty = rows.some((row) => !row.time);
+  const hasLateFinish = rows.some((row) => row.time && row.km != null && row.km >= 42);
+  // 넷이 없고 중간이 비어 있는데 42.2만 찍힌 도착은 앞뒤가 맞지 않아 버린다.
+  const dropFinish = !netTime && hasEmpty && hasLateFinish;
+  const splits = [];
+  for (const row of rows) {
+    if (!row.time) continue;
+    if (dropFinish && row.km != null && row.km >= 42) continue;
+    const split = { label: row.label, time: row.time };
+    if (row.clockTime) split.clockTime = row.clockTime;
+    if (row.pace) split.pace = row.pace;
+    splits.push(split);
+  }
+  return splits;
+}
+
 function parseSmartChipResult(html, memberName) {
   const $ = cheerioLoad(html);
   const jamsil = [];
@@ -255,7 +379,19 @@ function parseSmartChipResult(html, memberName) {
   }
 
   const enc = html.match(/drawTextCanvas\s*\(\s*"targetClock"\s*,\s*"([0-9a-fA-F]+)"\s*\)/);
-  const netTime = enc ? scDecrypt(enc[1], html) : "";
+  const netRaw = enc ? scDecrypt(enc[1], html) : "";
+  const officialNet = usableSmartChipHms(netRaw);
+  const rows = parseSmartChipSplitRows(html);
+  const hasEmpty = rows.some((row) => !row.time);
+  let netTime = officialNet;
+  let netTimeSource = "";
+  if (!officialNet && !hasEmpty) {
+    const substitute = consistentFinishNet(rows);
+    if (substitute) {
+      netTime = substitute;
+      netTimeSource = "split42.2";
+    }
+  }
   const rankData = html.match(/var rawData\s*=\s*\[([^\]]*)\]/);
   const overallRank = rankData ? parseInt(rankData[1].split(",")[0]) : null;
 
@@ -268,11 +404,13 @@ function parseSmartChipResult(html, memberName) {
     else if (genderRaw === "여" || genderRaw.toLowerCase() === "female" || genderRaw.toLowerCase() === "f") gender = "F";
   }
 
-  if (!netTime) return null;
+  const splits = smartChipSplitsForRecord(rows, officialNet);
+  if (!netTime && splits.length === 0) return null;
   return {
-    name, bib, distance, netTime: normTime(netTime), gunTime: "",
+    name, bib, distance, netTime, gunTime: "",
     overallRank, genderRank: null, ageGroupRank: null,
-    gender, splits: [], pace: "",
+    gender, splits, pace: "",
+    ...(netTimeSource ? { netTimeSource } : {}),
   };
 }
 
@@ -1327,6 +1465,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         pace: r.pace || "",
         splits: Array.isArray(r.splits) ? r.splits : [],
         ...(r.startClock ? { startClock: r.startClock } : {}),
+        ...(r.netTimeSource ? { netTimeSource: r.netTimeSource } : {}),
         memberRealName: m.realName,
         memberNickname: m.nickname,
         memberGender: m.gender || "",
@@ -1635,6 +1774,7 @@ async function crawlAllUpcomingEvents() {
 
 module.exports = {
   normDist, normalizeRaceDistance, normTime, timeToSeconds, inferGender,
+  parseSmartChipResult,
   searchMyResult, searchMember, getEventInfo,
   buildPBMap, isPB,
   discoverAllEvents, discoverMarazone, discoverMyResult, discoverSPCT, discoverSmartChip,

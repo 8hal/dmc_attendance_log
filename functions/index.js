@@ -2576,6 +2576,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
           status: r.dnStatus || "confirmed",
           confirmedAt: now,
           confirmSource: confirmSource || "operator",
+          ...(r.netTimeSource ? { netTimeSource: r.netTimeSource } : {}),
         };
         if (!r.dnStatus && finishTrim && finishTrim !== "-") row.finishTime = finishTrim;
         if (canonicalEventId) row.canonicalEventId = String(canonicalEventId);
@@ -3669,6 +3670,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
             pending = {
               bib: match.bib || bib,
               netTime: match.netTime || "",
+              ...(match.netTimeSource ? { netTimeSource: match.netTimeSource } : {}),
               gunTime: match.gunTime || "",
               distance: match.distance || participant.distance || "",
               overallRank: match.overallRank != null ? match.overallRank : null,
@@ -3962,6 +3964,7 @@ exports.race = onRequest({ cors: true, timeoutSeconds: 540, memory: "512MiB", re
               distance: distNorm,
               netTime: netEff,
               gunTime: participant.gunTime || "",
+              ...(participant.netTimeSource ? { netTimeSource: participant.netTimeSource } : {}),
               bib: participant.bib || "",
               overallRank: participant.overallRank || null,
               gender: participant.gender || "",

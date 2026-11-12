@@ -150,6 +150,7 @@ function buildSelfConfirmRow({
     status: dnStatus ? String(dnStatus).toLowerCase() : "confirmed",
     confirmedAt: now,
     confirmSource: "personal",
+    ...(pending && pending.netTimeSource ? { netTimeSource: pending.netTimeSource } : {}),
   };
   if (!dnStatus && finishTrim && finishTrim !== "-") {
     row.finishTime = finishTrim;

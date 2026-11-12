@@ -7,7 +7,8 @@ const FULL_KM = 42.195;
 const GOAL_MIN_SEC = 3600;
 const GOAL_MAX_SEC = 36000;
 // 스크랩된 구간은 거리로만 온다. 반환점은 고정 km가 없어 기한 사다리에 넣지 않는다.
-const SPLIT_CHECKPOINTS_KM = [5, 10, 15, 20, 21.0975, 25, 30, 35, 40, FULL_KM];
+const HALF_CHECKPOINT_KM = 21.0975;
+const SPLIT_CHECKPOINTS_KM = [5, 10, 15, 20, HALF_CHECKPOINT_KM, 25, 30, 35, 40, FULL_KM];
 const ANOMALY_GRACE_FLOOR_SEC = 15 * 60;
 const ANOMALY_INTERVAL_FACTOR = 1.5;
 
@@ -26,6 +27,17 @@ function parseHms(value) {
   const seconds = Number(match[3]);
   if (minutes > 59 || seconds > 59) return null;
   return hours * 3600 + minutes * 60 + seconds;
+}
+
+function isOfficialFinishKm(km) {
+  return Math.abs(Number(km) - FULL_KM) < 1e-6;
+}
+
+// 넷타임 또는 도착/완주/42/42.195 라벨만 완주다. 42.2km 숫자는 구간일 뿐 완주가 아니다.
+function chipCountsAsFinish(lastSplit) {
+  if (!lastSplit) return false;
+  if (lastSplit.fromNet) return true;
+  return isOfficialFinishKm(lastSplit.km);
 }
 
 function mapSplitLabelToKm(label) {
@@ -57,20 +69,96 @@ function mapSplitLabelToKm(label) {
     if (delta > 0.051) continue;
     if (!best || delta < best.delta) best = { km: row.km, delta };
   }
-  return best ? best.km : null;
+  // 42와 42.195만 완주 거리로 접는다. 42.2km는 그 자체 거리로 둔다.
+  const exactMarathonAlias = Math.abs(num - 42) < 1e-6 || Math.abs(num - 42.195) < 1e-6;
+  if (best && (best.km !== FULL_KM || exactMarathonAlias)) return best.km;
+  if (num > 0 && num <= 250) return num;
+  return null;
 }
 
 function kstDateKey(ms) {
   return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-function nextCheckpointKm(lastKm) {
+function hasRecordedHalfMat(lastSplit) {
+  if (lastSplit && lastSplit.expectHalf) return true;
+  return recordedSplitKms(lastSplit).some((km) => Math.abs(km - HALF_CHECKPOINT_KM) <= 0.051);
+}
+
+function resultHasHalfSplit(result) {
+  const splits = result && Array.isArray(result.splits) ? result.splits : [];
+  for (const split of splits) {
+    const km = mapSplitLabelToKm(split && split.label);
+    if (km != null && Math.abs(km - HALF_CHECKPOINT_KM) <= 0.051) return true;
+  }
+  return false;
+}
+
+// 같은 종목의 다른 기록에 21.1이 있을 때만 코스에 하프 매트가 있다고 본다.
+function courseExpectsHalf(jobResults, distance) {
+  const want = String(distance || "").trim();
+  for (const result of jobResults || []) {
+    const dist = result && result.distance != null ? String(result.distance).trim() : "";
+    if (want && dist && want !== dist) continue;
+    if (resultHasHalfSplit(result)) return true;
+  }
+  return false;
+}
+
+// 하프 매트가 확인되지 않으면 20km 다음은 25km다. 확인되면 21.0975km를 기다린다.
+function nextCheckpointKm(lastKm, lastSplit) {
   const km = Number(lastKm);
   if (!Number.isFinite(km)) return SPLIT_CHECKPOINTS_KM[0];
+  const keepHalf = hasRecordedHalfMat(lastSplit);
   for (const point of SPLIT_CHECKPOINTS_KM) {
+    if (!keepHalf && Math.abs(point - HALF_CHECKPOINT_KM) < 1e-6) continue;
     if (point > km + 1e-6) return point;
   }
   return null;
+}
+
+function onStandardLadder(km) {
+  const value = Number(km);
+  if (!Number.isFinite(value)) return false;
+  return SPLIT_CHECKPOINTS_KM.some((point) => Math.abs(value - point) <= 0.051);
+}
+
+function recordedSplitKms(lastSplit) {
+  const raw = lastSplit && Array.isArray(lastSplit.splitKms) ? lastSplit.splitKms : [];
+  const kms = [];
+  for (const km of raw) {
+    const value = Number(km);
+    if (Number.isFinite(value) && value > 0) kms.push(value);
+  }
+  const last = Number(lastSplit && lastSplit.km);
+  if (Number.isFinite(last) && last > 0 && !kms.some((km) => Math.abs(km - last) < 1e-6)) {
+    kms.push(last);
+  }
+  kms.sort((a, b) => a - b);
+  return kms;
+}
+
+// 표준 5km 매트가 있는 코스는 그 사다리를 기다린다.
+// 18km·30.9km처럼 사다리 밖의 기록만 있으면, 없는 20km·35km를 다음 매트로 보지 않는다.
+function anomalyGapKm(lastSplit) {
+  const lastKm = Number(lastSplit && lastSplit.km);
+  const nextKm = nextCheckpointKm(lastKm, lastSplit);
+  if (nextKm == null) return null;
+  const ladderGap = nextKm - lastKm;
+  if (!(ladderGap > 0)) return null;
+  if (onStandardLadder(lastKm)) return ladderGap;
+
+  const recorded = recordedSplitKms(lastSplit);
+  const ladderBehind = recorded.filter((km) => km < lastKm - 1e-6 && onStandardLadder(km));
+  const nearest = ladderBehind.length ? ladderBehind[ladderBehind.length - 1] : null;
+  if (nearest != null && lastKm - nearest <= 5.051) return ladderGap;
+
+  let observed = 0;
+  for (let i = 1; i < recorded.length; i++) {
+    observed = Math.max(observed, recorded[i] - recorded[i - 1]);
+  }
+  const irregularGap = observed > 0 ? observed : lastKm;
+  return Math.max(ladderGap, irregularGap);
 }
 
 // 다음 매트까지 예상 시간의 1.5배. 짧은 구간(하프, 40K→도착)은 마지막 통과 후 최소 15분.
@@ -79,10 +167,8 @@ function anomalyWaitSec(intervalSec) {
 }
 
 function missedNextSplit(lastSplit, projPace, rawElapsed) {
-  const nextKm = nextCheckpointKm(lastSplit && lastSplit.km);
-  if (nextKm == null) return false;
-  const gapKm = nextKm - Number(lastSplit.km);
-  if (!(gapKm > 0) || !(projPace > 0)) return false;
+  const gapKm = anomalyGapKm(lastSplit);
+  if (gapKm == null || !(gapKm > 0) || !(projPace > 0)) return false;
   const since = rawElapsed - Number(lastSplit.elapsedSec);
   return since > anomalyWaitSec(gapKm * projPace);
 }
@@ -127,7 +213,7 @@ function projectRunner(input) {
     km = FULL_KM;
     if (lastSplit && lastSplit.fromNet && Number(lastSplit.elapsedSec) > 0) {
       elapsedSec = Number(lastSplit.elapsedSec);
-    } else if (lastSplit && Number(lastSplit.km) >= FULL_KM - 1e-9) {
+    } else if (chipCountsAsFinish(lastSplit)) {
       elapsedSec = Number(lastSplit.elapsedSec);
     } else if (!chip) {
       elapsedSec = Math.round(goalFinishSec);
@@ -138,7 +224,7 @@ function projectRunner(input) {
     avgPace = elapsedSec / FULL_KM;
   }
 
-  const finished = !!(chip && (lastSplit.fromNet || Number(lastSplit.km) >= FULL_KM - 1e-9));
+  const finished = !!(chip && chipCountsAsFinish(lastSplit));
   let projectedFinishSec;
   if (finished) {
     projectedFinishSec = Number(lastSplit.elapsedSec);
@@ -189,12 +275,14 @@ function pickLastSplit(result) {
   }
   const splits = Array.isArray(result.splits) ? result.splits : [];
   let best = null;
+  const splitKms = [];
   for (const split of splits) {
     const km = mapSplitLabelToKm(split && split.label);
     const elapsedSec = parseHms(split && split.time);
     if (km == null || elapsedSec == null) continue;
+    splitKms.push(km);
     if (!best || km > best.km) {
-      best = { km, elapsedSec, fromNet: false };
+      best = { km, elapsedSec, fromNet: false, splitKms };
     }
   }
   return best;
@@ -299,6 +387,7 @@ function buildCheerBoard(input) {
   const wavesById = waveMap(waves);
   const fallback = earliestWave(waves);
   const runners = [];
+  const expectHalfByDistance = new Map();
   for (const participant of event.participants || []) {
     const wave = participant ? runnerWave(participant, wavesById, fallback) : null;
     if (!isBoardRunner(participant, wave)) continue;
@@ -306,6 +395,11 @@ function buildCheerBoard(input) {
     const chipMs = chipStartMs(match, wave.startAt);
     const startMs = chipMs != null ? chipMs : Date.parse(wave.startAt);
     const lastSplit = pickLastSplit(match);
+    const distanceKey = String(participant.distance || "").trim();
+    if (!expectHalfByDistance.has(distanceKey)) {
+      expectHalfByDistance.set(distanceKey, courseExpectsHalf(jobResults, distanceKey));
+    }
+    if (lastSplit && expectHalfByDistance.get(distanceKey)) lastSplit.expectHalf = true;
     const projected = projectRunner({
       startMs,
       goalFinishSec: Number(participant.goalFinishSec),

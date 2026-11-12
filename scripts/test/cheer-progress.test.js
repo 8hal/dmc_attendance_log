@@ -92,6 +92,18 @@ describe("split labels", () => {
     assert.equal(mapSplitLabelToKm("도착"), FULL_KM);
     assert.equal(mapSplitLabelToKm("Section 3"), null);
   });
+
+  it("maps decimal km labels, including ones that are not on the 5 km grid", () => {
+    assert.equal(mapSplitLabelToKm("30.5km"), 30.5);
+    assert.equal(mapSplitLabelToKm("38.3km"), 38.3);
+    assert.equal(mapSplitLabelToKm("18.0km"), 18);
+    assert.equal(mapSplitLabelToKm("25.9km"), 25.9);
+    assert.equal(mapSplitLabelToKm("32.2km"), 32.2);
+    assert.equal(mapSplitLabelToKm("30.9km"), 30.9);
+    assert.equal(mapSplitLabelToKm("42.2km"), 42.2);
+    assert.equal(mapSplitLabelToKm("42"), FULL_KM);
+    assert.equal(mapSplitLabelToKm("42.195"), FULL_KM);
+  });
 });
 
 describe("cheer board", () => {
@@ -463,30 +475,84 @@ describe("record anomaly", () => {
     assert.equal(Number.isFinite(inside.projectedFinishSec), true);
   });
 
-  it("waits at least 15 minutes when the next split is only the half", () => {
+  it("does not treat the half as the next mat after 20 km unless a half split exists", () => {
     const lastKm = 20;
     const pace = 360;
     const lastSec = lastKm * pace;
-    const intervalSec = (21.0975 - lastKm) * pace;
-    assert.ok(1.5 * intervalSec < GRACE_FLOOR_SEC);
+    const to25 = (25 - lastKm) * pace;
     const stillRacing = projectRunner({
       startMs: START,
       goalFinishSec: GOAL,
-      nowMs: START + (lastSec + GRACE_FLOOR_SEC) * 1000,
-      lastSplit: { km: lastKm, elapsedSec: lastSec },
+      nowMs: START + (lastSec + GRACE_FLOOR_SEC + 1) * 1000,
+      lastSplit: { km: lastKm, elapsedSec: lastSec, splitKms: [5, 10, 15, 20] },
     });
     assert.equal(stillRacing.recordAnomaly, false);
+    assert.equal(stillRacing.status, "racing");
     assert.ok(stillRacing.km > lastKm);
+    assert.ok(stillRacing.km < 25);
+
     const anomaly = projectRunner({
       startMs: START,
       goalFinishSec: GOAL,
-      nowMs: START + (lastSec + GRACE_FLOOR_SEC + 1) * 1000,
-      lastSplit: { km: lastKm, elapsedSec: lastSec },
+      nowMs: START + (lastSec + overdueAfterSec(to25) + 1) * 1000,
+      lastSplit: { km: lastKm, elapsedSec: lastSec, splitKms: [5, 10, 15, 20] },
     });
     assert.equal(anomaly.status, "recordAnomaly");
     assert.equal(anomaly.km, lastKm);
-    assert.equal(anomaly.elapsedSec, lastSec);
-    assert.equal(anomaly.projectedFinishSec, null);
+
+    const halfKnown = projectRunner({
+      startMs: START,
+      goalFinishSec: GOAL,
+      nowMs: START + (lastSec + GRACE_FLOOR_SEC + 1) * 1000,
+      lastSplit: { km: lastKm, elapsedSec: lastSec, splitKms: [5, 10, 15, 20], expectHalf: true },
+    });
+    assert.equal(halfKnown.status, "recordAnomaly");
+    assert.equal(halfKnown.km, lastKm);
+  });
+
+  it("waits for 21.1 after 20 km only when the same distance has a half split", () => {
+    const start = Date.parse("2026-10-19T08:00:00+09:00");
+    const event = {
+      eventDate: "2026-10-19",
+      waves: [{ id: "a", name: "A조", startAt: "2026-10-19T08:00:00+09:00" }],
+      participants: [
+        { nickname: "풀20", realName: "풀이십", bib: "20", distance: "full", waveId: "a", goalFinishSec: GOAL },
+        { nickname: "풀21", realName: "풀하프", bib: "21", distance: "full", waveId: "a", goalFinishSec: GOAL },
+      ],
+    };
+    const nowMs = start + (1 * 3600 + 56 * 60) * 1000;
+    const withHalf = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        { bib: "20", distance: "full", netTime: "", splits: [{ label: "20.0km", time: "01:40:00" }] },
+        {
+          bib: "21",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "20.0km", time: "01:30:00" },
+            { label: "21.1km", time: "01:36:00" },
+          ],
+        },
+      ],
+    });
+    const waited = withHalf.runners.find((runner) => runner.bib === "20");
+    assert.equal(waited.status, "recordAnomaly");
+    assert.equal(waited.km, 20);
+
+    const halfOnly = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        { bib: "20", distance: "full", netTime: "", splits: [{ label: "20.0km", time: "01:40:00" }] },
+        { bib: "21", distance: "half", netTime: "", splits: [{ label: "21.1km", time: "01:36:00" }] },
+      ],
+    });
+    const moving = halfOnly.runners.find((runner) => runner.bib === "20");
+    assert.equal(moving.status, "racing");
+    assert.ok(moving.km > 20);
+    assert.ok(moving.km < 25);
   });
 
   it("keeps a net-time finish as finished after the grace window", () => {
@@ -670,5 +736,190 @@ describe("record anomaly", () => {
     assert.equal(row.km, FULL_KM);
     assert.equal(row.elapsedSec, 3 * 3600 + 40 * 60);
     assert.equal(row.finishSec, 3 * 3600 + 40 * 60);
+  });
+
+  it("does not finish a runner from a 42.2 split when the net time is missing", () => {
+    const board = buildCheerBoard({
+      event,
+      nowMs: START + 8 * 3600 * 1000,
+      jobResults: [
+        { bib: "1", distance: "full", netTime: "", splits: [{ label: "42.2km", time: "03:10:00" }] },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.finished, false);
+    assert.notEqual(row.status, "finished");
+    assert.equal(row.chip, true);
+  });
+
+  it("moves a runner using a decimal smartchip split", () => {
+    const board = buildCheerBoard({
+      event,
+      nowMs: START + (3 * 3600 + 40 * 60) * 1000,
+      jobResults: [
+        {
+          bib: "1",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "30.5km", time: "02:49:35" },
+            { label: "38.3km", time: "03:34:59" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.finished, false);
+    assert.equal(row.chip, true);
+    assert.ok(row.km >= 38.3);
+    assert.ok(row.km < FULL_KM);
+  });
+
+  it("keeps projecting after an off-grid split when the next 5 km mat is not on that course", () => {
+    const pace = 360;
+    const lastKm = 18;
+    const lastSec = lastKm * pace;
+    const falseGap = 20 - lastKm;
+    const nowMs = START + (lastSec + overdueAfterSec(falseGap * pace) + 1) * 1000;
+    const row = projectRunner({
+      startMs: START,
+      goalFinishSec: GOAL,
+      nowMs,
+      lastSplit: { km: lastKm, elapsedSec: lastSec },
+    });
+    assert.equal(row.recordAnomaly, false);
+    assert.equal(row.status, "racing");
+    assert.ok(row.km > lastKm);
+    assert.equal(Number.isFinite(row.projectedFinishSec), true);
+  });
+
+  it("still flags a missed 35 km mat after an incheon 30.5 split", () => {
+    const pace = 360;
+    const lastSec = 30.5 * pace;
+    const gap = 35 - 30.5;
+    const nowMs = START + (lastSec + overdueAfterSec(gap * pace) + 1) * 1000;
+    const board = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        {
+          bib: "1",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "30km", time: "03:00:00" },
+            { label: "30.5km", time: "03:03:00" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.status, "recordAnomaly");
+    assert.equal(row.km, 30.5);
+    assert.equal(row.elapsedSec, 3 * 3600 + 3 * 60);
+    assert.equal(row.projectedFinishSec, null);
+  });
+
+  it("keeps projecting from 30.9 when the course skipped the 35 km mat", () => {
+    const pace = 360;
+    const lastSec = 30.9 * pace;
+    const falseGap = 35 - 30.9;
+    const nowMs = START + (lastSec + overdueAfterSec(falseGap * pace) + 1) * 1000;
+    const board = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        {
+          bib: "1",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "18.0km", time: "01:48:00" },
+            { label: "30.9km", time: "03:05:24" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "1");
+    assert.equal(row.recordAnomaly, false);
+    assert.equal(row.status, "racing");
+    assert.ok(row.km > 30.9);
+    assert.ok(row.km < FULL_KM);
+  });
+
+  it("keeps a gyeongju runner moving 15 minutes after 20 km when the course has no half mat", () => {
+    const start = Date.parse("2026-10-17T08:00:00+09:00");
+    const board = buildCheerBoard({
+      event: {
+        eventDate: "2026-10-17",
+        waves: [{ id: "a", name: "A조", startAt: "2026-10-17T08:00:00+09:00" }],
+        participants: [
+          { nickname: "빅씨", realName: "BigC", bib: "11312", distance: "full", waveId: "a", goalFinishSec: GOAL },
+        ],
+      },
+      nowMs: start + 2 * 3600 * 1000,
+      jobResults: [
+        {
+          bib: "11312",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "5.0km", time: "00:25:19" },
+            { label: "10.0km", time: "00:49:44" },
+            { label: "15.0km", time: "01:14:08" },
+            { label: "20.0km", time: "01:38:55" },
+          ],
+        },
+      ],
+    });
+    const row = board.runners.find((runner) => runner.bib === "11312");
+    assert.equal(row.status, "racing");
+    assert.equal(row.recordAnomaly, false);
+    assert.ok(row.km > 20);
+    assert.ok(row.km < 25);
+  });
+
+  it("keeps an incheon half split and a myresult half label as progress", () => {
+    const start = Date.parse("2026-10-19T08:00:00+09:00");
+    const event = {
+      eventDate: "2026-10-19",
+      waves: [{ id: "a", name: "A조", startAt: "2026-10-19T08:00:00+09:00" }],
+      participants: [
+        { nickname: "인천", realName: "강동원", bib: "40486", distance: "full", waveId: "a", goalFinishSec: GOAL },
+        { nickname: "마이", realName: "기록", bib: "1001", distance: "full", waveId: "a", goalFinishSec: GOAL },
+      ],
+    };
+    const board = buildCheerBoard({
+      event,
+      nowMs: start + (1 * 3600 + 50 * 60) * 1000,
+      jobResults: [
+        {
+          bib: "40486",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "20.0km", time: "01:40:00" },
+            { label: "21.1km", time: "01:46:00" },
+          ],
+        },
+        {
+          bib: "1001",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "20K", time: "01:40:00" },
+            { label: "하프", time: "01:46:00" },
+          ],
+        },
+      ],
+    });
+    const incheon = board.runners.find((runner) => runner.bib === "40486");
+    const myresult = board.runners.find((runner) => runner.bib === "1001");
+    assert.equal(incheon.status, "racing");
+    assert.ok(incheon.km > 21);
+    assert.equal(myresult.status, "racing");
+    assert.ok(myresult.km > 21);
+    assert.equal(mapSplitLabelToKm("하프"), 21.0975);
+    assert.equal(mapSplitLabelToKm("도착"), FULL_KM);
   });
 });
