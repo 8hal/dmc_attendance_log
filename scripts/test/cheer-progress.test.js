@@ -504,10 +504,55 @@ describe("record anomaly", () => {
       startMs: START,
       goalFinishSec: GOAL,
       nowMs: START + (lastSec + GRACE_FLOOR_SEC + 1) * 1000,
-      lastSplit: { km: lastKm, elapsedSec: lastSec, splitKms: [5, 10, 15, 20, 21.0975] },
+      lastSplit: { km: lastKm, elapsedSec: lastSec, splitKms: [5, 10, 15, 20], expectHalf: true },
     });
     assert.equal(halfKnown.status, "recordAnomaly");
     assert.equal(halfKnown.km, lastKm);
+  });
+
+  it("waits for 21.1 after 20 km only when the same distance has a half split", () => {
+    const start = Date.parse("2026-10-19T08:00:00+09:00");
+    const event = {
+      eventDate: "2026-10-19",
+      waves: [{ id: "a", name: "A조", startAt: "2026-10-19T08:00:00+09:00" }],
+      participants: [
+        { nickname: "풀20", realName: "풀이십", bib: "20", distance: "full", waveId: "a", goalFinishSec: GOAL },
+        { nickname: "풀21", realName: "풀하프", bib: "21", distance: "full", waveId: "a", goalFinishSec: GOAL },
+      ],
+    };
+    const nowMs = start + (1 * 3600 + 56 * 60) * 1000;
+    const withHalf = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        { bib: "20", distance: "full", netTime: "", splits: [{ label: "20.0km", time: "01:40:00" }] },
+        {
+          bib: "21",
+          distance: "full",
+          netTime: "",
+          splits: [
+            { label: "20.0km", time: "01:30:00" },
+            { label: "21.1km", time: "01:36:00" },
+          ],
+        },
+      ],
+    });
+    const waited = withHalf.runners.find((runner) => runner.bib === "20");
+    assert.equal(waited.status, "recordAnomaly");
+    assert.equal(waited.km, 20);
+
+    const halfOnly = buildCheerBoard({
+      event,
+      nowMs,
+      jobResults: [
+        { bib: "20", distance: "full", netTime: "", splits: [{ label: "20.0km", time: "01:40:00" }] },
+        { bib: "21", distance: "half", netTime: "", splits: [{ label: "21.1km", time: "01:36:00" }] },
+      ],
+    });
+    const moving = halfOnly.runners.find((runner) => runner.bib === "20");
+    assert.equal(moving.status, "racing");
+    assert.ok(moving.km > 20);
+    assert.ok(moving.km < 25);
   });
 
   it("keeps a net-time finish as finished after the grace window", () => {

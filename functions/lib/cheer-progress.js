@@ -81,10 +81,31 @@ function kstDateKey(ms) {
 }
 
 function hasRecordedHalfMat(lastSplit) {
+  if (lastSplit && lastSplit.expectHalf) return true;
   return recordedSplitKms(lastSplit).some((km) => Math.abs(km - HALF_CHECKPOINT_KM) <= 0.051);
 }
 
-// 하프 매트가 이 기록에 없으면 20km 다음은 25km다. 21.1이 있으면 그 매트를 기다린다.
+function resultHasHalfSplit(result) {
+  const splits = result && Array.isArray(result.splits) ? result.splits : [];
+  for (const split of splits) {
+    const km = mapSplitLabelToKm(split && split.label);
+    if (km != null && Math.abs(km - HALF_CHECKPOINT_KM) <= 0.051) return true;
+  }
+  return false;
+}
+
+// 같은 종목의 다른 기록에 21.1이 있을 때만 코스에 하프 매트가 있다고 본다.
+function courseExpectsHalf(jobResults, distance) {
+  const want = String(distance || "").trim();
+  for (const result of jobResults || []) {
+    const dist = result && result.distance != null ? String(result.distance).trim() : "";
+    if (want && dist && want !== dist) continue;
+    if (resultHasHalfSplit(result)) return true;
+  }
+  return false;
+}
+
+// 하프 매트가 확인되지 않으면 20km 다음은 25km다. 확인되면 21.0975km를 기다린다.
 function nextCheckpointKm(lastKm, lastSplit) {
   const km = Number(lastKm);
   if (!Number.isFinite(km)) return SPLIT_CHECKPOINTS_KM[0];
@@ -366,6 +387,7 @@ function buildCheerBoard(input) {
   const wavesById = waveMap(waves);
   const fallback = earliestWave(waves);
   const runners = [];
+  const expectHalfByDistance = new Map();
   for (const participant of event.participants || []) {
     const wave = participant ? runnerWave(participant, wavesById, fallback) : null;
     if (!isBoardRunner(participant, wave)) continue;
@@ -373,6 +395,11 @@ function buildCheerBoard(input) {
     const chipMs = chipStartMs(match, wave.startAt);
     const startMs = chipMs != null ? chipMs : Date.parse(wave.startAt);
     const lastSplit = pickLastSplit(match);
+    const distanceKey = String(participant.distance || "").trim();
+    if (!expectHalfByDistance.has(distanceKey)) {
+      expectHalfByDistance.set(distanceKey, courseExpectsHalf(jobResults, distanceKey));
+    }
+    if (lastSplit && expectHalfByDistance.get(distanceKey)) lastSplit.expectHalf = true;
     const projected = projectRunner({
       startMs,
       goalFinishSec: Number(participant.goalFinishSec),
