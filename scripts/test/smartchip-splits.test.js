@@ -178,6 +178,49 @@ describe("parseSmartChipResult splits", () => {
     assert.equal(parseSmartChipResult("", "홍길동"), null);
   });
 
+  it("uses a consistent 42.2 split as the net when the official net is blank", () => {
+    const record = parseSmartChipResult(
+      loadFixture("gyeongju2026_202650000218_12479.html"),
+      "롸져"
+    );
+    assert.equal(record.bib, "12479");
+    assert.equal(record.netTime, "03:01:05");
+    assert.equal(record.netTimeSource, "split42.2");
+    assert.equal(record.splits.length, 9);
+    assert.equal(record.splits.at(-1).label, "42.2km");
+    assert.equal(record.splits.at(-1).time, "03:01:05");
+  });
+
+  it("still drops a gapped 42.2 and does not invent a net", () => {
+    const cases = [
+      ["gyeongju2026_notime_202650000218_14433.html", "14433", 3],
+      ["gyeongju2026_202650000218_10115.html", "10115", 5],
+      ["gyeongju2026_202650000218_14655.html", "14655", 3],
+      ["gyeongju2026_202650000218_12370.html", "12370", 3],
+    ];
+    for (const [file, bib, count] of cases) {
+      const record = parseSmartChipResult(loadFixture(file), bib);
+      assert.equal(record.bib, bib);
+      assert.equal(record.netTime, "");
+      assert.equal(record.netTimeSource, undefined);
+      assert.equal(record.splits.length, count);
+      assert.equal(record.splits.some((split) => split.label.startsWith("42.2")), false);
+    }
+  });
+
+  it("does not replace the net when the 42.2 pace is not credible", () => {
+    const record = parseSmartChipResult(loadFixture("synthetic_fast_42_2.html"), "합성");
+    assert.equal(record.netTime, "");
+    assert.equal(record.netTimeSource, undefined);
+    assert.equal(record.splits.at(-1).time, "02:51:00");
+  });
+
+  it("leaves an official net unmarked as a split substitute", () => {
+    const record = parseSmartChipResult(loadFixture(CASES[0].file), "강동원");
+    assert.equal(record.netTime, "03:59:41");
+    assert.equal(record.netTimeSource, undefined);
+  });
+
   it("reads saved HTML without calling fetch", () => {
     const original = global.fetch;
     let calls = 0;
@@ -284,5 +327,36 @@ describe("smartchip splits on the cheer board", () => {
     });
     assert.equal(detail.splits.some((split) => split.km === 30.5), true);
     assert.equal(detail.splits.some((split) => split.km === 38.3), true);
+  });
+
+  it("finishes a blank-net runner when the 42.2 split is the substitute net", () => {
+    const record = parseSmartChipResult(
+      loadFixture("gyeongju2026_202650000218_12479.html"),
+      "롸져"
+    );
+    const start = Date.parse("2026-10-17T08:00:00+09:00");
+    const board = buildCheerBoard({
+      event: {
+        eventDate: "2026-10-17",
+        waves: [{ id: "a", name: "A조", startAt: "2026-10-17T08:00:00+09:00" }],
+        participants: [
+          {
+            nickname: "롸져",
+            realName: "롸져",
+            bib: "12479",
+            distance: "full",
+            waveId: "a",
+            goalFinishSec: 4 * 3600,
+          },
+        ],
+      },
+      jobResults: [record],
+      nowMs: start + 4 * 3600 * 1000,
+    });
+    const row = board.runners.find((runner) => runner.bib === "12479");
+    assert.equal(row.finished, true);
+    assert.equal(row.status, "finished");
+    assert.equal(row.km, FULL_KM);
+    assert.equal(record.netTimeSource, "split42.2");
   });
 });

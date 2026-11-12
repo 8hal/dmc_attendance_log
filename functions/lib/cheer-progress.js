@@ -7,7 +7,8 @@ const FULL_KM = 42.195;
 const GOAL_MIN_SEC = 3600;
 const GOAL_MAX_SEC = 36000;
 // 스크랩된 구간은 거리로만 온다. 반환점은 고정 km가 없어 기한 사다리에 넣지 않는다.
-const SPLIT_CHECKPOINTS_KM = [5, 10, 15, 20, 21.0975, 25, 30, 35, 40, FULL_KM];
+const HALF_CHECKPOINT_KM = 21.0975;
+const SPLIT_CHECKPOINTS_KM = [5, 10, 15, 20, HALF_CHECKPOINT_KM, 25, 30, 35, 40, FULL_KM];
 const ANOMALY_GRACE_FLOOR_SEC = 15 * 60;
 const ANOMALY_INTERVAL_FACTOR = 1.5;
 
@@ -79,10 +80,17 @@ function kstDateKey(ms) {
   return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-function nextCheckpointKm(lastKm) {
+function hasRecordedHalfMat(lastSplit) {
+  return recordedSplitKms(lastSplit).some((km) => Math.abs(km - HALF_CHECKPOINT_KM) <= 0.051);
+}
+
+// 하프 매트가 이 기록에 없으면 20km 다음은 25km다. 21.1이 있으면 그 매트를 기다린다.
+function nextCheckpointKm(lastKm, lastSplit) {
   const km = Number(lastKm);
   if (!Number.isFinite(km)) return SPLIT_CHECKPOINTS_KM[0];
+  const keepHalf = hasRecordedHalfMat(lastSplit);
   for (const point of SPLIT_CHECKPOINTS_KM) {
+    if (!keepHalf && Math.abs(point - HALF_CHECKPOINT_KM) < 1e-6) continue;
     if (point > km + 1e-6) return point;
   }
   return null;
@@ -113,7 +121,7 @@ function recordedSplitKms(lastSplit) {
 // 18km·30.9km처럼 사다리 밖의 기록만 있으면, 없는 20km·35km를 다음 매트로 보지 않는다.
 function anomalyGapKm(lastSplit) {
   const lastKm = Number(lastSplit && lastSplit.km);
-  const nextKm = nextCheckpointKm(lastKm);
+  const nextKm = nextCheckpointKm(lastKm, lastSplit);
   if (nextKm == null) return null;
   const ladderGap = nextKm - lastKm;
   if (!(ladderGap > 0)) return null;

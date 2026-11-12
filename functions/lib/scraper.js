@@ -306,6 +306,46 @@ function parseSmartChipSplitRows(html) {
   return rows;
 }
 
+const SPLIT_PACE_MIN_SEC = 120;
+const SPLIT_PACE_MAX_SEC = 1200;
+
+function hmsToSec(value) {
+  const match = String(value || "").match(/^(\d{2}):(\d{2}):(\d{2})$/);
+  if (!match) return null;
+  return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+}
+
+function segmentPaceSec(earlier, later) {
+  const dt = hmsToSec(later.time) - hmsToSec(earlier.time);
+  const dk = Number(later.km) - Number(earlier.km);
+  if (!(dt > 0) || !(dk > 0)) return null;
+  return dt / dk;
+}
+
+// 중간이 빈 기록은 여기 오지 않는다. 42.2가 직전 구간 페이스와 사람 속도로 맞을 때만 넷을 대신한다.
+function consistentFinishNet(rows) {
+  const filled = rows
+    .filter((row) => row.time && row.km != null)
+    .slice()
+    .sort((a, b) => a.km - b.km);
+  const finish = filled.filter((row) => row.km >= 42).pop();
+  if (!finish) return "";
+  const before = filled.filter((row) => row.km < finish.km - 1e-6);
+  if (before.length === 0) return "";
+  const prev = before[before.length - 1];
+  const finishPace = segmentPaceSec(prev, finish);
+  if (finishPace == null || finishPace < SPLIT_PACE_MIN_SEC || finishPace > SPLIT_PACE_MAX_SEC) {
+    return "";
+  }
+  if (before.length >= 2) {
+    const priorPace = segmentPaceSec(before[before.length - 2], prev);
+    if (priorPace == null) return "";
+    const ratio = finishPace / priorPace;
+    if (ratio < 0.5 || ratio > 2.5) return "";
+  }
+  return finish.time;
+}
+
 function smartChipSplitsForRecord(rows, netTime) {
   const hasEmpty = rows.some((row) => !row.time);
   const hasLateFinish = rows.some((row) => row.time && row.km != null && row.km >= 42);
@@ -340,7 +380,18 @@ function parseSmartChipResult(html, memberName) {
 
   const enc = html.match(/drawTextCanvas\s*\(\s*"targetClock"\s*,\s*"([0-9a-fA-F]+)"\s*\)/);
   const netRaw = enc ? scDecrypt(enc[1], html) : "";
-  const netTime = usableSmartChipHms(netRaw);
+  const officialNet = usableSmartChipHms(netRaw);
+  const rows = parseSmartChipSplitRows(html);
+  const hasEmpty = rows.some((row) => !row.time);
+  let netTime = officialNet;
+  let netTimeSource = "";
+  if (!officialNet && !hasEmpty) {
+    const substitute = consistentFinishNet(rows);
+    if (substitute) {
+      netTime = substitute;
+      netTimeSource = "split42.2";
+    }
+  }
   const rankData = html.match(/var rawData\s*=\s*\[([^\]]*)\]/);
   const overallRank = rankData ? parseInt(rankData[1].split(",")[0]) : null;
 
@@ -353,12 +404,13 @@ function parseSmartChipResult(html, memberName) {
     else if (genderRaw === "여" || genderRaw.toLowerCase() === "female" || genderRaw.toLowerCase() === "f") gender = "F";
   }
 
-  const splits = smartChipSplitsForRecord(parseSmartChipSplitRows(html), netTime);
+  const splits = smartChipSplitsForRecord(rows, officialNet);
   if (!netTime && splits.length === 0) return null;
   return {
     name, bib, distance, netTime, gunTime: "",
     overallRank, genderRank: null, ageGroupRank: null,
     gender, splits, pace: "",
+    ...(netTimeSource ? { netTimeSource } : {}),
   };
 }
 
@@ -1413,6 +1465,7 @@ async function scrapeEvent({ source, sourceId, members, pbMap, onProgress, db, s
         pace: r.pace || "",
         splits: Array.isArray(r.splits) ? r.splits : [],
         ...(r.startClock ? { startClock: r.startClock } : {}),
+        ...(r.netTimeSource ? { netTimeSource: r.netTimeSource } : {}),
         memberRealName: m.realName,
         memberNickname: m.nickname,
         memberGender: m.gender || "",
